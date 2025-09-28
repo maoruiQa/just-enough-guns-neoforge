@@ -1,0 +1,143 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 128,
+				"texture_height": 128,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "gun_body",
+					"pivot": [0, 4.25, -3],
+					"cubes": [
+						{
+							"origin": [-0.5, 3.625, -3.3875],
+							"size": [1.25, 1.25, 9.5475],
+							"pivot": [0, 4.375, 5.13625],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"east": {"uv": [23, 0], "uv_size": [-23, 3]},
+								"west": {"uv": [0, 3], "uv_size": [23, -3]},
+								"up": {"uv": [0, 26], "uv_size": [3, -23]},
+								"down": {"uv": [3, 3], "uv_size": [-3, 23]}
+							}
+						},
+						{
+							"origin": [-0.5, 3.625, 8.96],
+							"size": [1.25, 1.25, 1.2],
+							"pivot": [0, 4.375, 9.13625],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"east": {"uv": [0, 0], "uv_size": [3, 3]},
+								"west": {"uv": [3, 0], "uv_size": [-3, 3]},
+								"up": {"uv": [3, 3], "uv_size": [-3, 3]},
+								"down": {"uv": [3, 6], "uv_size": [-3, -3]}
+							}
+						},
+						{
+							"origin": [-0.8, 3.375, -4.19],
+							"size": [1.6, 1.6, 0.8],
+							"pivot": [0, 4.175, -7.21375],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"north": {"uv": [25, 0], "uv_size": [3, 3]},
+								"east": {"uv": [25, 0], "uv_size": [1, 3]},
+								"south": {"uv": [25, 0], "uv_size": [3, 3]},
+								"west": {"uv": [27, 0], "uv_size": [1, 3]},
+								"up": {"uv": [28, 1], "uv_size": [-3, -1]},
+								"down": {"uv": [28, 3], "uv_size": [-3, -1]}
+							}
+						},
+						{
+							"origin": [-0.8, 3.375, 4.16],
+							"size": [1.6, 1.6, 4.8],
+							"pivot": [0, 4.175, 5.13625],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"north": {"uv": [29, 0], "uv_size": [3, 3]},
+								"east": {"uv": [32, 0], "uv_size": [9, 3]},
+								"south": {"uv": [29, 0], "uv_size": [3, 3]},
+								"west": {"uv": [32, 0], "uv_size": [9, 3]},
+								"up": {"uv": [32, 10], "uv_size": [-3, -9]},
+								"down": {"uv": [32, 10], "uv_size": [-3, -9]}
+							}
+						},
+						{
+							"origin": [-0.8, 3.375, 10.16],
+							"size": [1.6, 1.6, 0.8],
+							"pivot": [0, 4.175, 7.13625],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"north": {"uv": [25, 0], "uv_size": [3, 3]},
+								"east": {"uv": [25, 0], "uv_size": [1, 3]},
+								"south": {"uv": [25, 0], "uv_size": [3, 3]},
+								"west": {"uv": [27, 0], "uv_size": [1, 3]},
+								"up": {"uv": [28, 1], "uv_size": [-3, -1]},
+								"down": {"uv": [28, 3], "uv_size": [-3, -1]}
+							}
+						},
+						{
+							"origin": [-0.575, 4.25, 5.7],
+							"size": [1.35, 2, 0],
+							"uv": {
+								"south": {"uv": [5, 5], "uv_size": [4, 6]}
+							}
+						},
+						{
+							"origin": [-1.03033, 4.7, -2],
+							"size": [1.5, 1.5, 0],
+							"pivot": [-0.53033, 4.95, -3],
+							"rotation": [0, 0, 25],
+							"uv": {
+								"south": {"uv": [15, 7], "uv_size": [4, 4]}
+							}
+						}
+					]
+				},
+				{
+					"name": "left_arm",
+					"parent": "gun_body",
+					"pivot": [6, 5.9068, 6.00305],
+					"cubes": [
+						{
+							"origin": [4.5, 0.1068, 4.50305],
+							"size": [3, 10, 3],
+							"uv": {
+								"north": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"east": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"south": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"west": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"up": {"uv": [5.25, 5.25], "uv_size": [-1, -1]},
+								"down": {"uv": [5.25, 7.25], "uv_size": [-1, -1]}
+							}
+						}
+					]
+				},
+				{
+					"name": "right_arm",
+					"parent": "gun_body",
+					"pivot": [-6, 3.9068, 6.00305],
+					"cubes": [
+						{
+							"origin": [-7.5, 0.1068, 4.50305],
+							"size": [3, 10, 3],
+							"uv": {
+								"north": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"east": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"south": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"west": {"uv": [4.25, 4.25], "uv_size": [1, 1]},
+								"up": {"uv": [5.25, 5.25], "uv_size": [-1, -1]},
+								"down": {"uv": [5.25, 7.25], "uv_size": [-1, -1]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

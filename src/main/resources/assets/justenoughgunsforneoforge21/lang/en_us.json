@@ -1,0 +1,13 @@
+{
+  "itemGroup.justenoughgunsforneoforge21": "Example Mod Tab",
+  "block.justenoughgunsforneoforge21.example_block": "Example Block",
+  "item.justenoughgunsforneoforge21.example_item": "Example Item",
+
+  "justenoughgunsforneoforge21.configuration.title": "Just Enough Guns for neoforge21 Configs",
+  "justenoughgunsforneoforge21.configuration.section.justenoughgunsforneoforge21.common.toml": "Just Enough Guns for neoforge21 Configs",
+  "justenoughgunsforneoforge21.configuration.section.justenoughgunsforneoforge21.common.toml.title": "Just Enough Guns for neoforge21 Configs",
+  "justenoughgunsforneoforge21.configuration.items": "Item List",
+  "justenoughgunsforneoforge21.configuration.logDirtBlock": "Log Dirt Block",
+  "justenoughgunsforneoforge21.configuration.magicNumberIntroduction": "Magic Number Text",
+  "justenoughgunsforneoforge21.configuration.magicNumber": "Magic Number"
+}

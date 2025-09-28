@@ -1,0 +1,28 @@
+Reusing configuration cache.
+> Task :createMinecraftArtifacts UP-TO-DATE
+
+> Task :compileJava FAILED
+C:\Users\user\Desktop\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge\src\main\java\ttv\migami\jeg\entity\projectile\ArrowProjectileEntity.java:152: 错误: 非法的表达式开始
+    private void onHit(HitResult result, Vec3 startVec, Vec3 endVec) {
+    ^
+1 个错误
+
+[Incubating] Problems report is available at: file:///C:/Users/user/Desktop/ai-workspace/Just%20Enough%20Gun%202/Just-Enough-Guns-NeoForge/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  C:\Users\user\Desktop\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge\src\main\java\ttv\migami\jeg\entity\projectile\ArrowProjectileEntity.java:152: 错误: 非法的表达式开始
+      private void onHit(HitResult result, Vec3 startVec, Vec3 endVec) {
+      ^
+  1 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1s
+2 actionable tasks: 1 executed, 1 up-to-date
+Configuration cache entry reused.

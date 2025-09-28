@@ -1,0 +1,41 @@
+package ttv.migami.jeg.world.loot;
+
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Random;
+
+public class GrenadeOnCreeperModifier extends LootModifier {
+    public static final MapCodec<GrenadeOnCreeperModifier> CODEC = RecordCodecBuilder.mapCodec(inst ->
+            LootModifier.codecStart(inst).and(BuiltInRegistries.ITEM.byNameCodec()
+                    .fieldOf("item").forGetter(m -> m.item)).apply(inst, GrenadeOnCreeperModifier::new));
+    private final Item item;
+
+    protected GrenadeOnCreeperModifier(LootItemCondition[] conditionsIn, Item item) {
+        super(conditionsIn);
+        this.item = item;
+    }
+
+    @Override
+    protected @NotNull ObjectArrayList<ItemStack> doApply(@NotNull ObjectArrayList<ItemStack> generatedLoot, @NotNull LootContext context) {
+        if(context.getRandom().nextFloat() > 0.80F) { // 20% chance of the item spawning in.
+            int random = new Random().nextInt(2) + 1; //Min 1, Max 2.
+            generatedLoot.add(new ItemStack(item, random));
+        }
+        return generatedLoot;
+    }
+
+    @Override
+    public MapCodec<? extends IGlobalLootModifier> codec() {
+        return CODEC;
+    }
+}
