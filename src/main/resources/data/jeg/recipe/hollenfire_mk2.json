@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:blaze_powder",
+    "minecraft:iron_nugget",
+    "minecraft:gunpowder",
+    "minecraft:light_blue_dye"
+  ],
+  "result": {
+    "id": "jeg:hollenfire_mk2"
+  }
+}

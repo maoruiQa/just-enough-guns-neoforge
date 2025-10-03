@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:iron_ingot",
+    "minecraft:gunpowder",
+    "minecraft:redstone",
+    "minecraft:white_dye"
+  ],
+  "result": {
+    "id": "jeg:combat_rifle"
+  }
+}

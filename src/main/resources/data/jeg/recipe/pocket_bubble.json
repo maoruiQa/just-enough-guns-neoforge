@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:prismarine_shard",
+    "minecraft:water_bucket"
+  ],
+  "result": {
+    "id": "jeg:pocket_bubble",
+    "count": 4
+  }
+}

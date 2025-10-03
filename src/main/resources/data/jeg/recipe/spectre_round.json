@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:amethyst_shard",
+    "minecraft:gunpowder",
+    "minecraft:glowstone_dust"
+  ],
+  "result": {
+    "id": "jeg:spectre_round",
+    "count": 4
+  }
+}

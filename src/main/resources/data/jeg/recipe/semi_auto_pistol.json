@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:iron_ingot",
+    "minecraft:gunpowder",
+    "minecraft:copper_ingot",
+    "minecraft:light_gray_dye"
+  ],
+  "result": {
+    "id": "jeg:semi_auto_pistol"
+  }
+}

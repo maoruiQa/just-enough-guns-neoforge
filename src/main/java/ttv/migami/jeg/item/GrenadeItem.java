@@ -1,125 +1,46 @@
 package ttv.migami.jeg.item;
 
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.gameevent.GameEvent;
-import ttv.migami.jeg.entity.throwable.ThrowableGrenadeEntity;
-import ttv.migami.jeg.init.ModItems;
-import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.entity.GrenadeEntity;
 
-/**
- * Author: MrCrayfish
- */
-public class GrenadeItem extends AmmoItem
-{
-    protected int maxCookTime;
+public class GrenadeItem extends Item {
+    private static final int DEFAULT_FUSE = 60;
+    private static final float DEFAULT_POWER = 2.4F;
+    // Reduced velocity to ensure throw range is less than grenade launcher
+    // Grenade launcher uses projectileSpeed * 1.6 (3 * 1.6 = 4.8), so 0.8 is much less
+    private static final float THROW_VELOCITY = 0.8F;
+    private static final float THROW_INACCURACY = 0.08F;
 
-    public GrenadeItem(Properties properties, int maxCookTime)
-    {
+    public GrenadeItem(Properties properties) {
         super(properties);
-        this.maxCookTime = maxCookTime;
     }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack)
-    {
-        return UseAnim.BOW;
-    }
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-    @Override
-    public int getUseDuration(ItemStack stack)
-    {
-        return this.maxCookTime;
-    }
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.8F, 0.9F + level.random.nextFloat() * 0.2F);
 
-    public void onUseTick(Level level, LivingEntity player, ItemStack stack, int count)
-    {
-        if(!this.canCook())
-            return;
-
-        int duration = this.getUseDuration(stack) - count;
-        if(duration == 10) {
-            level.gameEvent(player, GameEvent.PRIME_FUSE, player.getPosition(1F));
-            player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), ModSounds.ITEM_GRENADE_PIN.get(), SoundSource.PLAYERS, 1.0F, 1.0F, false);
+        if (!level.isClientSide) {
+            GrenadeEntity grenade = new GrenadeEntity(level, player, DEFAULT_POWER, DEFAULT_FUSE, false);
+            grenade.setItem(stack.copyWithCount(1));
+            grenade.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, THROW_VELOCITY, THROW_INACCURACY);
+            level.addFreshEntity(grenade);
+            player.awardStat(Stats.ITEM_USED.get(this));
         }
-    }
 
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn)
-    {
-        ItemStack stack = playerIn.getItemInHand(handIn);
-        playerIn.startUsingItem(handIn);
-
-        if (!worldIn.isClientSide()) {
-            if (playerIn instanceof Player) {
-                Player player = (Player) playerIn;
-                if (player.isUnderWater() && this == ModItems.GRENADE.get()) {
-                    player.getInventory().add(new ItemStack(ModItems.WATER_BOMB.get()));
-                    player.awardStat(Stats.ITEM_USED.get(this));
-                    stack.shrink(1);
-                }
-            }
+        if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
         }
-        return InteractionResultHolder.consume(stack);
-    }
 
-    @Override
-    public ItemStack finishUsingItem(ItemStack stack, Level worldIn, LivingEntity entityLiving)
-    {
-        if(this.canCook() && !worldIn.isClientSide() && !entityLiving.isUnderWater())
-        {
-            ThrowableGrenadeEntity grenade = this.create(stack, worldIn, entityLiving, 0);
-            if(!(entityLiving instanceof Player) || !((Player) entityLiving).isCreative())
-                stack.shrink(1);
-            grenade.onDeath();
-            if(entityLiving instanceof Player)
-            {
-                ((Player) entityLiving).awardStat(Stats.ITEM_USED.get(this));
-            }
-        }
-        return stack;
-    }
-
-    @Override
-    public void releaseUsing(ItemStack stack, Level worldIn, LivingEntity entityLiving, int timeLeft)
-    {
-        if(!worldIn.isClientSide()  && !entityLiving.isUnderWater())
-        {
-            int duration = this.getUseDuration(stack) - timeLeft;
-            if(duration >= 10)
-            {
-                ThrowableGrenadeEntity grenade = this.create(stack, worldIn, entityLiving, this.maxCookTime - duration);
-                if(!(entityLiving instanceof Player) || !((Player) entityLiving).isCreative())
-                    stack.shrink(1);
-                grenade.shootFromRotation(entityLiving, entityLiving.getXRot(), entityLiving.getYRot(), 0.0F, Math.min(1.0F, duration / 10F), 1.0F);
-                worldIn.addFreshEntity(grenade);
-                this.onThrown(worldIn, grenade);
-                if(entityLiving instanceof Player)
-                {
-                    ((Player) entityLiving).awardStat(Stats.ITEM_USED.get(this));
-                }
-            }
-        }
-    }
-
-    public ThrowableGrenadeEntity create(ItemStack stack, Level world, LivingEntity entity, int timeLeft)
-    {
-        return new ThrowableGrenadeEntity(world, entity, timeLeft);
-    }
-
-    public boolean canCook()
-    {
-        return true;
-    }
-
-    protected void onThrown(Level world, ThrowableGrenadeEntity entity)
-    {
+        return InteractionResult.SUCCESS;
     }
 }

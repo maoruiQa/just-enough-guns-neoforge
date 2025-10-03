@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:sculk_catalyst",
+    "minecraft:brown_dye"
+  ],
+  "result": {
+    "id": "jeg:hypersonic_cannon"
+  }
+}

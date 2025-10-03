@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:prismarine_crystals",
+    "minecraft:water_bucket"
+  ],
+  "result": {
+    "id": "jeg:water_bomb",
+    "count": 4
+  }
+}

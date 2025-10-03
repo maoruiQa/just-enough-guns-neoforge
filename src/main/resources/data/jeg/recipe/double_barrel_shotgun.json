@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:paper",
+    "minecraft:gunpowder",
+    "minecraft:string",
+    "minecraft:red_dye"
+  ],
+  "result": {
+    "id": "jeg:double_barrel_shotgun"
+  }
+}

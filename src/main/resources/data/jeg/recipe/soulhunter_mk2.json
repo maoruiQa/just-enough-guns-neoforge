@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:blaze_powder",
+    "minecraft:iron_nugget",
+    "minecraft:gunpowder",
+    "minecraft:red_dye"
+  ],
+  "result": {
+    "id": "jeg:soulhunter_mk2"
+  }
+}

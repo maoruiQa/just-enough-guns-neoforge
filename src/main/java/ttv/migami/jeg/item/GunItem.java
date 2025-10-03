@@ -1,437 +1,396 @@
 package ttv.migami.jeg.item;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import java.util.Optional;
+import java.util.function.Consumer;
+import javax.annotation.Nullable;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.minecraft.core.registries.BuiltInRegistries;
-import ttv.migami.jeg.Config;
-import ttv.migami.jeg.JustEnoughGuns;
-import ttv.migami.jeg.client.KeyBinds;
-import ttv.migami.jeg.common.FireMode;
-import ttv.migami.jeg.common.Gun;
-import ttv.migami.jeg.common.NetworkGunManager;
-import ttv.migami.jeg.common.ReloadType;
-import ttv.migami.jeg.debug.Debug;
-import ttv.migami.jeg.enchantment.EnchantmentTypes;
-import ttv.migami.jeg.init.ModEnchantments;
-import ttv.migami.jeg.init.ModItems;
-import ttv.migami.jeg.init.ModTags;
-import ttv.migami.jeg.modifier.Modifier;
-import ttv.migami.jeg.modifier.type.IModifierEffect;
-import ttv.migami.jeg.modifier.type.StatModifier;
-import ttv.migami.jeg.modifier.type.StatType;
-import ttv.migami.jeg.util.GunEnchantmentHelper;
-import ttv.migami.jeg.util.GunModifierHelper;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.particles.ParticleTypes;
+import ttv.migami.jeg.client.GunRecoilHandler;
+import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.entity.GrenadeEntity;
+import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.Reference;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.WeakHashMap;
+public class GunItem extends Item {
+    private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
 
-import static ttv.migami.jeg.JustEnoughGuns.devilFruitsLoaded;
+    private final GunStats stats;
 
-public class GunItem extends Item implements IColored, IMeta {
-    private final WeakHashMap<CompoundTag, Gun> modifiedGunCache = new WeakHashMap<>();
-    private Gun gun = new Gun();
-    private Modifier modifier = null;
-
-    public GunItem(Item.Properties properties) {
+    public GunItem(Properties properties, GunStats stats) {
         super(properties);
+        this.stats = stats;
     }
 
-    public void setGun(NetworkGunManager.Supplier supplier) {
-        this.gun = supplier.getGun();
+    public GunStats getStats() {
+        return this.stats;
     }
 
-    public Gun getGun() {
-        return this.gun;
+    public int magazineSize() {
+        return this.stats.magazineSize();
     }
 
-    public void setModifier(Modifier modifier) {
-        this.modifier = modifier;
-    }
-
-    public Modifier getModifier() {
-        return this.modifier;
-    }
-
-    // Data-driven gun
-    public static ItemStack makeGunStack(ResourceLocation gunId) {
-        ItemStack stack = new ItemStack(ModItems.ABSTRACT_GUN.get());
-        stack.getOrCreateTag().putString("GunId", gunId.toString());
+    @Override
+    public ItemStack getDefaultInstance() {
+        ItemStack stack = super.getDefaultInstance();
+        if (stats.usesMagazine()) {
+            stack.set(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+        }
         return stack;
     }
 
-    @Override
-    public void inventoryTick(ItemStack pStack, Level pLevel, Entity pEntity, int pSlotId, boolean pIsSelected) {
-        if (this.modifier != null && Config.COMMON.gameplay.gunModifiers.get()) {
-            pStack.setHoverName(pStack.getHoverName().copy().withStyle(style -> style.withColor(this.modifier.getColor()).withItalic(false)));
+    private void ensureAmmoInitialized(ItemStack stack) {
+        if (stats.usesMagazine() && !stack.has(ModDataComponents.GUN_AMMO.get())) {
+            stack.set(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+        }
+    }
 
-            /*if (pStack.getHoverName().getString().matches(Component.translatable("item." + this.getModID() + "." + this.toString()).getString())) {
-                    pStack.setHoverName(Component.translatable("jeg.modifier." + modifierGroup.getName()).append(" ").append(pStack.getHoverName()));
-            }*/
+    private int getAmmo(ItemStack stack) {
+        if (!stats.usesMagazine()) {
+            return 0;
+        }
+        ensureAmmoInitialized(stack);
+        return stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+    }
+
+    public int getMagazineAmmo(ItemStack stack) {
+        return stats.usesMagazine() ? getAmmo(stack) : 0;
+    }
+
+    public int countInventoryAmmo(Player player) {
+        if (player.getAbilities().instabuild) {
+            return Integer.MAX_VALUE;
         }
 
-        if (pStack.getTag() != null && !pStack.getTag().contains("AmmoCount")) {
-            pStack.getTag().putInt("AmmoCount", 0);
+        Optional<Item> ammoItem = getAmmoItem();
+        if (ammoItem.isEmpty()) {
+            return Integer.MAX_VALUE;
         }
-        if (pStack.is(ModItems.FLARE_GUN.get())) {
-            if (pStack.hasTag() && pStack.getTag().getBoolean("HasRaid")) {
-                pStack.setHoverName(Component.translatable("item.jeg.raid_flare_gun").withStyle(style -> style.withColor(ChatFormatting.RED).withItalic(false)));
-            } else if (pStack.getHoverName().equals(Component.translatable("item.jeg.raid_flare_gun").withStyle(style -> style.withColor(ChatFormatting.RED).withItalic(false)))) {
-                pStack.resetHoverName();
+
+        Item ammo = ammoItem.get();
+        int total = 0;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack slot = player.getInventory().getItem(i);
+            if (!slot.isEmpty() && slot.is(ammo)) {
+                total += slot.getCount();
             }
+        }
+        return total;
+    }
+
+    private void setAmmo(ItemStack stack, int value) {
+        if (stats.usesMagazine()) {
+            stack.set(ModDataComponents.GUN_AMMO.get(), Mth.clamp(value, 0, stats.magazineSize()));
         }
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flag) {
-        CompoundTag tagCompound = stack.getTag();
-        Gun modifiedGun = this.getModifiedGun(stack);
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        ensureAmmoInitialized(stack);
 
-        if (stack.is(ModItems.FLARE_GUN.get())) {
-            if (stack.hasTag() && stack.getTag().getBoolean("HasRaid")) {
-                String factionName;
-                if (tagCompound != null && tagCompound.contains("Raid")) {
-                    factionName = tagCompound.getString("Raid");
-                } else {
-                    factionName = "random";
-                }
-                tooltip.add(Component.translatable("info.jeg.raid_flare_gun").withStyle(ChatFormatting.RED).withStyle(ChatFormatting.BOLD));
-                tooltip.add(Component.literal(""));
-                tooltip.add(Component.translatable("info.jeg.raid_flare").withStyle(ChatFormatting.RED).withStyle(ChatFormatting.BOLD));
-                tooltip.add(Component.literal(""));
-                tooltip.add(Component.translatable("info.jeg.flare_raid").withStyle(ChatFormatting.GRAY)
-                        .append(Component.translatable("faction.jeg." + factionName).withStyle(ChatFormatting.WHITE)));
-                tooltip.add(Component.literal(""));
-            } else {
-                tooltip.add(Component.translatable("info.jeg.flare_gun.color").withStyle(ChatFormatting.BLUE));
-            }
+        if (player.getCooldowns().isOnCooldown(stack)) {
+            return InteractionResult.PASS;
         }
 
-        if (stack.getItem() != ModItems.FINGER_GUN.get()) {
-            if (Screen.hasShiftDown()) {
-                if (this.modifier != null && Config.COMMON.gameplay.gunModifiers.get()) {
-                    tooltip.add(Component.translatable("info.jeg.modifier").withStyle(ChatFormatting.GRAY)
-                            .append(Component.translatable("modifier.jeg." + this.modifier.getName()).withStyle(style -> style.withColor(this.modifier.getColor()))));
-                }
-
-                String fireMode = modifiedGun.getGeneral().getFireMode().getId().toString();
-                tooltip.add(Component.translatable("info.jeg.fire_mode").withStyle(ChatFormatting.GRAY)
-                        .append(Component.translatable("fire_mode." + fireMode).withStyle(ChatFormatting.WHITE)));
-
-                Item ammo = BuiltInRegistries.ITEM.get(modifiedGun.getProjectile().getItem());
-                Item reloadItem = BuiltInRegistries.ITEM.get(modifiedGun.getReloads().getReloadItem());
-                if (modifiedGun.getReloads().getReloadType() == ReloadType.SINGLE_ITEM) {
-                    ammo = reloadItem;
-                }
-                if (ammo != null) {
-                    tooltip.add(Component.translatable("info.jeg.ammo_type", Component.translatable(ammo.getDescriptionId()).withStyle(ChatFormatting.WHITE)).withStyle(ChatFormatting.GRAY));
-                }
-
-                // Minimal, non-invasive extra stats
-                int rate = modifiedGun.getGeneral().getRate();
-                if (rate > 0) {
-                    int rpm = Math.round((20f * 60f) / rate);
-                    tooltip.add(Component.literal("RPM: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(String.valueOf(rpm)).withStyle(ChatFormatting.WHITE)));
-                }
-
-                int reloadTicks = modifiedGun.getReloads().getReloadTimer();
-                int addReloadTicks = modifiedGun.getReloads().getAdditionalReloadTimer();
-                if (reloadTicks > 0) {
-                    String base = String.format("%.2fs", reloadTicks / 20f);
-                    String extra = addReloadTicks > 0 ? String.format(" (+%.2fs)", addReloadTicks / 20f) : "";
-                    tooltip.add(Component.literal("Reload: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(base + extra).withStyle(ChatFormatting.WHITE)));
-                }
-
-                float spread = modifiedGun.getGeneral().getSpread();
-                if (spread > 0.0F || modifiedGun.getGeneral().isAlwaysSpread()) {
-                    tooltip.add(Component.literal("Spread: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(String.format("%.2f°", spread)).withStyle(ChatFormatting.WHITE)));
-                }
-
-                float recoilAngle = modifiedGun.getGeneral().getRecoilAngle();
-                float recoilKick = modifiedGun.getGeneral().getRecoilKick();
-                if (recoilAngle > 0.0F || recoilKick > 0.0F) {
-                    tooltip.add(Component.literal("Recoil: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(String.format("%.2f°/%.2f", recoilAngle, recoilKick)).withStyle(ChatFormatting.WHITE)));
-                }
-
-                int pellets = modifiedGun.getGeneral().getProjectileAmount();
-                if (pellets > 1) {
-                    tooltip.add(Component.literal("Projectiles: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(String.valueOf(pellets)).withStyle(ChatFormatting.WHITE)));
-                }
-
-                if (modifiedGun.getGeneral().canFireUnderwater()) {
-                    tooltip.add(Component.literal("Underwater: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal("Yes").withStyle(ChatFormatting.WHITE)));
-                }
-                if (modifiedGun.getGeneral().isSilenced()) {
-                    tooltip.add(Component.literal("Silenced").withStyle(ChatFormatting.DARK_GRAY));
-                }
-
-                String additionalDamageText = "";
-
-                if (tagCompound != null) {
-                    if (tagCompound.contains("AdditionalDamage", Tag.TAG_ANY_NUMERIC)) {
-                        float additionalDamage = tagCompound.getFloat("AdditionalDamage");
-                        additionalDamage += GunModifierHelper.getAdditionalDamage(stack);
-
-                        if (additionalDamage > 0) {
-                            additionalDamageText = ChatFormatting.GREEN + " +" + ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(additionalDamage);
-                        } else if (additionalDamage < 0) {
-                            additionalDamageText = ChatFormatting.RED + " " + ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(additionalDamage);
-                        }
-                    }
-                }
-
-                float damage = modifiedGun.getProjectile().getDamage();
-                if (this.modifier != null && Config.COMMON.gameplay.gunModifiers.get()) {
-                    float fireRateMultiplier = 1.0F;
-
-                    for (IModifierEffect effect : this.modifier.getModifiers()) {
-                        if (effect instanceof StatModifier statModifier && statModifier.getStatType() == StatType.DAMAGE) {
-                            fireRateMultiplier *= statModifier.getValue();
-                        }
-                    }
-
-                    damage *= fireRateMultiplier;
-                }
-
-                ResourceLocation advantage = modifiedGun.getProjectile().getAdvantage();
-                damage = GunModifierHelper.getModifiedProjectileDamage(stack, damage);
-                damage = GunEnchantmentHelper.getAcceleratorDamage(stack, damage);
-                damage = GunEnchantmentHelper.getWitheredDamage(stack, damage);
-                if (modifiedGun.getProjectile().getItem().equals(new ResourceLocation(Items.EMERALD.toString()))){
-                    tooltip.add(Component.translatable("info.jeg.damage", ChatFormatting.WHITE + ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(damage) + additionalDamageText)
-                            .append(Component.literal(" - " + ChatFormatting.WHITE + ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format((damage * Config.COMMON.gameplay.maxResonanceLevel.get()) * 0.8) + additionalDamageText)).withStyle(ChatFormatting.GRAY));
-                } else tooltip.add(Component.translatable("info.jeg.damage", ChatFormatting.WHITE + ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(damage) + additionalDamageText).withStyle(ChatFormatting.GRAY));
-
-                if (modifiedGun.getProjectile().getItem().equals(new ResourceLocation(Items.EMERALD.toString()))) {
-                    tooltip.add(Component.translatable("info.jeg.resonance").withStyle(ChatFormatting.GREEN));
-                    tooltip.add(Component.translatable("info.jeg.resonance_info").withStyle(ChatFormatting.GREEN));
-                }
-
-                if (!advantage.equals(ModTags.Entities.NONE.location()) && Config.COMMON.gameplay.gunAdvantage.get()) {
-                    tooltip.add(Component.translatable("info.jeg.advantage").withStyle(ChatFormatting.GRAY)
-                            .append(Component.translatable("advantage." + advantage).withStyle(ChatFormatting.GOLD)));
-                }
+        if (!hasAmmoAvailable(player, stack)) {
+            if (level.isClientSide) {
+                GunRecoilHandler.addDryFire(stats.recoilKick() * 0.25F);
+                playDryFireSound(level, player);
+                Component message = stats.usesMagazine() && !stats.isInventoryFed()
+                        ? Component.translatable("item.jeg.gun.empty")
+                        : Component.translatable("item.jeg.gun.no_ammo");
+                player.displayClientMessage(message, true);
             } else {
-                tooltip.add(Component.translatable("info.jeg.shift_tooltip").withStyle(ChatFormatting.WHITE));
+                playDryFireSound(level, player);
             }
-
-            if (tagCompound != null) {
-                if (tagCompound.getBoolean("IgnoreAmmo")) {
-                    tooltip.add(Component.translatable("info.jeg.ignore_ammo").withStyle(ChatFormatting.AQUA));
-                } else {
-                    int ammoCount = tagCompound.getInt("AmmoCount");
-                    tooltip.add(Component.translatable("info.jeg.ammo", ChatFormatting.WHITE.toString() + ammoCount + "/" + GunModifierHelper.getModifiedAmmoCapacity(stack, modifiedGun)).withStyle(ChatFormatting.GRAY));
-                }
-            }
-
-            if (devilFruitsLoaded && KeyBinds.KEY_ATTACHMENTS.getKey() == ttv.migami.mdf.client.KeyBinds.KEY_Z_ACTION.getKey()) {
-                tooltip.add(Component.translatable("info.jeg.attachment_help_mdf", KeyBinds.KEY_ATTACHMENTS.getTranslatedKeyMessage().getString().toUpperCase(Locale.ENGLISH)).withStyle(ChatFormatting.YELLOW));
-            } else {
-                tooltip.add(Component.translatable("info.jeg.attachment_help", KeyBinds.KEY_ATTACHMENTS.getTranslatedKeyMessage().getString().toUpperCase(Locale.ENGLISH)).withStyle(ChatFormatting.YELLOW));
-            }
-
-            if (this == ModItems.TYPHOONEE.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.typhoonee").withStyle(ChatFormatting.GRAY));
-            } else if (this == ModItems.ATLANTEAN_SPEAR.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.atlantean_spear").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.SOULHUNTER_MK2.get() || this == ModItems.HOLLENFIRE_MK2.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.mk2_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.REPEATING_SHOTGUN.get() || this == ModItems.INFANTRY_RIFLE.get() || this == ModItems.SERVICE_RIFLE.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.ww_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.SUBSONIC_RIFLE.get() || this == ModItems.SUPERSONIC_SHOTGUN.get() || this == ModItems.HYPERSONIC_CANNON.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.warden_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.ROCKET_LAUNCHER.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.wither_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.COMPOUND_BOW.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.compound_bow_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.LIGHT_MACHINE_GUN.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.light_machine_gun_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.GRENADE_LAUNCHER.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.grenade_launcher_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.FLAMETHROWER.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.flamethrower_blueprint").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.MINIGUN.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.minigun").withStyle(ChatFormatting.GRAY));
-            }
-            else if (this == ModItems.PRIMITIVE_BOW.get()) {
-                tooltip.add(Component.translatable("info.jeg.tooltip_item.primitive_bow").withStyle(ChatFormatting.GRAY));
-            }
-
-            if (modifiedGun.getGeneral().getFireTimer() != 0) {
-                tooltip.add(Component.literal(""));
-                tooltip.add(Component.translatable("info.jeg.hold_fire").withStyle(ChatFormatting.WHITE));
-            }
-
-            if (this == ModItems.SUBSONIC_RIFLE.get() || this == ModItems.HYPERSONIC_CANNON.get() ||
-                    this == ModItems.SUPERSONIC_SHOTGUN.get()) {
-                tooltip.add(Component.literal(""));
-                tooltip.add(Component.translatable("info.jeg.echo_shard").withStyle(ChatFormatting.WHITE));
-            }
-
-
-            if (this.getEnchantmentLevel(stack, ModEnchantments.INFINITY.get()) != 0 || this.getEnchantmentLevel(stack, ModEnchantments.WITHERED.get()) != 0) {
-                tooltip.add(Component.literal(""));
-
-                if (this.getEnchantmentLevel(stack, ModEnchantments.WITHERED.get()) != 0 ) {
-                    tooltip.add(Component.translatable("info.jeg.withered").withStyle(ChatFormatting.DARK_RED));
-                }
-                if (this.getEnchantmentLevel(stack, ModEnchantments.INFINITY.get()) != 0 ) {
-                    tooltip.add(Component.translatable("info.jeg.infinity").withStyle(ChatFormatting.AQUA));
-                }
-            }
+            return InteractionResult.FAIL;
         }
+
+        if (level.isClientSide) {
+            GunRecoilHandler.addShot(stats.recoilKick());
+            float targetPitch = player.getXRot() - stats.recoilKick() * 6.0F;
+            player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
+        } else {
+            if (!consumeAmmo(level, player, stack)) {
+                return InteractionResult.FAIL;
+            }
+
+            fireAt(level, player, stack, null);
+            player.awardStat(Stats.ITEM_USED.get(this));
+            player.getCooldowns().addCooldown(stack, Math.max(1, stats.fireDelay()));
+            stack.hurtAndBreak(1, player, hand);
+        }
+
+        playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
+        return InteractionResult.SUCCESS;
     }
 
-    @Override
-    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+    private boolean hasAmmoAvailable(Player player, ItemStack stack) {
+        if (player.getAbilities().instabuild) {
+            return true;
+        }
+
+        if (stats.isInventoryFed() || !stats.usesMagazine()) {
+            return hasAmmoInInventory(player);
+        }
+
+        ensureAmmoInitialized(stack);
+        return getAmmo(stack) > 0;
+    }
+
+    private boolean hasAmmoInInventory(Player player) {
+        Optional<Item> ammoItem = getAmmoItem();
+        if (ammoItem.isEmpty()) {
+            return true;
+        }
+
+        Item ammo = ammoItem.get();
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack slot = player.getInventory().getItem(i);
+            if (!slot.isEmpty() && slot.is(ammo)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean consumeAmmo(Level level, Player player, ItemStack stack) {
+        if (player.getAbilities().instabuild) {
+            return true;
+        }
+
+        if (stats.isInventoryFed()) {
+            if (consumeSingleAmmoFromInventory(player)) {
+                return true;
+            }
+            player.displayClientMessage(Component.translatable("item.jeg.gun.no_ammo"), true);
+            return false;
+        }
+
+        if (!stats.usesMagazine()) {
+            return consumeSingleAmmoFromInventory(player);
+        }
+
+        int ammo = getAmmo(stack);
+        if (ammo <= 0) {
+            player.displayClientMessage(Component.translatable("item.jeg.gun.empty"), true);
+            return false;
+        }
+
+        setAmmo(stack, ammo - 1);
         return true;
     }
 
-    @Override
-    public int getUseDuration(ItemStack stack) {
-        Gun gun = ((GunItem) stack.getItem()).getModifiedGun(stack);
-        return gun.getGeneral().getRate() * 4;
-    }
-
-    @Override
-    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
-        return slotChanged;
-    }
-
-    @Override
-    public boolean isBarVisible(ItemStack stack) {
-        //CompoundTag tagCompound = stack.getOrCreateTag();
-        //Gun modifiedGun = this.getModifiedGun(stack);
-        //return !tagCompound.getBoolean("IgnoreAmmo") && tagCompound.getInt("AmmoCount") != GunModifierHelper.getModifiedAmmoCapacity(stack, modifiedGun);
-        return stack.isDamaged();
-    }
-
-    @Override
-    public int getBarWidth(ItemStack stack) {
-        CompoundTag tagCompound = stack.getOrCreateTag();
-        Gun modifiedGun = this.getModifiedGun(stack);
-        //return (int) (13.0 * (tagCompound.getInt("AmmoCount") / (double) GunModifierHelper.getModifiedAmmoCapacity(stack, modifiedGun)));
-        return Math.round(13.0F - (float)stack.getDamageValue() * 13.0F / (float)this.getMaxDamage(stack));
-    }
-
-    @Override
-    public int getBarColor(ItemStack stack) {
-        if (stack.getDamageValue() >= (stack.getMaxDamage() / 1.5)) {
-            return Objects.requireNonNull(ChatFormatting.RED.getColor());
+    private boolean consumeSingleAmmoFromInventory(Player player) {
+        Optional<Item> ammoItem = getAmmoItem();
+        if (ammoItem.isEmpty()) {
+            return true;
         }
-        float stackMaxDamage = this.getMaxDamage(stack);
-        float f = Math.max(0.0F, (stackMaxDamage - (float)stack.getDamageValue()) / stackMaxDamage);
-        return Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
-        //return Objects.requireNonNull(ChatFormatting.WHITE.getColor());
-    }
 
-    @Override
-    public Component getName(ItemStack stack) {
-        if (stack.hasTag() && stack.getTag() != null) {
-            if (stack.getTag().contains("GunId")) {
-                ResourceLocation gunID = new ResourceLocation(stack.getTag().getString("GunId"));
-                return Component.translatable("item.jeg." + gunID.getPath());
+        Item ammo = ammoItem.get();
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack slot = player.getInventory().getItem(i);
+            if (!slot.isEmpty() && slot.is(ammo)) {
+                slot.shrink(1);
+                if (slot.isEmpty()) {
+                    player.getInventory().setItem(i, ItemStack.EMPTY);
+                }
+                return true;
             }
         }
 
-        return super.getName(stack);
+        return false;
     }
 
-    public Gun getModifiedGun(ItemStack stack) {
-        // Data-driven gun
-        CompoundTag tagCompound = stack.getTag();
-        if (tagCompound != null && tagCompound.contains("GunId", Tag.TAG_STRING)) {
-            ResourceLocation id = new ResourceLocation(tagCompound.getString("GunId"));
-            Gun data = FMLEnvironment.dist.isClient()
-                    ? NetworkGunManager.getClientGun(id)
-                    : (NetworkGunManager.get() != null
-                    ? NetworkGunManager.get().getRegisteredGuns().get(id)
-                    : null);
-            return data != null ? data : this.gun;
+    private Optional<Item> getAmmoItem() {
+        ResourceLocation ammoId = stats.ammoItem();
+        if (ammoId == null) {
+            return Optional.empty();
         }
+        return BuiltInRegistries.ITEM.getOptional(ammoId);
+    }
 
-        if (tagCompound != null && tagCompound.contains("Gun", Tag.TAG_COMPOUND)) {
-            return this.modifiedGunCache.computeIfAbsent(tagCompound, item ->
-            {
-                if (tagCompound.getBoolean("Custom")) {
-                    return Gun.create(tagCompound.getCompound("Gun"));
-                } else {
-                    Gun gunCopy = this.gun.copy();
-                    gunCopy.deserializeNBT(tagCompound.getCompound("Gun"));
-                    return gunCopy;
+    public void fireAt(Level level, LivingEntity shooter, ItemStack stack, @Nullable LivingEntity target) {
+        Vec3 origin = shooter.getEyePosition();
+        RandomSource random = shooter.getRandom();
+        int pellets = Math.max(1, stats.projectileAmount());
+        float spread = stats.spread();
+        ResourceLocation gunId = stats.id();
+
+        boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
+        boolean flamethrower = gunId.equals(Reference.id("flamethrower"));
+        float grenadePower = Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        int fuseTicks = grenadeLauncher ? Math.max(20, stats.projectileLife() / 3) : 40;
+        Vec3 shooterMotion = shooter.getDeltaMovement();
+
+        for (int i = 0; i < pellets; i++) {
+            Vec3 direction = computeDirection(shooter, origin, target, random, spread);
+            Vec3 muzzle = origin.add(direction.scale(0.35F));
+
+            if (grenadeLauncher) {
+                GrenadeEntity grenade = new GrenadeEntity(level, shooter, grenadePower, fuseTicks, true);
+                grenade.initialisePosition(muzzle);
+                Vec3 launchVelocity = direction.scale(Math.max(1.2F, stats.projectileSpeed() * 0.8F)).add(shooterMotion);
+                grenade.setDeltaMovement(launchVelocity);
+                level.addFreshEntity(grenade);
+            } else {
+                Vec3 velocity = direction.scale(stats.projectileSpeed());
+                if (flamethrower) {
+                    // Apply gravity to flamethrower projectiles
+                    velocity = velocity.add(0, -0.05, 0);
                 }
-            });
+                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity);
+                bullet.initialisePosition(muzzle);
+                level.addFreshEntity(bullet);
+            }
         }
-        if (JustEnoughGuns.isDebugging()) {
-            return Debug.getGun(this);
+    }
+
+    private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, float spreadDeg) {
+        Vec3 base = target != null
+                ? target.getEyePosition().subtract(origin)
+                : shooter.getViewVector(1.0F);
+
+        // Reduce spread when crouching (aiming)
+        float actualSpread = spreadDeg;
+        if (shooter.isCrouching()) {
+            actualSpread *= 0.3F;  // 70% spread reduction when aiming
         }
-        return this.gun;
+
+        return applySpread(base, actualSpread, random);
+    }
+
+    private Vec3 applySpread(Vec3 direction, float spreadDeg, RandomSource random) {
+        Vec3 normalized = direction.normalize();
+        if (spreadDeg <= 0.0F) {
+            return normalized;
+        }
+
+        double deviation = Math.tan(Math.toRadians(spreadDeg));
+        double offsetX = random.triangle(0.0D, deviation);
+        double offsetY = random.triangle(0.0D, deviation * 0.5D);
+        double offsetZ = random.triangle(0.0D, deviation);
+        Vec3 jitter = new Vec3(offsetX, offsetY, offsetZ);
+        return normalized.add(jitter).normalize();
+    }
+
+    private void playSound(Level level, LivingEntity shooter, Optional<SoundEvent> sound) {
+        SoundSource source = shooter instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+        double x = shooter.getX();
+        double y = shooter.getY();
+        double z = shooter.getZ();
+        sound.ifPresentOrElse(
+                value -> level.playSound(null, x, y, z, value, source, 1.0F, 1.0F),
+                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, 1.0F, 1.1F)
+        );
+    }
+
+    private void playDryFireSound(Level level, LivingEntity shooter) {
+        SoundSource source = shooter instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+        double x = shooter.getX();
+        double y = shooter.getY();
+        double z = shooter.getZ();
+        level.playSound(
+                shooter instanceof Player ? (Player) shooter : null,
+                x,
+                y,
+                z,
+                SoundEvents.LEVER_CLICK,
+                source,
+                0.6F,
+                1.8F
+        );
+    }
+
+    public boolean tryReload(Level level, Player player, ItemStack stack, boolean notify) {
+        if (!stats.usesMagazine()) {
+            return false;
+        }
+
+        ensureAmmoInitialized(stack);
+        int ammo = getAmmo(stack);
+        if (ammo >= stats.magazineSize()) {
+            if (notify) {
+                player.displayClientMessage(Component.translatable("item.jeg.gun.magazine_full"), true);
+            }
+            return false;
+        }
+
+        int needed = stats.magazineSize() - ammo;
+        int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
+        if (pulled <= 0) {
+            if (notify) {
+                player.displayClientMessage(Component.translatable("item.jeg.gun.no_ammo"), true);
+            }
+            return false;
+        }
+
+        setAmmo(stack, ammo + pulled);
+        int reloadTicks = Math.max(1, stats.totalReloadTime());
+        player.getCooldowns().addCooldown(stack, reloadTicks);
+        playSound(level, player, stats.reloadStartSoundEvent());
+        return true;
+    }
+
+    private int removeAmmoFromInventory(Player player, int needed) {
+        Optional<Item> ammoItem = getAmmoItem();
+        if (ammoItem.isEmpty()) {
+            return needed;
+        }
+
+        Item ammo = ammoItem.get();
+        int removed = 0;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack invStack = player.getInventory().getItem(slot);
+            if (!invStack.isEmpty() && invStack.is(ammo)) {
+                int take = Math.min(needed - removed, invStack.getCount());
+                invStack.shrink(take);
+                removed += take;
+                if (invStack.isEmpty()) {
+                    player.getInventory().setItem(slot, ItemStack.EMPTY);
+                }
+                if (removed >= needed) {
+                    break;
+                }
+            }
+        }
+        return removed;
     }
 
     @Override
-    public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-        if (enchantment.category == EnchantmentTypes.SEMI_AUTO_GUN) {
-            Gun modifiedGun = this.getModifiedGun(stack);
-            return (modifiedGun.getGeneral().getFireMode() != FireMode.AUTOMATIC);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        tooltipAdder.accept(Component.translatable("item.jeg.gun.damage", String.format("%.1f", stats.damage())));
+
+        if (stats.usesMagazine()) {
+            tooltipAdder.accept(Component.translatable("item.jeg.gun.ammo", getAmmo(stack), stats.magazineSize()));
         }
-        return super.canApplyAtEnchantingTable(stack, enchantment);
-    }
 
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return this.getMaxStackSize(stack) == 1;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 5;
-    }
-
-    // Disables the enchantment foil to allow a different kind of customization.
-    // Foil only applies when the gun is blessed by Infinity
-    public boolean isFoil(ItemStack stack) {
-        return stack.getEnchantmentLevel(ModEnchantments.INFINITY.get()) != 0;
-    }
-
-    public boolean isValidRepairItem(ItemStack pToRepair, ItemStack pRepair) {
-        return pRepair.is(ModItems.REPAIR_KIT.get());
-    }
-
-    public String getModID() {
-        ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(this);
-        if (registryName != null)
-            return registryName.getNamespace();
-        else return null;
+        // Add ammo type information
+        Optional<Item> ammoItem = getAmmoItem();
+        if (ammoItem.isPresent()) {
+            ItemStack ammoStack = new ItemStack(ammoItem.get());
+            Component ammoName = ammoStack.getHoverName();
+            tooltipAdder.accept(Component.translatable("info.jeg.ammo_type", ammoName));
+        }
     }
 }

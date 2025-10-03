@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:amethyst_shard",
+    "minecraft:gunpowder",
+    "minecraft:glowstone_dust",
+    "minecraft:purple_dye"
+  ],
+  "result": {
+    "id": "jeg:blossom_rifle"
+  }
+}

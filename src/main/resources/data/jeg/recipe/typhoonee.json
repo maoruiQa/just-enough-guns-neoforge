@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:prismarine_shard",
+    "minecraft:water_bucket",
+    "minecraft:magenta_dye"
+  ],
+  "result": {
+    "id": "jeg:typhoonee"
+  }
+}

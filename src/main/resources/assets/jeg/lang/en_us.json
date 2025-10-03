@@ -472,5 +472,6 @@
   "jeg.chat.install_configured": "Install %s to access config options",
   "gui.jeg.category.recycling": "Recycling",
   "gui.jeg.category.recycling.experience": "%s XP",
-  "gui.jeg.category.recycling.time.seconds": "%ss"
+  "gui.jeg.category.recycling.time.seconds": "%ss",
+  "subtitles.jeg.fire": "Gun fires"
 }

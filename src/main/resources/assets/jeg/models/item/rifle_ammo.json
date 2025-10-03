@@ -1,7 +1,6 @@
 {
-	"credit": "Made with Blockbench",
-	"parent": "item/generated",
-	"textures": {
-		"layer0": "jeg:item/rifle_ammo"
-	}
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "jeg:item/rifle_ammo"
+  }
 }

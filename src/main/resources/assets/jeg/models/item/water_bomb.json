@@ -1,7 +1,6 @@
 {
-	"credit": "Made with Blockbench",
-	"parent": "item/generated",
-	"textures": {
-		"layer0": "jeg:item/water_bomb"
-	}
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "jeg:item/water_bomb"
+  }
 }

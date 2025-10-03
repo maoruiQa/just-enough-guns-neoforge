@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder",
+    "minecraft:echo_shard",
+    "minecraft:white_dye"
+  ],
+  "result": {
+    "id": "jeg:supersonic_shotgun"
+  }
+}
