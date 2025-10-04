@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:redstone",
-    "minecraft:white_dye"
+  "pattern": [
+    "BBR",
+    " RF",
+    "  B"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone",
+    "F": "minecraft:flint"
+  },
   "result": {
-    "id": "jeg:combat_rifle"
+    "id": "jeg:combat_rifle",
+    "count": 1
   }
 }

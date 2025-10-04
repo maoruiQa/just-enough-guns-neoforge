@@ -3,11 +3,11 @@
   "category": "misc",
   "ingredients": [
     "minecraft:copper_ingot",
-    "minecraft:paper",
+    "minecraft:gunpowder",
     "minecraft:gunpowder"
   ],
   "result": {
     "id": "jeg:shotgun_shell",
-    "count": 4
+    "count": 24
   }
 }

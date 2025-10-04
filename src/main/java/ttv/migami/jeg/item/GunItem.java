@@ -41,6 +41,18 @@ public class GunItem extends Item {
         this.stats = stats;
     }
 
+    public boolean isEnchantable(ItemStack stack) {
+        return stack.getMaxDamage() > 0;
+    }
+
+    public int getEnchantmentValue() {
+        return 10; // Same as iron tools
+    }
+
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return repair.is(net.minecraft.world.item.Items.IRON_INGOT);
+    }
+
     public GunStats getStats() {
         return this.stats;
     }
@@ -113,7 +125,7 @@ public class GunItem extends Item {
         }
 
         if (!hasAmmoAvailable(player, stack)) {
-            if (level.isClientSide) {
+            if (level.isClientSide()) {
                 GunRecoilHandler.addDryFire(stats.recoilKick() * 0.25F);
                 playDryFireSound(level, player);
                 Component message = stats.usesMagazine() && !stats.isInventoryFed()
@@ -126,7 +138,7 @@ public class GunItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             GunRecoilHandler.addShot(stats.recoilKick());
             float targetPitch = player.getXRot() - stats.recoilKick() * 6.0F;
             player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
@@ -240,7 +252,7 @@ public class GunItem extends Item {
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
         boolean flamethrower = gunId.equals(Reference.id("flamethrower"));
         float grenadePower = Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
-        int fuseTicks = grenadeLauncher ? Math.max(20, stats.projectileLife() / 3) : 40;
+        int fuseTicks = grenadeLauncher ? Math.max(40, stats.projectileLife() / 2) : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
 
         for (int i = 0; i < pellets; i++) {
@@ -359,13 +371,18 @@ public class GunItem extends Item {
         }
 
         Item ammo = ammoItem.get();
+        // Check if this is flamethrower (fire_charge ammo) - 1 fire_charge = 3 ammo
+        boolean isFlamethrower = stats.id().equals(Reference.id("flamethrower"));
+        int ammoPerItem = isFlamethrower ? 3 : 1;
+
         int removed = 0;
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack invStack = player.getInventory().getItem(slot);
             if (!invStack.isEmpty() && invStack.is(ammo)) {
-                int take = Math.min(needed - removed, invStack.getCount());
+                int itemsNeeded = (int) Math.ceil((double)(needed - removed) / ammoPerItem);
+                int take = Math.min(itemsNeeded, invStack.getCount());
                 invStack.shrink(take);
-                removed += take;
+                removed += take * ammoPerItem;
                 if (invStack.isEmpty()) {
                     player.getInventory().setItem(slot, ItemStack.EMPTY);
                 }
@@ -374,7 +391,7 @@ public class GunItem extends Item {
                 }
             }
         }
-        return removed;
+        return Math.min(removed, needed); // Cap at needed amount
     }
 
     @Override

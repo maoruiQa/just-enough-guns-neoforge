@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:redstone",
-    "minecraft:magenta_dye"
+  "pattern": [
+    "BLR",
+    " L ",
+    "  L"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "L": "#minecraft:logs",
+    "R": "minecraft:redstone"
+  },
   "result": {
-    "id": "jeg:bolt_action_rifle"
+    "id": "jeg:bolt_action_rifle",
+    "count": 1
   }
 }

@@ -95,7 +95,7 @@ public final class ModItems {
             case "jeg:manual" -> 256;
             default -> 512;
         };
-        return baseProperties(id).stacksTo(1).durability(durability);
+        return baseProperties(id).stacksTo(1).durability(durability).repairable(net.minecraft.world.item.Items.IRON_INGOT);
     }
 
     private static Item.Properties baseProperties(ResourceLocation id) {

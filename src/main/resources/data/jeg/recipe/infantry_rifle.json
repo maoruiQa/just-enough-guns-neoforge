@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:redstone",
-    "minecraft:brown_dye"
+  "pattern": [
+    "IIL",
+    " LR",
+    "  L"
   ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "L": "#minecraft:logs",
+    "R": "minecraft:redstone"
+  },
   "result": {
+    "count": 1,
     "id": "jeg:infantry_rifle"
   }
 }

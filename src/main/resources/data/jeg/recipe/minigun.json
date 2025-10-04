@@ -1,16 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:copper_ingot",
-    "minecraft:brown_dye"
+  "pattern": [
+    "BRH",
+    "BPB",
+    " BR"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "H": "minecraft:hopper",
+    "P": "minecraft:piston"
+  },
   "result": {
-    "id": "jeg:minigun"
+    "id": "jeg:minigun",
+    "count": 1
   }
 }

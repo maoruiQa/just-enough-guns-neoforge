@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:copper_ingot",
-    "minecraft:red_dye"
+  "pattern": [
+    "II ",
+    " RL",
+    "  L"
   ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "L": "#minecraft:logs",
+    "R": "minecraft:redstone"
+  },
   "result": {
-    "id": "jeg:revolver"
+    "id": "jeg:revolver",
+    "count": 1
   }
 }

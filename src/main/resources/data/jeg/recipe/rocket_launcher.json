@@ -1,15 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:tnt",
-    "minecraft:iron_ingot",
-    "minecraft:yellow_dye"
+  "pattern": [
+    "BRD",
+    "BTB",
+    "B  "
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "D": "minecraft:dispenser",
+    "T": "minecraft:tnt"
+  },
   "result": {
-    "id": "jeg:rocket_launcher"
+    "id": "jeg:rocket_launcher",
+    "count": 1
   }
 }

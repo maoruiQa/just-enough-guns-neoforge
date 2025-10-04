@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:copper_ingot",
-    "minecraft:paper",
-    "minecraft:gunpowder",
-    "minecraft:blue_dye"
+  "pattern": [
+    "BRL",
+    " RL",
+    "  L"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone",
+    "L": "#minecraft:logs"
+  },
   "result": {
-    "id": "jeg:repeating_shotgun"
+    "id": "jeg:repeating_shotgun",
+    "count": 1
   }
 }

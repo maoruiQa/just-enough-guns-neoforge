@@ -1,15 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:tnt",
-    "minecraft:slime_ball",
-    "minecraft:red_dye"
+  "pattern": [
+    "BRT",
+    " T ",
+    "  B"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "T": "minecraft:tnt"
+  },
   "result": {
-    "id": "jeg:grenade_launcher"
+    "id": "jeg:grenade_launcher",
+    "count": 1
   }
 }

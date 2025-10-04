@@ -1,16 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:amethyst_shard",
-    "minecraft:gunpowder",
-    "minecraft:glowstone_dust",
-    "minecraft:cyan_dye"
+  "pattern": [
+    "GGI",
+    " LB",
+    "  G"
   ],
+  "key": {
+    "G": "minecraft:gold_block",
+    "I": "minecraft:iron_block",
+    "L": "minecraft:glowstone",
+    "B": "minecraft:iron_block"
+  },
   "result": {
-    "id": "jeg:holy_shotgun"
+    "id": "jeg:holy_shotgun",
+    "count": 1
   }
 }

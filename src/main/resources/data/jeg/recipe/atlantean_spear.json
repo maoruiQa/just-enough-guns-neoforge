@@ -1,15 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:prismarine_crystals",
-    "minecraft:water_bucket",
-    "minecraft:blue_dye"
+  "pattern": [
+    "PST",
+    " PS",
+    "  P"
   ],
+  "key": {
+    "P": "minecraft:prismarine",
+    "S": "minecraft:sea_lantern",
+    "T": "minecraft:trident"
+  },
   "result": {
-    "id": "jeg:atlantean_spear"
+    "id": "jeg:atlantean_spear",
+    "count": 1
   }
 }

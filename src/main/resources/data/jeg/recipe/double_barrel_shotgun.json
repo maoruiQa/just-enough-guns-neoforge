@@ -1,16 +1,17 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:paper",
-    "minecraft:gunpowder",
-    "minecraft:string",
-    "minecraft:red_dye"
+  "pattern": [
+    "BB ",
+    " LL",
+    "  L"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "L": "#minecraft:logs"
+  },
   "result": {
-    "id": "jeg:double_barrel_shotgun"
+    "id": "jeg:double_barrel_shotgun",
+    "count": 1
   }
 }

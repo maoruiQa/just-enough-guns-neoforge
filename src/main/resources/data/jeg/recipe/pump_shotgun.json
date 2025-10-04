@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:copper_ingot",
-    "minecraft:paper",
-    "minecraft:gunpowder",
-    "minecraft:blue_dye"
+  "pattern": [
+    "IIF",
+    " LL",
+    "  L"
   ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "F": "minecraft:flint",
+    "L": "#minecraft:logs"
+  },
   "result": {
-    "id": "jeg:pump_shotgun"
+    "id": "jeg:pump_shotgun",
+    "count": 1
   }
 }

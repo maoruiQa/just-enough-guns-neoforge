@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:iron_ingot",
-    "minecraft:gunpowder",
-    "minecraft:copper_ingot",
-    "minecraft:green_dye"
+  "pattern": [
+    "BRG",
+    " R ",
+    "  B"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone",
+    "G": "minecraft:gold_ingot"
+  },
   "result": {
-    "id": "jeg:combat_pistol"
+    "id": "jeg:combat_pistol",
+    "count": 1
   }
 }

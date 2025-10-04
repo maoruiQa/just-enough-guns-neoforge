@@ -1,14 +1,17 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:arrow",
-    "minecraft:blue_dye"
+  "pattern": [
+    "LS ",
+    "L  ",
+    "LS "
   ],
+  "key": {
+    "L": "#minecraft:logs",
+    "S": "minecraft:string"
+  },
   "result": {
-    "id": "jeg:primitive_bow"
+    "id": "jeg:primitive_bow",
+    "count": 1
   }
 }

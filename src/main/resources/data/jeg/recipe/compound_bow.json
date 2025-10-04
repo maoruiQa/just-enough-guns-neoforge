@@ -1,14 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:arrow",
-    "minecraft:yellow_dye"
+  "pattern": [
+    "BIS",
+    "BI ",
+    "BS "
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "I": "minecraft:iron_ingot",
+    "S": "minecraft:string"
+  },
   "result": {
-    "id": "jeg:compound_bow"
+    "id": "jeg:compound_bow",
+    "count": 1
   }
 }

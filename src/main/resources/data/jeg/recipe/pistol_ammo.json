@@ -2,11 +2,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:iron_ingot",
+    "minecraft:copper_ingot",
     "minecraft:gunpowder"
   ],
   "result": {
     "id": "jeg:pistol_ammo",
-    "count": 4
+    "count": 32
   }
 }

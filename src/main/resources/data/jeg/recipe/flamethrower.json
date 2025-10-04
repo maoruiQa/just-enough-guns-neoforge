@@ -1,14 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:fire_charge",
-    "minecraft:white_dye"
+  "pattern": [
+    "BBL",
+    " BR",
+    "  B"
   ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "L": "minecraft:lava_bucket",
+    "R": "minecraft:blaze_rod"
+  },
   "result": {
-    "id": "jeg:flamethrower"
+    "id": "jeg:flamethrower",
+    "count": 1
   }
 }

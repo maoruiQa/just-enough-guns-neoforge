@@ -40,26 +40,31 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float equip = Mth.clamp(equipProcess, 0.0F, 1.0F);
         float recoil = GunRecoilHandler.getRecoil(partialTick);
 
-        // Check if it's a short weapon (pistol, grenade launcher)
+        // Check if it's a short weapon (pistol, grenade launcher, shotgun)
         String gunId = stats.id().getPath();
         boolean isShortWeapon = gunId.contains("pistol") || gunId.contains("revolver") ||
-                                gunId.contains("grenade_launcher") || gunId.contains("flare_gun");
+                                gunId.contains("grenade_launcher") || gunId.contains("flare_gun") ||
+                                gunId.contains("double_barrel") || gunId.contains("waterpipe");
+        // Extra large display for double barrel shotgun
+        boolean isDoubleBarrel = gunId.contains("double_barrel");
 
         if (player.isCrouching()) {
-            // Aiming down sights
-            float xOffset = isShortWeapon ? 0.25F : 0.35F;
-            float yOffset = isShortWeapon ? -0.05F : -0.1F;
-            poseStack.translate(direction * xOffset, yOffset, -1.0F);
-            // Very little rotation for straight forward aim
-            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 5.0F));
+            // Aiming down sights - short weapons closer to face and more to the right
+            float xOffset = isDoubleBarrel ? 0.2F : (isShortWeapon ? 0.3F : 0.35F);
+            float yOffset = isDoubleBarrel ? 0.25F : (isShortWeapon ? 0.2F : -0.1F);
+            float zOffset = isDoubleBarrel ? -1.0F : (isShortWeapon ? -0.8F : -1.0F);  // Short weapons much closer to camera
+            poseStack.translate(direction * xOffset, yOffset, zOffset);
+            // Short weapons point more forward when aiming
+            float aimRotation = isShortWeapon ? 2.0F : 5.0F;
+            poseStack.mulPose(Axis.YP.rotationDegrees(direction * aimRotation));
         } else {
-            // Hip fire - closer to camera for larger screen presence
-            float xOffset = isShortWeapon ? 0.65F : 0.85F;
-            float yOffset = isShortWeapon ? 0.0F : -0.05F;
+            // Hip fire - short weapons occupy more screen space, closer to camera
+            float xOffset = isDoubleBarrel ? 0.3F : (isShortWeapon ? 0.35F : 0.65F);  // Double barrel slightly less extreme
+            float yOffset = isDoubleBarrel ? 0.28F : (isShortWeapon ? 0.25F : 0.05F);  // Double barrel moderate increase
             poseStack.translate(direction * xOffset, yOffset, -0.6F);
-            // Minimal rotation to keep gun pointing forward
-            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 10.0F));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 3.0F));
+            // Minimal rotation so barrel points toward crosshair
+            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 3.0F));  // Short weapons point more forward
+            poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F));
         }
 
         poseStack.mulPose(Axis.XP.rotationDegrees(4.0F));

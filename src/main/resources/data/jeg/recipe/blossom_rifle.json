@@ -1,16 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:amethyst_shard",
-    "minecraft:gunpowder",
-    "minecraft:glowstone_dust",
-    "minecraft:purple_dye"
+  "pattern": [
+    "CCB",
+    " PB",
+    "  C"
   ],
+  "key": {
+    "C": "minecraft:cherry_log",
+    "P": "minecraft:pink_dye",
+    "B": "minecraft:iron_block"
+  },
   "result": {
-    "id": "jeg:blossom_rifle"
+    "id": "jeg:blossom_rifle",
+    "count": 1
   }
 }

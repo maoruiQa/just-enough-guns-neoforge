@@ -1,15 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:glowstone_dust",
-    "minecraft:paper",
-    "minecraft:light_gray_dye"
+  "pattern": [
+    "II ",
+    " RT",
+    "  L"
   ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone_torch",
+    "T": "minecraft:redstone_torch",
+    "L": "#minecraft:logs"
+  },
   "result": {
-    "id": "jeg:flare_gun"
+    "id": "jeg:flare_gun",
+    "count": 1
   }
 }

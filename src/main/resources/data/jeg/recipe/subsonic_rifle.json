@@ -1,14 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "minecraft:iron_ingot",
-    "minecraft:redstone",
-    "minecraft:gunpowder",
-    "minecraft:echo_shard",
-    "minecraft:magenta_dye"
+  "pattern": [
+    "EBW",
+    " WB",
+    "  E"
   ],
+  "key": {
+    "E": "minecraft:echo_shard",
+    "B": "minecraft:iron_block",
+    "W": "#minecraft:wool"
+  },
   "result": {
-    "id": "jeg:subsonic_rifle"
+    "id": "jeg:subsonic_rifle",
+    "count": 1
   }
 }
