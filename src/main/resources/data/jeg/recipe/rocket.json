@@ -4,10 +4,12 @@
   "ingredients": [
     "minecraft:tnt",
     "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:gunpowder",
     "minecraft:gunpowder"
   ],
   "result": {
     "id": "jeg:rocket",
-    "count": 4
+    "count": 3
   }
 }

@@ -7,8 +7,8 @@
     " BR"
   ],
   "key": {
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block",
+    "B": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
     "F": "minecraft:flint"
   },
   "result": {

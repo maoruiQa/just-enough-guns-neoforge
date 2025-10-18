@@ -1,5 +1,6 @@
 package ttv.migami.jeg.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -8,9 +9,11 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import org.lwjgl.opengl.GL11;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
@@ -110,6 +113,36 @@ public final class GunClientEvents {
         }
 
         return "Ammo " + reserveText;
+    }
+
+    @SubscribeEvent
+    public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.hasSingleplayerServer()) {
+            return;
+        }
+
+        flushRenderQueue();
+    }
+
+    private static void flushRenderQueue() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return;
+        }
+
+        Runnable finish = () -> {
+            if (org.lwjgl.opengl.GL.getCapabilities() != null) {
+                GL11.glFinish();
+            }
+        };
+
+        if (RenderSystem.isOnRenderThread()) {
+            finish.run();
+            return;
+        }
+
+        minecraft.submit(finish).join();
     }
 
 }

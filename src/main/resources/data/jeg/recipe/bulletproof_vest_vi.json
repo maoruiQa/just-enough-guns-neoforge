@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:iron_chestplate",
+    "minecraft:netherite_scrap",
+    "minecraft:gold_ingot",
+    "minecraft:terracotta",
+    "minecraft:diamond",
+    "minecraft:chain",
+    "minecraft:chain"
+  ],
+  "result": {
+    "id": "jeg:bulletproof_vest_vi",
+    "components": {
+      "minecraft:enchantments": {
+        "minecraft:projectile_protection": 8
+      },
+      "minecraft:enchantment_glint_override": true
+    }
+  }
+}

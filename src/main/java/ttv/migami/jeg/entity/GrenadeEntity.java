@@ -58,6 +58,36 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     public void tick() {
         super.tick();
 
+        // Add flame particle trail for visual effect
+        if (this.level().isClientSide()) {
+            Vec3 motion = this.getDeltaMovement();
+            double speed = motion.length();
+            if (speed > 0.1D) {
+                // Spawn flame particles along the trajectory
+                this.level().addParticle(
+                    net.minecraft.core.particles.ParticleTypes.FLAME,
+                    this.getX(),
+                    this.getY() + 0.1D,
+                    this.getZ(),
+                    -motion.x * 0.1D,
+                    -motion.y * 0.1D,
+                    -motion.z * 0.1D
+                );
+                // Add smoke particles for better visibility
+                if (this.random.nextInt(2) == 0) {
+                    this.level().addParticle(
+                        net.minecraft.core.particles.ParticleTypes.SMOKE,
+                        this.getX(),
+                        this.getY() + 0.1D,
+                        this.getZ(),
+                        -motion.x * 0.05D,
+                        -motion.y * 0.05D,
+                        -motion.z * 0.05D
+                    );
+                }
+            }
+        }
+
         if (!this.level().isClientSide) {
             int fuse = this.entityData.get(DATA_FUSE) - 1;
             if (fuse <= 0) {

@@ -12,6 +12,9 @@ import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.entity.GunnerEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
+import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
+import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 
 public final class ModEntities {
     private ModEntities() {}
@@ -58,6 +61,44 @@ public final class ModEntities {
                         .sized(0.25F, 0.25F)
                         .clientTrackingRange(6)
                         .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PhantomGunner>> PHANTOM_GUNNER = REGISTER.register(
+            "phantom_gunner",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("phantom_gunner"));
+                return EntityType.Builder.of(PhantomGunner::new, MobCategory.MONSTER)
+                        .sized(4.0F, 1.0F)
+                        .clientTrackingRange(8)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TerrorPhantom>> TERROR_PHANTOM = REGISTER.register(
+            "terror_phantom",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom"));
+                return EntityType.Builder.of(TerrorPhantom::new, MobCategory.MONSTER)
+                        .sized(4.0F, 1.5F)
+                        .clientTrackingRange(8)
+                        .updateInterval(2)
+                        .fireImmune()
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TerrorPhantomGuardian>> TERROR_PHANTOM_GUARDIAN = REGISTER.register(
+            "terror_phantom_guardian",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom_guardian"));
+                return EntityType.Builder.of(TerrorPhantomGuardian::new, MobCategory.MONSTER)
+                        .sized(4.5F, 1.8F)
+                        .clientTrackingRange(8)
+                        .updateInterval(2)
+                        .fireImmune()
                         .build(key);
             }
     );

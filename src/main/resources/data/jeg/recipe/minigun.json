@@ -2,15 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRH",
-    "BPB",
-    " BR"
+    "XDH",
+    "XPG",
+    " XR"
   ],
   "key": {
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block",
+    "X": "minecraft:iron_block",
+    "D": "minecraft:diamond",
     "H": "minecraft:hopper",
-    "P": "minecraft:piston"
+    "P": "minecraft:piston",
+    "G": "minecraft:gold_ingot",
+    "R": "minecraft:redstone_block"
   },
   "result": {
     "id": "jeg:minigun",

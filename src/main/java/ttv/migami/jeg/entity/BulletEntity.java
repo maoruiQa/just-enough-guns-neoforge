@@ -13,9 +13,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Blocks;
@@ -25,13 +28,19 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.item.BulletproofArmorItem;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -70,7 +79,7 @@ public class BulletEntity extends Projectile {
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.entityData.set(DATA_GUN, stats.id().toString());
         this.entityData.set(DATA_DAMAGE, stats.damage());
-        this.entityData.set(DATA_LIFE, stats.projectileLife());
+        this.entityData.set(DATA_LIFE, GunRangeHelper.computeEffectiveLife(stats));
         this.entityData.set(DATA_TRAIL_COLOR, stats.trailColor());
         this.entityData.set(DATA_TRAIL_LENGTH, stats.clampedTrailLength());
         this.entityData.set(DATA_SIZE, stats.clampedProjectileSize());
@@ -107,13 +116,13 @@ public class BulletEntity extends Projectile {
         if (gunId.equals(FLARE_GUN_ID)) {
             // Debug logging to verify tickCount is incrementing
             if (this.tickCount % 10 == 0) {
-                System.out.println("[" + (this.level().isClientSide ? "CLIENT" : "SERVER") + "] Flare tickCount: " + this.tickCount + "/" + FLARE_DETONATE_TICKS);
+                System.out.println("[" + (this.level().isClientSide() ? "CLIENT" : "SERVER") + "] Flare tickCount: " + this.tickCount + "/" + FLARE_DETONATE_TICKS);
             }
 
             Vec3 motion = this.getDeltaMovement();
             HitResult collisionResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (collisionResult.getType() != HitResult.Type.MISS) {
-                if (!this.level().isClientSide && this.isAlive()) {
+                if (!this.level().isClientSide() && this.isAlive()) {
                     detonateFlare((ServerLevel)this.level());
                     this.discard();
                 }
@@ -122,7 +131,7 @@ public class BulletEntity extends Projectile {
 
             // Entity tickCount is automatically incremented by Minecraft
             if (this.tickCount >= FLARE_DETONATE_TICKS) {
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide()) {
                     System.out.println("[SERVER] Flare detonating at tick " + this.tickCount);
                     detonateFlare((ServerLevel) this.level());
                     this.discard();
@@ -131,7 +140,7 @@ public class BulletEntity extends Projectile {
             }
 
             // Continue normal movement for flare
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 spawnFlareParticles();
             }
 
@@ -155,7 +164,7 @@ public class BulletEntity extends Projectile {
 
         if (this.isAlive()) {
             // Spawn particles along bullet trail BEFORE moving (so particles spawn along the path)
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 if (gunId.equals(FLAMETHROWER_ID)) {
                     spawnFlameParticles();
                 } else if (gunId.equals(FLARE_GUN_ID)) {
@@ -183,7 +192,7 @@ public class BulletEntity extends Projectile {
 
         if (this.entityData.get(DATA_TICKS_LIVED) > this.entityData.get(DATA_LIFE)) {
             // Special effects when projectile lifetime ends
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 if (gunId.equals(FLAMETHROWER_ID)) {
                     igniteArea(this.blockPosition());
                 }
@@ -200,7 +209,7 @@ public class BulletEntity extends Projectile {
         // Flare gun only detonates on timer, not on collision
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         if (gunId.equals(FLARE_GUN_ID)) {
-            if (!this.level().isClientSide && this.isAlive()) {
+            if (!this.level().isClientSide() && this.isAlive()) {
                 detonateFlare((ServerLevel) this.level());
                 this.discard();
             }
@@ -211,23 +220,97 @@ public class BulletEntity extends Projectile {
             this.discard();
             return;
         }
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             float damage = this.entityData.get(DATA_DAMAGE);
+
+            // Reduce damage for Terror Phantom and Phantom Gunner to balance fire rate (5 shots/sec)
+            if (owner instanceof AbstractTerrorPhantom || owner instanceof PhantomGunner) {
+                damage *= 0.3F; // Reduce damage by 70% to compensate for sustained fire
+            }
+
+            LivingEntity livingOwner = owner instanceof LivingEntity ? (LivingEntity) owner : null;
+            if (livingOwner != null && entity instanceof LivingEntity livingTarget && isFriendlyFire(livingOwner, livingTarget)) {
+                this.discard();
+                return;
+            }
+
+            boolean creativeShooter = livingOwner instanceof Player player && (player.isCreative() || player.isSpectator());
+            // Use direct damage source to ensure proper aggro attribution at all ranges
             DamageSource source;
-            if (owner instanceof LivingEntity livingOwner) {
-                source = this.damageSources().mobProjectile(this, livingOwner);
+            if (livingOwner != null) {
+                source = creativeShooter ? this.damageSources().thrown(this, null) : this.damageSources().mobProjectile(this, livingOwner);
             } else {
                 source = this.damageSources().thrown(this, owner);
             }
 
             if (entity instanceof LivingEntity living) {
-                living.hurtServer((ServerLevel)this.level(), source, damage);
+                applyBulletproofWear(living);
+
+                ServerLevel serverLevel = (ServerLevel) this.level();
+                living.hurtServer(serverLevel, source, damage);
+
+                if (creativeShooter) {
+                    living.setLastHurtByMob(null);
+                    if (living instanceof Mob mob && livingOwner instanceof Player player && mob.getTarget() == player) {
+                        mob.setTarget(null);
+                    }
+                } else if (livingOwner instanceof Player player) {
+                    living.setLastHurtByMob(player);
+
+                    if (!player.isCreative() && !player.isSpectator() && living instanceof Mob mob) {
+                        double followRange = getEffectiveFollowRange(mob);
+                        if (mob.distanceToSqr(player) <= followRange * followRange) {
+                            mob.setTarget(player);
+                            mob.setAggressive(true);
+                            mob.getLookControl().setLookAt(player.getX(), player.getEyeY(), player.getZ());
+                        }
+                    }
+                } else if (livingOwner != null) {
+                    living.setLastHurtByMob(livingOwner);
+                    if (living instanceof Mob mob) {
+                        if (mob.getSensing().hasLineOfSight(livingOwner) || mob.getTarget() != null) {
+                            mob.setTarget(livingOwner);
+                        }
+                    }
+                }
             } else {
                 entity.hurt(source, damage);
             }
         }
 
         this.discard();
+    }
+
+    private boolean isFriendlyFire(LivingEntity owner, LivingEntity target) {
+        if (owner == target) {
+            return true;
+        }
+        if (owner.isAlliedTo(target)) {
+            return true;
+        }
+        if (owner instanceof Mob ownerMob && target instanceof Mob targetMob) {
+            if (ownerMob.getType() == targetMob.getType()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void applyBulletproofWear(LivingEntity target) {
+        for (EquipmentSlot slot : new EquipmentSlot[] { EquipmentSlot.HEAD, EquipmentSlot.CHEST }) {
+            ItemStack stack = target.getItemBySlot(slot);
+            if (!stack.isEmpty() && BulletproofArmorItem.isBulletproof(stack)) {
+                stack.hurtAndBreak(1, target, slot);
+            }
+        }
+    }
+
+    private static double getEffectiveFollowRange(Mob mob) {
+        AttributeInstance followRange = mob.getAttribute(Attributes.FOLLOW_RANGE);
+        if (followRange != null) {
+            return Math.max(16.0D, followRange.getValue());
+        }
+        return 16.0D;
     }
 
     @Override
@@ -270,6 +353,7 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TRAIL_LENGTH, input.getFloatOr("TrailLength", this.entityData.get(DATA_TRAIL_LENGTH)));
         this.entityData.set(DATA_SIZE, input.getFloatOr("ProjectileSize", this.entityData.get(DATA_SIZE)));
         this.entityData.set(DATA_TICKS_LIVED, input.getIntOr("Ticks", this.entityData.get(DATA_TICKS_LIVED)));
+        this.entityData.set(DATA_LIFE, Math.min(this.entityData.get(DATA_LIFE), GunRangeHelper.computeEffectiveLife(getGunStats())));
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
     }
@@ -332,7 +416,7 @@ public class BulletEntity extends Projectile {
         ResourceLocation id = stats.id();
 
         if (id.equals(FLAMETHROWER_ID)) {
-            if (!this.level().isClientSide) {
+            if (!this.level().isClientSide()) {
                 if (result instanceof EntityHitResult entityHit && entityHit.getEntity() != null) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity instanceof LivingEntity living) {
@@ -347,14 +431,26 @@ public class BulletEntity extends Projectile {
         }
 
         if (id.equals(ROCKET_LAUNCHER_ID) || id.equals(HYPERSONIC_ID) || id.equals(TYPHOONEE_ID)) {
-            if (!this.level().isClientSide) {
-                float power = 2.5F;
+            if (!this.level().isClientSide()) {
+                float power = 4.0F;
+                float directDamage = 14.0F;
                 if (id.equals(HYPERSONIC_ID)) {
-                    power = 3.5F;
+                    power = 5.0F;
+                    directDamage = 18.0F;
                 } else if (id.equals(TYPHOONEE_ID)) {
-                    power = 3.1F;
+                    power = 4.5F;
+                    directDamage = 16.0F;
                 }
-                this.level().explode(this, this.getX(), this.getY(), this.getZ(), power, ExplosionInteraction.MOB);
+
+                Entity owner = this.getOwner();
+                this.level().explode(this, this.getX(), this.getY(), this.getZ(), power, ExplosionInteraction.TNT);
+
+                if (result instanceof EntityHitResult entityHit) {
+                    Entity hitEntity = entityHit.getEntity();
+                    if (hitEntity.isAlive()) {
+                        hitEntity.hurt(this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null), directDamage);
+                    }
+                }
             }
             return true;
         }
@@ -725,7 +821,7 @@ public class BulletEntity extends Projectile {
     public void handleEntityEvent(byte event) {
     	if (event == FLARE_DETONATION_EVENT) {
     	    // Debug: 打印客户端是否真收到事件（方便排查网络/追踪问题）
-    	    if (this.level().isClientSide) {
+    	    if (this.level().isClientSide()) {
     	        System.out.println("[CLIENT] BulletEntity received FLARE_DETONATION_EVENT id="
     	            + this.getId() + " pos=" + this.position());
     	    }
@@ -737,7 +833,7 @@ public class BulletEntity extends Projectile {
 
 
     private void spawnColoredDustBurst(Level level, double originX, double originY, double originZ, double dirX, double dirY, double dirZ) {
-        double spread = 2.8;
+        double spread = 2.2;
         for (int color : FLARE_BLAST_COLORS) {
             for (int i = 0; i < 5; i++) {
                 double velocityScale = 0.9 + level.random.nextDouble() * 2.2;

@@ -2,13 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BBR",
+    "BDR",
     " RB",
-    "  B"
+    " NB"
   ],
   "key": {
     "B": "minecraft:blaze_rod",
-    "R": "minecraft:redstone_block"
+    "D": "minecraft:diamond",
+    "R": "minecraft:redstone_block",
+    "N": "minecraft:netherite_scrap"
   },
   "result": {
     "id": "jeg:hollenfire_mk2",

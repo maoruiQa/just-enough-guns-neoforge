@@ -1,16 +1,8 @@
 {
   "pack": {
     "pack_format": 34,
-    "description": "Just Enough Guns resources"
-  },
-  "supported_formats": {
-    "resource": {
-      "min_inclusive": 34,
-      "max_inclusive": 34
-    },
-    "data": {
-      "min_inclusive": 48,
-      "max_inclusive": 48
-    }
+    "description": "Just Enough Guns resources",
+    "forge:resource_pack_format": 34,
+    "forge:data_pack_format": 48
   }
 }

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:iron_helmet",
+    "minecraft:terracotta",
+    "minecraft:iron_ingot",
+    "minecraft:chain"
+  ],
+  "result": {
+    "id": "jeg:bulletproof_helmet_iv",
+    "components": {
+      "minecraft:enchantments": {
+        "minecraft:projectile_protection": 5
+      },
+      "minecraft:enchantment_glint_override": true
+    }
+  }
+}

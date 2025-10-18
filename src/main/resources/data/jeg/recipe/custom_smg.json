@@ -2,14 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRF",
-    "BFF",
-    "B  "
+    "XRF",
+    "IFF",
+    "I  "
   ],
   "key": {
-    "B": "minecraft:iron_block",
+    "X": "minecraft:iron_block",
+    "I": "minecraft:iron_ingot",
     "R": "minecraft:redstone",
-    "F": "minecraft:flint"
+    "F": "minecraft:gunpowder"
   },
   "result": {
     "id": "jeg:custom_smg",

@@ -21,6 +21,7 @@ public class SkeletonGunAttackGoal extends Goal {
     private int fireCooldown;
     private int reloadTicks;
     private int magazine;
+    private int aimTicks;
 
     public SkeletonGunAttackGoal(Skeleton skeleton) {
         this.skeleton = skeleton;
@@ -55,6 +56,7 @@ public class SkeletonGunAttackGoal extends Goal {
     public void stop() {
         this.fireCooldown = 0;
         this.reloadTicks = 0;
+        skeleton.setAggressive(false);
     }
 
     @Override
@@ -66,6 +68,7 @@ public class SkeletonGunAttackGoal extends Goal {
 
         LivingEntity target = skeleton.getTarget();
         if (target == null) {
+            skeleton.setAggressive(false);
             return;
         }
 
@@ -75,25 +78,43 @@ public class SkeletonGunAttackGoal extends Goal {
 
         if (!canSee || distance > 900.0D) {
             skeleton.getNavigation().moveTo(target, 1.05D);
+            skeleton.setAggressive(false);
         }
 
+        // Handle reloading
         if (reloadTicks > 0) {
             reloadTicks--;
+            skeleton.setAggressive(false);
             if (reloadTicks == 0) {
                 refillMagazine(stack, gun.getStats());
             }
             return;
         }
 
+        // Handle fire cooldown
         if (fireCooldown > 0) {
             fireCooldown--;
+            if (aimTicks > 0) {
+                // Keep aiming animation active
+                skeleton.setAggressive(true);
+            }
             return;
         }
 
+        // Ready to shoot
         if (!canSee || distance > 900.0D) {
+            skeleton.setAggressive(false);
             return;
         }
 
+        // Start aiming animation
+        skeleton.setAggressive(true);
+        if (aimTicks < 8) {
+            aimTicks++;
+            return;
+        }
+
+        // Fire the gun
         Level level = skeleton.level();
         GunStats stats = gun.getStats();
         gun.fireAt(level, skeleton, stack, target);
@@ -108,11 +129,14 @@ public class SkeletonGunAttackGoal extends Goal {
             stack.set(ModDataComponents.GUN_AMMO.get(), magazine);
             if (magazine <= 0) {
                 beginReload(stats, stack);
+                aimTicks = 0;
             } else {
                 fireCooldown = Math.max(4, stats.fireDelay());
+                aimTicks = 8; // Keep aim for a few ticks after shooting
             }
         } else {
             fireCooldown = Math.max(6, stats.fireDelay());
+            aimTicks = 8;
         }
     }
 

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_saddle": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["minecraft:saddle"]
+          }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:armored_joy_harness"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_saddle",
+      "has_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "jeg:armored_joy_harness"
+    ]
+  }
+}

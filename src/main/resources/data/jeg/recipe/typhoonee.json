@@ -7,15 +7,9 @@
     "  P"
   ],
   "key": {
-    "H": {
-      "item": "minecraft:heart_of_the_sea"
-    },
-    "P": {
-      "item": "minecraft:prismarine"
-    },
-    "B": {
-      "item": "minecraft:iron_block"
-    }
+    "H": "minecraft:heart_of_the_sea",
+    "P": "minecraft:prismarine",
+    "B": "minecraft:iron_block"
   },
   "result": {
     "id": "jeg:typhoonee",

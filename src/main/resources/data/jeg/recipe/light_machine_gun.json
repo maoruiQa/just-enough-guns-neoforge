@@ -2,14 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRP",
-    "BRB",
-    " BP"
+    "XRP",
+    "XDX",
+    " XI"
   ],
   "key": {
-    "B": "minecraft:iron_block",
+    "X": "minecraft:iron_block",
     "R": "minecraft:redstone_block",
-    "P": "minecraft:piston"
+    "P": "minecraft:piston",
+    "D": "minecraft:diamond",
+    "I": "minecraft:iron_ingot"
   },
   "result": {
     "id": "jeg:light_machine_gun",

@@ -15,7 +15,9 @@ import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModEntityEvents;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.network.NetworkHandler;
 
 @Mod(Reference.MOD_ID)
 public final class JustEnoughGuns {
@@ -31,11 +33,14 @@ public final class JustEnoughGuns {
         ModDataComponents.REGISTER.register(modBus);
         ModEntities.REGISTER.register(modBus);
         ModSounds.REGISTER.register(modBus);
+        ModStructures.STRUCTURES.register(modBus);
+        ModStructures.PIECES.register(modBus);
 
         modBus.addListener(this::onCommonSetup);
         modBus.addListener(this::onBuildCreativeTab);
         modBus.addListener(ModEntityEvents::onAttributeCreation);
         modBus.addListener(ModEntityEvents::onSpawnPlacement);
+        modBus.addListener(NetworkHandler::register);
 
     }
 

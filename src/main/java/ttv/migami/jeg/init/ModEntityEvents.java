@@ -1,11 +1,14 @@
 package ttv.migami.jeg.init;
 
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import ttv.migami.jeg.entity.GunnerEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
+import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 
 public final class ModEntityEvents {
     private ModEntityEvents() {}
@@ -13,6 +16,9 @@ public final class ModEntityEvents {
     public static void onAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(ModEntities.GUNNER.get(), GunnerEntity.createAttributes().build());
         event.put(ModEntities.GHOUL.get(), Ghoul.createAttributes().build());
+        event.put(ModEntities.PHANTOM_GUNNER.get(), PhantomGunner.createAttributes().build());
+        event.put(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes().build());
+        event.put(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(95.0D).build());
     }
 
     public static void onSpawnPlacement(RegisterSpawnPlacementsEvent event) {
@@ -21,6 +27,30 @@ public final class ModEntityEvents {
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Ghoul::checkMonsterSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
+
+        event.register(
+                ModEntities.PHANTOM_GUNNER.get(),
+                SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING,
+                Mob::checkMobSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
+
+        event.register(
+                ModEntities.TERROR_PHANTOM.get(),
+                SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING,
+                Mob::checkMobSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
+
+        event.register(
+                ModEntities.TERROR_PHANTOM_GUARDIAN.get(),
+                SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING,
+                Mob::checkMobSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
     }
