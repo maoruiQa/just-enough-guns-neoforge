@@ -2,14 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BBR",
-    " RF",
-    "  B"
+    "IBR",
+    "CRG",
+    " IB"
   ],
   "key": {
-    "B": "minecraft:iron_ingot",
-    "R": "minecraft:redstone",
-    "F": "minecraft:flint"
+    "I": "minecraft:iron_ingot",
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "C": "minecraft:comparator",
+    "G": "minecraft:gunpowder"
   },
   "result": {
     "id": "jeg:combat_rifle",

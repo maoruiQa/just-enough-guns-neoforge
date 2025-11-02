@@ -2,16 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRD",
-    "BTX",
-    "B X"
+    "DBD",
+    "GTG",
+    " S "
   ],
   "key": {
+    "D": "minecraft:diamond_block",
     "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block",
-    "D": "minecraft:dispenser",
+    "G": "minecraft:gunpowder",
     "T": "minecraft:tnt",
-    "X": "minecraft:diamond"
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "jeg:rocket_launcher",

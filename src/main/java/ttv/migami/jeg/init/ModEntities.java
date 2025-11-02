@@ -10,7 +10,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
-import ttv.migami.jeg.entity.GunnerEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
@@ -21,16 +20,7 @@ public final class ModEntities {
 
     public static final DeferredRegister<EntityType<?>> REGISTER = DeferredRegister.create(Registries.ENTITY_TYPE, Reference.MOD_ID);
 
-    public static final DeferredHolder<EntityType<?>, EntityType<GunnerEntity>> GUNNER = REGISTER.register(
-            "gunner",
-            () -> {
-                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gunner"));
-                return EntityType.Builder.of(GunnerEntity::new, MobCategory.MONSTER)
-                        .sized(0.6F, 1.95F)
-                        .build(key);
-            }
-    );
-
+  
     public static final DeferredHolder<EntityType<?>, EntityType<Ghoul>> GHOUL = REGISTER.register(
             "ghoul",
             () -> {

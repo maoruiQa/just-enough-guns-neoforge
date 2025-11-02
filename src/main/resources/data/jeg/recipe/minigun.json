@@ -8,7 +8,7 @@
   ],
   "key": {
     "X": "minecraft:iron_block",
-    "D": "minecraft:diamond",
+    "D": "minecraft:diamond_block",
     "H": "minecraft:hopper",
     "P": "minecraft:piston",
     "G": "minecraft:gold_ingot",

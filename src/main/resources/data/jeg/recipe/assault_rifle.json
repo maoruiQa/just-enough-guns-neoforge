@@ -2,14 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRF",
-    "BRF",
-    " BR"
+    "IRI",
+    "BRG",
+    " I "
   ],
   "key": {
-    "B": "minecraft:iron_ingot",
-    "R": "minecraft:redstone",
-    "F": "minecraft:flint"
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "I": "minecraft:iron_ingot",
+    "G": "minecraft:gunpowder"
   },
   "result": {
     "id": "jeg:assault_rifle",

@@ -210,7 +210,7 @@ public abstract class AbstractTerrorPhantom extends Phantom {
     private void playGunshotSound(GunStats stats) {
         stats.fireSoundEvent().or(stats::silencedFireSoundEvent).ifPresentOrElse(
                 sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F),
-                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F)
+                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 0.9F + this.random.nextFloat() * 0.2F)
         );
     }
 
@@ -430,8 +430,7 @@ public abstract class AbstractTerrorPhantom extends Phantom {
             skeleton.setYRot(level.random.nextFloat() * 360.0F);
             skeleton.yRotO = skeleton.getYRot();
             skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
-            skeleton.addTag(GunEvents.SKELETON_GUNNER_TAG);
-            GunEvents.equipSkeletonWithGun(skeleton, level.random);
+            skeleton.addTag(GunEvents.JEG_GUNNER_TAG);            // JEG faction system will handle gun equipping automatically
             prepareSkeletonForDaylight(skeleton);
 
             // Set target to nearest player

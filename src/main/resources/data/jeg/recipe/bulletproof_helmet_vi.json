@@ -1,19 +1,13 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
   "ingredients": [
-    "minecraft:iron_helmet",
-    "minecraft:netherite_scrap",
-    "minecraft:gold_ingot",
-    "minecraft:terracotta",
-    "minecraft:diamond"
+    "jeg:bulletproof_helmet_v",
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot"
   ],
   "result": {
     "id": "jeg:bulletproof_helmet_vi",
-    "components": {
-      "minecraft:enchantments": {
-        "minecraft:projectile_protection": 8
-      },
-      "minecraft:enchantment_glint_override": true
-    }
+    "count": 1
   }
 }

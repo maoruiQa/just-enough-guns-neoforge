@@ -2,14 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRT",
-    " T ",
-    "  B"
+    "IBI",
+    "GTG",
+    " S "
   ],
   "key": {
+    "I": "minecraft:iron_ingot",
     "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block",
-    "T": "minecraft:tnt"
+    "G": "minecraft:gunpowder",
+    "T": "minecraft:tnt",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "jeg:grenade_launcher",

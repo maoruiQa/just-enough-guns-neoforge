@@ -2,7 +2,6 @@ package ttv.migami.jeg.item;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -17,8 +16,6 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.equipment.Equippable;
-import net.minecraft.world.item.equipment.EquipmentAsset;
-import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -66,7 +63,7 @@ public final class ArmoredJoyHarnessItem extends Item {
                 .setEquipOnInteract(true)
                 .setDamageOnHurt(false);
 
-        ResourceKey<EquipmentAsset> assetKey = resolveAsset(color, tier);
+        var assetKey = resolveAsset(color, tier);
         if (assetKey != null) {
             builder.setAsset(assetKey);
         }
@@ -80,7 +77,7 @@ public final class ArmoredJoyHarnessItem extends Item {
     }
 
     @Nullable
-    private static ResourceKey<EquipmentAsset> resolveAsset(@Nullable DyeColor color, HarnessTier tier) {
+    private static net.minecraft.resources.ResourceKey<net.minecraft.world.item.equipment.EquipmentAsset> resolveAsset(@Nullable DyeColor color, HarnessTier tier) {
         if (color == null) {
             return null;
         }
@@ -90,7 +87,7 @@ public final class ArmoredJoyHarnessItem extends Item {
             case NETHERITE -> "_netherite";
         };
         String name = color.getName() + suffix + "_harness";
-        return ResourceKey.create(EquipmentAssets.ROOT_ID, Reference.id(name));
+        return net.minecraft.resources.ResourceKey.create(net.minecraft.world.item.equipment.EquipmentAssets.ROOT_ID, Reference.id(name));
     }
 
     @Nullable

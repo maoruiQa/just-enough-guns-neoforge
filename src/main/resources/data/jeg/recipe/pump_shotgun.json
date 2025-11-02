@@ -2,14 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "IIF",
-    " LL",
-    "  L"
+    "III",
+    "GGG",
+    " S "
   ],
   "key": {
     "I": "minecraft:iron_ingot",
-    "F": "minecraft:flint",
-    "L": "#minecraft:logs"
+    "G": "minecraft:gunpowder",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "jeg:pump_shotgun",

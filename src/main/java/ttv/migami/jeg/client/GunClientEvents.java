@@ -1,8 +1,10 @@
 package ttv.migami.jeg.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -65,6 +67,8 @@ public final class GunClientEvents {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         GunRecoilHandler.tick();
+        // Tick bullet trail renderer to age and remove old trails
+        ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
 
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
@@ -123,6 +127,8 @@ public final class GunClientEvents {
         }
 
         flushRenderQueue();
+        // Clear bullet trails when logging out
+        ttv.migami.jeg.client.render.BulletTrailRenderer.clear();
     }
 
     private static void flushRenderQueue() {

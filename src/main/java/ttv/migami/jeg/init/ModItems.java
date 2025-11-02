@@ -9,9 +9,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.Recipe;
@@ -22,13 +22,14 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.event.RecipeUnlockHandler;
-import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
-import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
-import ttv.migami.jeg.item.JoyousArmorPlateItem;
+import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
+import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
+import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.item.JoyousArmorPlateItem;
 
 public final class ModItems {
     private ModItems() {}
@@ -72,26 +73,17 @@ public final class ModItems {
 
     public static final DeferredHolder<Item, SpawnEggItem> PHANTOM_GUNNER_SPAWN_EGG = REGISTER.register(
             "phantom_gunner_spawn_egg",
-            () -> new SpawnEggItem(
-                    ModEntities.PHANTOM_GUNNER.get(),
-                    baseProperties(Reference.id("phantom_gunner_spawn_egg")).stacksTo(64)
-            )
+            () -> new ModSpawnEggItem(ModEntities.PHANTOM_GUNNER.get(), baseProperties(Reference.id("phantom_gunner_spawn_egg")).stacksTo(64))
     );
 
     public static final DeferredHolder<Item, SpawnEggItem> TERROR_PHANTOM_SPAWN_EGG = REGISTER.register(
             "terror_phantom_spawn_egg",
-            () -> new SpawnEggItem(
-                    ModEntities.TERROR_PHANTOM.get(),
-                    baseProperties(Reference.id("terror_phantom_spawn_egg")).stacksTo(64)
-            )
+            () -> new ModSpawnEggItem(ModEntities.TERROR_PHANTOM.get(), baseProperties(Reference.id("terror_phantom_spawn_egg")).stacksTo(64))
     );
 
     public static final DeferredHolder<Item, SpawnEggItem> TERROR_PHANTOM_GUARDIAN_SPAWN_EGG = REGISTER.register(
             "terror_phantom_guardian_spawn_egg",
-            () -> new SpawnEggItem(
-                    ModEntities.TERROR_PHANTOM_GUARDIAN.get(),
-                    baseProperties(Reference.id("terror_phantom_guardian_spawn_egg")).stacksTo(64)
-            )
+            () -> new ModSpawnEggItem(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), baseProperties(Reference.id("terror_phantom_guardian_spawn_egg")).stacksTo(64))
     );
 
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_SKELETON_SPAWN_EGG = REGISTER.register(
@@ -100,6 +92,99 @@ public final class ModItems {
                     EntityType.SKELETON,
                     baseProperties(Reference.id("gunner_skeleton_spawn_egg")).stacksTo(64)
             )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIE_SPAWN_EGG = REGISTER.register(
+            "gunner_zombie_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.ZOMBIE,
+                    baseProperties(Reference.id("gunner_zombie_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG = REGISTER.register(
+            "gunner_zombified_piglin_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.ZOMBIFIED_PIGLIN,
+                    baseProperties(Reference.id("gunner_zombified_piglin_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PIGLIN_SPAWN_EGG = REGISTER.register(
+            "gunner_piglin_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.PIGLIN,
+                    baseProperties(Reference.id("gunner_piglin_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_HUSK_SPAWN_EGG = REGISTER.register(
+            "gunner_husk_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.HUSK,
+                    baseProperties(Reference.id("gunner_husk_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_WITHER_SKELETON_SPAWN_EGG = REGISTER.register(
+            "gunner_wither_skeleton_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.WITHER_SKELETON,
+                    baseProperties(Reference.id("gunner_wither_skeleton_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_DROWNED_SPAWN_EGG = REGISTER.register(
+            "gunner_drowned_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.DROWNED,
+                    baseProperties(Reference.id("gunner_drowned_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIE_VILLAGER_SPAWN_EGG = REGISTER.register(
+            "gunner_zombie_villager_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.ZOMBIE_VILLAGER,
+                    baseProperties(Reference.id("gunner_zombie_villager_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_STRAY_SPAWN_EGG = REGISTER.register(
+            "gunner_stray_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.STRAY,
+                    baseProperties(Reference.id("gunner_stray_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PILLAGER_SPAWN_EGG = REGISTER.register(
+            "gunner_pillager_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.PILLAGER,
+                    baseProperties(Reference.id("gunner_pillager_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_VINDICATOR_SPAWN_EGG = REGISTER.register(
+            "gunner_vindicator_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.VINDICATOR,
+                    baseProperties(Reference.id("gunner_vindicator_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PIGLIN_BRUTE_SPAWN_EGG = REGISTER.register(
+            "gunner_piglin_brute_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.PIGLIN_BRUTE,
+                    baseProperties(Reference.id("gunner_piglin_brute_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, SpawnEggItem> GUNNER_GHOUL_SPAWN_EGG = REGISTER.register(
+            "gunner_ghoul_spawn_egg",
+            () -> new ModSpawnEggItem(ModEntities.GHOUL.get(), baseProperties(Reference.id("gunner_ghoul_spawn_egg")).stacksTo(64))
     );
 
     public static final DeferredHolder<Item, JoyousArmorPlateItem> JOYOUS_ARMOR_PLATE = REGISTER.register(
@@ -148,8 +233,7 @@ public final class ModItems {
                     diamondId.getPath(),
                     () -> new ArmoredJoyHarnessItem(color,
                             ArmoredJoyHarnessItem.buildProperties(baseProperties(diamondId), color, ArmoredJoyHarnessItem.HarnessTier.DIAMOND),
-                            40.0F,
-                            160.0F,
+                            40.0F, 160.0F,
                             Component.translatable("tooltip.jeg.harness_material.diamond"),
                             ArmoredJoyHarnessItem.HarnessTier.DIAMOND)
             );
@@ -160,8 +244,7 @@ public final class ModItems {
                     netheriteId.getPath(),
                     () -> new ArmoredJoyHarnessItem(color,
                             ArmoredJoyHarnessItem.buildProperties(baseProperties(netheriteId), color, ArmoredJoyHarnessItem.HarnessTier.NETHERITE),
-                            50.0F,
-                            250.0F,
+                            50.0F, 250.0F,
                             Component.translatable("tooltip.jeg.harness_material.netherite"),
                             ArmoredJoyHarnessItem.HarnessTier.NETHERITE)
             );
@@ -241,6 +324,11 @@ public final class ModItems {
             event.accept(TERROR_PHANTOM_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
+            event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
+            event.accept(GUNNER_HUSK_SPAWN_EGG.get());
+            event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
+            event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
+            event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
@@ -256,6 +344,18 @@ public final class ModItems {
             event.accept(TERROR_PHANTOM_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
+            event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
+            event.accept(GUNNER_HUSK_SPAWN_EGG.get());
+            event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
+            event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
+            event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
+            event.accept(GUNNER_DROWNED_SPAWN_EGG.get());
+            event.accept(GUNNER_ZOMBIE_VILLAGER_SPAWN_EGG.get());
+            event.accept(GUNNER_STRAY_SPAWN_EGG.get());
+            event.accept(GUNNER_PILLAGER_SPAWN_EGG.get());
+            event.accept(GUNNER_VINDICATOR_SPAWN_EGG.get());
+            event.accept(GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get());
+            event.accept(GUNNER_GHOUL_SPAWN_EGG.get());
         }
     }
 

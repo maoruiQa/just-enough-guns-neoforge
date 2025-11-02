@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -24,16 +25,17 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.client.GunRecoilHandler;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
-import ttv.migami.jeg.entity.GunnerEntity;
 import ttv.migami.jeg.gun.GunCategory;
-import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.gun.GunRangeHelper;
+import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
@@ -48,6 +50,7 @@ public class GunItem extends Item {
             "burst_rifle",
             "combat_rifle",
             "custom_smg",
+            "flamethrower",
             "phantom_smg",
             "hollenfire_mk2",
             "infantry_rifle",
@@ -89,14 +92,14 @@ public class GunItem extends Item {
     public ItemStack getDefaultInstance() {
         ItemStack stack = super.getDefaultInstance();
         if (stats.usesMagazine()) {
-            stack.set(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+            stack.set(ModDataComponents.GUN_AMMO.get(), 0); // 弹匣默认为空
         }
         return stack;
     }
 
     private void ensureAmmoInitialized(ItemStack stack) {
         if (stats.usesMagazine() && !stack.has(ModDataComponents.GUN_AMMO.get())) {
-            stack.set(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+            stack.set(ModDataComponents.GUN_AMMO.get(), 0); // 弹匣默认为空
         }
     }
 
@@ -118,6 +121,20 @@ public class GunItem extends Item {
 
     public static boolean isAutomatic(GunStats stats) {
         return AUTOMATIC_IDS.contains(stats.id().getPath());
+    }
+
+    /**
+     * Check if this gun fires slow bullets (tracked projectiles) vs fast bullets (instant raycast).
+     * Slow bullets: flamethrower, flare gun, rocket launcher, hypersonic cannon, typhoonee
+     * Fast bullets: all other guns
+     */
+    private static boolean isSlowBullet(ResourceLocation gunId) {
+        String path = gunId.getPath();
+        return path.equals("flamethrower") ||
+               path.equals("flare_gun") ||
+               path.equals("rocket_launcher") ||
+               path.equals("hypersonic_cannon") ||
+               path.equals("typhoonee");
     }
 
     public static boolean isTriggerLocked(ItemStack stack) {
@@ -179,7 +196,8 @@ public class GunItem extends Item {
 
         if (!hasAmmoAvailable(player, stack)) {
             if (level.isClientSide()) {
-                GunRecoilHandler.addDryFire(stats.recoilKick() * 0.25F);
+                float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
+                GunRecoilHandler.addDryFire(stats.recoilKick() * recoilMultiplier * 0.25F);
                 playDryFireSound(level, player);
                 Component message = stats.usesMagazine() && !stats.isInventoryFed()
                         ? Component.translatable("item.jeg.gun.empty")
@@ -192,12 +210,19 @@ public class GunItem extends Item {
         }
 
         if (level.isClientSide()) {
-            GunRecoilHandler.addShot(stats.recoilKick());
-            float targetPitch = player.getXRot() - stats.recoilKick() * 6.0F;
+            float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
+            float recoilKick = stats.recoilKick() * recoilMultiplier;
+            GunRecoilHandler.addShot(recoilKick);
+            float targetPitch = player.getXRot() - recoilKick * 6.0F;
             player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
                 setTriggerLocked(stack, true);
             }
+
+            // Client-side instant trail calculation for fast bullets
+            ResourceLocation gunId = stats.id();
+            // Removed custom trail rendering - rely on server-sent particles instead
+            // which have proper depth testing and don't render through blocks
         } else {
             if (!consumeAmmo(level, player, stack)) {
                 return InteractionResult.FAIL;
@@ -340,31 +365,8 @@ public class GunItem extends Item {
                 // Add bullet trail particles for all guns EXCEPT flamethrower
                 // (flamethrower already has its own particle effects)
                 if (!flamethrower && level instanceof ServerLevel serverLevel) {
-                    // Estimate target position for particle trail
-                    Vec3 targetPos = target != null ? target.getEyePosition() : muzzle.add(direction.scale(50.0D));
-                    double distance = muzzle.distanceTo(targetPos);
-
-                    // Spawn flame and smoke particles along the bullet path
-                    // Scale particle count based on distance (max 20 particles)
-                    int particleCount = Math.min(20, (int) (distance / 2.0D));
-                    for (int j = 0; j < particleCount; j++) {
-                        double fraction = (double) j / particleCount;
-                        Vec3 particlePos = muzzle.add(direction.scale(distance * fraction));
-
-                        // Fire particles (reduced from phantom code for subtler effect)
-                        serverLevel.sendParticles(
-                            ParticleTypes.FLAME,
-                            particlePos.x, particlePos.y, particlePos.z,
-                            1, 0.01D, 0.01D, 0.01D, 0.005D
-                        );
-
-                        // Smoke particles
-                        serverLevel.sendParticles(
-                            ParticleTypes.SMOKE,
-                            particlePos.x, particlePos.y, particlePos.z,
-                            1, 0.01D, 0.01D, 0.01D, 0.005D
-                        );
-                    }
+                    // Use penetration-aware raycast to spawn particles along actual bullet path
+                    spawnBulletTrailParticles(serverLevel, muzzle, direction, stats, shooter);
                 }
             }
         }
@@ -401,23 +403,8 @@ public class GunItem extends Item {
                 level.addFreshEntity(bullet);
 
                 if (!flamethrower && level instanceof ServerLevel serverLevel) {
-                    Vec3 targetPos = muzzle.add(normalized.scale(50.0D));
-                    double distance = muzzle.distanceTo(targetPos);
-                    int particleCount = Math.min(20, (int) (distance / 2.0D));
-                    for (int j = 0; j < particleCount; j++) {
-                        double fraction = (double) j / particleCount;
-                        Vec3 particlePos = muzzle.add(normalized.scale(distance * fraction));
-                        serverLevel.sendParticles(
-                                ParticleTypes.FLAME,
-                                particlePos.x, particlePos.y, particlePos.z,
-                                1, 0.01D, 0.01D, 0.01D, 0.005D
-                        );
-                        serverLevel.sendParticles(
-                                ParticleTypes.SMOKE,
-                                particlePos.x, particlePos.y, particlePos.z,
-                                1, 0.01D, 0.01D, 0.01D, 0.005D
-                        );
-                    }
+                    // Use penetration-aware raycast to spawn particles along actual bullet path
+                    spawnBulletTrailParticles(serverLevel, muzzle, normalized, stats, shooter);
                 }
             }
         }
@@ -435,8 +422,13 @@ public class GunItem extends Item {
 
         if (!(shooter instanceof Player)) {
             actualSpread += 2.5F;
-            if (shooter instanceof Skeleton || shooter instanceof GunnerEntity) {
-                actualSpread += 2.5F;
+            if (shooter instanceof Skeleton) {
+                // Check if this skeleton was converted from a pillager (reduced spread for better accuracy)
+                if (shooter.getTags().contains("jeg_pillager_converted")) {
+                    actualSpread += 1.5F; // Moderately reduced spread for pillager gunners (was 2.5F)
+                } else {
+                    actualSpread += 2.5F; // Normal spread for other gunners
+                }
             }
             if (shooter instanceof PhantomGunner) {
                 actualSpread += 3.0F;
@@ -548,6 +540,91 @@ public class GunItem extends Item {
         return Math.min(removed, needed); // Cap at needed amount
     }
 
+    /**
+     * Spawn bullet trail particles with penetration-aware raycast.
+     * Particles have proper depth testing and won't render through blocks.
+     */
+    private void spawnBulletTrailParticles(ServerLevel level, Vec3 start, Vec3 direction, GunStats stats, LivingEntity shooter) {
+        double maxRange = GunRangeHelper.computeEffectiveRange(stats);
+        Vec3 motion = direction.scale(maxRange);
+        Vec3 searchStart = start;
+
+        int maxIterations = 10;
+        for (int i = 0; i < maxIterations; i++) {
+            Vec3 searchEnd = searchStart.add(motion);
+
+            // Check block collision
+            ClipContext clipContext = new ClipContext(
+                searchStart,
+                searchEnd,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                shooter
+            );
+            net.minecraft.world.phys.BlockHitResult blockHit = level.clip(clipContext);
+
+            if (blockHit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                // No collision - spawn particles to max range
+                spawnParticleSegment(level, searchStart, searchEnd);
+                return;
+            }
+
+            BlockPos hitPos = blockHit.getBlockPos();
+            net.minecraft.world.level.block.state.BlockState hitState = level.getBlockState(hitPos);
+            Vec3 hitLocation = blockHit.getLocation();
+            boolean isPenetrable = ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, hitState);
+
+            if (isPenetrable) {
+                // Calculate exit point
+                Vec3 dir = motion.normalize();
+                Vec3 exitPoint = new Vec3(
+                    hitPos.getX() + 0.5 + dir.x * 0.6,
+                    hitPos.getY() + 0.5 + dir.y * 0.6,
+                    hitPos.getZ() + 0.5 + dir.z * 0.6
+                );
+
+                spawnParticleSegment(level, searchStart, exitPoint);
+
+                // Continue from exit point
+                double distanceToHit = searchStart.distanceTo(hitLocation);
+                double remainingDistance = searchStart.distanceTo(searchEnd) - distanceToHit;
+                searchStart = exitPoint;
+                motion = dir.scale(remainingDistance);
+            } else {
+                // Hit solid block - spawn particles and stop
+                spawnParticleSegment(level, searchStart, hitLocation);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Spawn particle trail from start to end position.
+     */
+    private void spawnParticleSegment(ServerLevel level, Vec3 start, Vec3 end) {
+        double distance = start.distanceTo(end);
+        int particleCount = Math.min(20, Math.max(3, (int) (distance / 2.0)));
+
+        for (int i = 1; i < particleCount; i++) { // Start from 1 instead of 0 to skip muzzle position
+            double fraction = (double) i / particleCount;
+            Vec3 pos = start.add(end.subtract(start).scale(fraction));
+
+            // Fire particles
+            level.sendParticles(
+                ParticleTypes.FLAME,
+                pos.x, pos.y, pos.z,
+                1, 0.01, 0.01, 0.01, 0.005
+            );
+
+            // Smoke particles
+            level.sendParticles(
+                ParticleTypes.SMOKE,
+                pos.x, pos.y, pos.z,
+                1, 0.01, 0.01, 0.01, 0.005
+            );
+        }
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
         tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format("%.1f", stats.damage())));
@@ -567,6 +644,11 @@ public class GunItem extends Item {
         double effectiveRange = GunRangeHelper.computeEffectiveRange(this.stats);
         if (effectiveRange > 0.0D) {
             tooltipAdder.accept(Component.translatable("info.jeg.range", String.format(Locale.US, "%.0f", effectiveRange)));
+        }
+
+        // Add projectile count for shotguns
+        if (stats.projectileAmount() > 1) {
+            tooltipAdder.accept(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
         }
     }
 }

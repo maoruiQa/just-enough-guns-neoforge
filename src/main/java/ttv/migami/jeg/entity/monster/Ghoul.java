@@ -89,11 +89,6 @@ public class Ghoul extends Zombie {
     }
 
     @Override
-    protected ItemStack getSkull() {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
     public MobCategory getClassification(boolean forSpawnCount) {
         return super.getClassification(forSpawnCount);
     }

@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.item.GunItem;
 
 public final class NetworkHandler {
@@ -14,7 +15,15 @@ public final class NetworkHandler {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         event.registrar(Reference.MOD_ID)
-                .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease);
+                .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
+                .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail);
+    }
+
+    private static void handleBulletTrail(BulletTrailPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            // Add instant trail to client-side renderer
+            BulletTrailRenderer.addInstantTrail(payload.start(), payload.end(), payload.color(), payload.size());
+        });
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {

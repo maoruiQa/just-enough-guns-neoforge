@@ -35,13 +35,14 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.entity.ai.GunCombatHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 
 public class GunnerEntity extends Monster {
-    private static final double ATTACK_RANGE = 30.0D;
+    private static final double BASE_ATTACK_RANGE = 30.0D;
     private static final ResourceLocation DEFAULT_GUN = Reference.id("assault_rifle");
     private static final ResourceLocation DEFAULT_AMMO = Reference.id("rifle_ammo");
 
@@ -153,11 +154,14 @@ public class GunnerEntity extends Monster {
 
     private static class GunnerShootGoal extends Goal {
         private final GunnerEntity mob;
+        private double attackRange;
+        private double retreatRange;
         private int cooldown;
 
         private GunnerShootGoal(GunnerEntity mob) {
             this.mob = mob;
             this.setFlags(EnumSet.of(Flag.LOOK, Flag.MOVE));
+            updateRanges();
         }
 
         @Override
@@ -175,6 +179,7 @@ public class GunnerEntity extends Monster {
         @Override
         public void start() {
             this.cooldown = 10;
+            updateRanges();
         }
 
         @Override
@@ -185,9 +190,9 @@ public class GunnerEntity extends Monster {
             }
             mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
             double distance = mob.distanceToSqr(target);
-            boolean canSee = mob.getSensing().hasLineOfSight(target);
+            boolean canSee = ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(mob, target);
 
-            if (canSee && distance < ATTACK_RANGE * ATTACK_RANGE) {
+            if (canSee && distance < attackRange * attackRange) {
                 if (mob.isReloading()) {
                     return;
                 }
@@ -200,6 +205,21 @@ public class GunnerEntity extends Monster {
                 mob.getNavigation().moveTo(target, 1.1D);
                 cooldown = Math.max(cooldown, 6);
             }
+
+            if (distance < retreatRange * retreatRange) {
+                Vec3 fallback = GunCombatHelper.computeRetreatPosition(mob, target, retreatRange);
+                mob.getNavigation().moveTo(fallback.x, fallback.y, fallback.z, 1.05D);
+            }
+        }
+
+        private void updateRanges() {
+            GunStats stats = mob.getEquippedGunStats().orElse(null);
+            double resolvedRange = GunCombatHelper.resolveAttackRange(stats);
+            if (resolvedRange <= 0.0D || Double.isNaN(resolvedRange) || Double.isInfinite(resolvedRange)) {
+                resolvedRange = BASE_ATTACK_RANGE;
+            }
+            this.attackRange = resolvedRange;
+            this.retreatRange = GunCombatHelper.resolveRetreatRange(stats, resolvedRange);
         }
     }
 

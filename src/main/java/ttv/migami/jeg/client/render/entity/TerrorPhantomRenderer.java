@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.model.PhantomModel;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.state.PhantomRenderState;
@@ -12,8 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 
 public final class TerrorPhantomRenderer extends MobRenderer<AbstractTerrorPhantom, TerrorPhantomRenderer.RenderState, PhantomModel> {
-    private static final double MAX_RENDER_DISTANCE_SQR = 120.0D * 120.0D;
-
     public static final class RenderState extends PhantomRenderState {
         ResourceLocation texture = ResourceLocation.withDefaultNamespace("textures/entity/phantom.png");
         float scale = 1.0F;
@@ -55,12 +52,4 @@ public final class TerrorPhantomRenderer extends MobRenderer<AbstractTerrorPhant
         super.setupRotations(renderState, poseStack, ageInTicks, partialTick);
         poseStack.mulPose(Axis.XP.rotationDegrees(renderState.xRot));
 }
-
-    @Override
-    public boolean shouldRender(AbstractTerrorPhantom entity, Frustum frustum, double x, double y, double z) {
-        if (this.entityRenderDispatcher.camera != null && entity.distanceToSqr(this.entityRenderDispatcher.camera.getPosition()) > MAX_RENDER_DISTANCE_SQR) {
-            return false;
-        }
-        return super.shouldRender(entity, frustum, x, y, z);
-    }
 }

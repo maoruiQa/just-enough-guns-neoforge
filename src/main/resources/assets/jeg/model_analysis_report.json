@@ -1,0 +1,637 @@
+{
+  "summary": {
+    "total_models": 176,
+    "gun_models": 53,
+    "problematic_models": 38
+  },
+  "detailed_analysis": [
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\abstract_gun.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\assault_rifle.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\blossom_rifle.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs ['1', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\bolt_action_rifle.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\bubble_cannon.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\burst_rifle.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\combat_pistol.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer2'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\combat_rifle.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\custom_smg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": true,
+      "parent": "none",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: None vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\double_barrel_shotgun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\finger_gun.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\flare_gun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer1', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\grenade_launcher.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunmetal_block.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:block/gunmetal_block",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunmetal_grit.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunmetal_ingot.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunmetal_nugget.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_drowned_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_ghoul_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_husk_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_piglin_brute_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_piglin_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_pillager_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_skeleton_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_stray_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_vindicator_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_wither_skeleton_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_zombie_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_zombie_villager_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunner_zombified_piglin_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/template_spawn_egg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunnite_block.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:block/gunnite_block",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunnite_ingot.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\gunsmith_manual.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\holy_shotgun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\hypersonic_cannon.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\infantry_rifle.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\light_machine_gun.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\minigun.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\phantom_gunner_bait.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\phantom_gunner_spawn_egg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\phantom_smg.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/custom_smg",
+      "texture_format": "custom"
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\pistol_ammo.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\pump_shotgun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\repeating_shotgun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer2'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\rifle_ammo.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\rocket_launcher.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\semi_auto_pistol.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer2'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\semi_auto_rifle.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer1'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\service_rifle.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['gun', 'particle'] vs []"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\shotgun_shell.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs item/generated"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\subsonic_rifle.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer2', 'particle'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\supersonic_shotgun.json",
+      "issues": [],
+      "recommendations": [],
+      "has_elements": false,
+      "parent": "jeg:item/abstract_gun",
+      "texture_format": "layer0",
+      "differences_from_reference": [
+        "parent: jeg:item/abstract_gun vs builtin/entity",
+        "texture keys: ['layer0'] vs ['0', 'particle']"
+      ]
+    },
+    {
+      "file": "D:\\ai-workspace\\Just Enough Gun 2\\Just-Enough-Guns-NeoForge-1.21.10\\src\\main\\resources\\assets\\jeg\\models\\item\\waterpipe_shotgun.json",
+      "issues": [
+        "使用handheld parent但包含elements - 可能导致显示问题"
+      ],
+      "recommendations": [
+        "考虑使用builtin/entity或移除elements"
+      ],
+      "has_elements": true,
+      "parent": "minecraft:item/handheld",
+      "texture_format": "custom",
+      "differences_from_reference": [
+        "parent: minecraft:item/handheld vs builtin/entity",
+        "texture keys: ['layer1', 'particle'] vs []"
+      ]
+    }
+  ]
+}

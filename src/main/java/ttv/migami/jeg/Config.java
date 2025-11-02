@@ -10,6 +10,11 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue PILLAGER_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue SKELETON_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue ZOMBIE_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue HUSK_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue ZOMBIFIED_PIGLIN_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue PIGLIN_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue WITHER_SKELETON_GUNNER_CHANCE;
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
@@ -33,6 +38,26 @@ public final class Config {
         SKELETON_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Skeleton is flagged to receive a gun on spawn completion.")
                 .defineInRange("skeletonGunnerChance", 1.0D / 7.0D, 0.0D, 1.0D);
+
+        ZOMBIE_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Zombie converts into a Zombie Gunner. Should be lower than Skeleton Gunner chance.")
+                .defineInRange("zombieGunnerChance", 1.0D / 12.0D, 0.0D, 1.0D);
+
+        HUSK_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Husk converts into a Husk Gunner. Same as Zombie Gunner chance.")
+                .defineInRange("huskGunnerChance", 1.0D / 12.0D, 0.0D, 1.0D);
+
+        ZOMBIFIED_PIGLIN_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Zombified Piglin converts into a Zombified Piglin Gunner. Should be lower than Skeleton Gunner chance.")
+                .defineInRange("zombifiedPiglinGunnerChance", 1.0D / 10.0D, 0.0D, 1.0D);
+
+        PIGLIN_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Piglin converts into a Piglin Gunner. Should be higher than Pillager Gunner chance.")
+                .defineInRange("piglinGunnerChance", 0.30D, 0.0D, 1.0D);
+
+        WITHER_SKELETON_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Wither Skeleton converts into a Wither Skeleton Gunner. Wither Skeletons prefer heavy weapons.")
+                .defineInRange("witherSkeletonGunnerChance", 0.25D, 0.0D, 1.0D);
         serverBuilder.pop();
 
         SERVER_SPEC = serverBuilder.build();
@@ -54,6 +79,26 @@ public final class Config {
 
     public static double skeletonGunnerChance() {
         return clamp01(SKELETON_GUNNER_CHANCE.get());
+    }
+
+    public static double zombieGunnerChance() {
+        return clamp01(ZOMBIE_GUNNER_CHANCE.get());
+    }
+
+    public static double huskGunnerChance() {
+        return clamp01(HUSK_GUNNER_CHANCE.get());
+    }
+
+    public static double zombifiedPiglinGunnerChance() {
+        return clamp01(ZOMBIFIED_PIGLIN_GUNNER_CHANCE.get());
+    }
+
+    public static double piglinGunnerChance() {
+        return clamp01(PIGLIN_GUNNER_CHANCE.get());
+    }
+
+    public static double witherSkeletonGunnerChance() {
+        return clamp01(WITHER_SKELETON_GUNNER_CHANCE.get());
     }
 
     private static double clamp01(double value) {

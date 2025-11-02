@@ -29,7 +29,7 @@ public class GrenadeItem extends Item {
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.8F, 0.9F + level.random.nextFloat() * 0.2F);
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             // Use grenade launcher approach: calculate direction and set velocity directly
             Vec3 eyePos = player.getEyePosition();
             Vec3 lookVec = player.getLookAngle();

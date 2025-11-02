@@ -60,8 +60,9 @@ public class PhantomGunner extends Phantom {
 
     @Override
     protected void registerGoals() {
+        // Add shooting goal BEFORE calling super.registerGoals() to ensure higher priority
+        this.goalSelector.addGoal(1, new ShootGunGoal());
         super.registerGoals();
-        this.goalSelector.addGoal(2, new ShootGunGoal());
         // Targeting filtered via canAttack() override
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, null));
     }
@@ -220,7 +221,7 @@ public class PhantomGunner extends Phantom {
     private void playGunshotSound(GunStats stats) {
         stats.fireSoundEvent().or(stats::silencedFireSoundEvent).ifPresentOrElse(
                 sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F),
-                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F)
+                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 0.9F + this.random.nextFloat() * 0.2F)
         );
     }
 
@@ -315,7 +316,7 @@ public class PhantomGunner extends Phantom {
 
             PhantomGunner.this.getLookControl().setLookAt(target, 30.0F, 30.0F);
             double distance = PhantomGunner.this.distanceToSqr(target);
-            boolean canSee = PhantomGunner.this.getSensing().hasLineOfSight(target);
+            boolean canSee = ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(PhantomGunner.this, target);
 
             if (!canSee || distance > 1024.0D) {
                 return;

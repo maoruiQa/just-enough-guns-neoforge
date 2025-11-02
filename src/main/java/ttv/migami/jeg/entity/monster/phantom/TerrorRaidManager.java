@@ -1,6 +1,10 @@
 package ttv.migami.jeg.entity.monster.phantom;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -15,12 +19,28 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.Stray;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -28,8 +48,17 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.entity.ai.AIType;
+import ttv.migami.jeg.entity.ai.GunAttackGoal;
 import ttv.migami.jeg.event.GunEvents;
+import ttv.migami.jeg.faction.Faction;
+import ttv.migami.jeg.faction.GunnerManager;
+import ttv.migami.jeg.faction.GunMobValues;
+import ttv.migami.jeg.faction.GunnerArmorEquiper;
+import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.util.LootUtils;
 
 /**
@@ -38,44 +67,49 @@ import ttv.migami.jeg.util.LootUtils;
 final class TerrorRaidManager {
     private static final ResourceKey<LootTable> SUPPLY_LOOT = ResourceKey.create(Registries.LOOT_TABLE, Reference.id("chests/terror_phantom_supply"));
     private static final ResourceKey<LootTable> REWARD_LOOT = ResourceKey.create(Registries.LOOT_TABLE, Reference.id("chests/terror_phantom_reward"));
-    private static final UniformInt SKELETON_WAVE_SIZE = UniformInt.of(3, 5);
-    private static final UniformInt PHANTOM_WAVE_SIZE = UniformInt.of(2, 3);
-    private static final int[] WAVE_DELAYS = new int[] {0, 120, 240};
+    private static final UniformInt GROUND_RAID_WAVE_SIZE = UniformInt.of(18, 22);
+    private static final UniformInt PHANTOM_WAVE_SIZE = UniformInt.of(4, 7);
+    private static final int[] WAVE_DELAYS = new int[] {0, 400, 800}; // Adjusted to ~20-40 seconds between waves for balanced difficulty
+    private static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+
+    // Raid boss bar system (simplified for now)
+    // TODO: Implement proper boss bar system in future update
 
     private TerrorRaidManager() {}
 
-    static void triggerGroundRaid(ServerLevel level, BlockPos origin) {
-        broadcast(level, Component.translatable("message.jeg.terror_raid.begin"));
+    static void triggerGroundRaid(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         BlockPos raidOrigin = origin.immutable();
+        broadcast(level, raidOrigin, Component.translatable("message.jeg.terror_raid.begin"));
         spawnLootCrates(level, raidOrigin);
         spawnFlareBurst(level, raidOrigin, false);
         awardCelebrationXp(level, raidOrigin);
-        for (int delay : WAVE_DELAYS) {
-            TerrorRaidScheduler.schedule(level, delay, () -> spawnSkeletonWave(level, raidOrigin));
+        for (int i = 0; i < WAVE_DELAYS.length; i++) {
+            int waveNumber = i;
+            TerrorRaidScheduler.schedule(level, WAVE_DELAYS[i], () -> spawnGroundRaidWave(level, raidOrigin, waveNumber, targetPlayer));
         }
     }
 
-    static void triggerAirRaid(ServerLevel level, BlockPos origin) {
+    static void triggerAirRaid(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         BlockPos raidOrigin = origin.immutable();
-        broadcast(level, Component.translatable("message.jeg.terror_raid.guardian"));
+        broadcast(level, raidOrigin, Component.translatable("message.jeg.terror_raid.guardian"));
         spawnFlareBurst(level, raidOrigin, true);
         awardCelebrationXp(level, raidOrigin);
         for (int delay : WAVE_DELAYS) {
-            TerrorRaidScheduler.schedule(level, delay, () -> spawnPhantomWave(level, raidOrigin));
+            TerrorRaidScheduler.schedule(level, delay, () -> spawnPhantomWave(level, raidOrigin, targetPlayer));
         }
     }
 
-    static void triggerGuardianAftermath(ServerLevel level, BlockPos origin) {
-        broadcast(level, Component.translatable("message.jeg.terror_raid.guardian"));
-        spawnPhantomWave(level, origin);
+    static void triggerGuardianAftermath(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
+        broadcast(level, origin, Component.translatable("message.jeg.terror_raid.guardian"));
+        spawnPhantomWave(level, origin, targetPlayer);
         for (int delay : WAVE_DELAYS) {
-            TerrorRaidScheduler.schedule(level, delay + 40, () -> spawnPhantomWave(level, origin));
+            TerrorRaidScheduler.schedule(level, delay + 40, () -> spawnPhantomWave(level, origin, targetPlayer));
         }
     }
 
-    private static void broadcast(ServerLevel level, MutableComponent message) {
+    private static void broadcast(ServerLevel level, BlockPos soundPos, MutableComponent message) {
         level.getServer().getPlayerList().broadcastSystemMessage(message, false);
-        level.playSound(null, level.getSharedSpawnPos(), SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(2).value(), SoundSource.HOSTILE, 4.0F, 0.9F);
+        level.playSound(null, soundPos, SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(2).value(), SoundSource.HOSTILE, 4.0F, 0.9F);
     }
 
     private static void spawnLootCrates(ServerLevel level, BlockPos origin) {
@@ -99,36 +133,48 @@ final class TerrorRaidManager {
         LootUtils.fillContainer(level, pos, lootTable, level.getRandom());
         var blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity randomizable) {
-            ResourceKey<LootTable> assigned = randomizable.getLootTable();
-            String lootId = assigned != null ? assigned.location().toString() : "none";
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[TerrorRaid] Barrel {} lootTable={} seed={}", pos, lootId, randomizable.getLootTableSeed());
+            // Barrel successfully placed with loot table
         } else if (blockEntity instanceof net.minecraft.world.Container container) {
-            boolean empty = LootUtils.isContainerEmpty(container);
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[TerrorRaid] Barrel {} filled empty={}", pos, empty);
+            // Barrel successfully filled as container
         } else {
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[TerrorRaid] Barrel {} has no container block entity", pos);
+            // Barrel placed without container block entity
         }
     }
 
-    private static void spawnSkeletonWave(ServerLevel level, BlockPos origin) {
+    private static void spawnGroundRaidWave(ServerLevel level, BlockPos origin, int waveNumber, @Nullable Player targetPlayer) {
         RandomSource random = level.getRandom();
-        int mobCount = SKELETON_WAVE_SIZE.sample(random);
+        int mobCount = GROUND_RAID_WAVE_SIZE.sample(random);
+
+        int successfulSpawns = 0;
         for (int i = 0; i < mobCount; i++) {
             BlockPos spawnPos = sampleGroundPosition(level, origin, random, 6, 12);
-            Skeleton skeleton = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
-            skeleton.addTag(GunEvents.SKELETON_GUNNER_TAG);
-            skeleton.setPersistenceRequired();
-            skeleton.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
-            skeleton.setYRot(random.nextFloat() * 360.0F);
-            skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, (SpawnGroupData) null);
-            GunEvents.equipSkeletonWithGun(skeleton, random);
-            AbstractTerrorPhantom.prepareSkeletonForDaylight(skeleton);
-            assignInitialTarget(level, skeleton, spawnPos, 16.0D);
-            level.addFreshEntity(skeleton);
+            net.minecraft.world.entity.Mob mob = createUndeadForWave(level, random, waveNumber);
+
+            // CRITICAL: Set mob position to spawn position BEFORE adding to world
+            mob.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
+
+            mob.addTag(GunEvents.JEG_GUNNER_TAG);
+            equipGunnerImmediately(mob);
+            GunnerArmorEquiper.GunnerArmorContext armorContext = GunnerArmorEquiper.GunnerArmorContext.special((PathfinderMob) mob);
+            GunnerArmorEquiper.equipGunnerArmor(random, armorContext);
+            if (mob instanceof Skeleton) {
+                AbstractTerrorPhantom.prepareSkeletonForDaylight((Skeleton) mob);
+            }
+
+            // Set target to player who killed Terror Phantom, or fallback to nearby player
+            assignDirectTarget(level, mob, targetPlayer, spawnPos, 64.0D);
+
+            if (!mob.isRemoved()) {
+                boolean added = level.addFreshEntity(mob);
+                if (added) {
+                    successfulSpawns++;
+                    // Monster spawned successfully
+                }
+            }
         }
     }
 
-    private static void spawnPhantomWave(ServerLevel level, BlockPos origin) {
+    private static void spawnPhantomWave(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         RandomSource random = level.getRandom();
         int mobCount = PHANTOM_WAVE_SIZE.sample(random);
         for (int i = 0; i < mobCount; i++) {
@@ -139,7 +185,10 @@ final class TerrorRaidManager {
             gunner.setYRot(random.nextFloat() * 360.0F);
             gunner.setXRot(-10.0F);
             gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(spawn)), EntitySpawnReason.EVENT, (SpawnGroupData) null);
-            assignInitialTarget(level, gunner, BlockPos.containing(spawn), 64.0D);
+
+            // Set target to player who killed Terror Phantom, or fallback to nearby player
+            assignDirectTarget(level, gunner, targetPlayer, BlockPos.containing(spawn), 128.0D);
+
             level.addFreshEntity(gunner);
         }
     }
@@ -184,6 +233,184 @@ final class TerrorRaidManager {
     private static void awardCelebrationXp(ServerLevel level, BlockPos origin) {
         for (int i = 0; i < 8; i++) {
             ExperienceOrb.award(level, Vec3.atCenterOf(origin).add(0.0D, 1.0D, 0.0D), 25);
+        }
+    }
+
+    /**
+     * Equips a gunner mob with a gun immediately during spawn, bypassing the timing race condition
+     * that prevents GunnerMobSpawner from equipping guns on terror raid mobs.
+     */
+    private static void equipGunnerImmediately(net.minecraft.world.entity.Mob mob) {
+        // Prevent baby entities from getting guns during terror raids
+        if (mob.isBaby()) {
+            return;
+        }
+
+        if (!(mob instanceof PathfinderMob pathfinderMob)) {
+            return;
+        }
+
+        ItemStack heldItem = pathfinderMob.getMainHandItem();
+
+        if (!(heldItem.getItem() instanceof GunItem)) {
+            GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
+            String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
+            ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
+            Faction faction = manager.getFactionForMob(entityTypeLocation);
+
+            if (faction != null) {
+                boolean isCloseRange = mob.getRandom().nextBoolean();
+                int stopRange = isCloseRange ? 7 : 20;
+
+                Item gun = faction.getRandomGun(isCloseRange);
+                AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
+                boolean elite = (mob.getRandom().nextFloat() < GunMobValues.eliteChance && GunMobValues.elitesEnabled);
+                int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
+
+                if (elite) {
+                    gun = faction.getEliteGun();
+                    applyEliteAttributes(pathfinderMob);
+                }
+
+                if (!mob.level().isClientSide() && !hasGunAttackGoal(pathfinderMob)) {
+                    pathfinderMob.goalSelector.addGoal(2, new GunAttackGoal<>(pathfinderMob, stopRange, 1.2F, aiType, aiLevel));
+                    mob.addTag("GunAttackAssigned");
+                }
+
+                ItemStack modifiedGun = createModifiedGun(pathfinderMob, gun);
+                mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
+                extendFollowRange(pathfinderMob);
+
+                extendFollowRange(pathfinderMob);
+            }
+        }
+    }
+
+    private static boolean hasGunAttackGoal(PathfinderMob mob) {
+        return mob.goalSelector.getAvailableGoals().stream()
+                .anyMatch(goal -> goal.getGoal() instanceof GunAttackGoal<?>);
+    }
+
+    private static void applyEliteAttributes(PathfinderMob mob) {
+        mob.addTag("EliteGunner");
+        mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        // Use the bulletproof armor system instead of manually equipping turtle helmet
+        // Elite armor will be equipped through the armor equiper system in equipGunnerImmediately
+        // Using alternative effect since DAMAGE_BOOST doesn't exist in 1.21.10
+        mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, -1, 1, false, true));
+        mob.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, -1, 0, false, false));
+    }
+
+    private static ItemStack createModifiedGun(PathfinderMob mob, Item gun) {
+        ItemStack gunStack = new ItemStack(gun);
+        if (gun instanceof GunItem gunItem) {
+            GunStats stats = gunItem.getStats();
+            // Set random ammo count between 0 and magazine size using stack.set()
+            gunStack.set(ttv.migami.jeg.init.ModDataComponents.GUN_AMMO.get(),
+                        mob.getRandom().nextInt(stats.magazineSize()));
+        }
+        return gunStack;
+    }
+
+    private static void extendFollowRange(PathfinderMob mob) {
+        AttributeInstance attribute = mob.getAttribute(Attributes.FOLLOW_RANGE);
+        if (attribute != null) {
+            double additionalRange = 64 - attribute.getBaseValue();
+            AttributeModifier modifier = new AttributeModifier(
+                    GUN_FOLLOW_RANGE_MODIFIER_ID,
+                    additionalRange,
+                    AttributeModifier.Operation.ADD_VALUE
+            );
+            if (!attribute.hasModifier(GUN_FOLLOW_RANGE_MODIFIER_ID)) {
+                attribute.addPermanentModifier(modifier);
+            }
+        }
+    }
+
+    private static net.minecraft.world.entity.Mob createUndeadForWave(ServerLevel level, RandomSource random, int waveNumber) {
+        // Wave-based undead diversity matching JEG 1.20.1
+        int roll = random.nextInt(100);
+
+        net.minecraft.world.entity.Mob mob;
+        String mobType;
+
+        if (waveNumber == 0) {
+            // Wave 1: zombies, zombie_villagers, husks with lower-tier guns
+            if (roll < 40) {
+                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mobType = "Zombie";
+            } else if (roll < 70) {
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mobType = "ZombieVillager";
+            } else if (roll < 85) {
+                mob = new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                mobType = "Husk";
+            } else {
+                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mobType = "Skeleton";
+            }
+        } else if (waveNumber == 1) {
+            // Wave 2: mix of zombies, skeletons, strays with mid-tier guns
+            if (roll < 35) {
+                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mobType = "Zombie";
+            } else if (roll < 65) {
+                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mobType = "Skeleton";
+            } else if (roll < 85) {
+                mob = new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                mobType = "Stray";
+            } else {
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mobType = "ZombieVillager";
+            }
+        } else {
+            // Wave 3: all types with higher-tier guns
+            if (roll < 25) {
+                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mobType = "Zombie";
+            } else if (roll < 45) {
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mobType = "ZombieVillager";
+            } else if (roll < 60) {
+                mob = new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                mobType = "Stray";
+            } else if (roll < 80) {
+                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mobType = "Skeleton";
+            } else {
+                mob = new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                mobType = "Husk";
+            }
+        }
+
+        return mob;
+    }
+
+    private static void assignDirectTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, @Nullable Player targetPlayer, BlockPos spawnPos, double range) {
+        Player target = targetPlayer;
+
+        // If no specific target player, find nearest player
+        if (target == null) {
+            target = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(range), null,
+                spawnPos.getX() + 0.5D, spawnPos.getY() + 0.5D, spawnPos.getZ() + 0.5D, new AABB(spawnPos).inflate(range));
+        }
+
+        // Set aggressive target with extended follow range
+        if (target != null) {
+            mob.setTarget(target);
+
+            // Increase follow range to ensure mobs can track the player over long distances
+            if (mob instanceof PathfinderMob pathfinderMob) {
+                AttributeInstance followRange = pathfinderMob.getAttribute(Attributes.FOLLOW_RANGE);
+                if (followRange != null) {
+                    followRange.addPermanentModifier(new AttributeModifier(
+                        GUN_FOLLOW_RANGE_MODIFIER_ID,
+                        64.0, // Add 64 blocks to follow range (default is typically 16-32)
+                        AttributeModifier.Operation.ADD_VALUE
+                    ));
+                }
+            }
         }
     }
 }

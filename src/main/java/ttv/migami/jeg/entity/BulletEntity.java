@@ -1,5 +1,7 @@
 package ttv.migami.jeg.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -7,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -22,12 +25,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -41,6 +46,7 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.network.BulletTrailPayload;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -67,10 +73,18 @@ public class BulletEntity extends Projectile {
         0x66FFF5  // cyan accent
     };
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
+
+    // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
+    private boolean clientHitSolidBlock = false;
+
+    // Client-side rocket trail storage
+    private List<Vec3> trailPositions;
 
     public BulletEntity(EntityType<? extends BulletEntity> type, Level level) {
         super(type, level);
-        this.noPhysics = false;
+        // CRITICAL: Disable physics so Projectile.tick() doesn't auto-handle collisions
+        this.noPhysics = true;
     }
 
     public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity) {
@@ -104,21 +118,25 @@ public class BulletEntity extends Projectile {
         builder.define(DATA_TRAIL_LENGTH, 1.0F);
         builder.define(DATA_SIZE, 0.05F);
         builder.define(DATA_TICKS_LIVED, 0);
+        builder.define(DATA_HIT_SOLID_BLOCK, false);
     }
 
     @Override
     public void tick() {
-        super.tick();
+        // CRITICAL: Don't call super.tick()! Projectile.tick() auto-handles collisions
+        // and will discard the entity before our penetration logic runs
+        // Instead, manually do basic entity updates
+        this.baseTick(); // Basic entity updates (fire, water, etc.)
+
+        // If entity was already discarded, don't process
+        if (!this.isAlive()) {
+            return;
+        }
 
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
 
         // FLARE GUN: Simple timer-based detonation using entity age (tickCount)
         if (gunId.equals(FLARE_GUN_ID)) {
-            // Debug logging to verify tickCount is incrementing
-            if (this.tickCount % 10 == 0) {
-                System.out.println("[" + (this.level().isClientSide() ? "CLIENT" : "SERVER") + "] Flare tickCount: " + this.tickCount + "/" + FLARE_DETONATE_TICKS);
-            }
-
             Vec3 motion = this.getDeltaMovement();
             HitResult collisionResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (collisionResult.getType() != HitResult.Type.MISS) {
@@ -132,7 +150,6 @@ public class BulletEntity extends Projectile {
             // Entity tickCount is automatically incremented by Minecraft
             if (this.tickCount >= FLARE_DETONATE_TICKS) {
                 if (!this.level().isClientSide()) {
-                    System.out.println("[SERVER] Flare detonating at tick " + this.tickCount);
                     detonateFlare((ServerLevel) this.level());
                     this.discard();
                 }
@@ -157,32 +174,125 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TICKS_LIVED, ticksLived + 1);
 
         Vec3 motion = this.getDeltaMovement();
-        HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitResult);
-        }
+        Vec3 currentPos = this.position();
+        Vec3 nextPos = currentPos.add(motion);
 
-        if (this.isAlive()) {
-            // Spawn particles along bullet trail BEFORE moving (so particles spawn along the path)
-            if (this.level().isClientSide()) {
-                if (gunId.equals(FLAMETHROWER_ID)) {
-                    spawnFlameParticles();
-                } else if (gunId.equals(FLARE_GUN_ID)) {
-                    spawnFlareParticles();
+        // SERVER SIDE: Full collision detection with continuous penetration checking
+        if (!this.level().isClientSide()) {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            Vec3 remainingMotion = motion;
+            Vec3 searchStart = currentPos;
+            Vec3 trailStart = currentPos; // Track start of current trail segment
+
+            // Loop to handle multiple penetrable blocks in the path
+            int maxIterations = 20; // Prevent infinite loops
+            for (int i = 0; i < maxIterations; i++) {
+                // Calculate search end point
+                Vec3 searchEnd = searchStart.add(remainingMotion);
+
+                // CRITICAL: Check entity collision for THIS SEGMENT (searchStart -> searchEnd)
+                // We must temporarily update bullet position for entity raycast to work correctly
+                Vec3 savedPos = this.position();
+                this.setPos(searchStart.x, searchStart.y, searchStart.z);
+                this.setDeltaMovement(remainingMotion);
+
+                HitResult entityHitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+
+                // Restore original position
+                this.setPos(savedPos.x, savedPos.y, savedPos.z);
+                this.setDeltaMovement(motion);
+
+                // Prioritize entity hits over block hits
+                if (entityHitResult.getType() == HitResult.Type.ENTITY) {
+                    Vec3 hitLoc = entityHitResult.getLocation();
+                    this.onHitEntity((EntityHitResult) entityHitResult);
+                    return; // Entity hit, stop processing
+                }
+
+                // Perform precise block raycast that allows bullets to pass through leaves gaps
+                BlockHitResult blockRaycast = performPreciseBlockRaycast(searchStart, searchEnd);
+
+                // Check block raycast result
+                if (blockRaycast.getType() != HitResult.Type.BLOCK) {
+                    break;
+                }
+
+                BlockPos hitPos = blockRaycast.getBlockPos();
+                BlockState hitState = this.level().getBlockState(hitPos);
+                Vec3 hitLocation = blockRaycast.getLocation();
+
+                boolean isPenetrable = ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(
+                    this.level(), hitState);
+
+                if (isPenetrable) {
+                    // Penetrable block - send trail through it and continue
+                    Vec3 direction = remainingMotion.normalize();
+                    double distanceToHit = searchStart.distanceTo(hitLocation);
+                    double remainingDistance = searchStart.distanceTo(searchEnd) - distanceToHit;
+
+                    // Calculate the exit point by moving to the block boundary
+                    Vec3 exitPoint = new Vec3(
+                        hitPos.getX() + 0.5 + direction.x * 0.6,  // Center + half block + margin
+                        hitPos.getY() + 0.5 + direction.y * 0.6,
+                        hitPos.getZ() + 0.5 + direction.z * 0.6
+                    );
+
+                    // Update for next iteration
+                    searchStart = exitPoint;
+                    remainingMotion = direction.scale(remainingDistance);
+                    trailStart = exitPoint; // Next trail starts from exit point
+
+                    // Continue loop to check for more collisions
                 } else {
-                    // Spawn particles along the entire movement path
-                    spawnBulletTrailParticlesAlongPath(motion);
+                    // Solid block - stop
+                    this.entityData.set(DATA_HIT_SOLID_BLOCK, true);  // Sync to client!
+
+                    // Set position to hit location before processing collision
+                    this.setPos(hitLocation.x, hitLocation.y, hitLocation.z);
+                    this.onHitBlock(blockRaycast);
+                    return; // Bullet stopped
                 }
             }
 
-            this.setPos(this.getX() + motion.x, this.getY() + motion.y, this.getZ() + motion.z);
+            // Move bullet to final position (if not stopped by solid block)
+            this.setPos(nextPos.x, nextPos.y, nextPos.z);
+
+            // Send bullet trail to clients
+            sendTrailToClients(trailStart, nextPos);
+
             if (!this.isNoGravity()) {
-                // Enhanced gravity for flamethrower and flare gun to simulate realistic projectile drop
                 double gravityAccel;
                 if (gunId.equals(FLAMETHROWER_ID)) {
-                    gravityAccel = 0.1;  // Reduced for minimal drop and maximum range
+                    gravityAccel = 0.1;
                 } else if (gunId.equals(FLARE_GUN_ID)) {
-                    gravityAccel = 0.08; // Flare gun has realistic arc trajectory
+                    gravityAccel = 0.08;
+                } else {
+                    gravityAccel = 0.05;
+                }
+                this.setDeltaMovement(motion.x, motion.y - gravityAccel, motion.z);
+            }
+        }
+        // CLIENT SIDE: Handle particle effects and movement
+        else {
+            // Client just moves the entity for hitbox synchronization
+            this.setPos(nextPos.x, nextPos.y, nextPos.z);
+
+            // Spawn particles for flamethrower on client side
+            if (gunId.equals(FLAMETHROWER_ID)) {
+                spawnFlameParticles();
+            }
+
+            // Spawn rocket trail particles on client side
+            else if (gunId.equals(ROCKET_LAUNCHER_ID)) {
+                spawnRocketTrailParticles();
+            }
+
+            if (!this.isNoGravity()) {
+                double gravityAccel;
+                if (gunId.equals(FLAMETHROWER_ID)) {
+                    gravityAccel = 0.1;
+                } else if (gunId.equals(FLARE_GUN_ID)) {
+                    gravityAccel = 0.08;
                 } else {
                     gravityAccel = 0.05;
                 }
@@ -190,8 +300,8 @@ public class BulletEntity extends Projectile {
             }
         }
 
+        // Check lifetime (both sides)
         if (this.entityData.get(DATA_TICKS_LIVED) > this.entityData.get(DATA_LIFE)) {
-            // Special effects when projectile lifetime ends
             if (!this.level().isClientSide()) {
                 if (gunId.equals(FLAMETHROWER_ID)) {
                     igniteArea(this.blockPosition());
@@ -216,10 +326,13 @@ public class BulletEntity extends Projectile {
             return;
         }
 
+        // Special weapons (explosives, flamethrower) handle their own logic
         if (handleSpecialImpact(result)) {
             this.discard();
             return;
         }
+
+        // Normal bullet damage logic
         if (!this.level().isClientSide()) {
             float damage = this.entityData.get(DATA_DAMAGE);
 
@@ -315,21 +428,37 @@ public class BulletEntity extends Projectile {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        // Flare gun only detonates on timer, not on collision
-        // Check BEFORE calling super to prevent premature discard
+        // This method should only be called for SOLID blocks (penetrable blocks are filtered in tick())
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
+
+        // Flare gun only detonates on timer, not on collision
         if (gunId.equals(FLARE_GUN_ID)) {
-            // Flare gun projectiles pass through blocks without exploding
-            // Do NOT call super.onHitBlock() to prevent entity from being discarded
-            return;
+            return; // Should not happen as flare gun has its own logic
         }
 
-        super.onHitBlock(result);
+        BlockPos hitPos = result.getBlockPos();
+        BlockState hitState = this.level().getBlockState(hitPos);
 
+        // Handle special weapons (explosives, flamethrower, etc.)
         if (handleSpecialImpact(result)) {
+            super.onHitBlock(result);
             this.discard();
             return;
         }
+
+        // Handle block destruction on server side only (for normal bullets)
+        if (!this.level().isClientSide()) {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            GunStats stats = getGunStats();
+
+            // Try to destroy the block based on tier and bullet power
+            ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
+                serverLevel, hitPos, stats
+            );
+        }
+
+        // Block stopped the bullet - call super and discard it
+        super.onHitBlock(result);
         this.discard();
     }
 
@@ -362,7 +491,7 @@ public class BulletEntity extends Projectile {
         ResourceLocation id = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         GunStats stats = GunDefinitions.ALL.get(id);
         if (stats == null) {
-            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), false, 0F, 1F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
+            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), false, 0F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
         }
         return stats;
     }
@@ -382,6 +511,14 @@ public class BulletEntity extends Projectile {
 
     public float getProjectileSize() {
         return this.entityData.get(DATA_SIZE);
+    }
+
+    public boolean hasHitSolidBlock() {
+        return this.entityData.get(DATA_HIT_SOLID_BLOCK);
+    }
+
+    public String getGunId() {
+        return this.entityData.get(DATA_GUN);
     }
 
     @Override
@@ -432,13 +569,13 @@ public class BulletEntity extends Projectile {
 
         if (id.equals(ROCKET_LAUNCHER_ID) || id.equals(HYPERSONIC_ID) || id.equals(TYPHOONEE_ID)) {
             if (!this.level().isClientSide()) {
-                float power = 4.0F;
+                float power = 6.0F; // Increased from 4.0 for larger block destruction radius
                 float directDamage = 14.0F;
                 if (id.equals(HYPERSONIC_ID)) {
-                    power = 5.0F;
+                    power = 7.5F; // Increased from 5.0 for larger block destruction radius
                     directDamage = 18.0F;
                 } else if (id.equals(TYPHOONEE_ID)) {
-                    power = 4.5F;
+                    power = 6.75F; // Increased from 4.5 for larger block destruction radius
                     directDamage = 16.0F;
                 }
 
@@ -481,35 +618,78 @@ public class BulletEntity extends Projectile {
             return;
         }
 
-        // Spawn flame and smoke particles along the flamethrower stream
-        for (int i = 0; i < 3; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 0.3;
+        // Spawn particles from the very beginning to start from gun muzzle
+        // No delay - particles should appear immediately from gun muzzle
+
+        // Check if current position is inside a solid block
+        BlockPos currentPos = this.blockPosition();
+        BlockState stateAtPos = level.getBlockState(currentPos);
+
+        // Only spawn particles if we're in air or penetrable blocks
+        if (!stateAtPos.isAir() && !ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, stateAtPos)) {
+            return;
+        }
+
+        Vec3 motion = this.getDeltaMovement();
+        double speed = motion.length();
+
+        // Significantly increase flame particle density for much more impressive effect
+        // Spawn 15-25 particles per tick instead of 5 (3x-5x increase)
+        int particleCount = 15 + level.random.nextInt(11); // 15-25 particles
+
+        for (int i = 0; i < particleCount; i++) {
+            // Slightly reduce spread for more concentrated stream
+            double offsetX = (level.random.nextDouble() - 0.5) * 0.3; // Reduced from 0.4
             double offsetY = (level.random.nextDouble() - 0.5) * 0.3;
             double offsetZ = (level.random.nextDouble() - 0.5) * 0.3;
 
-            level.addParticle(ParticleTypes.FLAME,
-                this.getX() + offsetX,
-                this.getY() + offsetY,
-                this.getZ() + offsetZ,
-                0, 0.02, 0);
+            // Add more velocity variation for dynamic flame effect
+            double velX = motion.x * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
+            double velY = motion.y * 0.15 + 0.03 + level.random.nextDouble() * 0.02; // Stronger upward bias
+            double velZ = motion.z * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
+
+            // Mix of flame and smoke particles for more realistic effect
+            if (level.random.nextFloat() < 0.7) {
+                // 70% flame particles
+                level.addParticle(ParticleTypes.FLAME,
+                    this.getX() + offsetX,
+                    this.getY() + offsetY,
+                    this.getZ() + offsetZ,
+                    velX, velY, velZ);
+            } else {
+                // 30% smoke particles
+                level.addParticle(ParticleTypes.SMOKE,
+                    this.getX() + offsetX,
+                    this.getY() + offsetY,
+                    this.getZ() + offsetZ,
+                    velX * 0.5, velY * 0.8, velZ * 0.5);
+            }
         }
 
-        // Add occasional smoke
-        if (level.random.nextInt(3) == 0) {
-            level.addParticle(ParticleTypes.SMOKE,
-                this.getX(),
-                this.getY(),
-                this.getZ(),
-                0, 0.01, 0);
+        // Add some extra large flame particles occasionally for visual variety
+        if (level.random.nextFloat() < 0.3) { // 30% chance
+            for (int i = 0; i < 3; i++) {
+                double offsetX = (level.random.nextDouble() - 0.5) * 0.2;
+                double offsetY = (level.random.nextDouble() - 0.5) * 0.2;
+                double offsetZ = (level.random.nextDouble() - 0.5) * 0.2;
+
+                level.addParticle(ParticleTypes.FLAME,
+                    this.getX() + offsetX,
+                    this.getY() + offsetY,
+                    this.getZ() + offsetZ,
+                    motion.x * 0.1, motion.y * 0.1, motion.z * 0.1);
+            }
         }
 
-        // Add large smoke particles less frequently
-        if (level.random.nextInt(5) == 0) {
-            level.addParticle(ParticleTypes.LARGE_SMOKE,
-                this.getX(),
-                this.getY(),
-                this.getZ(),
-                0, 0.015, 0);
+        // Add more ember particles for extra visibility and dramatic effect
+        if (level.random.nextFloat() < 0.5) { // 50% chance (increased from 25%)
+            level.addParticle(ParticleTypes.SMALL_FLAME,
+                this.getX() + (level.random.nextDouble() - 0.5) * 0.4,
+                this.getY() + (level.random.nextDouble() - 0.5) * 0.4,
+                this.getZ() + (level.random.nextDouble() - 0.5) * 0.4,
+                motion.x * 0.1 + (level.random.nextDouble() - 0.5) * 0.05,
+                motion.y * 0.1 + 0.05,
+                motion.z * 0.1 + (level.random.nextDouble() - 0.5) * 0.05);
         }
     }
 
@@ -519,19 +699,41 @@ public class BulletEntity extends Projectile {
             return;
         }
 
-        // Only spawn 1 smoke particle at current position per tick
-        // This creates a thin continuous trail as the bullet moves
-        // The BulletRenderer handles the visual trail line
-        level.addParticle(ParticleTypes.SMOKE,
-            this.getX(),
-            this.getY(),
-            this.getZ(),
-            0, 0, 0);
+        // Check if current position is inside a solid block - don't spawn particles there
+        BlockPos currentPos = this.blockPosition();
+        BlockState stateAtPos = level.getBlockState(currentPos);
+
+        // Only spawn particles if we're in air or penetrable blocks
+        if (stateAtPos.isAir() || ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, stateAtPos)) {
+            // Only spawn 1 smoke particle at current position per tick
+            // This creates a thin continuous trail as the bullet moves
+            // The BulletRenderer handles the visual trail line
+            level.addParticle(ParticleTypes.SMOKE,
+                this.getX(),
+                this.getY(),
+                this.getZ(),
+                0, 0, 0);
+        }
     }
 
     private void spawnFlareParticles() {
         Level level = this.level();
         if (!level.isClientSide()) {
+            return;
+        }
+
+        // Don't generate particles right at the gun to avoid blocking player vision
+        // Wait until the bullet has traveled at least 2 blocks
+        if (this.tickCount < 5) {
+            return;
+        }
+
+        // Check if current position is inside a solid block
+        BlockPos currentPos = this.blockPosition();
+        BlockState stateAtPos = level.getBlockState(currentPos);
+
+        // Only spawn particles if we're in air or penetrable blocks
+        if (!stateAtPos.isAir() && !ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, stateAtPos)) {
             return;
         }
 
@@ -558,104 +760,157 @@ public class BulletEntity extends Projectile {
         }
     }
 
+    private void spawnRocketTrailParticles() {
+        Level level = this.level();
+        if (!level.isClientSide()) {
+            return;
+        }
+
+        // Spawn particles from the very beginning to start from gun muzzle
+        // No delay - smoke trail should appear immediately from rocket launcher muzzle
+
+        // Create continuous smoke trail from start to current position
+        createRocketSmokeTrail(level);
+
+        // Spawn fire particles at current position
+        level.addParticle(ParticleTypes.FLAME,
+            this.getX(),
+            this.getY(),
+            this.getZ(),
+            0, 0, 0);
+
+        level.addParticle(ParticleTypes.LAVA,
+            this.getX(),
+            this.getY(),
+            this.getZ(),
+            0, 0, 0);
+    }
+
+    private void createRocketSmokeTrail(Level level) {
+        // Store trail positions for smoother effect
+        if (this.trailPositions == null) {
+            this.trailPositions = new ArrayList<>();
+        }
+
+        // Add current position to trail
+        this.trailPositions.add(this.position());
+
+        // Limit trail length to prevent performance issues
+        int maxTrailLength = 30;
+        if (this.trailPositions.size() > maxTrailLength) {
+            this.trailPositions.remove(0);
+        }
+
+        // Generate smoke particles along the trail
+        for (int i = 0; i < this.trailPositions.size(); i++) {
+            Vec3 trailPos = this.trailPositions.get(i);
+
+            // Fade older trail positions (fewer particles for older positions)
+            int particleCount = Math.max(1, 3 - (this.trailPositions.size() - i) / 10);
+
+            for (int j = 0; j < particleCount; j++) {
+                double offsetX = (level.random.nextDouble() - 0.5) * 0.4;
+                double offsetY = (level.random.nextDouble() - 0.5) * 0.4;
+                double offsetZ = (level.random.nextDouble() - 0.5) * 0.4;
+
+                level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    trailPos.x + offsetX,
+                    trailPos.y + offsetY,
+                    trailPos.z + offsetZ,
+                    (level.random.nextDouble() - 0.5) * 0.02,
+                    0.01 + level.random.nextDouble() * 0.02,
+                    (level.random.nextDouble() - 0.5) * 0.02);
+            }
+        }
+    }
+
     private void detonateFlare(ServerLevel serverLevel) {
-    	Vec3 pos = this.position();
-    	Entity owner = this.getOwner();
+        Vec3 pos = this.position();
+        Entity owner = this.getOwner();
 
-    	System.out.println("spawnFlareFireworks broadcast on SERVER at " + pos);
+        // Broadcast entity event to tracking clients
+        serverLevel.broadcastEntityEvent(this, FLARE_DETONATION_EVENT);
 
-    	// 1) 仍然广播实体事件给正在跟踪该实体的客户端（保持现有机制）
-    	serverLevel.broadcastEntityEvent(this, FLARE_DETONATION_EVENT);
+        // Send server-side particles and sound to nearby players
+        try {
+            // Explosion emitter for instant visual effect
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
+                pos.x, pos.y, pos.z,
+                1, 0.0D, 0.0D, 0.0D, 0.0D);
 
-    	// Debug: 统计附近（64 块范围）玩家数，便于判定 sendParticles 是否会有人接收
-    	//int nearbyPlayers = serverLevel.getPlayers(p -> p.distanceToSqr(pos.x, pos.y, pos.z) <= 64.0D * 64.0D).size();
-	//System.out.println("[SERVER] nearby players within 64 blocks: " + nearbyPlayers);
+            // Firework particles for visual impact
+            serverLevel.sendParticles(ParticleTypes.FIREWORK,
+                pos.x, pos.y, pos.z,
+                80, 6.0D, 6.0D, 6.0D, 0.15D);
 
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                pos.x, pos.y, pos.z,
+                12, 3.0D, 3.0D, 3.0D, 0.0D);
 
-    	// 2) 额外在服务器端向附近玩家发送一些基础粒子和声音（保证可见性）
-    	try {
-    	    // 爆炸发射器：瞬间的爆炸视觉（常见、可靠）
-        	serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-            	pos.x, pos.y, pos.z,
-            	1, 0.0D, 0.0D, 0.0D, 0.0D);
+            // Flame and smoke effects
+            serverLevel.sendParticles(ParticleTypes.FLAME,
+                pos.x, pos.y, pos.z,
+                40, 1.6D, 1.6D, 1.6D, 0.04D);
 
-        	// 大量火花/烟用 FIREWORK + EXPLOSION（这些类型对视觉效果更明显）
-        	serverLevel.sendParticles(ParticleTypes.FIREWORK,
-        	    pos.x, pos.y, pos.z,
-        	    80, 6.0D, 6.0D, 6.0D, 0.15D);
+            serverLevel.sendParticles(ParticleTypes.SMOKE,
+                pos.x, pos.y, pos.z,
+                30, 2.0D, 2.0D, 2.0D, 0.02D);
 
-        	serverLevel.sendParticles(ParticleTypes.EXPLOSION,
-        	    pos.x, pos.y, pos.z,
-        	    12, 3.0D, 3.0D, 3.0D, 0.0D);
+            // Colored dust particles
+            for (int color : FLARE_BLAST_COLORS) {
+                serverLevel.sendParticles(new DustParticleOptions(color, 1.2F),
+                    pos.x, pos.y, pos.z,
+                    4, 2.0D, 2.0D, 2.0D, 0.06D);
+            }
 
-        	// 保留火焰与烟雾（补充细节）
-        	serverLevel.sendParticles(ParticleTypes.FLAME,
-        	    pos.x, pos.y, pos.z,
-        	    40, 1.6D, 1.6D, 1.6D, 0.04D);
-	
-        	serverLevel.sendParticles(ParticleTypes.SMOKE,
-        	    pos.x, pos.y, pos.z,
-        	    30, 2.0D, 2.0D, 2.0D, 0.02D);
+            // Sound effects
+            serverLevel.playSound(null, pos.x, pos.y, pos.z,
+                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
+                net.minecraft.sounds.SoundSource.PLAYERS,
+                4.0F, 0.9F + serverLevel.random.nextFloat() * 0.2F);
 
-        	// 有色尘埃保留，但数量减小（避免网络/客户端抑制）
-        	for (int color : FLARE_BLAST_COLORS) {
-        	    serverLevel.sendParticles(new DustParticleOptions(color, 1.2F),
-        	        pos.x, pos.y, pos.z,
-        	        4, 2.0D, 2.0D, 2.0D, 0.06D);
-        	}
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
-        	// 声音：广播给附近玩家
-        	serverLevel.playSound(null, pos.x, pos.y, pos.z,
-        	    net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
-        	    net.minecraft.sounds.SoundSource.PLAYERS,
-        	    4.0F, 0.9F + serverLevel.random.nextFloat() * 0.2F);
+        // Apply damage to nearby entities
+        applyFlareDamage(serverLevel, pos, owner);
+    }
 
-    	} catch (Exception ex) {
-    	    ex.printStackTrace();
-    	}
+    private void applyFlareDamage(ServerLevel serverLevel, Vec3 pos, @Nullable Entity owner) {
+        final float explosionDamage = 12.0F;
+        final float explosionRadius = 4.0F;
 
-    	// 3) 最后应用服务器端的伤害逻辑（和你原来的实现一致）
-    	applyFlareDamage(serverLevel, pos, owner);
-	}	
+        for (Entity entity : serverLevel.getEntities(null, new net.minecraft.world.phys.AABB(
+            pos.x - explosionRadius, pos.y - explosionRadius, pos.z - explosionRadius,
+            pos.x + explosionRadius, pos.y + explosionRadius, pos.z + explosionRadius))) {
+            if (entity instanceof LivingEntity living && entity != owner) {
+                double distance = entity.position().distanceTo(pos);
+                if (distance <= explosionRadius) {
+                    float damage = explosionDamage * (1.0F - (float)(distance / explosionRadius));
+                    DamageSource source;
+                    if (owner instanceof LivingEntity livingOwner) {
+                        source = this.damageSources().mobProjectile(this, livingOwner);
+                    } else {
+                         source = this.damageSources().thrown(this, owner);
+                     }
+                     living.hurtServer(serverLevel, source, damage);
+                     living.igniteForSeconds(2);
+                 }
+             }
+        }
+    }
 
+    private void spawnFlareExplosionEffectsClient() {
+        Level level = this.level();
+        if (!level.isClientSide()) {
+            return;
+        }
 
+        Vec3 pos = this.position();
 
-    	private void applyFlareDamage(ServerLevel serverLevel, Vec3 pos, @Nullable Entity owner) {
-    	    final float explosionDamage = 12.0F;
-    	    final float explosionRadius = 4.0F;
-
-    	    for (Entity entity : serverLevel.getEntities(null, new net.minecraft.world.phys.AABB(
-    	            pos.x - explosionRadius, pos.y - explosionRadius, pos.z - explosionRadius,
-    	            pos.x + explosionRadius, pos.y + explosionRadius, pos.z + explosionRadius))) {
-    	        if (entity instanceof LivingEntity living && entity != owner) {
-    	            double distance = entity.position().distanceTo(pos);
-    	            if (distance <= explosionRadius) {
-    	                float damage = explosionDamage * (1.0F - (float)(distance / explosionRadius));
-    	                DamageSource source;
-    	                if (owner instanceof LivingEntity livingOwner) {
-    	                    source = this.damageSources().mobProjectile(this, livingOwner);
-    	                } else {
-   	                     source = this.damageSources().thrown(this, owner);
-       	             }
-       	             living.hurtServer(serverLevel, source, damage);
-       	             living.igniteForSeconds(2);
-       	         }
-       	     }
-       	 }
-	
-        System.out.println("SERVER: Damage applied");
-    	}
-
-    	private void spawnFlareExplosionEffectsClient() {
-    	    Level level = this.level();
-    	    if (!level.isClientSide()) {
-    	        return;
-    	    }
-	
-	        Vec3 pos = this.position();
-	
-	        // Multi-stage burst with different colors for visual clarity
-			for (int i = 0; i < 1400; i++) {
+        // Multi-stage burst with different colors for visual clarity
+        for (int i = 0; i < 1400; i++) {
             double speed = 0.65 + level.random.nextDouble() * 3.6;
             double angle = level.random.nextDouble() * Math.PI * 2;
             double verticalAngle = (level.random.nextDouble() - 0.5) * Math.PI;
@@ -673,7 +928,7 @@ public class BulletEntity extends Projectile {
             level.addParticle(ParticleTypes.FIREWORK,
                spawnX, spawnY, spawnZ,
                offsetX, offsetY, offsetZ);
-	
+
             if (i % 2 == 0) {
                 level.addParticle(ParticleTypes.FLAME,
                     spawnX, spawnY, spawnZ,
@@ -819,18 +1074,12 @@ public class BulletEntity extends Projectile {
 
     @Override
     public void handleEntityEvent(byte event) {
-    	if (event == FLARE_DETONATION_EVENT) {
-    	    // Debug: 打印客户端是否真收到事件（方便排查网络/追踪问题）
-    	    if (this.level().isClientSide()) {
-    	        System.out.println("[CLIENT] BulletEntity received FLARE_DETONATION_EVENT id="
-    	            + this.getId() + " pos=" + this.position());
-    	    }
-    	    spawnFlareExplosionEffectsClient();
-    	    return;
-    	}
-    	super.handleEntityEvent(event);
+        if (event == FLARE_DETONATION_EVENT) {
+            spawnFlareExplosionEffectsClient();
+            return;
+        }
+        super.handleEntityEvent(event);
     }
-
 
     private void spawnColoredDustBurst(Level level, double originX, double originY, double originZ, double dirX, double dirY, double dirZ) {
         double spread = 2.2;
@@ -844,6 +1093,46 @@ public class BulletEntity extends Projectile {
                     dirX * velocityScale,
                     dirY * velocityScale,
                     dirZ * velocityScale);
+            }
+        }
+    }
+
+    /**
+     * Perform precise block raycast that better handles leaves and other penetrable blocks.
+     * This allows bullets to pass through gaps between leaves that would otherwise be blocked.
+     */
+    private BlockHitResult performPreciseBlockRaycast(Vec3 start, Vec3 end) {
+        // Use OUTLINE block collision for more lenient detection that allows bullets to pass through leaves gaps
+        ClipContext clipContext = new ClipContext(
+            start,
+            end,
+            ClipContext.Block.OUTLINE,
+            ClipContext.Fluid.NONE,
+            this
+        );
+        return this.level().clip(clipContext);
+    }
+
+    /**
+     * Send bullet trail data to all nearby clients
+     */
+    private void sendTrailToClients(Vec3 start, Vec3 end) {
+        if (this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        // Get trail properties
+        int color = this.entityData.get(DATA_TRAIL_COLOR);
+        float size = this.entityData.get(DATA_SIZE);
+        boolean hitSolid = this.entityData.get(DATA_HIT_SOLID_BLOCK);
+
+        // Create trail payload
+        BulletTrailPayload payload = new BulletTrailPayload(start, end, color, size, hitSolid);
+
+        // Send to all nearby players
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+            if (player.level() == serverLevel && player.distanceToSqr(this) <= 64.0 * 64.0) {
+                player.connection.send(payload);
             }
         }
     }

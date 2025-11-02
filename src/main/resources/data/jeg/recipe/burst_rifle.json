@@ -2,14 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRF",
-    " RF",
-    "  B"
+    "III",
+    "GRG",
+    " SS"
   ],
   "key": {
-    "B": "minecraft:iron_ingot",
-    "R": "minecraft:redstone",
-    "F": "minecraft:flint"
+    "I": "minecraft:iron_ingot",
+    "G": "minecraft:gunpowder",
+    "R": "minecraft:redstone_block",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "jeg:burst_rifle",

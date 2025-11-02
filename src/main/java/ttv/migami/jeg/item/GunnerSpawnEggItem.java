@@ -1,154 +1,38 @@
 package ttv.migami.jeg.item;
 
-import java.util.Objects;
-import java.util.Optional;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.stats.Stats;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.WitherSkeleton;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.ZombifiedPiglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.stats.Stats;
 import ttv.migami.jeg.event.GunEvents;
 
 /**
- * Spawn egg that guarantees a skeleton gunner loadout when spawned.
+ * Spawn egg that guarantees a JEG faction gunner when spawned.
+ * Uses the JEG faction system to equip guns automatically.
  */
-public class GunnerSpawnEggItem extends SpawnEggItem {
-    private final EntityType<? extends Mob> defaultType;
+public class GunnerSpawnEggItem extends ModSpawnEggItem {
 
     public GunnerSpawnEggItem(EntityType<? extends Mob> type, Properties properties) {
         super(type, properties);
-        this.defaultType = type;
     }
 
     @Override
-    public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
-        }
+    protected void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {
+        // Add JEG gunner tag - the faction system will handle gun equipping automatically
+        mob.addTag(GunEvents.JEG_GUNNER_TAG);
 
-        ItemStack stack = context.getItemInHand();
-        BlockPos clickedPos = context.getClickedPos();
-        Player player = context.getPlayer();
-        BlockState state = level.getBlockState(clickedPos);
-
-        BlockEntity blockEntity = level.getBlockEntity(clickedPos);
-        if (blockEntity instanceof SpawnerBlockEntity spawner) {
-            EntityType<?> entityType = this.getType(level.registryAccess(), stack);
-            spawner.getSpawner().setEntityId(entityType, level, level.getRandom(), clickedPos);
-            level.sendBlockUpdated(clickedPos, state, state, 3);
-            level.gameEvent(player, GameEvent.BLOCK_CHANGE, clickedPos);
-            stack.consume(1, player);
-            return InteractionResult.SUCCESS;
-        }
-
-        BlockPos spawnPos = state.getCollisionShape(level, clickedPos).isEmpty()
-                ? clickedPos
-                : clickedPos.relative(context.getClickedFace());
-
-        EntityType<?> rawType = this.getType(level.registryAccess(), stack);
-        Mob mob = resolveMobType(rawType).spawn(
-                (ServerLevel) level,
-                stack,
-                player,
-                spawnPos,
-                net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
-                true,
-                !Objects.equals(clickedPos, spawnPos) && context.getClickedFace() == Direction.UP
-        );
-
-        if (mob == null) {
-            return InteractionResult.FAIL;
-        }
-
-        postSpawn(level, mob, stack, player);
-        return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        BlockHitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.SOURCE_ONLY);
-        if (hitResult.getType() != HitResult.Type.BLOCK) {
-            return InteractionResult.PASS;
-        }
-
-        BlockPos blockPos = hitResult.getBlockPos();
-        if (!(level.getBlockState(blockPos).getBlock() instanceof LiquidBlock)) {
-            return InteractionResult.PASS;
-        }
-
-        if (!level.isClientSide()) {
-            if (!level.mayInteract(player, blockPos) || !player.mayUseItemAt(blockPos, hitResult.getDirection(), stack)) {
-                return InteractionResult.FAIL;
-            }
-
-            EntityType<?> rawType = this.getType(level.registryAccess(), stack);
-            Mob mob = resolveMobType(rawType).spawn(
-                    (ServerLevel) level,
-                    stack,
-                    player,
-                    blockPos,
-                    net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
-                    false,
-                    false
-            );
-
-            if (mob == null) {
-                return InteractionResult.FAIL;
-            }
-
-            postSpawn(level, mob, stack, player);
-        }
-
-        return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public Optional<Mob> spawnOffspringFromSpawnEgg(Player player, Mob parent, EntityType<? extends Mob> type, ServerLevel level, Vec3 pos, ItemStack stack) {
-        Optional<Mob> result = super.spawnOffspringFromSpawnEgg(player, parent, type, level, pos, stack);
-        result.ifPresent(mob -> postSpawn(level, mob, stack, player));
-        return result;
-    }
-
-    @Override
-    public EntityType<?> getType(HolderLookup.Provider provider, ItemStack stack) {
-        EntityType<?> type = super.getType(provider, stack);
-        return type != null ? type : this.defaultType;
-    }
-
-    @SuppressWarnings("unchecked")
-    private EntityType<? extends Mob> resolveMobType(EntityType<?> type) {
-        return (EntityType<? extends Mob>) type;
-    }
-
-    private void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {
-        mob.addTag(GunEvents.SKELETON_GUNNER_TAG);
-        if (mob instanceof Skeleton skeleton) {
-            RandomSource random = mob.level().getRandom();
-            GunEvents.equipSkeletonWithGun(skeleton, random);
-        }
-
+        // Call parent method to handle standard spawn egg behavior
         mob.applyComponentsFromItemStack(stack);
         level.gameEvent(player, GameEvent.ENTITY_PLACE, mob.position());
         stack.consume(1, player);

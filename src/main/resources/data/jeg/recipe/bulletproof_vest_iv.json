@@ -1,20 +1,13 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
   "ingredients": [
-    "minecraft:iron_chestplate",
-    "minecraft:terracotta",
+    "jeg:bulletproof_vest_iii",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot",
-    "minecraft:chain",
-    "minecraft:chain"
+    "minecraft:iron_ingot"
   ],
   "result": {
     "id": "jeg:bulletproof_vest_iv",
-    "components": {
-      "minecraft:enchantments": {
-        "minecraft:projectile_protection": 5
-      },
-      "minecraft:enchantment_glint_override": true
-    }
+    "count": 1
   }
 }

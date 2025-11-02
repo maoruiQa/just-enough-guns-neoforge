@@ -88,7 +88,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
             }
         }
 
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             int fuse = this.entityData.get(DATA_FUSE) - 1;
             if (fuse <= 0) {
                 explode();
@@ -116,7 +116,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             DamageSource source = this.damageSources().explosion(this, this.getOwner());
             result.getEntity().hurt(source, 2.0F);
         }
@@ -157,7 +157,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     }
 
     private void explode() {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             ExplosionInteraction interaction = this.launched ? ExplosionInteraction.TNT : ExplosionInteraction.MOB;
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), this.explosionPower, interaction);
             igniteNearby();

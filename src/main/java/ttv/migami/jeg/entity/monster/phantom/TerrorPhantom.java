@@ -1,6 +1,7 @@
 package ttv.migami.jeg.entity.monster.phantom;
 
 import java.util.EnumSet;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -51,15 +52,19 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     private boolean isAngry = false;
 
     // Death animation
-    protected boolean isDying = false;
-    protected int deathTimer = 0;
-    protected static final int DEATH_ANIMATION_DURATION = 200;
-    protected double forwardSpeed = 0.1;
-    protected boolean looted = false;
+    private boolean isDying = false;
+    private int deathTimer = 0;
+    private static final int DEATH_ANIMATION_DURATION = 200;
+    private double forwardSpeed = 0.1;
+    private boolean looted = false;
 
     // Swarm spawning
     private final int MAX_SWARM_SPAWN_TICK = 300;
     private int swarmSpawnTick = MAX_SWARM_SPAWN_TICK;
+
+    // Store the player who killed this phantom for raid targeting
+    @Nullable
+    private Player killer;
 
     public TerrorPhantom(EntityType<? extends TerrorPhantom> type, Level level) {
         super(type, level);
@@ -108,7 +113,10 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
-        TerrorRaidManager.triggerGroundRaid(level, this.blockPosition());
+        // Store the killer for raid targeting
+        this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
+        // Trigger ground raid for regular terror phantom death
+        TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), this.killer);
     }
 
     @Override
@@ -162,7 +170,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         }
     }
 
-    protected void tickDeathAnimation() {
+    private void tickDeathAnimation() {
         this.deathTimer++;
 
         // Accelerate forward during death dive
@@ -190,7 +198,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         }
     }
 
-    protected void explodeOnDeath() {
+    private void explodeOnDeath() {
         if (this.level() instanceof ServerLevel serverLevel) {
             // Main explosion
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
@@ -202,7 +210,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             }
 
             // Trigger raid
-            TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition());
+            TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition(), this.killer);
 
             // Award XP
             for (int i = 0; i < 25; i++) {
@@ -829,8 +837,8 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             // Always look at target
             TerrorPhantom.this.getLookControl().setLookAt(target, 30.0F, 30.0F);
 
-            // Check if we can shoot
-            if (!TerrorPhantom.this.getSensing().hasLineOfSight(target)) return;
+            // Check if we can shoot (can see through penetrable blocks like leaves)
+            if (!ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(TerrorPhantom.this, target)) return;
             if (TerrorPhantom.this.isReloading() || !TerrorPhantom.this.readyToShoot()) return;
 
             TerrorPhantom.this.shootAt(target);

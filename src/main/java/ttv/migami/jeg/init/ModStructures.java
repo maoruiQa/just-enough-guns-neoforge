@@ -22,4 +22,5 @@ public final class ModStructures {
 
     public static final DeferredHolder<StructurePieceType, StructurePieceType> SKY_SHIP_GUARDIAN_PIECE =
             PIECES.register("sky_ship_guardian_piece", () -> (StructurePieceType.ContextlessType) SkyShipArmadaStructure.GuardianSpawnPiece::new);
+
 }

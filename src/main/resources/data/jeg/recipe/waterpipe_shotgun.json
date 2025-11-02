@@ -2,14 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "II ",
-    "SL ",
-    "  L"
+    "I I",
+    " G ",
+    " S "
   ],
   "key": {
     "I": "minecraft:iron_ingot",
-    "L": "#minecraft:logs",
-    "S": "minecraft:string"
+    "G": "minecraft:gunpowder",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "jeg:waterpipe_shotgun",

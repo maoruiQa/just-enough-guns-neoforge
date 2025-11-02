@@ -44,6 +44,7 @@ final class HappyGhastArmorHelper {
         }
     }
 
+
     static boolean hasHarnessEquipped(HappyGhast ghast) {
         return isArmoredHarness(ghast.getItemBySlot(EquipmentSlot.BODY));
     }

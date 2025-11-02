@@ -42,28 +42,74 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         // Check if it's a short weapon (pistol, grenade launcher, shotgun)
         String gunId = stats.id().getPath();
-        boolean isShortWeapon = gunId.contains("pistol") || gunId.contains("revolver") ||
+        boolean isBow = gunId.contains("bow");
+        boolean isShortWeapon = (!isBow) && (gunId.contains("pistol") || gunId.contains("revolver") ||
                                 gunId.contains("grenade_launcher") || gunId.contains("flare_gun") ||
-                                gunId.contains("double_barrel") || gunId.contains("waterpipe");
+                                gunId.contains("double_barrel") || gunId.contains("waterpipe"));
         // Extra large display for double barrel shotgun
         boolean isDoubleBarrel = gunId.contains("double_barrel");
+        // Special handling for typhoonee (large heavy weapon)
+        boolean isTyphoonee = gunId.contains("typhoonee");
 
         if (player.isCrouching()) {
             // Aiming down sights - short weapons closer to face and more to the right
-            float xOffset = isDoubleBarrel ? 0.2F : (isShortWeapon ? 0.3F : 0.35F);
-            float yOffset = isDoubleBarrel ? 0.25F : (isShortWeapon ? 0.2F : -0.1F);
-            float zOffset = isDoubleBarrel ? -1.0F : (isShortWeapon ? -0.8F : -1.0F);  // Short weapons much closer to camera
+            float xOffset, yOffset, zOffset, aimRotation;
+
+            if (isBow) {
+                xOffset = 0.2915F;
+                yOffset = 0.247F;
+                zOffset = -0.56F;
+                aimRotation = 0.5F;
+            } else if (isTyphoonee) {
+                // Typhoonee needs special positioning when aiming - centered and lower
+                xOffset = 0.35F;
+                yOffset = -0.7F;  // Even lower for proper center positioning
+                zOffset = -0.9F;
+                aimRotation = 5.0F;
+            } else if (isDoubleBarrel) {
+                xOffset = 0.2F;
+                yOffset = 0.25F;
+                zOffset = -1.0F;
+                aimRotation = 5.0F;
+            } else if (isShortWeapon) {
+                xOffset = 0.3F;
+                yOffset = 0.2F;
+                zOffset = -0.8F;
+                aimRotation = 2.0F;
+            } else {
+                xOffset = 0.32F;
+                yOffset = -0.02F;
+                zOffset = -0.82F;
+                aimRotation = 4.0F;
+            }
+
             poseStack.translate(direction * xOffset, yOffset, zOffset);
-            // Short weapons point more forward when aiming
-            float aimRotation = isShortWeapon ? 2.0F : 5.0F;
             poseStack.mulPose(Axis.YP.rotationDegrees(direction * aimRotation));
         } else {
             // Hip fire - short weapons occupy more screen space, closer to camera
-            float xOffset = isDoubleBarrel ? 0.3F : (isShortWeapon ? 0.35F : 0.65F);  // Double barrel slightly less extreme
-            float yOffset = isDoubleBarrel ? 0.28F : (isShortWeapon ? 0.25F : 0.05F);  // Double barrel moderate increase
+            float xOffset, yOffset;
+
+            if (isBow) {
+                xOffset = 0.46F;
+                yOffset = 0.2F;
+            } else if (isTyphoonee) {
+                // Typhoonee needs centered and lower position for hip fire
+                xOffset = 0.65F;  // Standard weapon horizontal offset
+                yOffset = -0.5F;  // Lower for proper center positioning
+            } else if (isDoubleBarrel) {
+                xOffset = 0.3F;
+                yOffset = 0.28F;
+            } else if (isShortWeapon) {
+                xOffset = 0.35F;
+                yOffset = 0.25F;
+            } else {
+                xOffset = 0.58F;
+                yOffset = 0.1F;
+            }
+
             poseStack.translate(direction * xOffset, yOffset, -0.6F);
             // Minimal rotation so barrel points toward crosshair
-            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 3.0F));  // Short weapons point more forward
+            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 3.0F));
             poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F));
         }
 

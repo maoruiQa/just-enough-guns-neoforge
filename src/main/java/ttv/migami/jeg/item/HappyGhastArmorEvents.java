@@ -38,7 +38,7 @@ public final class HappyGhastArmorEvents {
             return;
         }
 
-        JustEnoughGuns.LOGGER.debug("[HappyGhast] Incoming damage={} platingBefore={} ghast={}", damage, plating, ghast.getUUID());
+        JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Incoming damage={} platingBefore={} ghast={}", damage, plating, ghast.getUUID());
         float absorbed = Math.min(plating, damage);
         float remaining = damage - absorbed;
         HappyGhastArmorHelper.removePlating(harness, absorbed);
@@ -46,10 +46,10 @@ public final class HappyGhastArmorEvents {
         notifyPassengers(ghast);
 
         if (remaining <= 0.0F) {
-            JustEnoughGuns.LOGGER.debug("[HappyGhast] Damage fully absorbed. Cancelling hit on {}", ghast.getUUID());
+            JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Damage fully absorbed. Cancelling hit on {}", ghast.getUUID());
             event.setCanceled(true);
         } else {
-            JustEnoughGuns.LOGGER.debug("[HappyGhast] Damage partially absorbed. Remaining={} on {}", remaining, ghast.getUUID());
+            JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Damage partially absorbed. Remaining={} on {}", remaining, ghast.getUUID());
             event.setAmount(remaining);
         }
     }
@@ -63,11 +63,11 @@ public final class HappyGhastArmorEvents {
         if (event.getSlot() == EquipmentSlot.BODY) {
             if (HappyGhastArmorHelper.isArmoredHarness(event.getTo())) {
                 HappyGhastArmorHelper.syncAbsorption(ghast);
-                JustEnoughGuns.LOGGER.debug("[HappyGhast] Harness equipped. Plating={} ghast={}", HappyGhastArmorHelper.getPlating(event.getTo()), ghast.getUUID());
+                JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Harness equipped. Plating={} ghast={}", HappyGhastArmorHelper.getPlating(event.getTo()), ghast.getUUID());
                 notifyPassengers(ghast);
             } else if (!ghast.level().isClientSide()) {
                 ghast.setAbsorptionAmount(0.0F);
-                JustEnoughGuns.LOGGER.debug("[HappyGhast] Harness removed. Clearing absorption for {}", ghast.getUUID());
+                JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Harness removed. Clearing absorption for {}", ghast.getUUID());
                 notifyPassengers(ghast);
             }
         }
@@ -100,7 +100,7 @@ public final class HappyGhastArmorEvents {
         float max = HappyGhastArmorHelper.getMaxPlating(harness);
         for (var passenger : ghast.getPassengers()) {
             if (passenger instanceof ServerPlayer player) {
-                JustEnoughGuns.LOGGER.debug("[HappyGhast] Notifying passenger {} plating={}", player.getUUID(), plating);
+                JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Notifying passenger {} plating={}", player.getUUID(), plating);
                 player.displayClientMessage(Component.translatable(
                         "tooltip.jeg.harness_status",
                         Math.round(plating),

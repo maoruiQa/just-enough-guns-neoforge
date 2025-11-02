@@ -9,7 +9,7 @@
   "key": {
     "C": "minecraft:cherry_log",
     "P": "minecraft:pink_dye",
-    "B": "minecraft:iron_block"
+    "B": "minecraft:iron_ingot"
   },
   "result": {
     "id": "jeg:blossom_rifle",

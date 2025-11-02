@@ -9,6 +9,8 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import ttv.migami.jeg.entity.ai.GunCombatHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
@@ -22,6 +24,8 @@ public class SkeletonGunAttackGoal extends Goal {
     private int reloadTicks;
     private int magazine;
     private int aimTicks;
+    private double attackRange;
+    private double retreatRange;
 
     public SkeletonGunAttackGoal(Skeleton skeleton) {
         this.skeleton = skeleton;
@@ -49,6 +53,8 @@ public class SkeletonGunAttackGoal extends Goal {
     @Override
     public void start() {
         this.fireCooldown = 10;
+        this.aimTicks = 0;
+        updateRanges();
         initialiseMagazine();
     }
 
@@ -56,7 +62,6 @@ public class SkeletonGunAttackGoal extends Goal {
     public void stop() {
         this.fireCooldown = 0;
         this.reloadTicks = 0;
-        skeleton.setAggressive(false);
     }
 
     @Override
@@ -74,11 +79,17 @@ public class SkeletonGunAttackGoal extends Goal {
 
         skeleton.getLookControl().setLookAt(target, 30.0F, 30.0F);
         double distance = skeleton.distanceToSqr(target);
-        boolean canSee = skeleton.getSensing().hasLineOfSight(target);
+        boolean canSee = ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(skeleton, target);
 
-        if (!canSee || distance > 900.0D) {
+        if (!canSee || distance > attackRange * attackRange) {
             skeleton.getNavigation().moveTo(target, 1.05D);
-            skeleton.setAggressive(false);
+            // Don't set aggressive to false during movement - this interferes with targeting
+            if (aimTicks > 0) {
+                skeleton.setAggressive(false);
+                aimTicks = 0;
+            }
+        } else if (skeleton.getNavigation().isInProgress()) {
+            skeleton.getNavigation().stop();
         }
 
         // Handle reloading
@@ -102,8 +113,9 @@ public class SkeletonGunAttackGoal extends Goal {
         }
 
         // Ready to shoot
-        if (!canSee || distance > 900.0D) {
-            skeleton.setAggressive(false);
+        if (!canSee || distance > attackRange * attackRange) {
+            // Don't clear aggressive state during line of sight check
+            // Just skip shooting and continue with movement
             return;
         }
 
@@ -138,6 +150,11 @@ public class SkeletonGunAttackGoal extends Goal {
             fireCooldown = Math.max(6, stats.fireDelay());
             aimTicks = 8;
         }
+
+        if (distance < retreatRange * retreatRange) {
+            Vec3 fallback = GunCombatHelper.computeRetreatPosition(skeleton, target, retreatRange);
+            skeleton.getNavigation().moveTo(fallback.x, fallback.y, fallback.z, 1.05D);
+        }
     }
 
     private boolean hasGun() {
@@ -151,6 +168,7 @@ public class SkeletonGunAttackGoal extends Goal {
             return;
         }
         GunStats stats = gun.getStats();
+        updateRanges(stats);
         if (stats.usesMagazine()) {
             magazine = stats.magazineSize();
             stack.set(ModDataComponents.GUN_AMMO.get(), magazine);
@@ -168,11 +186,31 @@ public class SkeletonGunAttackGoal extends Goal {
         }
         stats.reloadEndSoundEvent().ifPresent(sound -> skeleton.level().playSound(null, skeleton, sound, SoundSource.HOSTILE, 1.0F, 1.0F));
         fireCooldown = Math.max(6, stats.fireDelay());
+        updateRanges(stats);
     }
 
     private void beginReload(GunStats stats, ItemStack stack) {
         reloadTicks = Math.max(20, stats.totalReloadTime());
         stack.set(ModDataComponents.GUN_AMMO.get(), 0);
         stats.reloadStartSoundEvent().ifPresent(sound -> skeleton.level().playSound(null, skeleton, sound, SoundSource.HOSTILE, 1.0F, 1.0F));
+    }
+
+    private void updateRanges() {
+        ItemStack stack = skeleton.getMainHandItem();
+        if (stack.getItem() instanceof GunItem gun) {
+            updateRanges(gun.getStats());
+        } else {
+            this.attackRange = GunCombatHelper.resolveAttackRange(null);
+            this.retreatRange = GunCombatHelper.resolveRetreatRange(null, attackRange);
+        }
+    }
+
+    private void updateRanges(GunStats stats) {
+        double resolved = GunCombatHelper.resolveAttackRange(stats);
+        if (resolved <= 0.0D || Double.isNaN(resolved) || Double.isInfinite(resolved)) {
+            resolved = GunCombatHelper.resolveAttackRange(null);
+        }
+        this.attackRange = resolved;
+        this.retreatRange = GunCombatHelper.resolveRetreatRange(stats, resolved);
     }
 }

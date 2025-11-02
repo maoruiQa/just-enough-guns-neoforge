@@ -1,15 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "equipment",
-  "pattern": [
-    "BR ",
-    "BR ",
-    "B  "
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:redstone",
+    "minecraft:gunpowder"
   ],
-  "key": {
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block"
-  },
   "result": {
     "id": "jeg:semi_auto_rifle",
     "count": 1
