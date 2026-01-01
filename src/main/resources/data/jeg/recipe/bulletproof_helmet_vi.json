@@ -3,7 +3,10 @@
   "category": "equipment",
   "ingredients": [
     "jeg:bulletproof_helmet_v",
-    "minecraft:iron_ingot",
+    "minecraft:netherite_ingot",
+    "minecraft:netherite_scrap",
+    "minecraft:obsidian",
+    "minecraft:iron_bars",
     "minecraft:iron_ingot"
   ],
   "result": {

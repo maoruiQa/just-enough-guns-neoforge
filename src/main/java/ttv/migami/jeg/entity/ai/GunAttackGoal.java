@@ -12,6 +12,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -76,7 +77,35 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     @Override
     public boolean canUse() {
-        return this.shooter.getTarget() != null && this.isHoldingGun() && !this.shooter.getTarget().isDeadOrDying();
+        if (this.shooter.getTarget() == null || !this.isHoldingGun() || this.shooter.getTarget().isDeadOrDying()) {
+            return false;
+        }
+
+        // For Drowned gunners: only attack if in water or in shade
+        if (this.shooter instanceof Drowned && this.shooter.getTags().contains("DrownedGunner")) {
+            return isInWaterOrShade();
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if the Drowned gunner is in water or in shade (favorable conditions)
+     */
+    private boolean isInWaterOrShade() {
+        // Check if in water
+        if (this.shooter.isInWater()) {
+            return true;
+        }
+
+        // Check if in shade (not directly exposed to sunlight)
+        BlockPos pos = this.shooter.blockPosition();
+        boolean isRaining = this.shooter.level().isRaining();
+        boolean isNight = !this.shooter.level().canSeeSky(pos);
+        float timeOfDay = this.shooter.level().getTimeOfDay(1.0F);
+        boolean isDarkTime = timeOfDay > 0.25F && timeOfDay < 0.75F; // Roughly sunset to sunrise
+
+        return isRaining || isNight || !isDarkTime;
     }
 
     protected boolean isHoldingGun() {

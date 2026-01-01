@@ -320,7 +320,7 @@ public class GunItem extends Item {
 
     private Optional<Item> getAmmoItem() {
         ResourceLocation ammoId = stats.ammoItem();
-        if (ammoId == null) {
+        if (ammoId == null || ammoId.equals(ResourceLocation.fromNamespaceAndPath("minecraft", "air"))) {
             return Optional.empty();
         }
         return BuiltInRegistries.ITEM.getOptional(ammoId);

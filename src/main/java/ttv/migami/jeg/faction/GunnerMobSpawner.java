@@ -12,7 +12,9 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -96,6 +98,15 @@ public class GunnerMobSpawner {
                 }
 
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
+                    // For Drowned: mark as gunner to enable combat in water/shade
+                    enableDrownedGunnerCombat(mob);
+
+                    // Add target-finding goal first (priority 1)
+                    if (!hasTargetGoal(mob)) {
+                        mob.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(mob, Player.class, true));
+                    }
+
+                    // Then add gun attack goal (priority 2)
                     mob.goalSelector.addGoal(2, new GunAttackGoal<>(mob, stopRange, 1.2F, aiType, aiLevel));
                     mob.addTag("GunAttackAssigned");
                 }
@@ -167,6 +178,25 @@ public class GunnerMobSpawner {
     public static boolean hasGunAttackGoal(PathfinderMob mob) {
         return mob.goalSelector.getAvailableGoals().stream()
                 .anyMatch(goal -> goal.getGoal() instanceof GunAttackGoal<?>);
+    }
+
+    public static boolean hasTargetGoal(PathfinderMob mob) {
+        return mob.targetSelector.getAvailableGoals().stream()
+                .anyMatch(goal -> goal.getGoal() instanceof NearestAttackableTargetGoal<?>);
+    }
+
+    /**
+     * Allows Drowned gunners to attack players while in water or under shade.
+     * Keeps original water-seeking and sun-avoiding behaviors intact, but allows combat
+     * when environmental conditions are favorable (in water or shade).
+     */
+    public static void enableDrownedGunnerCombat(PathfinderMob mob) {
+        if (!(mob instanceof net.minecraft.world.entity.monster.Drowned)) {
+            return;
+        }
+
+        // Mark this drowned as a gunner so it will attack in favorable conditions
+        mob.addTag("DrownedGunner");
     }
 
     public static void reassessWeaponGoal(PathfinderMob mob) {

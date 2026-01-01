@@ -1,6 +1,6 @@
 {
   "credit": "Simplified to prevent ModelManager crash",
-  "parent": "minecraft:builtin/entity",
+  "parent": "minecraft:block/block",
   "texture_size": [
     64,
     64

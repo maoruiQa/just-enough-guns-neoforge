@@ -42,6 +42,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         // Check if it's a short weapon (pistol, grenade launcher, shotgun)
         String gunId = stats.id().getPath();
+        boolean isFingerGun = gunId.equals("finger_gun");
         boolean isBow = gunId.contains("bow");
         boolean isShortWeapon = (!isBow) && (gunId.contains("pistol") || gunId.contains("revolver") ||
                                 gunId.contains("grenade_launcher") || gunId.contains("flare_gun") ||
@@ -51,7 +52,14 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         // Special handling for typhoonee (large heavy weapon)
         boolean isTyphoonee = gunId.contains("typhoonee");
 
-        if (player.isCrouching()) {
+        if (isFingerGun) {
+            // Push finger gun to the lower-right corner and align barrel toward crosshair.
+            poseStack.translate(direction * 0.75F, -0.48F, -0.35F);
+            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(direction * 0.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(0.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(20.0F));
+        } else if (player.isCrouching()) {
             // Aiming down sights - short weapons closer to face and more to the right
             float xOffset, yOffset, zOffset, aimRotation;
 

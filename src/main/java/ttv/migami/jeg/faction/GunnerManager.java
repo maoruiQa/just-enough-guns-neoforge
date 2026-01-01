@@ -18,7 +18,7 @@ public class GunnerManager {
         if (gunnerMobsList == null) {
             // Factions configuration matching 1.20.1 reference
             gunnerMobsList = Arrays.asList(
-                "night_of_the_undead|1|minecraft:zombie,minecraft:husk,minecraft:zombie_villager|jeg:custom_smg,jeg:waterpipe_shotgun|jeg:revolver|jeg:double_barrel_shotgun",
+                "night_of_the_undead|1|minecraft:zombie,minecraft:husk,minecraft:zombie_villager,minecraft:drowned|jeg:custom_smg,jeg:waterpipe_shotgun|jeg:revolver|jeg:double_barrel_shotgun",
                 "the_rattlers|2|minecraft:skeleton,minecraft:stray|jeg:custom_smg|jeg:semi_auto_rifle|jeg:bolt_action_rifle,jeg:semi_auto_rifle",
                 "nosy_business|3|minecraft:pillager,minecraft:vindicator|jeg:pump_shotgun|jeg:semi_auto_rifle,jeg:assault_rifle|jeg:repeating_shotgun,jeg:service_rifle",
                 "bad_piggies|2|minecraft:piglin,minecraft:piglin_brute|jeg:double_barrel_shotgun,jeg:waterpipe_shotgun|jeg:assault_rifle,jeg:semi_auto_rifle|jeg:hollenfire_mk2",

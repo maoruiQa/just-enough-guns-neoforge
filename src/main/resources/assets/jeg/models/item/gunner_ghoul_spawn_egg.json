@@ -1,6 +1,7 @@
 {
-  "parent": "minecraft:item/template_spawn_egg",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer2": "jeg:item/spawn_egg_helmet"
+    "layer0": "minecraft:item/zombie_spawn_egg",
+    "layer1": "jeg:item/spawn_egg_helmet"
   }
 }

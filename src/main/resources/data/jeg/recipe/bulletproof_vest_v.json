@@ -3,8 +3,12 @@
   "category": "equipment",
   "ingredients": [
     "jeg:bulletproof_vest_iv",
+    "minecraft:diamond",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "minecraft:obsidian"
   ],
   "result": {
     "id": "jeg:bulletproof_vest_v",

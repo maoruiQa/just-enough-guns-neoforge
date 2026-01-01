@@ -186,7 +186,9 @@ public class BulletproofArmorItem extends Item {
         // Tier III+: Enchanted iron appearance (enchanted due to isFoil())
         return switch (tier) {
             case I, II -> EquipmentAssets.LEATHER;
-            default -> EquipmentAssets.IRON;
+            case III, IV -> EquipmentAssets.IRON;
+            case V -> EquipmentAssets.DIAMOND;
+            case VI -> EquipmentAssets.NETHERITE;
         };
     }
 }

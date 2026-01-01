@@ -3,7 +3,13 @@
   "category": "equipment",
   "ingredients": [
     "minecraft:leather_chestplate",
-    "minecraft:iron_ingot"
+    "minecraft:leather",
+    "minecraft:leather",
+    "minecraft:white_wool",
+    "minecraft:white_wool",
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:string"
   ],
   "result": {
     "id": "jeg:bulletproof_vest_i",

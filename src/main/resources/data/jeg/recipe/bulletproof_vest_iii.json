@@ -2,10 +2,14 @@
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
   "ingredients": [
-    "minecraft:iron_chestplate",
+    "jeg:bulletproof_vest_ii",
     "minecraft:iron_ingot",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars"
   ],
   "result": {
     "id": "jeg:bulletproof_vest_iii",

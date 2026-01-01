@@ -4,7 +4,11 @@
   "ingredients": [
     "jeg:bulletproof_vest_i",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars",
+    "minecraft:leather"
   ],
   "result": {
     "id": "jeg:bulletproof_vest_ii",

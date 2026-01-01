@@ -4,7 +4,11 @@
   "ingredients": [
     "jeg:bulletproof_helmet_iii",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:iron_bars",
+    "minecraft:iron_bars"
   ],
   "result": {
     "id": "jeg:bulletproof_helmet_iv",
