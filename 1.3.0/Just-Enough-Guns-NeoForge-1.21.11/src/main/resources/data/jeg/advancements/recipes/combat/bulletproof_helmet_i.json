@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_leather_helmet": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:leather_helmet"] }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:bulletproof_helmet_i"
+      }
+    }
+  },
+  "requirements": [
+    ["has_leather_helmet", "has_recipe"]
+  ],
+  "rewards": {
+    "recipes": ["jeg:bulletproof_helmet_i"]
+  }
+}

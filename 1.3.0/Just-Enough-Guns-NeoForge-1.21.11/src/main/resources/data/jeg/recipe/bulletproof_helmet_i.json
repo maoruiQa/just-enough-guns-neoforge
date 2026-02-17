@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:leather_helmet",
+    "minecraft:leather",
+    "minecraft:leather",
+    "minecraft:white_wool",
+    "minecraft:white_wool",
+    "minecraft:string"
+  ],
+  "result": {
+    "id": "jeg:bulletproof_helmet_i",
+    "count": 1
+  }
+}

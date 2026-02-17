@@ -62,6 +62,7 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
     private static final int FLARE_DETONATE_TICKS = 40; // 2 seconds (20 ticks per second)
     private static final byte FLARE_DETONATION_EVENT = (byte) 98;
+    private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final double SKY_RANGE_THRESHOLD = 6.0D;
     private static final double SKY_RANGE_MULTIPLIER = 8.0D;
     private static final int[] FLARE_BLAST_COLORS = new int[] {
@@ -362,12 +363,14 @@ public class BulletEntity extends Projectile {
                 ServerLevel serverLevel = (ServerLevel) this.level();
                 living.hurtServer(serverLevel, source, damage);
 
+                boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
+
                 if (creativeShooter) {
                     living.setLastHurtByMob(null);
                     if (living instanceof Mob mob && livingOwner instanceof Player player && mob.getTarget() == player) {
                         mob.setTarget(null);
                     }
-                } else if (livingOwner instanceof Player player) {
+                } else if (!raidFriendlyPair && livingOwner instanceof Player player) {
                     living.setLastHurtByMob(player);
 
                     if (!player.isCreative() && !player.isSpectator() && living instanceof Mob mob) {
@@ -378,7 +381,7 @@ public class BulletEntity extends Projectile {
                             mob.getLookControl().setLookAt(player.getX(), player.getEyeY(), player.getZ());
                         }
                     }
-                } else if (livingOwner != null) {
+                } else if (!raidFriendlyPair && livingOwner != null) {
                     living.setLastHurtByMob(livingOwner);
                     if (living instanceof Mob mob) {
                         if (mob.getSensing().hasLineOfSight(livingOwner) || mob.getTarget() != null) {
@@ -398,6 +401,9 @@ public class BulletEntity extends Projectile {
         if (owner == target) {
             return true;
         }
+        if (isRaidFriendlyPair(owner, target)) {
+            return true;
+        }
         if (owner.isAlliedTo(target)) {
             return true;
         }
@@ -407,6 +413,10 @@ public class BulletEntity extends Projectile {
             }
         }
         return false;
+    }
+
+    private boolean isRaidFriendlyPair(LivingEntity owner, LivingEntity target) {
+        return owner.getTags().contains(TERROR_RAID_MOB_TAG) && target.getTags().contains(TERROR_RAID_MOB_TAG);
     }
 
     private void applyBulletproofWear(LivingEntity target) {

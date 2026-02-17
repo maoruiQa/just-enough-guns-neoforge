@@ -1,0 +1,61 @@
+{
+  "parent": "jeg:item/abstract_gun",
+  "textures": {
+    "layer0": "jeg:item/blossom_rifle"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        0,
+        7,
+        -6.75
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        -3,
+        0,
+        -3
+      ]
+    },
+    "gui": {
+      "rotation": [
+        90,
+        -45,
+        90
+      ],
+      "translation": [
+        -4.25,
+        11,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        -6,
+        -7.75,
+        -0.25
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    }
+  }
+}

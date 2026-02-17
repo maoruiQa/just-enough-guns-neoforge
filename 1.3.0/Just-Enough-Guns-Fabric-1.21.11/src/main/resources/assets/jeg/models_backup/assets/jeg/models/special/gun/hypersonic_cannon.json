@@ -1,0 +1,91 @@
+{
+  "credit": "Simplified to prevent ModelManager crash",
+  "parent": "builtin/entity",
+  "texture_size": [
+    128,
+    128
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        0.0,
+        4.6145,
+        -1.90128
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        -2.5,
+        7.6145,
+        2.34872
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "firstperson_lefthand": {
+      "translation": [
+        3.75,
+        -5.6355,
+        4.84872
+      ]
+    },
+    "ground": {
+      "translation": [
+        0.0,
+        2.6145,
+        3.84872
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        1.25,
+        2.1145,
+        4.84872
+      ],
+      "scale": [
+        1.25,
+        1.25,
+        1.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        -3.25,
+        8.8645,
+        2.84872
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    }
+  },
+  "textures": {
+    "hypersonic_cannon": "jeg:item/hypersonic_cannon",
+    "particle": "jeg:item/hypersonic_cannon"
+  }
+}

@@ -1,0 +1,8 @@
+  @SubscribeEvent
+    public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        // Render bullet trails after entities are rendered
+        PoseStack poseStack = event.getPoseStack();
+        MultiBufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+        float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
+        ttv.migami.jeg.client.render.BulletTrailRenderer.render(poseStack, bufferSource, partialTick);
+    }

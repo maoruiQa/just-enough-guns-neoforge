@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "jeg:entity/equipment/happy_ghast_body/green_harness"
+  }
+}

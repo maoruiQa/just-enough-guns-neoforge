@@ -1,0 +1,122 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Reusing configuration cache.
+> Task :generateModMetadata UP-TO-DATE
+> Task :downloadAssets UP-TO-DATE
+> Task :createMinecraftArtifacts UP-TO-DATE
+> Task :prepareClientRun UP-TO-DATE
+> Task :processResources UP-TO-DATE
+
+> Task :compileJava
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:51: 错误: 非法的类型开始
+        if (!ENABLED) {
+        ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:51: 错误: 需要<标识符>
+        if (!ENABLED) {
+                    ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 非法的类型开始
+        if (!(entity instanceof PathfinderMob)) {
+        ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 需要<标识符>
+        if (!(entity instanceof PathfinderMob)) {
+                    ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 需要<标识符>
+        if (!(entity instanceof PathfinderMob)) {
+                                             ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:64: 错误: 非法的类型开始
+        if (currentDay < MIN_DAYS) {
+        ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:64: 错误: 需要>或','
+        if (currentDay < MIN_DAYS) {
+                                 ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 非法的类型开始
+        if (entity.getRandom().nextInt(100) >= currentChance) {
+        ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 需要<标识符>
+        if (entity.getRandom().nextInt(100) >= currentChance) {
+                            ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 需要';'
+        if (entity.getRandom().nextInt(100) >= currentChance) {
+                              ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:78: 错误: 非法的类型开始
+        if (faction != null) {
+        ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:78: 错误: 需要<标识符>
+        if (faction != null) {
+                   ^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:85: 错误: 未命名类 是预览功能，默认情况下禁用。
+    public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
+                  ^
+  （请使用 --enable-preview 以启用 未命名类）
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:248: 错误: 需要 class、interface、enum 或 record
+}
+^
+D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:1: 错误: 未命名类不应有程序包声明
+package ttv.migami.jeg.faction;
+^
+15 个错误
+
+> Task :compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/ai-workspace/Just%20Enough%20Gun%202/Just-Enough-Guns-NeoForge-1.21.10/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:85: 错误: 未命名类 是预览功能，默认情况下禁用。
+      public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
+                    ^
+    （请使用 --enable-preview 以启用 未命名类）
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:64: 错误: 需要>或','
+          if (currentDay < MIN_DAYS) {
+                                   ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:248: 错误: 需要 class、interface、enum 或 record
+  }
+  ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:51: 错误: 非法的类型开始
+          if (!ENABLED) {
+          ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 非法的类型开始
+          if (!(entity instanceof PathfinderMob)) {
+          ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:64: 错误: 非法的类型开始
+          if (currentDay < MIN_DAYS) {
+          ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 非法的类型开始
+          if (entity.getRandom().nextInt(100) >= currentChance) {
+          ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:78: 错误: 非法的类型开始
+          if (faction != null) {
+          ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:1: 错误: 未命名类不应有程序包声明
+  package ttv.migami.jeg.faction;
+  ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:51: 错误: 需要<标识符>
+          if (!ENABLED) {
+                      ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 需要<标识符>
+          if (!(entity instanceof PathfinderMob)) {
+                      ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:57: 错误: 需要<标识符>
+          if (!(entity instanceof PathfinderMob)) {
+                                               ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 需要<标识符>
+          if (entity.getRandom().nextInt(100) >= currentChance) {
+                              ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:71: 错误: 需要';'
+          if (entity.getRandom().nextInt(100) >= currentChance) {
+                                ^
+  D:\ai-workspace\Just Enough Gun 2\Just-Enough-Guns-NeoForge-1.21.10\src\main\java\ttv\migami\jeg\faction\GunnerMobSpawner.java:78: 错误: 需要<标识符>
+          if (faction != null) {
+                     ^
+  15 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 11s
+6 actionable tasks: 1 executed, 5 up-to-date
+Configuration cache entry reused.

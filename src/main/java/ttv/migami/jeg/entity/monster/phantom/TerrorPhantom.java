@@ -54,6 +54,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     // Death animation
     private boolean isDying = false;
     private int deathTimer = 0;
+    private boolean deathResolved = false;
     private static final int DEATH_ANIMATION_DURATION = 200;
     private double forwardSpeed = 0.1;
     private boolean looted = false;
@@ -116,7 +117,10 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         // Store the killer for raid targeting
         this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
         // Trigger ground raid for regular terror phantom death
-        TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), this.killer);
+        try {
+            TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), this.killer);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -192,7 +196,8 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         }
 
         // End death animation
-        if (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision) {
+        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision)) {
+            this.deathResolved = true;
             explodeOnDeath();
             this.remove(RemovalReason.KILLED);
         }
@@ -210,7 +215,10 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             }
 
             // Trigger raid
-            TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition(), this.killer);
+            try {
+                TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition(), this.killer);
+            } catch (Exception ignored) {
+            }
 
             // Award XP
             for (int i = 0; i < 25; i++) {
@@ -261,7 +269,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
             int count = 1 + serverLevel.random.nextInt(1);
             for (int i = 0; i < count; i++) {
-                PhantomGunner phantom = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), serverLevel);
+                PhantomGunner phantom = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), serverLevel);
                 Vec3 pos = Vec3.atCenterOf(spawnPos).add(random.nextGaussian() * 2, 2, random.nextGaussian() * 2);
                 phantom.setPos(pos.x, pos.y, pos.z);
                 phantom.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
@@ -636,13 +644,8 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                 int numPhantoms = 1 + TerrorPhantom.this.random.nextInt(1);
 
                 for (int i = 0; i < numPhantoms; i++) {
-                    // 20% chance to spawn PhantomGunner, otherwise regular phantom
-                    Phantom newPhantom;
-                    if (TerrorPhantom.this.random.nextInt(1, 5) == 1) {
-                        newPhantom = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), serverLevel);
-                    } else {
-                        newPhantom = EntityType.PHANTOM.create(serverLevel, EntitySpawnReason.EVENT);
-                    }
+                    // Half-health swarm should summon the minion variant, not regular phantoms.
+                    Phantom newPhantom = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), serverLevel);
 
                     if (newPhantom != null) {
                         Vec3 spawnPos = TerrorPhantom.this.position().add(

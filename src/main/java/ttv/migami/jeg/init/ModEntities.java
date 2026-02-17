@@ -14,6 +14,7 @@ import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunnerMinion;
 
 public final class ModEntities {
     private ModEntities() {}
@@ -60,6 +61,19 @@ public final class ModEntities {
             () -> {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("phantom_gunner"));
                 return EntityType.Builder.of(PhantomGunner::new, MobCategory.MONSTER)
+                        .sized(4.0F, 1.0F)
+                        .clientTrackingRange(8)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    // Summoned by Terror Phantom / Bound Terror Phantom: identical to Phantom Gunner except reduced max health.
+    public static final DeferredHolder<EntityType<?>, EntityType<PhantomGunnerMinion>> PHANTOM_GUNNER_MINION = REGISTER.register(
+            "phantom_gunner_minion",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("phantom_gunner_minion"));
+                return EntityType.Builder.of(PhantomGunnerMinion::new, MobCategory.MONSTER)
                         .sized(4.0F, 1.0F)
                         .clientTrackingRange(8)
                         .updateInterval(2)

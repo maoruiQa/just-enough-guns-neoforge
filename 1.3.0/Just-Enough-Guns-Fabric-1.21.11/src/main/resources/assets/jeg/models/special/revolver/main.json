@@ -1,0 +1,12 @@
+{
+  "credit": "Simplified to prevent ModelManager crash",
+  "parent": "builtin/entity",
+  "texture_size": [
+    32,
+    32
+  ],
+  "display": {},
+  "textures": {
+    "revolver": "jeg:item/revolver"
+  }
+}

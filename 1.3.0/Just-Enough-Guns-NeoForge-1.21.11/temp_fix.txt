@@ -1,0 +1,12 @@
+      // Remove old gunner system - only handle pillager gunners here (non-JEG system)
+        if (event.getEntity() instanceof Pillager pillager) {
+            if (pillager.getTags().contains("jeg_pillager_gunner")) {
+                // Only equip if pillager doesn't already have a gun
+                if (!isHoldingGun(pillager)) {
+                    ResourceLocation selected = selectRandomGun(event.getLevel().getRandom());
+                    if (selected != null) {
+                        equipPillagerWithGun(pillager, selected);
+                    }
+                }
+            }
+        }

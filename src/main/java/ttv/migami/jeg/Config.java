@@ -15,6 +15,9 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue ZOMBIFIED_PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue WITHER_SKELETON_GUNNER_CHANCE;
+    public static final ModConfigSpec.IntValue TERROR_RAID_WAVE_INTERVAL_SECONDS;
+    public static final ModConfigSpec.IntValue TERROR_RAID_GROUND_WAVE_COUNT;
+    public static final ModConfigSpec.IntValue TERROR_RAID_AIR_WAVE_COUNT;
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
@@ -25,7 +28,7 @@ public final class Config {
         serverBuilder.push("spawns");
         TERROR_PHANTOM_NATURAL_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Phantom upgrades into a Terror Phantom.")
-                .defineInRange("terrorPhantomChance", 0.005D, 0.0D, 1.0D);
+                .defineInRange("terrorPhantomChance", 0.03D, 0.0D, 1.0D);
 
         PHANTOM_GUNNER_NATURAL_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Phantom upgrades into a Phantom Gunner when it does not become a Terror Phantom.")
@@ -58,6 +61,18 @@ public final class Config {
         WITHER_SKELETON_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Wither Skeleton converts into a Wither Skeleton Gunner. Wither Skeletons prefer heavy weapons.")
                 .defineInRange("witherSkeletonGunnerChance", 0.25D, 0.0D, 1.0D);
+        serverBuilder.pop();
+
+        serverBuilder.push("terrorRaid");
+        TERROR_RAID_WAVE_INTERVAL_SECONDS = serverBuilder
+                .comment("Seconds between Terror Raid waves.")
+                .defineInRange("waveIntervalSeconds", 18, 3, 120);
+        TERROR_RAID_GROUND_WAVE_COUNT = serverBuilder
+                .comment("Total ground raid waves triggered by Terror Phantom death.")
+                .defineInRange("groundWaveCount", 4, 1, 10);
+        TERROR_RAID_AIR_WAVE_COUNT = serverBuilder
+                .comment("Total air raid waves triggered by Bound Terror Phantom death.")
+                .defineInRange("airWaveCount", 4, 1, 10);
         serverBuilder.pop();
 
         SERVER_SPEC = serverBuilder.build();
@@ -99,6 +114,18 @@ public final class Config {
 
     public static double witherSkeletonGunnerChance() {
         return clamp01(WITHER_SKELETON_GUNNER_CHANCE.get());
+    }
+
+    public static int terrorRaidWaveIntervalSeconds() {
+        return Math.max(3, TERROR_RAID_WAVE_INTERVAL_SECONDS.get());
+    }
+
+    public static int terrorRaidGroundWaveCount() {
+        return Math.max(1, TERROR_RAID_GROUND_WAVE_COUNT.get());
+    }
+
+    public static int terrorRaidAirWaveCount() {
+        return Math.max(1, TERROR_RAID_AIR_WAVE_COUNT.get());
     }
 
     private static double clamp01(double value) {

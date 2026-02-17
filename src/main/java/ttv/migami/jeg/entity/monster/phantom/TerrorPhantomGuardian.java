@@ -708,7 +708,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         LivingEntity target = level.getNearestEntity(Player.class, TargetingConditions.DEFAULT, null,
             origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
         for (int i = 0; i < count; i++) {
-            PhantomGunner gunner = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), level);
+            PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
             if (gunner == null) {
                 continue;
             }

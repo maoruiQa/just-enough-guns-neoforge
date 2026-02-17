@@ -35,6 +35,7 @@ import ttv.migami.jeg.item.GunItem;
 import java.util.EnumSet;
 
 public class GunAttackGoal<T extends PathfinderMob> extends Goal {
+    private static final String MINIGUN_PATH = "minigun";
     protected final T shooter;
     protected final double speedModifier;
     protected int seeTime;
@@ -269,52 +270,57 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         RandomSource random = this.shooter.getRandom();
         int pellets = Math.max(1, stats.projectileAmount());
         ResourceLocation gunId = stats.id();
+        int shotsPerBurst = MINIGUN_PATH.equals(gunId.getPath()) ? 5 : 1;
 
         Vec3 origin = new Vec3(this.shooter.getX(), this.shooter.getEyeY(), this.shooter.getZ());
 
         boolean grenadeLauncher = gunId.equals(ResourceLocation.fromNamespaceAndPath("jeg", "grenade_launcher"));
         boolean flamethrower = gunId.equals(Reference.id("flamethrower"));
 
-        for (int i = 0; i < pellets; i++) {
-            Vec3 direction = computeDirection(this.shooter, origin, target, random, stats);
-            Vec3 muzzle = origin.add(direction.scale(0.35F));
-
-            if (grenadeLauncher) {
-                GrenadeEntity grenade = new GrenadeEntity(this.shooter.level(), this.shooter, 2.0F, 40, true);
-                grenade.initialisePosition(muzzle);
-                Vec3 launchVelocity = direction.scale(stats.projectileSpeed() * 0.8F);
-                grenade.setDeltaMovement(launchVelocity);
-                this.shooter.level().addFreshEntity(grenade);
-            } else {
-                Vec3 velocity = direction.scale(stats.projectileSpeed());
-                if (flamethrower) {
-                    velocity = velocity.add(0, -0.05, 0);
+        for (int burst = 0; burst < shotsPerBurst; burst++) {
+            if (stats.usesMagazine()) {
+                Integer ammoComponent = heldItem.get(ModDataComponents.GUN_AMMO.get());
+                int currentAmmo = ammoComponent != null ? ammoComponent : 0;
+                if (currentAmmo <= 0) {
+                    break;
                 }
+                heldItem.set(ModDataComponents.GUN_AMMO.get(), Math.max(0, currentAmmo - 1));
+            }
 
-                BulletEntity bullet = new BulletEntity(this.shooter.level(), this.shooter, stats, velocity);
-                bullet.setPos(muzzle);
-                this.shooter.level().addFreshEntity(bullet);
+            for (int i = 0; i < pellets; i++) {
+                Vec3 direction = computeDirection(this.shooter, origin, target, random, stats);
+                Vec3 muzzle = origin.add(direction.scale(0.35F));
 
-                // Add bullet trail particles for all guns EXCEPT flamethrower
-                if (!flamethrower && this.shooter.level() instanceof ServerLevel serverLevel) {
-                    // Use penetration-aware raycast to spawn particles along actual bullet path
-                    spawnBulletTrailParticles(serverLevel, muzzle, direction, stats);
+                if (grenadeLauncher) {
+                    GrenadeEntity grenade = new GrenadeEntity(this.shooter.level(), this.shooter, 2.0F, 40, true);
+                    grenade.initialisePosition(muzzle);
+                    Vec3 launchVelocity = direction.scale(stats.projectileSpeed() * 0.8F);
+                    grenade.setDeltaMovement(launchVelocity);
+                    this.shooter.level().addFreshEntity(grenade);
+                } else {
+                    Vec3 velocity = direction.scale(stats.projectileSpeed());
+                    if (flamethrower) {
+                        velocity = velocity.add(0, -0.05, 0);
+                    }
+
+                    BulletEntity bullet = new BulletEntity(this.shooter.level(), this.shooter, stats, velocity);
+                    bullet.setPos(muzzle);
+                    this.shooter.level().addFreshEntity(bullet);
+
+                    // Add bullet trail particles for all guns EXCEPT flamethrower
+                    if (!flamethrower && this.shooter.level() instanceof ServerLevel serverLevel) {
+                        // Use penetration-aware raycast to spawn particles along actual bullet path
+                        spawnBulletTrailParticles(serverLevel, muzzle, direction, stats);
+                    }
                 }
             }
+
+            // Play sound
+            playGunshotSound(stats);
+
+            // Damage gun
+            heldItem.hurtAndBreak(1, this.shooter, this.shooter.getUsedItemHand());
         }
-
-        // Play sound
-        playGunshotSound(stats);
-
-        // Consume ammo
-        if (stats.usesMagazine()) {
-            Integer ammoComponent = heldItem.get(ModDataComponents.GUN_AMMO.get());
-            int currentAmmo = ammoComponent != null ? ammoComponent : 0;
-            heldItem.set(ModDataComponents.GUN_AMMO.get(), Math.max(0, currentAmmo - 1));
-        }
-
-        // Damage gun
-        heldItem.hurtAndBreak(1, this.shooter, this.shooter.getUsedItemHand());
     }
 
     /**
@@ -373,8 +379,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     protected void playGunshotSound(GunStats stats) {
         stats.fireSoundEvent().or(stats::silencedFireSoundEvent).ifPresentOrElse(
-                sound -> this.shooter.level().playSound(null, this.shooter, sound, SoundSource.HOSTILE, 1.0F, 0.9F + this.shooter.level().random.nextFloat() * 0.2F),
-                () -> this.shooter.level().playSound(null, this.shooter, net.minecraft.sounds.SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 0.9F + this.shooter.level().random.nextFloat() * 0.2F)
+                sound -> this.shooter.level().playSound(null, this.shooter, sound, SoundSource.HOSTILE, 7.5F, 0.9F + this.shooter.level().random.nextFloat() * 0.2F),
+                () -> this.shooter.level().playSound(null, this.shooter, net.minecraft.sounds.SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 7.5F, 0.9F + this.shooter.level().random.nextFloat() * 0.2F)
         );
     }
 
@@ -455,7 +461,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
             if (blockHit.getType() != HitResult.Type.BLOCK) {
                 // No collision - spawn particles to max range
-                spawnParticleSegment(level, searchStart, searchEnd);
+                spawnParticleSegment(level, searchStart, searchEnd, stats);
                 return;
             }
 
@@ -473,7 +479,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                     hitPos.getZ() + 0.5 + dir.z * 0.6
                 );
 
-                spawnParticleSegment(level, searchStart, exitPoint);
+                spawnParticleSegment(level, searchStart, exitPoint, stats);
 
                 // Continue from exit point
                 double distanceToHit = searchStart.distanceTo(hitLocation);
@@ -482,7 +488,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 motion = dir.scale(remainingDistance);
             } else {
                 // Hit solid block - spawn particles and stop
-                spawnParticleSegment(level, searchStart, hitLocation);
+                spawnParticleSegment(level, searchStart, hitLocation, stats);
                 return;
             }
         }
@@ -492,7 +498,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
      * Spawn particle trail from start to end position.
      * Same as GunItem's implementation.
      */
-    private void spawnParticleSegment(ServerLevel level, Vec3 start, Vec3 end) {
+    private void spawnParticleSegment(ServerLevel level, Vec3 start, Vec3 end, GunStats stats) {
         double distance = start.distanceTo(end);
         int particleCount = Math.min(20, Math.max(3, (int) (distance / 2.0)));
 
@@ -500,12 +506,14 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             double fraction = (double) i / particleCount;
             Vec3 pos = start.add(end.subtract(start).scale(fraction));
 
-            // Fire particles
-            level.sendParticles(
-                ParticleTypes.FLAME,
-                pos.x, pos.y, pos.z,
-                1, 0.01, 0.01, 0.01, 0.005
-            );
+            if (stats.gravity()) {
+                // Fire particles for gravity-affected bullets only
+                level.sendParticles(
+                    ParticleTypes.FLAME,
+                    pos.x, pos.y, pos.z,
+                    1, 0.01, 0.01, 0.01, 0.005
+                );
+            }
 
             // Smoke particles
             level.sendParticles(

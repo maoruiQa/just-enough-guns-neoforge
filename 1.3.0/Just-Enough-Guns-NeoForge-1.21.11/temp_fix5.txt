@@ -1,0 +1,33 @@
+  @SubscribeEvent
+    public static void onSpecialSpawn(MobSpawnEvent event) {
+        if (!ENABLED) {
+            return;
+        }
+
+        LivingEntity entity = event.getEntity();
+
+        if (!(entity instanceof PathfinderMob)) {
+            return;
+        }
+
+        long totalDayTime = entity.level().getDayTime();
+        int currentDay = (int) (totalDayTime / 24000L);
+
+        if (currentDay < MIN_DAYS) {
+            return;
+        }
+
+        int daysOverMin = currentDay - MIN_DAYS;
+        int currentChance = Math.min(INITIAL_CHANCE + (daysOverMin * CHANCE_INCREMENT), MAX_CHANCE);
+
+        if (entity.getRandom().nextInt(100) >= currentChance) {
+            return;
+        }
+
+        GunnerManager manager = GunnerManager.getInstance();
+        Faction faction = manager.getFactionForMob(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()));
+
+        if (faction != null) {
+            entity.addTag("MobGunner");
+        }
+    }

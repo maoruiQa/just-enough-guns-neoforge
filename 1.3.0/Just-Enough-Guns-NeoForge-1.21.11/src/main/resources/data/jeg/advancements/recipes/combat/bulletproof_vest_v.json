@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_iron_chest": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:iron_chestplate"] }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:bulletproof_vest_v"
+      }
+    }
+  },
+  "requirements": [
+    ["has_iron_chest", "has_recipe"]
+  ],
+  "rewards": {
+    "recipes": ["jeg:bulletproof_vest_v"]
+  }
+}

@@ -209,8 +209,8 @@ public abstract class AbstractTerrorPhantom extends Phantom {
 
     private void playGunshotSound(GunStats stats) {
         stats.fireSoundEvent().or(stats::silencedFireSoundEvent).ifPresentOrElse(
-                sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F),
-                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 0.9F + this.random.nextFloat() * 0.2F)
+                sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 7.5F, 0.9F + this.random.nextFloat() * 0.2F),
+                () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 7.5F, 0.9F + this.random.nextFloat() * 0.2F)
         );
     }
 
@@ -289,7 +289,7 @@ public abstract class AbstractTerrorPhantom extends Phantom {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return createAttributes(120.0D); // Increased from 70 for better durability
+        return createAttributes(160.0D);
     }
 
     public static AttributeSupplier.Builder createAttributes(double maxHealth) {
@@ -390,7 +390,7 @@ public abstract class AbstractTerrorPhantom extends Phantom {
             return;
         }
 
-        PhantomGunner gunner = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), level);
+        PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
         if (gunner == null) {
             this.summonCooldown = Mth.nextInt(this.random, 120, 200);
             return;
@@ -482,7 +482,7 @@ public abstract class AbstractTerrorPhantom extends Phantom {
             origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
 
         for (int i = 0; i < count; i++) {
-            PhantomGunner gunner = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), level);
+            PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
             if (gunner == null) {
                 continue;
             }

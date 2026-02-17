@@ -1,0 +1,687 @@
+package ttv.migami.jeg.entity.monster.phantom;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import ttv.migami.jeg.JustEnoughGuns;
+import ttv.migami.jeg.Reference;
+
+/**
+ * Structure-bound Terror Phantom guardian variant with improved AI.
+ * Stays within a certain radius of its spawn point and flies higher.
+ */
+public class TerrorPhantomGuardian extends TerrorPhantom {
+    // Guardian parameters
+    private static final double SKYSHIP_VERTICAL_RANGE = 128.0D;
+    private static final double SKYSHIP_DETECTION_RADIUS = 160.0D;
+    private static final double ACTIVE_DETECTION_RADIUS = 85.0D; // Increased from 56 by 29 blocks
+    private static final double PASSIVE_RETALIATION_RADIUS = 160.0D;
+    private static final int DEFAULT_TETHER_RADIUS = 120;
+    // Guardian flies above Sky Ship structure: tightened altitude band relative to detected deck height
+    private static final int MIN_FLIGHT_HEIGHT_ABOVE_DECK = 55;
+    private static final int MAX_FLIGHT_HEIGHT_ABOVE_DECK = 70;
+    private static final int PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK = 60;
+    private static final int INITIAL_ASCENT_HEIGHT = 18;
+    private static final int IDLE_ALTITUDE_BONUS = 10;
+    private static final int MAX_SCAN_HEIGHT_OFFSET = 40;
+    private static final int MIN_SCAN_HEIGHT_OFFSET = 32;
+    private static final int[][] DECK_SAMPLE_OFFSETS = new int[][] {
+        {0, 0},
+        {12, 0},
+        {-12, 0},
+        {0, 12},
+        {0, -12},
+        {12, 12},
+        {12, -12},
+        {-12, 12},
+        {-12, -12}
+    };
+
+    private static final String TAG_TETHER_RADIUS = "DeckTetherRadius";
+    private static final String TAG_DECK_HEIGHT = "DeckHeight";
+    private static final String TAG_DECK_RESOLVED = "DeckResolved";
+    private static final String TAG_ANCHOR_X = "DeckAnchorX";
+    private static final String TAG_ANCHOR_Y = "DeckAnchorY";
+    private static final String TAG_ANCHOR_Z = "DeckAnchorZ";
+    private static final int GUARDIAN_DEATH_HOVER_TICKS = 60;
+    private static final int GUARDIAN_DEATH_DURATION = 200;
+    private static final double PATROL_STEP_RADIANS = Math.toRadians(24.0D);
+
+    private BlockPos anchorPos;
+    private BlockPos desiredAnchor;
+    private int tetherRadius = DEFAULT_TETHER_RADIUS;
+    private int deckHeight = -1;
+    private boolean deckResolved = false;
+    private boolean guardianFinalExplosion = false;
+    private final java.util.Set<java.util.UUID> engagedPlayers = new java.util.HashSet<>();
+    private int idleRecenterTicks = 0;
+    private int guardianDeathTicks = 0;
+
+    public TerrorPhantomGuardian(EntityType<? extends TerrorPhantomGuardian> type, Level level) {
+        super(type, level);
+    }
+
+    @Override
+    protected ResourceLocation getVariantTexture() {
+        return Reference.id("textures/entity/phantom_gunner/phantom_gunner_friendly.png");
+    }
+
+    @Override
+    protected float getModelScale() {
+        return 3.0F; // Increased from 2.4F for better visibility
+    }
+
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(1, new TerrorPhantomAttackStrategyGoal());
+        this.goalSelector.addGoal(2, new TerrorPhantomSweepAttackGoal());
+        this.goalSelector.addGoal(2, new TerrorPhantomRollAttackGoal());
+        this.goalSelector.addGoal(2, new TerrorPhantomSwarmAttackGoal());
+        this.goalSelector.addGoal(2, new TerrorPhantomBombingAttackGoal());
+        this.goalSelector.addGoal(3, new GuardianPatrolGoal());
+        this.goalSelector.addGoal(5, new TerrorPhantomShootGoal());
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, null));
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        double extended = 120.0D * 120.0D;
+        return distance <= extended || super.shouldRenderAtSqrDistance(distance);
+    }
+
+    @Override
+    protected boolean shouldSpawnGunnerSkeletonsOnDeath() {
+        return false;
+    }
+
+    @Override
+    protected boolean shouldSpawnPhantomGunnersOnDeath() {
+        return true;
+    }
+
+    @Override
+    protected boolean canPerformBombing() {
+        return false; // Guardian doesn't bomb
+    }
+
+    @Override
+    protected boolean shouldTriggerRaidOnDeath() {
+        return false;
+    }
+
+    @Override
+    protected void onDefeated(ServerLevel level, DamageSource source) {
+        // Guardian aftermath handled during custom death sequence.
+    }
+
+    protected void tickDeathAnimation() {
+        this.guardianDeathTicks++;
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPos(this.getX(), this.getY(), this.getZ());
+
+        if (this.level() instanceof ServerLevel serverLevel) {
+            if (this.guardianDeathTicks % 5 == 0) {
+                serverLevel.sendParticles(
+                    ParticleTypes.SOUL_FIRE_FLAME,
+                    this.getX(),
+                    this.getY() + 2.0D,
+                    this.getZ(),
+                    18,
+                    0.6D,
+                    0.6D,
+                    0.6D,
+                    0.01D
+                );
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 0.8F + serverLevel.random.nextFloat() * 0.2F);
+                serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
+            }
+        }
+
+        if (this.guardianDeathTicks >= GUARDIAN_DEATH_HOVER_TICKS) {
+            triggerGuardianFinale();
+        }
+    }
+
+    private void triggerGuardianFinale() {
+        if (this.guardianFinalExplosion) {
+            return;
+        }
+        this.guardianFinalExplosion = true;
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 4.5F, Level.ExplosionInteraction.MOB);
+            TerrorRaidManager.triggerGuardianAftermath(serverLevel, this.blockPosition());
+        }
+        this.guardianDeathTicks = Math.max(this.guardianDeathTicks, GUARDIAN_DEATH_DURATION);
+        this.remove(RemovalReason.KILLED);
+    }
+
+    @Override
+    protected void onSpawned(ServerLevel level, BlockPos spawnPos) {
+        this.setPersistenceRequired();
+    }
+
+    /**
+     * Sets the anchor point and tether radius for this guardian.
+     */
+    public void setAnchor(BlockPos pos, int radius) {
+        this.desiredAnchor = pos.immutable();
+        this.deckResolved = false;
+        this.deckHeight = this.desiredAnchor.getY();
+        this.anchorPos = this.desiredAnchor;
+        this.tetherRadius = radius;
+        Vec3 center = Vec3.atCenterOf(this.anchorPos);
+        this.orbitCenter = center.add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+        this.setPos(center.x, this.orbitCenter.y + INITIAL_ASCENT_HEIGHT, center.z);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPersistenceRequired();
+        this.anchorPoint = new BlockPos(
+            this.anchorPos.getX(),
+            this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS,
+            this.anchorPos.getZ()
+        );
+    }
+
+    public void initialiseDeckAnchor(BlockPos deckAnchor, int radius) {
+        this.desiredAnchor = deckAnchor.immutable();
+        this.anchorPos = deckAnchor;
+        this.deckHeight = deckAnchor.getY();
+        this.tetherRadius = radius;
+        this.deckResolved = true;
+        Vec3 center = Vec3.atCenterOf(this.anchorPos);
+        this.orbitCenter = center.add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+        this.setPos(center.x, this.orbitCenter.y + INITIAL_ASCENT_HEIGHT, center.z);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPersistenceRequired();
+        this.anchorPoint = new BlockPos(
+            this.anchorPos.getX(),
+            this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS,
+            this.anchorPos.getZ()
+        );
+    }
+
+    /**
+     * Overrides orbit center calculation to stay near anchor point.
+     * Ensures Guardian never flies outside the structure area.
+     */
+    @Override
+    protected void updateOrbitCenter(LivingEntity target) {
+        if (this.anchorPos == null) {
+            // Fallback to default behavior if no anchor set
+            super.updateOrbitCenter(target);
+            return;
+        }
+
+        Vec3 anchorVec = Vec3.atCenterOf(this.anchorPos);
+        int orbitY = this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK;
+
+        // Calculate orbit center constrained to tether radius
+        if (target != null && target.isAlive()) {
+            Vec3 targetPos = target.position();
+
+            // Calculate vector from anchor to target
+            Vec3 toTarget = new Vec3(
+                targetPos.x - anchorVec.x,
+                0, // Ignore vertical component for horizontal tethering
+                targetPos.z - anchorVec.z
+            );
+            double distance = toTarget.length();
+
+            // If target is outside tether radius, clamp to edge of radius
+            if (distance > this.tetherRadius * 0.8D) { // Use 80% of radius for safer margin
+                toTarget = toTarget.normalize().scale(this.tetherRadius * 0.8D);
+            }
+
+            // Set orbit center within tether radius, elevated well above deck
+            Vec3 desiredCenter = new Vec3(
+                anchorVec.x + toTarget.x,
+                orbitY,
+                anchorVec.z + toTarget.z
+            );
+
+            // Smooth transition to new orbit center
+            if (this.orbitCenter.equals(Vec3.ZERO)) {
+                this.orbitCenter = desiredCenter;
+            } else {
+                // Slower lerp for Guardian to maintain stable patrol
+                this.orbitCenter = this.orbitCenter.lerp(desiredCenter, 0.03D);
+            }
+        } else {
+            // No target - orbit around anchor at high altitude
+            this.orbitCenter = new Vec3(
+                this.anchorPos.getX() + 0.5D,
+                orbitY + IDLE_ALTITUDE_BONUS,
+                this.anchorPos.getZ() + 0.5D
+            );
+        }
+    }
+
+    /**
+     * Overrides flight height enforcement to work relative to anchor.
+     * Strictly enforces both height and horizontal boundaries.
+     */
+    @Override
+    protected Vec3 enforceFlightHeight(Vec3 targetPos) {
+        if (this.anchorPos == null) {
+            return super.enforceFlightHeight(targetPos);
+        }
+
+        // Enforce height relative to anchor point
+        int minY = this.anchorPos.getY() + MIN_FLIGHT_HEIGHT_ABOVE_DECK;
+        int maxY = this.anchorPos.getY() + MAX_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
+        double clampedY = Mth.clamp(targetPos.y, minY, maxY);
+
+        // Strictly enforce horizontal tether - prevent ANY movement outside radius
+        Vec3 anchorVec = Vec3.atCenterOf(this.anchorPos);
+        double dx = targetPos.x - anchorVec.x;
+        double dz = targetPos.z - anchorVec.z;
+        double horizontalDistSq = dx * dx + dz * dz;
+        double maxDistSq = this.tetherRadius * this.tetherRadius;
+
+        // If outside tether radius, pull back to edge
+        if (horizontalDistSq > maxDistSq) {
+            double horizontalDist = Math.sqrt(horizontalDistSq);
+            double scale = this.tetherRadius / horizontalDist;
+            return new Vec3(
+                anchorVec.x + dx * scale,
+                clampedY,
+                anchorVec.z + dz * scale
+            );
+        }
+
+        return new Vec3(targetPos.x, clampedY, targetPos.z);
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        if (!this.level().isClientSide()) {
+            explodeImmediately((ServerLevel) this.level());
+        }
+        super.die(source);
+    }
+
+    private void explodeImmediately(ServerLevel level) {
+        level.explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
+    }
+
+    @Override
+    protected void customServerAiStep(ServerLevel level) {
+        resolveDeckAnchor(level);
+        if (this.anchorPos != null) {
+            double minY = this.anchorPos.getY() + MIN_FLIGHT_HEIGHT_ABOVE_DECK;
+            if (this.getY() < minY) {
+                Vec3 motion = this.getDeltaMovement();
+                this.setPos(this.getX(), minY, this.getZ());
+                this.setDeltaMovement(motion.x, Math.max(0.0D, motion.y), motion.z);
+            }
+            ensureAggroOnNearbyPlayers(level);
+            if (this.getTarget() == null) {
+                idleRecenterTicks++;
+                double idleY = this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
+                if (this.getY() < idleY) {
+                    Vec3 motion = this.getDeltaMovement();
+                    double lift = Math.max(0.06D, Math.min(0.3D, idleY - this.getY()) * 0.05D);
+                    this.setDeltaMovement(motion.x, Math.max(lift, motion.y), motion.z);
+                }
+                if (idleRecenterTicks >= 200) {
+                    idleRecenterTicks = 0;
+                    recenterAboveAnchor(level);
+                }
+            } else {
+                idleRecenterTicks = 0;
+            }
+        }
+        super.customServerAiStep(level);
+    }
+
+    private void recenterAboveAnchor(ServerLevel level) {
+        if (this.anchorPos == null) {
+            return;
+        }
+        Vec3 center = Vec3.atCenterOf(this.anchorPos);
+        Vec3 current = this.position();
+        double horizontalDist = current.subtract(center.x, current.y, center.z).horizontalDistance();
+
+        // Allow patrol within 50 block radius - only recenter if outside this area
+        if (horizontalDist <= 50.0D) {
+            return;
+        }
+
+        // Smoothly guide back to center via orbit center instead of teleporting
+        double desiredY = this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
+        Vec3 targetOrbit = center.add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+
+        // Gradual orbit center adjustment for smooth return
+        this.orbitCenter = this.orbitCenter.lerp(targetOrbit, 0.1D);
+
+        // Apply gentle pull towards center through movement control
+        Vec3 toCenter = center.subtract(current.x, current.y, current.z).normalize();
+        this.getMoveControl().setWantedPosition(
+            current.x + toCenter.x * 10.0D,
+            desiredY,
+            current.z + toCenter.z * 10.0D,
+            1.2D
+        );
+    }
+
+    private void resolveDeckAnchor(ServerLevel level) {
+        if (this.deckResolved || this.desiredAnchor == null) {
+            return;
+        }
+
+        if (!level.isLoaded(this.desiredAnchor)) {
+            return;
+        }
+
+        int highest = Integer.MIN_VALUE;
+        int minY = level.dimensionType().minY();
+        int worldTop = minY + level.dimensionType().logicalHeight() - 1;
+        int scanTop = Math.min(worldTop, this.desiredAnchor.getY() + MAX_SCAN_HEIGHT_OFFSET);
+        int scanFloor = Math.max(minY, this.desiredAnchor.getY() - MIN_SCAN_HEIGHT_OFFSET);
+        MutableBlockPos cursor = new MutableBlockPos();
+
+        for (int[] offset : DECK_SAMPLE_OFFSETS) {
+            int sampleX = this.desiredAnchor.getX() + Mth.clamp(offset[0], -this.tetherRadius, this.tetherRadius);
+            int sampleZ = this.desiredAnchor.getZ() + Mth.clamp(offset[1], -this.tetherRadius, this.tetherRadius);
+            cursor.set(sampleX, scanTop, sampleZ);
+            if (!level.isLoaded(cursor)) {
+                continue;
+            }
+            for (int y = scanTop; y >= scanFloor; y--) {
+                cursor.setY(y);
+                BlockState state = level.getBlockState(cursor);
+                if (!state.isAir() && !state.getCollisionShape(level, cursor).isEmpty()) {
+                    highest = Math.max(highest, y);
+                    break;
+                }
+            }
+        }
+
+        if (highest == Integer.MIN_VALUE) {
+            highest = this.desiredAnchor.getY();
+        }
+
+        this.deckHeight = highest;
+        this.anchorPos = new BlockPos(this.desiredAnchor.getX(), highest, this.desiredAnchor.getZ());
+        this.orbitCenter = Vec3.atCenterOf(this.anchorPos).add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+        this.deckResolved = true;
+        this.anchorPoint = new BlockPos(
+            this.anchorPos.getX(),
+            this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS,
+            this.anchorPos.getZ()
+        );
+    }
+
+    class GuardianPatrolGoal extends TerrorPhantomMoveTargetGoal {
+        private double angle;
+        private double patrolRadius;
+        private boolean clockwise;
+        private int retargetCooldown;
+
+        @Override
+        public boolean canUse() {
+            return !TerrorPhantomGuardian.this.isDying() &&
+                   TerrorPhantomGuardian.this.getTarget() == null &&
+                   TerrorPhantomGuardian.this.anchorPos != null;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return this.canUse();
+        }
+
+        @Override
+        public void start() {
+            RandomSource random = TerrorPhantomGuardian.this.random;
+            this.clockwise = random.nextBoolean();
+            this.angle = random.nextDouble() * Mth.TWO_PI;
+            this.patrolRadius = computeRadius(random);
+            this.retargetCooldown = 0;
+            TerrorPhantomGuardian.this.attackPhase = AttackPhase.CIRCLE;
+            placeTarget(false);
+        }
+
+        @Override
+        public void stop() {
+            this.retargetCooldown = 0;
+        }
+
+        @Override
+        public void tick() {
+            if (TerrorPhantomGuardian.this.anchorPos == null) {
+                return;
+            }
+
+            if (touchingTarget()) {
+                RandomSource random = TerrorPhantomGuardian.this.random;
+                if (random.nextInt(3) == 0) {
+                    this.patrolRadius = computeRadius(random);
+                }
+                placeTarget(true);
+                this.retargetCooldown = 0;
+            } else if (++this.retargetCooldown >= 120) {
+                this.retargetCooldown = 0;
+                placeTarget(true);
+            }
+        }
+
+        private void placeTarget(boolean advance) {
+            if (TerrorPhantomGuardian.this.anchorPos == null) {
+                return;
+            }
+
+            if (advance) {
+                this.angle += this.clockwise ? PATROL_STEP_RADIANS : -PATROL_STEP_RADIANS;
+            }
+
+            Vec3 center = Vec3.atCenterOf(TerrorPhantomGuardian.this.anchorPos);
+            double baseY = TerrorPhantomGuardian.this.anchorPos.getY() + PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
+            Vec3 rawTarget = new Vec3(
+                center.x + this.patrolRadius * Math.cos(this.angle),
+                baseY,
+                center.z + this.patrolRadius * Math.sin(this.angle)
+            );
+            Vec3 enforced = TerrorPhantomGuardian.this.enforceFlightHeight(rawTarget);
+            TerrorPhantomGuardian.this.moveTargetPoint = enforced;
+        }
+
+        private double computeRadius(RandomSource random) {
+            double max = Math.max(28.0D, TerrorPhantomGuardian.this.tetherRadius * 0.75D);
+            double min = Math.min(32.0D, max - 4.0D);
+            if (max - min < 1.0D) {
+                return max;
+            }
+            double sampled = min + (max - min) * random.nextDouble();
+            return Mth.clamp(sampled, 24.0D, max);
+        }
+    }
+
+    private void ensureAggroOnNearbyPlayers(ServerLevel level) {
+        if (this.anchorPos == null || this.isRemoved()) {
+            return;
+        }
+
+        Vec3 anchorVec = Vec3.atCenterOf(this.anchorPos);
+        double radius = Math.min(this.tetherRadius, ACTIVE_DETECTION_RADIUS);
+        AABB searchArea = new AABB(
+                this.anchorPos.getX() - radius,
+                this.anchorPos.getY() - SKYSHIP_VERTICAL_RANGE * 0.5D,
+                this.anchorPos.getZ() - radius,
+                this.anchorPos.getX() + radius,
+                this.anchorPos.getY() + SKYSHIP_VERTICAL_RANGE,
+                this.anchorPos.getZ() + radius
+        );
+
+        java.util.List<Player> players = level.getEntitiesOfClass(
+                Player.class,
+                searchArea,
+                player -> player.isAlive() && !player.isSpectator() && !player.isCreative()
+        );
+
+        Player currentTarget = this.getTarget() instanceof Player player ? player : null;
+        if (currentTarget != null && !isValidCombatTarget(currentTarget)) {
+            disengageCurrentTarget();
+            currentTarget = null;
+        }
+
+        if (players.isEmpty()) {
+            if (currentTarget != null) {
+                double distSq = currentTarget.distanceToSqr(anchorVec.x, anchorVec.y, anchorVec.z);
+                if (distSq <= PASSIVE_RETALIATION_RADIUS * PASSIVE_RETALIATION_RADIUS) {
+                    return;
+                }
+            }
+            disengageCurrentTarget();
+            this.engagedPlayers.clear();
+            return;
+        }
+
+        java.util.HashSet<java.util.UUID> present = new java.util.HashSet<>();
+
+        for (Player player : players) {
+            present.add(player.getUUID());
+            if (this.engagedPlayers.add(player.getUUID())) {
+                this.setTarget(player);
+                this.setAggressive(true);
+                JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Aggro acquired on player {} at {}", player.getName().getString(), player.blockPosition());
+                return;
+            }
+        }
+
+        this.engagedPlayers.retainAll(present);
+
+        if (currentTarget == null || !present.contains(currentTarget.getUUID())) {
+            Player nearest = null;
+            double nearestDistance = Double.MAX_VALUE;
+            for (Player player : players) {
+                double dist = player.distanceToSqr(this);
+                if (nearest == null || dist < nearestDistance) {
+                    nearest = player;
+                    nearestDistance = dist;
+                }
+            }
+
+            if (nearest != null) {
+                this.setTarget(nearest);
+                this.setAggressive(true);
+                this.engagedPlayers.add(nearest.getUUID());
+            }
+        }
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        boolean damaged = super.hurtServer(level, source, amount);
+        if (!damaged || amount <= 0.0F || this.anchorPos == null) {
+            return damaged;
+        }
+
+        LivingEntity retaliateTarget = null;
+        Entity causing = source.getEntity();
+        Entity direct = source.getDirectEntity();
+
+        if (causing instanceof LivingEntity living) {
+            retaliateTarget = living;
+        } else if (direct instanceof LivingEntity living) {
+            retaliateTarget = living;
+        } else if (direct instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            retaliateTarget = owner;
+        }
+
+        if (retaliateTarget instanceof Player player && isValidCombatTarget(player)) {
+            Vec3 anchorVec = Vec3.atCenterOf(this.anchorPos);
+            double distSq = player.distanceToSqr(anchorVec.x, anchorVec.y, anchorVec.z);
+            if (distSq <= PASSIVE_RETALIATION_RADIUS * PASSIVE_RETALIATION_RADIUS) {
+                if (this.engagedPlayers.add(player.getUUID())) {
+                    JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Retaliating against {} at distance {}", player.getName().getString(), Math.sqrt(distSq));
+                }
+                this.setTarget(player);
+                this.setAggressive(true);
+            }
+        }
+
+        return damaged;
+    }
+
+    private boolean isValidCombatTarget(Player player) {
+        return player.isAlive() && !player.isSpectator() && !player.isCreative();
+    }
+
+    private void disengageCurrentTarget() {
+        if (this.getTarget() instanceof Player player) {
+            this.engagedPlayers.remove(player.getUUID());
+        }
+        this.setTarget(null);
+        this.setAggressive(false);
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt(TAG_TETHER_RADIUS, this.tetherRadius);
+        output.putInt(TAG_DECK_HEIGHT, this.deckHeight);
+        output.putBoolean(TAG_DECK_RESOLVED, this.deckResolved);
+        if (this.desiredAnchor != null) {
+            output.putInt(TAG_ANCHOR_X, this.desiredAnchor.getX());
+            output.putInt(TAG_ANCHOR_Y, this.desiredAnchor.getY());
+            output.putInt(TAG_ANCHOR_Z, this.desiredAnchor.getZ());
+        }
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        this.tetherRadius = input.getIntOr(TAG_TETHER_RADIUS, this.tetherRadius <= 0 ? DEFAULT_TETHER_RADIUS : this.tetherRadius);
+        this.deckHeight = input.getIntOr(TAG_DECK_HEIGHT, this.deckHeight);
+        boolean resolved = input.getBooleanOr(TAG_DECK_RESOLVED, false);
+        int anchorX = input.getIntOr(TAG_ANCHOR_X, Integer.MIN_VALUE);
+        int anchorY = input.getIntOr(TAG_ANCHOR_Y, Integer.MIN_VALUE);
+        int anchorZ = input.getIntOr(TAG_ANCHOR_Z, Integer.MIN_VALUE);
+
+        if (anchorX != Integer.MIN_VALUE && anchorY != Integer.MIN_VALUE && anchorZ != Integer.MIN_VALUE) {
+            BlockPos anchor = new BlockPos(anchorX, anchorY, anchorZ);
+            if (resolved) {
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    this.initialiseDeckAnchor(anchor, this.tetherRadius);
+                } else {
+                    this.desiredAnchor = anchor;
+                    this.anchorPos = anchor;
+                    this.deckHeight = anchor.getY();
+                    this.tetherRadius = this.tetherRadius <= 0 ? DEFAULT_TETHER_RADIUS : this.tetherRadius;
+                    this.deckResolved = true;
+                    this.orbitCenter = Vec3.atCenterOf(this.anchorPos).add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+                }
+            } else {
+                this.desiredAnchor = anchor;
+                this.anchorPos = anchor;
+                this.deckResolved = false;
+                if (this.deckHeight <= 0) {
+                    this.deckHeight = anchor.getY();
+                }
+                this.orbitCenter = Vec3.atCenterOf(this.anchorPos).add(0.0D, PREFERRED_FLIGHT_HEIGHT_ABOVE_DECK, 0.0D);
+            }
+        } else {
+            this.deckResolved = false;
+        }
+    }
+
+}

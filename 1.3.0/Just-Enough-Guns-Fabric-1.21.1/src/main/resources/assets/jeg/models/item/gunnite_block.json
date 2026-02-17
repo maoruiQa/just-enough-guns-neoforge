@@ -1,0 +1,6 @@
+{
+  "parent": "jeg:block/gunnite_block",
+  "textures": {
+    "layer0": "jeg:block/gunnite_block"
+  }
+}

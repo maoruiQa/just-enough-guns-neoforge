@@ -43,6 +43,10 @@ import net.minecraft.ChatFormatting;
 
 public class GunItem extends Item {
     private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
+    private static final float GRENADE_BASE_POWER = 4.0F;
+    private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
+    private static final int GRENADE_FUSE_TICKS = 600;
+    private static final String MINIGUN_PATH = "minigun";
     private static final Set<String> AUTOMATIC_IDS = Set.of(
             "abstract_gun",
             "assault_rifle",
@@ -121,6 +125,10 @@ public class GunItem extends Item {
 
     public static boolean isAutomatic(GunStats stats) {
         return AUTOMATIC_IDS.contains(stats.id().getPath());
+    }
+
+    private int shotsPerTrigger() {
+        return MINIGUN_PATH.equals(this.stats.id().getPath()) ? 5 : 1;
     }
 
     /**
@@ -224,17 +232,28 @@ public class GunItem extends Item {
             // Removed custom trail rendering - rely on server-sent particles instead
             // which have proper depth testing and don't render through blocks
         } else {
-            if (!consumeAmmo(level, player, stack)) {
+            int shotsFired = 0;
+            int shotsToFire = shotsPerTrigger();
+            for (int shot = 0; shot < shotsToFire; shot++) {
+                if (!consumeAmmo(level, player, stack)) {
+                    if (shot == 0) {
+                        return InteractionResult.FAIL;
+                    }
+                    break;
+                }
+                fireAt(level, player, stack, null);
+                stack.hurtAndBreak(1, player, hand);
+                shotsFired++;
+            }
+            if (shotsFired <= 0) {
                 return InteractionResult.FAIL;
             }
 
-            fireAt(level, player, stack, null);
             if (!automatic) {
                 setTriggerLocked(stack, true);
             }
             player.awardStat(Stats.ITEM_USED.get(this));
             player.getCooldowns().addCooldown(stack, Math.max(1, stats.fireDelay()));
-            stack.hurtAndBreak(1, player, hand);
         }
 
         playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
@@ -338,8 +357,8 @@ public class GunItem extends Item {
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
         boolean flamethrower = gunId.equals(Reference.id("flamethrower"));
-        float grenadePower = Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
-        int fuseTicks = grenadeLauncher ? Math.max(40, stats.projectileLife() / 2) : 40;
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
 
         for (int i = 0; i < pellets; i++) {
@@ -349,7 +368,7 @@ public class GunItem extends Item {
             if (grenadeLauncher) {
                 GrenadeEntity grenade = new GrenadeEntity(level, shooter, grenadePower, fuseTicks, true);
                 grenade.initialisePosition(muzzle);
-                Vec3 launchVelocity = direction.scale(Math.max(1.2F, stats.projectileSpeed() * 0.8F)).add(shooterMotion);
+                Vec3 launchVelocity = direction.scale(Math.max(1.2F, stats.projectileSpeed() * 0.9F)).add(shooterMotion);
                 grenade.setDeltaMovement(launchVelocity);
                 level.addFreshEntity(grenade);
             } else {
@@ -379,8 +398,8 @@ public class GunItem extends Item {
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
         boolean flamethrower = gunId.equals(Reference.id("flamethrower"));
-        float grenadePower = Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
-        int fuseTicks = grenadeLauncher ? Math.max(40, stats.projectileLife() / 2) : 40;
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         Vec3 normalized = direction.normalize();
 
@@ -390,7 +409,7 @@ public class GunItem extends Item {
             if (grenadeLauncher) {
                 GrenadeEntity grenade = new GrenadeEntity(level, shooter, grenadePower, fuseTicks, true);
                 grenade.initialisePosition(muzzle);
-                Vec3 launchVelocity = normalized.scale(Math.max(1.2F, stats.projectileSpeed() * 0.8F)).add(shooterMotion);
+                Vec3 launchVelocity = normalized.scale(Math.max(1.2F, stats.projectileSpeed() * 0.9F)).add(shooterMotion);
                 grenade.setDeltaMovement(launchVelocity);
                 level.addFreshEntity(grenade);
             } else {
@@ -435,6 +454,10 @@ public class GunItem extends Item {
             }
         }
 
+        if (shooter.isCrouching() && "light_machine_gun".equals(stats.id().getPath())) {
+            actualSpread *= 1.85F;
+        }
+
         return applySpread(base, actualSpread, random);
     }
 
@@ -458,8 +481,8 @@ public class GunItem extends Item {
         double y = shooter.getY();
         double z = shooter.getZ();
         sound.ifPresentOrElse(
-                value -> level.playSound(null, x, y, z, value, source, 8.0F, 1.0F),
-                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, 8.0F, 1.1F)
+                value -> level.playSound(null, x, y, z, value, source, 7.5F, 1.0F),
+                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, 7.5F, 1.1F)
         );
     }
 
@@ -609,12 +632,14 @@ public class GunItem extends Item {
             double fraction = (double) i / particleCount;
             Vec3 pos = start.add(end.subtract(start).scale(fraction));
 
-            // Fire particles
-            level.sendParticles(
-                ParticleTypes.FLAME,
-                pos.x, pos.y, pos.z,
-                1, 0.01, 0.01, 0.01, 0.005
-            );
+            if (stats.gravity()) {
+                // Fire particles for gravity-affected bullets only
+                level.sendParticles(
+                    ParticleTypes.FLAME,
+                    pos.x, pos.y, pos.z,
+                    1, 0.01, 0.01, 0.01, 0.005
+                );
+            }
 
             // Smoke particles
             level.sendParticles(
@@ -627,7 +652,8 @@ public class GunItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
-        tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format("%.1f", stats.damage())));
+        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID) ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR : stats.damage();
+        tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
 
         if (stats.usesMagazine()) {
             tooltipAdder.accept(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));

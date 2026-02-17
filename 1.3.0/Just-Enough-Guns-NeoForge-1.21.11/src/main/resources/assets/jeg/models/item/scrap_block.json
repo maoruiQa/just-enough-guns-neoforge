@@ -1,0 +1,6 @@
+{
+  "parent": "jeg:block/scrap_block",
+  "textures": {
+    "layer0": "jeg:block/scrap_block"
+  }
+}

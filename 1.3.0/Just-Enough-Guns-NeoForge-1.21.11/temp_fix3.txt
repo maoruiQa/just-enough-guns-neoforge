@@ -1,0 +1,2 @@
+          skeleton.addTag(GunEvents.JEG_GUNNER_TAG);
+            // JEG faction system will handle gun equipping automatically

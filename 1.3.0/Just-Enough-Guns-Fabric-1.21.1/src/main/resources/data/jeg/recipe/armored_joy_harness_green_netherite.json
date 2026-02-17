@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "jeg:armored_joy_harness_green_diamond",
+    "minecraft:netherite_scrap",
+    "minecraft:netherite_scrap",
+    "minecraft:gold_ingot"
+  ],
+  "result": {
+    "id": "jeg:armored_joy_harness_green_netherite"
+  }
+}

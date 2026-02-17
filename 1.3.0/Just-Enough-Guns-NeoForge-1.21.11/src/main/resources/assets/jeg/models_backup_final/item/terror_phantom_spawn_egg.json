@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "jeg:item/terror_phantom_spawn_egg"
+  }
+}

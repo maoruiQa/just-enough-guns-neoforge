@@ -5,7 +5,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -28,11 +29,22 @@ public class GrenadeEntity extends ThrowableItemProjectile {
             GrenadeEntity.class,
             EntityDataSerializers.INT
     );
-    private static final int DEFAULT_FUSE = 60;
+    private static final int DEFAULT_FUSE = 600;
     private static final float BOUNCE_DAMPING = 0.6F;
     private static final float SLIDE_DAMPING = 0.7F;
+    private static final double LAUNCHED_GRAVITY = 0.015D;
+    private static final double DAMAGE_RADIUS_MULTIPLIER = 2.0D;
+    private static final float BALANCED_DAMAGE_FACTOR = 5.0F;
+    private static final float EDGE_DAMAGE_FLOOR = 0.35F;
+    private static final double FALLOFF_EXPONENT = 0.8D;
+    private static final int OWNER_COLLISION_SAFE_TICKS = 8;
 
-    private float explosionPower = 2.4F;
+    @Override
+    protected double getDefaultGravity() {
+        return this.launched ? LAUNCHED_GRAVITY : super.getDefaultGravity();
+    }
+
+    private float explosionPower = 3.0F;
     private boolean launched;
 
     public GrenadeEntity(EntityType<? extends GrenadeEntity> type, Level level) {
@@ -109,16 +121,15 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        Vec3 motion = this.getDeltaMovement();
-        this.setDeltaMovement(motion.x * SLIDE_DAMPING, -motion.y * BOUNCE_DAMPING, motion.z * SLIDE_DAMPING);
+        explode();
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        if (!this.level().isClientSide()) {
-            DamageSource source = this.damageSources().explosion(this, this.getOwner());
-            result.getEntity().hurt(source, 2.0F);
+        Entity hitEntity = result.getEntity();
+        if (hitEntity == this.getOwner() && this.tickCount <= OWNER_COLLISION_SAFE_TICKS) {
+            return;
         }
         explode();
     }
@@ -134,7 +145,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
-        this.entityData.set(DATA_FUSE, Mth.clamp(input.getIntOr("Fuse", DEFAULT_FUSE), 5, 200));
+        this.entityData.set(DATA_FUSE, Mth.clamp(input.getIntOr("Fuse", DEFAULT_FUSE), 5, DEFAULT_FUSE));
         this.explosionPower = input.getFloatOr("Power", this.explosionPower);
         this.launched = input.getBooleanOr("Launched", this.launched);
     }
@@ -159,10 +170,48 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     private void explode() {
         if (!this.level().isClientSide()) {
             ExplosionInteraction interaction = this.launched ? ExplosionInteraction.TNT : ExplosionInteraction.MOB;
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), this.explosionPower, interaction);
+            float visualPower = Math.max(1.2F, this.explosionPower * 0.5F);
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), visualPower, interaction);
+            applyBalancedBlastDamage();
             igniteNearby();
         }
         this.discard();
+    }
+
+
+    private void applyBalancedBlastDamage() {
+        if (this.level().isClientSide()) {
+            return;
+        }
+
+        double radius = Math.max(2.6D, this.explosionPower * DAMAGE_RADIUS_MULTIPLIER);
+        float baseDamage = this.explosionPower * BALANCED_DAMAGE_FACTOR;
+        Entity owner = this.getOwner();
+        AABB area = this.getBoundingBox().inflate(radius);
+
+        for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, area)) {
+            if (!target.isAlive()) {
+                continue;
+            }
+
+            double distance = target.distanceTo(this);
+            if (distance > radius) {
+                continue;
+            }
+
+            double t = 1.0D - (distance / radius);
+            double curve = Math.pow(Math.max(0.0D, t), FALLOFF_EXPONENT);
+            float scale = (float) (EDGE_DAMAGE_FLOOR + (1.0F - EDGE_DAMAGE_FLOOR) * curve);
+            float damage = baseDamage * scale;
+
+            if (owner != null && target == owner) {
+                damage *= 0.65F;
+            }
+
+            if (damage > 0.5F) {
+                target.hurt(this.damageSources().explosion(this, owner), damage);
+            }
+        }
     }
 
     private void igniteNearby() {

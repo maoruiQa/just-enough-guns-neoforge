@@ -8,6 +8,7 @@ import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunnerMinion;
 
 public final class ModEntityEvents {
     private ModEntityEvents() {}
@@ -15,8 +16,9 @@ public final class ModEntityEvents {
     public static void onAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(ModEntities.GHOUL.get(), Ghoul.createAttributes().build());
         event.put(ModEntities.PHANTOM_GUNNER.get(), PhantomGunner.createAttributes().build());
-        event.put(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes().build());
-        event.put(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(95.0D).build());
+        event.put(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerMinion.createAttributes().build());
+        event.put(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes(160.0D).build());
+        event.put(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(180.0D).build());
     }
 
     public static void onSpawnPlacement(RegisterSpawnPlacementsEvent event) {
@@ -30,6 +32,14 @@ public final class ModEntityEvents {
 
         event.register(
                 ModEntities.PHANTOM_GUNNER.get(),
+                SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING,
+                Mob::checkMobSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
+
+        event.register(
+                ModEntities.PHANTOM_GUNNER_MINION.get(),
                 SpawnPlacementTypes.NO_RESTRICTIONS,
                 Heightmap.Types.MOTION_BLOCKING,
                 Mob::checkMobSpawnRules,
