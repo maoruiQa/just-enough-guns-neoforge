@@ -87,6 +87,13 @@ public class BulletEntity extends Projectile {
             "fire_sweeper"
     );
     private static final double MIN_TRAIL_START_DISTANCE_SQR = 0.45D * 0.45D;
+    private static final float ROCKET_EXPLOSION_POWER = 6.8F;
+    private static final float ROCKET_DIRECT_HIT_DAMAGE = 40.0F;
+    private static final float ROCKET_BLAST_BASE_DAMAGE = 32.0F;
+    private static final double ROCKET_BLAST_RADIUS = 11.0D;
+    private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
+    private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 2.7D;
+    private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
     private static final int FLARE_DETONATE_TICKS = 40; // 2 seconds (20 ticks per second)
     private static final byte FLARE_DETONATION_EVENT = (byte) 98;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
@@ -608,19 +615,26 @@ public class BulletEntity extends Projectile {
 
         if (id.equals(ROCKET_LAUNCHER_ID) || id.equals(HYPERSONIC_ID) || id.equals(TYPHOONEE_ID)) {
             if (!this.level().isClientSide()) {
-                float power = 6.0F; // Increased from 4.0 for larger block destruction radius
+                float power = 6.0F;
                 float directDamage = 14.0F;
+                if (id.equals(ROCKET_LAUNCHER_ID)) {
+                    power = ROCKET_EXPLOSION_POWER;
+                    directDamage = ROCKET_DIRECT_HIT_DAMAGE;
+                }
                 if (id.equals(HYPERSONIC_ID)) {
-                    power = 7.5F; // Increased from 5.0 for larger block destruction radius
+                    power = 7.5F;
                     directDamage = 18.0F;
                 } else if (id.equals(TYPHOONEE_ID)) {
-                    power = 6.75F; // Increased from 4.5 for larger block destruction radius
+                    power = 6.75F;
                     directDamage = 16.0F;
                 }
 
                 Entity owner = this.getOwner();
                 spawnCustomExplosionEffects((ServerLevel) this.level(), this.position(), id);
                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), power, ExplosionInteraction.TNT);
+                if (id.equals(ROCKET_LAUNCHER_ID)) {
+                    applyRocketBlastDamage(owner);
+                }
 
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
@@ -633,6 +647,37 @@ public class BulletEntity extends Projectile {
         }
 
         return false;
+    }
+
+    private void applyRocketBlastDamage(@Nullable Entity owner) {
+        if (this.level().isClientSide()) {
+            return;
+        }
+
+        AABB area = this.getBoundingBox().inflate(ROCKET_BLAST_RADIUS);
+        for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, area)) {
+            if (!target.isAlive()) {
+                continue;
+            }
+
+            double distance = target.distanceTo(this);
+            if (distance > ROCKET_BLAST_RADIUS) {
+                continue;
+            }
+
+            double t = 1.0D - (distance / ROCKET_BLAST_RADIUS);
+            double curve = Math.pow(Math.max(0.0D, t), ROCKET_BLAST_FALLOFF_EXPONENT);
+            float scale = (float) (ROCKET_BLAST_EDGE_FLOOR + (1.0F - ROCKET_BLAST_EDGE_FLOOR) * curve);
+            float damage = ROCKET_BLAST_BASE_DAMAGE * scale;
+
+            if (owner != null && target == owner) {
+                damage *= ROCKET_SELF_DAMAGE_SCALE;
+            }
+
+            if (damage > 0.5F) {
+                target.hurt(this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null), damage);
+            }
+        }
     }
 
     private void spawnCustomExplosionEffects(ServerLevel serverLevel, Vec3 pos, ResourceLocation weaponId) {
