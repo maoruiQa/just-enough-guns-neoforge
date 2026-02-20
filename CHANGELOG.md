@@ -1,27 +1,44 @@
 # Changelog
 
-## 1.3.1 - 2026-02-18
+## 1.3.1 - 2026-02-20
 
 ### Added
-- Added NeoForge 1.21.11 faction patrol/raid runtime modules (`FactionEventTicker`, patrol encounter tracking, home-raid trigger flow, and raid controller entity) aligned with newer branch behavior.
+- Added NeoForge 1.21.11 faction patrol/raid runtime modules (`FactionEventTicker`, patrol encounter tracking, home-raid trigger flow, raid controller entity) aligned with newer branch behavior.
 - Added faction patrol boss bar UI and localized messages for patrol/omen/home-trigger events.
 - Added `Faction Omen` status effect registration and icon resource (`textures/mob_effect/faction_omen.png`).
-- Added patrol spawn diagnostics in command feedback/logs, including detailed spawn-failure categories for rapid troubleshooting.
-- Added muzzle flame effects for gunfire presentation.
-- Added explosion flame visual effects for explosive impact moments.
-- Added new ballistic behavior for projectile trajectories.
+- Added patrol spawn diagnostics in command feedback/logs, including detailed spawn-failure categories for troubleshooting.
 - Added configurable day-scaling gunner accuracy controls (`gunnerAccuracyStartDay`, `gunnerAccuracyDaysToMax`, `gunnerAccuracyMaxSpreadMultiplier`).
 - Added configurable gunner shotgun spread control (`gunnerShotgunSpreadMultiplier`).
 
 ### Changed
-- Crosshair is now hidden while the player is holding any gun item (main hand or offhand).
-- Patrol command/simulation now consistently tags spawned faction mobs as gunners in this branch flow.
-- Faction omen duration is now 30 minutes (`36000` ticks) after clearing a patrol.
-- Home-return raid trigger now consumes faction omen and starts raid near player respawn/home position.
-- Removed the "no players in raid radius => monster auto-win" outcome; raids no longer end in monster victory for that condition.
-- Patrol spawn position sampling was reworked to prefer valid surface positions near target players and avoid invalid/random unreachable placements.
-- Path setup at spawn now uses tolerant fallback flow; path-init failure is recorded for debug instead of deleting already-spawned mobs.
-- Same-faction gunners now treat each other as friendly targets and will not fight each other.
-- Gunner shot spread now scales with in-game day progression toward a configurable late-game accuracy value.
-- Gunner-fired shotguns now use tighter pellet spread by default.
-- Gunner loadouts are now locked: gunner mobs are prevented from picking up loot and auto-recover a gun if their main hand is no longer a gun.
+- Crosshair is hidden while the player is holding any gun item (main hand/offhand).
+- Faction raids are now bound to patrol omen faction context; patrol boss bar duplication was removed.
+- Home-return raid trigger consumes faction omen and starts raid near player respawn/home position.
+- Patrol spawn position sampling now prefers valid surface positions near target players.
+- Path setup at spawn now uses tolerant fallback flow and records path-init failure for diagnostics.
+- Same-faction gunners are treated as friendly targets and no longer attack each other.
+- Gunner loadouts are locked: gunner mobs are prevented from picking up loot and can recover a gun when disarmed.
+- Non-flamethrower guns now use `IGNORE_LEAVES` bullet collision behavior.
+- Weapon handling pass updated recoil/movement spread behavior by weapon class.
+- Weapon durability baseline was increased (about 2.5x), with additional durability/gravity tuning pass.
+
+### Fixed
+- Fixed raid ground spawns to avoid leaves and unsafe relocation outcomes.
+- Fixed raid mob unreachable timeout behavior via forced repath/relocation.
+- Fixed unreachable-cleanup edge case when no nearby players are present.
+- Unified raid target validation and constrained terror raid target range.
+- Removed monster auto-win outcome when no players are inside raid radius.
+- Tightened empty-fire visual handling and removed empty-fire recoil animation side effects.
+- Fixed machine-gun overheat bar visibility on NeoForge HUD.
+
+### Balance
+- Rebalanced terror phantom survivability and protection:
+  - adjusted HP/protection values
+  - set armor to `6`
+  - increased projectile protection to `5`
+- Reworked rocket damage model:
+  - adjusted blast damage/falloff
+  - increased direct-hit damage and ensured direct hits bypass terror projectile protection.
+- Rebalanced recoil/spread across weapon classes and removed flamethrower recoil.
+- Added/updated tiered low armor values for bulletproof helmets and vests.
+- Gunner shot spread now scales with in-game day progression; shotgun pellet spread is tighter by default.
