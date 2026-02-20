@@ -1,7 +1,9 @@
 package ttv.migami.jeg.faction.raid;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -21,7 +23,9 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -39,11 +43,17 @@ public class RaidEntity extends Entity {
     private static final int SPAWN_INTERVAL_TICKS = 30;
     private static final int WAVE_COOLDOWN_TICKS = 120;
     private static final int MAX_DESPAWN_TICKS = 600;
+    private static final int UNREACHABLE_REPATH_TICKS = 80;
+    private static final int UNREACHABLE_RELOCATE_TICKS = 200;
+    private static final int UNREACHABLE_CLEANUP_TICKS = 600;
+    private static final double RAID_NAVIGATION_SPEED = 1.2D;
 
     private final ServerBossEvent bossBar;
     private final Set<UUID> activeMobIds = new HashSet<>();
     private final Set<UUID> spawnedThisWave = new HashSet<>();
     private final Set<UUID> activePlayerIds = new HashSet<>();
+    private final Map<UUID, Integer> unreachableTicks = new HashMap<>();
+    private final Map<UUID, Integer> relocationCounts = new HashMap<>();
 
     private String factionName = "night_of_the_undead";
     private boolean forceGuns = true;
@@ -81,6 +91,7 @@ public class RaidEntity extends Entity {
         refreshPlayers(serverLevel);
 
         if (!this.finished) {
+            maintainRaidMobPressure(serverLevel);
             if (serverLevel.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) {
                 finishDefeat();
             } else {
@@ -154,10 +165,79 @@ public class RaidEntity extends Entity {
     }
 
     private void refreshActiveMobs(ServerLevel level) {
+        Set<UUID> removed = new HashSet<>();
         this.activeMobIds.removeIf(id -> {
             Entity entity = level.getEntity(id);
-            return !(entity instanceof Mob mob) || mob.isRemoved() || !mob.isAlive();
+            boolean missing = !(entity instanceof Mob mob) || mob.isRemoved() || !mob.isAlive();
+            if (missing) {
+                removed.add(id);
+            }
+            return missing;
         });
+        for (UUID mobId : removed) {
+            clearMobTracking(mobId);
+        }
+    }
+
+    private void maintainRaidMobPressure(ServerLevel level) {
+        Player preferred = pickPreferredTarget(level);
+        if (!isValidRaidTarget(preferred, level)) {
+            for (UUID mobId : this.activeMobIds) {
+                clearMobTracking(mobId);
+            }
+            return;
+        }
+
+        Set<UUID> unreachableMobs = new HashSet<>();
+        for (UUID mobId : new HashSet<>(this.activeMobIds)) {
+            Entity entity = level.getEntity(mobId);
+            if (!(entity instanceof Mob mob) || !mob.isAlive() || mob.isRemoved()) {
+                unreachableMobs.add(mobId);
+                clearMobTracking(mobId);
+                continue;
+            }
+
+            LivingEntity currentTarget = mob.getTarget();
+            if (!(currentTarget instanceof Player currentPlayer) || !isValidRaidTarget(currentPlayer, level)) {
+                mob.setTarget(preferred);
+                mob.setAggressive(true);
+            }
+
+            if (!(mob instanceof PathfinderMob pathfinderMob)) {
+                clearMobTracking(mobId);
+                continue;
+            }
+
+            double distanceSq = mob.distanceToSqr(preferred);
+            boolean farFromTarget = distanceSq > 24.0D * 24.0D;
+            boolean navDone = pathfinderMob.getNavigation().isDone();
+            boolean noLineOfSight = !mob.hasLineOfSight(preferred);
+            boolean stuck = farFromTarget && (navDone || noLineOfSight);
+
+            if (!stuck) {
+                clearMobTracking(mobId);
+                continue;
+            }
+
+            int stuckTicks = this.unreachableTicks.merge(mobId, 1, Integer::sum);
+            if (stuckTicks % UNREACHABLE_REPATH_TICKS == 0) {
+                forceRepath(pathfinderMob, preferred);
+            }
+            if (stuckTicks % UNREACHABLE_RELOCATE_TICKS == 0) {
+                relocateMobNearPlayer(level, pathfinderMob, preferred);
+                this.relocationCounts.merge(mobId, 1, Integer::sum);
+            }
+
+            if (stuckTicks >= UNREACHABLE_CLEANUP_TICKS || this.relocationCounts.getOrDefault(mobId, 0) >= 3) {
+                mob.discard();
+                unreachableMobs.add(mobId);
+                clearMobTracking(mobId);
+            }
+        }
+
+        if (!unreachableMobs.isEmpty()) {
+            this.activeMobIds.removeAll(unreachableMobs);
+        }
     }
 
     private void refreshPlayers(ServerLevel level) {
@@ -248,6 +328,42 @@ public class RaidEntity extends Entity {
         this.defeat = true;
         this.victory = false;
         this.spawningWave = false;
+    }
+
+    private static boolean isValidRaidTarget(@Nullable Player player, ServerLevel level) {
+        return player != null
+                && player.level() == level
+                && player.isAlive()
+                && !player.isDeadOrDying()
+                && !player.isSpectator()
+                && !player.isCreative();
+    }
+
+    private static void forceRepath(PathfinderMob mob, Player target) {
+        if (mob.getNavigation().moveTo(target, RAID_NAVIGATION_SPEED)) {
+            return;
+        }
+        var path = mob.getNavigation().createPath(target, 0);
+        if (path != null) {
+            mob.getNavigation().moveTo(path, RAID_NAVIGATION_SPEED);
+        }
+    }
+
+    private static void relocateMobNearPlayer(ServerLevel level, PathfinderMob mob, Player target) {
+        BlockPos relocatePos = FactionSpawnHelper.sampleGroundPosition(level, target.blockPosition(), level.getRandom(), 4, 10);
+        if (!level.getWorldBorder().isWithinBounds(relocatePos)) {
+            return;
+        }
+        mob.teleportTo(relocatePos.getX() + 0.5D, relocatePos.getY(), relocatePos.getZ() + 0.5D);
+        mob.getNavigation().stop();
+        mob.setTarget(target);
+        mob.setAggressive(true);
+        forceRepath(mob, target);
+    }
+
+    private void clearMobTracking(UUID mobId) {
+        this.unreachableTicks.remove(mobId);
+        this.relocationCounts.remove(mobId);
     }
 
     @Nullable
