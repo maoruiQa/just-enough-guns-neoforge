@@ -47,7 +47,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.BossEvent;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
@@ -90,6 +92,7 @@ final class TerrorRaidManager {
     private static final int UNREACHABLE_REPATH_TICKS = 3;
     private static final int UNREACHABLE_RELOCATE_TICKS = 8;
     private static final int UNREACHABLE_CLEANUP_TICKS = 24;
+    private static final int MAX_GROUND_SAMPLE_ATTEMPTS = 12;
     private static final double RAID_NAVIGATION_SPEED = 1.2D;
     private static final Map<ServerLevel, List<RaidContext>> ACTIVE_RAIDS = new HashMap<>();
     private static final Map<ServerLevel, Map<BlockPos, Long>> RECENT_RAID_TRIGGERS = new HashMap<>();
@@ -210,8 +213,23 @@ final class TerrorRaidManager {
 
         int successfulSpawns = 0;
         for (int i = 0; i < mobCount; i++) {
-            BlockPos spawnPos = sampleGroundPosition(level, origin, random, 6, 12);
             net.minecraft.world.entity.Mob mob = createUndeadForWave(level, random, waveNumber);
+            BlockPos spawnPos = null;
+            for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+                BlockPos candidate = sampleGroundPosition(level, origin, random, 6, 12);
+                if (!isSafeGroundPosition(level, candidate)) {
+                    continue;
+                }
+                mob.setPos(candidate.getX() + 0.5D, candidate.getY(), candidate.getZ() + 0.5D);
+                if (!level.noCollision(mob)) {
+                    continue;
+                }
+                spawnPos = candidate;
+                break;
+            }
+            if (spawnPos == null) {
+                continue;
+            }
 
             // CRITICAL: Set mob position to spawn position BEFORE adding to world
             mob.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
@@ -700,7 +718,7 @@ final class TerrorRaidManager {
             mob.teleportTo(relocate.x, relocate.y, relocate.z);
         } else {
             BlockPos relocate = sampleGroundPosition(level, preferred.blockPosition(), level.getRandom(), 4, 10);
-            if (!level.getWorldBorder().isWithinBounds(relocate)) {
+            if (!isSafeGroundPosition(level, relocate)) {
                 return;
             }
             mob.teleportTo(relocate.getX() + 0.5D, relocate.getY(), relocate.getZ() + 0.5D);
@@ -846,32 +864,66 @@ final class TerrorRaidManager {
     }
 
     private static BlockPos sampleGroundPosition(ServerLevel level, BlockPos origin, RandomSource random, int minRadius, int maxRadius) {
-        double angle = random.nextDouble() * Mth.TWO_PI;
-        double radius = Mth.nextDouble(random, minRadius, maxRadius);
-        int x = origin.getX() + Mth.floor(Math.cos(angle) * radius);
-        int z = origin.getZ() + Mth.floor(Math.sin(angle) * radius);
+        BlockPos fallback = resolveGroundSpawn(level, origin.getX(), origin.getZ());
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            double angle = random.nextDouble() * Mth.TWO_PI;
+            double radius = Mth.nextDouble(random, minRadius, maxRadius);
+            int x = origin.getX() + Mth.floor(Math.cos(angle) * radius);
+            int z = origin.getZ() + Mth.floor(Math.sin(angle) * radius);
+            BlockPos candidate = resolveGroundSpawn(level, x, z);
+            if (isSafeGroundPosition(level, candidate)) {
+                return candidate;
+            }
+            fallback = candidate;
+        }
+        return fallback;
+    }
+
+    private static BlockPos resolveGroundSpawn(ServerLevel level, int x, int z) {
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         BlockPos spawnPos = new BlockPos(x, y, z);
-
-        // Check if the spawn position is valid (must be empty space for mob to spawn)
-        boolean validSpawn = level.isEmptyBlock(spawnPos) && level.getWorldBorder().isWithinBounds(spawnPos);
-
-        // If position is not valid (solid block), try to find air above
-        if (!validSpawn) {
-            // Try to find air space above the ground position
-            BlockPos checkPos = spawnPos.above();
-            int attempts = 0;
-            while (attempts < 5 && !level.isEmptyBlock(checkPos)) {
-                checkPos = checkPos.above();
-                attempts++;
-            }
-
-            if (level.isEmptyBlock(checkPos) && level.getWorldBorder().isWithinBounds(checkPos)) {
-                return checkPos;
-            }
+        if (level.isEmptyBlock(spawnPos)) {
+            return spawnPos;
         }
 
+        BlockPos checkPos = spawnPos.above();
+        for (int attempt = 0; attempt < 5; attempt++) {
+            if (level.isEmptyBlock(checkPos)) {
+                return checkPos;
+            }
+            checkPos = checkPos.above();
+        }
         return spawnPos;
+    }
+
+    private static boolean isSafeGroundPosition(ServerLevel level, BlockPos spawnPos) {
+        if (!level.getWorldBorder().isWithinBounds(spawnPos)) {
+            return false;
+        }
+
+        BlockState feetState = level.getBlockState(spawnPos);
+        BlockState headState = level.getBlockState(spawnPos.above());
+        BlockState groundState = level.getBlockState(spawnPos.below());
+        if (isLeafBlock(feetState) || isLeafBlock(headState) || isLeafBlock(groundState)) {
+            return false;
+        }
+        if (!feetState.getCollisionShape(level, spawnPos).isEmpty()) {
+            return false;
+        }
+        if (!headState.getCollisionShape(level, spawnPos.above()).isEmpty()) {
+            return false;
+        }
+        if (groundState.isAir()) {
+            return false;
+        }
+        if (!level.getFluidState(spawnPos).isEmpty() || !level.getFluidState(spawnPos.above()).isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isLeafBlock(BlockState state) {
+        return state.is(BlockTags.LEAVES);
     }
 
     private static Vec3 sampleAirPosition(ServerLevel level, BlockPos origin, RandomSource random, int minRadius, int maxRadius, int minHeight, int maxHeight) {

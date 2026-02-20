@@ -349,7 +349,7 @@ public class RaidEntity extends Entity {
 
     private static void relocateMobNearPlayer(ServerLevel level, PathfinderMob mob, Player target) {
         BlockPos relocatePos = FactionSpawnHelper.sampleGroundPosition(level, target.blockPosition(), level.getRandom(), 4, 10);
-        if (!level.getWorldBorder().isWithinBounds(relocatePos)) {
+        if (!FactionSpawnHelper.isSafeGroundPosition(level, relocatePos)) {
             return;
         }
         mob.teleportTo(relocatePos.getX() + 0.5D, relocatePos.getY(), relocatePos.getZ() + 0.5D);

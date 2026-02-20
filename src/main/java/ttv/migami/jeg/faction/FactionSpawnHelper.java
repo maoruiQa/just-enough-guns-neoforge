@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
 import ttv.migami.jeg.JustEnoughGuns;
@@ -30,6 +32,7 @@ public final class FactionSpawnHelper {
     public static final String PATROL_FACTION_TAG_PREFIX = "JEGPatrolFaction:";
     public static final String OMEN_FACTION_TAG_PREFIX = "JEGOmenFaction:";
     private static final int MAX_SPAWN_POSITION_ATTEMPTS = 96;
+    private static final int MAX_GROUND_SAMPLE_ATTEMPTS = 12;
     private static final int PATH_SEARCH_RANGE = 32;
     private static final double NAVIGATION_SPEED = 1.2D;
     private static final int[][] TARGET_PATH_OFFSETS = new int[][] {
@@ -68,6 +71,7 @@ public final class FactionSpawnHelper {
         int headBlockedFailures = 0;
         int noGroundFailures = 0;
         int fluidFailures = 0;
+        int leafBlockedFailures = 0;
         int collisionFailures = 0;
         int addEntityFailures = 0;
 
@@ -103,6 +107,7 @@ public final class FactionSpawnHelper {
                         case HEAD_BLOCKED -> headBlockedFailures++;
                         case NO_GROUND -> noGroundFailures++;
                         case FLUID_BLOCKED -> fluidFailures++;
+                        case LEAF_BLOCKED -> leafBlockedFailures++;
                         case COLLISION_BLOCKED -> collisionFailures++;
                         case ADD_ENTITY_FAILED -> addEntityFailures++;
                         default -> {
@@ -126,6 +131,7 @@ public final class FactionSpawnHelper {
                 + ", headBlocked=" + headBlockedFailures
                 + ", noGround=" + noGroundFailures
                 + ", fluidFail=" + fluidFailures
+                + ", leafBlocked=" + leafBlockedFailures
                 + ", collisionFail=" + collisionFailures
                 + ", addEntityFail=" + addEntityFailures
                 + ", faction=" + faction.getName();
@@ -330,13 +336,19 @@ public final class FactionSpawnHelper {
         if (!level.getWorldBorder().isWithinBounds(spawnPos)) {
             return SpawnFailReason.OUT_OF_BORDER;
         }
-        if (!level.getBlockState(spawnPos).getCollisionShape(level, spawnPos).isEmpty()) {
+        BlockState feetState = level.getBlockState(spawnPos);
+        BlockState headState = level.getBlockState(spawnPos.above());
+        BlockState groundState = level.getBlockState(spawnPos.below());
+        if (isLeafBlock(feetState) || isLeafBlock(headState) || isLeafBlock(groundState)) {
+            return SpawnFailReason.LEAF_BLOCKED;
+        }
+        if (!feetState.getCollisionShape(level, spawnPos).isEmpty()) {
             return SpawnFailReason.FEET_BLOCKED;
         }
-        if (!level.getBlockState(spawnPos.above()).getCollisionShape(level, spawnPos.above()).isEmpty()) {
+        if (!headState.getCollisionShape(level, spawnPos.above()).isEmpty()) {
             return SpawnFailReason.HEAD_BLOCKED;
         }
-        if (level.getBlockState(spawnPos.below()).isAir()) {
+        if (groundState.isAir()) {
             return SpawnFailReason.NO_GROUND;
         }
         if (!level.getFluidState(spawnPos).isEmpty() || !level.getFluidState(spawnPos.above()).isEmpty()) {
@@ -349,18 +361,26 @@ public final class FactionSpawnHelper {
     }
 
     public static BlockPos sampleGroundPosition(ServerLevel level, BlockPos origin, RandomSource random, int minDistance, int maxDistance) {
-        int dx = random.nextInt(maxDistance - minDistance + 1) + minDistance;
-        int dz = random.nextInt(maxDistance - minDistance + 1) + minDistance;
-        if (random.nextBoolean()) {
-            dx = -dx;
-        }
-        if (random.nextBoolean()) {
-            dz = -dz;
-        }
+        BlockPos fallback = resolveSurfaceSpawn(level, origin);
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            int dx = random.nextInt(maxDistance - minDistance + 1) + minDistance;
+            int dz = random.nextInt(maxDistance - minDistance + 1) + minDistance;
+            if (random.nextBoolean()) {
+                dx = -dx;
+            }
+            if (random.nextBoolean()) {
+                dz = -dz;
+            }
 
-        int x = origin.getX() + dx;
-        int z = origin.getZ() + dz;
-        return resolveSurfaceSpawn(level, new BlockPos(x, origin.getY(), z));
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            BlockPos candidate = resolveSurfaceSpawn(level, new BlockPos(x, origin.getY(), z));
+            if (isSafeGroundPosition(level, candidate)) {
+                return candidate;
+            }
+            fallback = candidate;
+        }
+        return fallback;
     }
 
     private static BlockPos resolveSurfaceSpawn(ServerLevel level, BlockPos source) {
@@ -370,6 +390,36 @@ public final class FactionSpawnHelper {
         return new BlockPos(x, y, z);
     }
 
+    public static boolean isSafeGroundPosition(ServerLevel level, BlockPos spawnPos) {
+        if (!level.getWorldBorder().isWithinBounds(spawnPos)) {
+            return false;
+        }
+
+        BlockState feetState = level.getBlockState(spawnPos);
+        BlockState headState = level.getBlockState(spawnPos.above());
+        BlockState groundState = level.getBlockState(spawnPos.below());
+        if (isLeafBlock(feetState) || isLeafBlock(headState) || isLeafBlock(groundState)) {
+            return false;
+        }
+        if (!feetState.getCollisionShape(level, spawnPos).isEmpty()) {
+            return false;
+        }
+        if (!headState.getCollisionShape(level, spawnPos.above()).isEmpty()) {
+            return false;
+        }
+        if (groundState.isAir()) {
+            return false;
+        }
+        if (!level.getFluidState(spawnPos).isEmpty() || !level.getFluidState(spawnPos.above()).isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isLeafBlock(BlockState state) {
+        return state.is(BlockTags.LEAVES);
+    }
+
     private enum SpawnFailReason {
         NONE,
         OUT_OF_BORDER,
@@ -377,6 +427,7 @@ public final class FactionSpawnHelper {
         HEAD_BLOCKED,
         NO_GROUND,
         FLUID_BLOCKED,
+        LEAF_BLOCKED,
         COLLISION_BLOCKED,
         ADD_ENTITY_FAILED
     }
