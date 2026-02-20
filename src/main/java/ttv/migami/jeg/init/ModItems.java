@@ -306,7 +306,7 @@ public final class ModItems {
             case "jeg:manual" -> 256;
             default -> 512;
         };
-        int durability = Math.max(1, (int) Math.round(baseDurability * 2.5D));
+        int durability = Math.max(1, (int) Math.round(baseDurability * 3.75D));
         return baseProperties(id).stacksTo(1).durability(durability).repairable(net.minecraft.world.item.Items.IRON_INGOT);
     }
 

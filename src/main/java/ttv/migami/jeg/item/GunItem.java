@@ -262,8 +262,6 @@ public class GunItem extends Item {
 
         if (!hasAmmoAvailable(player, stack)) {
             if (level.isClientSide()) {
-                float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
-                GunRecoilHandler.addDryFire(stats.recoilKick() * recoilMultiplier * 0.25F);
                 playDryFireSound(level, player);
                 Component message = stats.usesMagazine() && !stats.isInventoryFed()
                         ? Component.translatable("item.jeg.gun.empty")
