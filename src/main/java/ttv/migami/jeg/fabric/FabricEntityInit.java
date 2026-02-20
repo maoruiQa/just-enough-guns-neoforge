@@ -18,8 +18,8 @@ public final class FabricEntityInit {
         FabricDefaultAttributeRegistry.register(ModEntities.GHOUL.get(), Ghoul.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.PHANTOM_GUNNER.get(), PhantomGunner.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerMinion.createAttributes());
-        FabricDefaultAttributeRegistry.register(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes(1000.0D));
-        FabricDefaultAttributeRegistry.register(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(1200.0D));
+        FabricDefaultAttributeRegistry.register(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes(450.0D));
+        FabricDefaultAttributeRegistry.register(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(550.0D));
 
         SpawnPlacements.register(
                 ModEntities.GHOUL.get(),
