@@ -371,7 +371,7 @@ public class RaidEntity extends Entity {
     private Player pickPreferredTarget(ServerLevel level) {
         for (UUID playerId : this.activePlayerIds) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-            if (player != null && player.level() == level && !player.isSpectator()) {
+            if (isValidRaidTarget(player, level)) {
                 return player;
             }
         }
@@ -379,7 +379,7 @@ public class RaidEntity extends Entity {
         ServerPlayer nearest = null;
         double nearestDistanceSq = Double.MAX_VALUE;
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            if (player.level() != level || player.isSpectator() || player.isDeadOrDying()) {
+            if (!isValidRaidTarget(player, level)) {
                 continue;
             }
 
