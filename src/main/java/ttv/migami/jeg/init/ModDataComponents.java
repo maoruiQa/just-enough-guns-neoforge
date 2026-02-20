@@ -21,6 +21,15 @@ public final class ModDataComponents {
                     .build()
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_HEAT = REGISTER.register(
+            "gun_heat",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
+                    .build()
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> ARMORED_HARNESS_PLATING = REGISTER.register(
             "armored_harness_plating",
             () -> DataComponentType.<Float>builder()
