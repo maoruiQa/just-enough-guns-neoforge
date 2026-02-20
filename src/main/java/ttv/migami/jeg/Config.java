@@ -141,7 +141,7 @@ public final class Config {
                 .defineInRange("gunnerShotgunSpreadMultiplier", 0.82D, 0.2D, 1.0D);
         BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = serverBuilder
                 .comment("Projectile Protection level applied to bound terror phantom (guardian). 0 disables this reduction.")
-                .defineInRange("boundTerrorPhantomProjectileProtectionLevel", 2, 0, 20);
+                .defineInRange("boundTerrorPhantomProjectileProtectionLevel", 4, 0, 20);
         serverBuilder.pop();
 
         serverBuilder.push("terrorRaid");
