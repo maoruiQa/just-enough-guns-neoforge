@@ -9,8 +9,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+import javax.annotation.Nullable;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.faction.Faction;
+import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.init.ModEffects;
 
@@ -26,7 +28,11 @@ public final class HomeRaidTriggerManager {
         double radiusSq = (double) radius * (double) radius;
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (!player.hasEffect(ModEffects.FACTION_OMEN) || player.isSpectator()) {
+            if (!player.hasEffect(ModEffects.FACTION_OMEN)) {
+                clearOmenFactionTag(player);
+                continue;
+            }
+            if (player.isSpectator()) {
                 continue;
             }
 
@@ -61,14 +67,44 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            Faction faction = FactionSpawnHelper.getRandomFaction();
+            Faction faction = resolveFactionFromOmen(player);
             if (faction == null) {
+                clearOmenFactionTag(player);
+                player.removeEffect(ModEffects.FACTION_OMEN);
                 continue;
             }
 
             RaidEntity.summonRaidEntity(currentLevel, faction, respawnCenter, true);
+            clearOmenFactionTag(player);
             player.removeEffect(ModEffects.FACTION_OMEN);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));
+        }
+    }
+
+    @Nullable
+    private static Faction resolveFactionFromOmen(ServerPlayer player) {
+        GunnerManager manager = GunnerManager.getInstance();
+        for (String tag : player.getTags()) {
+            if (!tag.startsWith(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX)) {
+                continue;
+            }
+            String factionName = tag.substring(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX.length());
+            if (factionName.isBlank()) {
+                continue;
+            }
+            Faction faction = manager.getFactionByName(factionName);
+            if (faction != null) {
+                return faction;
+            }
+        }
+        return null;
+    }
+
+    private static void clearOmenFactionTag(ServerPlayer player) {
+        for (String tag : java.util.List.copyOf(player.getTags())) {
+            if (tag.startsWith(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX)) {
+                player.removeTag(tag);
+            }
         }
     }
 }
