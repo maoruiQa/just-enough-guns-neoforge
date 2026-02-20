@@ -43,6 +43,8 @@ import ttv.migami.jeg.network.NetworkHandler;
 public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
+    private static final int OVERHEAT_BAR_WIDTH = 82;
+    private static final int OVERHEAT_BAR_HEIGHT = 4;
     private static int hudTicker;
     private static String lastHudText = "";
     private static boolean attackHeldLastTick;
@@ -123,6 +125,14 @@ public final class GunClientEvents {
             return;
         }
 
+        ItemStack held = player.getMainHandItem();
+        if (held.getItem() instanceof GunItem gun && gun.usesOverheatMechanic()) {
+            int heatPercent = gun.getOverheatPercent(held);
+            if (heatPercent > 0) {
+                renderOverheatBar(event.getGuiGraphics(), heatPercent);
+            }
+        }
+
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
             event.setCanceled(true);
         }
@@ -171,7 +181,7 @@ public final class GunClientEvents {
                 if (gun.isAutomatic() || !attackHeldLastTick) {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
-                if (shouldApplyVisualRecoil(gun, attackHeldLastTick, nowTick)) {
+                if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
                     applyLocalVisualRecoil(gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
@@ -241,7 +251,7 @@ public final class GunClientEvents {
         GunStats stats = gun.getStats();
         int reserve = gun.countInventoryAmmo(player);
         boolean infinite = reserve == Integer.MAX_VALUE;
-        String reserveText = infinite ? "∞" : Integer.toString(Math.max(0, reserve));
+        String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
 
         if (stats.usesMagazine()) {
             int magazine = gun.getMagazineAmmo(stack);
@@ -285,12 +295,12 @@ public final class GunClientEvents {
         minecraft.submit(finish).join();
     }
 
-    private static boolean shouldApplyVisualRecoil(GunItem gun, boolean attackHeldLastTick, long nowTick) {
+    private static boolean shouldApplyVisualRecoil(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackHeldLastTick, long nowTick) {
+        if (!canPredictShot(player, stack, gun, attackHeldLastTick)) {
+            return false;
+        }
         int fireDelay = Math.max(1, gun.getStats().fireDelay());
         if (!gun.isAutomatic()) {
-            if (attackHeldLastTick) {
-                return false;
-            }
             nextVisualShotTickMain = nowTick + fireDelay;
             return true;
         }
@@ -308,6 +318,30 @@ public final class GunClientEvents {
         for (int i = 0; i < shotsPerTrigger; i++) {
             GunRecoilHandler.addShot(recoilKick * 2.20F);
         }
+    }
+
+    private static boolean canPredictShot(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackHeldLastTick) {
+        if (player.getCooldowns().isOnCooldown(stack.getItem())) {
+            return false;
+        }
+        if (!gun.isAutomatic() && (attackHeldLastTick || GunItem.isTriggerLocked(stack))) {
+            return false;
+        }
+        if (gun.usesOverheatMechanic() && gun.getOverheatPercent(stack) >= 100) {
+            return false;
+        }
+        return hasShootableAmmo(player, stack, gun);
+    }
+
+    private static boolean hasShootableAmmo(LocalPlayer player, ItemStack stack, GunItem gun) {
+        if (player.getAbilities().instabuild) {
+            return true;
+        }
+        GunStats stats = gun.getStats();
+        if (stats.isInventoryFed() || !stats.usesMagazine()) {
+            return gun.countInventoryAmmo(player) > 0;
+        }
+        return gun.getMagazineAmmo(stack) > 0;
     }
 
     public static void showMuzzleFlash(int entityId, float random) {
@@ -432,6 +466,37 @@ public final class GunClientEvents {
         }
 
         return eye.add(look.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
+    }
+
+    private static void renderOverheatBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int heatPercent) {
+        float ratio = Mth.clamp(heatPercent / 100.0F, 0.0F, 1.0F);
+        int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
+        int y = guiGraphics.guiHeight() - 66;
+        int filled = Math.max(0, Mth.ceil(OVERHEAT_BAR_WIDTH * ratio));
+
+        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
+        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
+
+        if (filled > 0) {
+            guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, overheatColor(ratio));
+        }
+    }
+
+    private static int overheatColor(float ratio) {
+        float clamped = Mth.clamp(ratio, 0.0F, 1.0F);
+        int red;
+        int green;
+        if (clamped < 0.5F) {
+            float t = clamped / 0.5F;
+            red = Mth.floor(255.0F * t);
+            green = 255;
+        } else {
+            float t = (clamped - 0.5F) / 0.5F;
+            red = 255;
+            green = Mth.floor(255.0F * (1.0F - t));
+        }
+        int blue = 32;
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
     private static boolean isCrosshairLayer(RenderGuiLayerEvent event) {
