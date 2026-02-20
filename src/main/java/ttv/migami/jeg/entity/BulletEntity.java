@@ -3,6 +3,7 @@ package ttv.migami.jeg.entity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -29,6 +30,7 @@ import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -73,6 +75,8 @@ public class BulletEntity extends Projectile {
     private static final Identifier TYPHOONEE_ID = Reference.id("typhoonee");
     private static final Identifier COMPOUND_BOW_ID = Reference.id("compound_bow");
     private static final Identifier PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
+    private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
+            && state.getBlock() instanceof LeavesBlock;
     private static final Set<String> DAMAGE_FALLOFF_IDS = Set.of(
             "pump_shotgun",
             "holy_shotgun",
@@ -190,6 +194,7 @@ public class BulletEntity extends Projectile {
         if (!this.level().isClientSide()) {
             Vec3 remainingMotion = motion;
             Vec3 searchStart = currentPos;
+            boolean ignoreLeavesForGun = !gunId.equals(FLAMETHROWER_ID);
 
             // Loop to handle multiple penetrable blocks in the path
             int maxIterations = 20; // Prevent infinite loops
@@ -198,7 +203,7 @@ public class BulletEntity extends Projectile {
                 Vec3 searchEnd = searchStart.add(remainingMotion);
 
                 // Perform precise block raycast that allows bullets to pass through leaves gaps
-                BlockHitResult blockRaycast = performPreciseBlockRaycast(searchStart, searchEnd);
+                BlockHitResult blockRaycast = performPreciseBlockRaycast(searchStart, searchEnd, ignoreLeavesForGun);
                 Vec3 entitySearchEnd = blockRaycast.getType() == HitResult.Type.BLOCK ? blockRaycast.getLocation() : searchEnd;
 
                 if (legacyBulletClass) {
@@ -234,9 +239,12 @@ public class BulletEntity extends Projectile {
                 BlockPos hitPos = blockRaycast.getBlockPos();
                 BlockState hitState = this.level().getBlockState(hitPos);
                 Vec3 hitLocation = blockRaycast.getLocation();
-
-                boolean isPenetrable = ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(
+                boolean ignoredLeaves = ignoreLeavesForGun && IGNORE_LEAVES.test(hitState);
+                boolean isPenetrable = ignoredLeaves || ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(
                     this.level(), hitState);
+                if (!ignoreLeavesForGun && hitState.getBlock() instanceof LeavesBlock) {
+                    isPenetrable = false;
+                }
 
                 if (isPenetrable) {
                     // Penetrable block - send trail through it and continue
@@ -900,16 +908,41 @@ public class BulletEntity extends Projectile {
      * Perform precise block raycast that better handles leaves and other penetrable blocks.
      * This allows bullets to pass through gaps between leaves that would otherwise be blocked.
      */
-    private BlockHitResult performPreciseBlockRaycast(Vec3 start, Vec3 end) {
-        // Use OUTLINE block collision for more lenient detection that allows bullets to pass through leaves gaps
-        ClipContext clipContext = new ClipContext(
-            start,
+    private BlockHitResult performPreciseBlockRaycast(Vec3 start, Vec3 end, boolean ignoreLeaves) {
+        Vec3 rayStart = start;
+        for (int attempts = 0; attempts < 16; attempts++) {
+            ClipContext clipContext = new ClipContext(
+                rayStart,
+                end,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                this
+            );
+            BlockHitResult hitResult = this.level().clip(clipContext);
+            if (hitResult.getType() != HitResult.Type.BLOCK || !ignoreLeaves) {
+                return hitResult;
+            }
+
+            BlockState hitState = this.level().getBlockState(hitResult.getBlockPos());
+            if (!IGNORE_LEAVES.test(hitState)) {
+                return hitResult;
+            }
+
+            Vec3 direction = end.subtract(rayStart);
+            if (direction.lengthSqr() <= 1.0E-7D) {
+                return hitResult;
+            }
+            rayStart = hitResult.getLocation().add(direction.normalize().scale(0.05D));
+        }
+
+        ClipContext fallback = new ClipContext(
+            rayStart,
             end,
             ClipContext.Block.OUTLINE,
             ClipContext.Fluid.NONE,
             this
         );
-        return this.level().clip(clipContext);
+        return this.level().clip(fallback);
     }
 
     @Nullable
