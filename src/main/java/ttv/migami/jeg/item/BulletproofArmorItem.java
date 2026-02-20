@@ -12,12 +12,16 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -30,26 +34,30 @@ import org.jetbrains.annotations.Nullable;
 
 public class BulletproofArmorItem extends Item {
     public enum Tier {
-        I("i", 1, 1, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER),
-        II("ii", 2, 2, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER),
-        III("iii", 3, 4, 165, 240, SoundEvents.ARMOR_EQUIP_IRON),
-        IV("iv", 4, 5, 165, 240, SoundEvents.ARMOR_EQUIP_IRON),
-        V("v", 5, 7, 165, 240, SoundEvents.ARMOR_EQUIP_DIAMOND),
-        VI("vi", 6, 8, 203, 320, SoundEvents.ARMOR_EQUIP_NETHERITE);
+        I("i", 1, 1, 55, 80, 0, 1, SoundEvents.ARMOR_EQUIP_LEATHER),
+        II("ii", 2, 2, 55, 80, 1, 2, SoundEvents.ARMOR_EQUIP_LEATHER),
+        III("iii", 3, 4, 165, 240, 1, 3, SoundEvents.ARMOR_EQUIP_IRON),
+        IV("iv", 4, 5, 165, 240, 1, 4, SoundEvents.ARMOR_EQUIP_IRON),
+        V("v", 5, 7, 165, 240, 2, 4, SoundEvents.ARMOR_EQUIP_DIAMOND),
+        VI("vi", 6, 8, 203, 320, 2, 5, SoundEvents.ARMOR_EQUIP_NETHERITE);
 
         private final String suffix;
         private final int tierNumber;
         private final int projectileLevel;
         private final int helmetDurability;
         private final int vestDurability;
+        private final int helmetArmor;
+        private final int vestArmor;
         private final Holder<SoundEvent> equipSound;
 
-        Tier(String suffix, int tierNumber, int projectileLevel, int helmetDurability, int vestDurability, Holder<SoundEvent> equipSound) {
+        Tier(String suffix, int tierNumber, int projectileLevel, int helmetDurability, int vestDurability, int helmetArmor, int vestArmor, Holder<SoundEvent> equipSound) {
             this.suffix = suffix;
             this.tierNumber = tierNumber;
             this.projectileLevel = projectileLevel;
             this.helmetDurability = helmetDurability;
             this.vestDurability = vestDurability;
+            this.helmetArmor = helmetArmor;
+            this.vestArmor = vestArmor;
             this.equipSound = equipSound;
         }
 
@@ -69,6 +77,10 @@ public class BulletproofArmorItem extends Item {
             return slot == EquipmentSlot.HEAD ? helmetDurability : vestDurability;
         }
 
+        public int armor(EquipmentSlot slot) {
+            return slot == EquipmentSlot.HEAD ? helmetArmor : vestArmor;
+        }
+
         public Holder<SoundEvent> equipSound() {
             return equipSound;
         }
@@ -76,8 +88,6 @@ public class BulletproofArmorItem extends Item {
 
     private final Tier tier;
     private final EquipmentSlot slot;
-    @Nullable
-    private static Holder<Enchantment> PROJECTILE_PROTECTION;
 
     public BulletproofArmorItem(Tier tier, EquipmentSlot slot, Properties properties) {
         super(applyProperties(properties, tier, slot));
@@ -92,10 +102,35 @@ public class BulletproofArmorItem extends Item {
                 .setEquipOnInteract(true)
                 .setDamageOnHurt(true)
                 .build();
+        ItemAttributeModifiers attributes = buildArmorModifiers(tier, slot);
         return base
                 .stacksTo(1)
                 .durability(tier.durability(slot))
-                .component(DataComponents.EQUIPPABLE, equippable);
+                .component(DataComponents.EQUIPPABLE, equippable)
+                .component(DataComponents.ATTRIBUTE_MODIFIERS, attributes);
+    }
+
+    private static ItemAttributeModifiers buildArmorModifiers(Tier tier, EquipmentSlot slot) {
+        int armor = tier.armor(slot);
+        if (armor <= 0) {
+            return ItemAttributeModifiers.EMPTY;
+        }
+
+        return ItemAttributeModifiers.builder()
+                .add(
+                        Attributes.ARMOR,
+                        new AttributeModifier(
+                                ttv.migami.jeg.Reference.id("bulletproof_armor_" + tier.suffix() + "_" + slotKey(slot)),
+                                armor,
+                                AttributeModifier.Operation.ADD_VALUE
+                        ),
+                        EquipmentSlotGroup.bySlot(slot)
+                )
+                .build();
+    }
+
+    private static String slotKey(EquipmentSlot slot) {
+        return slot == EquipmentSlot.HEAD ? "helmet" : "vest";
     }
 
     public Tier tier() {
@@ -120,13 +155,8 @@ public class BulletproofArmorItem extends Item {
 
     @Nullable
     private static Holder<Enchantment> resolveProjectileProtection(RegistryAccess registryAccess) {
-        if (PROJECTILE_PROTECTION != null) {
-            return PROJECTILE_PROTECTION;
-        }
-
         HolderLookup<Enchantment> lookup = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
-        PROJECTILE_PROTECTION = lookup.get(Enchantments.PROJECTILE_PROTECTION).orElse(null);
-        return PROJECTILE_PROTECTION;
+        return lookup.get(Enchantments.PROJECTILE_PROTECTION).orElse(null);
     }
 
     private void ensureDefaultEnchant(ItemStack stack, RegistryAccess registryAccess) {
@@ -136,17 +166,15 @@ public class BulletproofArmorItem extends Item {
         }
 
         ItemEnchantments current = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        int existing = current.getLevel(protection);
-        if (existing == tier.projectileLevel()) {
-            return;
-        }
-
         ItemEnchantments.Mutable updated = new ItemEnchantments.Mutable(current);
-        updated.removeIf(holder -> holder == protection);
+        updated.removeIf(holder -> holder.is(Enchantments.PROJECTILE_PROTECTION));
         if (tier.projectileLevel() > 0) {
             updated.set(protection, tier.projectileLevel());
         }
-        stack.set(DataComponents.ENCHANTMENTS, updated.toImmutable());
+        ItemEnchantments normalized = updated.toImmutable();
+        if (!normalized.equals(current)) {
+            stack.set(DataComponents.ENCHANTMENTS, normalized);
+        }
     }
 
     @Override
