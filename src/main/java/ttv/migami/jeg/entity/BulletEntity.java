@@ -91,7 +91,7 @@ public class BulletEntity extends Projectile {
     );
     private static final double MIN_TRAIL_START_DISTANCE_SQR = 0.45D * 0.45D;
     private static final float ROCKET_EXPLOSION_POWER = 6.8F;
-    private static final float ROCKET_DIRECT_HIT_DAMAGE = 40.0F;
+    private static final float ROCKET_DIRECT_HIT_DAMAGE = 70.0F;
     private static final float ROCKET_BLAST_BASE_DAMAGE = 32.0F;
     private static final double ROCKET_BLAST_RADIUS = 11.0D;
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;

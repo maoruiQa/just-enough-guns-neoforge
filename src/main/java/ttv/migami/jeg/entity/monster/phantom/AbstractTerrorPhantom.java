@@ -75,7 +75,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final int IDLE_HEAL_DELAY_TICKS = 20 * 60;
     private static final int IDLE_HEAL_INTERVAL_TICKS = 40;
     private static final float IDLE_HEAL_AMOUNT = 1.0F;
-    private static final int DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = 4;
+    private static final int DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = 5;
     private static final long DESPAWN_IF_UNHIT_TICKS = 24000L;
     private static final String TAG_LAST_ATTACKED_GAME_TIME = "LastAttackedGameTime";
     private static final int TARGET_REACQUIRE_INTERVAL_TICKS = 20;
