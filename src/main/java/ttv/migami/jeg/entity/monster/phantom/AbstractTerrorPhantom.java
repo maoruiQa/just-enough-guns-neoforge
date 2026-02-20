@@ -78,6 +78,8 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final int DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = 2;
     private static final long DESPAWN_IF_UNHIT_TICKS = 24000L;
     private static final String TAG_LAST_ATTACKED_GAME_TIME = "LastAttackedGameTime";
+    private static final int TARGET_REACQUIRE_INTERVAL_TICKS = 20;
+    private static final double TARGET_REACQUIRE_RANGE = 96.0D;
     private int summonCooldown = SUMMON_INTERVAL_TICKS;
     private final ServerBossEvent bossInfo = new ServerBossEvent(
             this.getDisplayName(),
@@ -377,10 +379,60 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             return;
         }
 
+        refreshCombatTarget(serverLevel);
         LivingEntity target = this.getTarget();
-        if (target != null && target.isAlive()) {
+        if (target != null) {
             trySummonReinforcements(serverLevel, target);
         }
+    }
+
+    private void refreshCombatTarget(ServerLevel level) {
+        LivingEntity current = this.getTarget();
+        if (!isInvalidCombatTarget(current)) {
+            return;
+        }
+
+        if (current != null) {
+            super.setTarget(null);
+        }
+
+        if (this.tickCount % TARGET_REACQUIRE_INTERVAL_TICKS != 0) {
+            return;
+        }
+
+        Player reacquired = findClosestAttackablePlayer(level);
+        if (reacquired != null) {
+            super.setTarget(reacquired);
+        }
+    }
+
+    private boolean isInvalidCombatTarget(@Nullable LivingEntity target) {
+        if (target == null || !target.isAlive()) {
+            return true;
+        }
+        if (target instanceof Player player && (player.isCreative() || player.isSpectator())) {
+            return true;
+        }
+        return !this.canAttack(target);
+    }
+
+    @Nullable
+    private Player findClosestAttackablePlayer(ServerLevel level) {
+        Player bestTarget = null;
+        double bestDistance = Double.MAX_VALUE;
+
+        for (Player candidate : level.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(TARGET_REACQUIRE_RANGE))) {
+            if (isInvalidCombatTarget(candidate)) {
+                continue;
+            }
+
+            double distance = this.distanceToSqr(candidate);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestTarget = candidate;
+            }
+        }
+        return bestTarget;
     }
 
     @Override
