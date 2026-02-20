@@ -232,7 +232,6 @@ public final class PatrolEncounterManager {
 
     private static boolean maintainPatrolMob(ServerLevel level, PatrolContext context, UUID mobId, Mob mob, @Nullable ServerPlayer preferredTarget) {
         if (!isValidPatrolTarget(level, preferredTarget)) {
-            context.clearMobTracking(mobId);
             return false;
         }
 
