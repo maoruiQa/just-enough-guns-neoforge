@@ -1,10 +1,12 @@
 package ttv.migami.jeg.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -174,15 +176,32 @@ public class GrenadeEntity extends ThrowableItemProjectile {
             ExplosionInteraction interaction = this.launched ? ExplosionInteraction.TNT : ExplosionInteraction.MOB;
             float visualPower = Math.max(1.2F, this.explosionPower * 0.5F);
             ServerLevel serverLevel = (ServerLevel) this.level();
-            serverLevel.sendParticles(ModParticleTypes.BIG_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 2, 0.2D, 0.2D, 0.2D, 0.01D);
-            serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 14, 0.8D, 0.8D, 0.8D, 0.12D);
-            serverLevel.sendParticles(ModParticleTypes.SMOKE.get(), this.getX(), this.getY(), this.getZ(), 10, 1.0D, 1.0D, 1.0D, 0.02D);
-            serverLevel.sendParticles(ModParticleTypes.FIRE.get(), this.getX(), this.getY(), this.getZ(), 8, 0.7D, 0.7D, 0.7D, 0.04D);
+            sendLongDistanceParticles(serverLevel, ModParticleTypes.BIG_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 2, 0.2D, 0.2D, 0.2D, 0.01D);
+            sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 14, 0.8D, 0.8D, 0.8D, 0.12D);
+            sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), this.getX(), this.getY(), this.getZ(), 10, 1.0D, 1.0D, 1.0D, 0.02D);
+            sendLongDistanceParticles(serverLevel, ModParticleTypes.FIRE.get(), this.getX(), this.getY(), this.getZ(), 8, 0.7D, 0.7D, 0.7D, 0.04D);
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), visualPower, interaction);
             applyBalancedBlastDamage();
             igniteNearby();
         }
         this.discard();
+    }
+
+    private static <T extends ParticleOptions> void sendLongDistanceParticles(
+            ServerLevel serverLevel,
+            T particle,
+            double x,
+            double y,
+            double z,
+            int count,
+            double xOffset,
+            double yOffset,
+            double zOffset,
+            double speed
+    ) {
+        for (ServerPlayer player : serverLevel.players()) {
+            serverLevel.sendParticles(player, particle, true, false, x, y, z, count, xOffset, yOffset, zOffset, speed);
+        }
     }
 
 
