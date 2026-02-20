@@ -342,7 +342,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
                 .add(Attributes.MAX_HEALTH, maxHealth)
                 .add(Attributes.MOVEMENT_SPEED, 0.45D)
                 .add(Attributes.FOLLOW_RANGE, 80.0D) // Increased from 52 to 80 for better player detection
-                .add(Attributes.ARMOR, 4.0D);
+                .add(Attributes.ARMOR, 6.0D);
     }
 
     @Override
