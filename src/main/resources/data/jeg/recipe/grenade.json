@@ -1,0 +1,19 @@
+﻿{
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "misc",
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:tnt"
+                        },
+                        {
+                            "item":  "minecraft:slime_ball"
+                        },
+                        {
+                            "item":  "minecraft:iron_ingot"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:grenade",
+                   "count":  4
+               }
+}

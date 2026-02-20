@@ -1,0 +1,24 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "EBR",
+                    " RB",
+                    "  E"
+                ],
+    "key":  {
+                "E":  {
+                          "item":  "minecraft:echo_shard"
+                      },
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:supersonic_shotgun",
+                   "count":  1
+               }
+}

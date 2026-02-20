@@ -1,0 +1,24 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "BBR",
+                    " RF",
+                    "  B"
+                ],
+    "key":  {
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone"
+                      },
+                "F":  {
+                          "item":  "minecraft:flint"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:combat_rifle",
+                   "count":  1
+               }
+}

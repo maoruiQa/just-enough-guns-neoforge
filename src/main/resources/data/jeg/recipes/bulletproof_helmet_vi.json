@@ -1,0 +1,28 @@
+﻿{
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "equipment",
+    "ingredients":  [
+                        {
+                            "item":  "jeg:bulletproof_helmet_v"
+                        },
+                        {
+                            "item":  "minecraft:netherite_ingot"
+                        },
+                        {
+                            "item":  "minecraft:netherite_scrap"
+                        },
+                        {
+                            "item":  "minecraft:obsidian"
+                        },
+                        {
+                            "item":  "minecraft:iron_bars"
+                        },
+                        {
+                            "item":  "minecraft:iron_ingot"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:bulletproof_helmet_vi",
+                   "count":  1
+               }
+}

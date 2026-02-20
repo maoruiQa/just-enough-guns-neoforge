@@ -1,0 +1,30 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "BDR",
+                    "BLH",
+                    "  L"
+                ],
+    "key":  {
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "D":  {
+                          "item":  "minecraft:dispenser"
+                      },
+                "H":  {
+                          "item":  "minecraft:hopper"
+                      },
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:bolt_action_rifle",
+                   "count":  1
+               }
+}

@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "ttv.migami.jeg.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MobAccessor",
+    "ServerGamePacketListenerImplMixin"
+  ],
+  "client": [
+    "GameRendererMixin",
+    "ItemInHandRendererMixin",
+    "PlayerRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

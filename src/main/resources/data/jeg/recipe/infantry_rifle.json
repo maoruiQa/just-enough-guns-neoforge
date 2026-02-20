@@ -1,0 +1,27 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "BIL",
+                    "LRB",
+                    "  L"
+                ],
+    "key":  {
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "I":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      }
+            },
+    "result":  {
+                   "count":  1,
+                   "id":  "jeg:infantry_rifle"
+               }
+}

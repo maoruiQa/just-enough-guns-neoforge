@@ -1,0 +1,30 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "IIF",
+                    "RGL",
+                    "  L"
+                ],
+    "key":  {
+                "I":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone"
+                      },
+                "G":  {
+                          "item":  "minecraft:gunpowder"
+                      },
+                "F":  {
+                          "item":  "minecraft:flint"
+                      },
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:pump_shotgun",
+                   "count":  1
+               }
+}

@@ -1,0 +1,19 @@
+﻿{
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "misc",
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:copper_ingot"
+                        },
+                        {
+                            "item":  "minecraft:copper_ingot"
+                        },
+                        {
+                            "item":  "minecraft:gunpowder"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:rifle_ammo",
+                   "count":  28
+               }
+}

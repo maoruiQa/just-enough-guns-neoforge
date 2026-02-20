@@ -1,0 +1,30 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "IIF",
+                    "SGL",
+                    "  L"
+                ],
+    "key":  {
+                "I":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "S":  {
+                          "item":  "minecraft:string"
+                      },
+                "G":  {
+                          "item":  "minecraft:gunpowder"
+                      },
+                "F":  {
+                          "item":  "minecraft:flint"
+                      },
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:waterpipe_shotgun",
+                   "count":  1
+               }
+}

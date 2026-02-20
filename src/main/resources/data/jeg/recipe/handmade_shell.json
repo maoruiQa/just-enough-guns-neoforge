@@ -1,0 +1,19 @@
+﻿{
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "misc",
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:paper"
+                        },
+                        {
+                            "item":  "minecraft:string"
+                        },
+                        {
+                            "item":  "minecraft:gunpowder"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:handmade_shell",
+                   "count":  4
+               }
+}
