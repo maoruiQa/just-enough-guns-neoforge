@@ -10,7 +10,7 @@ public enum GunCategory {
     SNIPER(1.50F, 0.45F, 120.0D),
     LMG(1.80F, 0.85F, 96.0D),
     SHOTGUN(1.60F, 0.90F, 40.0D),
-    HEAVY(1.45F, 0.70F, 300.0D),
+    HEAVY(1.45F, 0.70F, 96.0D),
     SPECIAL(1.00F, 0.65F, 60.0D);
 
     private final float hipMultiplier;

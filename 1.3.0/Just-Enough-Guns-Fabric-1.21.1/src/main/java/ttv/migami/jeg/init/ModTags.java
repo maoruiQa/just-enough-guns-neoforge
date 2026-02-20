@@ -4,7 +4,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import ttv.migami.jeg.Reference;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class ModTags
 {
-    public static Map<Identifier, TagKey<Block>> blockTagCache = new HashMap<>();
+    public static Map<ResourceLocation, TagKey<Block>> blockTagCache = new HashMap<>();
 
     public static class Blocks
     {
@@ -29,7 +29,7 @@ public class ModTags
 
         private static TagKey<Block> tag(String name)
         {
-            return TagKey.create(Registries.BLOCK, Identifier.tryParse(Reference.MOD_ID + ":" + name));
+            return TagKey.create(Registries.BLOCK, ResourceLocation.tryParse(Reference.MOD_ID + ":" + name));
         }
     }
 
@@ -45,7 +45,7 @@ public class ModTags
 
         public static TagKey<EntityType<?>> tag(String name)
         {
-            return TagKey.create(Registries.ENTITY_TYPE, Identifier.tryParse(Reference.MOD_ID + ":" + name));
+            return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.tryParse(Reference.MOD_ID + ":" + name));
         }
     }
 
@@ -55,15 +55,15 @@ public class ModTags
 
         public static TagKey<Item> tag(String name)
         {
-            return TagKey.create(Registries.ITEM, Identifier.tryParse(Reference.MOD_ID + ":" + name));
+            return TagKey.create(Registries.ITEM, ResourceLocation.tryParse(Reference.MOD_ID + ":" + name));
         }
     }
 
     public static TagKey<Block> getBlockTag(String name) {
-        return getBlockTag(Identifier.tryParse(Reference.MOD_ID + ":" + name));
+        return getBlockTag(ResourceLocation.tryParse(Reference.MOD_ID + ":" + name));
     }
 
-    public static TagKey<Block> getBlockTag(Identifier resourceLocation) {
+    public static TagKey<Block> getBlockTag(ResourceLocation resourceLocation) {
         if (!blockTagCache.containsKey(resourceLocation)) {
             blockTagCache.put(resourceLocation, TagKey.create(Registries.BLOCK, resourceLocation));
         }

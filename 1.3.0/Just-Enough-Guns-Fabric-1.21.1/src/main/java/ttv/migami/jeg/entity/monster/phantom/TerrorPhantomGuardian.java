@@ -1,38 +1,34 @@
 package ttv.migami.jeg.entity.monster.phantom;
 
-import java.util.EnumSet;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
+
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.projectile.Projectile;
-import ttv.migami.jeg.Config;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
-import ttv.migami.jeg.entity.GrenadeEntity;
 
 /**
  * Structure-bound Terror Phantom guardian variant with improved AI.
@@ -84,17 +80,17 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     private final java.util.Set<java.util.UUID> engagedPlayers = new java.util.HashSet<>();
     private int idleRecenterTicks = 0;
     private int guardianDeathTicks = 0;
-    // Death circling bombing fields
-    private Vec3 deathCirclingCenter;
-    private double deathCirclingAngle;
-    private double deathCirclingRadius;
+
+    // Store the player who killed this phantom for raid targeting
+    @Nullable
+    private Player killer;
 
     public TerrorPhantomGuardian(EntityType<? extends TerrorPhantomGuardian> type, Level level) {
         super(type, level);
     }
 
     @Override
-    protected Identifier getVariantTexture() {
+    protected ResourceLocation getVariantTexture() {
         return Reference.id("textures/entity/phantom_gunner/phantom_gunner_friendly.png");
     }
 
@@ -123,7 +119,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     protected boolean shouldSpawnGunnerSkeletonsOnDeath() {
-        return false; // Guardian spawns phantom gunners, not skeletons
+        return false;
     }
 
     @Override
@@ -133,133 +129,42 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     protected boolean canPerformBombing() {
-        return false; // Guardian cannot perform dive bombing attacks
+        return false; // Guardian doesn't bomb
     }
 
     @Override
     protected boolean shouldTriggerRaidOnDeath() {
-        return true; // Guardian should trigger air raid on death
+        return false;
     }
 
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
+        // Store the killer for raid targeting
+        this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
         // Trigger air raid for guardian death
-        Player killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
-        TerrorRaidManager.triggerAirRaid(level, this.blockPosition(), killer);
+        TerrorRaidManager.triggerAirRaid(level, this.blockPosition(), this.killer);
     }
 
-    @Override
-    public void die(DamageSource source) {
-        // Call super.die() first to ensure proper boss bar cleanup and death handling
-        super.die(source);
-
-        // Handle guardian-specific death behavior
-        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
-
-            // Start guardian death sequence
-            this.guardianDeathTicks = 0;
-            this.setDeltaMovement(Vec3.ZERO);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        // Handle guardian-specific death animation
-        if (!this.level().isClientSide() && this.getHealth() <= 0 && this.guardianDeathTicks < GUARDIAN_DEATH_DURATION) {
-            tickGuardianDeathAnimation();
-            return; // Skip normal ticking during guardian death sequence
-        }
-    }
-
-  /**
-     * Handles the circling bombing behavior during the first 60 ticks of guardian death.
-     * The guardian circles around its death point and drops grenades periodically.
-     */
-    private void performDeathCirclingBombing() {
-        if (!(this.level() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        // Store death position for circling center
-        if (this.deathCirclingCenter == null) {
-            this.deathCirclingCenter = this.position();
-            this.deathCirclingAngle = 0.0D;
-            this.deathCirclingRadius = 20.0D;
-        }
-
-        // Update circling angle - make one complete circle over 60 ticks
-        this.deathCirclingAngle += Math.toRadians(360.0D / GUARDIAN_DEATH_HOVER_TICKS);
-
-        // Calculate new position for circling
-        double targetX = this.deathCirclingCenter.x + Math.cos(this.deathCirclingAngle) * this.deathCirclingRadius;
-        double targetZ = this.deathCirclingCenter.z + Math.sin(this.deathCirclingAngle) * this.deathCirclingRadius;
-        double targetY = this.deathCirclingCenter.y;
-
-        // Apply movement using move control to maintain smooth flight
-        this.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 1.5D);
-
-        // Drop grenades every 10 ticks (6 grenades total during circling phase)
-        if (this.guardianDeathTicks % 10 == 0) {
-            // Create grenade with death animation parameters
-            GrenadeEntity grenade = new GrenadeEntity(serverLevel, this, 3.0F, 40, true);
-            Vec3 origin = this.position().add(0.0D, -2.0D, 0.0D);
-            grenade.initialisePosition(origin);
-
-            // Give grenade slight downward velocity
-            grenade.setDeltaMovement(
-                this.random.nextGaussian() * 0.1D,
-                -0.3D,
-                this.random.nextGaussian() * 0.1D
-            );
-
-            serverLevel.addFreshEntity(grenade);
-            serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.TNT_PRIMED, SoundSource.HOSTILE, 1.0F, 0.8F + this.random.nextFloat() * 0.2F);
-        }
-
-        // Add soul fire particles during circling
-        if (this.guardianDeathTicks % 3 == 0) {
-            serverLevel.sendParticles(
-                ParticleTypes.SOUL_FIRE_FLAME,
-                this.getX(),
-                this.getY() + 1.0D,
-                this.getZ(),
-                8,
-                0.3D,
-                0.3D,
-                0.3D,
-                0.01D
-            );
-        }
-    }
-  private void tickGuardianDeathAnimation() {
+    protected void tickDeathAnimation() {
         this.guardianDeathTicks++;
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPos(this.getX(), this.getY(), this.getZ());
 
-        if (this.guardianDeathTicks <= GUARDIAN_DEATH_HOVER_TICKS) {
-            // 0-60 ticks: circling bombing phase
-            performDeathCirclingBombing();
-        } else {
-            // 60+ ticks: final phase with explosions (original behavior)
-            this.setDeltaMovement(Vec3.ZERO);
-            this.setPos(this.getX(), this.getY(), this.getZ());
-
-            if (this.level() instanceof ServerLevel serverLevel) {
-                if (this.guardianDeathTicks % 5 == 0) {
-                    serverLevel.sendParticles(
-                        ParticleTypes.SOUL_FIRE_FLAME,
-                        this.getX(),
-                        this.getY() + 2.0D,
-                        this.getZ(),
-                        18,
-                        0.6D,
-                        0.6D,
-                        0.6D,
-                        0.01D
-                    );
-                    serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 0.8F + serverLevel.random.nextFloat() * 0.2F);
-                    serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
-                }
+        if (this.level() instanceof ServerLevel serverLevel) {
+            if (this.guardianDeathTicks % 5 == 0) {
+                serverLevel.sendParticles(
+                    ParticleTypes.SOUL_FIRE_FLAME,
+                    this.getX(),
+                    this.getY() + 2.0D,
+                    this.getZ(),
+                    18,
+                    0.6D,
+                    0.6D,
+                    0.6D,
+                    0.01D
+                );
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 0.8F + serverLevel.random.nextFloat() * 0.2F);
+                serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
             }
         }
 
@@ -267,26 +172,16 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
             triggerGuardianFinale();
         }
     }
+
     private void triggerGuardianFinale() {
         if (this.guardianFinalExplosion) {
             return;
         }
         this.guardianFinalExplosion = true;
-
         if (this.level() instanceof ServerLevel serverLevel) {
-            // Final explosion
             serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 4.5F, Level.ExplosionInteraction.MOB);
-
-            // Spawn phantom gunners
-            if (shouldSpawnPhantomGunnersOnDeath()) {
-                spawnPhantomGunners(serverLevel);
-            }
-
-            // Trigger air raid (this also handles loot barrels)
-            Player killer = this.getKillCredit() instanceof Player ? (Player) this.getKillCredit() : null;
-            TerrorRaidManager.triggerAirRaid(serverLevel, this.blockPosition(), killer);
+            TerrorRaidManager.triggerAirRaid(serverLevel, this.blockPosition(), this.killer);
         }
-
         this.guardianDeathTicks = Math.max(this.guardianDeathTicks, GUARDIAN_DEATH_DURATION);
         this.remove(RemovalReason.KILLED);
     }
@@ -294,50 +189,6 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     @Override
     protected void onSpawned(ServerLevel level, BlockPos spawnPos) {
         this.setPersistenceRequired();
-    }
-
-    /**
-     * Spawn phantom gunners on death - consistent with original 1.20.1 behavior
-     */
-    private void spawnPhantomGunners(ServerLevel level) {
-        int count = 2 + level.random.nextInt(2); // Spawn 2-3 phantom gunners like original
-        BlockPos origin = this.blockPosition();
-
-        // Find and target nearest player
-        LivingEntity target = level.getNearestEntity(Player.class, TargetingConditions.DEFAULT, null,
-            origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
-
-        for (int i = 0; i < count; i++) {
-            PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
-            if (gunner == null) {
-                continue;
-            }
-            Vec3 offset = Vec3.directionFromRotation(0.0F, level.random.nextFloat() * 360.0F).scale(6.0D + level.random.nextDouble() * 4.0D);
-            Vec3 spawnCenter = this.position().add(offset.x, 4.0D + level.random.nextInt(4), offset.z);
-            BlockPos spawnPos = BlockPos.containing(spawnCenter);
-            gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
-            gunner.setYRot(level.random.nextFloat() * 360.0F);
-            gunner.yRotO = gunner.getYRot();
-            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
-
-            // Set target to nearest player
-            if (target != null) {
-                gunner.setTarget(target);
-            }
-
-            level.addFreshEntity(gunner);
-        }
-        playSummonEffects(level, this.blockPosition().above(4));
-    }
-
-    private void playSummonEffects(ServerLevel level, BlockPos center) {
-        level.playSound(null, center, SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.8F, 0.6F + level.random.nextFloat() * 0.3F);
-        for (int i = 0; i < 12; i++) {
-            double dx = center.getX() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
-            double dy = center.getY() + level.random.nextDouble() * 2.0D;
-            double dz = center.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
-            level.sendParticles(ParticleTypes.SMOKE, dx, dy, dz, 1, 0.0D, 0.05D, 0.0D, 0.02D);
-        }
     }
 
     /**
@@ -472,6 +323,25 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     }
 
     @Override
+    public void die(DamageSource source) {
+        // Call super.die() first to ensure proper boss bar cleanup and death handling
+        super.die(source);
+
+        // Handle guardian-specific death behavior
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
+
+            // Start guardian death sequence
+            this.guardianDeathTicks = 0;
+            this.setDeltaMovement(Vec3.ZERO);
+        }
+    }
+
+    private void explodeImmediately(ServerLevel level) {
+        level.explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
+    }
+
+    // Note: Method is not @Override because signature changed in 1.21.1
+    // Parent customServerAiStep() takes no parameters
     protected void customServerAiStep(ServerLevel level) {
         resolveDeckAnchor(level);
         if (this.anchorPos != null) {
@@ -498,7 +368,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
                 idleRecenterTicks = 0;
             }
         }
-        super.customServerAiStep(level);
+        super.customServerAiStep();
     }
 
     private void recenterAboveAnchor(ServerLevel level) {
@@ -738,8 +608,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        float adjustedAmount = applyProjectileProtectionReduction(source, amount);
-        boolean damaged = super.hurtServer(level, source, adjustedAmount);
+        boolean damaged = super.hurtServer(level, source, amount);
         if (!damaged || amount <= 0.0F || this.anchorPos == null) {
             return damaged;
         }
@@ -771,22 +640,6 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         return damaged;
     }
 
-    private static float applyProjectileProtectionReduction(DamageSource source, float amount) {
-        if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
-            return amount;
-        }
-
-        int level = Config.boundTerrorPhantomProjectileProtectionLevel();
-        if (level <= 0) {
-            return amount;
-        }
-
-        // Match vanilla-like projectile protection scaling: EPF = level * 2, capped at 20; reduction = EPF / 25.
-        int epf = Math.min(20, level * 2);
-        float reduction = (float) epf / 25.0F;
-        return amount * (1.0F - reduction);
-    }
-
     private boolean isValidCombatTarget(Player player) {
         return player.isAlive() && !player.isSpectator() && !player.isCreative();
     }
@@ -800,7 +653,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
+    public void addAdditionalSaveData(CompoundTag output) {
         super.addAdditionalSaveData(output);
         output.putInt(TAG_TETHER_RADIUS, this.tetherRadius);
         output.putInt(TAG_DECK_HEIGHT, this.deckHeight);
@@ -813,14 +666,14 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
+    public void readAdditionalSaveData(CompoundTag input) {
         super.readAdditionalSaveData(input);
-        this.tetherRadius = input.getIntOr(TAG_TETHER_RADIUS, this.tetherRadius <= 0 ? DEFAULT_TETHER_RADIUS : this.tetherRadius);
-        this.deckHeight = input.getIntOr(TAG_DECK_HEIGHT, this.deckHeight);
-        boolean resolved = input.getBooleanOr(TAG_DECK_RESOLVED, false);
-        int anchorX = input.getIntOr(TAG_ANCHOR_X, Integer.MIN_VALUE);
-        int anchorY = input.getIntOr(TAG_ANCHOR_Y, Integer.MIN_VALUE);
-        int anchorZ = input.getIntOr(TAG_ANCHOR_Z, Integer.MIN_VALUE);
+        this.tetherRadius = input.contains(TAG_TETHER_RADIUS) ? input.getInt(TAG_TETHER_RADIUS) : this.tetherRadius <= 0 ? DEFAULT_TETHER_RADIUS : this.tetherRadius;
+        this.deckHeight = input.contains(TAG_DECK_HEIGHT) ? input.getInt(TAG_DECK_HEIGHT) : this.deckHeight;
+        boolean resolved = input.contains(TAG_DECK_RESOLVED) ? input.getBoolean(TAG_DECK_RESOLVED) : false;
+        int anchorX = input.contains(TAG_ANCHOR_X) ? input.getInt(TAG_ANCHOR_X) : Integer.MIN_VALUE;
+        int anchorY = input.contains(TAG_ANCHOR_Y) ? input.getInt(TAG_ANCHOR_Y) : Integer.MIN_VALUE;
+        int anchorZ = input.contains(TAG_ANCHOR_Z) ? input.getInt(TAG_ANCHOR_Z) : Integer.MIN_VALUE;
 
         if (anchorX != Integer.MIN_VALUE && anchorY != Integer.MIN_VALUE && anchorZ != Integer.MIN_VALUE) {
             BlockPos anchor = new BlockPos(anchorX, anchorY, anchorZ);
@@ -849,9 +702,41 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         }
     }
 
-    @Override
-    public boolean isDying() {
-        // Guardian uses custom death sequence, but still reports parent death state for compatibility
-        return this.getHealth() <= 0 || this.guardianDeathTicks > 0;
+    private void spawnPhantomGunners(ServerLevel level) {
+        int count = 1 + level.random.nextInt(2);
+        BlockPos origin = this.blockPosition();
+        // Find and target nearest player
+        LivingEntity target = level.getNearestEntity(Player.class, TargetingConditions.DEFAULT, null,
+            origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
+        for (int i = 0; i < count; i++) {
+            PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
+            if (gunner == null) {
+                continue;
+            }
+            Vec3 offset = Vec3.directionFromRotation(0.0F, level.random.nextFloat() * 360.0F).scale(6.0D + level.random.nextDouble() * 4.0D);
+            Vec3 spawnCenter = this.position().add(offset.x, 4.0D + level.random.nextInt(4), offset.z);
+            BlockPos spawnPos = BlockPos.containing(spawnCenter);
+            gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
+            gunner.setYRot(level.random.nextFloat() * 360.0F);
+            gunner.yRotO = gunner.getYRot();
+            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
+            // Set target to nearest player
+            if (target != null) {
+                gunner.setTarget(target);
+            }
+            level.addFreshEntity(gunner);
+        }
+        playSummonEffects(level, this.blockPosition().above(4));
     }
+
+    private void playSummonEffects(ServerLevel level, BlockPos center) {
+        level.playSound(null, center, SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.8F, 0.6F + level.random.nextFloat() * 0.3F);
+        for (int i = 0; i < 12; i++) {
+            double dx = center.getX() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
+            double dy = center.getY() + level.random.nextDouble() * 2.0D;
+            double dz = center.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
+            level.sendParticles(ParticleTypes.SMOKE, dx, dy, dz, 1, 0.0D, 0.05D, 0.0D, 0.02D);
+        }
+    }
+
 }

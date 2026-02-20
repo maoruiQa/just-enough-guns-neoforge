@@ -3,13 +3,13 @@ package ttv.migami.jeg.entity.monster.phantom;
 import java.util.EnumSet;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.EntityType;
@@ -33,10 +33,10 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
@@ -45,12 +45,12 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 
 public class PhantomGunner extends Phantom implements GeoEntity {
-    private static final Identifier DEFAULT_GUN = Reference.id("phantom_smg");
+    private static final ResourceLocation DEFAULT_GUN = Reference.id("phantom_smg");
+    private static final ResourceLocation GEO_TEXTURE = Reference.id("textures/entity/phantom_gunner/phantom_gunner.png");
     private static final float EXPLOSION_POWER = 2.6F;
-    private static final Identifier GEO_TEXTURE = Reference.id("textures/entity/phantom_gunner/phantom_gunner.png");
-
     private static final String GECKO_CONTROLLER = "Idle";
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
+
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
 
     private GunStats cachedStats;
@@ -73,6 +73,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(
+                this,
                 GECKO_CONTROLLER,
                 0,
                 state -> {
@@ -87,12 +88,11 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         return geckoCache;
     }
 
-    public Identifier getGeoTexture() {
+    public ResourceLocation getGeoTexture() {
         return GEO_TEXTURE;
     }
 
     public float getGeoScale() {
-        // Keep visuals consistent with getDefaultDimensions() scaling.
         return 0.4F;
     }
 
@@ -117,8 +117,8 @@ public class PhantomGunner extends Phantom implements GeoEntity {
     }
 
     @Override
-    protected void customServerAiStep(ServerLevel level) {
-        super.customServerAiStep(level);
+    protected void customServerAiStep() {
+        super.customServerAiStep();
         tickCombatTimers();
     }
 
@@ -131,7 +131,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnType, SpawnGroupData spawnData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnData) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnData);
         equipDefaultGun();
         return data;
@@ -195,7 +195,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         }
 
         playGunshotSound(stats);
-        stack.hurtAndBreak(1, this, InteractionHand.MAIN_HAND);
+        stack.hurtAndBreak(1, this, EquipmentSlot.MAINHAND);
         this.gameEvent(GameEvent.ENTITY_ACTION);
 
         if (stats.usesMagazine()) {
@@ -263,7 +263,10 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         );
     }
 
-    // Note: isSunBurnTick removed in 1.21.11, phantoms don't burn in sun by default
+    @Override
+    protected boolean isSunBurnTick() {
+        return false;
+    }
 
     @Override
     public boolean canAttack(LivingEntity target) {

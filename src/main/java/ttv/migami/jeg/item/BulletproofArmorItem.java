@@ -76,8 +76,6 @@ public class BulletproofArmorItem extends Item {
 
     private final Tier tier;
     private final EquipmentSlot slot;
-    @Nullable
-    private static Holder<Enchantment> PROJECTILE_PROTECTION;
 
     public BulletproofArmorItem(Tier tier, EquipmentSlot slot, Properties properties) {
         super(applyProperties(properties, tier, slot));
@@ -120,13 +118,8 @@ public class BulletproofArmorItem extends Item {
 
     @Nullable
     private static Holder<Enchantment> resolveProjectileProtection(RegistryAccess registryAccess) {
-        if (PROJECTILE_PROTECTION != null) {
-            return PROJECTILE_PROTECTION;
-        }
-
         HolderLookup<Enchantment> lookup = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
-        PROJECTILE_PROTECTION = lookup.get(Enchantments.PROJECTILE_PROTECTION).orElse(null);
-        return PROJECTILE_PROTECTION;
+        return lookup.get(Enchantments.PROJECTILE_PROTECTION).orElse(null);
     }
 
     private void ensureDefaultEnchant(ItemStack stack, RegistryAccess registryAccess) {
@@ -136,17 +129,15 @@ public class BulletproofArmorItem extends Item {
         }
 
         ItemEnchantments current = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        int existing = current.getLevel(protection);
-        if (existing == tier.projectileLevel()) {
-            return;
-        }
-
         ItemEnchantments.Mutable updated = new ItemEnchantments.Mutable(current);
-        updated.removeIf(holder -> holder == protection);
+        updated.removeIf(holder -> holder.is(Enchantments.PROJECTILE_PROTECTION));
         if (tier.projectileLevel() > 0) {
             updated.set(protection, tier.projectileLevel());
         }
-        stack.set(DataComponents.ENCHANTMENTS, updated.toImmutable());
+        ItemEnchantments normalized = updated.toImmutable();
+        if (!normalized.equals(current)) {
+            stack.set(DataComponents.ENCHANTMENTS, normalized);
+        }
     }
 
     @Override

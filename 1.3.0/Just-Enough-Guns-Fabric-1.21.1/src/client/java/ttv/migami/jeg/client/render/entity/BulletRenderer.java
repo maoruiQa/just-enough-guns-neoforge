@@ -1,59 +1,69 @@
 package ttv.migami.jeg.client.render.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.entity.BulletEntity;
 
-public final class BulletRenderer extends EntityRenderer<BulletEntity, BulletRenderer.State> {
-    private static final Identifier FLAMETHROWER_ID = Identifier.parse("jeg:flamethrower");
-    private static final Identifier FLARE_GUN_ID = Identifier.parse("jeg:flare_gun");
-    private static final Identifier ROCKET_LAUNCHER_ID = Identifier.parse("jeg:rocket_launcher");
-    private static final Identifier HYPERSONIC_ID = Identifier.parse("jeg:hypersonic_cannon");
-    private static final Identifier GRENADE_LAUNCHER_ID = Identifier.parse("jeg:grenade_launcher");
-    private static final Identifier TYPHOONEE_ID = Identifier.parse("jeg:typhoonee");
+/**
+ * Renderer for BulletEntity using the legacy rendering system (1.21.1).
+ * EntityRenderState was introduced in 1.21.2+, so this uses direct entity rendering.
+ */
+public final class BulletRenderer extends EntityRenderer<BulletEntity> {
+    private static final ResourceLocation FLAMETHROWER_ID = ResourceLocation.parse("jeg:flamethrower");
+    private static final ResourceLocation FLARE_GUN_ID = ResourceLocation.parse("jeg:flare_gun");
+    private static final ResourceLocation ROCKET_LAUNCHER_ID = ResourceLocation.parse("jeg:rocket_launcher");
+    private static final ResourceLocation HYPERSONIC_ID = ResourceLocation.parse("jeg:hypersonic_cannon");
+    private static final ResourceLocation GRENADE_LAUNCHER_ID = ResourceLocation.parse("jeg:grenade_launcher");
+    private static final ResourceLocation TYPHOONEE_ID = ResourceLocation.parse("jeg:typhoonee");
 
     public BulletRenderer(EntityRendererProvider.Context context) {
         super(context);
     }
 
-    public void submit(State state, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        // Trails are rendered globally from GunClientEvents.onRenderLevelAfterEntities.
+    @Override
+    public void render(BulletEntity entity, float entityYaw, float partialTick, PoseStack poseStack,
+                       MultiBufferSource bufferSource, int packedLight) {
+        // For SLOW bullets (projectiles), update dynamic trail
+        ResourceLocation gunId = ResourceLocation.parse(entity.getGunId());
+        boolean isSlowBullet = isSlowBullet(gunId);
+
+        if (isSlowBullet) {
+            ttv.migami.jeg.client.render.BulletTrailRenderer.updateDynamicTrail(
+                entity.getId(),
+                entity.position(),
+                entity.getTrailColor(),
+                entity.getProjectileSize()
+            );
+        }
+
+        // Call global trail renderer once per frame
+        PoseStack globalPoseStack = new PoseStack();
+        Minecraft mc = Minecraft.getInstance();
+        float gameTimeDelta = mc.getTimer().getGameTimeDeltaPartialTick(false);
+
+        ttv.migami.jeg.client.render.BulletTrailRenderer.render(
+            globalPoseStack,
+            bufferSource,
+            gameTimeDelta
+        );
     }
 
     @Override
-    public State createRenderState() {
-        return new State();
+    public ResourceLocation getTextureLocation(BulletEntity entity) {
+        return null; // Bullets don't use textures, they use particle trails
     }
 
-    @Override
-    public void extractRenderState(BulletEntity entity, State state, float partialTick) {
-        super.extractRenderState(entity, state, partialTick);
-        state.entityId = entity.getId();
-        state.size = entity.getProjectileSize();
-        state.trailColor = entity.getTrailColor();
-
-        // Determine if this is a slow bullet that needs dynamic trail tracking
-        Identifier gunId = Identifier.parse(entity.getGunId());
-        state.isSlowBullet = isSlowBullet(gunId);
-    }
-
-    private boolean isSlowBullet(Identifier gunId) {
+    private boolean isSlowBullet(ResourceLocation gunId) {
         return gunId.equals(FLAMETHROWER_ID) ||
                gunId.equals(FLARE_GUN_ID) ||
                gunId.equals(ROCKET_LAUNCHER_ID) ||
                gunId.equals(HYPERSONIC_ID) ||
                gunId.equals(GRENADE_LAUNCHER_ID) ||
                gunId.equals(TYPHOONEE_ID);
-    }
-
-    public static final class State extends EntityRenderState {
-        int entityId = -1;
-        float size;
-        int trailColor;
-        boolean isSlowBullet;
     }
 }

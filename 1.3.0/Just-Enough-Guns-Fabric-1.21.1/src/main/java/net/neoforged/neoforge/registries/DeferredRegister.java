@@ -5,7 +5,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -40,7 +40,7 @@ public class DeferredRegister<T> {
     public void register(IEventBus bus) {
         Registry<T> registry = resolveRegistry();
         for (Entry<T, ? extends T> entry : entries) {
-            Identifier id = Identifier.fromNamespaceAndPath(modId, entry.name);
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(modId, entry.name);
             if (!registry.containsKey(id)) {
                 Registry.register(registry, id, entry.holder.get());
             }

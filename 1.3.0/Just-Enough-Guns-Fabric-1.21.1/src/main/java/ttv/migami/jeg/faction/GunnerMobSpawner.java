@@ -3,7 +3,7 @@ package ttv.migami.jeg.faction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -30,7 +30,6 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
-import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.item.GunItem;
@@ -41,7 +40,7 @@ import java.util.UUID;
 
 public class GunnerMobSpawner {
     public static final UUID GUN_FOLLOW_RANGE_MODIFIER_UUID = UUID.randomUUID();
-    public static final Identifier GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+    public static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
 
     @SubscribeEvent
     public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
@@ -52,10 +51,6 @@ public class GunnerMobSpawner {
         ItemStack heldItem = mob.getMainHandItem();
 
         if (heldItem.getItem() instanceof GunItem) {
-            LivingEntity currentTarget = mob.getTarget();
-            if (currentTarget instanceof AbstractTerrorPhantom) {
-                mob.setTarget(null);
-            }
             reassessWeaponGoal(mob);
         }
     }
@@ -86,10 +81,24 @@ public class GunnerMobSpawner {
         if (mob.getTags().contains("MobGunner") && !(heldItem.getItem() instanceof GunItem) && !mob.isBaby()) {
             GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
             String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-            Identifier entityTypeLocation = Identifier.tryParse(entityName);
-            Faction faction = manager.getFactionForMob(entityTypeLocation);
+            ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
 
-            if (faction != null) {
+            // More robust entity type resolution
+            ResourceLocation actualEntityType = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+            String entityTypeString = actualEntityType != null ? actualEntityType.toString() : entityName;
+
+            Faction faction = manager.getFactionForMob(actualEntityType != null ? actualEntityType : entityTypeLocation);
+
+            if (faction == null) {
+                // Log warning and try alternative lookup
+                ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("No faction found for gunner mob type: {} (tried: {})", mob.getType().getDescriptionId(), entityTypeString);
+
+                // Remove the tag so we don't keep trying
+                mob.removeTag("MobGunner");
+                return;
+            }
+
+            {
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
@@ -103,8 +112,15 @@ public class GunnerMobSpawner {
                     applyEliteAttributes(mob);
                 }
 
+                // Ensure gun is not null before equipping
+                if (gun == null) {
+                    ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("Faction {} has no guns available for mob {}", faction.getName(), mob.getType().getDescriptionId());
+                    mob.removeTag("MobGunner");
+                    return;
+                }
+
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
-                    // Remove Drowned water-seeking restrictions to allow land combat
+                    // For Drowned: mark as gunner to enable combat in water/shade
                     enableDrownedGunnerCombat(mob);
 
                     // Add target-finding goal first (priority 1)
@@ -129,14 +145,11 @@ public class GunnerMobSpawner {
                 }
 
                 extendFollowRange(mob);
+                ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Equipped gunner {} with gun {} from faction {}", mob.getType().getDescriptionId(), gun, faction.getName());
             }
         }
 
         if (heldItem.getItem() instanceof GunItem) {
-            LivingEntity currentTarget = mob.getTarget();
-            if (currentTarget instanceof AbstractTerrorPhantom) {
-                mob.setTarget(null);
-            }
             reassessWeaponGoal(mob);
         }
     }
@@ -166,7 +179,7 @@ public class GunnerMobSpawner {
                 if (mob.getRandom().nextInt(100) < currentChance) {
                     GunnerManager manager = GunnerManager.getInstance();
                     String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                    Identifier entityTypeLocation = Identifier.tryParse(entityName);
+                    ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
                     Faction faction = manager.getFactionForMob(entityTypeLocation);
 
                     if (faction != null) {
@@ -201,7 +214,7 @@ public class GunnerMobSpawner {
      * when environmental conditions are favorable (in water or shade).
      */
     public static void enableDrownedGunnerCombat(PathfinderMob mob) {
-        if (!(mob instanceof net.minecraft.world.entity.monster.zombie.Drowned)) {
+        if (!(mob instanceof net.minecraft.world.entity.monster.Drowned)) {
             return;
         }
 
@@ -247,8 +260,8 @@ public class GunnerMobSpawner {
     private static void applyEliteAttributes(PathfinderMob mob) {
         mob.addTag("EliteGunner");
         mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
-        // Replace turtle helmet with bulletproof armor using GunnerArmorEquiper
-        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.elite(mob));
+        // Elite armor is now handled by GunnerArmorEquiper with helmet priority
+        // This ensures consistent armor system across all gunner types
         // Using alternative effect since DAMAGE_BOOST doesn't exist in 1.21.10
         mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, -1, 1, false, true));
         mob.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, -1, 0, false, false));

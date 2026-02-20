@@ -1,41 +1,28 @@
 package ttv.migami.jeg.client.render.entity;
 
-import net.minecraft.resources.Identifier;
-import software.bernie.geckolib.constant.dataticket.DataTicket;
+import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 
 public final class PhantomGunnerGeoModel extends GeoModel<PhantomGunner> {
-    public static final DataTicket<PhantomGunner> ANIMATABLE =
-            DataTicket.create("jeg_phantom_gunner_animatable", PhantomGunner.class);
-
-    private static final Identifier MODEL = Reference.id("entity/phantom_gunner");
-    private static final Identifier ANIM = Reference.id("entity/phantom_gunner");
+    private static final ResourceLocation MODEL = Reference.id("geo/entity/phantom_gunner.geo.json");
+    private static final ResourceLocation ANIMATION = Reference.id("animations/entity/phantom_gunner.animation.json");
+    private static final ResourceLocation FALLBACK_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/phantom.png");
 
     @Override
-    public void addAdditionalStateData(PhantomGunner animatable, Object obj, GeoRenderState renderState) {
-        renderState.addGeckolibData(ANIMATABLE, animatable);
-    }
-
-    @Override
-    public Identifier getModelResource(GeoRenderState renderState) {
+    public ResourceLocation getModelResource(PhantomGunner animatable) {
         return MODEL;
     }
 
     @Override
-    public Identifier getTextureResource(GeoRenderState renderState) {
-        PhantomGunner animatable = renderState.hasGeckolibData(ANIMATABLE) ? renderState.getGeckolibData(ANIMATABLE) : null;
-        if (animatable != null) {
-            return animatable.getGeoTexture();
-        }
-        return Identifier.withDefaultNamespace("textures/entity/phantom.png");
+    public ResourceLocation getTextureResource(PhantomGunner animatable) {
+        ResourceLocation texture = animatable.getGeoTexture();
+        return texture != null ? texture : FALLBACK_TEXTURE;
     }
 
     @Override
-    public Identifier getAnimationResource(PhantomGunner animatable) {
-        return ANIM;
+    public ResourceLocation getAnimationResource(PhantomGunner animatable) {
+        return ANIMATION;
     }
 }
-

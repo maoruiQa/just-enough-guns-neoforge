@@ -2,7 +2,6 @@ package ttv.migami.jeg.init;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -15,13 +14,13 @@ import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunnerMinion;
+import ttv.migami.jeg.faction.raid.RaidEntity;
 
 public final class ModEntities {
     private ModEntities() {}
 
     public static final DeferredRegister<EntityType<?>> REGISTER = DeferredRegister.create(Registries.ENTITY_TYPE, Reference.MOD_ID);
 
-  
     public static final DeferredHolder<EntityType<?>, EntityType<Ghoul>> GHOUL = REGISTER.register(
             "ghoul",
             () -> {
@@ -68,7 +67,7 @@ public final class ModEntities {
             }
     );
 
-    // Summoned by Terror Phantom / Bound Terror Phantom: identical to Phantom Gunner except reduced max health.
+    // Summoned by Terror Phantom / Bound Terror Phantom: identical to Phantom Gunner except half max health.
     public static final DeferredHolder<EntityType<?>, EntityType<PhantomGunnerMinion>> PHANTOM_GUNNER_MINION = REGISTER.register(
             "phantom_gunner_minion",
             () -> {
@@ -86,7 +85,7 @@ public final class ModEntities {
             () -> {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom"));
                 return EntityType.Builder.of(TerrorPhantom::new, MobCategory.MONSTER)
-                        .sized(4.0F, 1.5F)
+                        .sized(40.19531F, 1.5F)
                         .clientTrackingRange(8)
                         .updateInterval(2)
                         .fireImmune()
@@ -99,11 +98,25 @@ public final class ModEntities {
             () -> {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom_guardian"));
                 return EntityType.Builder.of(TerrorPhantomGuardian::new, MobCategory.MONSTER)
-                        .sized(4.5F, 1.8F)
+                        .sized(45.21973F, 1.8F)
                         .clientTrackingRange(8)
                         .updateInterval(2)
                         .fireImmune()
                         .build(key);
             }
     );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RaidEntity>> RAID_ENTITY = REGISTER.register(
+            "raid_entity",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("raid_entity"));
+                return EntityType.Builder.<RaidEntity>of(RaidEntity::new, MobCategory.MISC)
+                        .sized(3.0F, 3.0F)
+                        .clientTrackingRange(8)
+                        .updateInterval(3)
+                        .fireImmune()
+                        .build(key);
+            }
+    );
 }
+

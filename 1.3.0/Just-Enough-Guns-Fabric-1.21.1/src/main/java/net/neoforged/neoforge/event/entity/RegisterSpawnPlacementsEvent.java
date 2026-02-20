@@ -11,7 +11,7 @@ public class RegisterSpawnPlacementsEvent {
 
     @FunctionalInterface
     public interface SpawnPredicate<T extends net.minecraft.world.entity.Mob> {
-        boolean test(EntityType<T> entityType, net.minecraft.world.level.ServerLevelAccessor level, net.minecraft.world.entity.EntitySpawnReason spawnReason, net.minecraft.core.BlockPos pos, net.minecraft.util.RandomSource random);
+        boolean test(EntityType<T> entityType, net.minecraft.world.level.ServerLevelAccessor level, net.minecraft.world.entity.MobSpawnType spawnReason, net.minecraft.core.BlockPos pos, net.minecraft.util.RandomSource random);
     }
 
     public <T extends net.minecraft.world.entity.Mob> void register(

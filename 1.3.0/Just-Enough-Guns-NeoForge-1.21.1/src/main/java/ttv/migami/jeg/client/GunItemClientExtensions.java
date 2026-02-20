@@ -11,10 +11,24 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
+    private static final float ADS_YAW_ALIGNED = 0.0F;
+    private static final float HIP_PITCH = 4.0F;
+    private static final float ADS_PITCH_ALIGNED = 0.0F;
+    private static final float ADS_LIFT_Y = 0.03F;
+    private static final float ADS_EXTRA_Y_ALL_OTHERS = 0.060F;
+    private static final float ADS_EXTRA_Y_STABLE = 0.050F;
+    private static final float ADS_EXTRA_Y_SHOTGUN_AND_CUSTOM_SMG = 0.075F;
+    private static final float ADS_EXTRA_Y_SUPERSONIC_SHOTGUN = 0.045F;
+    // 1.21.1 renderer baseline sits lower than 1.21.11 for the same profile numbers.
+    // Per-gun compensation values are anchored by combat_rifle parity and applied
+    // after aligning first-person arm rendering to the 1.21.11-style bone-driven path.
+    private record LegacyComp(float yHip, float yAds, float z) {}
+
     private final GunStats stats;
 
     public GunItemClientExtensions(GunItem item) {
@@ -23,6 +37,8 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
     @Override
     public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
+        // Match NeoForge 1.21.10: third-person two-handed hold pose for guns.
+        // First-person pose is handled by applyForgeHandTransform + GeckoLib arms layer for AnimatedGunItem.
         return HumanoidModel.ArmPose.CROSSBOW_HOLD;
     }
 
@@ -37,107 +53,29 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             float swingProcess
     ) {
         int direction = arm == HumanoidArm.RIGHT ? 1 : -1;
+        String gunPath = stats.id().getPath();
+        boolean isBow = gunPath.contains("bow");
         float ads = AimingHandler.get().getNormalisedAdsProgress(partialTick);
+        GunPoseProfile profile = GunPoseProfile.forGun(stats.id());
 
-        String gunId = stats.id().getPath();
-        boolean isFingerGun = gunId.equals("finger_gun");
-        boolean isBow = gunId.contains("bow");
-        boolean isFlareGun = gunId.contains("flare_gun");
-        boolean isPistolClass = gunId.contains("pistol") || gunId.contains("revolver");
-        boolean isCombatRifle = gunId.contains("combat_rifle");
-        boolean isShortWeapon = (!isBow) && (gunId.contains("pistol") || gunId.contains("revolver")
-                || gunId.contains("grenade_launcher") || gunId.contains("flare_gun")
-                || gunId.contains("double_barrel") || gunId.contains("waterpipe"));
-        boolean isRocketLauncher = gunId.contains("rocket_launcher");
-        boolean isDoubleBarrel = gunId.contains("double_barrel");
-        boolean isTyphoonee = gunId.contains("typhoonee");
+        float xOffset = Mth.lerp(ads, profile.hipX(), profile.adsX());
+        float yOffset = Mth.lerp(ads, profile.hipY(), profile.adsY());
+        float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
+        float[] comp = legacyCompensation(stats, ads);
+        yOffset += comp[0];
+        zOffset += comp[1];
+        float yaw = Mth.lerp(ads, profile.hipYaw(), ADS_YAW_ALIGNED);
+        float pitch = Mth.lerp(ads, HIP_PITCH, ADS_PITCH_ALIGNED);
 
-        float hipX;
-        float hipY;
-        float hipZ;
-        float adsX;
-        float adsY;
-        float adsZ;
-        float adsYaw;
-        float hipYaw = 3.0F;
-        float scale = 1.25F;
-
-        if (isFingerGun) {
-            hipX = 0.75F; hipY = -0.48F; hipZ = -0.35F;
-            adsX = 0.75F; adsY = -0.48F; adsZ = -0.35F;
-            hipYaw = 180.0F; adsYaw = 180.0F; scale = 1.25F;
-        } else if (isRocketLauncher) {
-            // Keep rocket launcher on shoulder in both hip-fire and ADS.
-            hipX = 0.76F; hipY = 0.42F; hipZ = -0.72F;
-            adsX = 0.44F; adsY = 0.48F; adsZ = -1.02F;
-            hipYaw = -1.0F; adsYaw = -2.0F; scale = 1.48F;
-        } else if (isBow) {
-            hipX = 0.46F; hipY = 0.20F; hipZ = -0.60F;
-            adsX = 0.2915F; adsY = 0.247F; adsZ = -0.56F; adsYaw = 0.5F;
-        } else if (isTyphoonee) {
-            hipX = 0.65F; hipY = -0.50F; hipZ = -0.60F;
-            adsX = 0.35F; adsY = -0.70F; adsZ = -0.90F; adsYaw = 5.0F;
-        } else if (isDoubleBarrel) {
-            hipX = 0.40F; hipY = 0.36F; hipZ = -0.66F;
-            adsX = 0.24F; adsY = 0.12F; adsZ = -0.94F; adsYaw = -1.8F;
-            hipYaw = -1.2F; scale = 1.36F;
-        } else if (isShortWeapon) {
-            hipX = 0.44F; hipY = 0.34F; hipZ = -0.64F;
-            adsX = 0.24F; adsY = 0.14F; adsZ = -0.82F; adsYaw = -1.6F;
-            hipYaw = -0.8F; scale = 1.33F;
-        } else {
-            hipX = 0.66F; hipY = 0.22F; hipZ = -0.66F;
-            adsX = 0.28F; adsY = 0.10F; adsZ = -0.88F; adsYaw = -2.0F;
-            hipYaw = -1.0F; scale = 1.35F;
-        }
-
-        float x = Mth.lerp(ads, hipX, adsX);
-        // Shift all guns slightly left while ADS.
-        x -= ads * 0.02F;
-        if (isRocketLauncher) {
-            // Rocket launcher: extremely slight right shift while ADS.
-            x += ads * 0.03F;
-        }
-        if (isPistolClass) {
-            // Pistols/revolvers: nudge ADS position back to the right.
-            x += ads * 0.04F;
-        }
-        if (isTyphoonee || isFlareGun) {
-            // Slight right correction for Typhoonee and flare gun.
-            x += ads * 0.04F;
-        }
-        float y = Mth.lerp(ads, hipY, adsY);
-        // All guns: slight upward lift while ADS.
-        y += ads * 0.05F;
-        if (!isRocketLauncher) {
-            // Non-rocket guns: additional medium-small ADS lift.
-            y += ads * 0.07F;
-        }
-        float z = Mth.lerp(ads, hipZ, adsZ);
-        float yaw = Mth.lerp(ads, hipYaw, adsYaw);
-        if (!isFingerGun) {
-            // Apply global leftward orientation mainly while ADS.
-            yaw += 1.2F * ads;
-        }
-        if (isPistolClass) {
-            // Fix pistol class drift: slight right in hip-fire, stronger left in ADS.
-            yaw += Mth.lerp(ads, -0.3F, 1.0F);
-        }
-        if (isTyphoonee || isFlareGun) {
-            // Typhoonee/flare issues are ADS-specific; keep hip-fire mostly unaffected.
-            yaw += 0.6F * ads;
-        }
-
-        poseStack.translate(direction * x, y, z);
+        poseStack.translate(direction * xOffset, yOffset + ads * ADS_LIFT_Y + adsExtraHeight(gunPath, ads), zOffset);
         poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(0.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(4.0F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F * (1.0F - ads)));
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.scale(profile.scale(), profile.scale(), profile.scale());
 
-        poseStack.scale(scale, scale, scale);
-
+        // Keep vanilla-like equip/swing movement to reduce "hard snap" while switching items.
         float equip = Mth.clamp(equipProcess, 0.0F, 1.0F);
         poseStack.translate(0.0F, -0.6F * equip, 0.0F);
-
         if (!isBow) {
             float swingRoot = Mth.sqrt(swingProcess);
             float swingX = -0.3F * Mth.sin(swingRoot * (float) Math.PI);
@@ -145,6 +83,86 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             poseStack.translate(direction * swingX * 0.08F, swingY * 0.05F, 0.0F);
         }
 
+        float recoil = GunRecoilHandler.getRecoil(partialTick);
+        if (Math.abs(recoil) > 0.0001F) {
+            // Vertical model shake only: no forward tilt and no forward/back translation.
+            poseStack.translate(0.0F, -recoil * 0.1F, 0.0F);
+        }
+
         return true;
+    }
+
+    private static float[] legacyCompensation(GunStats stats, float ads) {
+        LegacyComp comp = legacyCompFor(stats.id().getPath());
+        float y = Mth.lerp(ads, comp.yHip(), comp.yAds());
+        return new float[] { y, comp.z() };
+    }
+
+    private static float adsExtraHeight(String gunPath, float ads) {
+        if (ads <= 0.0F) {
+            return 0.0F;
+        }
+        float extra = switch (gunPath) {
+            case "combat_rifle" -> 0.0F;
+            // Keep these weapons at their current tuned ADS height.
+            case "hollenfire_mk2", "infantry_rifle", "blossom_rifle", "subsonic_rifle", "soulhunter_mk2" -> ADS_EXTRA_Y_STABLE;
+            case "service_rifle" -> 0.020F;
+            // Raise ADS for shotgun family and custom_smg.
+            case "double_barrel_shotgun", "holy_shotgun", "pump_shotgun", "repeating_shotgun", "waterpipe_shotgun", "shotgun", "custom_smg", "phantom_smg" ->
+                    ADS_EXTRA_Y_SHOTGUN_AND_CUSTOM_SMG;
+            // Medium-small ADS raise for supersonic_shotgun.
+            case "supersonic_shotgun" -> ADS_EXTRA_Y_SUPERSONIC_SHOTGUN;
+            // Requested small ADS raise for burst_rifle.
+            case "burst_rifle" -> 0.030F;
+            // Keep previous downward/low-uplift retunes.
+            case "flamethrower", "light_machine_gun" -> 0.020F;
+            // All other guns: slight ADS uplift.
+            default -> ADS_EXTRA_Y_ALL_OTHERS;
+        };
+        return ads * extra;
+    }
+
+    private static LegacyComp legacyCompFor(String gunPath) {
+        if ("minigun".equals(gunPath)) {
+            // Keep minigun ADS net height stable after global ADS uplift.
+            return new LegacyComp(0.58F, 0.57F, -0.06F);
+        }
+        if ("rocket_launcher".equals(gunPath)) {
+            // Slight ADS height increase after global ADS uplift.
+            return new LegacyComp(0.59F, 0.66F, -0.04F);
+        }
+        if ("typhoonee".equals(gunPath)) {
+            // Medium downshift to reduce top-of-screen clipping.
+            return new LegacyComp(0.98F, 1.12F, -0.06F);
+        }
+        if ("soulhunter_mk2".equals(gunPath)) {
+            // Medium hip downshift while keeping ADS net height near previous level.
+            return new LegacyComp(0.12F, 0.17F, -0.04F);
+        }
+        if ("burst_rifle".equals(gunPath)) {
+            // Medium-large ADS downshift for burst_rifle while preserving hip stance.
+            return new LegacyComp(0.60F, 0.68F, -0.03F);
+        }
+        return switch (gunPath) {
+            // SMG
+            case "custom_smg", "phantom_smg" -> new LegacyComp(0.58F, 0.70F, -0.02F);
+            // Pistol
+            case "combat_pistol", "semi_auto_pistol", "revolver", "finger_gun" -> new LegacyComp(0.58F, 0.70F, -0.02F);
+            // Sniper/Bow
+            case "bolt_action_rifle", "semi_auto_rifle", "compound_bow", "primitive_bow" -> new LegacyComp(0.64F, 0.76F, -0.05F);
+            // LMG
+            case "light_machine_gun", "hollenfire_mk2", "flamethrower" -> new LegacyComp(0.59F, 0.71F, -0.04F);
+            // Shotgun
+            case "double_barrel_shotgun", "holy_shotgun", "pump_shotgun", "repeating_shotgun", "supersonic_shotgun", "waterpipe_shotgun" ->
+                    new LegacyComp(0.62F, 0.74F, -0.04F);
+            // Heavy
+            case "grenade_launcher", "hypersonic_cannon" -> new LegacyComp(0.58F, 0.70F, -0.06F);
+            // Rifle
+            case "assault_rifle", "blossom_rifle", "burst_rifle", "combat_rifle", "infantry_rifle", "service_rifle", "subsonic_rifle", "abstract_gun" ->
+                    new LegacyComp(0.60F, 0.72F, -0.03F);
+            // Special/default
+            case "flare_gun" -> new LegacyComp(0.58F, 0.70F, -0.02F);
+            default -> new LegacyComp(0.60F, 0.72F, -0.03F);
+        };
     }
 }

@@ -6,14 +6,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.item.GunItem;
 
-/**
- * Lightweight ADS tracker for first-person render/FOV transforms.
- * Uses right-click hold semantics like 1.20.1.
- */
 public final class AimingHandler {
     private static final float MAX_AIM_PROGRESS = 5.0F;
     private static final float AIM_SPEED = 1.0F;
-
     private static final AimingHandler INSTANCE = new AimingHandler();
 
     private float currentAim;
@@ -27,12 +22,16 @@ public final class AimingHandler {
 
     public void tick(LocalPlayer player) {
         previousAim = currentAim;
-
         if (shouldAim(player)) {
             currentAim = Math.min(MAX_AIM_PROGRESS, currentAim + AIM_SPEED);
         } else {
             currentAim = Math.max(0.0F, currentAim - AIM_SPEED);
         }
+    }
+
+    public void reset() {
+        currentAim = 0.0F;
+        previousAim = 0.0F;
     }
 
     public boolean isAiming() {
@@ -53,12 +52,7 @@ public final class AimingHandler {
         if (minecraft == null || minecraft.screen != null || player.isSpectator()) {
             return false;
         }
-
         ItemStack mainHand = player.getMainHandItem();
-        if (!(mainHand.getItem() instanceof GunItem)) {
-            return false;
-        }
-
-        return minecraft.options.keyUse.isDown();
+        return mainHand.getItem() instanceof GunItem && minecraft.options.keyUse.isDown();
     }
 }

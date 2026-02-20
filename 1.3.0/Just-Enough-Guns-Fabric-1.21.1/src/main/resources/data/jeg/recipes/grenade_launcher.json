@@ -1,0 +1,27 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "IRT",
+                    "IT ",
+                    "  B"
+                ],
+    "key":  {
+                "I":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      },
+                "T":  {
+                          "item":  "minecraft:tnt"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:grenade_launcher",
+                   "count":  1
+               }
+}

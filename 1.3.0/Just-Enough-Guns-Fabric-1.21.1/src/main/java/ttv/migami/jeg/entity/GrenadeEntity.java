@@ -8,14 +8,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
+
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -135,7 +135,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
+    public void addAdditionalSaveData(CompoundTag output) {
         super.addAdditionalSaveData(output);
         output.putInt("Fuse", this.entityData.get(DATA_FUSE));
         output.putFloat("Power", this.explosionPower);
@@ -143,11 +143,11 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
+    public void readAdditionalSaveData(CompoundTag input) {
         super.readAdditionalSaveData(input);
-        this.entityData.set(DATA_FUSE, Mth.clamp(input.getIntOr("Fuse", DEFAULT_FUSE), 5, DEFAULT_FUSE));
-        this.explosionPower = input.getFloatOr("Power", this.explosionPower);
-        this.launched = input.getBooleanOr("Launched", this.launched);
+        this.entityData.set(DATA_FUSE, Mth.clamp(input.contains("Fuse") ? input.getInt("Fuse") : DEFAULT_FUSE, 5, DEFAULT_FUSE));
+        this.explosionPower = input.contains("Power") ? input.getFloat("Power") : this.explosionPower;
+        this.launched = input.contains("Launched") ? input.getBoolean("Launched") : this.launched;
     }
 
     @Override

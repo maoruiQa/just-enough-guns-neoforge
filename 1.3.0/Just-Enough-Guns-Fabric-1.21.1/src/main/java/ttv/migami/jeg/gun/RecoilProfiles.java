@@ -1,11 +1,11 @@
 package ttv.migami.jeg.gun;
 
 import java.util.Map;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import ttv.migami.jeg.Reference;
 
 public final class RecoilProfiles {
-    private static final Map<Identifier, Float> MULTIPLIERS = Map.ofEntries(
+    private static final Map<ResourceLocation, Float> MULTIPLIERS = Map.ofEntries(
         Map.entry(Reference.id("waterpipe_shotgun"), 1.6F),
         Map.entry(Reference.id("pump_shotgun"), 1.4F),
         Map.entry(Reference.id("double_barrel_shotgun"), 1.7F),
@@ -22,7 +22,7 @@ public final class RecoilProfiles {
 
     private RecoilProfiles() {}
 
-    public static float multiplier(Identifier id) {
+    public static float multiplier(ResourceLocation id) {
         return MULTIPLIERS.getOrDefault(id, 1.0F);
     }
 }

@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -30,11 +31,10 @@ public class ModSpawnEggItem extends SpawnEggItem {
     private final Supplier<EntityType<? extends Mob>> typeSupplier;
 
     public ModSpawnEggItem(EntityType<? extends Mob> type, Properties properties) {
-        super(properties);
+        super(type, 0xFFFFFF, 0x000000, properties); // Default colors - can be overridden
         this.typeSupplier = () -> type;
     }
 
-    @Override
     public EntityType<?> getType(ItemStack stack) {
         return this.typeSupplier.get();
     }
@@ -71,7 +71,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
                 stack,
                 player,
                 spawnPos,
-                net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
+                net.minecraft.world.entity.MobSpawnType.SPAWN_EGG,
                 true,
                 !Objects.equals(clickedPos, spawnPos) && context.getClickedFace() == Direction.UP
         );
@@ -85,21 +85,21 @@ public class ModSpawnEggItem extends SpawnEggItem {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         BlockHitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.SOURCE_ONLY);
         if (hitResult.getType() != HitResult.Type.BLOCK) {
-            return InteractionResult.PASS;
+            return InteractionResultHolder.pass(stack);
         }
 
         BlockPos blockPos = hitResult.getBlockPos();
         if (!(level.getBlockState(blockPos).getBlock() instanceof LiquidBlock)) {
-            return InteractionResult.PASS;
+            return InteractionResultHolder.pass(stack);
         }
 
         if (!level.isClientSide()) {
             if (!level.mayInteract(player, blockPos) || !player.mayUseItemAt(blockPos, hitResult.getDirection(), stack)) {
-                return InteractionResult.FAIL;
+                return InteractionResultHolder.fail(stack);
             }
 
             EntityType<?> rawType = getType(stack);
@@ -108,19 +108,19 @@ public class ModSpawnEggItem extends SpawnEggItem {
                     stack,
                     player,
                     blockPos,
-                    net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
+                    net.minecraft.world.entity.MobSpawnType.SPAWN_EGG,
                     false,
                     false
             );
 
             if (mob == null) {
-                return InteractionResult.FAIL;
+                return InteractionResultHolder.fail(stack);
             }
 
             postSpawn(level, mob, stack, player);
         }
 
-        return InteractionResult.SUCCESS;
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
     @Override
@@ -131,7 +131,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
     }
 
     protected void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {
-        mob.applyComponentsFromItemStack(stack);
+        // Removed applyComponentsFromItemStack - not available in 1.21.1
         level.gameEvent(player, GameEvent.ENTITY_PLACE, mob.position());
         stack.consume(1, player);
         if (player != null) {

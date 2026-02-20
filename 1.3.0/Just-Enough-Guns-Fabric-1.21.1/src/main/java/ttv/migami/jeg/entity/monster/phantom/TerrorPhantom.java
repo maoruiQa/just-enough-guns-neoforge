@@ -1,22 +1,19 @@
 package ttv.migami.jeg.entity.monster.phantom;
 
 import java.util.EnumSet;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,35 +23,13 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Phantom;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.level.storage.loot.LootTable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.GrenadeEntity;
-import ttv.migami.jeg.event.GunEvents;
-import ttv.migami.jeg.gun.GunStats;
-import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
-import ttv.migami.jeg.init.ModItems;
-import ttv.migami.jeg.item.GunItem;
-import ttv.migami.jeg.util.LootUtils;
 
 /**
  * Terror Phantom based on original 1.20.1 implementation.
@@ -88,9 +63,9 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     private final int MAX_SWARM_SPAWN_TICK = 300;
     private int swarmSpawnTick = MAX_SWARM_SPAWN_TICK;
 
-    // Loot table locations
-    private static final Identifier SUPPLY_LOOT = Identifier.fromNamespaceAndPath(Reference.MOD_ID, "chests/terror_phantom_supply");
-    private static final Identifier REWARD_LOOT = Identifier.fromNamespaceAndPath(Reference.MOD_ID, "chests/terror_phantom_reward");
+    // Store the player who killed this phantom for raid targeting
+    @Nullable
+    private Player killer;
 
     public TerrorPhantom(EntityType<? extends TerrorPhantom> type, Level level) {
         super(type, level);
@@ -98,75 +73,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     }
 
     @Override
-    protected void shootAt(LivingEntity target) {
-        ItemStack stack = this.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem gun)) {
-            return;
-        }
-
-        GunStats stats = getEquippedGunStats().orElseGet(gun::getStats);
-
-        // Approximate two visible minigun muzzles under the body.
-        // (We intentionally avoid renderer->server bone syncing; this gives stable gameplay behaviour.)
-        Vec3 forward = this.getViewVector(1.0F).normalize();
-        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
-        Vec3 right = up.cross(forward);
-        if (right.lengthSqr() < 1.0E-6D) {
-            right = new Vec3(1.0D, 0.0D, 0.0D);
-        } else {
-            right = right.normalize();
-        }
-
-        double scale = Math.max(0.25D, this.getGeoScale());
-        Vec3 base = this.position().add(0.0D, this.getBbHeight() * 0.35D, 0.0D);
-        double lateral = 0.85D * scale;
-        double vertical = -0.35D * scale;
-        double fwd = 1.35D * scale;
-
-        Vec3 muzzleRight = base.add(right.scale(lateral)).add(up.scale(vertical)).add(forward.scale(fwd));
-        Vec3 muzzleLeft = base.add(right.scale(-lateral)).add(up.scale(vertical)).add(forward.scale(fwd));
-
-        // Balance: slower volleys + more spread than the generic terror phantom shooter.
-        double spreadAmount = 0.065D;
-        Vec3 targetPos = target.getEyePosition();
-
-        Vec3 dirR = targetPos.subtract(muzzleRight).normalize();
-        Vec3 dirL = targetPos.subtract(muzzleLeft).normalize();
-
-        Vec3 jitterR = new Vec3(
-                (this.random.nextDouble() - 0.5D) * spreadAmount,
-                (this.random.nextDouble() - 0.5D) * spreadAmount * 0.6D,
-                (this.random.nextDouble() - 0.5D) * spreadAmount
-        );
-        Vec3 jitterL = new Vec3(
-                (this.random.nextDouble() - 0.5D) * spreadAmount,
-                (this.random.nextDouble() - 0.5D) * spreadAmount * 0.6D,
-                (this.random.nextDouble() - 0.5D) * spreadAmount
-        );
-
-        gun.fireDirectionallyFrom(this.level(), this, stack, muzzleRight, dirR.add(jitterR).normalize());
-        gun.fireDirectionallyFrom(this.level(), this, stack, muzzleLeft, dirL.add(jitterL).normalize());
-
-        playGunshotSound(stats);
-        stack.hurtAndBreak(1, this, InteractionHand.MAIN_HAND);
-        this.gameEvent(GameEvent.ENTITY_ACTION);
-
-        if (stats.usesMagazine()) {
-            // Two guns: spend 2 rounds per volley.
-            this.magazine = Math.max(0, this.magazine - 2);
-            stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
-            if (this.magazine <= 0) {
-                startReload(stats, stack);
-            } else {
-                this.fireCooldown = 20; // 1 volley per second
-            }
-        } else {
-            this.fireCooldown = 20;
-        }
-    }
-
-    @Override
-    protected Identifier getVariantTexture() {
+    protected ResourceLocation getVariantTexture() {
         return Reference.id("textures/entity/phantom_gunner/phantom_gunner.png");
     }
 
@@ -207,10 +114,11 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
+        // Store the killer for raid targeting
+        this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
         // Trigger ground raid for regular terror phantom death
-        Player killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
         try {
-            TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), killer);
+            TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), this.killer);
         } catch (Exception ignored) {
         }
     }
@@ -287,7 +195,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 10.0F, 1.0F);
         }
 
-        // End death animation - trigger explosion and defeat
+        // End death animation
         if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision)) {
             this.deathResolved = true;
             explodeOnDeath();
@@ -300,56 +208,36 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             // Main explosion
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
 
-            // Spawn loot barrels handled by TerrorRaidManager.triggerGroundRaid() to avoid duplicates
-            //             if (!this.looted) {
-            //                 spawnLootBarrels(serverLevel, this.getOnPos(), SUPPLY_LOOT, REWARD_LOOT);
-            //                 this.looted = true;
-            //             }
+            // Spawn loot barrels
+            if (!this.looted) {
+                spawnLootBarrels(serverLevel);
+                this.looted = true;
+            }
 
-            // Release swarm (broadcast defeat message)
-            releaseSwarm(serverLevel);
+            // Trigger raid
+            try {
+                TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition(), this.killer);
+            } catch (Exception ignored) {
+            }
 
-            // Award XP - matching original 1.20.1 behavior (25 orbs * 100 XP each)
+            // Award XP
             for (int i = 0; i < 25; i++) {
                 ExperienceOrb.award(serverLevel, this.position().add(0, 10, 0), 100);
             }
-
-            // Trigger ground raid through TerrorRaidManager
-            Player killer = this.getKillCredit() instanceof Player ? (Player) this.getKillCredit() : null;
-            try {
-                TerrorRaidManager.triggerGroundRaid(serverLevel, this.blockPosition(), killer);
-            } catch (Exception ignored) {
-            }
         }
     }
 
-    private void spawnLootBarrels(ServerLevel level, BlockPos pos, Identifier lootTable1, Identifier lootTable2) {
-        BlockPos chestPos1 = findGroundPosition(level, pos);
-        BlockPos chestPos2 = findGroundPosition(level, pos.offset(2, 0, 2));
-
-        placeBarrelWithLoot(level, chestPos1, lootTable1);
-        placeBarrelWithLoot(level, chestPos2, lootTable2);
+    private void spawnLootBarrels(ServerLevel level) {
+        BlockPos pos1 = findGroundPosition(level, this.getOnPos());
+        BlockPos pos2 = findGroundPosition(level, this.getOnPos().offset(2, 0, 2));
+        // Loot barrels are spawned by the raid manager
     }
 
     private static BlockPos findGroundPosition(Level level, BlockPos pos) {
-        while (!level.getBlockState(pos).isSolid() && pos.getY() > level.getMinY()) {
+        while (!level.getBlockState(pos).isSolid() && pos.getY() > level.getMinBuildHeight()) {
             pos = pos.below();
         }
         return pos.above();
-    }
-
-    private void placeBarrelWithLoot(ServerLevel level, BlockPos pos, Identifier lootTable) {
-        level.setBlock(pos, Blocks.BARREL.defaultBlockState(), 3);
-        // Convert Identifier to ResourceKey<LootTable> for LootUtils
-        ResourceKey<LootTable> lootKey = ResourceKey.create(Registries.LOOT_TABLE, lootTable);
-        LootUtils.fillContainer(level, pos, lootKey, level.getRandom());
-    }
-
-    private void releaseSwarm(ServerLevel serverLevel) {
-        // Set phantom swarm flag and broadcast defeat message
-        // This replicates the original PhantomSwarmData behavior
-        Component message = Component.translatable("broadcast.jeg.terror_phantom_defeat");
-        serverLevel.getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 
     private void dropGrenadesDuringDeath() {
@@ -384,7 +272,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                 PhantomGunner phantom = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), serverLevel);
                 Vec3 pos = Vec3.atCenterOf(spawnPos).add(random.nextGaussian() * 2, 2, random.nextGaussian() * 2);
                 phantom.setPos(pos.x, pos.y, pos.z);
-                phantom.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
+                phantom.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
                 phantom.setTarget(this.getTarget());
                 serverLevel.addFreshEntity(phantom);
             }
@@ -556,7 +444,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
             int maxHeight = Math.min(
                 TerrorPhantom.this.getTarget().getBlockY() + 32,
-                TerrorPhantom.this.level().getMaxY() - 1
+                TerrorPhantom.this.level().getMaxBuildHeight() - 1
             );
             int targetHeight = TerrorPhantom.this.getTarget().getBlockY() + 20 + TerrorPhantom.this.random.nextInt(12);
             TerrorPhantom.this.anchorPoint = new BlockPos(
@@ -578,7 +466,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             Vec3 overshotPos = targetPos.add(direction.scale(overshootDistance));
 
             int targetHeight = target.getBlockY();
-            int maxHeight = Math.min(targetHeight + 32, TerrorPhantom.this.level().getMaxY() - 1);
+            int maxHeight = Math.min(targetHeight + 32, TerrorPhantom.this.level().getMaxBuildHeight() - 1);
             int finalHeight = Math.min(targetHeight, maxHeight);
 
             TerrorPhantom.this.anchorPoint = new BlockPos((int) overshotPos.x, finalHeight, (int) overshotPos.z);
@@ -769,7 +657,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                         newPhantom.finalizeSpawn(
                             serverLevel,
                             serverLevel.getCurrentDifficultyAt(TerrorPhantom.this.blockPosition()),
-                            EntitySpawnReason.EVENT,
+                            MobSpawnType.EVENT,
                             null
                         );
                         newPhantom.setTarget(TerrorPhantom.this.getTarget());

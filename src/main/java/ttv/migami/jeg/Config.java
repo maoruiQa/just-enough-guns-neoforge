@@ -1,42 +1,88 @@
 package ttv.migami.jeg;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 public final class Config {
     public static final ModConfigSpec CLIENT_SPEC;
     public static final ModConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec.BooleanValue LEGACY_BULLET_TRAIL_ENABLED;
 
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
+    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_NATURAL_CHANCE;
+    public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue PILLAGER_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue PILLAGER_GUNNER_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue SKELETON_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue ZOMBIE_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue HUSK_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue ZOMBIFIED_PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue WITHER_SKELETON_GUNNER_CHANCE;
+    public static final ModConfigSpec.IntValue SPAWN_SCALING_START_DAY;
+    public static final ModConfigSpec.IntValue SPAWN_SCALING_DAYS_TO_MAX;
+    public static final ModConfigSpec.BooleanValue RECOIL_BACKSTEP_ENABLED;
+    public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
+    public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
+    public static final ModConfigSpec.IntValue GUNNER_ACCURACY_START_DAY;
+    public static final ModConfigSpec.IntValue GUNNER_ACCURACY_DAYS_TO_MAX;
+    public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue GUNNER_SHOTGUN_SPREAD_MULTIPLIER;
+    public static final ModConfigSpec.IntValue BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL;
     public static final ModConfigSpec.IntValue TERROR_RAID_WAVE_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue TERROR_RAID_GROUND_WAVE_COUNT;
     public static final ModConfigSpec.IntValue TERROR_RAID_AIR_WAVE_COUNT;
+    public static final ModConfigSpec.BooleanValue FACTION_PATROL_ENABLED;
+    public static final ModConfigSpec.IntValue FACTION_PATROL_INTERVAL_DAYS;
+    public static final ModConfigSpec.IntValue FACTION_PATROL_RANDOM_INTERVAL_MIN_TICKS;
+    public static final ModConfigSpec.IntValue FACTION_PATROL_RANDOM_INTERVAL_MAX_TICKS;
+    public static final ModConfigSpec.IntValue FACTION_PATROL_MINIMUM_DAYS;
+    public static final ModConfigSpec.IntValue FACTION_PATROL_BOSSBAR_RANGE;
+    public static final ModConfigSpec.BooleanValue FACTION_RAID_ENABLED;
+    public static final ModConfigSpec.IntValue FACTION_RAID_INTERVAL_DAYS;
+    public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MIN_TICKS;
+    public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MAX_TICKS;
+    public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
+    public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
+    public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
+        clientBuilder.push("rendering");
+        LEGACY_BULLET_TRAIL_ENABLED = clientBuilder
+                .comment("If true, use legacy 1.20.1-style bullet trail rendering.")
+                .define("legacyBulletTrailEnabled", true);
+        clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
         ModConfigSpec.Builder serverBuilder = new ModConfigSpec.Builder();
 
         serverBuilder.push("spawns");
         TERROR_PHANTOM_NATURAL_CHANCE = serverBuilder
-                .comment("Probability (0-1) that a naturally spawned Phantom upgrades into a Terror Phantom.")
-                .defineInRange("terrorPhantomChance", 0.03D, 0.0D, 1.0D);
+                .comment("Base probability (0-1) that a naturally spawned Phantom upgrades into a Terror Phantom at early game.")
+                .defineInRange("terrorPhantomChance", 0.01D, 0.0D, 1.0D);
+
+        TERROR_PHANTOM_MAX_CHANCE = serverBuilder
+                .comment("Upper cap probability (0-1) for natural Terror Phantom conversion as game time increases.")
+                .defineInRange("terrorPhantomMaxChance", 0.07D, 0.0D, 1.0D);
 
         PHANTOM_GUNNER_NATURAL_CHANCE = serverBuilder
-                .comment("Probability (0-1) that a naturally spawned Phantom upgrades into a Phantom Gunner when it does not become a Terror Phantom.")
-                .defineInRange("phantomGunnerChance", 0.20D, 0.0D, 1.0D);
+                .comment("Base probability (0-1) that a naturally spawned Phantom upgrades into a Phantom Gunner (when not converted to Terror Phantom).")
+                .defineInRange("phantomGunnerChance", 0.12D, 0.0D, 1.0D);
+
+        PHANTOM_GUNNER_MAX_CHANCE = serverBuilder
+                .comment("Upper cap probability (0-1) for Phantom Gunner conversion as game time increases.")
+                .defineInRange("phantomGunnerMaxChance", 0.33D, 0.0D, 1.0D);
 
         PILLAGER_GUNNER_CHANCE = serverBuilder
-                .comment("Probability (0-1) that a naturally spawned Pillager immediately converts into a Pillager Gunner variant.")
-                .defineInRange("pillagerGunnerChance", 0.20D, 0.0D, 1.0D);
+                .comment("Base probability (0-1) that a naturally spawned Pillager converts into a Pillager Gunner.")
+                .defineInRange("pillagerGunnerChance", 0.14D, 0.0D, 1.0D);
+
+        PILLAGER_GUNNER_MAX_CHANCE = serverBuilder
+                .comment("Upper cap probability (0-1) for Pillager Gunner conversion as game time increases.")
+                .defineInRange("pillagerGunnerMaxChance", 0.35D, 0.0D, 1.0D);
 
         SKELETON_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Skeleton is flagged to receive a gun on spawn completion.")
@@ -61,6 +107,41 @@ public final class Config {
         WITHER_SKELETON_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Wither Skeleton converts into a Wither Skeleton Gunner. Wither Skeletons prefer heavy weapons.")
                 .defineInRange("witherSkeletonGunnerChance", 0.25D, 0.0D, 1.0D);
+
+        SPAWN_SCALING_START_DAY = serverBuilder
+                .comment("In-game day when dynamic spawn scaling starts.")
+                .defineInRange("spawnScalingStartDay", 3, 0, 5000);
+
+        SPAWN_SCALING_DAYS_TO_MAX = serverBuilder
+                .comment("Number of in-game days from scaling start day to reach max spawn probabilities.")
+                .defineInRange("spawnScalingDaysToMax", 28, 1, 5000);
+        serverBuilder.pop();
+
+        serverBuilder.push("combat");
+        RECOIL_BACKSTEP_ENABLED = serverBuilder
+                .comment("If true, firing a gun pushes the player backwards.")
+                .define("recoilBackstepEnabled", true);
+        RECOIL_BACKSTEP_SCALE = serverBuilder
+                .comment("Global multiplier for recoil backstep force. 0.5 means half of 1.20.1-like force.")
+                .defineInRange("recoilBackstepScale", 0.5D, 0.0D, 2.0D);
+        BLOCK_HIT_ANIMATION_ENABLED = serverBuilder
+                .comment("If true, bullets hitting a block trigger the vanilla block hit particle animation event.")
+                .define("blockHitAnimationEnabled", true);
+        GUNNER_ACCURACY_START_DAY = serverBuilder
+                .comment("In-game day when gunner accuracy scaling starts.")
+                .defineInRange("gunnerAccuracyStartDay", 5, 0, 5000);
+        GUNNER_ACCURACY_DAYS_TO_MAX = serverBuilder
+                .comment("In-game days needed for gunner accuracy to reach configured max value.")
+                .defineInRange("gunnerAccuracyDaysToMax", 40, 1, 5000);
+        GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER = serverBuilder
+                .comment("Late-game gunner spread multiplier. Lower = more accurate. Typical range: 1.5-4.0.")
+                .defineInRange("gunnerAccuracyMaxSpreadMultiplier", 2.5D, 0.1D, 20.0D);
+        GUNNER_SHOTGUN_SPREAD_MULTIPLIER = serverBuilder
+                .comment("Additional spread multiplier for gunner-fired shotguns. Lower = tighter pellet grouping.")
+                .defineInRange("gunnerShotgunSpreadMultiplier", 0.82D, 0.2D, 1.0D);
+        BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = serverBuilder
+                .comment("Projectile Protection level applied to bound terror phantom (guardian). 0 disables this reduction.")
+                .defineInRange("boundTerrorPhantomProjectileProtectionLevel", 2, 0, 20);
         serverBuilder.pop();
 
         serverBuilder.push("terrorRaid");
@@ -75,6 +156,54 @@ public final class Config {
                 .defineInRange("airWaveCount", 4, 1, 10);
         serverBuilder.pop();
 
+        serverBuilder.push("factionPatrol");
+        FACTION_PATROL_ENABLED = serverBuilder
+                .comment("If true, faction patrols spawn naturally and command-spawned patrols show encounter boss bars.")
+                .define("enabled", true);
+        FACTION_PATROL_INTERVAL_DAYS = serverBuilder
+                .comment("Fixed patrol interval in days. Set to 0 to use random interval ticks.")
+                .defineInRange("intervalDays", 5, 0, 30);
+        FACTION_PATROL_RANDOM_INTERVAL_MIN_TICKS = serverBuilder
+                .comment("Minimum random patrol interval in ticks when intervalDays is 0.")
+                .defineInRange("randomIntervalMinTicks", 12000, 1, Integer.MAX_VALUE);
+        FACTION_PATROL_RANDOM_INTERVAL_MAX_TICKS = serverBuilder
+                .comment("Maximum random patrol interval in ticks when intervalDays is 0.")
+                .defineInRange("randomIntervalMaxTicks", 24000, 1, Integer.MAX_VALUE);
+        FACTION_PATROL_MINIMUM_DAYS = serverBuilder
+                .comment("Minimum in-game days before patrols can naturally spawn.")
+                .defineInRange("minimumDays", 5, 0, 100);
+        FACTION_PATROL_BOSSBAR_RANGE = serverBuilder
+                .comment("Range in blocks where patrol boss bars are visible.")
+                .defineInRange("bossBarRange", 64, 16, 256);
+        serverBuilder.pop();
+
+        serverBuilder.push("factionRaid");
+        FACTION_RAID_ENABLED = serverBuilder
+                .comment("If true, faction raids can spawn naturally and by returning home with Faction Omen.")
+                .define("enabled", true);
+        FACTION_RAID_INTERVAL_DAYS = serverBuilder
+                .comment("Fixed raid interval in days. Set to 0 to use random interval ticks.")
+                .defineInRange("intervalDays", 30, 0, 100);
+        FACTION_RAID_RANDOM_INTERVAL_MIN_TICKS = serverBuilder
+                .comment("Minimum random raid interval in ticks when intervalDays is 0.")
+                .defineInRange("randomIntervalMinTicks", 12000, 1, Integer.MAX_VALUE);
+        FACTION_RAID_RANDOM_INTERVAL_MAX_TICKS = serverBuilder
+                .comment("Maximum random raid interval in ticks when intervalDays is 0.")
+                .defineInRange("randomIntervalMaxTicks", 24000, 1, Integer.MAX_VALUE);
+        FACTION_RAID_MINIMUM_DAYS = serverBuilder
+                .comment("Minimum in-game days before natural raids can spawn.")
+                .defineInRange("minimumDays", 15, 0, 100);
+        FACTION_RAID_HOME_TRIGGER_RADIUS = serverBuilder
+                .comment("Radius around player's respawn point that triggers a faction raid when Faction Omen is active.")
+                .defineInRange("homeTriggerRadius", 48, 8, 256);
+        serverBuilder.pop();
+
+        serverBuilder.push("combat");
+        BULLET_LIFETIME_SECONDS = serverBuilder
+                .comment("Global bullet lifetime in seconds. Applies to all bullets.")
+                .defineInRange("bulletLifetimeSeconds", 60, 1, 3600);
+        serverBuilder.pop();
+
         SERVER_SPEC = serverBuilder.build();
     }
 
@@ -84,12 +213,24 @@ public final class Config {
         return clamp01(TERROR_PHANTOM_NATURAL_CHANCE.get());
     }
 
+    public static double terrorPhantomChance(Level level) {
+        return scaledChance(level, terrorPhantomChance(), clamp01(TERROR_PHANTOM_MAX_CHANCE.get()));
+    }
+
     public static double phantomGunnerChance() {
         return clamp01(PHANTOM_GUNNER_NATURAL_CHANCE.get());
     }
 
+    public static double phantomGunnerChance(Level level) {
+        return scaledChance(level, phantomGunnerChance(), clamp01(PHANTOM_GUNNER_MAX_CHANCE.get()));
+    }
+
     public static double pillagerGunnerChance() {
         return clamp01(PILLAGER_GUNNER_CHANCE.get());
+    }
+
+    public static double pillagerGunnerChance(Level level) {
+        return scaledChance(level, pillagerGunnerChance(), clamp01(PILLAGER_GUNNER_MAX_CHANCE.get()));
     }
 
     public static double skeletonGunnerChance() {
@@ -120,6 +261,55 @@ public final class Config {
         return Math.max(3, TERROR_RAID_WAVE_INTERVAL_SECONDS.get());
     }
 
+    public static boolean recoilBackstepEnabled() {
+        return RECOIL_BACKSTEP_ENABLED.get();
+    }
+
+    public static double recoilBackstepScale() {
+        return Math.max(0.0D, RECOIL_BACKSTEP_SCALE.get());
+    }
+
+    public static boolean blockHitAnimationEnabled() {
+        return BLOCK_HIT_ANIMATION_ENABLED.get();
+    }
+
+    public static int gunnerAccuracyStartDay() {
+        return Math.max(0, GUNNER_ACCURACY_START_DAY.get());
+    }
+
+    public static int gunnerAccuracyDaysToMax() {
+        return Math.max(1, GUNNER_ACCURACY_DAYS_TO_MAX.get());
+    }
+
+    public static double gunnerAccuracyMaxSpreadMultiplier() {
+        return Math.max(0.1D, GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER.get());
+    }
+
+    public static double gunnerShotgunSpreadMultiplier() {
+        return Mth.clamp(GUNNER_SHOTGUN_SPREAD_MULTIPLIER.get(), 0.2D, 1.0D);
+    }
+
+    public static float scaleGunnerSpreadMultiplier(Level level, float earlyMultiplier) {
+        if (earlyMultiplier <= 0.0F) {
+            return earlyMultiplier;
+        }
+
+        long day = Math.max(0L, level.getDayTime() / 24000L);
+        int startDay = gunnerAccuracyStartDay();
+        if (day <= startDay) {
+            return earlyMultiplier;
+        }
+
+        int daysToMax = gunnerAccuracyDaysToMax();
+        double progress = Math.min(1.0D, (double) (day - startDay) / (double) daysToMax);
+        double maxSpreadMultiplier = Math.min((double) earlyMultiplier, gunnerAccuracyMaxSpreadMultiplier());
+        return (float) (earlyMultiplier + (maxSpreadMultiplier - earlyMultiplier) * progress);
+    }
+
+    public static int boundTerrorPhantomProjectileProtectionLevel() {
+        return Math.max(0, BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL.get());
+    }
+
     public static int terrorRaidGroundWaveCount() {
         return Math.max(1, TERROR_RAID_GROUND_WAVE_COUNT.get());
     }
@@ -128,9 +318,84 @@ public final class Config {
         return Math.max(1, TERROR_RAID_AIR_WAVE_COUNT.get());
     }
 
+    public static boolean factionPatrolEnabled() {
+        return FACTION_PATROL_ENABLED.get();
+    }
+
+    public static int factionPatrolIntervalDays() {
+        return Math.max(0, FACTION_PATROL_INTERVAL_DAYS.get());
+    }
+
+    public static int factionPatrolRandomIntervalMinTicks() {
+        return Math.max(1, FACTION_PATROL_RANDOM_INTERVAL_MIN_TICKS.get());
+    }
+
+    public static int factionPatrolRandomIntervalMaxTicks() {
+        return Math.max(factionPatrolRandomIntervalMinTicks(), FACTION_PATROL_RANDOM_INTERVAL_MAX_TICKS.get());
+    }
+
+    public static int factionPatrolMinimumDays() {
+        return Math.max(0, FACTION_PATROL_MINIMUM_DAYS.get());
+    }
+
+    public static int factionPatrolBossBarRange() {
+        return Math.max(16, FACTION_PATROL_BOSSBAR_RANGE.get());
+    }
+
+    public static boolean factionRaidEnabled() {
+        return FACTION_RAID_ENABLED.get();
+    }
+
+    public static int factionRaidIntervalDays() {
+        return Math.max(0, FACTION_RAID_INTERVAL_DAYS.get());
+    }
+
+    public static int factionRaidRandomIntervalMinTicks() {
+        return Math.max(1, FACTION_RAID_RANDOM_INTERVAL_MIN_TICKS.get());
+    }
+
+    public static int factionRaidRandomIntervalMaxTicks() {
+        return Math.max(factionRaidRandomIntervalMinTicks(), FACTION_RAID_RANDOM_INTERVAL_MAX_TICKS.get());
+    }
+
+    public static int factionRaidMinimumDays() {
+        return Math.max(0, FACTION_RAID_MINIMUM_DAYS.get());
+    }
+
+    public static int factionRaidHomeTriggerRadius() {
+        return Math.max(8, FACTION_RAID_HOME_TRIGGER_RADIUS.get());
+    }
+
+    public static int bulletLifetimeTicks() {
+        return Math.max(20, BULLET_LIFETIME_SECONDS.get() * 20);
+    }
+
+    public static boolean legacyBulletTrailEnabled() {
+        return LEGACY_BULLET_TRAIL_ENABLED.get();
+    }
+
     private static double clamp01(double value) {
         if (value < 0.0D) return 0.0D;
         if (value > 1.0D) return 1.0D;
         return value;
+    }
+
+    private static double scaledChance(Level level, double baseChance, double maxChance) {
+        double base = clamp01(baseChance);
+        double cap = clamp01(maxChance);
+        if (cap < base) {
+            cap = base;
+        }
+
+        long day = Math.max(0L, level.getDayTime() / 24000L);
+        int startDay = Math.max(0, SPAWN_SCALING_START_DAY.get());
+        int daysToMax = Math.max(1, SPAWN_SCALING_DAYS_TO_MAX.get());
+
+        if (day <= startDay) {
+            return base;
+        }
+
+        double progress = Math.min(1.0D, (double) (day - startDay) / (double) daysToMax);
+        return base + (cap - base) * progress;
     }
 }

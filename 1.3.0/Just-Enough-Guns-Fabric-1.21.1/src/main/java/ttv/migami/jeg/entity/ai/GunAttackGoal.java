@@ -4,7 +4,7 @@ import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -12,11 +12,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,7 +27,6 @@ import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
-import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.gun.BulletPenetrationHelper;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.GunStats;
@@ -77,18 +78,12 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     @Override
     public boolean canUse() {
-        LivingEntity target = this.shooter.getTarget();
-        if (target != null && isProtectedTerrorPhantomTarget(target)) {
-            this.shooter.setTarget(null);
-            return false;
-        }
-
-        if (target == null || !this.isHoldingGun() || target.isDeadOrDying()) {
+        if (this.shooter.getTarget() == null || !this.isHoldingGun() || this.shooter.getTarget().isDeadOrDying()) {
             return false;
         }
 
         // For Drowned gunners: only attack if in water or in shade
-        if (this.shooter instanceof net.minecraft.world.entity.monster.zombie.Drowned && this.shooter.getTags().contains("DrownedGunner")) {
+        if (this.shooter instanceof net.minecraft.world.entity.monster.Drowned && this.shooter.getTags().contains("DrownedGunner")) {
             return isInWaterOrShade();
         }
 
@@ -145,11 +140,6 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     public void tick() {
         LivingEntity target = this.shooter.getTarget();
         ItemStack heldItem = this.shooter.getMainHandItem();
-
-        if (target != null && isProtectedTerrorPhantomTarget(target)) {
-            this.shooter.setTarget(null);
-            return;
-        }
 
         if (target != null && heldItem.getItem() instanceof GunItem gunItem) {
             GunStats stats = gunItem.getStats();
@@ -276,20 +266,16 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         }
     }
 
-    private boolean isProtectedTerrorPhantomTarget(LivingEntity target) {
-        return target instanceof AbstractTerrorPhantom;
-    }
-
     protected void shoot(LivingEntity target, GunItem gunItem, GunStats stats) {
         ItemStack heldItem = this.shooter.getMainHandItem();
         RandomSource random = this.shooter.getRandom();
         int pellets = Math.max(1, stats.projectileAmount());
-        Identifier gunId = stats.id();
+        ResourceLocation gunId = stats.id();
         int shotsPerBurst = 1;
 
         Vec3 origin = new Vec3(this.shooter.getX(), this.shooter.getEyeY(), this.shooter.getZ());
 
-        boolean grenadeLauncher = gunId.equals(Identifier.fromNamespaceAndPath("jeg", "grenade_launcher"));
+        boolean grenadeLauncher = gunId.equals(ResourceLocation.fromNamespaceAndPath("jeg", "grenade_launcher"));
 
         for (int burst = 0; burst < shotsPerBurst; burst++) {
             if (stats.usesMagazine()) {
@@ -321,7 +307,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                     }
 
                     // Add bullet trail particles for all guns EXCEPT flamethrower
-                    if (!stats.flameTrail() && this.shooter.level() instanceof ServerLevel serverLevel) {
+                    if (!GunItem.hasFlameTrail(stats.id()) && this.shooter.level() instanceof ServerLevel serverLevel) {
                         // Use penetration-aware raycast to spawn particles along actual bullet path
                         spawnBulletTrailParticles(serverLevel, muzzle, direction, stats);
                     }
@@ -329,7 +315,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             }
 
             playGunshotSound(stats);
-            heldItem.hurtAndBreak(1, this.shooter, this.shooter.getUsedItemHand());
+            InteractionHand usedHand = this.shooter.getUsedItemHand(); EquipmentSlot slot = usedHand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND; heldItem.hurtAndBreak(1, this.shooter, slot);
         }
     }
 
@@ -457,4 +443,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
 }
+
+
+
 

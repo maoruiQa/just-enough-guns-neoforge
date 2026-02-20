@@ -37,35 +37,19 @@ public final class ModDataComponents {
                     .build()
     );
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_STAGE = REGISTER.register(
-            "gun_reload_stage",
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_ANIM_STAGE = REGISTER.register(
+            "gun_reload_anim_stage",
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build()
     );
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_TICKS_TOTAL = REGISTER.register(
-            "gun_reload_ticks_total",
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_ANIM_TICKS = REGISTER.register(
+            "gun_reload_anim_ticks",
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
-                    .build()
-    );
-
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_TICKS_REMAINING = REGISTER.register(
-            "gun_reload_ticks_remaining",
-            () -> DataComponentType.<Integer>builder()
-                    .persistent(Codec.INT)
-                    .networkSynchronized(ByteBufCodecs.VAR_INT)
-                    .build()
-    );
-
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> GUN_RELOAD_END_TICK = REGISTER.register(
-            "gun_reload_end_tick",
-            () -> DataComponentType.<Long>builder()
-                    .persistent(Codec.LONG)
-                    .networkSynchronized(ByteBufCodecs.VAR_LONG)
                     .build()
     );
 }

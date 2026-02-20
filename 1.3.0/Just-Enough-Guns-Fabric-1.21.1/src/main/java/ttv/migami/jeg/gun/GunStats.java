@@ -3,13 +3,13 @@ package ttv.migami.jeg.gun;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 
 public record GunStats(
-        Identifier id,
-        @Nullable Identifier ammoItem,
+        ResourceLocation id,
+        @Nullable ResourceLocation ammoItem,
         String reloadType,
         int magazineSize,
         int reloadTime,
@@ -19,17 +19,16 @@ public record GunStats(
         float projectileSpeed,
         int projectileLife,
         boolean gravity,
-        boolean flameTrail,
         float spread,
         int projectileAmount,
-        @Nullable Identifier fireSound,
-        @Nullable Identifier silencedFireSound,
-        @Nullable Identifier enchantedFireSound,
-        @Nullable Identifier reloadStartSound,
-        @Nullable Identifier reloadLoadSound,
-        @Nullable Identifier reloadEndSound,
-        @Nullable Identifier ejectorPullSound,
-        @Nullable Identifier ejectorReleaseSound,
+        @Nullable ResourceLocation fireSound,
+        @Nullable ResourceLocation silencedFireSound,
+        @Nullable ResourceLocation enchantedFireSound,
+        @Nullable ResourceLocation reloadStartSound,
+        @Nullable ResourceLocation reloadLoadSound,
+        @Nullable ResourceLocation reloadEndSound,
+        @Nullable ResourceLocation ejectorPullSound,
+        @Nullable ResourceLocation ejectorReleaseSound,
         float projectileSize,
         int trailColor,
         float trailLengthMultiplier
@@ -73,7 +72,7 @@ public record GunStats(
         return resolveSound(reloadEndSound);
     }
 
-    private Optional<SoundEvent> resolveSound(@Nullable Identifier location) {
+    private Optional<SoundEvent> resolveSound(@Nullable ResourceLocation location) {
         if (location == null) {
             return Optional.empty();
         }

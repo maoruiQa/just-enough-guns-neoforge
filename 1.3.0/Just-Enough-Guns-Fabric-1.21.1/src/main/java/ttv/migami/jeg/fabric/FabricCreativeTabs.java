@@ -32,10 +32,6 @@ public final class FabricCreativeTabs {
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(ModItems.GUNSMITH_MANUAL.get());
-            ModItems.ARMORED_JOY_HARNESSES.values().forEach(holder -> entries.accept(holder.get()));
-            ModItems.ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> entries.accept(holder.get()));
-            ModItems.ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> entries.accept(holder.get()));
-            entries.accept(ModItems.JOYOUS_ARMOR_PLATE.get());
         });
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> {
@@ -54,8 +50,6 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.GUNNER_PILLAGER_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_VINDICATOR_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get());
-            entries.accept(ModItems.GUNNER_GHOUL_SPAWN_EGG.get());
         });
     }
 }
-

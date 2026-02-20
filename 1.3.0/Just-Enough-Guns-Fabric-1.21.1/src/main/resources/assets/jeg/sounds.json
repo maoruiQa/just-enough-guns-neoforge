@@ -225,6 +225,7 @@
       }
     ]
   },
+
   "item.combat_rifle.fire": {
     "subtitle": "subtitle.jeg.fire",
     "sounds": [
@@ -759,6 +760,7 @@
       }
     ]
   },
+
   "item.combat_rifle.reload_magazine_out": {
     "subtitle": "subtitle.jeg.reload",
     "sounds": [
@@ -911,6 +913,15 @@
       }
     ]
   },
+  "item.service_rifle.reload_magazine_in": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/service_rifle/reload_magazine_in"
+      }
+    ]
+  },
+
   "item.gun_generic.enchanted_fire": {
     "subtitle": "subtitle.jeg.fire.enchanted",
     "sounds": [
@@ -1056,6 +1067,7 @@
       }
     ]
   },
+
   "item.pistol.silenced_fire": {
     "subtitle": "subtitle.jeg.fire.silenced",
     "sounds": [
@@ -1304,6 +1316,7 @@
       }
     ]
   },
+
   "event.phantom.distant": {
     "sounds": [
       {

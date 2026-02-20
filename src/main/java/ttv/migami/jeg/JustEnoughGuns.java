@@ -10,16 +10,19 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ttv.migami.jeg.event.FactionEventTicker;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModEntityEvents;
+import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.network.NetworkHandler;
 
 @Mod(Reference.MOD_ID)
@@ -30,12 +33,13 @@ public final class JustEnoughGuns {
         container.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
         container.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);
 
-        LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.10");
+        LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.11");
 
         // Register mod content first
         ModItems.REGISTER.register(modBus);
         ModDataComponents.REGISTER.register(modBus);
         ModEntities.REGISTER.register(modBus);
+        ModEffects.REGISTER.register(modBus);
         ModSounds.REGISTER.register(modBus);
         ModParticleTypes.REGISTER.register(modBus);
         ModStructures.STRUCTURES.register(modBus);
@@ -61,6 +65,8 @@ public final class JustEnoughGuns {
         // This prevents the ModelManager.reload() NullPointerException
         NeoForge.EVENT_BUS.register(GunEvents.class);
         NeoForge.EVENT_BUS.register(GunnerMobSpawner.class);
+        NeoForge.EVENT_BUS.register(FactionEventTicker.class);
+        NeoForge.EVENT_BUS.addListener(ModCommands::onRegisterCommands);
 
         LOGGER.debug("Game events registered successfully");
     }

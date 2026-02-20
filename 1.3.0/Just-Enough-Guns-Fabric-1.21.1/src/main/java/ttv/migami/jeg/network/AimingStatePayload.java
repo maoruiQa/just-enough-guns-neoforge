@@ -9,7 +9,7 @@ public record AimingStatePayload(boolean aiming) implements CustomPacketPayload 
     public static final Type<AimingStatePayload> TYPE = new Type<>(Reference.id("aiming_state"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AimingStatePayload> STREAM_CODEC = StreamCodec.of(
-            (buf, payload) -> buf.writeBoolean(payload.aiming),
+            (buf, payload) -> buf.writeBoolean(payload.aiming()),
             buf -> new AimingStatePayload(buf.readBoolean())
     );
 

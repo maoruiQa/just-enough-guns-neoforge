@@ -3,10 +3,7 @@ package ttv.migami.jeg.event;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
-import java.util.Map;
-import java.util.WeakHashMap;
+import net.minecraft.resources.ResourceLocation;
 import java.util.stream.StreamSupport;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,10 +11,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.monster.Phantom;
-import net.minecraft.world.entity.monster.illager.Pillager;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -26,7 +20,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -45,16 +38,12 @@ import ttv.migami.jeg.gun.GunStats;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
-    private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
     public static final String JEG_ELITE_GUNNER_TAG = "EliteGunner";
-    private static final double TERROR_PHANTOM_EXCLUSION_RADIUS = 128.0D;
-    private static final long NATURAL_TERROR_PHANTOM_COOLDOWN_TICKS = 10L * 24000L;
-    private static final Map<MinecraftServer, Long> LAST_NATURAL_TERROR_PHANTOM_SPAWN = new WeakHashMap<>();
 
-    private static final Identifier[] DEFAULT_PILLAGER_GUNS = new Identifier[] {
+    private static final ResourceLocation[] DEFAULT_PILLAGER_GUNS = new ResourceLocation[] {
             Reference.id("assault_rifle"),
             Reference.id("burst_rifle"),
             Reference.id("service_rifle"),
@@ -92,7 +81,7 @@ public final class GunEvents {
             if (pillager.getTags().contains("jeg_pillager_gunner")) {
                 // Only equip if pillager doesn't already have a gun
                 if (!isHoldingGun(pillager)) {
-                    Identifier selected = selectRandomGun(event.getLevel().getRandom());
+                    ResourceLocation selected = selectRandomGun(event.getLevel().getRandom());
                     if (selected != null) {
                         equipPillagerWithGun(pillager, selected);
                     }
@@ -104,7 +93,7 @@ public final class GunEvents {
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         long count = StreamSupport.stream(event.getServer().getRecipeManager().getRecipes().spliterator(), false)
-                .filter(holder -> holder.id().identifier().getNamespace().equals(Reference.MOD_ID))
+                .filter(holder -> holder.id().getNamespace().equals(Reference.MOD_ID))
                 .count();
         if (count == 0) {
             ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("No {} recipes were loaded; verify data pack paths", Reference.MOD_ID);
@@ -114,32 +103,26 @@ public final class GunEvents {
     }
 
     private static void grantStartingManual(ServerPlayer player) {
-        boolean manualGranted = player.getTags().contains(MANUAL_GRANTED_TAG);
-        if (!manualGranted) {
-            ItemStack manual = new ItemStack(ModItems.GUNSMITH_MANUAL.get());
-            boolean added = player.getInventory().add(manual);
-            if (!added) {
-                player.drop(manual, false);
-            }
-
-            player.awardRecipesByKey(ModItems.manualRecipes());
-
-            // Grant armored harness and armor plate recipes
-            player.awardRecipesByKey(java.util.List.of(
-                    ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness")),
-                    ResourceKey.create(Registries.RECIPE, Reference.id("joyous_armor_plate")),
-                    ResourceKey.create(Registries.RECIPE, Reference.id("finger_gun"))
-            ));
-
-            player.addTag(MANUAL_GRANTED_TAG);
+        if (player.getTags().contains(MANUAL_GRANTED_TAG)) {
+            return;
         }
 
-        if (!player.getTags().contains(FINGER_GUN_RECIPE_GRANTED_TAG)) {
-            player.awardRecipesByKey(java.util.List.of(
-                    ResourceKey.create(Registries.RECIPE, Reference.id("finger_gun"))
-            ));
-            player.addTag(FINGER_GUN_RECIPE_GRANTED_TAG);
+        ItemStack manual = new ItemStack(ModItems.GUNSMITH_MANUAL.get());
+        boolean added = player.getInventory().add(manual);
+        if (!added) {
+            player.drop(manual, false);
         }
+
+        // player.awardRecipesByKey(ModItems.manualRecipes()); // TODO: Fix recipe type conversion
+
+        // Grant armored harness and armor plate recipes
+        // Armor recipes temporarily disabled
+        // player.awardRecipesByKey(java.util.List.of(
+        //     Reference.id("armored_joy_harness"),
+        //     Reference.id("joyous_armor_plate")
+        // ));
+
+        player.addTag(MANUAL_GRANTED_TAG);
     }
 
     @SubscribeEvent
@@ -179,20 +162,20 @@ public final class GunEvents {
             return;
         }
 
-        double conversionChance = Config.pillagerGunnerChance(serverLevel);
+        double conversionChance = Config.pillagerGunnerChance();
         if (conversionChance <= 0.0D || serverLevel.random.nextDouble() >= conversionChance) {
             return;
         }
 
         // Since GunnerEntity was removed, we just tag the pillager instead
         pillager.addTag("jeg_pillager_gunner");
-        Identifier selected = selectRandomGun(serverLevel.random);
+        ResourceLocation selected = selectRandomGun(serverLevel.random);
         if (selected != null) {
             equipPillagerWithGun(pillager, selected);
         }
     }
 
-    static void equipPillagerWithGun(Pillager pillager, Identifier gunId) {
+    static void equipPillagerWithGun(Pillager pillager, ResourceLocation gunId) {
         var holder = ModItems.GUNS.get(gunId);
         if (holder == null) {
             return;
@@ -215,27 +198,23 @@ public final class GunEvents {
             return;
         }
 
-        if (event.getSpawnType() == net.minecraft.world.entity.EntitySpawnReason.NATURAL) {
-            double terrorChance = Config.terrorPhantomChance(serverLevel);
-            if (terrorChance > 0.0D
-                    && canSpawnNaturalTerrorPhantom(serverLevel, phantom)
-                    && serverLevel.random.nextDouble() < terrorChance) {
+        if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            double terrorChance = Config.terrorPhantomChance();
+            if (terrorChance > 0.0D && serverLevel.random.nextDouble() < terrorChance) {
                 TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
                 if (terror != null) {
                     terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
                     terror.setYRot(phantom.getYRot());
                     terror.setXRot(phantom.getXRot());
                     terror.setDeltaMovement(phantom.getDeltaMovement());
-                    terror.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.EntitySpawnReason.EVENT, event.getSpawnData());
-                    if (serverLevel.addFreshEntity(terror)) {
-                        recordNaturalTerrorPhantomSpawn(serverLevel);
-                        phantom.discard();
-                        return;
-                    }
+                    terror.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
+                    serverLevel.addFreshEntity(terror);
+                    phantom.discard();
+                    return;
                 }
             }
 
-            double gunnerChance = Config.phantomGunnerChance(serverLevel);
+            double gunnerChance = Config.phantomGunnerChance();
             if (gunnerChance <= 0.0D || serverLevel.random.nextDouble() >= gunnerChance) {
                 return;
             }
@@ -254,32 +233,9 @@ public final class GunEvents {
         gunner.yRotO = phantom.yRotO;
         gunner.xRotO = phantom.xRotO;
         gunner.setDeltaMovement(phantom.getDeltaMovement());
-        gunner.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.EntitySpawnReason.EVENT, event.getSpawnData());
+        gunner.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
         serverLevel.addFreshEntity(gunner);
         phantom.discard();
-    }
-
-    private static boolean canSpawnNaturalTerrorPhantom(ServerLevel level, Phantom sourcePhantom) {
-        if (!isNaturalTerrorPhantomCooldownReady(level)) {
-            return false;
-        }
-
-        AABB checkArea = sourcePhantom.getBoundingBox().inflate(TERROR_PHANTOM_EXCLUSION_RADIUS, 96.0D, TERROR_PHANTOM_EXCLUSION_RADIUS);
-        // Guardian (Bound Terror Phantom) extends TerrorPhantom, so this single query covers both variants.
-        return level.getEntitiesOfClass(TerrorPhantom.class, checkArea, existing -> existing.isAlive()).isEmpty();
-    }
-
-    private static boolean isNaturalTerrorPhantomCooldownReady(ServerLevel level) {
-        MinecraftServer server = level.getServer();
-        Long lastSpawn = LAST_NATURAL_TERROR_PHANTOM_SPAWN.get(server);
-        if (lastSpawn == null) {
-            return true;
-        }
-        return level.getGameTime() - lastSpawn >= NATURAL_TERROR_PHANTOM_COOLDOWN_TICKS;
-    }
-
-    private static void recordNaturalTerrorPhantomSpawn(ServerLevel level) {
-        LAST_NATURAL_TERROR_PHANTOM_SPAWN.put(level.getServer(), level.getGameTime());
     }
 
     @SubscribeEvent
@@ -294,16 +250,16 @@ public final class GunEvents {
         ItemStack held = entity.getMainHandItem();
         if (!(held.getItem() instanceof GunItem gunItem)) {
             // Remove vanilla ranged weapons from gunner drops
-            if (entity instanceof net.minecraft.world.entity.monster.skeleton.Skeleton) {
+            if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
                 event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
             }
             return;
         }
 
         // Remove vanilla ranged weapons from all gunner types
-        if (entity instanceof net.minecraft.world.entity.monster.skeleton.Skeleton) {
+        if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
             event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
-        } else if (entity instanceof net.minecraft.world.entity.monster.zombie.Zombie || entity instanceof net.minecraft.world.entity.monster.zombie.Husk) {
+        } else if (entity instanceof net.minecraft.world.entity.monster.Zombie || entity instanceof net.minecraft.world.entity.monster.Husk) {
             event.getDrops().removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
         }
 
@@ -353,7 +309,7 @@ public final class GunEvents {
     }
 
     private static ItemStack buildAmmoDrop(GunStats stats, RandomSource random) {
-        Identifier ammoId = stats.ammoItem();
+        ResourceLocation ammoId = stats.ammoItem();
         if (ammoId != null) {
             var ammoHolder = ModItems.AMMO.get(ammoId);
             Item ammo = ammoHolder != null ? ammoHolder.get() : BuiltInRegistries.ITEM.getOptional(ammoId).orElse(null);
@@ -368,7 +324,7 @@ public final class GunEvents {
         return new ItemStack(Items.GUNPOWDER, fallback);
     }
 
-    private static Identifier selectRandomGun(RandomSource random) {
+    private static ResourceLocation selectRandomGun(RandomSource random) {
         if (DEFAULT_PILLAGER_GUNS.length == 0) {
             return null;
         }

@@ -1185,6 +1185,5 @@
         }
       ]
     }
-  ],
-  "parent": "builtin/entity"
+  ]
 }

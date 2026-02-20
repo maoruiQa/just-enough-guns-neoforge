@@ -21,6 +21,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -34,6 +35,8 @@ import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
+import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
+import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
 
 import java.util.UUID;
 
@@ -81,9 +84,23 @@ public class GunnerMobSpawner {
             GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
             String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
             ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
-            Faction faction = manager.getFactionForMob(entityTypeLocation);
 
-            if (faction != null) {
+            // More robust entity type resolution
+            ResourceLocation actualEntityType = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+            String entityTypeString = actualEntityType != null ? actualEntityType.toString() : entityName;
+
+            Faction faction = manager.getFactionForMob(actualEntityType != null ? actualEntityType : entityTypeLocation);
+
+            if (faction == null) {
+                // Log warning and try alternative lookup
+                ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("No faction found for gunner mob type: {} (tried: {})", mob.getType().getDescriptionId(), entityTypeString);
+
+                // Remove the tag so we don't keep trying
+                mob.removeTag("MobGunner");
+                return;
+            }
+
+            {
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
@@ -95,6 +112,13 @@ public class GunnerMobSpawner {
                 if (elite) {
                     gun = faction.getEliteGun();
                     applyEliteAttributes(mob);
+                }
+
+                // Ensure gun is not null before equipping
+                if (gun == null) {
+                    ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("Faction {} has no guns available for mob {}", faction.getName(), mob.getType().getDescriptionId());
+                    mob.removeTag("MobGunner");
+                    return;
                 }
 
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
@@ -123,6 +147,7 @@ public class GunnerMobSpawner {
                 }
 
                 extendFollowRange(mob);
+                ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Equipped gunner {} with gun {} from faction {}", mob.getType().getDescriptionId(), gun, faction.getName());
             }
         }
 
@@ -139,6 +164,11 @@ public class GunnerMobSpawner {
 
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
             return;
+        }
+
+        if (mob.level() instanceof ServerLevel serverLevel) {
+            PatrolEncounterManager.recoverPatrolMob(serverLevel, mob);
+            TerrorRaidHooks.recoverRaidMob(mob);
         }
 
         mob.removeTag("GunAttackAssigned");

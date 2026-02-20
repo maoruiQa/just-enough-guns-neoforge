@@ -9,7 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -29,8 +29,7 @@ import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -39,6 +38,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import org.joml.Vector3f;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -63,14 +63,14 @@ public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<Integer> DATA_TRAIL_COLOR = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_TRAIL_LENGTH = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_SIZE = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.FLOAT);
-    private static final Identifier FLAMETHROWER_ID = Reference.id("flamethrower");
-    private static final Identifier FLARE_GUN_ID = Reference.id("flare_gun");
-    private static final Identifier ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
-    private static final Identifier GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
-    private static final Identifier HYPERSONIC_ID = Reference.id("hypersonic_cannon");
-    private static final Identifier TYPHOONEE_ID = Reference.id("typhoonee");
-    private static final Identifier COMPOUND_BOW_ID = Reference.id("compound_bow");
-    private static final Identifier PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
+    private static final ResourceLocation FLAMETHROWER_ID = Reference.id("flamethrower");
+    private static final ResourceLocation FLARE_GUN_ID = Reference.id("flare_gun");
+    private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
+    private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
+    private static final ResourceLocation HYPERSONIC_ID = Reference.id("hypersonic_cannon");
+    private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
+    private static final ResourceLocation COMPOUND_BOW_ID = Reference.id("compound_bow");
+    private static final ResourceLocation PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
     private static final Set<String> DAMAGE_FALLOFF_IDS = Set.of(
             "pump_shotgun",
             "holy_shotgun",
@@ -154,7 +154,7 @@ public class BulletEntity extends Projectile {
             return;
         }
 
-        Identifier gunId = Identifier.parse(this.entityData.get(DATA_GUN));
+        ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         GunStats gunStats = getGunStats();
 
         // FLARE GUN: Simple timer-based detonation using entity age (tickCount)
@@ -290,7 +290,7 @@ public class BulletEntity extends Projectile {
             this.setPos(nextPos.x, nextPos.y, nextPos.z);
 
             // Spawn fire particles for weapons configured for flame trails.
-            if (gunStats.flameTrail()) {
+            if (GunItem.hasFlameTrail(gunStats.id())) {
                 spawnFlameParticles();
             }
 
@@ -319,7 +319,7 @@ public class BulletEntity extends Projectile {
         Entity owner = this.getOwner();
 
         // Flare gun only detonates on timer, not on collision
-        Identifier gunId = Identifier.parse(this.entityData.get(DATA_GUN));
+        ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         if (gunId.equals(FLARE_GUN_ID)) {
             if (!this.level().isClientSide() && this.isAlive()) {
                 detonateFlare((ServerLevel) this.level());
@@ -362,7 +362,7 @@ public class BulletEntity extends Projectile {
                 applyBulletproofWear(living);
 
                 ServerLevel serverLevel = (ServerLevel) this.level();
-                living.hurtServer(serverLevel, source, damage);
+                living.hurt(source, damage);
 
                 boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
 
@@ -455,7 +455,7 @@ public class BulletEntity extends Projectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         // This method should only be called for SOLID blocks (penetrable blocks are filtered in tick())
-        Identifier gunId = Identifier.parse(this.entityData.get(DATA_GUN));
+        ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
 
         // Flare gun only detonates on timer, not on collision
         if (gunId.equals(FLARE_GUN_ID)) {
@@ -493,7 +493,7 @@ public class BulletEntity extends Projectile {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
+    protected void addAdditionalSaveData(CompoundTag output) {
         output.putString("GunId", this.entityData.get(DATA_GUN));
         output.putFloat("Damage", this.entityData.get(DATA_DAMAGE));
         output.putInt("Life", this.entityData.get(DATA_LIFE));
@@ -504,24 +504,24 @@ public class BulletEntity extends Projectile {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        this.entityData.set(DATA_GUN, input.getStringOr("GunId", Reference.id("assault_rifle").toString()));
-        this.entityData.set(DATA_DAMAGE, input.getFloatOr("Damage", this.entityData.get(DATA_DAMAGE)));
-        this.entityData.set(DATA_LIFE, input.getIntOr("Life", this.entityData.get(DATA_LIFE)));
-        this.entityData.set(DATA_TRAIL_COLOR, input.getIntOr("TrailColor", this.entityData.get(DATA_TRAIL_COLOR)));
-        this.entityData.set(DATA_TRAIL_LENGTH, input.getFloatOr("TrailLength", this.entityData.get(DATA_TRAIL_LENGTH)));
-        this.entityData.set(DATA_SIZE, input.getFloatOr("ProjectileSize", this.entityData.get(DATA_SIZE)));
-        this.entityData.set(DATA_TICKS_LIVED, input.getIntOr("Ticks", this.entityData.get(DATA_TICKS_LIVED)));
+    protected void readAdditionalSaveData(CompoundTag input) {
+        this.entityData.set(DATA_GUN, input.contains("GunId") ? input.getString("GunId") : Reference.id("assault_rifle").toString());
+        this.entityData.set(DATA_DAMAGE, input.contains("Damage") ? input.getFloat("Damage") : this.entityData.get(DATA_DAMAGE));
+        this.entityData.set(DATA_LIFE, input.contains("Life") ? input.getInt("Life") : this.entityData.get(DATA_LIFE));
+        this.entityData.set(DATA_TRAIL_COLOR, input.contains("TrailColor") ? input.getInt("TrailColor") : this.entityData.get(DATA_TRAIL_COLOR));
+        this.entityData.set(DATA_TRAIL_LENGTH, input.contains("TrailLength") ? input.getFloat("TrailLength") : this.entityData.get(DATA_TRAIL_LENGTH));
+        this.entityData.set(DATA_SIZE, input.contains("ProjectileSize") ? input.getFloat("ProjectileSize") : this.entityData.get(DATA_SIZE));
+        this.entityData.set(DATA_TICKS_LIVED, input.contains("Ticks") ? input.getInt("Ticks") : this.entityData.get(DATA_TICKS_LIVED));
         this.entityData.set(DATA_LIFE, Config.bulletLifetimeTicks());
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
     }
 
     public GunStats getGunStats() {
-        Identifier id = Identifier.parse(this.entityData.get(DATA_GUN));
+        ResourceLocation id = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         GunStats stats = GunDefinitions.ALL.get(id);
         if (stats == null) {
-            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), true, false, 0F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
+            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), true, 0F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
         }
         return stats;
     }
@@ -580,7 +580,7 @@ public class BulletEntity extends Projectile {
 
     private boolean handleSpecialImpact(HitResult result) {
         GunStats stats = getGunStats();
-        Identifier id = stats.id();
+        ResourceLocation id = stats.id();
 
         if (id.equals(FLAMETHROWER_ID)) {
             if (!this.level().isClientSide()) {
@@ -888,7 +888,7 @@ public class BulletEntity extends Projectile {
 
             // Colored dust particles
             for (int color : FLARE_BLAST_COLORS) {
-                serverLevel.sendParticles(new DustParticleOptions(color, 1.2F),
+                serverLevel.sendParticles(new DustParticleOptions(rgbToVector3f(color), 1.2F),
                     pos.x, pos.y, pos.z,
                     4, 2.0D, 2.0D, 2.0D, 0.06D);
             }
@@ -924,7 +924,7 @@ public class BulletEntity extends Projectile {
                     } else {
                          source = this.damageSources().thrown(this, owner);
                      }
-                     living.hurtServer(serverLevel, source, damage);
+                     living.hurt(source, damage);
                      living.igniteForSeconds(2);
                  }
              }
@@ -1017,7 +1017,7 @@ public class BulletEntity extends Projectile {
             double haloZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
 
             int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
-            level.addParticle(new DustParticleOptions(color, 2.4F),
+            level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
                 haloX, haloY, haloZ,
                 0, 0, 0);
 
@@ -1044,7 +1044,7 @@ public class BulletEntity extends Projectile {
 
             if (column % 3 == 0) {
                 int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
-                level.addParticle(new DustParticleOptions(color, 2.4F),
+                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
                     startX, startY, startZ,
                     velocityX * 0.85, -0.38 - level.random.nextDouble() * 0.34, velocityZ * 0.85);
             }
@@ -1064,7 +1064,7 @@ public class BulletEntity extends Projectile {
 
             if (ring % 2 == 0) {
                 int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
-                level.addParticle(new DustParticleOptions(color, 2.8F),
+                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.8F),
                     ringX, ringY, ringZ,
                     0, 0, 0);
             }
@@ -1080,7 +1080,7 @@ public class BulletEntity extends Projectile {
             double outerZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
 
             int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
-            level.addParticle(new DustParticleOptions(color, 2.2F),
+            level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.2F),
                 outerX, outerY, outerZ,
                 0, 0, 0);
 
@@ -1116,7 +1116,7 @@ public class BulletEntity extends Projectile {
         for (int color : FLARE_BLAST_COLORS) {
             for (int i = 0; i < 5; i++) {
                 double velocityScale = 0.9 + level.random.nextDouble() * 2.2;
-                level.addParticle(new DustParticleOptions(color, 2.6F),
+                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.6F),
                     originX + (level.random.nextDouble() - 0.5) * spread,
                     originY + (level.random.nextDouble() - 0.5) * spread,
                     originZ + (level.random.nextDouble() - 0.5) * spread,
@@ -1141,6 +1141,13 @@ public class BulletEntity extends Projectile {
             this
         );
         return this.level().clip(clipContext);
+    }
+
+    private static Vector3f rgbToVector3f(int color) {
+        float r = ((color >> 16) & 0xFF) / 255.0F;
+        float g = ((color >> 8) & 0xFF) / 255.0F;
+        float b = (color & 0xFF) / 255.0F;
+        return new Vector3f(r, g, b);
     }
 
     @Nullable
@@ -1244,6 +1251,9 @@ public class BulletEntity extends Projectile {
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {
-        return !stats.flameTrail() && GunItem.isBulletClassWeapon(stats.id());
+        return !GunItem.hasFlameTrail(stats.id()) && GunItem.isBulletClassWeapon(stats.id());
     }
 }
+
+
+

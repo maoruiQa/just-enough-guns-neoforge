@@ -8,8 +8,9 @@ import ttv.migami.jeg.Reference;
 
 public record ReloadRequestPayload(InteractionHand hand) implements CustomPacketPayload {
     public static final Type<ReloadRequestPayload> TYPE = new Type<>(Reference.id("reload_request"));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, ReloadRequestPayload> STREAM_CODEC = StreamCodec.of(
-            (buf, payload) -> buf.writeEnum(payload.hand),
+            (buf, payload) -> buf.writeEnum(payload.hand()),
             buf -> new ReloadRequestPayload(buf.readEnum(InteractionHand.class))
     );
 
@@ -18,4 +19,3 @@ public record ReloadRequestPayload(InteractionHand hand) implements CustomPacket
         return TYPE;
     }
 }
-

@@ -14,6 +14,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.render.entity.BulletRenderer;
 import ttv.migami.jeg.client.render.entity.GhoulRenderer;
 import ttv.migami.jeg.client.render.entity.PhantomGunnerRenderer;
+import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomRenderer;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
@@ -37,8 +38,9 @@ public final class ClientSetup {
             event.registerEntityRenderer(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerRenderer::new);
             event.registerEntityRenderer(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomRenderer::new);
             event.registerEntityRenderer(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomRenderer::new);
+            event.registerEntityRenderer(ModEntities.RAID_ENTITY.get(), RaidEntityRenderer::new);
 
-            LOGGER.debug("Successfully registered {} entity renderers", 7);
+            LOGGER.debug("Successfully registered {} entity renderers", 8);
         } catch (Exception e) {
             LOGGER.error("Failed to register entity renderers", e);
             throw e;

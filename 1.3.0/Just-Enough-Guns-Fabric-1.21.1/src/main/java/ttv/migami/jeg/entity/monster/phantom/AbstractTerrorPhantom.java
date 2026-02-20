@@ -6,21 +6,20 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -28,7 +27,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Phantom;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -41,18 +40,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.GrenadeEntity;
@@ -67,7 +62,6 @@ import ttv.migami.jeg.item.GunItem;
  * Shared behaviour for Terror Phantom variants.
  */
 public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTerrorPhantom.class);
     private static final int SUMMON_INTERVAL_TICKS = 200;
     private static final int MAX_ACTIVE_GUNNERS = 6; // Increased from 3 to 6 for more intense battles
     private static final double SUMMON_RANGE = 48.0D;
@@ -75,9 +69,6 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final int IDLE_HEAL_DELAY_TICKS = 20 * 60;
     private static final int IDLE_HEAL_INTERVAL_TICKS = 40;
     private static final float IDLE_HEAL_AMOUNT = 1.0F;
-    private static final int DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = 2;
-    private static final long DESPAWN_IF_UNHIT_TICKS = 24000L;
-    private static final String TAG_LAST_ATTACKED_GAME_TIME = "LastAttackedGameTime";
     private int summonCooldown = SUMMON_INTERVAL_TICKS;
     private final ServerBossEvent bossInfo = new ServerBossEvent(
             this.getDisplayName(),
@@ -85,16 +76,12 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             BossEvent.BossBarOverlay.PROGRESS
     );
     private GunStats cachedStats;
-    protected int magazine;
+    private int magazine;
     private int reloadTicks;
-    protected int fireCooldown;
+    private int fireCooldown;
     private int ticksSinceLastDamage = IDLE_HEAL_DELAY_TICKS;
-    private long lastAttackedGameTime = Long.MIN_VALUE;
-
     private static final String GECKO_CONTROLLER = "Idle";
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
-    private static final RawAnimation GECKO_DYING = RawAnimation.begin().thenPlay("dying");
-
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
 
     protected AbstractTerrorPhantom(EntityType<? extends Phantom> type, Level level) {
@@ -108,12 +95,10 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(
+                this,
                 GECKO_CONTROLLER,
                 0,
                 state -> {
-                    if (isDying()) {
-                        return state.setAndContinue(GECKO_DYING);
-                    }
                     state.setAndContinue(GECKO_IDLE);
                     return PlayState.CONTINUE;
                 }
@@ -125,7 +110,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         return geckoCache;
     }
 
-    protected Identifier defaultGunId() {
+    protected ResourceLocation defaultGunId() {
         return Reference.id("light_machine_gun");
     }
 
@@ -142,7 +127,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     protected void equipDefaultGun() {
-        Identifier gunId = defaultGunId();
+        ResourceLocation gunId = defaultGunId();
         if (gunId == null) {
             return;
         }
@@ -234,7 +219,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         }
 
         playGunshotSound(stats);
-        stack.hurtAndBreak(1, this, InteractionHand.MAIN_HAND);
+        stack.hurtAndBreak(1, this, EquipmentSlot.MAINHAND);
         this.gameEvent(GameEvent.ENTITY_ACTION);
 
         if (stats.usesMagazine()) {
@@ -250,7 +235,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         }
     }
 
-    protected void playGunshotSound(GunStats stats) {
+    private void playGunshotSound(GunStats stats) {
         stats.fireSoundEvent().or(stats::silencedFireSoundEvent).ifPresentOrElse(
                 sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 7.5F, 0.9F + this.random.nextFloat() * 0.2F),
                 () -> this.level().playSound(null, this, SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 7.5F, 0.9F + this.random.nextFloat() * 0.2F)
@@ -350,12 +335,6 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             return;
         }
 
-        ServerLevel serverLevel = (ServerLevel) this.level();
-        long gameTime = serverLevel.getGameTime();
-        if (this.lastAttackedGameTime == Long.MIN_VALUE) {
-            this.lastAttackedGameTime = gameTime;
-        }
-
         if (this.getPhantomSize() != PHANTOM_SIZE) {
             this.setPhantomSize(PHANTOM_SIZE);
         }
@@ -372,52 +351,19 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             this.heal(IDLE_HEAL_AMOUNT);
         }
 
-        if (gameTime - this.lastAttackedGameTime >= DESPAWN_IF_UNHIT_TICKS) {
-            this.discard();
-            return;
-        }
-
         LivingEntity target = this.getTarget();
         if (target != null && target.isAlive()) {
-            trySummonReinforcements(serverLevel, target);
+            trySummonReinforcements((ServerLevel) this.level(), target);
         }
     }
 
-    @Override
+    // @Override removed - method signature changed in 1.21.1
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        float adjustedAmount = applyDefaultProjectileProtectionReduction(source, amount);
-        boolean damaged = super.hurtServer(level, source, adjustedAmount);
+        boolean damaged = super.hurt(source, amount);
         if (damaged && amount > 0.0F) {
             this.ticksSinceLastDamage = 0;
-            this.lastAttackedGameTime = level.getGameTime();
         }
         return damaged;
-    }
-
-    private float applyDefaultProjectileProtectionReduction(DamageSource source, float amount) {
-        if (this.getType() != ModEntities.TERROR_PHANTOM.get()) {
-            return amount;
-        }
-        if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
-            return amount;
-        }
-
-        // Match vanilla projectile protection scaling: EPF = level * 2, capped at 20; reduction = EPF / 25.
-        int epf = Math.min(20, DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL * 2);
-        float reduction = (float) epf / 25.0F;
-        return amount * (1.0F - reduction);
-    }
-
-    @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
-        super.addAdditionalSaveData(output);
-        output.putLong(TAG_LAST_ATTACKED_GAME_TIME, this.lastAttackedGameTime);
-    }
-
-    @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        super.readAdditionalSaveData(input);
-        this.lastAttackedGameTime = input.getLongOr(TAG_LAST_ATTACKED_GAME_TIME, Long.MIN_VALUE);
     }
 
     @Override
@@ -441,19 +387,19 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor accessor, DifficultyInstance difficulty, EntitySpawnReason reason, SpawnGroupData data) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor accessor, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData data) {
         SpawnGroupData spawnGroupData = super.finalizeSpawn(accessor, difficulty, reason, data);
         if (accessor instanceof ServerLevel serverLevel) {
             this.onSpawned(serverLevel, this.blockPosition());
-            this.lastAttackedGameTime = serverLevel.getGameTime();
         }
         this.setPersistenceRequired();
         return spawnGroupData;
     }
 
     @Override
-    protected void customServerAiStep(ServerLevel serverLevel) {
-        super.customServerAiStep(serverLevel);
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        // ServerLevel can be accessed via this.level()
         tickCombatTimers();
         this.bossInfo.setProgress(this.getHealth() / this.getMaxHealth());
         this.bossInfo.setName(this.getDisplayName());
@@ -489,7 +435,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         gunner.setXRot(this.getXRot());
         gunner.yRotO = gunner.getYRot();
         gunner.xRotO = gunner.getXRot();
-        gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(spawnPos)), EntitySpawnReason.EVENT, null);
+        gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(spawnPos)), MobSpawnType.EVENT, null);
         gunner.setTarget(target);
         level.addFreshEntity(gunner);
         this.summonCooldown = Mth.nextInt(this.random, 200, 320);
@@ -512,7 +458,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             skeleton.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
             skeleton.setYRot(level.random.nextFloat() * 360.0F);
             skeleton.yRotO = skeleton.getYRot();
-            skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
+            skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
             skeleton.addTag(GunEvents.JEG_GUNNER_TAG);            // JEG faction system will handle gun equipping automatically
             prepareSkeletonForDaylight(skeleton);
 
@@ -576,7 +522,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
             gunner.setYRot(level.random.nextFloat() * 360.0F);
             gunner.yRotO = gunner.getYRot();
-            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
+            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
 
             // Set target to nearest player
             if (target != null) {
@@ -628,13 +574,13 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         return super.canAttack(target);
     }
 
-    protected abstract Identifier getVariantTexture();
+    protected abstract ResourceLocation getVariantTexture();
 
     protected float getModelScale() {
         return 1.6F;
     }
 
-    public Identifier getRenderTexture() {
+    public ResourceLocation getRenderTexture() {
         return getVariantTexture();
     }
 
@@ -642,17 +588,13 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         return getModelScale();
     }
 
-    public final Identifier getGeoTexture() {
+    public final ResourceLocation getGeoTexture() {
         return getVariantTexture();
     }
 
-    public final float getGeoScale() {
+    public float getGeoScale() {
         return getModelScale();
     }
-
-    public abstract boolean isRolling();
-
-    public abstract boolean isDying();
 
     @Override
     public void setCustomName(Component name) {

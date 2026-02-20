@@ -3,6 +3,7 @@ package ttv.migami.jeg.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,8 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.lwjgl.opengl.GL11;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
@@ -23,6 +26,9 @@ import ttv.migami.jeg.item.GunItem;
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
     private static final float AIM_FOV_MULTIPLIER = 0.8F;
+    private static final int OVERHEAT_BAR_WIDTH = 82;
+    private static final int OVERHEAT_BAR_HEIGHT = 4;
+    private static final int OVERHEAT_BAR_Y_OFFSET = 58;
     private static int hudTicker;
     private static String lastHudText = "";
 
@@ -117,6 +123,61 @@ public final class GunClientEvents {
         }
 
         return "Ammo " + reserveText;
+    }
+
+    @SubscribeEvent
+    public static void onRenderGuiLayer(RenderGuiLayerEvent.Post event) {
+        if (!VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {
+            return;
+        }
+        renderOverheatBar(event.getGuiGraphics());
+    }
+
+    private static void renderOverheatBar(GuiGraphics guiGraphics) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null) {
+            return;
+        }
+
+        ItemStack held = player.getMainHandItem();
+        if (!(held.getItem() instanceof GunItem gun) || !gun.usesOverheatMechanic()) {
+            return;
+        }
+
+        int percent = gun.getOverheatPercent(held);
+        if (percent <= 0) {
+            return;
+        }
+
+        int screenWidth = minecraft.getWindow().getGuiScaledWidth();
+        int screenHeight = minecraft.getWindow().getGuiScaledHeight();
+        int x = (screenWidth - OVERHEAT_BAR_WIDTH) / 2;
+        int y = screenHeight - OVERHEAT_BAR_Y_OFFSET;
+
+        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
+        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
+
+        float ratio = Math.max(0.0F, Math.min(1.0F, percent / 100.0F));
+        int fill = Math.max(1, Math.round(OVERHEAT_BAR_WIDTH * ratio));
+        guiGraphics.fill(x, y, x + fill, y + OVERHEAT_BAR_HEIGHT, overheatColor(ratio));
+    }
+
+    private static int overheatColor(float ratio) {
+        float clamped = Math.max(0.0F, Math.min(1.0F, ratio));
+        int red;
+        int green;
+        if (clamped < 0.5F) {
+            float t = clamped / 0.5F;
+            red = Math.round(255.0F * t);
+            green = 255;
+        } else {
+            float t = (clamped - 0.5F) / 0.5F;
+            red = 255;
+            green = Math.round(255.0F * (1.0F - t));
+        }
+        int blue = 48;
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
     @SubscribeEvent

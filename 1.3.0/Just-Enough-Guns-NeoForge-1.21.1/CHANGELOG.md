@@ -1,5 +1,135 @@
 # Changelog
 
+## 1.3.0 - 2026-02-19 (1.21.1 Service Rifle ADS Visibility + Handguard Hide)
+
+### Changed
+- In first-person, forced `service_rifle` aiming-related bones visible: `railing`, `iron_sight`, `modified_iron_sight`, `stock_iron_sight`.
+- In first-person, forced `service_rifle` handguard bones hidden: `handguard`, `light_handguard`, `tactical_handguard`, `weighted_handguard`.
+- Lowered `service_rifle` ADS height by a medium step: ADS extra uplift `0.045F` -> `0.020F`.
+
+## 1.3.0 - 2026-02-19 (1.21.1 ADS Raise Pass: Burst + Shotgun/SMG + Hypersonic Centering)
+
+### Changed
+- Raised `burst_rifle` ADS height slightly by changing ADS extra uplift from `0.000F` to `0.010F`.
+- Raised `burst_rifle` ADS height again slightly by increasing its ADS extra uplift from `0.010F` to `0.020F`.
+- Raised `burst_rifle` ADS height slightly again by increasing its ADS extra uplift from `0.020F` to `0.030F`.
+- Raised ADS height for shotgun family and `custom_smg`/`phantom_smg` by setting their ADS extra uplift to `0.075F`.
+- Raised `supersonic_shotgun` ADS height by a medium-small amount, increasing its ADS extra uplift from `0.020F` to `0.045F`.
+- Lowered `service_rifle` ADS height slightly by moving it from default uplift (`0.060F`) to the stable uplift tier (`0.050F`).
+- Lowered `service_rifle` ADS height slightly again by reducing ADS extra uplift from `0.050F` to `0.045F`.
+- Lowered `service_rifle` ADS height by a medium step by reducing ADS extra uplift from `0.045F` to `0.020F`.
+- Added first-person `service_rifle` bone-visibility override:
+  - force-show aiming-related bones (`railing`, `iron_sight`, `modified_iron_sight`, `stock_iron_sight`),
+  - force-hide handguard bones (`handguard`, `light_handguard`, `tactical_handguard`, `weighted_handguard`).
+- Kept previous low-uplift retunes for `flamethrower` and `light_machine_gun` (`0.020F`) and preserved stable-anchor group behavior.
+- Centered `hypersonic_cannon` in ADS by shifting `adsX` from `0.35F` to `0.24F`.
+
+## 1.3.0 - 2026-02-19 (1.21.1 ADS Retune: Burst/Flamethrower/Supersonic + Global Others Up)
+
+### Changed
+- Raised global ADS extra-height baseline for "other guns" from `0.050F` to `0.060F` (`adsExtraHeight` default path), so non-exempt weapons aim slightly higher.
+- Kept these weapons unchanged at their previous ADS uplift level (`0.050F`): `hollenfire_mk2`, `infantry_rifle`, `blossom_rifle`, `subsonic_rifle`, `soulhunter_mk2`.
+- Kept `combat_rifle` excluded from ADS extra uplift (`0.0F`) as parity anchor.
+- Slightly raised `rocket_launcher` ADS net height indirectly by letting it receive the new default ADS uplift path.
+- Applied medium-large ADS downshift for `burst_rifle` via dedicated compensation override: `LegacyComp(0.60F, 0.68F, -0.03F)` and zero ADS extra uplift.
+- Lowered `flamethrower` ADS (medium-small) and shifted its overall pose left/down:
+  - pose `hipX/hipY`: `0.62/-0.38` -> `0.56/-0.42`
+  - pose `adsX/adsY`: `0.34/-0.48` -> `0.28/-0.52`
+  - ADS extra uplift reduced to `0.020F`.
+- Added dedicated `SUPSERSONIC_SHOTGUN_PROFILE`:
+  - ADS lowered slightly-medium (`adsY`: `-0.52` -> `-0.56`)
+  - ADS moved forward medium (`adsZ`: `-0.78` -> `-0.86`)
+  - ADS extra uplift reduced to `0.020F`.
+- Applied slight ADS uplift for `light_machine_gun` by moving it from no ADS extra uplift to `0.020F`.
+
+## 1.3.0 - 2026-02-19 (1.21.1 ADS Coverage Correction + Targeted Recalibration)
+
+### Changed
+- Corrected global ADS extra-height coverage so it applies to all guns except only `light_machine_gun` and `combat_rifle`.
+- Lowered `soulhunter_mk2` hip (non-ADS) height to a medium-lower profile while keeping its ADS net height near previous level.
+- Slightly increased `rocket_launcher` ADS net height via dedicated compensation re-tuning under the corrected global ADS uplift.
+- Recalibrated `minigun` ADS dedicated compensation to keep net ADS height stable under the broader global ADS uplift.
+
+## 1.3.0 - 2026-02-19 (1.21.1 ADS Height Batch Retune)
+
+### Changed
+- Lowered ADS height moderately for `soulhunter_mk2` and `minigun` by reducing their dedicated ADS compensation targets.
+- Lowered ADS height slightly for `rocket_launcher` and shifted its ADS pose slightly left by reducing `rocket_launcher` `adsX`.
+- Increased global ADS extra height uplift for all other guns to `0.050F` while excluding `light_machine_gun`, `combat_rifle`, `rocket_launcher`, `minigun`, and `soulhunter_mk2`.
+
+## 1.3.0 - 2026-02-19 (1.21.1 Visibility + ADS Height Retune)
+
+### Changed
+- Fixed first-person hand visibility for `rocket_launcher` and `minigun` by forcing dual-arm rendering and replacing their arm transforms with in-frame neutral heavy-arm transforms.
+- Lowered `typhoonee` first-person height to a medium-lower profile: `LegacyComp(0.98F, 1.12F, -0.06F)`.
+- Greatly lowered `soulhunter_mk2` first-person height with a dedicated override: `LegacyComp(0.22F, 0.30F, -0.04F)`.
+- Added an ADS-only extra height uplift for all guns except `light_machine_gun` and `combat_rifle` via `adsExtraHeight(...)`.
+
+## 1.3.0 - 2026-02-19 (1.21.1 Typhoonee Downshift + RPG/Minigun Arm Visibility)
+
+### Changed
+- Reduced `typhoonee` first-person compensation from `LegacyComp(1.70F, 1.86F, -0.06F)` to `LegacyComp(1.20F, 1.34F, -0.06F)` to move the weapon substantially lower while keeping it visible.
+- Split `rocket_launcher`/`minigun` first-person pose mapping into body-vs-arm responsibilities:
+  - kept the currently tuned swapped gun body offsets/scales,
+  - restored arm-side behavior and arm transforms to their original weapon ownership to prevent missing-hands frames.
+
+## 1.3.0 - 2026-02-19 (1.21.1 Typhoonee First-Person Visibility Hotfix)
+
+### Changed
+- Added a dedicated `typhoonee` first-person compensation override in `GunItemClientExtensions` instead of sharing the generic heavy-weapon compensation bucket.
+- Set `typhoonee` compensation to `LegacyComp(1.70F, 1.86F, -0.06F)` to keep the weapon body consistently inside the first-person view window on NeoForge 1.21.1.
+
+## 1.3.0 - 2026-02-19 (1.21.1 Render-Path Flattening Follow-up)
+
+### Changed
+- Flattened first-person arm rendering path in NeoForge 1.21.1 to match NeoForge 1.21.11 behavior: `FirstPersonGunArmRenderEvents` now does not render event-based arm overlays by default.
+- Kept first-person arm rendering authoritative in GeckoLib bone layer to avoid fallback-path motion flattening across heavy weapons (e.g. `minigun` vs `rocket_launcher`).
+- Clarified per-gun compensation intent in `GunItemClientExtensions`: values are anchored by `combat_rifle` parity and used after render-path alignment.
+
+## 1.3.0 - 2026-02-19 (1.21.1 Per-Gun Compensation Table Applied)
+
+### Changed
+- Replaced NeoForge 1.21.1 first-person legacy category-based compensation with an explicit per-gun compensation table in `GunItemClientExtensions`.
+- Compensation now uses per-gun `hipY/adsY/z` values (linearly blended by ADS progress) derived from the `combat_rifle` visual parity anchor against NeoForge 1.21.11.
+- Restored `combat_rifle` `GunPoseProfile` hip/ADS Y values back to NeoForge 1.21.11 baseline values and moved parity uplift responsibility into the per-gun compensation table.
+
+## 1.3.0 - 2026-02-19 (1.21.1 First-Person Arm Visibility Root-Cause Fix)
+
+### Fixed
+- Fixed NeoForge 1.21.1 first-person hand invisibility caused by brittle reflective hand-render invocation:
+  - Added a shared hand-render invoker (`HandRenderInvoker`) that supports both 5-parameter and 6-parameter `renderLeftHand/renderRightHand` signatures.
+  - Removed duplicated reflection paths between arm-bone layer and event fallback, so both use one compatibility implementation.
+- Fixed fallback starvation where event arm rendering was skipped only because GeoLib arm layer was "operational" even when no arm was actually drawn in the current visual flow.
+
+### Changed
+- Updated `GunFirstPersonArmsLayer` to publish a recent-render signal and let event fallback activate when no arm was rendered recently.
+- Kept GeoLib arm layer active across transient failures (no hard one-way shutdown), with event fallback covering missing-arm frames.
+
+## 1.3.0 - 2026-02-18 (1.21.1 First-Person Compensation Recalibration Follow-up)
+
+### Changed
+- Recalibrated NeoForge 1.21.1 first-person legacy compensation in `GunItemClientExtensions` to better match NeoForge 1.21.11 visual framing under the same `GunPoseProfile` parameter system.
+- Increased global first-person Y baseline compensation and ADS-stage Y uplift so guns no longer sit excessively low in the 1.21.1 render baseline.
+- Increased category-specific Y compensation for `RIFLE/SHOTGUN/SNIPER/LMG/HEAVY/default` groups to preserve relative weapon class posture while lifting overall sightline alignment.
+
+## 1.3.0 - 2026-02-18 (1.21.1 First-Person Parameter-System Adaptation)
+
+### Added
+- Added `GunFirstPersonArmsLayer` for the NeoForge 1.21.1 branch (`src/main/java/ttv/migami/jeg/client/render/gun/layer/GunFirstPersonArmsLayer.java`) to attempt GeckoLib-bone-driven first-person arm rendering with runtime safety fallback.
+- Added compatibility helpers in `AnimatedGunRenderer` to resolve first-person context and active hand from current render state (`currentPerspective`, `isFirstPersonContext`, `resolveRenderedHand`).
+
+### Changed
+- Updated `AnimatedGunRenderer` in NeoForge 1.21.1 to register the first-person arms layer (`addRenderLayer(new GunFirstPersonArmsLayer(this))`), aligning renderer composition with the newer profile-based first-person pipeline.
+- Updated `FirstPersonGunArmRenderEvents` to act as fallback-only path: when bone-layer rendering is operational, event-based hand rendering is skipped.
+- Updated `GunItemClientExtensions` to keep the 1.21.11 profile interpolation model while adding 1.21.1-specific baseline compensation:
+  - global Y/Z baseline compensation,
+  - ADS extra Y compensation,
+  - category-group compensation (`RIFLE/SHOTGUN/SNIPER/LMG/HEAVY/default`) via `GunCategory`.
+
+### Fixed
+- Fixed first-person guns appearing significantly too low in NeoForge 1.21.1 after profile-system migration by introducing explicit legacy baseline compensation in the hand-transform stage.
+- Fixed first-person arm/gun reference-frame drift by prioritizing bone-driven arm rendering and demoting event overlay rendering to compatibility fallback only.
+
 ## 1.2.3 - 2026-02-14
 
 ### Changed

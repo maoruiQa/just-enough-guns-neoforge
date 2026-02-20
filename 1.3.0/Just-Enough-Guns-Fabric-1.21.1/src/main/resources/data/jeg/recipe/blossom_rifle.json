@@ -1,18 +1,24 @@
-{
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "CCB",
-    " PB",
-    "  C"
-  ],
-  "key": {
-    "C": "minecraft:cherry_log",
-    "P": "minecraft:pink_dye",
-    "B": "minecraft:iron_block"
-  },
-  "result": {
-    "id": "jeg:blossom_rifle",
-    "count": 1
-  }
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "CCB",
+                    " PB",
+                    "  C"
+                ],
+    "key":  {
+                "C":  {
+                          "item":  "minecraft:cherry_log"
+                      },
+                "P":  {
+                          "item":  "minecraft:pink_dye"
+                      },
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:blossom_rifle",
+                   "count":  1
+               }
 }

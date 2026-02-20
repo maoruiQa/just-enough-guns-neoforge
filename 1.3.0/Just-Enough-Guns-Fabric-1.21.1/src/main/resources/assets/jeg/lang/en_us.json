@@ -1,5 +1,4 @@
 {
-  "item.jeg.finger_gun": "Finger Gun",
   "item.jeg.ghoul_spawn_talisman": "Ghoul Spawn Talisman",
   "item.jeg.boo_spawn_honeycomb": "Boo Spawn Honeycomb",
   "item.jeg.gunner_zombie_spawn_egg": "Gunner Zombie Spawn Egg",
@@ -16,6 +15,7 @@
   "item.jeg.gunner_wither_skeleton_spawn_egg": "Gunner Wither Skeleton Spawn Egg",
   "item.jeg.gunner_ghoul_spawn_egg": "Gunner Ghoul Spawn Egg",
   "item.jeg.phantom_gunner_spawn_egg": "Phantom Gunner Spawn Egg",
+  "item.jeg.finger_gun": "Finger Gun",
   "block.jeg.scrap_workbench": "Scrap Workbench",
   "block.jeg.gunmetal_workbench": "Gunmetal Workbench",
   "block.jeg.gunnite_workbench": "Gunnite Workbench",

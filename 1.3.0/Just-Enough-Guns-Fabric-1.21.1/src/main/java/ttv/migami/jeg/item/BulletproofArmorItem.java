@@ -15,27 +15,25 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.item.equipment.Equippable;
-import net.minecraft.world.item.equipment.EquipmentAsset;
-import net.minecraft.world.item.equipment.EquipmentAssets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class BulletproofArmorItem extends Item {
+/**
+ * Bulletproof armor for 1.21.1 - Adapted from 1.21.8 version.
+ * Uses ArmorItem base class since Equipment API is not available in 1.21.1.
+ */
+public class BulletproofArmorItem extends ArmorItem {
     public enum Tier {
-        I("i", 1, 1, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER),
-        II("ii", 2, 2, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER),
-        III("iii", 3, 4, 165, 240, SoundEvents.ARMOR_EQUIP_IRON),
-        IV("iv", 4, 5, 165, 240, SoundEvents.ARMOR_EQUIP_IRON),
-        V("v", 5, 7, 165, 240, SoundEvents.ARMOR_EQUIP_DIAMOND),
-        VI("vi", 6, 8, 203, 320, SoundEvents.ARMOR_EQUIP_NETHERITE);
+        I("i", 1, 1, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
+        II("ii", 2, 2, 55, 80, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
+        III("iii", 3, 4, 165, 240, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
+        IV("iv", 4, 5, 165, 240, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
+        V("v", 5, 7, 165, 240, SoundEvents.ARMOR_EQUIP_DIAMOND, ArmorMaterials.DIAMOND),
+        VI("vi", 6, 8, 203, 320, SoundEvents.ARMOR_EQUIP_NETHERITE, ArmorMaterials.NETHERITE);
 
         private final String suffix;
         private final int tierNumber;
@@ -43,14 +41,17 @@ public class BulletproofArmorItem extends Item {
         private final int helmetDurability;
         private final int vestDurability;
         private final Holder<SoundEvent> equipSound;
+        private final Holder<ArmorMaterial> material;
 
-        Tier(String suffix, int tierNumber, int projectileLevel, int helmetDurability, int vestDurability, Holder<SoundEvent> equipSound) {
+        Tier(String suffix, int tierNumber, int projectileLevel, int helmetDurability, int vestDurability,
+             Holder<SoundEvent> equipSound, Holder<ArmorMaterial> material) {
             this.suffix = suffix;
             this.tierNumber = tierNumber;
             this.projectileLevel = projectileLevel;
             this.helmetDurability = helmetDurability;
             this.vestDurability = vestDurability;
             this.equipSound = equipSound;
+            this.material = material;
         }
 
         public String suffix() {
@@ -65,45 +66,46 @@ public class BulletproofArmorItem extends Item {
             return projectileLevel;
         }
 
-        public int durability(EquipmentSlot slot) {
-            return slot == EquipmentSlot.HEAD ? helmetDurability : vestDurability;
+        public int durability(Type armorType) {
+            return armorType == Type.HELMET ? helmetDurability : vestDurability;
         }
 
         public Holder<SoundEvent> equipSound() {
             return equipSound;
         }
+
+        public Holder<ArmorMaterial> material() {
+            return material;
+        }
     }
 
     private final Tier tier;
-    private final EquipmentSlot slot;
     @Nullable
     private static Holder<Enchantment> PROJECTILE_PROTECTION;
 
     public BulletproofArmorItem(Tier tier, EquipmentSlot slot, Properties properties) {
-        super(applyProperties(properties, tier, slot));
+        super(tier.material(), convertSlotToType(slot), applyProperties(properties, tier, slot));
         this.tier = tier;
-        this.slot = slot;
+    }
+
+    private static Type convertSlotToType(EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD -> Type.HELMET;
+            case CHEST -> Type.CHESTPLATE;
+            case LEGS -> Type.LEGGINGS;
+            case FEET -> Type.BOOTS;
+            default -> Type.CHESTPLATE;
+        };
     }
 
     private static Properties applyProperties(Properties base, Tier tier, EquipmentSlot slot) {
-        Equippable equippable = Equippable.builder(slot)
-                .setEquipSound(tier.equipSound())
-                .setAsset(assetForTier(tier))
-                .setEquipOnInteract(true)
-                .setDamageOnHurt(true)
-                .build();
         return base
                 .stacksTo(1)
-                .durability(tier.durability(slot))
-                .component(DataComponents.EQUIPPABLE, equippable);
+                .durability(tier.durability(convertSlotToType(slot)));
     }
 
     public Tier tier() {
         return tier;
-    }
-
-    public EquipmentSlot slot() {
-        return slot;
     }
 
     @Override
@@ -112,10 +114,10 @@ public class BulletproofArmorItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, Item.@NotNull TooltipContext context, @NotNull TooltipDisplay display, @NotNull Consumer<Component> tooltipAdder, @NotNull TooltipFlag flag) {
-        super.appendHoverText(stack, context, display, tooltipAdder, flag);
-        tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_tier", tier.tierNumber()).withStyle(net.minecraft.ChatFormatting.GRAY));
-        tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_projectile", tier.projectileLevel()).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+    public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, @NotNull java.util.List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_tier", tier.tierNumber()).withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_projectile", tier.projectileLevel()).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
     }
 
     @Nullable
@@ -150,20 +152,24 @@ public class BulletproofArmorItem extends Item {
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull ServerLevel level, @NotNull Entity entity, @NotNull EquipmentSlot slot) {
-        super.inventoryTick(stack, level, entity, slot);
-        if (slot == this.slot && entity instanceof LivingEntity living) {
-            ItemStack equipped = living.getItemBySlot(slot);
-            if (ItemStack.isSameItemSameComponents(equipped, stack)) {
-                ensureDefaultEnchant(stack, level.registryAccess());
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.world.level.Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        if (!level.isClientSide() && entity instanceof LivingEntity living) {
+            // Check if this item is equipped in the correct slot
+            EquipmentSlot correctSlot = this.getType().getSlot();
+            ItemStack equipped = living.getItemBySlot(correctSlot);
+            if (ItemStack.isSameItemSameComponents(equipped, stack) && level instanceof ServerLevel serverLevel) {
+                ensureDefaultEnchant(stack, serverLevel.registryAccess());
             }
         }
     }
 
     @Override
-    public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
-        super.onCraftedBy(stack, player);
-        ensureDefaultEnchant(stack, player.registryAccess());
+    public void onCraftedBy(@NotNull ItemStack stack, @NotNull net.minecraft.world.level.Level level, @NotNull Player player) {
+        super.onCraftedBy(stack, level, player);
+        if (!level.isClientSide()) {
+            ensureDefaultEnchant(stack, player.registryAccess());
+        }
     }
 
     public static boolean isBulletproof(ItemStack stack) {
@@ -179,16 +185,5 @@ public class BulletproofArmorItem extends Item {
 
     public int projectileLevel() {
         return tier.projectileLevel();
-    }
-
-    private static ResourceKey<EquipmentAsset> assetForTier(Tier tier) {
-        // Tier I-II: Leather appearance
-        // Tier III+: Enchanted iron appearance (enchanted due to isFoil())
-        return switch (tier) {
-            case I, II -> EquipmentAssets.LEATHER;
-            case III, IV -> EquipmentAssets.IRON;
-            case V -> EquipmentAssets.DIAMOND;
-            case VI -> EquipmentAssets.NETHERITE;
-        };
     }
 }

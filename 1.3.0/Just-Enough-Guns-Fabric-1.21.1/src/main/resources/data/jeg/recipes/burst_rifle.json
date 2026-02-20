@@ -1,0 +1,27 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "BRF",
+                    "GRF",
+                    "  B"
+                ],
+    "key":  {
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      },
+                "F":  {
+                          "item":  "minecraft:flint"
+                      },
+                "G":  {
+                          "item":  "minecraft:gunpowder"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:burst_rifle",
+                   "count":  1
+               }
+}

@@ -2,14 +2,30 @@
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
   "ingredients": [
-    "minecraft:leather_chestplate",
-    "minecraft:leather",
-    "minecraft:leather",
-    "minecraft:white_wool",
-    "minecraft:white_wool",
-    "minecraft:iron_ingot",
-    "minecraft:iron_ingot",
-    "minecraft:string"
+    {
+      "item": "minecraft:leather_chestplate"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:white_wool"
+    },
+    {
+      "item": "minecraft:white_wool"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:string"
+    }
   ],
   "result": {
     "id": "jeg:bulletproof_vest_i",

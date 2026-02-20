@@ -12,10 +12,10 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -66,7 +66,7 @@ import ttv.migami.jeg.JustEnoughGuns;
 public class SkyShipArmadaStructure extends Structure {
     public static final MapCodec<SkyShipArmadaStructure> CODEC = simpleCodec(SkyShipArmadaStructure::new);
 
-    private static final Identifier TEMPLATE_LOCATION = Identifier.withDefaultNamespace("end_city/ship");
+    private static final ResourceLocation TEMPLATE_LOCATION = ResourceLocation.withDefaultNamespace("end_city/ship");
     private static final int MIN_SHIPS = 8;
     private static final int MAX_SHIPS = 12;
     private static final int MIN_RADIUS = 18;
@@ -81,7 +81,7 @@ public class SkyShipArmadaStructure extends Structure {
     private static final int REQUIRED_LOOT_SHIPS_MIN = 2;
     private static final int REQUIRED_LOOT_SHIPS_MAX = 2;
     private static final int GUARDIAN_TETHER_RADIUS = 96;
-    private static final Identifier LOOT_TABLE = Reference.id("chests/sky_ship_armada");
+    private static final ResourceLocation LOOT_TABLE = Reference.id("chests/sky_ship_armada");
     private static final ResourceKey<LootTable> LOOT_TABLE_KEY = ResourceKey.create(Registries.LOOT_TABLE, LOOT_TABLE);
 
     public SkyShipArmadaStructure(StructureSettings settings) {
@@ -226,9 +226,9 @@ public class SkyShipArmadaStructure extends Structure {
         }
 
         public SkyShipPiece(StructureTemplateManager manager, CompoundTag nbt) {
-            super(ModStructures.SKY_SHIP_ARMADA_PIECE.get(), nbt, manager, location -> makeSettings(Rotation.valueOf(nbt.getString("Rot").orElse("NONE"))));
-            this.hasLootChest = nbt.getBoolean(LOOT_FLAG).orElse(true);
-            this.damagedElytra = nbt.getBoolean(DAMAGE_FLAG).orElse(this.hasLootChest);
+            super(ModStructures.SKY_SHIP_ARMADA_PIECE.get(), nbt, manager, location -> makeSettings(Rotation.valueOf(nbt.contains("Rot") ? nbt.getString("Rot") : "NONE")));
+            this.hasLootChest = nbt.contains(LOOT_FLAG) ? nbt.getBoolean(LOOT_FLAG) : true;
+            this.damagedElytra = nbt.contains(DAMAGE_FLAG) ? nbt.getBoolean(DAMAGE_FLAG) : this.hasLootChest;
         }
 
         @Override
@@ -278,7 +278,7 @@ public class SkyShipArmadaStructure extends Structure {
                 var blockEntity = level.getBlockEntity(chestPos);
                 if (blockEntity instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity randomizable) {
                     ResourceKey<net.minecraft.world.level.storage.loot.LootTable> assigned = randomizable.getLootTable();
-                    String lootId = assigned != null ? assigned.identifier().toString() : "none";
+                    String lootId = assigned != null ? assigned.location().toString() : "none";
                     ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} lootTable={} seed={}", chestPos, lootId, randomizable.getLootTableSeed());
                 } else if (blockEntity instanceof net.minecraft.world.Container container) {
                     boolean empty = LootUtils.isContainerEmpty(container);
@@ -384,7 +384,7 @@ public class SkyShipArmadaStructure extends Structure {
         }
 
         private void spawnImmediateGunner(ServerLevel level, BlockPos pos, RandomSource random) {
-            var gunner = ModEntities.PHANTOM_GUNNER.get().create(level, EntitySpawnReason.SPAWNER);
+            var gunner = ModEntities.PHANTOM_GUNNER.get().create(level);
             if (gunner == null) {
                 return;
             }
@@ -394,7 +394,7 @@ public class SkyShipArmadaStructure extends Structure {
             gunner.setPos(x, y, z);
             gunner.setYRot(random.nextFloat() * 360.0F);
             gunner.setPersistenceRequired();
-            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWNER, null);
+            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.SPAWNER, null);
             level.addFreshEntity(gunner);
         }
 
@@ -485,9 +485,9 @@ public class SkyShipArmadaStructure extends Structure {
 
         public GuardianSpawnPiece(CompoundTag tag) {
             super(ModStructures.SKY_SHIP_GUARDIAN_PIECE.get(), tag);
-            int x = tag.getInt("SpawnX").orElse(0);
-            int y = tag.getInt("SpawnY").orElse(0);
-            int z = tag.getInt("SpawnZ").orElse(0);
+            int x = tag.contains("SpawnX") ? tag.getInt("SpawnX") : 0;
+            int y = tag.contains("SpawnY") ? tag.getInt("SpawnY") : 0;
+            int z = tag.contains("SpawnZ") ? tag.getInt("SpawnZ") : 0;
             this.spawnPos = new BlockPos(x, y, z);
             this.boundingBox = new BoundingBox(this.spawnPos);
         }
@@ -504,7 +504,7 @@ public class SkyShipArmadaStructure extends Structure {
             ServerLevel serverLevel = level.getLevel();
             BlockPos anchorBase = this.spawnPos;
             if (serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
-                TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel, EntitySpawnReason.EVENT);
+                TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel);
                 if (guardian != null) {
                     int deckHeight = findDeckHeight(level, serverLevel, anchorBase);
                     BlockPos deckAnchor = new BlockPos(anchorBase.getX(), deckHeight, anchorBase.getZ());
@@ -516,8 +516,8 @@ public class SkyShipArmadaStructure extends Structure {
                     guardian.xRotO = guardian.getXRot();
                     // Use a fixed difficulty to avoid chunk loading during worldgen (causes deadlock)
                     // DifficultyInstance params: difficulty, dayTime, chunkInhabitedTime, moonBrightness
-                    DifficultyInstance difficulty = new DifficultyInstance(serverLevel.getDifficulty(), serverLevel.getDayTime(), 0L, serverLevel.getMoonBrightness(spawnAbove));
-                    guardian.finalizeSpawn(serverLevel, difficulty, EntitySpawnReason.EVENT, null);
+                    DifficultyInstance difficulty = new DifficultyInstance(serverLevel.getDifficulty(), serverLevel.getDayTime(), 0L, serverLevel.getMoonBrightness());
+                    guardian.finalizeSpawn(serverLevel, difficulty, MobSpawnType.EVENT, null);
                     guardian.initialiseDeckAnchor(deckAnchor, GUARDIAN_TETHER_RADIUS);
                     serverLevel.addFreshEntity(guardian);
                 }

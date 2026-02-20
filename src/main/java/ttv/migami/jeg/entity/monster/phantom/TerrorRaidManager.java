@@ -77,8 +77,15 @@ final class TerrorRaidManager {
     private static final UniformInt PHANTOM_WAVE_SIZE = UniformInt.of(4, 7);
     private static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
+    private static final String RAID_ID_TAG_PREFIX = "JEGTerrorRaidId:";
+    private static final String RAID_ORIGIN_TAG_PREFIX = "JEGTerrorRaidOrigin:";
+    private static final String RAID_TOTAL_WAVES_TAG_PREFIX = "JEGTerrorRaidTotalWaves:";
+    private static final String RAID_WAVES_SPAWNED_TAG_PREFIX = "JEGTerrorRaidWavesSpawned:";
+    private static final String RAID_AIR_TAG_PREFIX = "JEGTerrorRaidAir:";
+    private static final String RAID_TARGET_TAG_PREFIX = "JEGTerrorRaidTarget:";
     private static final int RAID_PLAYER_RANGE = 128;
     private static final int RAID_DUPLICATE_GUARD_TICKS = 200;
+    private static final int LEGACY_RECOVERY_MERGE_DISTANCE = 192;
     private static final Map<ServerLevel, List<RaidContext>> ACTIVE_RAIDS = new HashMap<>();
     private static final Map<ServerLevel, Map<BlockPos, Long>> RECENT_RAID_TRIGGERS = new HashMap<>();
 
@@ -123,6 +130,38 @@ final class TerrorRaidManager {
 
     static void triggerGuardianAftermath(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         triggerAirRaid(level, origin, targetPlayer);
+    }
+    static void recoverRaidMob(PathfinderMob mob) {
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!mob.getTags().contains(TERROR_RAID_MOB_TAG)) {
+            return;
+        }
+
+        UUID raidId = parseUuid(readTagValue(mob, RAID_ID_TAG_PREFIX));
+        BlockPos origin = parseOrigin(readTagValue(mob, RAID_ORIGIN_TAG_PREFIX), mob.blockPosition());
+        int totalWaves = Math.max(1, parseInt(readTagValue(mob, RAID_TOTAL_WAVES_TAG_PREFIX), 1));
+        boolean airRaid = Boolean.parseBoolean(readTagValue(mob, RAID_AIR_TAG_PREFIX));
+        UUID targetPlayerId = parseUuid(readTagValue(mob, RAID_TARGET_TAG_PREFIX));
+
+        List<RaidContext> raids = ACTIVE_RAIDS.computeIfAbsent(level, ignored -> new ArrayList<>());
+        RaidContext raid = raidId != null ? findContextById(raids, raidId) : null;
+        if (raid == null) {
+            raid = findCompatibleRecoveryContext(raids, origin, airRaid, targetPlayerId);
+        }
+        if (raid == null) {
+            if (raidId == null) {
+                raidId = UUID.randomUUID();
+            }
+            raid = new RaidContext(raidId, origin, targetPlayerId, airRaid, totalWaves);
+            // Scheduler state is in-memory only; after relog treat current mobs as the remaining phase.
+            raid.wavesSpawned = raid.totalWaves;
+            raids.add(raid);
+            scheduleRaidTick(level, raid);
+        }
+
+        raid.trackRecoveredMob(mob);
     }
 
     private static void broadcast(ServerLevel level, BlockPos soundPos, MutableComponent message) {
@@ -399,10 +438,110 @@ final class TerrorRaidManager {
     }
 
     private static RaidContext createRaid(ServerLevel level, BlockPos origin, @Nullable Player initialTarget, boolean airRaid, int totalWaves) {
-        RaidContext raid = new RaidContext(level, origin, initialTarget, airRaid, totalWaves);
+        RaidContext raid = new RaidContext(UUID.randomUUID(), origin, initialTarget != null ? initialTarget.getUUID() : null, airRaid, totalWaves);
         ACTIVE_RAIDS.computeIfAbsent(level, ignored -> new ArrayList<>()).add(raid);
         RECENT_RAID_TRIGGERS.computeIfAbsent(level, ignored -> new HashMap<>()).put(origin.immutable(), level.getGameTime());
         return raid;
+    }
+
+    @Nullable
+    private static RaidContext findContextById(List<RaidContext> raids, UUID raidId) {
+        for (RaidContext raid : raids) {
+            if (raid.raidId.equals(raidId)) {
+                return raid;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static RaidContext findCompatibleRecoveryContext(List<RaidContext> raids, BlockPos origin, boolean airRaid, @Nullable UUID targetPlayerId) {
+        RaidContext best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        for (RaidContext raid : raids) {
+            if (raid.airRaid != airRaid) {
+                continue;
+            }
+            if (targetPlayerId != null && raid.targetPlayerId != null && !targetPlayerId.equals(raid.targetPlayerId)) {
+                continue;
+            }
+
+            int distance = raid.origin.distManhattan(origin);
+            if (distance > LEGACY_RECOVERY_MERGE_DISTANCE || distance >= bestDistance) {
+                continue;
+            }
+
+            best = raid;
+            bestDistance = distance;
+        }
+        return best;
+    }
+
+    @Nullable
+    private static String readTagValue(net.minecraft.world.entity.Mob mob, String prefix) {
+        for (String tag : mob.getTags()) {
+            if (tag.startsWith(prefix)) {
+                return tag.substring(prefix.length());
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static UUID parseUuid(@Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static int parseInt(@Nullable String value, int fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
+    }
+
+    private static BlockPos parseOrigin(@Nullable String value, BlockPos fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+
+        String[] parts = value.split(",");
+        if (parts.length != 3) {
+            return fallback;
+        }
+
+        try {
+            return new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
+    }
+
+    private static void replaceTagValue(net.minecraft.world.entity.Mob mob, String prefix, @Nullable String value) {
+        List<String> stale = new ArrayList<>();
+        for (String tag : mob.getTags()) {
+            if (tag.startsWith(prefix)) {
+                stale.add(tag);
+            }
+        }
+
+        for (String tag : stale) {
+            mob.removeTag(tag);
+        }
+
+        if (value != null && !value.isBlank()) {
+            mob.addTag(prefix + value);
+        }
     }
 
     private static void scheduleRaidTick(ServerLevel level, RaidContext raid) {
@@ -517,9 +656,10 @@ final class TerrorRaidManager {
     }
 
     private static final class RaidContext {
-        private final UUID raidId = UUID.randomUUID();
+        private final UUID raidId;
         private final BlockPos origin;
         private final @Nullable UUID targetPlayerId;
+        private final boolean airRaid;
         private final int totalWaves;
         private final Set<UUID> activeMobIds = new HashSet<>();
         private final ServerBossEvent bossBar;
@@ -527,9 +667,11 @@ final class TerrorRaidManager {
         private int wavesSpawned;
         private boolean completed;
 
-        private RaidContext(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer, boolean airRaid, int totalWaves) {
+        private RaidContext(UUID raidId, BlockPos origin, @Nullable UUID targetPlayerId, boolean airRaid, int totalWaves) {
+            this.raidId = raidId;
             this.origin = origin.immutable();
-            this.targetPlayerId = targetPlayer != null ? targetPlayer.getUUID() : null;
+            this.targetPlayerId = targetPlayerId;
+            this.airRaid = airRaid;
             this.totalWaves = Math.max(1, totalWaves);
             Component title = airRaid
                     ? Component.translatable("message.jeg.terror_raid.guardian")
@@ -538,9 +680,28 @@ final class TerrorRaidManager {
             this.bossBar.setProgress(1.0F);
         }
 
-        private void trackSpawn(net.minecraft.world.entity.Mob mob) {
-            this.activeMobIds.add(mob.getUUID());
-            this.spawnedTotal++;
+                private void trackSpawn(net.minecraft.world.entity.Mob mob) {
+            if (this.activeMobIds.add(mob.getUUID())) {
+                this.spawnedTotal++;
+            }
+            applyRaidTags(mob);
+        }
+
+        private void trackRecoveredMob(net.minecraft.world.entity.Mob mob) {
+            if (this.activeMobIds.add(mob.getUUID())) {
+                this.spawnedTotal = Math.max(this.spawnedTotal, this.activeMobIds.size());
+            }
+            applyRaidTags(mob);
+        }
+
+        private void applyRaidTags(net.minecraft.world.entity.Mob mob) {
+            mob.addTag(TERROR_RAID_MOB_TAG);
+            replaceTagValue(mob, RAID_ID_TAG_PREFIX, this.raidId.toString());
+            replaceTagValue(mob, RAID_ORIGIN_TAG_PREFIX, this.origin.getX() + "," + this.origin.getY() + "," + this.origin.getZ());
+            replaceTagValue(mob, RAID_TOTAL_WAVES_TAG_PREFIX, Integer.toString(this.totalWaves));
+            replaceTagValue(mob, RAID_WAVES_SPAWNED_TAG_PREFIX, Integer.toString(this.wavesSpawned));
+            replaceTagValue(mob, RAID_AIR_TAG_PREFIX, Boolean.toString(this.airRaid));
+            replaceTagValue(mob, RAID_TARGET_TAG_PREFIX, this.targetPlayerId != null ? this.targetPlayerId.toString() : null);
         }
 
         private void refreshActiveMobs(ServerLevel level) {
@@ -615,4 +776,5 @@ final class TerrorRaidManager {
         }
     }
 }
+
 

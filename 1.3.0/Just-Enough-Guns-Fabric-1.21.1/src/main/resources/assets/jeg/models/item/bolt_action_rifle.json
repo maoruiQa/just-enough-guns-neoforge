@@ -1655,6 +1655,5 @@
         }
       ]
     }
-  ],
-  "parent": "builtin/entity"
+  ]
 }

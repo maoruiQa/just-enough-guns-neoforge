@@ -2819,6 +2819,5 @@
         }
       ]
     }
-  ],
-  "parent": "builtin/entity"
+  ]
 }

@@ -2,13 +2,27 @@
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
   "ingredients": [
-    "jeg:bulletproof_vest_v",
-    "minecraft:netherite_ingot",
-    "minecraft:netherite_scrap",
-    "minecraft:obsidian",
-    "minecraft:obsidian",
-    "minecraft:iron_bars",
-    "minecraft:iron_bars"
+    {
+      "item": "jeg:bulletproof_vest_v"
+    },
+    {
+      "item": "minecraft:netherite_ingot"
+    },
+    {
+      "item": "minecraft:netherite_scrap"
+    },
+    {
+      "item": "minecraft:obsidian"
+    },
+    {
+      "item": "minecraft:obsidian"
+    },
+    {
+      "item": "minecraft:iron_bars"
+    },
+    {
+      "item": "minecraft:iron_bars"
+    }
   ],
   "result": {
     "id": "jeg:bulletproof_vest_vi",

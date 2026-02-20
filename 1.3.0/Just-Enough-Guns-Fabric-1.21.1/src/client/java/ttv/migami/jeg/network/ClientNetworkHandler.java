@@ -2,8 +2,7 @@ package ttv.migami.jeg.network;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.InteractionHand;
-import ttv.migami.jeg.client.render.BulletTrailRenderer;
-import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.compat.ClientHooks;
 
 public final class ClientNetworkHandler {
     private ClientNetworkHandler() {}
@@ -18,27 +17,20 @@ public final class ClientNetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(BulletTrailPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                if (!NetworkHandler.shouldRenderLegacyBulletTrail()) {
+                if (!payload.trailVisible()) {
                     return;
                 }
-                BulletTrailRenderer.upsertLegacyTrail(payload);
+                int count = Math.min(payload.positions().length, payload.motions().length);
+                for (int i = 0; i < count; i++) {
+                    var start = payload.positions()[i];
+                    var end = start.add(payload.motions()[i]);
+                    ClientHooks.addBulletTrail(start, end, payload.color(), payload.size());
+                }
             });
         });
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {
         ClientPlayNetworking.send(new TriggerReleasePayload(hand));
-    }
-
-    public static void sendShoot(InteractionHand hand) {
-        ClientPlayNetworking.send(new ShootRequestPayload(hand));
-    }
-
-    public static void sendReload(InteractionHand hand) {
-        ClientPlayNetworking.send(new ReloadRequestPayload(hand));
-    }
-
-    public static void sendAiming(boolean aiming) {
-        ClientPlayNetworking.send(new AimingStatePayload(aiming));
     }
 }

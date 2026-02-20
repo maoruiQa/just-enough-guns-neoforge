@@ -1,17 +1,17 @@
 package ttv.migami.jeg.item;
 
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.sounds.SoundEvent;
@@ -22,20 +22,19 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.GunStats;
@@ -44,12 +43,10 @@ import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
-// NOTE: AnimatedGunItem extends GunItem and adds GeckoLib animation triggers.
-import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.network.NetworkHandler;
 
 public class GunItem extends Item {
-    private static final Identifier GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
+    private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
     private static final int GRENADE_FUSE_TICKS = 600;
@@ -93,6 +90,8 @@ public class GunItem extends Item {
     private static final int RELOAD_STAGE_START = 1;
     private static final int RELOAD_STAGE_LOOP = 2;
     private static final int RELOAD_STAGE_STOP = 3;
+    private static final int RELOAD_START_SEGMENT_TICKS = 6;
+    private static final int RELOAD_STOP_SEGMENT_TICKS = 6;
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
     private static final Map<UUID, SpreadTrackerState> SPREAD_TRACKERS = new WeakHashMap<>();
@@ -177,8 +176,12 @@ public class GunItem extends Item {
         return AUTOMATIC_IDS.contains(stats.id().getPath());
     }
 
-    public static boolean isBulletClassWeapon(Identifier gunId) {
+    public static boolean isBulletClassWeapon(ResourceLocation gunId) {
         return !NON_BULLET_TRAIL_IDS.contains(gunId.getPath());
+    }
+
+    public static boolean hasFlameTrail(ResourceLocation gunId) {
+        return "flamethrower".equals(gunId.getPath());
     }
 
     private int shotsPerTrigger() {
@@ -190,7 +193,7 @@ public class GunItem extends Item {
      * Slow bullets: flamethrower, flare gun, rocket launcher, hypersonic cannon, typhoonee
      * Fast bullets: all other guns
      */
-    private static boolean isSlowBullet(Identifier gunId) {
+    private static boolean isSlowBullet(ResourceLocation gunId) {
         String path = gunId.getPath();
         return path.equals("flamethrower") ||
                path.equals("flare_gun") ||
@@ -243,10 +246,10 @@ public class GunItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        // Fabric input pipeline shoots via C2S ShootRequest payload on attack input.
-        // Right-click should be reserved for ADS state (aiming), not firing.
-        return InteractionResult.PASS;
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        // Right-click is reserved for ADS; firing is handled by left-click network requests.
+        return InteractionResultHolder.pass(stack);
     }
 
     public boolean tryShoot(Level level, Player player, InteractionHand hand) {
@@ -258,14 +261,14 @@ public class GunItem extends Item {
             return false;
         }
 
-        if (player.getCooldowns().isOnCooldown(stack)) {
+        if (player.getCooldowns().isOnCooldown(stack.getItem())) {
             return false;
         }
 
         if (!hasAmmoAvailable(player, stack)) {
             if (level.isClientSide()) {
                 float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
-                ClientHooks.addDryFireRecoil(stats.recoilKick() * recoilMultiplier * 0.25F);
+                addClientDryFireRecoil(stats.recoilKick() * recoilMultiplier * 0.25F);
                 playDryFireSound(level, player);
                 Component message = stats.usesMagazine() && !stats.isInventoryFed()
                         ? Component.translatable("item.jeg.gun.empty")
@@ -280,7 +283,7 @@ public class GunItem extends Item {
         if (level.isClientSide()) {
             float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
             float recoilKick = stats.recoilKick() * recoilMultiplier;
-            ClientHooks.addShotRecoil(recoilKick);
+            addClientShotRecoil(recoilKick);
             float targetPitch = player.getXRot() - recoilKick * 6.0F;
             player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
@@ -288,7 +291,7 @@ public class GunItem extends Item {
             }
 
             // Client-side instant trail calculation for fast bullets
-            Identifier gunId = stats.id();
+            ResourceLocation gunId = stats.id();
             // Removed custom trail rendering - rely on server-sent particles instead
             // which have proper depth testing and don't render through blocks
         } else {
@@ -303,11 +306,15 @@ public class GunItem extends Item {
                     break;
                 }
                 fireAt(level, player, stack, null);
-                stack.hurtAndBreak(1, player, hand);
+                stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
                 shotsFired++;
             }
             if (shotsFired <= 0) {
                 return false;
+            }
+
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerShoot(level, player, stack);
             }
 
             applyRecoilBackstep(player);
@@ -316,7 +323,7 @@ public class GunItem extends Item {
                 setTriggerLocked(stack, true);
             }
             player.awardStat(Stats.ITEM_USED.get(this));
-            player.getCooldowns().addCooldown(stack, Math.max(1, stats.fireDelay()));
+            player.getCooldowns().addCooldown(stack.getItem(), Math.max(1, stats.fireDelay()));
         }
 
         playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
@@ -433,8 +440,8 @@ public class GunItem extends Item {
     }
 
     private Optional<Item> getAmmoItem() {
-        Identifier ammoId = stats.ammoItem();
-        if (ammoId == null || ammoId.equals(Identifier.fromNamespaceAndPath("minecraft", "air"))) {
+        ResourceLocation ammoId = stats.ammoItem();
+        if (ammoId == null || ammoId.equals(ResourceLocation.fromNamespaceAndPath("minecraft", "air"))) {
             return Optional.empty();
         }
         return BuiltInRegistries.ITEM.getOptional(ammoId);
@@ -444,7 +451,7 @@ public class GunItem extends Item {
         Vec3 origin = shooter.getEyePosition();
         RandomSource random = shooter.getRandom();
         int pellets = Math.max(1, stats.projectileAmount());
-        Identifier gunId = stats.id();
+        ResourceLocation gunId = stats.id();
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
         float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
@@ -472,7 +479,7 @@ public class GunItem extends Item {
 
                 // Add bullet trail particles for all guns EXCEPT flamethrower
                 // (flamethrower already has its own particle effects)
-                if (!stats.flameTrail() && level instanceof ServerLevel serverLevel) {
+                if (!hasFlameTrail(stats.id()) && level instanceof ServerLevel serverLevel) {
                     // Use penetration-aware raycast to spawn particles along actual bullet path
                     spawnBulletTrailParticles(serverLevel, muzzle, direction, stats, shooter);
                 }
@@ -493,7 +500,7 @@ public class GunItem extends Item {
      */
     public void fireDirectionallyFrom(Level level, LivingEntity shooter, ItemStack stack, Vec3 origin, Vec3 direction) {
         int pellets = Math.max(1, stats.projectileAmount());
-        Identifier gunId = stats.id();
+        ResourceLocation gunId = stats.id();
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
         float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
@@ -520,7 +527,7 @@ public class GunItem extends Item {
                     bullet.sendTrailToClients(serverLevel);
                 }
 
-                if (!stats.flameTrail() && level instanceof ServerLevel serverLevel) {
+                if (!hasFlameTrail(stats.id()) && level instanceof ServerLevel serverLevel) {
                     // Use penetration-aware raycast to spawn particles along actual bullet path
                     spawnBulletTrailParticles(serverLevel, muzzle, normalized, stats, shooter);
                 }
@@ -584,7 +591,7 @@ public class GunItem extends Item {
         return forwards.add(sideways.scale(a1)).add(upwards.scale(a2)).normalize();
     }
 
-    private static void updateSpreadTracker(Player player, Identifier gunId) {
+    private static void updateSpreadTracker(Player player, ResourceLocation gunId) {
         SpreadTrackerState playerState = SPREAD_TRACKERS.computeIfAbsent(player.getUUID(), ignored -> new SpreadTrackerState());
         SpreadEntry entry = playerState.byGun.computeIfAbsent(gunId, ignored -> new SpreadEntry());
         long now = System.currentTimeMillis();
@@ -604,7 +611,7 @@ public class GunItem extends Item {
         entry.lastFireMs = now;
     }
 
-    private static float getSpreadMultiplier(Player player, Identifier gunId) {
+    private static float getSpreadMultiplier(Player player, ResourceLocation gunId) {
         SpreadTrackerState playerState = SPREAD_TRACKERS.get(player.getUUID());
         if (playerState == null) {
             return 0.0F;
@@ -616,12 +623,12 @@ public class GunItem extends Item {
         return (float) entry.spreadCount / (float) SPREAD_MAX_COUNT;
     }
 
-    private static boolean isShotgun(Identifier gunId) {
+    private static boolean isShotgun(ResourceLocation gunId) {
         return SHOTGUN_IDS.contains(gunId.getPath());
     }
 
     private static final class SpreadTrackerState {
-        final Map<Identifier, SpreadEntry> byGun = new WeakHashMap<>();
+        final Map<ResourceLocation, SpreadEntry> byGun = new WeakHashMap<>();
     }
 
     private static final class SpreadEntry {
@@ -682,95 +689,112 @@ public class GunItem extends Item {
 
         setAmmo(stack, ammo + pulled);
         int reloadTicks = Math.max(1, stats.totalReloadTime());
-        player.getCooldowns().addCooldown(stack, reloadTicks);
+        player.getCooldowns().addCooldown(stack.getItem(), reloadTicks);
         playSound(level, player, stats.reloadStartSoundEvent());
-
-        // Track reload progress on the stack so we can drive segmented reload animations over time.
-        stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_START);
-        stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), reloadTicks);
-        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), reloadTicks);
-        if (level instanceof ServerLevel serverLevel) {
-            stack.set(ModDataComponents.GUN_RELOAD_END_TICK.get(), serverLevel.getGameTime() + reloadTicks);
-        }
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
             if (usesSegmentedReloadAnimation()) {
+                setReloadAnimState(stack, RELOAD_STAGE_START, reloadTicks);
                 animated.triggerReloadStart(level, player, stack);
             } else {
+                clearReloadAnimState(stack);
                 animated.triggerReload(level, player, stack);
             }
         }
+
         return true;
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
+        super.inventoryTick(stack, level, entity, slot, selected);
+
+        if (level.isClientSide()) {
+            return;
+        }
+        if (!(entity instanceof Player player)) {
+            clearReloadAnimState(stack);
+            return;
+        }
+        if (!(stack.getItem() instanceof AnimatedGunItem animated) || !usesSegmentedReloadAnimation()) {
+            clearReloadAnimState(stack);
+            return;
+        }
+
+        int stage = getReloadAnimStage(stack);
+        if (stage == RELOAD_STAGE_NONE) {
+            return;
+        }
+
+        if (!player.getCooldowns().isOnCooldown(stack.getItem())) {
+            clearReloadAnimState(stack);
+            return;
+        }
+
+        int remaining = Math.max(0, getReloadAnimTicks(stack) - 1);
+        setReloadAnimTicks(stack, remaining);
+
+        int totalReloadTicks = Math.max(1, stats.totalReloadTime());
+        int startTicks = Math.min(RELOAD_START_SEGMENT_TICKS, Math.max(1, totalReloadTicks / 3));
+        int stopTicks = Math.min(RELOAD_STOP_SEGMENT_TICKS, Math.max(1, totalReloadTicks / 4));
+
+        if (stage == RELOAD_STAGE_START) {
+            if (remaining <= totalReloadTicks - startTicks) {
+                animated.triggerReloadLoop(level, player, stack);
+                setReloadAnimStage(stack, RELOAD_STAGE_LOOP);
+            }
+            return;
+        }
+
+        if (stage == RELOAD_STAGE_LOOP) {
+            if (remaining <= stopTicks) {
+                animated.triggerReloadStop(level, player, stack);
+                setReloadAnimStage(stack, RELOAD_STAGE_STOP);
+            }
+            return;
+        }
+
+        if (stage == RELOAD_STAGE_STOP && remaining <= 0) {
+            clearReloadAnimState(stack);
+        }
     }
 
     private boolean usesSegmentedReloadAnimation() {
         return SEGMENTED_RELOAD_ANIM_IDS.contains(stats.id().getPath());
     }
 
-    private static void clearReloadState(ItemStack stack) {
-        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_END_TICK.get());
+    private static int getReloadAnimStage(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get(), RELOAD_STAGE_NONE);
     }
 
-    @Override
-    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
-        super.inventoryTick(stack, level, entity, slot);
-        if (!(entity instanceof Player player)) {
-            return;
+    private static void setReloadAnimStage(ItemStack stack, int stage) {
+        if (stage == RELOAD_STAGE_NONE) {
+            stack.remove(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get());
+        } else {
+            stack.set(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get(), stage);
         }
-        if (slot != EquipmentSlot.MAINHAND && slot != EquipmentSlot.OFFHAND) {
-            return;
+    }
+
+    private static int getReloadAnimTicks(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get(), 0);
+    }
+
+    private static void setReloadAnimTicks(ItemStack stack, int ticks) {
+        if (ticks <= 0) {
+            stack.remove(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get());
+        } else {
+            stack.set(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get(), ticks);
         }
+    }
 
-        long endTick = stack.getOrDefault(ModDataComponents.GUN_RELOAD_END_TICK.get(), 0L);
-        int remaining = endTick > 0L
-                ? (int) Math.max(0L, endTick - level.getGameTime())
-                : stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
-        if (remaining <= 0) {
-            // Ensure stale state isn't kept around indefinitely.
-            if (stack.has(ModDataComponents.GUN_RELOAD_STAGE.get())) {
-                clearReloadState(stack);
-            }
-            return;
-        }
+    private static void setReloadAnimState(ItemStack stack, int stage, int ticks) {
+        setReloadAnimStage(stack, stage);
+        setReloadAnimTicks(stack, ticks);
+    }
 
-        int total = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), remaining);
-        int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
-
-        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), remaining);
-
-        if (!(stack.getItem() instanceof AnimatedGunItem animated)) {
-            if (remaining == 0) {
-                clearReloadState(stack);
-            }
-            return;
-        }
-
-        if (usesSegmentedReloadAnimation()) {
-            int startTicks = Math.max(3, total / 5);
-            int stopTicks = Math.max(3, total / 5);
-            int loopStartRemaining = Math.max(0, total - startTicks);
-
-            // START -> LOOP once the start phase elapses.
-            if (stage == RELOAD_STAGE_START && remaining <= loopStartRemaining) {
-                stage = RELOAD_STAGE_LOOP;
-                stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), stage);
-                animated.triggerReloadLoop(level, player, stack);
-            }
-
-            // LOOP/START -> STOP near the end.
-            if (stage != RELOAD_STAGE_STOP && remaining <= stopTicks) {
-                stage = RELOAD_STAGE_STOP;
-                stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), stage);
-                animated.triggerReloadStop(level, player, stack);
-            }
-        }
-
-        if (remaining == 0) {
-            clearReloadState(stack);
-        }
+    private static void clearReloadAnimState(ItemStack stack) {
+        setReloadAnimStage(stack, RELOAD_STAGE_NONE);
+        setReloadAnimTicks(stack, 0);
     }
 
     private int removeAmmoFromInventory(Player player, int needed) {
@@ -820,12 +844,12 @@ public class GunItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID) ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR : stats.damage();
-        tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
+        tooltip.add(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
 
         if (stats.usesMagazine()) {
-            tooltipAdder.accept(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));
+            tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));
         }
 
         // Add ammo type information
@@ -833,18 +857,38 @@ public class GunItem extends Item {
         if (ammoItem.isPresent()) {
             ItemStack ammoStack = new ItemStack(ammoItem.get());
             Component ammoName = ammoStack.getHoverName();
-            tooltipAdder.accept(Component.translatable("info.jeg.ammo_type", ammoName));
+            tooltip.add(Component.translatable("info.jeg.ammo_type", ammoName));
         }
 
         double effectiveRange = GunRangeHelper.computeEffectiveRange(this.stats);
         if (effectiveRange > 0.0D) {
-            tooltipAdder.accept(Component.translatable("info.jeg.range", String.format(Locale.US, "%.0f", effectiveRange)));
+            tooltip.add(Component.translatable("info.jeg.range", String.format(Locale.US, "%.0f", effectiveRange)));
         }
 
         // Add projectile count for shotguns
         if (stats.projectileAmount() > 1) {
-            tooltipAdder.accept(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
+            tooltip.add(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
+        }
+    }
+
+    private static void addClientDryFireRecoil(float recoilAmount) {
+        invokeClientRecoilMethod("addDryFire", recoilAmount);
+    }
+
+    private static void addClientShotRecoil(float recoilAmount) {
+        invokeClientRecoilMethod("addShot", recoilAmount);
+    }
+
+    private static void invokeClientRecoilMethod(String methodName, float recoilAmount) {
+        try {
+            Class<?> recoilClass = Class.forName("ttv.migami.jeg.client.GunRecoilHandler");
+            recoilClass.getDeclaredMethod(methodName, float.class).invoke(null, recoilAmount);
+        } catch (Throwable ignored) {
         }
     }
 }
+
+
+
+
 

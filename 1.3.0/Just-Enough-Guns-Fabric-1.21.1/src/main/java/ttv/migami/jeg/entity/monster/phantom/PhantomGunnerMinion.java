@@ -3,13 +3,13 @@ package ttv.migami.jeg.entity.monster.phantom;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.level.Level;
 
 /**
  * Terror Phantom / Bound Terror Phantom summoned Phantom Gunner variant.
- * Same behaviour as {@link PhantomGunner}, but with half max health.
+ * Same behaviour as {@link PhantomGunner}, but with lower max health.
  */
 public class PhantomGunnerMinion extends PhantomGunner {
     public static final double MAX_HEALTH = 40.0D;

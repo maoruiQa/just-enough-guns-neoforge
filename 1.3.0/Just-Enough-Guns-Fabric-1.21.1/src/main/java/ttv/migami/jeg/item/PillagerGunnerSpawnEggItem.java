@@ -1,11 +1,11 @@
 package ttv.migami.jeg.item;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.illager.Pillager;
+import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -40,8 +40,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
             equipPillagerWithGun(pillager, random);
         }
 
-        // Call parent method to handle standard spawn egg behavior
-        mob.applyComponentsFromItemStack(stack);
+        // Call parent method to handle standard spawn egg behavior (without applyComponentsFromItemStack)
         level.gameEvent(player, GameEvent.ENTITY_PLACE, mob.position());
         stack.consume(1, player);
         if (player != null) {
@@ -54,7 +53,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
      */
     private void equipPillagerWithGun(Pillager pillager, RandomSource random) {
         // Use the same enhanced weapon pool as regular pillager gunners
-        Identifier[] guns = new Identifier[] {
+        ResourceLocation[] guns = new ResourceLocation[] {
                 ttv.migami.jeg.Reference.id("assault_rifle"),
                 ttv.migami.jeg.Reference.id("burst_rifle"),
                 ttv.migami.jeg.Reference.id("service_rifle"),
@@ -67,7 +66,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
                 ttv.migami.jeg.Reference.id("minigun")
         };
 
-        Identifier choice = guns[random.nextInt(guns.length)];
+        ResourceLocation choice = guns[random.nextInt(guns.length)];
         var holder = ModItems.GUNS.get(choice);
         if (holder != null) {
             ItemStack gunStack = new ItemStack(holder.get());

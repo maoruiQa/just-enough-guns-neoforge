@@ -21,7 +21,7 @@ dependencies {
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modImplementation "software.bernie.geckolib:geckolib-fabric-1.21.11:5.4.2"
+    modImplementation "software.bernie.geckolib:geckolib-fabric-1.21.1:4.8.3"
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 

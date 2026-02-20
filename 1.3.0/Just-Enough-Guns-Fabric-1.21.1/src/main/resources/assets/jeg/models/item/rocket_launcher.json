@@ -1432,6 +1432,5 @@
         }
       ]
     }
-  ],
-  "parent": "builtin/entity"
+  ]
 }

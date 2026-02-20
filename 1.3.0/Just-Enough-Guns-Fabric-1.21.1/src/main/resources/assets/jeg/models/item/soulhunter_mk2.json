@@ -4737,6 +4737,5 @@
         }
       ]
     }
-  ],
-  "parent": "builtin/entity"
+  ]
 }

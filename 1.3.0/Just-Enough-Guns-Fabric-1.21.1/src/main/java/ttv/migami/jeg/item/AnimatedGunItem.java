@@ -1,18 +1,17 @@
 package ttv.migami.jeg.item;
 
+import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.server.level.ServerLevel;
 import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
+import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.object.PlayState;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.gun.GunStats;
 
@@ -23,12 +22,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String ANIM_RELOAD_START = "reload_start";
     public static final String ANIM_RELOAD_LOOP = "reload_loop";
     public static final String ANIM_RELOAD_STOP = "reload_stop";
-    public static final String ANIM_RELOAD_ALT = "reload_alt";
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation RELOAD_LOOP = RawAnimation.begin().thenLoop(ANIM_RELOAD_LOOP);
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private transient Object cachedGeoItemRenderer;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -38,23 +37,21 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(
+                this,
                 CONTROLLER,
                 0,
                 state -> {
-                    // Triggered animations (reload/shoot/etc) are driven by server-side triggerAnim calls.
-                    // Do not overwrite them every tick with idle, or they will never be visible.
-                    if (!state.controller().isPlayingTriggeredAnimation()) {
+                    if (!state.getController().isPlayingTriggeredAnimation()) {
                         state.setAndContinue(IDLE);
                     }
                     return PlayState.CONTINUE;
                 }
-        ).receiveTriggeredAnimations()
-         .triggerableAnim(ANIM_SHOOT, RawAnimation.begin().thenPlay(ANIM_SHOOT))
-         .triggerableAnim(ANIM_RELOAD, RawAnimation.begin().thenPlay(ANIM_RELOAD))
-         .triggerableAnim(ANIM_RELOAD_START, RawAnimation.begin().thenPlay(ANIM_RELOAD_START))
-         .triggerableAnim(ANIM_RELOAD_LOOP, RELOAD_LOOP)
-         .triggerableAnim(ANIM_RELOAD_STOP, RawAnimation.begin().thenPlay(ANIM_RELOAD_STOP))
-         .triggerableAnim(ANIM_RELOAD_ALT, RawAnimation.begin().thenPlay(ANIM_RELOAD_ALT)));
+        )
+                .triggerableAnim(ANIM_SHOOT, RawAnimation.begin().thenPlay(ANIM_SHOOT))
+                .triggerableAnim(ANIM_RELOAD, RawAnimation.begin().thenPlay(ANIM_RELOAD))
+                .triggerableAnim(ANIM_RELOAD_START, RawAnimation.begin().thenPlay(ANIM_RELOAD_START))
+                .triggerableAnim(ANIM_RELOAD_LOOP, RELOAD_LOOP)
+                .triggerableAnim(ANIM_RELOAD_STOP, RawAnimation.begin().thenPlay(ANIM_RELOAD_STOP)));
     }
 
     @Override
@@ -63,23 +60,30 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     @Override
-    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-        consumer.accept(new GeoRenderProvider() {
-            private GeoItemRenderer<?> renderer;
-
-            @Override
-            public GeoItemRenderer<?> getGeoItemRenderer() {
-                if (renderer == null) {
-                    try {
-                        Class<?> clazz = Class.forName("ttv.migami.jeg.client.render.gun.AnimatedGunRenderer");
-                        renderer = (GeoItemRenderer<?>) clazz.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to create AnimatedGunRenderer", e);
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void createGeoRenderer(Consumer consumer) {
+        try {
+            Class<?> providerClass = Class.forName("software.bernie.geckolib.animatable.client.GeoRenderProvider");
+            Object provider = Proxy.newProxyInstance(
+                    providerClass.getClassLoader(),
+                    new Class<?>[] {providerClass},
+                    (proxy, method, args) -> {
+                        if ("getGeoItemRenderer".equals(method.getName())) {
+                            if (cachedGeoItemRenderer == null) {
+                                Class<?> rendererClass = Class.forName("ttv.migami.jeg.client.render.gun.AnimatedGunRenderer");
+                                cachedGeoItemRenderer = rendererClass.getDeclaredConstructor().newInstance();
+                            }
+                            return cachedGeoItemRenderer;
+                        }
+                        return null;
                     }
-                }
-                return renderer;
-            }
-        });
+            );
+            consumer.accept(provider);
+        } catch (ClassNotFoundException ignored) {
+            // Dedicated server: no client renderer classes available.
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create AnimatedGunRenderer provider", e);
+        }
     }
 
     private void trigger(Level level, Entity triggerEntity, ItemStack stack, String animation) {

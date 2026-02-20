@@ -26,7 +26,7 @@ public final class FabricRecipeUnlock {
         // hardcoded list and ensures the client recipe book actually syncs.
         java.util.ArrayList<RecipeHolder<?>> holders = new java.util.ArrayList<>();
         for (RecipeHolder<?> holder : recipeManager.getRecipes()) {
-            if (holder.id().identifier().getNamespace().equals(Reference.MOD_ID)) {
+            if (holder.id().getNamespace().equals(Reference.MOD_ID)) {
                 holders.add(holder);
             }
         }

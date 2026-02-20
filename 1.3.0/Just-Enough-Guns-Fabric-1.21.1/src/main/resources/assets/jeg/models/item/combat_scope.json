@@ -1,13 +1,6 @@
 {
-  "credit": "Simplified to prevent ModelManager crash. Original by MrCrayfish using Blockbench.",
-  "parent": "builtin/entity",
-  "texture_size": [
-    64,
-    64
-  ],
-  "display": {},
+  "parent": "item/handheld",
   "textures": {
-    "gun": "jeg:item/combat_scope",
-    "particle": "jeg:item/combat_scope"
+    "layer0": "jeg:item/combat_scope"
   }
 }

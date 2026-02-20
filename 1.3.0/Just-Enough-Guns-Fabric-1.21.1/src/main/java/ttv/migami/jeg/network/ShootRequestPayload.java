@@ -8,8 +8,9 @@ import ttv.migami.jeg.Reference;
 
 public record ShootRequestPayload(InteractionHand hand) implements CustomPacketPayload {
     public static final Type<ShootRequestPayload> TYPE = new Type<>(Reference.id("shoot_request"));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, ShootRequestPayload> STREAM_CODEC = StreamCodec.of(
-            (buf, payload) -> buf.writeEnum(payload.hand),
+            (buf, payload) -> buf.writeEnum(payload.hand()),
             buf -> new ShootRequestPayload(buf.readEnum(InteractionHand.class))
     );
 

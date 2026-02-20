@@ -14,12 +14,10 @@ public final class GunRecoilHandler {
     private static float pendingImpulse;
     private static boolean firedThisTick;
 
-    // Frequency controls (radians/tick): speed has a hard cap for very high fire-rate weapons.
     private static final float BASE_PHASE_SPEED = 0.42F;
     private static final float MAX_PHASE_SPEED = 1.75F;
     private static final float SPEED_GAIN_PER_SHOT = 0.22F;
 
-    // Amplitude controls.
     private static final float IMPULSE_SCALE = 0.42F;
     private static final float MIN_IMPULSE = 0.08F;
     private static final float MAX_IMPULSE = 0.45F;

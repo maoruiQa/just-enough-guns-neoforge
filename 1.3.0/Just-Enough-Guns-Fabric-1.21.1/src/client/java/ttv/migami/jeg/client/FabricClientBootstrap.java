@@ -1,37 +1,44 @@
 package ttv.migami.jeg.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.client.render.entity.BulletRenderer;
-import ttv.migami.jeg.client.render.entity.GhoulRenderer;
 import ttv.migami.jeg.client.render.entity.PhantomGunnerGeoRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
 import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.network.AimingStatePayload;
 import ttv.migami.jeg.network.ClientNetworkHandler;
-import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.network.ReloadRequestPayload;
+import ttv.migami.jeg.network.ShootRequestPayload;
+import ttv.migami.jeg.network.TriggerReleasePayload;
 
 public final class FabricClientBootstrap {
     private static boolean registered;
-    private static int hudTicker;
-    private static String lastHudText = "";
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
+    private static boolean reloadHeldLastTick;
     private static long nextVisualShotTickMain;
+    private static int hudTicker;
+    private static String lastHudText = "";
 
     private FabricClientBootstrap() {}
 
@@ -40,8 +47,6 @@ public final class FabricClientBootstrap {
             return;
         }
         registered = true;
-
-        KeyBindings.init();
 
         ClientHooks.setImpl(new ClientHooks.Impl() {
             @Override
@@ -59,11 +64,9 @@ public final class FabricClientBootstrap {
                 BulletTrailRenderer.addInstantTrail(start, end, color, size);
             }
         });
-
         ClientNetworkHandler.initClient();
-        ClientSetup.registerClientExtensions(new RegisterClientExtensionsEvent());
+        registerClientExtensions(new RegisterClientExtensionsEvent());
 
-        EntityRendererRegistry.register(ModEntities.GHOUL.get(), GhoulRenderer::new);
         EntityRendererRegistry.register(ModEntities.BULLET.get(), BulletRenderer::new);
         EntityRendererRegistry.register(ModEntities.GRENADE.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
         EntityRendererRegistry.register(ModEntities.PHANTOM_GUNNER.get(), PhantomGunnerGeoRenderer::new);
@@ -71,42 +74,41 @@ public final class FabricClientBootstrap {
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
 
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            if (!NetworkHandler.shouldRenderLegacyBulletTrail()) {
-                return;
-            }
-            BulletTrailRenderer.render(
-                    context.matrices(),
-                    context.consumers(),
-                    Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)
-            );
-        });
+        ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
+                player != null && player.getMainHandItem().getItem() instanceof GunItem);
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            GunRecoilHandler.tick();
-            if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
-                BulletTrailRenderer.tick();
-            }
-
-            handleCombatInput(client);
-            suppressSwingAnimation(client);
-            tickAmmoActionbar(client);
-        });
-
+        ClientTickEvents.END_CLIENT_TICK.register(FabricClientBootstrap::onClientTick);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             BulletTrailRenderer.clear();
+            AimingHandler.get().reset();
             attackHeldLastTick = false;
             aimingStateLastSent = false;
+            reloadHeldLastTick = false;
             nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
         });
     }
 
-    private static void handleCombatInput(Minecraft client) {
+    private static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        for (var holder : ModItems.GUNS.values()) {
+            event.registerItem(new GunItemClientExtensions(holder.get()), holder.get());
+        }
+    }
+
+    private static void onClientTick(Minecraft client) {
+        GunRecoilHandler.tick();
+        BulletTrailRenderer.tick();
+
         LocalPlayer player = client.player;
         if (player == null || client.level == null) {
             attackHeldLastTick = false;
             aimingStateLastSent = false;
+            reloadHeldLastTick = false;
             nextVisualShotTickMain = 0L;
+            hudTicker = 0;
+            lastHudText = "";
+            AimingHandler.get().reset();
+            GunRecoilHandler.stopImmediate();
             return;
         }
 
@@ -114,7 +116,7 @@ public final class FabricClientBootstrap {
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
-            ClientNetworkHandler.sendAiming(aiming);
+            ClientPlayNetworking.send(new AimingStatePayload(aiming));
         }
 
         ItemStack heldMain = player.getMainHandItem();
@@ -126,14 +128,14 @@ public final class FabricClientBootstrap {
 
             if (attackDown) {
                 if (gun.isAutomatic() || !attackHeldLastTick) {
-                    ClientNetworkHandler.sendShoot(InteractionHand.MAIN_HAND);
+                    ClientPlayNetworking.send(new ShootRequestPayload(InteractionHand.MAIN_HAND));
                 }
                 if (shouldApplyVisualRecoil(gun, attackHeldLastTick, nowTick)) {
                     applyLocalVisualRecoil(gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
-                ClientNetworkHandler.sendTriggerRelease(InteractionHand.MAIN_HAND);
+                ClientPlayNetworking.send(new TriggerReleasePayload(InteractionHand.MAIN_HAND));
                 nextVisualShotTickMain = 0L;
                 GunRecoilHandler.stopImmediate();
             } else {
@@ -147,27 +149,34 @@ public final class FabricClientBootstrap {
             GunRecoilHandler.stopImmediate();
         }
 
-        if (KeyBindings.RELOAD.consumeClick()) {
+        boolean reloadDown = InputConstants.isKeyDown(client.getWindow().getWindow(), GLFW.GLFW_KEY_R);
+        if (reloadDown && !reloadHeldLastTick) {
             if (heldMain.getItem() instanceof GunItem) {
-                ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
+                ClientPlayNetworking.send(new ReloadRequestPayload(InteractionHand.MAIN_HAND));
             } else if (heldOff.getItem() instanceof GunItem) {
-                ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
+                ClientPlayNetworking.send(new ReloadRequestPayload(InteractionHand.OFF_HAND));
             }
         }
+        reloadHeldLastTick = reloadDown;
+
+        suppressSwingAnimation(player, heldMain, heldOff);
+        tickAmmoActionbar(player, heldMain);
     }
 
-    private static boolean shouldApplyVisualRecoil(GunItem gun, boolean attackHeldLastTick, long nowTick) {
+    private static boolean shouldApplyVisualRecoil(GunItem gun, boolean wasHeldLastTick, long nowTick) {
         int fireDelay = Math.max(1, gun.getStats().fireDelay());
         if (!gun.isAutomatic()) {
-            if (attackHeldLastTick) {
+            if (wasHeldLastTick) {
                 return false;
             }
             nextVisualShotTickMain = nowTick + fireDelay;
             return true;
         }
+
         if (nowTick < nextVisualShotTickMain) {
             return false;
         }
+
         nextVisualShotTickMain = nowTick + fireDelay;
         return true;
     }
@@ -181,14 +190,7 @@ public final class FabricClientBootstrap {
         }
     }
 
-    private static void suppressSwingAnimation(Minecraft client) {
-        LocalPlayer player = client.player;
-        if (player == null) {
-            return;
-        }
-
-        ItemStack main = player.getMainHandItem();
-        ItemStack off = player.getOffhandItem();
+    private static void suppressSwingAnimation(LocalPlayer player, ItemStack main, ItemStack off) {
         if (main.getItem() instanceof GunItem || off.getItem() instanceof GunItem) {
             player.attackAnim = 0.0F;
             player.oAttackAnim = 0.0F;
@@ -197,26 +199,18 @@ public final class FabricClientBootstrap {
         }
     }
 
-    private static void tickAmmoActionbar(Minecraft client) {
-        LocalPlayer player = client.player;
-        if (player == null) {
-            hudTicker = 0;
-            lastHudText = "";
-            return;
-        }
-
+    private static void tickAmmoActionbar(LocalPlayer player, ItemStack heldMain) {
         hudTicker++;
         if (hudTicker % 4 != 0) {
             return;
         }
 
-        ItemStack held = player.getMainHandItem();
-        if (!(held.getItem() instanceof GunItem gun)) {
+        if (!(heldMain.getItem() instanceof GunItem gun)) {
             lastHudText = "";
             return;
         }
 
-        String hudText = buildAmmoHudText(player, held, gun);
+        String hudText = buildAmmoHudText(player, heldMain, gun);
         if (!hudText.isEmpty() && (!hudText.equals(lastHudText) || hudTicker % 20 == 0)) {
             player.displayClientMessage(Component.literal(hudText), true);
             lastHudText = hudText;
@@ -226,14 +220,12 @@ public final class FabricClientBootstrap {
     private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
         GunStats stats = gun.getStats();
         int reserve = gun.countInventoryAmmo(player);
-        boolean infinite = reserve == Integer.MAX_VALUE;
-        String reserveText = infinite ? "∞" : Integer.toString(Math.max(0, reserve));
+        String reserveText = reserve == Integer.MAX_VALUE ? "INF" : Integer.toString(Math.max(0, reserve));
 
         if (stats.usesMagazine()) {
             int magazine = gun.getMagazineAmmo(stack);
             return "Ammo " + magazine + "/" + stats.magazineSize() + " | Reserve " + reserveText;
         }
-
         return "Ammo " + reserveText;
     }
 }

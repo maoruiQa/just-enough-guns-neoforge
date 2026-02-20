@@ -2,13 +2,27 @@
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
   "ingredients": [
-    "jeg:bulletproof_vest_i",
-    "minecraft:iron_ingot",
-    "minecraft:iron_ingot",
-    "minecraft:iron_ingot",
-    "minecraft:iron_bars",
-    "minecraft:iron_bars",
-    "minecraft:leather"
+    {
+      "item": "jeg:bulletproof_vest_i"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_bars"
+    },
+    {
+      "item": "minecraft:iron_bars"
+    },
+    {
+      "item": "minecraft:leather"
+    }
   ],
   "result": {
     "id": "jeg:bulletproof_vest_ii",

@@ -1,6 +1,6 @@
 package ttv.migami.jeg.faction;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
@@ -47,7 +47,7 @@ public class GunnerManager {
                 List<Item> closeGuns = Arrays.stream(parts[3].split(","))
                         .map(gunName -> {
                             try {
-                                Identifier gunId = Identifier.parse(gunName);
+                                ResourceLocation gunId = ResourceLocation.parse(gunName);
                                 DeferredHolder<?, ?> holder = ModItems.GUNS.get(gunId);
                                 return holder != null ? (Item) holder.get() : null;
                             } catch (Exception e) {
@@ -60,7 +60,7 @@ public class GunnerManager {
                 List<Item> longGuns = Arrays.stream(parts[4].split(","))
                         .map(gunName -> {
                             try {
-                                Identifier gunId = Identifier.parse(gunName);
+                                ResourceLocation gunId = ResourceLocation.parse(gunName);
                                 DeferredHolder<?, ?> holder = ModItems.GUNS.get(gunId);
                                 return holder != null ? (Item) holder.get() : null;
                             } catch (Exception e) {
@@ -73,7 +73,7 @@ public class GunnerManager {
                 List<Item> eliteGuns = Arrays.stream(parts[5].split(","))
                         .map(gunName -> {
                             try {
-                                Identifier gunId = Identifier.parse(gunName);
+                                ResourceLocation gunId = ResourceLocation.parse(gunName);
                                 DeferredHolder<?, ?> holder = ModItems.GUNS.get(gunId);
                                 return holder != null ? (Item) holder.get() : null;
                             } catch (Exception e) {
@@ -90,7 +90,7 @@ public class GunnerManager {
         }
     }
 
-    public Faction getFactionForMob(Identifier entityType) {
+    public Faction getFactionForMob(ResourceLocation entityType) {
         return factions.values().stream()
                 .filter(f -> f.getMobs().contains(entityType.toString()))
                 .findFirst().orElse(null);

@@ -7,7 +7,7 @@ import java.util.Set;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
@@ -23,29 +23,29 @@ import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.event.RecipeUnlockHandler;
 import ttv.migami.jeg.item.GrenadeItem;
-import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
-import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
-import ttv.migami.jeg.item.JoyousArmorPlateItem;
+// import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
+// import ttv.migami.jeg.item.JoyousArmorPlateItem;
 
 public final class ModItems {
     private ModItems() {}
 
     public static final DeferredRegister<Item> REGISTER = DeferredRegister.create(Registries.ITEM, Reference.MOD_ID);
 
-    public static final Map<Identifier, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
-    public static final Map<Identifier, DeferredHolder<Item, GunItem>> GUNS = new LinkedHashMap<>();
-    public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES = new LinkedHashMap<>();
-    public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_DIAMOND = new LinkedHashMap<>();
-    public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_NETHERITE = new LinkedHashMap<>();
+    public static final Map<ResourceLocation, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
+    public static final Map<ResourceLocation, DeferredHolder<Item, GunItem>> GUNS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_HELMETS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_VESTS = new LinkedHashMap<>();
-      private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
-    private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
+    // public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES = new LinkedHashMap<>();
+    // public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_DIAMOND = new LinkedHashMap<>();
+    // public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_NETHERITE = new LinkedHashMap<>();
+    private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
+    private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
 
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
@@ -62,8 +62,8 @@ public final class ModItems {
     static {
         registerAmmoItems();
         registerGunItems();
-        registerArmoredHarnessItems();
         registerBulletproofArmorItems();
+        // registerArmoredHarnessItems(); // Disabled - armor system not available in 1.21.1
         MANUAL_RECIPES = buildManualRecipes();
     }
 
@@ -183,19 +183,15 @@ public final class ModItems {
             )
     );
 
-    public static final DeferredHolder<Item, SpawnEggItem> GUNNER_GHOUL_SPAWN_EGG = REGISTER.register(
-            "gunner_ghoul_spawn_egg",
-            () -> new ModSpawnEggItem(ModEntities.GHOUL.get(), baseProperties(Reference.id("gunner_ghoul_spawn_egg")).stacksTo(64))
-    );
-
-    public static final DeferredHolder<Item, JoyousArmorPlateItem> JOYOUS_ARMOR_PLATE = REGISTER.register(
-            "joyous_armor_plate",
-            () -> new JoyousArmorPlateItem(baseProperties(Reference.id("joyous_armor_plate")))
-    );
+    // DISABLED: Joyous Armor Plate (Equipment API not available in 1.21.1)
+    // public static final DeferredHolder<Item, JoyousArmorPlateItem> JOYOUS_ARMOR_PLATE = REGISTER.register(
+    //         "joyous_armor_plate",
+    //         () -> new JoyousArmorPlateItem(baseProperties(Reference.id("joyous_armor_plate")))
+    // );
 
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
-            Identifier id = Reference.id(path);
+            ResourceLocation id = Reference.id(path);
             if ("grenade".equals(path)) {
                 AMMO.put(id, REGISTER.register(path, () -> new GrenadeItem(baseProperties(id).stacksTo(16))));
             } else {
@@ -205,66 +201,38 @@ public final class ModItems {
     }
 
     private static void registerGunItems() {
-        for (Map.Entry<Identifier, GunStats> entry : GunDefinitions.ALL.entrySet()) {
-            Identifier id = entry.getKey();
+        for (Map.Entry<ResourceLocation, GunStats> entry : GunDefinitions.ALL.entrySet()) {
+            ResourceLocation id = entry.getKey();
             GunStats stats = entry.getValue();
             DeferredHolder<Item, GunItem> holder = REGISTER.register(id.getPath(), () -> new AnimatedGunItem(defaultGunProperties(id, stats), stats));
             GUNS.put(id, holder);
         }
     }
 
+    /* DISABLED: Armored harness items (Equipment API not available in 1.21.1)
+
+
     private static void registerArmoredHarnessItems() {
-        for (DyeColor color : DyeColor.values()) {
-            String colorName = color.getName();
 
-            Identifier baseId = Reference.id("armored_joy_harness_" + colorName);
-            DeferredHolder<Item, ArmoredJoyHarnessItem> baseHolder = REGISTER.register(
-                    "armored_joy_harness_" + colorName,
-                    () -> new ArmoredJoyHarnessItem(color,
-                            ArmoredJoyHarnessItem.buildProperties(baseProperties(baseId), color, ArmoredJoyHarnessItem.HarnessTier.BASE),
-                            30.0F,
-                            100.0F,
-                            null,
-                            ArmoredJoyHarnessItem.HarnessTier.BASE)
-            );
-            ARMORED_JOY_HARNESSES.put(color, baseHolder);
 
-            Identifier diamondId = Reference.id("armored_joy_harness_" + colorName + "_diamond");
-            DeferredHolder<Item, ArmoredJoyHarnessItem> diamondHolder = REGISTER.register(
-                    diamondId.getPath(),
-                    () -> new ArmoredJoyHarnessItem(color,
-                            ArmoredJoyHarnessItem.buildProperties(baseProperties(diamondId), color, ArmoredJoyHarnessItem.HarnessTier.DIAMOND),
-                            40.0F, 160.0F,
-                            Component.translatable("tooltip.jeg.harness_material.diamond"),
-                            ArmoredJoyHarnessItem.HarnessTier.DIAMOND)
-            );
-            ARMORED_JOY_HARNESSES_DIAMOND.put(color, diamondHolder);
+        // Method disabled
 
-            Identifier netheriteId = Reference.id("armored_joy_harness_" + colorName + "_netherite");
-            DeferredHolder<Item, ArmoredJoyHarnessItem> netheriteHolder = REGISTER.register(
-                    netheriteId.getPath(),
-                    () -> new ArmoredJoyHarnessItem(color,
-                            ArmoredJoyHarnessItem.buildProperties(baseProperties(netheriteId), color, ArmoredJoyHarnessItem.HarnessTier.NETHERITE),
-                            50.0F, 250.0F,
-                            Component.translatable("tooltip.jeg.harness_material.netherite"),
-                            ArmoredJoyHarnessItem.HarnessTier.NETHERITE)
-            );
-            ARMORED_JOY_HARNESSES_NETHERITE.put(color, netheriteHolder);
-        }
+
     }
+
+
+    */
 
     private static void registerBulletproofArmorItems() {
         for (BulletproofArmorItem.Tier tier : BulletproofArmorItem.Tier.values()) {
-            // Helmets
-            Identifier helmetId = Reference.id("bulletproof_helmet_" + tier.suffix());
+            ResourceLocation helmetId = Reference.id("bulletproof_helmet_" + tier.suffix());
             DeferredHolder<Item, BulletproofArmorItem> helmet = REGISTER.register(
                     helmetId.getPath(),
                     () -> new BulletproofArmorItem(tier, EquipmentSlot.HEAD, baseProperties(helmetId))
             );
             BULLETPROOF_HELMETS.put(tier, helmet);
 
-            // Chests (Vests)
-            Identifier vestId = Reference.id("bulletproof_vest_" + tier.suffix());
+            ResourceLocation vestId = Reference.id("bulletproof_vest_" + tier.suffix());
             DeferredHolder<Item, BulletproofArmorItem> vest = REGISTER.register(
                     vestId.getPath(),
                     () -> new BulletproofArmorItem(tier, EquipmentSlot.CHEST, baseProperties(vestId))
@@ -278,21 +246,18 @@ public final class ModItems {
         for (String ammo : AMMO_IDS) {
             keys.add(ResourceKey.create(Registries.RECIPE, Reference.id(ammo)));
         }
-        for (Identifier id : GunDefinitions.ALL.keySet()) {
+        for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
             }
         }
-        RecipeUnlockHandler.BULLETPROOF_RECIPES.forEach(keys::add);
 
-        // Add all colored harness recipes
-        for (DyeColor color : DyeColor.values()) {
-            String name = color.getName();
-            keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness_" + name)));
-            keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness_" + name + "_diamond")));
-            keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness_" + name + "_netherite")));
+        // Add bulletproof armor recipes
+        for (BulletproofArmorItem.Tier tier : BulletproofArmorItem.Tier.values()) {
+            keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("bulletproof_helmet_" + tier.suffix())));
+            keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("bulletproof_vest_" + tier.suffix())));
         }
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("joyous_armor_plate")));
+
         return List.copyOf(keys);
     }
 
@@ -300,17 +265,20 @@ public final class ModItems {
         return MANUAL_RECIPES;
     }
 
-    private static Item.Properties defaultGunProperties(Identifier id, GunStats stats) {
+    private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
         int durability = switch (stats.reloadType()) {
             case "jeg:inventory_fed" -> 1024;
             case "jeg:manual" -> 256;
             default -> 512;
         };
-        return baseProperties(id).stacksTo(1).durability(durability).repairable(net.minecraft.world.item.Items.IRON_INGOT);
+        // Note: .repairable() doesn't exist in 1.21.1 Item.Properties API
+        // Repair logic should be handled via isValidRepairItem() override in GunItem
+        return baseProperties(id).stacksTo(1).durability(durability);
     }
 
-    private static Item.Properties baseProperties(Identifier id) {
-        return new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id));
+    private static Item.Properties baseProperties(ResourceLocation id) {
+        // Note: .setId() doesn't exist in 1.21.1 - ID is set during registration
+        return new Item.Properties();
     }
 
     public static void addToTab(BuildCreativeModeTabContentsEvent event) {
@@ -336,10 +304,10 @@ public final class ModItems {
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(GUNSMITH_MANUAL.get());
-            ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
-            ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
-            ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));
-            event.accept(JOYOUS_ARMOR_PLATE.get());
+    // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
+    // ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
+    // ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));
+            // event.accept(JOYOUS_ARMOR_PLATE.get()); // Disabled - class doesn't exist
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.SPAWN_EGGS)) {
@@ -358,7 +326,6 @@ public final class ModItems {
             event.accept(GUNNER_PILLAGER_SPAWN_EGG.get());
             event.accept(GUNNER_VINDICATOR_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get());
-            event.accept(GUNNER_GHOUL_SPAWN_EGG.get());
         }
     }
 

@@ -2,43 +2,86 @@ package ttv.migami.jeg.faction;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
-import ttv.migami.jeg.init.ModEntities;
-import ttv.migami.jeg.init.ModTags;
+import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 
+import net.minecraft.resources.ResourceLocation;
 import java.util.UUID;
 
+@EventBusSubscriber(modid = Reference.MOD_ID)
 public class GunnerMobSpawner {
-    public static final UUID GUN_FOLLOW_RANGE_MODIFIER_UUID = UUID.randomUUID();
-    public static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+
+    // Default values - will be replaced by config system later
+    private static final boolean ENABLED = true;
+    private static final int MIN_DAYS = 4;
+    private static final int INITIAL_CHANCE = 10;
+    private static final int CHANCE_INCREMENT = 1;
+    private static final int MAX_CHANCE = 50;
+    private static final float ELITE_CHANCE = 0.3F;
+    private static final boolean ELITES_ENABLED = true;
+
+    public static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("jeg", "gun_follow_range");
 
     @SubscribeEvent
+// TEMPORARILY DISABLED TO FIX EVENT BUS ERROR
+    // public static void onSpecialSpawn(MobSpawnEvent event) {
+        if (!ENABLED) {
+            return;
+        }
+
+        LivingEntity entity = event.getEntity();
+
+        if (!(entity instanceof PathfinderMob)) {
+            return;
+        }
+
+        long totalDayTime = entity.level().getDayTime();
+        int currentDay = (int) (totalDayTime / 24000L);
+
+        if (currentDay < MIN_DAYS) {
+            return;
+        }
+
+        int daysOverMin = currentDay - MIN_DAYS;
+        int currentChance = Math.min(INITIAL_CHANCE + (daysOverMin * CHANCE_INCREMENT), MAX_CHANCE);
+
+        if (entity.getRandom().nextInt(100) >= currentChance) {
+            return;
+        }
+
+        GunnerManager manager = GunnerManager.getInstance();
+        Faction faction = manager.getFactionForMob(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()));
+
+        if (faction != null) {
+            entity.addTag("MobGunner");
+        }
+    }
+
+    @SubscribeEvent
+// TEMPORARILY DISABLED TO FIX EVENT BUS ERROR
     public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
             return;
@@ -52,8 +95,9 @@ public class GunnerMobSpawner {
     }
 
     @SubscribeEvent
+// TEMPORARILY DISABLED TO FIX EVENT BUS ERROR
     public static void onLivingUpdate(EntityTickEvent.Post event) {
-        if (!GunMobValues.enabled) {
+        if (!ENABLED) {
             return;
         }
 
@@ -67,30 +111,29 @@ public class GunnerMobSpawner {
 
         ItemStack heldItem = mob.getMainHandItem();
 
-        // Alternative approach for piglin zombification immunity - since PiglinAi.rideInBoat() doesn't exist
         if (mob.getTags().contains("MobGunner") && mob instanceof AbstractPiglin abstractPiglin && abstractPiglin.level().dimension() == Level.OVERWORLD) {
-            // Give piglin fire resistance to prevent zombification in overworld
-            abstractPiglin.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20 * 60, 0, false, true));
+            abstractPiglin.setImmuneToZombification(true);
         }
 
         if (mob.getTags().contains("MobGunner") && !(heldItem.getItem() instanceof GunItem)) {
-            GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
-            String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-            ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
-            Faction faction = manager.getFactionForMob(entityTypeLocation);
+            GunnerManager manager = GunnerManager.getInstance();
+            Faction faction = manager.getFactionForMob(BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()));
 
             if (faction != null) {
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
-                Item gun = faction.getRandomGun(isCloseRange);
+                net.minecraft.world.item.Item gun = faction.getRandomGun(isCloseRange);
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
-                boolean elite = (mob.getRandom().nextFloat() < GunMobValues.eliteChance && GunMobValues.elitesEnabled);
+                boolean elite = (mob.getRandom().nextFloat() < ELITE_CHANCE && ELITES_ENABLED);
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
                 if (elite) {
-                    gun = faction.getEliteGun();
-                    applyEliteAttributes(mob);
+                    net.minecraft.world.item.Item eliteGun = faction.getEliteGun();
+                    if (eliteGun != null) {
+                        gun = eliteGun;
+                        applyEliteAttributes(mob);
+                    }
                 }
 
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
@@ -111,8 +154,9 @@ public class GunnerMobSpawner {
     }
 
     @SubscribeEvent
+// TEMPORARILY DISABLED TO FIX EVENT BUS ERROR
     public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
-        if (!GunMobValues.enabled) {
+        if (!ENABLED) {
             return;
         }
 
@@ -121,30 +165,6 @@ public class GunnerMobSpawner {
         }
 
         mob.removeTag("GunAttackAssigned");
-
-        // Check if this mob should become a gunner (only for newly spawned mobs)
-        // Prevent baby mobs from becoming gunners
-        if (mob.tickCount <= 5 && !mob.getTags().contains("MobGunner") && mob.getType().is(ModTags.Entities.GUNNER) && !mob.isBaby()) {
-            long totalDayTime = mob.level().getDayTime();
-            int currentDay = (int) (totalDayTime / 24000L);
-
-            if (currentDay >= GunMobValues.minDays) {
-                int daysOverMin = currentDay - GunMobValues.minDays;
-                int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
-
-                if (mob.getRandom().nextInt(100) < currentChance) {
-                    GunnerManager manager = GunnerManager.getInstance();
-                    String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                    ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
-                    Faction faction = manager.getFactionForMob(entityTypeLocation);
-
-                    if (faction != null) {
-                        mob.addTag("MobGunner");
-                        ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
-                    }
-                }
-            }
-        }
 
         ItemStack heldItem = mob.getMainHandItem();
         if (heldItem.getItem() instanceof GunItem) {
@@ -178,41 +198,51 @@ public class GunnerMobSpawner {
         mob.addTag("EliteGunner");
         mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.TURTLE_HELMET));
-        // Using alternative effect since DAMAGE_BOOST doesn't exist in 1.21.10
-        mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, -1, 1, false, true));
-        mob.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, -1, 0, false, false));
+
+        // Apply effects using NeoForge 1.21.10 API
+        try {
+            // Use available effect IDs for 1.21.10
+            mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, Integer.MAX_VALUE, 1, false, true));
+            mob.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, Integer.MAX_VALUE, 2, false, false));
+        } catch (Exception e) {
+            ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("Failed to apply elite gunner effects: {}", e.getMessage());
+        }
     }
 
-    private static ItemStack createModifiedGun(PathfinderMob mob, Item gun) {
+    private static ItemStack createModifiedGun(PathfinderMob mob, net.minecraft.world.item.Item gun) {
         ItemStack gunStack = new ItemStack(gun);
         if (gun instanceof GunItem gunItem) {
             GunStats stats = gunItem.getStats();
-            // Set random ammo count between 0 and magazine size using stack.set()
-            gunStack.set(ttv.migami.jeg.init.ModDataComponents.GUN_AMMO.get(),
-                        mob.getRandom().nextInt(stats.magazineSize()));
+            if (stats.usesMagazine()) {
+                gunStack.set(ModDataComponents.GUN_AMMO.get(),
+                    mob.getRandom().nextInt(stats.magazineSize()));
+            } else {
+                gunStack.set(ModDataComponents.GUN_AMMO.get(),
+                    Math.max(1, stats.projectileAmount()));
+            }
         }
         return gunStack;
     }
 
     public static void extendFollowRange(PathfinderMob mob) {
-        AttributeInstance attribute = mob.getAttribute(Attributes.FOLLOW_RANGE);
-        if (attribute != null) {
-            double additionalRange = 64 - attribute.getBaseValue();
+        if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+            double additionalRange = 64 - mob.getAttribute(Attributes.FOLLOW_RANGE).getBaseValue();
             AttributeModifier modifier = new AttributeModifier(
                     GUN_FOLLOW_RANGE_MODIFIER_ID,
                     additionalRange,
                     AttributeModifier.Operation.ADD_VALUE
             );
-            if (!attribute.hasModifier(GUN_FOLLOW_RANGE_MODIFIER_ID)) {
-                attribute.addPermanentModifier(modifier);
+
+            // Check if modifier already exists before adding
+            if (!mob.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(GUN_FOLLOW_RANGE_MODIFIER_ID)) {
+                mob.getAttribute(Attributes.FOLLOW_RANGE).addPermanentModifier(modifier);
             }
         }
     }
 
     public static void resetFollowRange(PathfinderMob mob) {
-        AttributeInstance attribute = mob.getAttribute(Attributes.FOLLOW_RANGE);
-        if (attribute != null) {
-            attribute.removeModifier(GUN_FOLLOW_RANGE_MODIFIER_ID);
+        if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+            mob.getAttribute(Attributes.FOLLOW_RANGE).removeModifier(GUN_FOLLOW_RANGE_MODIFIER_ID);
         }
     }
 }

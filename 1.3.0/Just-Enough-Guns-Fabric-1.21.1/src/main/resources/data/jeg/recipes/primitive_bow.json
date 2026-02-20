@@ -1,0 +1,21 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "LS ",
+                    "L  ",
+                    "LS "
+                ],
+    "key":  {
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      },
+                "S":  {
+                          "item":  "minecraft:string"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:primitive_bow",
+                   "count":  1
+               }
+}

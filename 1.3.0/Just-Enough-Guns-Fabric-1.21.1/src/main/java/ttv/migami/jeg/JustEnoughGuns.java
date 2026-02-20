@@ -30,7 +30,7 @@ public final class JustEnoughGuns {
         container.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
         container.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);
 
-        LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.10");
+        LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.1-1.21.4");
 
         // Register mod content first
         ModItems.REGISTER.register(modBus);
@@ -50,6 +50,9 @@ public final class JustEnoughGuns {
         // FIXED: Register game events immediately after mod content registration
         // This prevents timing issues with ModelManager.reload() in NeoForge 1.21.10
         registerGameEvents();
+
+        // Initialize client-side components if running on client
+        ClientOnly.initClient();
 
         LOGGER.info("JEG initialization completed successfully");
     }

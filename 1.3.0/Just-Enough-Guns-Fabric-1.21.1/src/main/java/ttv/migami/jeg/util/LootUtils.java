@@ -11,7 +11,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -38,12 +38,13 @@ import ttv.migami.jeg.init.ModItems;
 public final class LootUtils {
     private LootUtils() {}
 
-    private static final net.minecraft.resources.Identifier SKY_SHIP_LOOT = Reference.id("chests/sky_ship_armada");
-    private static final net.minecraft.resources.Identifier SUPPLY_LOOT = Reference.id("chests/terror_phantom_supply");
-    private static final net.minecraft.resources.Identifier REWARD_LOOT = Reference.id("chests/terror_phantom_reward");
-    private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
-    private static final Identifier ABSTRACT_GUN_ID = Reference.id("abstract_gun");
-    private static final Set<Identifier> EXCLUDED_GUN_LOOT = Set.of(PHANTOM_SMG_ID, ABSTRACT_GUN_ID);
+    private static final net.minecraft.resources.ResourceLocation SKY_SHIP_LOOT = Reference.id("chests/sky_ship_armada");
+    private static final net.minecraft.resources.ResourceLocation SUPPLY_LOOT = Reference.id("chests/terror_phantom_supply");
+    private static final net.minecraft.resources.ResourceLocation REWARD_LOOT = Reference.id("chests/terror_phantom_reward");
+    private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
+    private static final ResourceLocation FINGER_GUN_ID = Reference.id("finger_gun");
+    private static final ResourceLocation ABSTRACT_GUN_ID = Reference.id("abstract_gun");
+    private static final Set<ResourceLocation> EXCLUDED_GUN_LOOT = Set.of(PHANTOM_SMG_ID, FINGER_GUN_ID, ABSTRACT_GUN_ID);
     private static final Item[] DIAMOND_ARMOR = {
         Items.DIAMOND_HELMET,
         Items.DIAMOND_CHESTPLATE,
@@ -64,7 +65,7 @@ public final class LootUtils {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity == null) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing block entity at {} when filling {}", pos, lootTable.identifier());
+            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing block entity at {} when filling {}", pos, lootTable.location());
             return;
         }
 
@@ -75,7 +76,7 @@ public final class LootUtils {
             var lootLookup = registryHolder.lookup().lookup(Registries.LOOT_TABLE);
             present = lootLookup.flatMap(provider -> provider.get(lootTable)).isPresent();
         }
-        JustEnoughGuns.LOGGER.debug("[LootUtils] Registry contains {} = {}", lootTable.identifier(), present);
+        JustEnoughGuns.LOGGER.debug("[LootUtils] Registry contains {} = {}", lootTable.location(), present);
 
         long seed = random.nextLong();
 
@@ -89,12 +90,12 @@ public final class LootUtils {
             randomizable.setLootTable(lootTable);
             randomizable.setLootTableSeed(seed);
             randomizable.setChanged();
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Assigned loot table {} seed={} to {}", lootTable.identifier(), seed, pos);
+            JustEnoughGuns.LOGGER.debug("[LootUtils] Assigned loot table {} seed={} to {}", lootTable.location(), seed, pos);
             return;
         }
 
         if (!(blockEntity instanceof Container container)) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Block entity at {} is not a container when filling {}", pos, lootTable.identifier());
+            JustEnoughGuns.LOGGER.debug("[LootUtils] Block entity at {} is not a container when filling {}", pos, lootTable.location());
             return;
         }
 
@@ -106,14 +107,14 @@ public final class LootUtils {
         }
 
         if (serverLevel == null || serverLevel.getServer() == null) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing server when filling {} at {}", lootTable.identifier(), pos);
+            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing server when filling {} at {}", lootTable.location(), pos);
             return;
         }
 
         var registryHolder = serverLevel.getServer().reloadableRegistries();
         LootTable table = registryHolder.getLootTable(lootTable);
         if (table == LootTable.EMPTY) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Loot table {} is empty when filling {}", lootTable.identifier(), pos);
+            JustEnoughGuns.LOGGER.debug("[LootUtils] Loot table {} is empty when filling {}", lootTable.location(), pos);
             return;
         }
 
@@ -124,7 +125,7 @@ public final class LootUtils {
         table.fill(container, params, seed);
         removeExcludedGunLoot(container);
         boolean empty = isContainerEmpty(container);
-        JustEnoughGuns.LOGGER.debug("[LootUtils] Filled container {} with {} empty={} seed={}", pos, lootTable.identifier(), empty, seed);
+        JustEnoughGuns.LOGGER.debug("[LootUtils] Filled container {} with {} empty={} seed={}", pos, lootTable.location(), empty, seed);
         blockEntity.setChanged();
     }
 
@@ -139,7 +140,7 @@ public final class LootUtils {
         }
 
         HolderLookup.RegistryLookup<Enchantment> enchantLookup = serverLevel.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-        net.minecraft.resources.Identifier id = lootTable.identifier();
+        net.minecraft.resources.ResourceLocation id = lootTable.location();
 
         if (id.equals(SKY_SHIP_LOOT)) {
             fillSkyShipFallback(container, random, enchantLookup);
@@ -162,7 +163,7 @@ public final class LootUtils {
             if (stack.isEmpty()) {
                 continue;
             }
-            Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (EXCLUDED_GUN_LOOT.contains(id)) {
                 container.setItem(i, ItemStack.EMPTY);
             }
@@ -275,7 +276,7 @@ public final class LootUtils {
             }
         }
 
-        ItemStack bonusAmmo = createRandomAmmo(random, 12, 24);
+        ItemStack bonusAmmo = createRandomAmmo(random, 48, 96);
         if (!bonusAmmo.isEmpty()) {
             placeInRandomSlot(container, bonusAmmo, random);
         }
@@ -288,7 +289,7 @@ public final class LootUtils {
     private static ItemStack createSupplyLootItem(RandomSource random) {
         int roll = random.nextInt(100);
         if (roll < 20) {
-            return createRandomAmmo(random, 8, 16);
+            return createRandomAmmo(random, 32, 64);
         }
         if (roll < 40) {
             return new ItemStack(Items.GUNPOWDER, 8 + random.nextInt(5));
@@ -349,7 +350,7 @@ public final class LootUtils {
             return createRandomGun(random);
         }
         if (roll < 92) {
-            return createRandomAmmo(random, 8, 16);
+            return createRandomAmmo(random, 64, 96);
         }
         if (roll < 98) {
             return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);

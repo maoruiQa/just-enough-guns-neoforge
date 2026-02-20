@@ -2,246 +2,166 @@ package ttv.migami.jeg.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import ttv.migami.jeg.network.BulletTrailPayload;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 /**
- * 1.20.x-style bullet trail renderer.
- * Trails are maintained per-bullet and rendered as textured energy-swirl geometry.
+ * Client-side bullet trail renderer with two modes:
+ * 1. Instant trails (fast bullets): Full raycast on fire, render complete path
+ * 2. Dynamic trails (slow bullets): Track entity position each frame
  */
-public final class BulletTrailRenderer {
-    private static final Identifier TRAIL_TEXTURE = Identifier.fromNamespaceAndPath("jeg", "textures/misc/bullet_trail.png");
-    private static final Map<Integer, TrailState> TRAILS = new HashMap<>();
-    private static final AtomicInteger SYNTHETIC_IDS = new AtomicInteger(-1);
-    private static long lastRenderFrame = -1L;
+public class BulletTrailRenderer {
+    private static final List<TrailSegment> INSTANT_TRAILS = new ArrayList<>();
+    private static final int INSTANT_TRAIL_LIFETIME = 3; // Instant trails fade after 3 ticks
 
-    private BulletTrailRenderer() {}
+    // Track last position for dynamic trails (keyed by entity ID)
+    private static final java.util.Map<Integer, Vec3> LAST_POSITIONS = new java.util.HashMap<>();
+    private static final java.util.Map<Integer, TrailInfo> DYNAMIC_TRAIL_INFO = new java.util.HashMap<>();
 
-    public static void upsertLegacyTrail(BulletTrailPayload payload) {
-        Minecraft mc = Minecraft.getInstance();
-        long gameTime = mc.level != null ? mc.level.getGameTime() : 0L;
-        int payloadColor = payload.color();
-        // Preserve legacy yellow fallback for entries that arrive as plain white.
-        if (payloadColor == 0xFFFFFF || payloadColor == 0xFFFFFFFF) {
-            payloadColor = 0xFFFF00;
-        }
-        int count = Math.min(
-                payload.entityIds().length,
-                Math.min(payload.positions().length, payload.motions().length)
-        );
-        for (int i = 0; i < count; i++) {
-            int entityId = payload.entityIds()[i];
-            TrailState state = TRAILS.get(entityId);
-            if (state == null) {
-                state = new TrailState(entityId);
-                TRAILS.put(entityId, state);
-            }
+    private static long lastRenderFrame = -1;
 
-            state.position = payload.positions()[i];
-            state.motion = payload.motions()[i];
-            state.color = payloadColor;
-            state.size = payload.size();
-            state.maxAge = Math.max(2, payload.life());
-            state.gravity = payload.gravity();
-            state.shooterId = payload.shooterId();
-            state.trailVisible = payload.trailVisible();
-            state.lastUpdateTick = gameTime;
-            state.updateYawPitch();
-        }
+    /**
+     * Add an instant trail segment (for fast bullets).
+     * These are pre-calculated and fade out over time.
+     */
+    public static void addInstantTrail(Vec3 start, Vec3 end, int color, float size) {
+        INSTANT_TRAILS.add(new TrailSegment(start, end, color, size, 0));
     }
 
     /**
-     * Compatibility fallback for local-only trail calls.
+     * Update dynamic trail for a bullet entity (for slow bullets).
+     * Tracks entity position and creates trail segments.
      */
-    public static void addInstantTrail(Vec3 start, Vec3 end, int color, float size) {
-        Vec3 motion = end.subtract(start);
-        if (motion.lengthSqr() < 1.0E-6) {
-            return;
-        }
-        int id = SYNTHETIC_IDS.getAndDecrement();
-        TrailState state = new TrailState(id);
-        state.position = start;
-        state.motion = motion;
-        state.color = color;
-        state.size = size;
-        state.maxAge = 3;
-        state.gravity = 0.0D;
-        state.shooterId = -1;
-        state.trailVisible = true;
-        state.lastUpdateTick = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.getGameTime() : 0L;
-        state.updateYawPitch();
-        TRAILS.put(id, state);
-    }
-
     public static void updateDynamicTrail(int entityId, Vec3 currentPos, int color, float size) {
-        TrailState state = TRAILS.get(entityId);
-        if (state == null) {
-            return;
+        Vec3 lastPos = LAST_POSITIONS.get(entityId);
+        if (lastPos != null && lastPos.distanceToSqr(currentPos) > 0.01) {
+            // Create trail segment from last position to current
+            INSTANT_TRAILS.add(new TrailSegment(lastPos, currentPos, color, size, 0));
         }
-        state.position = currentPos;
-        state.color = color;
-        state.size = size;
-        state.lastUpdateTick = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.getGameTime() : state.lastUpdateTick;
+        LAST_POSITIONS.put(entityId, currentPos);
+        DYNAMIC_TRAIL_INFO.put(entityId, new TrailInfo(color, size));
     }
 
+    /**
+     * Remove dynamic trail tracking for an entity.
+     */
     public static void removeDynamicTrail(int entityId) {
-        TRAILS.remove(entityId);
+        LAST_POSITIONS.remove(entityId);
+        DYNAMIC_TRAIL_INFO.remove(entityId);
     }
 
     public static void tick() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            TRAILS.clear();
-            return;
-        }
-
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
-        Iterator<TrailState> iterator = TRAILS.values().iterator();
+        // Age and remove old instant trails
+        Iterator<TrailSegment> iterator = INSTANT_TRAILS.iterator();
         while (iterator.hasNext()) {
-            TrailState trail = iterator.next();
+            TrailSegment trail = iterator.next();
             trail.age++;
-            trail.position = trail.position.add(trail.motion);
-            if (trail.gravity != 0.0D) {
-                trail.motion = trail.motion.add(0.0D, trail.gravity, 0.0D);
-                trail.updateYawPitch();
-            }
-
-            if (cameraPos.distanceToSqr(trail.position) > 256.0D * 256.0D) {
-                iterator.remove();
-                continue;
-            }
-
-            if (trail.age >= trail.maxAge) {
+            if (trail.age > INSTANT_TRAIL_LIFETIME) {
                 iterator.remove();
             }
         }
     }
 
     public static void render(PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+        // Prevent rendering multiple times per frame
         long currentFrame = Minecraft.getInstance().getFrameTimeNs();
         if (currentFrame == lastRenderFrame) {
             return;
         }
         lastRenderFrame = currentFrame;
 
-        if (TRAILS.isEmpty()) {
+        if (INSTANT_TRAILS.isEmpty()) {
             return;
         }
 
-        Minecraft mc = Minecraft.getInstance();
-        Vec3 view = mc.gameRenderer.getMainCamera().position();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutoutNoCull(TRAIL_TEXTURE));
-
-        for (TrailState trail : TRAILS.values()) {
-            if (!trail.trailVisible) {
-                continue;
-            }
-            renderTrail(trail, poseStack, consumer, view, partialTick);
-        }
-    }
-
-    private static void renderTrail(TrailState trail, PoseStack poseStack, VertexConsumer consumer, Vec3 view, float partialTick) {
-        poseStack.pushPose();
-
-        Vec3 position = trail.position;
-        Vec3 motion = trail.motion;
-        double bulletX = position.x + motion.x * partialTick;
-        double bulletY = position.y + motion.y * partialTick;
-        double bulletZ = position.z + motion.z * partialTick;
-        poseStack.translate(bulletX - view.x(), bulletY - view.y(), bulletZ - view.z());
-
-        poseStack.mulPose(Axis.YP.rotationDegrees(trail.yaw - 90.0F));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(trail.pitch));
-        poseStack.mulPose(Axis.XP.rotationDegrees(45.0F));
-        poseStack.scale(0.05625F, 0.05625F, 0.05625F);
-        poseStack.translate(-4.0F, 0.0F, 0.0F);
-
-        float size = Math.min((trail.age + 1) * 30.0F, 200.0F);
-        float tailX = -size;
-        float headX = 0.0F;
-        float radius = Math.max(1.7F, trail.size * 34.0F);
-        int red = (trail.color >> 16) & 0xFF;
-        int green = (trail.color >> 8) & 0xFF;
-        int blue = trail.color & 0xFF;
-        int light = LightTexture.FULL_BRIGHT;
-
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lightning());
         Matrix4f matrix = poseStack.last().pose();
-        // Leading and trailing quads.
-        vertex(consumer, matrix, red, green, blue, tailX, -radius, -radius, 0.0F, 0.15625F, -1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, tailX, -radius, radius, 0.15625F, 0.15625F, -1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, tailX, radius, radius, 0.15625F, 0.3125F, -1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, tailX, radius, -radius, 0.0F, 0.3125F, -1.0F, 0.0F, 0.0F, light);
 
-        vertex(consumer, matrix, red, green, blue, headX, radius, -radius, 0.0F, 0.15625F, 1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, headX, radius, radius, 0.15625F, 0.15625F, 1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, headX, -radius, radius, 0.15625F, 0.3125F, 1.0F, 0.0F, 0.0F, light);
-        vertex(consumer, matrix, red, green, blue, headX, -radius, -radius, 0.0F, 0.3125F, 1.0F, 0.0F, 0.0F, light);
+        for (TrailSegment trail : INSTANT_TRAILS) {
+            float ageRatio = (trail.age + partialTick) / INSTANT_TRAIL_LIFETIME;
+            float alpha = Math.max(0.0F, 1.0F - ageRatio);
 
-        // Body quads rotated around the trail axis.
-        for (int i = 0; i < 4; ++i) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
-            matrix = poseStack.last().pose();
-            vertex(consumer, matrix, red, green, blue, tailX, -radius, radius, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, headX, -radius, radius, 0.5F, 0.0F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, headX, radius, radius, 0.5F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, tailX, radius, radius, 0.0F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
+            renderTrailSegment(consumer, matrix, camera, trail, alpha);
         }
-
-        poseStack.popPose();
     }
 
-    private static void vertex(VertexConsumer consumer, Matrix4f matrix, int red, int green, int blue,
-                               float x, float y, float z, float u, float v,
-                               float normalX, float normalY, float normalZ, int light) {
-        consumer.addVertex(matrix, x, y, z)
-                .setColor(red, green, blue, 255)
-                .setUv(u, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(light)
-                .setNormal(normalX, normalY, normalZ);
+    private static void renderTrailSegment(VertexConsumer consumer, Matrix4f pose, Vec3 camera,
+                                          TrailSegment trail, float alpha) {
+        Vec3 start = trail.start;
+        Vec3 end = trail.end;
+
+        float red = ((trail.color >> 16) & 0xFF) / 255.0F;
+        float green = ((trail.color >> 8) & 0xFF) / 255.0F;
+        float blue = (trail.color & 0xFF) / 255.0F;
+
+        Vec3 direction = end.subtract(start).normalize();
+        Vec3 cameraDir = start.subtract(camera).normalize();
+        Vec3 perpendicular = direction.cross(cameraDir).normalize().scale(trail.size * 0.05);
+
+        Vec3 p1 = start.add(perpendicular);
+        Vec3 p2 = start.subtract(perpendicular);
+        Vec3 p3 = end.subtract(perpendicular);
+        Vec3 p4 = end.add(perpendicular);
+
+        float startAlpha = alpha * 0.9F;
+        float endAlpha = alpha * 0.3F;
+
+        drawVertex(consumer, pose, camera, p1, red, green, blue, startAlpha);
+        drawVertex(consumer, pose, camera, p2, red, green, blue, startAlpha);
+        drawVertex(consumer, pose, camera, p3, red, green, blue, endAlpha);
+        drawVertex(consumer, pose, camera, p4, red, green, blue, endAlpha);
+    }
+
+    private static void drawVertex(VertexConsumer consumer, Matrix4f pose, Vec3 camera, Vec3 pos,
+                                   float r, float g, float b, float a) {
+        consumer.addVertex(pose,
+                (float)(pos.x - camera.x()),
+                (float)(pos.y - camera.y()),
+                (float)(pos.z - camera.z()))
+                .setColor(r, g, b, a)
+                .setUv(0, 0)
+                .setLight(LightTexture.FULL_BRIGHT)
+                .setNormal(0, 1, 0);
     }
 
     public static void clear() {
-        TRAILS.clear();
+        INSTANT_TRAILS.clear();
+        LAST_POSITIONS.clear();
+        DYNAMIC_TRAIL_INFO.clear();
     }
 
-    private static final class TrailState {
-        final int entityId;
-        Vec3 position = Vec3.ZERO;
-        Vec3 motion = Vec3.ZERO;
-        float yaw;
-        float pitch;
+    private static class TrailSegment {
+        final Vec3 start;
+        final Vec3 end;
+        final int color;
+        final float size;
         int age;
-        int maxAge = 3;
-        int color = 0xFFFFFF;
-        float size = 0.05F;
-        double gravity;
-        int shooterId = -1;
-        boolean trailVisible = true;
-        long lastUpdateTick;
 
-        TrailState(int entityId) {
-            this.entityId = entityId;
+        TrailSegment(Vec3 start, Vec3 end, int color, float size, int age) {
+            this.start = start;
+            this.end = end;
+            this.color = color;
+            this.size = size;
+            this.age = age;
         }
+    }
 
-        void updateYawPitch() {
-            float horizontalLength = Mth.sqrt((float) (this.motion.x * this.motion.x + this.motion.z * this.motion.z));
-            this.yaw = (float) Math.toDegrees(Mth.atan2(this.motion.x, this.motion.z));
-            this.pitch = (float) Math.toDegrees(Mth.atan2(this.motion.y, horizontalLength));
+    private static class TrailInfo {
+        final int color;
+        final float size;
+
+        TrailInfo(int color, float size) {
+            this.color = color;
+            this.size = size;
         }
     }
 }

@@ -1,24 +1,18 @@
 package ttv.migami.jeg.entity.monster.phantom;
 
-import java.util.EnumSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,9 +21,10 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.init.ModEntities;
 
 /**
  * Structure-bound Terror Phantom guardian variant with improved AI.
@@ -116,7 +111,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     protected boolean shouldSpawnGunnerSkeletonsOnDeath() {
-        return false; // Guardian spawns phantom gunners, not skeletons
+        return false;
     }
 
     @Override
@@ -126,49 +121,20 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     protected boolean canPerformBombing() {
-        return false; // Guardian cannot perform dive bombing attacks
+        return false; // Guardian doesn't bomb
     }
 
     @Override
     protected boolean shouldTriggerRaidOnDeath() {
-        return true; // Guardian should trigger air raid on death
+        return false;
     }
 
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
-        // Trigger air raid for guardian death
-        TerrorRaidManager.triggerAirRaid(level, this.blockPosition());
+        // Guardian aftermath handled during custom death sequence.
     }
 
-    @Override
-    public void die(DamageSource source) {
-        JustEnoughGuns.LOGGER.info("[TerrorPhantomGuardian] Death triggered. shouldSpawnPhantomGunnersOnDeath: {}", shouldSpawnPhantomGunnersOnDeath());
-
-        // Call super.die() first to ensure proper boss bar cleanup and death handling
-        super.die(source);
-
-        // Handle guardian-specific death behavior
-        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
-            JustEnoughGuns.LOGGER.info("[TerrorPhantomGuardian] Attempting to spawn phantom gunners...");
-
-            // Start guardian death sequence
-            this.guardianDeathTicks = 0;
-            this.setDeltaMovement(Vec3.ZERO);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        // Handle guardian-specific death animation
-        if (!this.level().isClientSide() && this.getHealth() <= 0 && this.guardianDeathTicks < GUARDIAN_DEATH_DURATION) {
-            tickGuardianDeathAnimation();
-            return; // Skip normal ticking during guardian death sequence
-        }
-    }
-
-    private void tickGuardianDeathAnimation() {
+    protected void tickDeathAnimation() {
         this.guardianDeathTicks++;
         this.setDeltaMovement(Vec3.ZERO);
         this.setPos(this.getX(), this.getY(), this.getZ());
@@ -201,20 +167,10 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
             return;
         }
         this.guardianFinalExplosion = true;
-
         if (this.level() instanceof ServerLevel serverLevel) {
-            // Final explosion
             serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 4.5F, Level.ExplosionInteraction.MOB);
-
-            // Spawn phantom gunners
-            if (shouldSpawnPhantomGunnersOnDeath()) {
-                spawnPhantomGunners(serverLevel);
-            }
-
-            // Trigger air raid (this also handles loot barrels)
-            TerrorRaidManager.triggerAirRaid(serverLevel, this.blockPosition());
+            TerrorRaidManager.triggerGuardianAftermath(serverLevel, this.blockPosition());
         }
-
         this.guardianDeathTicks = Math.max(this.guardianDeathTicks, GUARDIAN_DEATH_DURATION);
         this.remove(RemovalReason.KILLED);
     }
@@ -222,52 +178,6 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     @Override
     protected void onSpawned(ServerLevel level, BlockPos spawnPos) {
         this.setPersistenceRequired();
-    }
-
-    /**
-     * Spawn phantom gunners on death - consistent with original 1.20.1 behavior
-     */
-    private void spawnPhantomGunners(ServerLevel level) {
-        int count = 2 + level.random.nextInt(2); // Spawn 2-3 phantom gunners like original
-        BlockPos origin = this.blockPosition();
-        JustEnoughGuns.LOGGER.info("[TerrorPhantomGuardian] Spawning {} phantom gunners at {}", count, origin);
-
-        // Find and target nearest player
-        LivingEntity target = level.getNearestEntity(Player.class, TargetingConditions.DEFAULT, null,
-            origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
-
-        for (int i = 0; i < count; i++) {
-            PhantomGunner gunner = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), level);
-            if (gunner == null) {
-                continue;
-            }
-            Vec3 offset = Vec3.directionFromRotation(0.0F, level.random.nextFloat() * 360.0F).scale(6.0D + level.random.nextDouble() * 4.0D);
-            Vec3 spawnCenter = this.position().add(offset.x, 4.0D + level.random.nextInt(4), offset.z);
-            BlockPos spawnPos = BlockPos.containing(spawnCenter);
-            gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
-            gunner.setYRot(level.random.nextFloat() * 360.0F);
-            gunner.yRotO = gunner.getYRot();
-            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
-            JustEnoughGuns.LOGGER.info("[TerrorPhantomGuardian] Spawned phantom gunner at {}", spawnPos);
-
-            // Set target to nearest player
-            if (target != null) {
-                gunner.setTarget(target);
-            }
-
-            level.addFreshEntity(gunner);
-        }
-        playSummonEffects(level, this.blockPosition().above(4));
-    }
-
-    private void playSummonEffects(ServerLevel level, BlockPos center) {
-        level.playSound(null, center, SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.8F, 0.6F + level.random.nextFloat() * 0.3F);
-        for (int i = 0; i < 12; i++) {
-            double dx = center.getX() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
-            double dy = center.getY() + level.random.nextDouble() * 2.0D;
-            double dz = center.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
-            level.sendParticles(ParticleTypes.SMOKE, dx, dy, dz, 1, 0.0D, 0.05D, 0.0D, 0.02D);
-        }
     }
 
     /**
@@ -399,6 +309,18 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         }
 
         return new Vec3(targetPos.x, clampedY, targetPos.z);
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        if (!this.level().isClientSide()) {
+            explodeImmediately((ServerLevel) this.level());
+        }
+        super.die(source);
+    }
+
+    private void explodeImmediately(ServerLevel level) {
+        level.explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
     }
 
     @Override
@@ -762,9 +684,4 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         }
     }
 
-    @Override
-    public boolean isDying() {
-        // Guardian uses custom death sequence, but still reports parent death state for compatibility
-        return this.getHealth() <= 0 || this.guardianDeathTicks > 0;
-    }
 }

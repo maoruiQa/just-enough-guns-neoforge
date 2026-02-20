@@ -1,10 +1,9 @@
 package ttv.migami.jeg.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.ChatFormatting;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
@@ -18,6 +17,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.NetworkHandler;
 
@@ -28,6 +29,7 @@ public final class GunClientEvents {
     private static String lastHudText = "";
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
+    private static long nextVisualShotTickMain;
 
     private GunClientEvents() {}
 
@@ -37,11 +39,13 @@ public final class GunClientEvents {
         if (player == null) {
             return;
         }
+
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof GunItem)) {
             return;
         }
-        float ads = AimingHandler.get().getNormalisedAdsProgress(1.0F);
+
+        float ads = AimingHandler.get().getNormalisedAdsProgress();
         if (ads <= 0.0F) {
             return;
         }
@@ -51,13 +55,20 @@ public final class GunClientEvents {
 
     @SubscribeEvent
     public static void onInteractionKey(InputEvent.InteractionKeyMappingTriggered event) {
+        if (event.getHand() == null) {
+            return;
+        }
+
         Player player = Minecraft.getInstance().player;
         if (player == null) {
             return;
         }
-        if (!(player.getMainHandItem().getItem() instanceof GunItem)) {
+
+        ItemStack heldMain = player.getMainHandItem();
+        if (!(heldMain.getItem() instanceof GunItem)) {
             return;
         }
+
         if (event.isUseItem() || event.isAttack()) {
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -66,6 +77,7 @@ public final class GunClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        GunRecoilHandler.tick();
         if (Config.legacyBulletTrailEnabled()) {
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
         }
@@ -77,6 +89,7 @@ public final class GunClientEvents {
             lastHudText = "";
             attackHeldLastTick = false;
             aimingStateLastSent = false;
+            nextVisualShotTickMain = 0L;
             return;
         }
 
@@ -89,20 +102,37 @@ public final class GunClientEvents {
 
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
+        if (heldMain.getItem() instanceof GunItem || heldOff.getItem() instanceof GunItem) {
+            player.attackAnim = 0.0F;
+            player.oAttackAnim = 0.0F;
+            player.swingTime = 0;
+            player.swinging = false;
+        }
 
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = minecraft.options.keyAttack.isDown();
+            long nowTick = player.level().getGameTime();
             if (attackDown) {
                 if (gun.isAutomatic() || !attackHeldLastTick) {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
+                if (shouldApplyVisualRecoil(gun, attackHeldLastTick, nowTick)) {
+                    applyLocalVisualRecoil(gun);
+                }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
                 NetworkHandler.sendTriggerRelease(net.minecraft.world.InteractionHand.MAIN_HAND);
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
+            } else if (!attackDown) {
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
             }
             attackHeldLastTick = attackDown;
         } else {
             attackHeldLastTick = false;
+            nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
         }
 
         if (KeyBindings.RELOAD.consumeClick()) {
@@ -118,14 +148,16 @@ public final class GunClientEvents {
             return;
         }
 
-        if (heldMain.getItem() instanceof GunItem gun) {
-            String hudText = buildAmmoHudText(player, heldMain, gun);
-            if (!hudText.equals(lastHudText) || hudTicker % 20 == 0) {
-                player.displayClientMessage(buildAmmoHudComponent(heldMain, hudText), true);
-                lastHudText = hudText;
-            }
-        } else {
+        ItemStack held = heldMain;
+        if (!(held.getItem() instanceof GunItem gun)) {
             lastHudText = "";
+            return;
+        }
+
+        String hudText = buildAmmoHudText(player, held, gun);
+        if (!hudText.isEmpty() && (!hudText.equals(lastHudText) || hudTicker % 20 == 0)) {
+            player.displayClientMessage(Component.literal(hudText), true);
+            lastHudText = hudText;
         }
     }
 
@@ -143,36 +175,56 @@ public final class GunClientEvents {
         if (Config.legacyBulletTrailEnabled()) {
             float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
             ttv.migami.jeg.client.render.BulletTrailRenderer.render(
-                    new com.mojang.blaze3d.vertex.PoseStack(),
+                    new PoseStack(),
                     minecraft.renderBuffers().bufferSource(),
                     partialTick
             );
         }
     }
 
+    private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
+        GunStats stats = gun.getStats();
+        int reserve = gun.countInventoryAmmo(player);
+        boolean infinite = reserve == Integer.MAX_VALUE;
+        String reserveText = infinite ? "∞" : Integer.toString(Math.max(0, reserve));
+
+        if (stats.usesMagazine()) {
+            int magazine = gun.getMagazineAmmo(stack);
+            return "Ammo " + magazine + "/" + stats.magazineSize() + " | Reserve " + reserveText;
+        }
+        return "Ammo " + reserveText;
+    }
+
     @SubscribeEvent
     public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         ttv.migami.jeg.client.render.BulletTrailRenderer.clear();
-        hudTicker = 0;
-        lastHudText = "";
         attackHeldLastTick = false;
         aimingStateLastSent = false;
+        nextVisualShotTickMain = 0L;
     }
 
-    private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
-        int reserve = gun.countInventoryAmmo(player);
-        String reserveText = reserve == Integer.MAX_VALUE ? "\u221e" : Integer.toString(Math.max(0, reserve));
-        if (gun.getStats().usesMagazine()) {
-            int magazine = gun.getMagazineAmmo(stack);
-            return magazine + "/" + gun.getStats().magazineSize() + " | " + reserveText;
+    private static boolean shouldApplyVisualRecoil(GunItem gun, boolean attackHeldLastTick, long nowTick) {
+        int fireDelay = Math.max(1, gun.getStats().fireDelay());
+        if (!gun.isAutomatic()) {
+            if (attackHeldLastTick) {
+                return false;
+            }
+            nextVisualShotTickMain = nowTick + fireDelay;
+            return true;
         }
-        return reserveText;
+        if (nowTick < nextVisualShotTickMain) {
+            return false;
+        }
+        nextVisualShotTickMain = nowTick + fireDelay;
+        return true;
     }
 
-    private static Component buildAmmoHudComponent(ItemStack stack, String ammoText) {
-        MutableComponent gunName = stack.getHoverName().copy().withStyle(ChatFormatting.WHITE);
-        MutableComponent divider = Component.literal(" • ").withStyle(ChatFormatting.DARK_GRAY);
-        MutableComponent ammo = Component.literal(ammoText).withStyle(ChatFormatting.GOLD);
-        return gunName.append(divider).append(ammo);
+    private static void applyLocalVisualRecoil(GunItem gun) {
+        float recoilMultiplier = RecoilProfiles.multiplier(gun.getStats().id());
+        float recoilKick = gun.getStats().recoilKick() * recoilMultiplier;
+        int shotsPerTrigger = "minigun".equals(gun.getStats().id().getPath()) ? 5 : 1;
+        for (int i = 0; i < shotsPerTrigger; i++) {
+            GunRecoilHandler.addShot(recoilKick * 2.20F);
+        }
     }
 }

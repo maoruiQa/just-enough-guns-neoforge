@@ -14,7 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -22,7 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.UniformInt;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
@@ -33,11 +33,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Phantom;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.entity.monster.skeleton.Stray;
-import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.Stray;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -66,6 +66,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.mixin.MobAccessor;
 import ttv.migami.jeg.util.LootUtils;
 
 /**
@@ -76,7 +77,7 @@ final class TerrorRaidManager {
     private static final ResourceKey<LootTable> REWARD_LOOT = ResourceKey.create(Registries.LOOT_TABLE, Reference.id("chests/terror_phantom_reward"));
     private static final UniformInt GROUND_RAID_WAVE_SIZE = UniformInt.of(18, 22);
     private static final UniformInt PHANTOM_WAVE_SIZE = UniformInt.of(4, 7);
-    private static final Identifier GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+    private static final ResourceLocation GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final int RAID_PLAYER_RANGE = 128;
     private static final int RAID_DUPLICATE_GUARD_TICKS = 200;
@@ -138,7 +139,7 @@ final class TerrorRaidManager {
 
     private static BlockPos findTerrain(ServerLevel level, BlockPos pos) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(pos.getX(), pos.getY(), pos.getZ());
-        while (cursor.getY() > level.getMinY() && level.isEmptyBlock(cursor)) {
+        while (cursor.getY() > level.getMinBuildHeight() && level.isEmptyBlock(cursor)) {
             cursor.move(0, -1, 0);
         }
         if (!level.getBlockState(cursor).isAir()) {
@@ -215,7 +216,7 @@ final class TerrorRaidManager {
         if (!(heldItem.getItem() instanceof GunItem)) {
             GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
             String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-            Identifier entityTypeLocation = Identifier.tryParse(entityName);
+            ResourceLocation entityTypeLocation = ResourceLocation.tryParse(entityName);
             Faction faction = manager.getFactionForMob(entityTypeLocation);
 
             if (faction != null) {
@@ -250,13 +251,7 @@ final class TerrorRaidManager {
     }
 
     private static GoalSelector getGoalSelector(PathfinderMob mob) {
-        try {
-            var field = net.minecraft.world.entity.Mob.class.getDeclaredField("goalSelector");
-            field.setAccessible(true);
-            return (GoalSelector) field.get(mob);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Cannot access goalSelector", e);
-        }
+        return ((MobAccessor) mob).jeg$getGoalSelector();
     }
 
     private static void applyEliteAttributes(PathfinderMob mob) {
@@ -365,7 +360,7 @@ final class TerrorRaidManager {
             gunner.setPos(spawn.x, spawn.y, spawn.z);
             gunner.setYRot(random.nextFloat() * 360.0F);
             gunner.setXRot(-10.0F);
-            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(spawn)), EntitySpawnReason.EVENT, (SpawnGroupData) null);
+            gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(spawn)), MobSpawnType.EVENT, (SpawnGroupData) null);
             gunner.addTag(TERROR_RAID_MOB_TAG);
             gunner.setPersistenceRequired();
 
@@ -626,3 +621,5 @@ final class TerrorRaidManager {
         }
     }
 }
+
+
