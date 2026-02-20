@@ -17,7 +17,8 @@ public final class RecoilProfiles {
         Map.entry(Reference.id("hypersonic_cannon"), 2.5F),
         Map.entry(Reference.id("typhoonee"), 2.0F),
         Map.entry(Reference.id("minigun"), 1.20F),
-        Map.entry(Reference.id("light_machine_gun"), 0.70F)
+        Map.entry(Reference.id("light_machine_gun"), 0.70F),
+        Map.entry(Reference.id("flamethrower"), 0.0F)
     );
 
     private RecoilProfiles() {}
