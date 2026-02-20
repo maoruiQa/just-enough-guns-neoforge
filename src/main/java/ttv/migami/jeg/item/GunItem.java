@@ -301,7 +301,7 @@ public class GunItem extends Item {
                     break;
                 }
                 fireAt(level, player, stack, null);
-                stack.hurtAndBreak(1, player, hand);
+                stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
                 shotsFired++;
             }
             if (shotsFired <= 0) {
