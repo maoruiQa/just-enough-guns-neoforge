@@ -114,6 +114,14 @@ public class GunItem extends Item {
             "compound_bow",
             "primitive_bow"
     );
+    private static final Set<String> HEAVY_BACKSTEP_IDS = Set.of(
+            "light_machine_gun",
+            "minigun",
+            "rocket_launcher",
+            "typhoonee"
+    );
+    private static final float MINIGUN_SPREAD_FLOOR = 0.85F;
+    private static final double MOVEMENT_THRESHOLD_SQR = 0.0036D;
 
     private final GunStats stats;
 
@@ -278,7 +286,7 @@ public class GunItem extends Item {
             float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
             float recoilKick = stats.recoilKick() * recoilMultiplier;
             ClientHooks.addShotRecoil(recoilKick);
-            float targetPitch = player.getXRot() - recoilKick * 6.0F;
+            float targetPitch = player.getXRot() - recoilKick * 7.5F;
             player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
                 setTriggerLocked(stack, true);
@@ -324,10 +332,17 @@ public class GunItem extends Item {
         if (!Config.recoilBackstepEnabled()) {
             return;
         }
+        if (!isHeavyBackstepWeapon(stats.id())) {
+            return;
+        }
 
-        // Keep close to legacy feel, then let config scale globally (default 0.5).
         double force = stats.recoilKick() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
-        force = Mth.clamp(force, 0.005D, 0.10D);
+        if (isRocketKnockbackWeapon(stats.id())) {
+            force *= 2.8D;
+            force = Mth.clamp(force, 0.060D, 0.280D);
+        } else {
+            force = Mth.clamp(force, 0.010D, 0.110D);
+        }
         if (player.isCrouching() && player.level().getBlockState(player.getOnPos()).isSolid()) {
             force *= 0.5D;
         }
@@ -553,9 +568,15 @@ public class GunItem extends Item {
         }
 
         if (shooter instanceof Player player) {
+            boolean minigun = isMinigunWeapon(stats.id());
             gunSpread *= getSpreadMultiplier(player, stats.id());
-            if (NetworkHandler.isAiming(player)) {
+            if (!minigun && NetworkHandler.isAiming(player)) {
                 gunSpread *= 0.5F;
+            }
+            if (!minigun) {
+                gunSpread *= getMovementSpreadMultiplier(player, stats);
+            } else {
+                gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
             }
             if (isShotgunWeapon(stats.id())) {
                 float shotgunFloor = stats.spread() * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
@@ -604,6 +625,9 @@ public class GunItem extends Item {
                     if (entry.spreadCount < SPREAD_MAX_COUNT && !NetworkHandler.isAiming(player)) {
                         entry.spreadCount++;
                     }
+                    if (isMinigunWeapon(gunId) && entry.spreadCount < SPREAD_MAX_COUNT) {
+                        entry.spreadCount++;
+                    }
                 }
             } else {
                 entry.spreadCount = 0;
@@ -615,17 +639,56 @@ public class GunItem extends Item {
     private static float getSpreadMultiplier(Player player, Identifier gunId) {
         SpreadTrackerState playerState = SPREAD_TRACKERS.get(player.getUUID());
         if (playerState == null) {
-            return 0.0F;
+            return isMinigunWeapon(gunId) ? MINIGUN_SPREAD_FLOOR : 0.0F;
         }
         SpreadEntry entry = playerState.byGun.get(gunId);
         if (entry == null) {
-            return 0.0F;
+            return isMinigunWeapon(gunId) ? MINIGUN_SPREAD_FLOOR : 0.0F;
         }
-        return (float) entry.spreadCount / (float) SPREAD_MAX_COUNT;
+        float tracked = (float) entry.spreadCount / (float) SPREAD_MAX_COUNT;
+        if (isMinigunWeapon(gunId)) {
+            return Math.max(MINIGUN_SPREAD_FLOOR, tracked);
+        }
+        return tracked;
     }
 
     public static boolean isShotgunWeapon(Identifier gunId) {
         return SHOTGUN_IDS.contains(gunId.getPath());
+    }
+
+    private static boolean isHeavyBackstepWeapon(Identifier gunId) {
+        return HEAVY_BACKSTEP_IDS.contains(gunId.getPath());
+    }
+
+    private static boolean isRocketKnockbackWeapon(Identifier gunId) {
+        String path = gunId.getPath();
+        return "rocket_launcher".equals(path) || "typhoonee".equals(path);
+    }
+
+    private static boolean isMinigunWeapon(Identifier gunId) {
+        return "minigun".equals(gunId.getPath());
+    }
+
+    private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
+        if (player.isCrouching() || !isPlayerMoving(player)) {
+            return 1.0F;
+        }
+        Identifier ammoId = stats.ammoItem();
+        if (ammoId != null) {
+            String ammoPath = ammoId.getPath();
+            if ("rifle_ammo".equals(ammoPath)) {
+                return 1.65F;
+            }
+            if ("pistol_ammo".equals(ammoPath)) {
+                return 1.35F;
+            }
+        }
+        return 1.15F;
+    }
+
+    private static boolean isPlayerMoving(Player player) {
+        Vec3 velocity = player.getDeltaMovement();
+        return velocity.horizontalDistanceSqr() > MOVEMENT_THRESHOLD_SQR;
     }
 
     private static final class SpreadTrackerState {
