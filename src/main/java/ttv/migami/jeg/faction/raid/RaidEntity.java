@@ -92,10 +92,10 @@ public class RaidEntity extends Entity {
         refreshPlayers(serverLevel);
 
         if (!this.finished) {
-            maintainRaidMobPressure(serverLevel);
             if (serverLevel.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) {
                 finishDefeat();
-            } else {
+            } else if (hasCombatTargetsInRange(serverLevel)) {
+                maintainRaidMobPressure(serverLevel);
                 tickActiveRaid(serverLevel);
             }
         }
@@ -183,9 +183,6 @@ public class RaidEntity extends Entity {
     private void maintainRaidMobPressure(ServerLevel level) {
         Player preferred = pickPreferredTarget(level);
         if (!isValidRaidTarget(preferred, level)) {
-            for (UUID mobId : this.activeMobIds) {
-                clearMobTracking(mobId);
-            }
             return;
         }
 
@@ -378,18 +375,30 @@ public class RaidEntity extends Entity {
 
         ServerPlayer nearest = null;
         double nearestDistanceSq = Double.MAX_VALUE;
+        double maxDistanceSq = (double) ACTIVE_RADIUS * (double) ACTIVE_RADIUS;
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (!isValidRaidTarget(player, level)) {
                 continue;
             }
 
             double distanceSq = player.distanceToSqr(this.getX(), this.getY(), this.getZ());
-            if (distanceSq < nearestDistanceSq) {
-                nearestDistanceSq = distanceSq;
-                nearest = player;
+            if (distanceSq > maxDistanceSq || distanceSq >= nearestDistanceSq) {
+                continue;
             }
+            nearestDistanceSq = distanceSq;
+            nearest = player;
         }
         return nearest;
+    }
+
+    private boolean hasCombatTargetsInRange(ServerLevel level) {
+        for (UUID playerId : this.activePlayerIds) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
+            if (isValidRaidTarget(player, level)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Nullable
@@ -472,4 +481,3 @@ public class RaidEntity extends Entity {
         level.getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 }
-
