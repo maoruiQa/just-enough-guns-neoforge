@@ -28,6 +28,7 @@ public final class FactionSpawnHelper {
     public static final String RAID_TAG = "FactionRaidMob";
     public static final String PATROL_ID_TAG_PREFIX = "JEGPatrolId:";
     public static final String PATROL_FACTION_TAG_PREFIX = "JEGPatrolFaction:";
+    public static final String OMEN_FACTION_TAG_PREFIX = "JEGOmenFaction:";
     private static final int MAX_SPAWN_POSITION_ATTEMPTS = 96;
     private static final int PATH_SEARCH_RANGE = 32;
     private static final double NAVIGATION_SPEED = 1.2D;

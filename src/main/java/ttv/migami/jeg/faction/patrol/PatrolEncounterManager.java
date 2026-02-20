@@ -49,12 +49,18 @@ public final class PatrolEncounterManager {
             patrolId = UUID.randomUUID().toString();
         }
 
-        PatrolContext context = new PatrolContext(faction.getName(), origin, mobs.size(), patrolId);
+        List<PatrolContext> contexts = ACTIVE_PATROLS.computeIfAbsent(level, ignored -> new ArrayList<>());
+        PatrolContext context = findContextById(contexts, patrolId);
+        if (context == null) {
+            context = new PatrolContext(faction.getName(), origin, mobs.size(), patrolId);
+            contexts.add(context);
+        }
         for (Mob mob : mobs) {
             context.mobIds.add(mob.getUUID());
+            replaceTagValue(mob, FactionSpawnHelper.PATROL_ID_TAG_PREFIX, context.patrolId);
+            replaceTagValue(mob, FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX, context.factionName);
         }
-
-        ACTIVE_PATROLS.computeIfAbsent(level, ignored -> new ArrayList<>()).add(context);
+        context.initialCount = Math.max(context.initialCount, context.mobIds.size());
     }
 
     public static void recoverPatrolMob(ServerLevel level, Mob mob) {
@@ -355,8 +361,24 @@ public final class PatrolEncounterManager {
             return;
         }
 
+        setOmenFactionTag(player, context.factionName);
         player.addEffect(new MobEffectInstance(ModEffects.FACTION_OMEN, OMEN_DURATION_TICKS, 0, false, true));
         player.sendSystemMessage(Component.translatable("message.jeg.faction_patrol.omen"));
+    }
+
+    private static void setOmenFactionTag(ServerPlayer player, String factionName) {
+        List<String> stale = new ArrayList<>();
+        for (String tag : player.getTags()) {
+            if (tag.startsWith(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX)) {
+                stale.add(tag);
+            }
+        }
+        for (String tag : stale) {
+            player.removeTag(tag);
+        }
+        if (!factionName.isBlank()) {
+            player.addTag(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX + factionName);
+        }
     }
 
     private static final class PatrolContext {
