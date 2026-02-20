@@ -1,0 +1,101 @@
+package ttv.migami.jeg.network;
+
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import ttv.migami.jeg.Config;
+import ttv.migami.jeg.item.GunItem;
+
+public final class NetworkHandler {
+    private NetworkHandler() {}
+
+    private static boolean commonRegistered;
+    private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
+
+    public static void initCommon() {
+        if (commonRegistered) {
+            return;
+        }
+        commonRegistered = true;
+
+        PayloadTypeRegistry.playC2S().register(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleShootRequest(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ReloadRequestPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleReloadRequest(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(TriggerReleasePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleTriggerRelease(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(AimingStatePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleAimingState(payload, context.player()));
+        });
+    }
+
+    private static void handleShootRequest(ShootRequestPayload payload, ServerPlayer player) {
+        ItemStack stack = player.getItemInHand(payload.hand());
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+        gun.tryShoot(player.level(), player, payload.hand());
+    }
+
+    private static void handleReloadRequest(ReloadRequestPayload payload, ServerPlayer player) {
+        ItemStack stack = player.getItemInHand(payload.hand());
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+        boolean reloaded = gun.tryReload(player.level(), player, stack, true);
+        if (reloaded) {
+            player.swing(payload.hand(), true);
+        }
+    }
+
+    private static void handleTriggerRelease(TriggerReleasePayload payload, ServerPlayer player) {
+        ItemStack stack = player.getItemInHand(payload.hand());
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+        if (GunItem.isAutomatic(gun.getStats())) {
+            return;
+        }
+        GunItem.clearTriggerLock(stack);
+    }
+
+    private static void handleAimingState(AimingStatePayload payload, ServerPlayer player) {
+        if (payload.aiming()) {
+            AIMING_PLAYERS.add(player.getUUID());
+        } else {
+            AIMING_PLAYERS.remove(player.getUUID());
+        }
+    }
+
+    public static boolean isAiming(Player player) {
+        return AIMING_PLAYERS.contains(player.getUUID());
+    }
+
+    public static boolean shouldRenderLegacyBulletTrail() {
+        return Config.legacyBulletTrailEnabled();
+    }
+
+    public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {
+        GunFireFxPayload payload = new GunFireFxPayload(shooterId, randomValue);
+        for (ServerPlayer player : PlayerLookup.world(level)) {
+            ServerPlayNetworking.send(player, payload);
+        }
+    }
+}

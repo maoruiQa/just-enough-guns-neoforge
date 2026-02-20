@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "BI ",
+    "RL ",
+    "  L"
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "I": "minecraft:iron_ingot",
+    "L": "#minecraft:logs",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "jeg:revolver",
+    "count": 1
+  }
+}

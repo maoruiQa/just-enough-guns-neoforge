@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "BR ",
+    "BR ",
+    "B  "
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "jeg:semi_auto_rifle",
+    "count": 1
+  }
+}

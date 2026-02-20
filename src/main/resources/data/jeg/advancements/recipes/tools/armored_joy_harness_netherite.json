@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_diamond_harness": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "jeg:armored_joy_harness_diamond"
+            ]
+          }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:armored_joy_harness_netherite"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_diamond_harness",
+      "has_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "jeg:armored_joy_harness_netherite"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ZSB",
+    "RBZ",
+    "  S"
+  ],
+  "key": {
+    "S": "minecraft:soul_sand",
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "Z": "minecraft:blaze_rod"
+  },
+  "result": {
+    "id": "jeg:soulhunter_mk2",
+    "count": 1
+  }
+}

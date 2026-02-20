@@ -1,0 +1,25 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": [
+          "firstperson_righthand",
+          "firstperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/compound_bow",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "jeg:item/compound_bow"
+    }
+  }
+}
