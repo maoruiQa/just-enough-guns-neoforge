@@ -1030,19 +1030,22 @@ public class BulletEntity extends Projectile {
     }
 
     private static double getGravityAcceleration(GunStats stats) {
+        double gravity;
         if (shouldSendBulletTrail(stats)) {
-            return stats.gravity() ? 0.040D : 0.0D;
+            gravity = stats.gravity() ? 0.040D : 0.0D;
+        } else {
+            gravity = switch (GunCategory.fromStats(stats)) {
+                case SNIPER -> 0.020D;
+                case RIFLE -> 0.024D;
+                case PISTOL -> 0.030D;
+                case SMG -> 0.032D;
+                case LMG -> 0.028D;
+                case SHOTGUN -> 0.040D;
+                case HEAVY -> 0.035D;
+                case SPECIAL -> 0.050D;
+            };
         }
-        return switch (GunCategory.fromStats(stats)) {
-            case SNIPER -> 0.020D;
-            case RIFLE -> 0.024D;
-            case PISTOL -> 0.030D;
-            case SMG -> 0.032D;
-            case LMG -> 0.028D;
-            case SHOTGUN -> 0.040D;
-            case HEAVY -> 0.035D;
-            case SPECIAL -> 0.050D;
-        };
+        return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.25D : gravity;
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {
