@@ -1060,7 +1060,7 @@ public class BulletEntity extends Projectile {
         if (shouldSendBulletTrail(stats) && stats.gravity()) {
             gravity = 0.040D;
         }
-        return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.25D : gravity;
+        return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.5D : gravity;
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {

@@ -125,8 +125,8 @@ public final class GunClientEvents {
                 if (gun.isAutomatic() || !attackHeldLastTick) {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
-                if (shouldApplyVisualRecoil(gun, attackHeldLastTick, nowTick)) {
-                    applyLocalVisualRecoil(gun);
+                if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
+                    applyLocalVisualRecoil(player, gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -235,7 +235,10 @@ public final class GunClientEvents {
         minecraft.submit(finish).join();
     }
 
-    private static boolean shouldApplyVisualRecoil(GunItem gun, boolean attackHeldLastTick, long nowTick) {
+    private static boolean shouldApplyVisualRecoil(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackHeldLastTick, long nowTick) {
+        if (!hasShootableAmmo(player, stack, gun)) {
+            return false;
+        }
         int fireDelay = Math.max(1, gun.getStats().fireDelay());
         if (!gun.isAutomatic()) {
             if (attackHeldLastTick) {
@@ -251,13 +254,37 @@ public final class GunClientEvents {
         return true;
     }
 
-    private static void applyLocalVisualRecoil(GunItem gun) {
+    private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
         float recoilMultiplier = RecoilProfiles.multiplier(gun.getStats().id());
         float recoilKick = gun.getStats().recoilKick() * recoilMultiplier;
+        float targetPitch = player.getXRot() - recoilKick * getPitchKickMultiplier(gun);
+        player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
         int shotsPerTrigger = "minigun".equals(gun.getStats().id().getPath()) ? 5 : 1;
         for (int i = 0; i < shotsPerTrigger; i++) {
             GunRecoilHandler.addShot(recoilKick * 2.20F);
         }
+    }
+
+    private static boolean hasShootableAmmo(LocalPlayer player, ItemStack stack, GunItem gun) {
+        if (player.getAbilities().instabuild) {
+            return true;
+        }
+        GunStats stats = gun.getStats();
+        if (stats.isInventoryFed() || !stats.usesMagazine()) {
+            return gun.countInventoryAmmo(player) > 0;
+        }
+        return gun.getMagazineAmmo(stack) > 0;
+    }
+
+    private static float getPitchKickMultiplier(GunItem gun) {
+        String path = gun.getStats().id().getPath();
+        if ("rocket_launcher".equals(path) || "typhoonee".equals(path)) {
+            return 4.5F;
+        }
+        if ("minigun".equals(path)) {
+            return 1.2F;
+        }
+        return 3.0F;
     }
 
 }
