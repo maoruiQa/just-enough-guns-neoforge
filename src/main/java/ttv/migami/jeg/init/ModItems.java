@@ -266,11 +266,12 @@ public final class ModItems {
     }
 
     private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
-        int durability = switch (stats.reloadType()) {
+        int baseDurability = switch (stats.reloadType()) {
             case "jeg:inventory_fed" -> 1024;
             case "jeg:manual" -> 256;
             default -> 512;
         };
+        int durability = Math.max(1, (int) Math.round(baseDurability * 2.5D));
         // Note: .repairable() doesn't exist in 1.21.1 Item.Properties API
         // Repair logic should be handled via isValidRepairItem() override in GunItem
         return baseProperties(id).stacksTo(1).durability(durability);

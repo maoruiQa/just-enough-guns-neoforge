@@ -69,6 +69,8 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final int IDLE_HEAL_DELAY_TICKS = 20 * 60;
     private static final int IDLE_HEAL_INTERVAL_TICKS = 40;
     private static final float IDLE_HEAL_AMOUNT = 1.0F;
+    private static final int TARGET_REACQUIRE_INTERVAL_TICKS = 20;
+    private static final double TARGET_REACQUIRE_RANGE = 96.0D;
     private int summonCooldown = SUMMON_INTERVAL_TICKS;
     private final ServerBossEvent bossInfo = new ServerBossEvent(
             this.getDisplayName(),
@@ -334,6 +336,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         if (this.level().isClientSide()) {
             return;
         }
+        ServerLevel serverLevel = (ServerLevel) this.level();
 
         if (this.getPhantomSize() != PHANTOM_SIZE) {
             this.setPhantomSize(PHANTOM_SIZE);
@@ -351,10 +354,60 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             this.heal(IDLE_HEAL_AMOUNT);
         }
 
+        refreshCombatTarget(serverLevel);
         LivingEntity target = this.getTarget();
-        if (target != null && target.isAlive()) {
-            trySummonReinforcements((ServerLevel) this.level(), target);
+        if (target != null) {
+            trySummonReinforcements(serverLevel, target);
         }
+    }
+
+    private void refreshCombatTarget(ServerLevel level) {
+        LivingEntity current = this.getTarget();
+        if (!isInvalidCombatTarget(current)) {
+            return;
+        }
+
+        if (current != null) {
+            super.setTarget(null);
+        }
+
+        if (this.tickCount % TARGET_REACQUIRE_INTERVAL_TICKS != 0) {
+            return;
+        }
+
+        Player reacquired = findClosestAttackablePlayer(level);
+        if (reacquired != null) {
+            super.setTarget(reacquired);
+        }
+    }
+
+    private boolean isInvalidCombatTarget(@Nullable LivingEntity target) {
+        if (target == null || !target.isAlive()) {
+            return true;
+        }
+        if (target instanceof Player player && (player.isCreative() || player.isSpectator())) {
+            return true;
+        }
+        return !this.canAttack(target);
+    }
+
+    @Nullable
+    private Player findClosestAttackablePlayer(ServerLevel level) {
+        Player bestTarget = null;
+        double bestDistance = Double.MAX_VALUE;
+
+        for (Player candidate : level.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(TARGET_REACQUIRE_RANGE))) {
+            if (isInvalidCombatTarget(candidate)) {
+                continue;
+            }
+
+            double distance = this.distanceToSqr(candidate);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestTarget = candidate;
+            }
+        }
+        return bestTarget;
     }
 
     // @Override removed - method signature changed in 1.21.1
