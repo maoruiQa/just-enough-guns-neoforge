@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "BBR",
+    " RB",
+    "  B"
+  ],
+  "key": {
+    "B": "minecraft:blaze_rod",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "jeg:hollenfire_mk2",
+    "count": 1
+  }
+}

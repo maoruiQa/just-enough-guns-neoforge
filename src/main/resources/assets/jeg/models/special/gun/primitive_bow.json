@@ -1,0 +1,13 @@
+{
+  "credit": "Simplified to prevent ModelManager crash",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ],
+  "display": {},
+  "textures": {
+    "primitive_bow": "jeg:item/primitive_bow",
+    "particle": "jeg:item/primitive_bow"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "jeg:entity/equipment/happy_ghast_body/lime_netherite_harness"
+  }
+}

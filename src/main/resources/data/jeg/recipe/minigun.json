@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "BRH",
+    "BPB",
+    "HBR"
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "H": "minecraft:hopper",
+    "P": "minecraft:piston"
+  },
+  "result": {
+    "id": "jeg:minigun",
+    "count": 1
+  }
+}

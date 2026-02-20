@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "BRP",
+    "BRB",
+    "HBP"
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "P": "minecraft:piston",
+    "H": "minecraft:hopper"
+  },
+  "result": {
+    "id": "jeg:light_machine_gun",
+    "count": 1
+  }
+}

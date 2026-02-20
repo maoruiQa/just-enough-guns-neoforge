@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_leather_chest": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:leather_chestplate"] }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:bulletproof_vest_i"
+      }
+    }
+  },
+  "requirements": [
+    ["has_leather_chest", "has_recipe"]
+  ],
+  "rewards": {
+    "recipes": ["jeg:bulletproof_vest_i"]
+  }
+}

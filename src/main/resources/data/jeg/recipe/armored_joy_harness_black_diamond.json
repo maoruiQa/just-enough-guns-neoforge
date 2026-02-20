@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "jeg:armored_joy_harness_black",
+    "minecraft:diamond",
+    "minecraft:diamond",
+    "minecraft:gold_ingot"
+  ],
+  "result": {
+    "id": "jeg:armored_joy_harness_black_diamond"
+  }
+}

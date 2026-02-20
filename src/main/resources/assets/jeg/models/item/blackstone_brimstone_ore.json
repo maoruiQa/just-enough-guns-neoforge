@@ -1,0 +1,6 @@
+{
+  "parent": "jeg:block/blackstone_brimstone_ore",
+  "textures": {
+    "layer0": "jeg:block/blackstone_brimstone_ore"
+  }
+}
