@@ -92,7 +92,7 @@ public class BulletEntity extends Projectile {
     private static final float ROCKET_BLAST_BASE_DAMAGE = 32.0F;
     private static final double ROCKET_BLAST_RADIUS = 11.0D;
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
-    private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 2.7D;
+    private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
     private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
     private static final int FLARE_DETONATE_TICKS = 40; // 2 seconds (20 ticks per second)
     private static final byte FLARE_DETONATION_EVENT = (byte) 98;

@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
@@ -69,6 +70,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final int IDLE_HEAL_DELAY_TICKS = 20 * 60;
     private static final int IDLE_HEAL_INTERVAL_TICKS = 40;
     private static final float IDLE_HEAL_AMOUNT = 1.0F;
+    private static final int DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = 4;
     private static final int TARGET_REACQUIRE_INTERVAL_TICKS = 20;
     private static final double TARGET_REACQUIRE_RANGE = 96.0D;
     private int summonCooldown = SUMMON_INTERVAL_TICKS;
@@ -412,11 +414,25 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
 
     // @Override removed - method signature changed in 1.21.1
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        boolean damaged = super.hurt(source, amount);
+        float adjustedAmount = applyDefaultProjectileProtectionReduction(source, amount);
+        boolean damaged = super.hurt(source, adjustedAmount);
         if (damaged && amount > 0.0F) {
             this.ticksSinceLastDamage = 0;
         }
         return damaged;
+    }
+
+    private float applyDefaultProjectileProtectionReduction(DamageSource source, float amount) {
+        if (this.getType() != ModEntities.TERROR_PHANTOM.get()) {
+            return amount;
+        }
+        if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
+            return amount;
+        }
+
+        int epf = Math.min(20, DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL * 2);
+        float reduction = (float) epf / 25.0F;
+        return amount * (1.0F - reduction);
     }
 
     @Override

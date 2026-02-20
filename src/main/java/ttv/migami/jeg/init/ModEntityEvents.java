@@ -15,8 +15,8 @@ public final class ModEntityEvents {
     public static void onAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(ModEntities.PHANTOM_GUNNER.get(), PhantomGunner.createAttributes().build());
         event.put(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerMinion.createAttributes().build());
-        event.put(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes(1000.0D).build());
-        event.put(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(1200.0D).build());
+        event.put(ModEntities.TERROR_PHANTOM.get(), AbstractTerrorPhantom.createAttributes(450.0D).build());
+        event.put(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), AbstractTerrorPhantom.createAttributes(550.0D).build());
     }
 
     public static void onSpawnPlacement(RegisterSpawnPlacementsEvent event) {

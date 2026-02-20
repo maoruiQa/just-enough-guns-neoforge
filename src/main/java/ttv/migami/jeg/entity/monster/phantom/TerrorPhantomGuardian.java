@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -26,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
@@ -608,7 +610,8 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        boolean damaged = super.hurtServer(level, source, amount);
+        float adjustedAmount = applyProjectileProtectionReduction(source, amount);
+        boolean damaged = super.hurtServer(level, source, adjustedAmount);
         if (!damaged || amount <= 0.0F || this.anchorPos == null) {
             return damaged;
         }
@@ -638,6 +641,21 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         }
 
         return damaged;
+    }
+
+    private static float applyProjectileProtectionReduction(DamageSource source, float amount) {
+        if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
+            return amount;
+        }
+
+        int level = Config.boundTerrorPhantomProjectileProtectionLevel();
+        if (level <= 0) {
+            return amount;
+        }
+
+        int epf = Math.min(20, level * 2);
+        float reduction = (float) epf / 25.0F;
+        return amount * (1.0F - reduction);
     }
 
     private boolean isValidCombatTarget(Player player) {
