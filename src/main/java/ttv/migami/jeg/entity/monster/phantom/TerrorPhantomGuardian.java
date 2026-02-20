@@ -28,6 +28,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
@@ -644,6 +645,9 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     }
 
     private static float applyProjectileProtectionReduction(DamageSource source, float amount) {
+        if (isRocketDirectDamageSource(source)) {
+            return amount;
+        }
         if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
             return amount;
         }
@@ -656,6 +660,13 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         int epf = Math.min(20, level * 2);
         float reduction = (float) epf / 25.0F;
         return amount * (1.0F - reduction);
+    }
+
+    private static boolean isRocketDirectDamageSource(DamageSource source) {
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return false;
+        }
+        return "rocket_launcher".equals(bullet.getGunStats().id().getPath());
     }
 
     private boolean isValidCombatTarget(Player player) {
