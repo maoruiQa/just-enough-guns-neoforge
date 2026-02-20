@@ -617,9 +617,6 @@ final class TerrorRaidManager {
     private static void maintainRaidTargets(ServerLevel level, RaidContext raid) {
         Player preferred = resolvePreferredTarget(level, raid);
         if (preferred == null) {
-            for (UUID mobId : raid.activeMobIds) {
-                raid.clearMobTracking(mobId);
-            }
             return;
         }
 
