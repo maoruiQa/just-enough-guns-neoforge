@@ -55,6 +55,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.animation.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunStats;
@@ -450,6 +451,9 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         if (this.getType() != ModEntities.TERROR_PHANTOM.get()) {
             return amount;
         }
+        if (isRocketDirectDamageSource(source)) {
+            return amount;
+        }
         if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
             return amount;
         }
@@ -458,6 +462,13 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         int epf = Math.min(20, DEFAULT_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL * 2);
         float reduction = (float) epf / 25.0F;
         return amount * (1.0F - reduction);
+    }
+
+    private static boolean isRocketDirectDamageSource(DamageSource source) {
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return false;
+        }
+        return "rocket_launcher".equals(bullet.getGunStats().id().getPath());
     }
 
     @Override
