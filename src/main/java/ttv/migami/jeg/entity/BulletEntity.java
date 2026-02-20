@@ -1297,7 +1297,7 @@ public class BulletEntity extends Projectile {
     }
 
     private static double getGravityAcceleration(GunStats stats) {
-        double categoryGravity = switch (GunCategory.fromStats(stats)) {
+        double gravity = switch (GunCategory.fromStats(stats)) {
             case SNIPER -> 0.020D;
             case RIFLE -> 0.024D;
             case PISTOL -> 0.030D;
@@ -1308,9 +1308,9 @@ public class BulletEntity extends Projectile {
             case SPECIAL -> 0.050D;
         };
         if (shouldSendBulletTrail(stats) && stats.gravity()) {
-            return 0.040D;
+            gravity = 0.040D;
         }
-        return categoryGravity;
+        return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.25D : gravity;
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {
