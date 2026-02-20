@@ -269,7 +269,8 @@ public final class FactionSpawnHelper {
         return player != null
                 && player.level() == level
                 && player.isAlive()
-                && !player.isSpectator();
+                && !player.isSpectator()
+                && !player.isCreative();
     }
 
     private static boolean configurePatrolBehavior(Mob mob, @Nullable Player targetPlayer) {
@@ -379,5 +380,6 @@ public final class FactionSpawnHelper {
         ADD_ENTITY_FAILED
     }
 }
+
 
 

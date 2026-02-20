@@ -226,7 +226,7 @@ final class TerrorRaidManager {
             }
 
             // Set target to player who killed Terror Phantom, or fallback to nearby player
-            assignDirectTarget(level, mob, targetPlayer, spawnPos, 64.0D);
+            assignDirectTarget(level, mob, targetPlayer, spawnPos, 64.0D, raid.origin);
 
             if (!mob.isRemoved()) {
                 boolean added = level.addFreshEntity(mob);
@@ -402,7 +402,7 @@ final class TerrorRaidManager {
             gunner.setPersistenceRequired();
 
             // Set target to player who killed Terror Phantom, or fallback to nearby player
-            assignDirectTarget(level, gunner, targetPlayer, BlockPos.containing(spawn), 128.0D);
+            assignDirectTarget(level, gunner, targetPlayer, BlockPos.containing(spawn), 128.0D, raid.origin);
 
             if (level.addFreshEntity(gunner)) {
                 raid.trackSpawn(gunner);
@@ -417,13 +417,13 @@ final class TerrorRaidManager {
         }
     }
 
-    private static void assignDirectTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, @Nullable Player targetPlayer, BlockPos spawnPos, double range) {
+    private static void assignDirectTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, @Nullable Player targetPlayer, BlockPos spawnPos, double range, BlockPos raidOrigin) {
         Player target = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(range), null,
                 spawnPos.getX() + 0.5D, spawnPos.getY() + 0.5D, spawnPos.getZ() + 0.5D, new AABB(spawnPos).inflate(range));
-        if (target != null && !isValidRaidTarget(target)) {
+        if (target != null && !isValidRaidTarget(target, level, raidOrigin)) {
             target = null;
         }
-        if (target == null && isValidRaidTarget(targetPlayer)) {
+        if (target == null && isValidRaidTarget(targetPlayer, level, raidOrigin)) {
             target = targetPlayer;
         }
 
@@ -594,7 +594,7 @@ final class TerrorRaidManager {
             if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) {
                 continue;
             }
-            boolean inRange = serverPlayer.level() == level && serverPlayer.blockPosition().distManhattan(raid.origin) <= RAID_PLAYER_RANGE;
+            boolean inRange = serverPlayer.level() == level && isWithinRaidRange(serverPlayer.blockPosition(), raid.origin);
             if (inRange) {
                 raid.bossBar.addPlayer(serverPlayer);
             } else {
@@ -625,7 +625,7 @@ final class TerrorRaidManager {
             }
 
             LivingEntity current = mob.getTarget();
-            if (!(current instanceof Player player) || !isValidRaidTarget(player)) {
+            if (!(current instanceof Player player) || !isValidRaidTarget(player, level, raid.origin)) {
                 mob.setTarget(preferred);
                 mob.setAggressive(true);
             }
@@ -707,7 +707,7 @@ final class TerrorRaidManager {
     private static @Nullable Player resolvePreferredTarget(ServerLevel level, RaidContext raid) {
         if (raid.targetPlayerId != null) {
             Player preferred = level.getServer().getPlayerList().getPlayer(raid.targetPlayerId);
-            if (isValidRaidTarget(preferred) && preferred.level() == level) {
+            if (isValidRaidTarget(preferred, level, raid.origin)) {
                 return preferred;
             }
         }
@@ -715,11 +715,19 @@ final class TerrorRaidManager {
         AABB search = new AABB(raid.origin).inflate(RAID_PLAYER_RANGE);
         Player nearest = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(RAID_PLAYER_RANGE), null,
                 raid.origin.getX() + 0.5D, raid.origin.getY() + 0.5D, raid.origin.getZ() + 0.5D, search);
-        return isValidRaidTarget(nearest) ? nearest : null;
+        return isValidRaidTarget(nearest, level, raid.origin) ? nearest : null;
     }
 
     private static boolean isValidRaidTarget(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isCreative() && !player.isSpectator();
+    }
+
+    private static boolean isValidRaidTarget(@Nullable Player player, ServerLevel level, BlockPos raidOrigin) {
+        return isValidRaidTarget(player) && player.level() == level && isWithinRaidRange(player.blockPosition(), raidOrigin);
+    }
+
+    private static boolean isWithinRaidRange(BlockPos playerPos, BlockPos raidOrigin) {
+        return playerPos.distManhattan(raidOrigin) <= RAID_PLAYER_RANGE;
     }
 
     private static boolean isDuplicateTrigger(ServerLevel level, BlockPos origin) {
