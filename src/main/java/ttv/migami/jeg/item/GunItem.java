@@ -120,6 +120,17 @@ public class GunItem extends Item {
             "rocket_launcher",
             "typhoonee"
     );
+    private static final Set<String> ASSAULT_RIFLE_IDS = Set.of(
+            "assault_rifle",
+            "burst_rifle",
+            "combat_rifle",
+            "service_rifle",
+            "blossom_rifle",
+            "infantry_rifle",
+            "subsonic_rifle",
+            "hollenfire_mk2",
+            "soulhunter_mk2"
+    );
     private static final float MINIGUN_SPREAD_FLOOR = 0.85F;
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0036D;
 
@@ -285,7 +296,7 @@ public class GunItem extends Item {
             float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
             float recoilKick = stats.recoilKick() * recoilMultiplier;
             GunRecoilHandler.addShot(recoilKick);
-            float targetPitch = player.getXRot() - recoilKick * 7.5F;
+            float targetPitch = player.getXRot() - recoilKick * getVerticalRecoilPitchMultiplier(stats.id());
             player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
                 setTriggerLocked(stack, true);
@@ -337,8 +348,11 @@ public class GunItem extends Item {
 
         double force = stats.recoilKick() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
         if (isRocketKnockbackWeapon(stats.id())) {
-            force *= 2.8D;
-            force = Mth.clamp(force, 0.060D, 0.280D);
+            force *= 4.2D;
+            force = Mth.clamp(force, 0.100D, 0.380D);
+        } else if (isShotgunWeapon(stats.id())) {
+            force *= 2.0D;
+            force = Mth.clamp(force, 0.030D, 0.180D);
         } else {
             force = Mth.clamp(force, 0.010D, 0.110D);
         }
@@ -656,7 +670,7 @@ public class GunItem extends Item {
     }
 
     private static boolean isHeavyBackstepWeapon(Identifier gunId) {
-        return HEAVY_BACKSTEP_IDS.contains(gunId.getPath());
+        return HEAVY_BACKSTEP_IDS.contains(gunId.getPath()) || isShotgunWeapon(gunId);
     }
 
     private static boolean isRocketKnockbackWeapon(Identifier gunId) {
@@ -672,6 +686,9 @@ public class GunItem extends Item {
         if (player.isCrouching() || !isPlayerMoving(player)) {
             return 1.0F;
         }
+        if (isAssaultRifleWeapon(stats.id())) {
+            return 1.90F;
+        }
         Identifier ammoId = stats.ammoItem();
         if (ammoId != null) {
             String ammoPath = ammoId.getPath();
@@ -683,6 +700,21 @@ public class GunItem extends Item {
             }
         }
         return 1.15F;
+    }
+
+    private static boolean isAssaultRifleWeapon(Identifier gunId) {
+        return ASSAULT_RIFLE_IDS.contains(gunId.getPath());
+    }
+
+    private static float getVerticalRecoilPitchMultiplier(Identifier gunId) {
+        String path = gunId.getPath();
+        if ("light_machine_gun".equals(path)) {
+            return 5.3F;
+        }
+        if ("minigun".equals(path)) {
+            return 4.9F;
+        }
+        return 7.5F;
     }
 
     private static boolean isPlayerMoving(Player player) {
