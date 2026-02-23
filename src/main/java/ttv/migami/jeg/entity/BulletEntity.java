@@ -554,10 +554,12 @@ public class BulletEntity extends Projectile {
                 serverLevel.levelEvent(2001, hitPos, Block.getId(hitState));
             }
 
-            // Try to destroy the block based on tier and bullet power
-            ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
-                serverLevel, hitPos, stats
-            );
+            if (Config.bulletBlockDestructionEnabled()) {
+                // Try to destroy the block based on tier and bullet power
+                ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
+                    serverLevel, hitPos, stats
+                );
+            }
         }
 
         // Block stopped the bullet - call super and discard it
