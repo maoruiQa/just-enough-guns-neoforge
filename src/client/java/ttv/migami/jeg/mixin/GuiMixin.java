@@ -13,7 +13,7 @@ import ttv.migami.jeg.item.GunItem;
 
 @Mixin(Gui.class)
 public final class GuiMixin {
-    @Inject(method = "renderCrosshair", at = @At("HEAD"))
+    @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
     private void jeg$renderOverheatBar(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         var player = Minecraft.getInstance().player;
         if (player == null) {
@@ -21,6 +21,7 @@ public final class GuiMixin {
         }
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
             FabricClientBootstrap.renderOverheatBar(guiGraphics);
+            ci.cancel();
         }
     }
 }
