@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.item.GunItem;
 
 @Mixin(Gui.class)
@@ -19,6 +20,7 @@ public final class GuiMixin {
             return;
         }
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
+            FabricClientBootstrap.renderOverheatBar(guiGraphics);
             ci.cancel();
         }
     }
