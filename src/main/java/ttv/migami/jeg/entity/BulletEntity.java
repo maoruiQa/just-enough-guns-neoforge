@@ -76,7 +76,13 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation HYPERSONIC_ID = Reference.id("hypersonic_cannon");
     private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
     private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
-            && state.getBlock() instanceof LeavesBlock;
+            && (state.getBlock() instanceof LeavesBlock || isGrassLikeFoliage(state));
+    private static boolean isGrassLikeFoliage(BlockState state) {
+        return state.is(Blocks.SHORT_GRASS)
+                || state.is(Blocks.TALL_GRASS)
+                || state.is(Blocks.FERN)
+                || state.is(Blocks.LARGE_FERN);
+    }
     private static final Set<String> DAMAGE_FALLOFF_IDS = Set.of(
             "pump_shotgun",
             "holy_shotgun",
@@ -262,7 +268,7 @@ public class BulletEntity extends Projectile {
                 boolean ignoredLeaves = ignoreLeavesForGun && IGNORE_LEAVES.test(hitState);
                 boolean isPenetrable = ignoredLeaves || ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(
                     this.level(), hitState);
-                if (!ignoreLeavesForGun && hitState.getBlock() instanceof LeavesBlock) {
+                if (!ignoreLeavesForGun && IGNORE_LEAVES.test(hitState)) {
                     isPenetrable = false;
                 }
 
