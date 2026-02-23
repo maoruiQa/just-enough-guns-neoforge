@@ -26,6 +26,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue RECOIL_BACKSTEP_ENABLED;
     public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
+    public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_START_DAY;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_DAYS_TO_MAX;
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER;
@@ -47,6 +48,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
+    private static volatile Boolean bulletBlockDestructionOverride;
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
@@ -127,6 +129,9 @@ public final class Config {
         BLOCK_HIT_ANIMATION_ENABLED = serverBuilder
                 .comment("If true, bullets hitting a block trigger the vanilla block hit particle animation event.")
                 .define("blockHitAnimationEnabled", true);
+        BULLET_BLOCK_DESTRUCTION_ENABLED = serverBuilder
+                .comment("If true, bullets can destroy hit blocks based on penetration and bullet power rules.")
+                .define("bulletBlockDestructionEnabled", true);
         GUNNER_ACCURACY_START_DAY = serverBuilder
                 .comment("In-game day when gunner accuracy scaling starts.")
                 .defineInRange("gunnerAccuracyStartDay", 5, 0, 5000);
@@ -271,6 +276,15 @@ public final class Config {
 
     public static boolean blockHitAnimationEnabled() {
         return BLOCK_HIT_ANIMATION_ENABLED.get();
+    }
+
+    public static boolean bulletBlockDestructionEnabled() {
+        Boolean override = bulletBlockDestructionOverride;
+        return override != null ? override : BULLET_BLOCK_DESTRUCTION_ENABLED.get();
+    }
+
+    public static void setBulletBlockDestructionEnabled(boolean enabled) {
+        bulletBlockDestructionOverride = enabled;
     }
 
     public static int gunnerAccuracyStartDay() {
