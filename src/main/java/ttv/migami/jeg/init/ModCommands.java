@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
@@ -45,7 +46,8 @@ public final class ModCommands {
         dispatcher.register(
                 Commands.literal("justEnoughGuns")
                         .then(spawnPatrolCommand())
-                        .then(simulatePatrolCommand()));
+                        .then(simulatePatrolCommand())
+                        .then(bulletBlockDestructionCommand()));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> spawnPatrolCommand() {
@@ -98,6 +100,38 @@ public final class ModCommands {
                                                         IntegerArgumentType.getInteger(context, "size"),
                                                         EntityArgument.getPlayer(context, "player"),
                                                         BoolArgumentType.getBool(context, "forceGuns")))))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> bulletBlockDestructionCommand() {
+        return Commands.literal("bulletBlockDestruction")
+                .executes(context -> executeGetBulletBlockDestruction(context.getSource()))
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(context -> executeSetBulletBlockDestruction(
+                                context.getSource(),
+                                BoolArgumentType.getBool(context, "enabled"))));
+    }
+
+    private static int executeGetBulletBlockDestruction(CommandSourceStack source) {
+        boolean enabled = Config.bulletBlockDestructionEnabled();
+        source.sendSuccess(
+                () -> Component.literal("Bullet block destruction is " + (enabled ? "enabled" : "disabled")),
+                false
+        );
+        return 1;
+    }
+
+    private static int executeSetBulletBlockDestruction(CommandSourceStack source, boolean enabled) {
+        if (!source.hasPermission(2)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+
+        Config.setBulletBlockDestructionEnabled(enabled);
+        source.sendSuccess(
+                () -> Component.literal("Set bullet block destruction to " + enabled),
+                true
+        );
+        return 1;
     }
 
     private static int executeSpawnPatrol(CommandSourceStack source, String factionName, int size, Vec3 pos, boolean forceGuns, int spread) {
