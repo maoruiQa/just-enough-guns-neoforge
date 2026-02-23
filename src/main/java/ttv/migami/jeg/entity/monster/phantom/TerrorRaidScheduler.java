@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class TerrorRaidScheduler {
+    private static final Logger LOGGER = LoggerFactory.getLogger("TerrorRaidScheduler");
     private static final Map<ServerLevel, List<ScheduledTask>> TASKS = new ConcurrentHashMap<>();
     private static boolean registered;
 
@@ -27,17 +30,17 @@ final class TerrorRaidScheduler {
 
     private static void ensureRegistered() {
         if (!registered) {
-            NeoForge.EVENT_BUS.addListener(TerrorRaidScheduler::onServerTick);
+            ServerTickEvents.END_SERVER_TICK.register(TerrorRaidScheduler::onServerTick);
             registered = true;
         }
     }
 
-    private static void onServerTick(ServerTickEvent.Post event) {
+    private static void onServerTick(MinecraftServer server) {
         Iterator<Map.Entry<ServerLevel, List<ScheduledTask>>> iterator = TASKS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ServerLevel, List<ScheduledTask>> entry = iterator.next();
             ServerLevel level = entry.getKey();
-            if (level.getServer() != event.getServer()) {
+            if (level.getServer() != server) {
                 continue;
             }
 
@@ -45,7 +48,11 @@ final class TerrorRaidScheduler {
             for (ScheduledTask task : tasks) {
                 task.ticks--;
                 if (task.ticks <= 0) {
-                    task.action.run();
+                    try {
+                        task.action.run();
+                    } catch (Exception e) {
+                        LOGGER.debug("Raid scheduled task failed: {}", task, e);
+                    }
                     tasks.remove(task);
                 }
             }
@@ -62,6 +69,11 @@ final class TerrorRaidScheduler {
         private ScheduledTask(int ticks, Runnable action) {
             this.ticks = ticks;
             this.action = action;
+        }
+
+        @Override
+        public String toString() {
+            return "ScheduledTask{ticks=" + ticks + ", action=" + action.getClass().getSimpleName() + "}";
         }
     }
 }

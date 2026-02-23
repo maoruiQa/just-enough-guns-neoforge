@@ -56,6 +56,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
@@ -102,6 +103,7 @@ final class TerrorRaidManager {
     static void triggerGroundRaid(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         BlockPos raidOrigin = origin.immutable();
         if (isDuplicateTrigger(level, raidOrigin)) {
+            JustEnoughGuns.LOGGER.debug("[TerrorRaid] Skip duplicate ground raid trigger at {}", raidOrigin);
             return;
         }
         broadcast(level, raidOrigin, Component.translatable("message.jeg.terror_raid.begin"));
@@ -111,8 +113,14 @@ final class TerrorRaidManager {
         int waveCount = Config.terrorRaidGroundWaveCount();
         int intervalTicks = Config.terrorRaidWaveIntervalSeconds() * 20;
         RaidContext raid = createRaid(level, raidOrigin, targetPlayer, false, waveCount);
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Ground raid created id={} origin={} waves={} intervalTicks={} target={} dim={}",
+                raid.raidId, raidOrigin, waveCount, intervalTicks, playerName(targetPlayer), level.dimension().location()
+        );
         for (int i = 0; i < waveCount; i++) {
             int waveNumber = i;
+            int delay = i * intervalTicks;
+            JustEnoughGuns.LOGGER.debug("[TerrorRaid] Scheduling ground raid id={} wave={} delayTicks={}", raid.raidId, waveNumber + 1, delay);
             TerrorRaidScheduler.schedule(level, i * intervalTicks, () -> spawnGroundRaidWave(level, raidOrigin, waveNumber, targetPlayer, raid));
         }
         scheduleRaidTick(level, raid);
@@ -121,6 +129,7 @@ final class TerrorRaidManager {
     static void triggerAirRaid(ServerLevel level, BlockPos origin, @Nullable Player targetPlayer) {
         BlockPos raidOrigin = origin.immutable();
         if (isDuplicateTrigger(level, raidOrigin)) {
+            JustEnoughGuns.LOGGER.debug("[TerrorRaid] Skip duplicate air raid trigger at {}", raidOrigin);
             return;
         }
         broadcast(level, raidOrigin, Component.translatable("message.jeg.terror_raid.guardian"));
@@ -129,8 +138,13 @@ final class TerrorRaidManager {
         int waveCount = Config.terrorRaidAirWaveCount();
         int intervalTicks = Config.terrorRaidWaveIntervalSeconds() * 20;
         RaidContext raid = createRaid(level, raidOrigin, targetPlayer, true, waveCount);
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Air raid created id={} origin={} waves={} intervalTicks={} target={} dim={}",
+                raid.raidId, raidOrigin, waveCount, intervalTicks, playerName(targetPlayer), level.dimension().location()
+        );
         for (int wave = 0; wave < waveCount; wave++) {
             int delay = wave * intervalTicks;
+            JustEnoughGuns.LOGGER.debug("[TerrorRaid] Scheduling air raid id={} wave={} delayTicks={}", raid.raidId, wave + 1, delay);
             TerrorRaidScheduler.schedule(level, delay, () -> spawnPhantomWave(level, raidOrigin, targetPlayer, raid));
         }
         scheduleRaidTick(level, raid);
@@ -210,6 +224,10 @@ final class TerrorRaidManager {
         RandomSource random = level.getRandom();
         int mobCount = GROUND_RAID_WAVE_SIZE.sample(random);
         raid.wavesSpawned = Math.max(raid.wavesSpawned, waveNumber + 1);
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Executing ground raid id={} wave={}/{} requestedMobs={} target={}",
+                raid.raidId, waveNumber + 1, raid.totalWaves, mobCount, playerName(targetPlayer)
+        );
 
         int successfulSpawns = 0;
         for (int i = 0; i < mobCount; i++) {
@@ -255,6 +273,10 @@ final class TerrorRaidManager {
                 }
             }
         }
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Ground raid id={} wave={}/{} spawned={}/{}",
+                raid.raidId, waveNumber + 1, raid.totalWaves, successfulSpawns, mobCount
+        );
     }
 
     /**
@@ -419,6 +441,11 @@ final class TerrorRaidManager {
         RandomSource random = level.getRandom();
         int mobCount = PHANTOM_WAVE_SIZE.sample(random);
         raid.wavesSpawned = Math.min(raid.totalWaves, raid.wavesSpawned + 1);
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Executing air raid id={} wave={}/{} requestedMobs={} target={}",
+                raid.raidId, raid.wavesSpawned, raid.totalWaves, mobCount, playerName(targetPlayer)
+        );
+        int successfulSpawns = 0;
         for (int i = 0; i < mobCount; i++) {
             Vec3 center = sampleAirPosition(level, origin, random, 10, 18, 8, 14);
             PhantomGunner gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
@@ -435,8 +462,13 @@ final class TerrorRaidManager {
 
             if (level.addFreshEntity(gunner)) {
                 raid.trackSpawn(gunner);
+                successfulSpawns++;
             }
         }
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Air raid id={} wave={}/{} spawned={}/{}",
+                raid.raidId, raid.wavesSpawned, raid.totalWaves, successfulSpawns, mobCount
+        );
     }
 
     private static void assignInitialTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, BlockPos origin, double range) {
@@ -474,6 +506,15 @@ final class TerrorRaidManager {
         RaidContext raid = new RaidContext(UUID.randomUUID(), origin, initialTarget != null ? initialTarget.getUUID() : null, airRaid, totalWaves);
         ACTIVE_RAIDS.computeIfAbsent(level, ignored -> new ArrayList<>()).add(raid);
         RECENT_RAID_TRIGGERS.computeIfAbsent(level, ignored -> new HashMap<>()).put(origin.immutable(), level.getGameTime());
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Registered raid id={} type={} origin={} target={} totalWaves={} activeRaidsInDim={}",
+                raid.raidId,
+                airRaid ? "air" : "ground",
+                origin,
+                playerName(initialTarget),
+                raid.totalWaves,
+                ACTIVE_RAIDS.getOrDefault(level, List.of()).size()
+        );
         return raid;
     }
 
@@ -578,6 +619,7 @@ final class TerrorRaidManager {
     }
 
     private static void scheduleRaidTick(ServerLevel level, RaidContext raid) {
+        JustEnoughGuns.LOGGER.debug("[TerrorRaid] Scheduling raid tick id={} in 20 ticks", raid.raidId);
         TerrorRaidScheduler.schedule(level, 20, () -> tickRaid(level, raid));
     }
 
@@ -607,6 +649,10 @@ final class TerrorRaidManager {
     }
 
     private static void cleanupRaid(ServerLevel level, RaidContext raid) {
+        JustEnoughGuns.LOGGER.debug(
+                "[TerrorRaid] Cleanup raid id={} completed={} wavesSpawned={}/{} activeMobs={}",
+                raid.raidId, raid.completed, raid.wavesSpawned, raid.totalWaves, raid.activeMobIds.size()
+        );
         raid.bossBar.removeAllPlayers();
         List<RaidContext> raids = ACTIVE_RAIDS.get(level);
         if (raids != null) {
@@ -763,10 +809,18 @@ final class TerrorRaidManager {
 
         for (Map.Entry<BlockPos, Long> entry : recent.entrySet()) {
             if (entry.getKey().distManhattan(origin) <= 16 && now - entry.getValue() <= RAID_DUPLICATE_GUARD_TICKS) {
+                JustEnoughGuns.LOGGER.debug(
+                        "[TerrorRaid] Duplicate trigger detected origin={} existingOrigin={} ageTicks={}",
+                        origin, entry.getKey(), now - entry.getValue()
+                );
                 return true;
             }
         }
         return false;
+    }
+
+    private static String playerName(@Nullable Player player) {
+        return player != null ? player.getGameProfile().getName() : "none";
     }
 
     private static final class RaidContext {

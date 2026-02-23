@@ -11,6 +11,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
@@ -21,6 +22,7 @@ public final class HomeRaidTriggerManager {
 
     public static void tick(MinecraftServer server) {
         if (!Config.factionRaidEnabled()) {
+            JustEnoughGuns.LOGGER.debug("[FactionRaid] Skip home-trigger tick: config disabled");
             return;
         }
 
@@ -34,10 +36,15 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
             if (player.isSpectator()) {
+                JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} is spectator", player.getGameProfile().getName());
                 continue;
             }
 
             if (!(player.level() instanceof ServerLevel currentLevel) || currentLevel.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) {
+                JustEnoughGuns.LOGGER.debug(
+                        "[FactionRaid] Home-trigger blocked: player={} invalid level or peaceful",
+                        player.getGameProfile().getName()
+                );
                 continue;
             }
 
@@ -47,6 +54,7 @@ public final class HomeRaidTriggerManager {
             if (respawnPos == null) {
                 ServerLevel overworld = server.overworld();
                 if (overworld == null) {
+                    JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} has no respawn and no overworld", player.getGameProfile().getName());
                     continue;
                 }
                 respawnPos = overworld.getSharedSpawnPos();
@@ -54,25 +62,46 @@ public final class HomeRaidTriggerManager {
             }
 
             if (player.level().dimension() != respawnDimension) {
+                JustEnoughGuns.LOGGER.debug(
+                        "[FactionRaid] Home-trigger blocked: player={} wrong dimension current={} expected={}",
+                        player.getGameProfile().getName(),
+                        player.level().dimension().location(),
+                        respawnDimension.location()
+                );
                 continue;
             }
 
             Vec3 respawnCenter = Vec3.atCenterOf(respawnPos);
             if (player.position().distanceToSqr(respawnCenter) > radiusSq) {
+                JustEnoughGuns.LOGGER.debug(
+                        "[FactionRaid] Home-trigger blocked: player={} outside radius={} respawn={}",
+                        player.getGameProfile().getName(),
+                        radius,
+                        respawnPos
+                );
                 continue;
             }
 
             if (RaidEntity.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
+                JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} nearby active raid at {}", player.getGameProfile().getName(), respawnPos);
                 continue;
             }
 
             Faction faction = resolveFactionFromOmen(player);
             if (faction == null) {
+                JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} omen has no faction tag", player.getGameProfile().getName());
                 clearOmenFactionTag(player);
                 player.removeEffect(factionOmen);
                 continue;
             }
 
+            JustEnoughGuns.LOGGER.debug(
+                    "[FactionRaid] Home-trigger summon: player={} faction={} respawn={} dim={}",
+                    player.getGameProfile().getName(),
+                    faction.getName(),
+                    respawnPos,
+                    currentLevel.dimension().location()
+            );
             RaidEntity.summonRaidEntity(currentLevel, faction, respawnCenter, true);
             clearOmenFactionTag(player);
             player.removeEffect(factionOmen);

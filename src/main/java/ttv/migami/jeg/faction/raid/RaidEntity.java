@@ -30,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
@@ -460,11 +461,21 @@ public class RaidEntity extends Entity {
                 pos.getX() - radius, pos.getY() - radius, pos.getZ() - radius,
                 pos.getX() + radius, pos.getY() + radius, pos.getZ() + radius
         );
-        return !level.getEntitiesOfClass(RaidEntity.class, area, raid -> !raid.finished).isEmpty();
+        boolean hasActive = !level.getEntitiesOfClass(RaidEntity.class, area, raid -> !raid.finished).isEmpty();
+        if (hasActive) {
+            JustEnoughGuns.LOGGER.debug("[FactionRaid] Active raid already present near {} radius={}", pos, radius);
+        }
+        return hasActive;
     }
 
     public static void summonRaidEntity(ServerLevel level, Faction faction, Vec3 startPos, boolean forceGuns) {
-        if (faction == null || hasActiveRaidNear(level, BlockPos.containing(startPos), ACTIVE_RADIUS)) {
+        BlockPos start = BlockPos.containing(startPos);
+        if (faction == null) {
+            JustEnoughGuns.LOGGER.debug("[FactionRaid] Raid summon blocked: faction is null at {}", start);
+            return;
+        }
+        if (hasActiveRaidNear(level, start, ACTIVE_RADIUS)) {
+            JustEnoughGuns.LOGGER.debug("[FactionRaid] Raid summon blocked: active raid nearby at {} radius={}", start, ACTIVE_RADIUS);
             return;
         }
 
@@ -473,6 +484,7 @@ public class RaidEntity extends Entity {
         raidEntity.factionName = faction.getName();
         raidEntity.forceGuns = forceGuns;
         level.addFreshEntity(raidEntity);
+        JustEnoughGuns.LOGGER.debug("[FactionRaid] Raid entity summoned: faction={} pos={} forceGuns={}", faction.getName(), start, forceGuns);
 
         Component message = Component.translatable(
                 "broadcast.jeg.raid",
