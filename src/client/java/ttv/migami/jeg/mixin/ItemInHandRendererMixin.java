@@ -3,6 +3,7 @@ package ttv.migami.jeg.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -12,16 +13,36 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.GunHandTransform;
 import ttv.migami.jeg.client.GunItemClientExtensions;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
 
 @Mixin(ItemInHandRenderer.class)
 public final class ItemInHandRendererMixin {
+    @Shadow
+    private ItemStack mainHandItem;
+
+    @Shadow
+    private ItemStack offHandItem;
+
+    @Shadow
+    private float mainHandHeight;
+
+    @Shadow
+    private float oMainHandHeight;
+
+    @Shadow
+    private float offHandHeight;
+
+    @Shadow
+    private float oOffHandHeight;
+
     @Unique
     private LocalPlayer jeg$capturedPlayer;
 
@@ -82,6 +103,28 @@ public final class ItemInHandRendererMixin {
         this.jeg$capturedEquipProcess = Float.NaN;
         this.jeg$capturedSwingProcess = Float.NaN;
         this.jeg$customTransformApplied = false;
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void jeg$stabilizeHeatOnlySwaps(CallbackInfo ci) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return;
+        }
+
+        ItemStack liveMain = player.getMainHandItem();
+        if (jeg$isHeatOnlyComponentDiff(this.mainHandItem, liveMain)) {
+            this.mainHandItem = liveMain;
+            this.mainHandHeight = 1.0F;
+            this.oMainHandHeight = 1.0F;
+        }
+
+        ItemStack liveOff = player.getOffhandItem();
+        if (jeg$isHeatOnlyComponentDiff(this.offHandItem, liveOff)) {
+            this.offHandItem = liveOff;
+            this.offHandHeight = 1.0F;
+            this.oOffHandHeight = 1.0F;
+        }
     }
 
     @WrapOperation(
@@ -178,5 +221,27 @@ public final class ItemInHandRendererMixin {
 
         this.jeg$customTransformApplied = applied;
         return applied;
+    }
+
+    @Unique
+    private static boolean jeg$isHeatOnlyComponentDiff(ItemStack visibleStack, ItemStack liveStack) {
+        if (visibleStack == null || liveStack == null || visibleStack.isEmpty() || liveStack.isEmpty()) {
+            return false;
+        }
+        if (!ItemStack.isSameItem(visibleStack, liveStack)) {
+            return false;
+        }
+        if (!(liveStack.getItem() instanceof GunItem)) {
+            return false;
+        }
+        if (ItemStack.isSameItemSameComponents(visibleStack, liveStack)) {
+            return false;
+        }
+
+        ItemStack visibleNoHeat = visibleStack.copy();
+        ItemStack liveNoHeat = liveStack.copy();
+        visibleNoHeat.remove(ModDataComponents.GUN_HEAT.get());
+        liveNoHeat.remove(ModDataComponents.GUN_HEAT.get());
+        return ItemStack.isSameItemSameComponents(visibleNoHeat, liveNoHeat);
     }
 }

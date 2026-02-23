@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -45,9 +46,13 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public final class FabricClientBootstrap {
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
+    private static final int OVERHEAT_BAR_WIDTH = 82;
+    private static final int OVERHEAT_BAR_HEIGHT = 4;
+    private static final int OVERHEAT_BAR_Y_OFFSET = 58;
     private static boolean registered;
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
@@ -112,6 +117,9 @@ public final class FabricClientBootstrap {
             if (matrixStack == null) {
                 return;
             }
+            if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
+                BulletTrailRenderer.render(matrixStack, context.consumers(), partialTick);
+            }
             renderMuzzleFlashes(matrixStack, context.consumers(), partialTick);
         });
 
@@ -136,7 +144,9 @@ public final class FabricClientBootstrap {
 
     private static void onClientTick(Minecraft client) {
         GunRecoilHandler.tick();
-        BulletTrailRenderer.tick();
+        if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
+            BulletTrailRenderer.tick();
+        }
         tickMuzzleFlashState();
 
         LocalPlayer player = client.player;
@@ -205,14 +215,11 @@ public final class FabricClientBootstrap {
     }
 
     private static boolean shouldApplyVisualRecoil(LocalPlayer player, ItemStack stack, GunItem gun, boolean wasHeldLastTick, long nowTick) {
-        if (!hasShootableAmmo(player, stack, gun)) {
+        if (!canPredictShot(player, stack, gun, wasHeldLastTick)) {
             return false;
         }
         int fireDelay = Math.max(1, gun.getStats().fireDelay());
         if (!gun.isAutomatic()) {
-            if (wasHeldLastTick) {
-                return false;
-            }
             nextVisualShotTickMain = nowTick + fireDelay;
             return true;
         }
@@ -234,6 +241,19 @@ public final class FabricClientBootstrap {
         for (int i = 0; i < shotsPerTrigger; i++) {
             GunRecoilHandler.addShot(recoilKick * 2.20F);
         }
+    }
+
+    private static boolean canPredictShot(LocalPlayer player, ItemStack stack, GunItem gun, boolean wasHeldLastTick) {
+        if (player.getCooldowns().isOnCooldown(stack.getItem())) {
+            return false;
+        }
+        if (!gun.isAutomatic() && (wasHeldLastTick || GunItem.isTriggerLocked(stack))) {
+            return false;
+        }
+        if (gun.usesOverheatMechanic() && gun.getOverheatPercent(stack) >= 100) {
+            return false;
+        }
+        return hasShootableAmmo(player, stack, gun);
     }
 
     private static boolean hasShootableAmmo(LocalPlayer player, ItemStack stack, GunItem gun) {
@@ -295,6 +315,53 @@ public final class FabricClientBootstrap {
             return "Ammo " + magazine + "/" + stats.magazineSize() + " | Reserve " + reserveText;
         }
         return "Ammo " + reserveText;
+    }
+
+    public static void renderOverheatBar(GuiGraphics guiGraphics) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null) {
+            return;
+        }
+
+        ItemStack held = player.getMainHandItem();
+        if (!(held.getItem() instanceof GunItem gun) || !gun.usesOverheatMechanic()) {
+            return;
+        }
+
+        int percent = gun.getOverheatPercent(held);
+        if (percent <= 0) {
+            return;
+        }
+
+        int screenWidth = minecraft.getWindow().getGuiScaledWidth();
+        int screenHeight = minecraft.getWindow().getGuiScaledHeight();
+        int x = (screenWidth - OVERHEAT_BAR_WIDTH) / 2;
+        int y = screenHeight - OVERHEAT_BAR_Y_OFFSET;
+
+        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
+        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
+
+        float ratio = Math.max(0.0F, Math.min(1.0F, percent / 100.0F));
+        int fill = Math.max(1, Math.round(OVERHEAT_BAR_WIDTH * ratio));
+        guiGraphics.fill(x, y, x + fill, y + OVERHEAT_BAR_HEIGHT, overheatColor(ratio));
+    }
+
+    private static int overheatColor(float ratio) {
+        float clamped = Math.max(0.0F, Math.min(1.0F, ratio));
+        int red;
+        int green;
+        if (clamped < 0.5F) {
+            float t = clamped / 0.5F;
+            red = Math.round(255.0F * t);
+            green = 255;
+        } else {
+            float t = (clamped - 0.5F) / 0.5F;
+            red = 255;
+            green = Math.round(255.0F * (1.0F - t));
+        }
+        int blue = 48;
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
     public static void showMuzzleFlash(int entityId, float random) {

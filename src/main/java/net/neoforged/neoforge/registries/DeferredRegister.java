@@ -61,6 +61,9 @@ public class DeferredRegister<T> {
         if (registryKey == Registries.PARTICLE_TYPE) {
             return (Registry<T>) BuiltInRegistries.PARTICLE_TYPE;
         }
+        if (registryKey == Registries.MOB_EFFECT) {
+            return (Registry<T>) BuiltInRegistries.MOB_EFFECT;
+        }
         if (registryKey == Registries.DATA_COMPONENT_TYPE) {
             return (Registry<T>) BuiltInRegistries.DATA_COMPONENT_TYPE;
         }

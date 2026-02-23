@@ -1,6 +1,7 @@
 package ttv.migami.jeg.item;
 
 import java.util.Locale;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,6 +96,8 @@ public class GunItem extends Item {
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
     private static final Map<UUID, SpreadTrackerState> SPREAD_TRACKERS = new WeakHashMap<>();
+    private static final Map<UUID, Integer> MINIGUN_PENDING_HEAT_SHOTS = new HashMap<>();
+    private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
     private static final Set<String> SHOTGUN_IDS = Set.of(
             "double_barrel_shotgun",
             "holy_shotgun",
@@ -109,7 +112,9 @@ public class GunItem extends Item {
             "rocket_launcher",
             "grenade_launcher",
             "hypersonic_cannon",
-            "typhoonee"
+            "typhoonee",
+            "compound_bow",
+            "primitive_bow"
     );
     private static final Set<String> HEAVY_BACKSTEP_IDS = Set.of(
             "light_machine_gun",
@@ -130,6 +135,13 @@ public class GunItem extends Item {
     );
     private static final float MINIGUN_SPREAD_FLOOR = 0.85F;
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0036D;
+    private static final int OVERHEAT_MAX = 100;
+    private static final int OVERHEAT_TRACKED_MAX = 140;
+    private static final int OVERHEAT_RECOVERY_BUFFER = 40;
+    private static final int OVERHEAT_HEAT_PER_SHOT_LMG = 2;
+    private static final int OVERHEAT_HEAT_PER_SHOT_MINIGUN = 3;
+    private static final int OVERHEAT_COOL_PER_TICK_HELD = 1;
+    private static final int OVERHEAT_COOL_PER_TICK_IDLE = 2;
 
     private final GunStats stats;
 
@@ -262,6 +274,75 @@ public class GunItem extends Item {
         }
     }
 
+    public boolean usesOverheatMechanic() {
+        return isOverheatWeapon(stats.id());
+    }
+
+    public int getOverheatPercent(ItemStack stack) {
+        if (!usesOverheatMechanic()) {
+            return 0;
+        }
+        return Math.round((Math.min(getTrackedHeat(stack), OVERHEAT_MAX) * 100.0F) / OVERHEAT_MAX);
+    }
+
+    private static boolean isOverheatWeapon(ResourceLocation gunId) {
+        String path = gunId.getPath();
+        return "light_machine_gun".equals(path) || "minigun".equals(path);
+    }
+
+    private static int getHeatPerShot(ResourceLocation gunId) {
+        return "minigun".equals(gunId.getPath()) ? OVERHEAT_HEAT_PER_SHOT_MINIGUN : OVERHEAT_HEAT_PER_SHOT_LMG;
+    }
+
+    private static int getTrackedHeat(ItemStack stack) {
+        return Mth.clamp(stack.getOrDefault(ModDataComponents.GUN_HEAT.get(), 0), 0, OVERHEAT_TRACKED_MAX);
+    }
+
+    private static void setTrackedHeat(ItemStack stack, int heat) {
+        int clamped = Mth.clamp(heat, 0, OVERHEAT_TRACKED_MAX);
+        stack.set(ModDataComponents.GUN_HEAT.get(), clamped);
+    }
+
+    private static boolean isOverheated(ItemStack stack) {
+        return getTrackedHeat(stack) >= OVERHEAT_MAX;
+    }
+
+    private static void addOverheatForShots(ItemStack stack, ResourceLocation gunId, int shotsFired, @Nullable Player shooter) {
+        if (shotsFired <= 0 || !isOverheatWeapon(gunId)) {
+            return;
+        }
+        int effectiveShots = shotsFired;
+        if ("minigun".equals(gunId.getPath()) && shooter != null) {
+            int pending = MINIGUN_PENDING_HEAT_SHOTS.getOrDefault(shooter.getUUID(), 0) + shotsFired;
+            int applyShots = pending - (pending % MINIGUN_HEAT_BATCH_SHOTS);
+            int remainder = pending % MINIGUN_HEAT_BATCH_SHOTS;
+            if (remainder > 0) {
+                MINIGUN_PENDING_HEAT_SHOTS.put(shooter.getUUID(), remainder);
+            } else {
+                MINIGUN_PENDING_HEAT_SHOTS.remove(shooter.getUUID());
+            }
+            if (applyShots <= 0) {
+                return;
+            }
+            effectiveShots = applyShots;
+        }
+        int current = getTrackedHeat(stack);
+        int next = Mth.clamp(current + getHeatPerShot(gunId) * effectiveShots, 0, OVERHEAT_TRACKED_MAX);
+        if (current < OVERHEAT_MAX && next >= OVERHEAT_MAX) {
+            next = Math.max(next, OVERHEAT_MAX + OVERHEAT_RECOVERY_BUFFER);
+        }
+        setTrackedHeat(stack, next);
+    }
+
+    private static void coolOverheat(ItemStack stack, boolean heldInHand) {
+        int current = getTrackedHeat(stack);
+        if (current <= 0) {
+            return;
+        }
+        int coolPerTick = heldInHand ? OVERHEAT_COOL_PER_TICK_HELD : OVERHEAT_COOL_PER_TICK_IDLE;
+        setTrackedHeat(stack, current - coolPerTick);
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -279,6 +360,13 @@ public class GunItem extends Item {
         }
 
         if (player.getCooldowns().isOnCooldown(stack.getItem())) {
+            return false;
+        }
+
+        if (usesOverheatMechanic() && isOverheated(stack)) {
+            if (level.isClientSide()) {
+                player.displayClientMessage(Component.literal("Gun overheated"), true);
+            }
             return false;
         }
 
@@ -326,6 +414,10 @@ public class GunItem extends Item {
             }
             if (shotsFired <= 0) {
                 return false;
+            }
+
+            if (usesOverheatMechanic()) {
+                addOverheatForShots(stack, stats.id(), shotsFired, player);
             }
 
             if (stack.getItem() instanceof AnimatedGunItem animated) {
@@ -603,7 +695,12 @@ public class GunItem extends Item {
                 gunSpread = Math.max(gunSpread, shotgunFloor);
             }
         } else {
-            gunSpread *= shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
+            float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
+            float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
+            gunSpread *= scaledSpreadMultiplier;
+            if (isShotgun(stats.id())) {
+                gunSpread *= (float) Config.gunnerShotgunSpreadMultiplier();
+            }
         }
 
         if (gunSpread <= 0.0F) {
@@ -809,6 +906,14 @@ public class GunItem extends Item {
         if (level.isClientSide()) {
             return;
         }
+        if (usesOverheatMechanic()) {
+            boolean coolingBlockedByFiring = selected
+                    && entity instanceof Player playerHolder
+                    && playerHolder.getCooldowns().isOnCooldown(stack.getItem());
+            if (!coolingBlockedByFiring && (!selected || (level.getGameTime() & 1L) == 0L)) {
+                coolOverheat(stack, selected);
+            }
+        }
         if (!(entity instanceof Player player)) {
             clearReloadAnimState(stack);
             return;
@@ -947,6 +1052,12 @@ public class GunItem extends Item {
 
         if (stats.usesMagazine()) {
             tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));
+        }
+
+        if (usesOverheatMechanic()) {
+            int heat = getOverheatPercent(stack);
+            ChatFormatting color = heat >= 100 ? ChatFormatting.RED : ChatFormatting.GOLD;
+            tooltip.add(Component.literal("Overheat: " + heat + "%").withStyle(color));
         }
 
         // Add ammo type information

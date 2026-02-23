@@ -27,6 +27,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
@@ -47,6 +48,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.faction.GunnerFactionRelations;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
@@ -168,35 +170,33 @@ public class BulletEntity extends Projectile {
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         GunStats gunStats = getGunStats();
 
-        // FLARE GUN: Simple timer-based detonation using entity age (tickCount)
+        // 1.20.1-style flare projectile: no timed detonation, just trail + ignition impacts.
         if (gunId.equals(FLARE_GUN_ID)) {
+            int ticksLived = this.entityData.get(DATA_TICKS_LIVED);
+            this.entityData.set(DATA_TICKS_LIVED, ticksLived + 1);
+
             Vec3 motion = this.getDeltaMovement();
             HitResult collisionResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (collisionResult.getType() != HitResult.Type.MISS) {
-                if (!this.level().isClientSide() && this.isAlive()) {
-                    detonateFlare((ServerLevel)this.level());
-                    this.discard();
+                if (collisionResult.getType() == HitResult.Type.ENTITY) {
+                    this.onHitEntity((EntityHitResult) collisionResult);
+                } else if (collisionResult.getType() == HitResult.Type.BLOCK) {
+                    this.onHitBlock((BlockHitResult) collisionResult);
                 }
                 return;
             }
 
-            // Entity tickCount is automatically incremented by Minecraft
-            if (this.tickCount >= FLARE_DETONATE_TICKS) {
-                if (!this.level().isClientSide()) {
-                    detonateFlare((ServerLevel) this.level());
-                    this.discard();
-                }
-                return;
-            }
-
-            // Continue normal movement for flare
             if (this.level().isClientSide()) {
                 spawnFlareParticles();
             }
 
             this.setPos(this.getX() + motion.x, this.getY() + motion.y, this.getZ() + motion.z);
             this.setDeltaMovement(applyGravity(motion, gunStats));
-            return; // Skip all other bullet logic for flare gun
+
+            if (this.entityData.get(DATA_TICKS_LIVED) > this.entityData.get(DATA_LIFE)) {
+                this.discard();
+            }
+            return;
         }
 
         // Normal bullet logic below (not flare gun)
@@ -334,13 +334,32 @@ public class BulletEntity extends Projectile {
         Entity entity = result.getEntity();
         Entity owner = this.getOwner();
 
-        // Flare gun only detonates on timer, not on collision
+        // 1.20.1 flare parity: direct hits ignite target, no explosion detonation.
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         if (gunId.equals(FLARE_GUN_ID)) {
-            if (!this.level().isClientSide() && this.isAlive()) {
-                detonateFlare((ServerLevel) this.level());
-                this.discard();
+            if (!this.level().isClientSide()) {
+                Entity hitEntity = result.getEntity();
+                LivingEntity livingOwner = owner instanceof LivingEntity living ? living : null;
+                if (livingOwner != null && hitEntity instanceof LivingEntity livingTarget && isFriendlyFire(livingOwner, livingTarget)) {
+                    this.discard();
+                    return;
+                }
+                DamageSource source = livingOwner != null
+                        ? this.damageSources().mobProjectile(this, livingOwner)
+                        : this.damageSources().thrown(this, owner);
+                if (hitEntity instanceof LivingEntity living) {
+                    applyBulletproofWear(living);
+                    living.hurt(source, this.entityData.get(DATA_DAMAGE));
+                } else {
+                    hitEntity.hurt(source, this.entityData.get(DATA_DAMAGE));
+                }
+                if (hitEntity instanceof LivingEntity living) {
+                    living.igniteForSeconds(5);
+                } else {
+                    hitEntity.igniteForSeconds(5);
+                }
             }
+            this.discard();
             return;
         }
 
@@ -436,6 +455,9 @@ public class BulletEntity extends Projectile {
         if (isRaidFriendlyPair(owner, target)) {
             return true;
         }
+        if (GunnerFactionRelations.areSameFactionGunners(owner, target)) {
+            return true;
+        }
         if (owner.isAlliedTo(target)) {
             return true;
         }
@@ -469,13 +491,48 @@ public class BulletEntity extends Projectile {
     }
 
     @Override
+    protected boolean canHitEntity(Entity entity) {
+        if (!super.canHitEntity(entity)) {
+            return false;
+        }
+
+        Entity owner = this.getOwner();
+        if (owner instanceof LivingEntity livingOwner && entity instanceof LivingEntity livingTarget) {
+            return !isFriendlyFire(livingOwner, livingTarget);
+        }
+
+        return true;
+    }
+
+    @Override
     protected void onHitBlock(BlockHitResult result) {
         // This method should only be called for SOLID blocks (penetrable blocks are filtered in tick())
         ResourceLocation gunId = ResourceLocation.parse(this.entityData.get(DATA_GUN));
 
-        // Flare gun only detonates on timer, not on collision
+        // 1.20.1 flare parity: chance to ignite nearby block on impact.
         if (gunId.equals(FLARE_GUN_ID)) {
-            return; // Should not happen as flare gun has its own logic
+            if (!this.level().isClientSide()) {
+                BlockPos hitPos = result.getBlockPos();
+                BlockPos offsetPos = hitPos.relative(result.getDirection());
+                if (this.level().random.nextFloat() > 0.50F
+                        && BaseFireBlock.canBePlacedAt(this.level(), offsetPos, result.getDirection())) {
+                    BlockState fireState = BaseFireBlock.getState(this.level(), offsetPos);
+                    this.level().setBlock(offsetPos, fireState, 11);
+                    ((ServerLevel) this.level()).sendParticles(
+                            ParticleTypes.LAVA,
+                            result.getLocation().x,
+                            result.getLocation().y,
+                            result.getLocation().z,
+                            4,
+                            0.4D,
+                            0.0D,
+                            0.4D,
+                            0.0D
+                    );
+                }
+            }
+            this.discard();
+            return;
         }
 
         BlockPos hitPos = result.getBlockPos();
@@ -834,9 +891,8 @@ public class BulletEntity extends Projectile {
             return;
         }
 
-        // Don't generate particles right at the gun to avoid blocking player vision
-        // Wait until the bullet has traveled at least 2 blocks
-        if (this.tickCount < 5) {
+        int life = this.entityData.get(DATA_LIFE);
+        if (this.tickCount <= 1 || this.tickCount >= life) {
             return;
         }
 
@@ -849,27 +905,14 @@ public class BulletEntity extends Projectile {
             return;
         }
 
-        // Spawn bright colored particles along flare trajectory
-        for (int i = 0; i < 2; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 0.1;
-            double offsetY = (level.random.nextDouble() - 0.5) * 0.1;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 0.1;
+        Vec3 motion = this.getDeltaMovement();
+        double px = this.getX() - motion.x;
+        double py = this.getY() - motion.y;
+        double pz = this.getZ() - motion.z;
 
-            level.addParticle(ParticleTypes.FLAME,
-                this.getX() + offsetX,
-                this.getY() + offsetY,
-                this.getZ() + offsetZ,
-                0, 0.01, 0);
-        }
-
-        // Add smoke trail
-        if (level.random.nextInt(2) == 0) {
-            level.addParticle(ParticleTypes.SMOKE,
-                this.getX(),
-                this.getY(),
-                this.getZ(),
-                0, 0.005, 0);
-        }
+        level.addParticle(ModParticleTypes.FLARE_SMOKE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ModParticleTypes.FIRE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0D, 0.0D, 0.0D);
     }
 
     private void spawnRocketTrailParticles() {
@@ -1342,18 +1385,20 @@ public class BulletEntity extends Projectile {
     }
 
     private static double getGravityAcceleration(GunStats stats) {
-        double gravity = switch (GunCategory.fromStats(stats)) {
-            case SNIPER -> 0.020D;
-            case RIFLE -> 0.024D;
-            case PISTOL -> 0.030D;
-            case SMG -> 0.032D;
-            case LMG -> 0.028D;
-            case SHOTGUN -> 0.040D;
-            case HEAVY -> 0.035D;
-            case SPECIAL -> 0.050D;
-        };
-        if (shouldSendBulletTrail(stats) && stats.gravity()) {
-            gravity = 0.040D;
+        double gravity;
+        if (shouldSendBulletTrail(stats)) {
+            gravity = stats.gravity() ? 0.040D : 0.0D;
+        } else {
+            gravity = switch (GunCategory.fromStats(stats)) {
+                case SNIPER -> 0.020D;
+                case RIFLE -> 0.024D;
+                case PISTOL -> 0.030D;
+                case SMG -> 0.032D;
+                case LMG -> 0.028D;
+                case SHOTGUN -> 0.040D;
+                case HEAVY -> 0.035D;
+                case SPECIAL -> 0.050D;
+            };
         }
         return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.5D : gravity;
     }
