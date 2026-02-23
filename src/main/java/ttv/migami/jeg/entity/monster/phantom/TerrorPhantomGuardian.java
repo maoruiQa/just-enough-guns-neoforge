@@ -148,7 +148,10 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         TerrorRaidManager.triggerAirRaid(level, this.blockPosition(), this.killer);
     }
 
+    @Override
     protected void tickDeathAnimation() {
+        // Keep vanilla death cleanup from truncating the guardian death sequence.
+        this.deathTime = 0;
         this.guardianDeathTicks++;
         this.setDeltaMovement(Vec3.ZERO);
         this.setPos(this.getX(), this.getY(), this.getZ());

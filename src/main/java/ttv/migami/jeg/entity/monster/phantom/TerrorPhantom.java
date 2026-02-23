@@ -174,7 +174,9 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         }
     }
 
-    private void tickDeathAnimation() {
+    protected void tickDeathAnimation() {
+        // Keep vanilla death cleanup from truncating the custom 200-tick sequence.
+        this.deathTime = 0;
         this.deathTimer++;
 
         // Accelerate forward during death dive
