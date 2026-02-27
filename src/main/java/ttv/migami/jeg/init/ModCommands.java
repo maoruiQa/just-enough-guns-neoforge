@@ -6,18 +6,23 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import ttv.migami.jeg.Config;
@@ -25,6 +30,7 @@ import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
+import ttv.migami.jeg.gun.GunDefinitions;
 
 public final class ModCommands {
     private static final SuggestionProvider<CommandSourceStack> FACTION_SUGGESTIONS = (context, builder) -> {
@@ -45,9 +51,15 @@ public final class ModCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("justEnoughGuns")
+                        .then(unlockGunRecipesCommand())
                         .then(spawnPatrolCommand())
                         .then(simulatePatrolCommand())
                         .then(bulletBlockDestructionCommand()));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> unlockGunRecipesCommand() {
+        return Commands.literal("unlockGunRecipes")
+                .executes(context -> executeUnlockGunRecipes(context.getSource()));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> spawnPatrolCommand() {
@@ -117,6 +129,27 @@ public final class ModCommands {
                 () -> Component.literal("Bullet block destruction is " + (enabled ? "enabled" : "disabled")),
                 false
         );
+        return 1;
+    }
+
+    private static int executeUnlockGunRecipes(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command can only be used by a player"));
+            return 0;
+        }
+
+        List<ResourceKey<Recipe<?>>> gunRecipeKeys = new ArrayList<>();
+        for (var gunId : GunDefinitions.ALL.keySet()) {
+            gunRecipeKeys.add(ResourceKey.create(Registries.RECIPE, gunId));
+        }
+
+        if (gunRecipeKeys.isEmpty()) {
+            source.sendFailure(Component.literal("No gun recipes were found"));
+            return 0;
+        }
+
+        player.awardRecipesByKey(gunRecipeKeys.stream().map(ResourceKey::location).toList());
+        source.sendSuccess(() -> Component.literal("Unlocked " + gunRecipeKeys.size() + " gun recipes."), false);
         return 1;
     }
 

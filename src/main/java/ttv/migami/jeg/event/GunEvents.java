@@ -5,6 +5,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import java.util.stream.StreamSupport;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -62,6 +64,7 @@ public final class GunEvents {
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
+            sendAvailableCommands(serverPlayer);
         }
     }
 
@@ -107,22 +110,56 @@ public final class GunEvents {
             return;
         }
 
-        ItemStack manual = new ItemStack(ModItems.GUNSMITH_MANUAL.get());
-        boolean added = player.getInventory().add(manual);
-        if (!added) {
-            player.drop(manual, false);
-        }
-
-        // player.awardRecipesByKey(ModItems.manualRecipes()); // TODO: Fix recipe type conversion
-
-        // Grant armored harness and armor plate recipes
-        // Armor recipes temporarily disabled
-        // player.awardRecipesByKey(java.util.List.of(
-        //     Reference.id("armored_joy_harness"),
-        //     Reference.id("joyous_armor_plate")
-        // ));
-
         player.getPersistentData().putBoolean(MANUAL_GRANTED_TAG, true);
+    }
+
+    private static void sendAvailableCommands(ServerPlayer player) {
+        Component header = Component.empty()
+                .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
+                .append(Component.literal("Command Console").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
+        Component divider = Component.literal("------------------------------")
+                .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
+        Component normalHeader = Component.literal("General Commands")
+                .withStyle(style -> style.withColor(ChatFormatting.GREEN).withBold(true));
+        Component unlockLine = Component.empty()
+                .append(Component.literal("/justEnoughGuns unlockGunRecipes")
+                        .withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(true)))
+                .append(Component.literal(" - Unlock all gun recipes")
+                        .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
+
+        player.sendSystemMessage(header);
+        player.sendSystemMessage(divider);
+        player.sendSystemMessage(normalHeader);
+        player.sendSystemMessage(unlockLine);
+
+        if (player.hasPermissions(2)) {
+            Component opHeader = Component.empty()
+                    .append(Component.literal("OP Commands")
+                            .withStyle(style -> style.withColor(ChatFormatting.RED).withBold(true)))
+                    .append(Component.literal(" (Admin)")
+                            .withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withItalic(true)));
+            Component spawnLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns spawnPatrol")
+                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
+                    .append(Component.literal(" - Spawn a patrol")
+                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
+            Component simulateLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns simulatePatrol")
+                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
+                    .append(Component.literal(" - Simulate a patrol event")
+                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
+            Component bulletLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns bulletBlockDestruction")
+                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
+                    .append(Component.literal(" - Toggle bullet block destruction")
+                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
+
+            player.sendSystemMessage(opHeader);
+            player.sendSystemMessage(spawnLine);
+            player.sendSystemMessage(simulateLine);
+            player.sendSystemMessage(bulletLine);
+        }
+        player.sendSystemMessage(divider);
     }
 
     @SubscribeEvent
