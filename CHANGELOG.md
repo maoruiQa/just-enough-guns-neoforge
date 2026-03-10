@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4 - 2026-03-10
+
+### Fixed
+- Fixed Fabric `gunner_spawn_egg` faction mobs spawning without a gun by restoring immediate loadout assignment on spawn.
+- Restored Fabric natural spawn hooks for `pillager gunner` and `phantom gunner` conversions so their special gunner variants can spawn correctly again.
+
 ## 1.3.1 - 2026-02-18
 
 ### Added
