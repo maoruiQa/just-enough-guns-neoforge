@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.stream.StreamSupport;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -22,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -199,17 +201,7 @@ public final class GunEvents {
             return;
         }
 
-        double conversionChance = Config.pillagerGunnerChance();
-        if (conversionChance <= 0.0D || serverLevel.random.nextDouble() >= conversionChance) {
-            return;
-        }
-
-        // Since GunnerEntity was removed, we just tag the pillager instead
-        pillager.addTag("jeg_pillager_gunner");
-        ResourceLocation selected = selectRandomGun(serverLevel.random);
-        if (selected != null) {
-            equipPillagerWithGun(pillager, selected);
-        }
+        handlePillagerFinalize(pillager, serverLevel);
     }
 
     static void equipPillagerWithGun(Pillager pillager, ResourceLocation gunId) {
@@ -235,27 +227,45 @@ public final class GunEvents {
             return;
         }
 
-        if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.NATURAL) {
-            double terrorChance = Config.terrorPhantomChance();
-            if (terrorChance > 0.0D && serverLevel.random.nextDouble() < terrorChance) {
-                TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
-                if (terror != null) {
-                    terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
-                    terror.setYRot(phantom.getYRot());
-                    terror.setXRot(phantom.getXRot());
-                    terror.setDeltaMovement(phantom.getDeltaMovement());
-                    terror.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
-                    serverLevel.addFreshEntity(terror);
+        handlePhantomFinalize(phantom, serverLevel, event.getDifficulty(), (net.minecraft.world.entity.MobSpawnType) event.getSpawnType(), event.getSpawnData());
+    }
+
+    public static void handlePillagerFinalize(Pillager pillager, ServerLevel serverLevel) {
+        double conversionChance = Config.pillagerGunnerChance();
+        if (conversionChance <= 0.0D || serverLevel.random.nextDouble() >= conversionChance) {
+            return;
+        }
+
+        pillager.addTag("jeg_pillager_gunner");
+        ResourceLocation selected = selectRandomGun(serverLevel.random);
+        if (selected != null) {
+            equipPillagerWithGun(pillager, selected);
+        }
+    }
+
+    public static void handlePhantomFinalize(Phantom phantom, ServerLevel serverLevel, DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnType, SpawnGroupData spawnData) {
+        if (spawnType != net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            return;
+        }
+
+        double terrorChance = Config.terrorPhantomChance();
+        if (terrorChance > 0.0D && serverLevel.random.nextDouble() < terrorChance) {
+            TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
+            if (terror != null) {
+                terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
+                terror.setYRot(phantom.getYRot());
+                terror.setXRot(phantom.getXRot());
+                terror.setDeltaMovement(phantom.getDeltaMovement());
+                terror.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
+                if (serverLevel.addFreshEntity(terror)) {
                     phantom.discard();
                     return;
                 }
             }
+        }
 
-            double gunnerChance = Config.phantomGunnerChance();
-            if (gunnerChance <= 0.0D || serverLevel.random.nextDouble() >= gunnerChance) {
-                return;
-            }
-        } else {
+        double gunnerChance = Config.phantomGunnerChance();
+        if (gunnerChance <= 0.0D || serverLevel.random.nextDouble() >= gunnerChance) {
             return;
         }
 
@@ -270,9 +280,10 @@ public final class GunEvents {
         gunner.yRotO = phantom.yRotO;
         gunner.xRotO = phantom.xRotO;
         gunner.setDeltaMovement(phantom.getDeltaMovement());
-        gunner.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
-        serverLevel.addFreshEntity(gunner);
-        phantom.discard();
+        gunner.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
+        if (serverLevel.addFreshEntity(gunner)) {
+            phantom.discard();
+        }
     }
 
     @SubscribeEvent
