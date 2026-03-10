@@ -3,6 +3,8 @@
   "package": "ttv.migami.jeg.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "PhantomFinalizeSpawnMixin",
+    "PillagerFinalizeSpawnMixin",
     "ServerGamePacketListenerImplMixin"
   ],
   "client": [
