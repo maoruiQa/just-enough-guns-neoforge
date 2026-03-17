@@ -1,4 +1,4 @@
-package net.neoforged.neoforge.common;
+package ttv.migami.jeg.config;
 
 public class ModConfigSpec {
     public static class Builder {

@@ -1,8 +1,8 @@
 package ttv.migami.jeg;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import ttv.migami.jeg.config.ModConfigSpec;
 
 public final class Config {
     public static final ModConfigSpec CLIENT_SPEC;
