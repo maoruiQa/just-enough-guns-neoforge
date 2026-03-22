@@ -38,6 +38,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
+import ttv.migami.jeg.mixin.MobAccessor;
 
 import java.util.UUID;
 
@@ -246,23 +247,11 @@ public class GunnerMobSpawner {
     }
 
     private static GoalSelector getGoalSelector(PathfinderMob mob) {
-        try {
-            var field = net.minecraft.world.entity.Mob.class.getDeclaredField("goalSelector");
-            field.setAccessible(true);
-            return (GoalSelector) field.get(mob);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Cannot access goalSelector", e);
-        }
+        return ((MobAccessor) mob).jeg$getGoalSelector();
     }
 
     private static GoalSelector getTargetSelector(PathfinderMob mob) {
-        try {
-            var field = net.minecraft.world.entity.Mob.class.getDeclaredField("targetSelector");
-            field.setAccessible(true);
-            return (GoalSelector) field.get(mob);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Cannot access targetSelector", e);
-        }
+        return ((MobAccessor) mob).jeg$getTargetSelector();
     }
 
     private static void applyEliteAttributes(PathfinderMob mob) {
