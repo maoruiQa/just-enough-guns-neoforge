@@ -68,6 +68,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.mixin.MobAccessor;
 import ttv.migami.jeg.util.LootUtils;
 
 /**
@@ -311,13 +312,7 @@ final class TerrorRaidManager {
     }
 
     private static GoalSelector getGoalSelector(PathfinderMob mob) {
-        try {
-            var field = net.minecraft.world.entity.Mob.class.getDeclaredField("goalSelector");
-            field.setAccessible(true);
-            return (GoalSelector) field.get(mob);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Cannot access goalSelector", e);
-        }
+        return ((MobAccessor) mob).jeg$getGoalSelector();
     }
 
     private static void applyEliteAttributes(PathfinderMob mob) {
