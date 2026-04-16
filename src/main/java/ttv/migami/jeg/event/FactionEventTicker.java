@@ -5,6 +5,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import ttv.migami.jeg.faction.patrol.GunnerPatrolSpawner;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
+import ttv.migami.jeg.faction.raid.FactionRaidManager;
 import ttv.migami.jeg.faction.raid.GunnerRaidSpawner;
 import ttv.migami.jeg.faction.raid.HomeRaidTriggerManager;
 
@@ -14,6 +15,10 @@ public final class FactionEventTicker {
     private static int tickCounter;
 
     private FactionEventTicker() {}
+
+    public static void reschedulePatrolSpawner() {
+        PATROL_SPAWNER.reschedule();
+    }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
@@ -25,8 +30,10 @@ public final class FactionEventTicker {
 
         if (++tickCounter % 20 == 0) {
             PatrolEncounterManager.tickAll(event.getServer());
+            FactionRaidManager.tickAll(event.getServer());
             HomeRaidTriggerManager.tick(event.getServer());
         }
+
+        MainThreadLevelActionScheduler.tick(event.getServer());
     }
 }
-

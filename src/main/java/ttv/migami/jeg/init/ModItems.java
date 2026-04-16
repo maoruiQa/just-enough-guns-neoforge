@@ -22,13 +22,18 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.event.RecipeUnlockHandler;
+import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
+import ttv.migami.jeg.item.MolotovCocktailItem;
 import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.item.SmokeGrenadeItem;
+import ttv.migami.jeg.item.StunGrenadeItem;
+import ttv.migami.jeg.item.WaterBombItem;
 // import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 // import ttv.migami.jeg.item.JoyousArmorPlateItem;
 
@@ -38,6 +43,8 @@ public final class ModItems {
     public static final DeferredRegister<Item> REGISTER = DeferredRegister.create(Registries.ITEM, Reference.MOD_ID);
 
     public static final Map<ResourceLocation, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
+    public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
+    public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
     public static final Map<ResourceLocation, DeferredHolder<Item, GunItem>> GUNS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_HELMETS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_VESTS = new LinkedHashMap<>();
@@ -56,6 +63,10 @@ public final class ModItems {
             "blaze_round",
             "rocket",
             "grenade",
+            "stun_grenade",
+            "smoke_grenade",
+            "molotov_cocktail",
+            "water_bomb",
             "flare"
     );
 
@@ -100,6 +111,14 @@ public final class ModItems {
             () -> new GunnerSpawnEggItem(
                     EntityType.ZOMBIE,
                     baseProperties(Reference.id("gunner_zombie_spawn_egg")).stacksTo(64)
+            )
+    );
+
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_GHOUL_SPAWN_EGG = REGISTER.register(
+            "gunner_ghoul_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    ModEntities.GHOUL.get(),
+                    baseProperties(Reference.id("gunner_ghoul_spawn_egg")).stacksTo(64)
             )
     );
 
@@ -192,10 +211,13 @@ public final class ModItems {
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
             ResourceLocation id = Reference.id(path);
-            if ("grenade".equals(path)) {
-                AMMO.put(id, REGISTER.register(path, () -> new GrenadeItem(baseProperties(id).stacksTo(16))));
-            } else {
-                AMMO.put(id, REGISTER.register(path, () -> new Item(baseProperties(id))));
+            switch (path) {
+                case "grenade" -> AMMO.put(id, REGISTER.register(path, () -> new GrenadeItem(baseProperties(id).stacksTo(16))));
+                case "stun_grenade" -> AMMO.put(id, REGISTER.register(path, () -> new StunGrenadeItem(baseProperties(id).stacksTo(16))));
+                case "smoke_grenade" -> AMMO.put(id, REGISTER.register(path, () -> new SmokeGrenadeItem(baseProperties(id).stacksTo(16))));
+                case "molotov_cocktail" -> AMMO.put(id, REGISTER.register(path, () -> new MolotovCocktailItem(baseProperties(id).stacksTo(16))));
+                case "water_bomb" -> AMMO.put(id, REGISTER.register(path, () -> new WaterBombItem(baseProperties(id).stacksTo(16))));
+                default -> AMMO.put(id, REGISTER.register(path, () -> new Item(baseProperties(id))));
             }
         }
     }
@@ -244,8 +266,13 @@ public final class ModItems {
     private static List<ResourceKey<Recipe<?>>> buildManualRecipes() {
         java.util.ArrayList<ResourceKey<Recipe<?>>> keys = new java.util.ArrayList<>();
         for (String ammo : AMMO_IDS) {
+            if ("water_bomb".equals(ammo)) {
+                continue;
+            }
             keys.add(ResourceKey.create(Registries.RECIPE, Reference.id(ammo)));
         }
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
@@ -263,6 +290,16 @@ public final class ModItems {
 
     public static List<ResourceKey<Recipe<?>>> manualRecipes() {
         return MANUAL_RECIPES;
+    }
+
+    public static List<ResourceKey<Recipe<?>>> unlockGunRecipeKeys() {
+        java.util.ArrayList<ResourceKey<Recipe<?>>> keys = new java.util.ArrayList<>();
+        for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
+            keys.add(ResourceKey.create(Registries.RECIPE, id));
+        }
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        return List.copyOf(keys);
     }
 
     private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
@@ -297,6 +334,7 @@ public final class ModItems {
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
+            event.accept(GUNNER_GHOUL_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
@@ -305,6 +343,8 @@ public final class ModItems {
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(GUNSMITH_MANUAL.get());
+            event.accept(COOLANT.get());
+            event.accept(ENHANCED_COOLANT.get());
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));
@@ -317,6 +357,7 @@ public final class ModItems {
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
+            event.accept(GUNNER_GHOUL_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());

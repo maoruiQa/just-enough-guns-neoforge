@@ -75,6 +75,11 @@ public class BulletPenetrationHelper {
         return 4; // Indestructible (tier 4)
     }
 
+    public static boolean canGunnerBreakBlock(Level level, BlockState state, int maxTier) {
+        int tier = getBlockTier(level, state);
+        return tier > 0 && tier <= maxTier;
+    }
+
     /**
      * Get the destructive power multiplier based on ammo type.
      */

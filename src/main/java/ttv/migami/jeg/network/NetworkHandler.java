@@ -12,6 +12,7 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 
 public final class NetworkHandler {
@@ -84,6 +85,17 @@ public final class NetworkHandler {
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
+
+            ItemStack offhand = player.getOffhandItem();
+            ItemStack mainHand = player.getMainHandItem();
+            if (payload.hand() == InteractionHand.MAIN_HAND
+                    && mainHand.getItem() instanceof GunItem
+                    && isCoolant(offhand)
+                    && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
+                player.startUsingItem(InteractionHand.OFF_HAND);
+                return;
+            }
+
             ItemStack stack = player.getItemInHand(payload.hand());
             if (!(stack.getItem() instanceof GunItem gun)) {
                 return;
@@ -93,6 +105,10 @@ public final class NetworkHandler {
                 player.swing(payload.hand(), true);
             }
         });
+    }
+
+    private static boolean isCoolant(ItemStack stack) {
+        return stack.is(ModItems.COOLANT.get()) || stack.is(ModItems.ENHANCED_COOLANT.get());
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {

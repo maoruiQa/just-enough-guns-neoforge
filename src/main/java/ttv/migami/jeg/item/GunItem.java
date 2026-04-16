@@ -29,19 +29,24 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -93,8 +98,13 @@ public class GunItem extends Item {
     private static final int RELOAD_STAGE_STOP = 3;
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
+    private static final int WATER_COOL_DURATION_TICKS = 60;
+    private static final ResourceLocation WATER_COOL_SOUND_ID = Reference.id("item.cooldown_with_water");
     private static final Map<UUID, SpreadTrackerState> SPREAD_TRACKERS = new WeakHashMap<>();
     private static final Map<UUID, Integer> MINIGUN_PENDING_HEAT_SHOTS = new HashMap<>();
+    private static final Map<Integer, Integer> MINIGUN_PENDING_HEAT_NUMERATOR = new HashMap<>();
+    private static final Map<Integer, Integer> OVERHEAT_PENDING_NUMERATOR = new HashMap<>();
+    private static final Map<Integer, Integer> OVERHEAT_COOL_NUMERATOR = new HashMap<>();
     private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
     private static final Set<String> SHOTGUN_IDS = Set.of(
             "double_barrel_shotgun",
@@ -131,13 +141,15 @@ public class GunItem extends Item {
     );
     private static final float MINIGUN_SPREAD_FLOOR = 0.85F;
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0036D;
-    private static final int OVERHEAT_MAX = 100;
-    private static final int OVERHEAT_TRACKED_MAX = 140;
-    private static final int OVERHEAT_RECOVERY_BUFFER = 40;
-    private static final int OVERHEAT_HEAT_PER_SHOT_LMG = 2;
-    private static final int OVERHEAT_HEAT_PER_SHOT_MINIGUN = 3;
-    private static final int OVERHEAT_COOL_PER_TICK_HELD = 1;
-    private static final int OVERHEAT_COOL_PER_TICK_IDLE = 2;
+    private static final int OVERHEAT_MAX = 200;
+    private static final int OVERHEAT_TRACKED_MAX = 280;
+    private static final int OVERHEAT_RECOVERY_BUFFER = 80;
+    private static final int OVERHEAT_HEAT_NUMERATOR_LMG = 5;
+    private static final int OVERHEAT_HEAT_NUMERATOR_MINIGUN = 8;
+    private static final int OVERHEAT_HEAT_DENOMINATOR = 6;
+    private static final int OVERHEAT_COOL_NUMERATOR_HELD = 2;
+    private static final int OVERHEAT_COOL_NUMERATOR_IDLE = 4;
+    private static final int OVERHEAT_COOL_DENOMINATOR = 5;
 
     private final GunStats stats;
 
@@ -285,13 +297,159 @@ public class GunItem extends Item {
         return Math.round((Math.min(getTrackedHeat(stack), OVERHEAT_MAX) * 100.0F) / OVERHEAT_MAX);
     }
 
+    public boolean shouldShowWaterCoolingPrompt(ItemStack stack) {
+        return usesOverheatMechanic() && isOverheated(stack);
+    }
+
+    public static boolean canWaterCool(ItemStack stack) {
+        return stack.getItem() instanceof GunItem gun
+                && gun.usesOverheatMechanic()
+                && getTrackedHeat(stack) > 0;
+    }
+
+    public static boolean isCoolingWithWater(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    public static int getWaterCoolingProgressPercent(ItemStack stack) {
+        int total = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_TOTAL.get(), 0);
+        int remaining = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
+        if (total <= 0 || remaining <= 0) {
+            return 0;
+        }
+        return Mth.clamp(Math.round(((total - remaining) * 100.0F) / total), 0, 100);
+    }
+
+    public static boolean tryStartWaterCooling(Level level, Player player, InteractionHand hand) {
+        ItemStack coolant = player.getItemInHand(hand);
+        ItemStack gunStack = hand == InteractionHand.OFF_HAND ? player.getMainHandItem() : player.getOffhandItem();
+        if (!isCoolant(coolant)) {
+            return false;
+        }
+        if (!canWaterCool(gunStack) || isCoolingWithWater(gunStack)) {
+            return false;
+        }
+        startWaterCooling(gunStack);
+        return true;
+    }
+
+    public static int getWaterCoolingUseDuration(ItemStack coolant, LivingEntity entity) {
+        if (isCoolant(coolant)) {
+            return WATER_COOL_DURATION_TICKS;
+        }
+        return 0;
+    }
+
+    public static void onWaterCoolingUseTick(Level level, LivingEntity livingEntity, ItemStack coolant, int remainingUseTicks) {
+        if (!(livingEntity instanceof Player player)) {
+            return;
+        }
+        ItemStack gunStack = coolant == player.getOffhandItem() ? player.getMainHandItem() : player.getOffhandItem();
+        if (!isActivelyCoolingWithWater(player, coolant)) {
+            clearWaterCooling(gunStack);
+            player.stopUsingItem();
+        }
+    }
+
+    public static ItemStack finishWaterCooling(ItemStack coolant, Level level, LivingEntity livingEntity) {
+        if (!(livingEntity instanceof Player player)) {
+            return coolant;
+        }
+        ItemStack currentOffhand = player.getOffhandItem();
+        ItemStack currentMainhand = player.getMainHandItem();
+        ItemStack gunStack = coolant == currentOffhand ? currentMainhand : currentOffhand;
+        if (!isCoolant(coolant) || !canWaterCool(gunStack)) {
+            return coolant;
+        }
+        applyWaterCooling(gunStack, coolant);
+        clearWaterCooling(gunStack);
+        playWaterCoolingSound(level, player);
+        player.awardStat(Stats.ITEM_USED.get(ModItems.COOLANT.get()));
+        if (!player.getAbilities().instabuild && coolant == player.getOffhandItem()) {
+            player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.GLASS_BOTTLE));
+            return player.getOffhandItem();
+        }
+        return coolant;
+    }
+
+    public static boolean releaseWaterCooling(ItemStack coolant, Level level, LivingEntity livingEntity, int timeLeft) {
+        if (livingEntity instanceof Player player) {
+            int usedTicks = getWaterCoolingUseDuration(coolant, livingEntity) - timeLeft;
+            if (usedTicks >= getWaterCoolingUseDuration(coolant, livingEntity)) {
+                return false;
+            }
+            ItemStack gunStack = coolant == player.getOffhandItem() ? player.getMainHandItem() : player.getOffhandItem();
+            clearWaterCooling(gunStack);
+        }
+        return false;
+    }
+
+    public static void cancelWaterCoolingIfInvalid(Player player) {
+        ItemStack mainhand = player.getMainHandItem();
+        ItemStack offhand = player.getOffhandItem();
+        if (isCoolingWithWater(mainhand) && !canWaterCool(mainhand)) {
+            clearWaterCooling(mainhand);
+        }
+        if (isCoolingWithWater(offhand) && !canWaterCool(offhand)) {
+            clearWaterCooling(offhand);
+        }
+    }
+
+    private static boolean isActivelyCoolingWithWater(Player player, ItemStack coolant) {
+        ItemStack gunStack = coolant == player.getOffhandItem() ? player.getMainHandItem() : player.getOffhandItem();
+        return isCoolant(coolant)
+                && ItemStack.isSameItemSameComponents(player.getUseItem(), coolant)
+                && canWaterCool(gunStack)
+                && isCoolingWithWater(gunStack);
+    }
+
+    private static boolean isCoolant(ItemStack stack) {
+        return stack.is(ModItems.COOLANT.get()) || stack.is(ModItems.ENHANCED_COOLANT.get());
+    }
+
+    private static void startWaterCooling(ItemStack stack) {
+        stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_TOTAL.get(), WATER_COOL_DURATION_TICKS);
+        stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), WATER_COOL_DURATION_TICKS);
+    }
+
+    private static void clearWaterCooling(ItemStack stack) {
+        stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get());
+    }
+
+    private static int getWaterCoolingAmount(ItemStack gunStack, ItemStack coolantStack) {
+        if (!(gunStack.getItem() instanceof GunItem gun)) {
+            return 0;
+        }
+        boolean enhanced = coolantStack.is(ModItems.ENHANCED_COOLANT.get());
+        return switch (gun.getStats().id().getPath()) {
+            case "minigun" -> Math.round(OVERHEAT_MAX * (enhanced ? 0.60F : 0.30F));
+            case "light_machine_gun" -> Math.round(OVERHEAT_MAX * (enhanced ? 0.90F : 0.50F));
+            default -> 0;
+        };
+    }
+
+    private static void applyWaterCooling(ItemStack gunStack, ItemStack coolantStack) {
+        if (!canWaterCool(gunStack)) {
+            return;
+        }
+        setTrackedHeat(gunStack, getTrackedHeat(gunStack) - getWaterCoolingAmount(gunStack, coolantStack));
+    }
+
+    private static void playWaterCoolingSound(Level level, Player player) {
+        SoundEvent sound = ModSounds.ALL.getOrDefault(WATER_COOL_SOUND_ID, null) != null
+                ? ModSounds.ALL.get(WATER_COOL_SOUND_ID).get()
+                : SoundEvents.FIRE_EXTINGUISH;
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+    }
+
     private static boolean isOverheatWeapon(ResourceLocation gunId) {
         String path = gunId.getPath();
         return "light_machine_gun".equals(path) || "minigun".equals(path);
     }
 
-    private static int getHeatPerShot(ResourceLocation gunId) {
-        return "minigun".equals(gunId.getPath()) ? OVERHEAT_HEAT_PER_SHOT_MINIGUN : OVERHEAT_HEAT_PER_SHOT_LMG;
+    private static int getHeatNumeratorPerShot(ResourceLocation gunId) {
+        return "minigun".equals(gunId.getPath()) ? OVERHEAT_HEAT_NUMERATOR_MINIGUN : OVERHEAT_HEAT_NUMERATOR_LMG;
     }
 
     private static int getTrackedHeat(ItemStack stack) {
@@ -300,11 +458,46 @@ public class GunItem extends Item {
 
     private static void setTrackedHeat(ItemStack stack, int heat) {
         int clamped = Mth.clamp(heat, 0, OVERHEAT_TRACKED_MAX);
+        int before = stack.getOrDefault(ModDataComponents.GUN_HEAT.get(), 0);
         stack.set(ModDataComponents.GUN_HEAT.get(), clamped);
+        JustEnoughGuns.LOGGER.info("[debug/heat-set] item={} beforeRaw={} requested={} stored={}", stack.getItem(), before, heat, clamped);
     }
 
     private static boolean isOverheated(ItemStack stack) {
         return getTrackedHeat(stack) >= OVERHEAT_MAX;
+    }
+
+    private static int applyHeatDelta(int current, int delta) {
+        int next = Mth.clamp(current + delta, 0, OVERHEAT_TRACKED_MAX);
+        if (current < OVERHEAT_MAX && next >= OVERHEAT_MAX) {
+            next = Math.max(next, OVERHEAT_MAX + OVERHEAT_RECOVERY_BUFFER);
+        }
+        return next;
+    }
+
+    private static int applyFractionalHeat(ItemStack stack, int numeratorDelta, int denominator) {
+        int trackedHeat = getTrackedHeat(stack);
+        int stackKey = System.identityHashCode(stack);
+        int pendingBefore = OVERHEAT_PENDING_NUMERATOR.getOrDefault(stackKey, 0);
+        int scaledNumerator = pendingBefore + numeratorDelta;
+        int wholeDelta = scaledNumerator / denominator;
+        int pendingAfter = scaledNumerator % denominator;
+        if (pendingAfter > 0) {
+            OVERHEAT_PENDING_NUMERATOR.put(stackKey, pendingAfter);
+        } else {
+            OVERHEAT_PENDING_NUMERATOR.remove(stackKey);
+        }
+        int next = applyHeatDelta(trackedHeat, wholeDelta);
+        JustEnoughGuns.LOGGER.info("[debug/overheat] frac item={} trackedHeat={} numeratorDelta={} denominator={} pendingBefore={} wholeDelta={} pendingAfter={} next={}",
+                stack.getItem(),
+                trackedHeat,
+                numeratorDelta,
+                denominator,
+                pendingBefore,
+                wholeDelta,
+                pendingAfter,
+                next);
+        return next;
     }
 
     private static void addOverheatForShots(ItemStack stack, ResourceLocation gunId, int shotsFired, @Nullable Player shooter) {
@@ -326,11 +519,7 @@ public class GunItem extends Item {
             }
             effectiveShots = applyShots;
         }
-        int current = getTrackedHeat(stack);
-        int next = Mth.clamp(current + getHeatPerShot(gunId) * effectiveShots, 0, OVERHEAT_TRACKED_MAX);
-        if (current < OVERHEAT_MAX && next >= OVERHEAT_MAX) {
-            next = Math.max(next, OVERHEAT_MAX + OVERHEAT_RECOVERY_BUFFER);
-        }
+        int next = applyFractionalHeat(stack, getHeatNumeratorPerShot(gunId) * effectiveShots, OVERHEAT_HEAT_DENOMINATOR);
         setTrackedHeat(stack, next);
     }
 
@@ -339,14 +528,65 @@ public class GunItem extends Item {
         if (current <= 0) {
             return;
         }
-        int coolPerTick = heldInHand ? OVERHEAT_COOL_PER_TICK_HELD : OVERHEAT_COOL_PER_TICK_IDLE;
-        setTrackedHeat(stack, current - coolPerTick);
+        int numerator = heldInHand ? OVERHEAT_COOL_NUMERATOR_HELD : OVERHEAT_COOL_NUMERATOR_IDLE;
+        int stackKey = ItemStack.hashItemAndComponents(stack);
+        int scaledNumerator = OVERHEAT_COOL_NUMERATOR.getOrDefault(stackKey, 0) + numerator;
+        int cooling = scaledNumerator / OVERHEAT_COOL_DENOMINATOR;
+        int remainder = scaledNumerator % OVERHEAT_COOL_DENOMINATOR;
+        if (remainder > 0) {
+            OVERHEAT_COOL_NUMERATOR.put(stackKey, remainder);
+        } else {
+            OVERHEAT_COOL_NUMERATOR.remove(stackKey);
+        }
+        if (cooling > 0) {
+            setTrackedHeat(stack, current - cooling);
+        }
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (tryStartWaterCooling(level, player, hand)) {
+            return InteractionResultHolder.consume(stack);
+        }
+        if (isCoolant(stack)) {
+            return InteractionResultHolder.consume(stack);
+        }
         return tryShoot(level, player, hand) ? InteractionResultHolder.success(stack) : InteractionResultHolder.fail(stack);
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return isCoolant(stack) ? UseAnim.NONE : super.getUseAnimation(stack);
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+        int duration = getWaterCoolingUseDuration(stack, entity);
+        return duration > 0 ? duration : super.getUseDuration(stack, entity);
+    }
+
+    @Override
+    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseTicks) {
+        onWaterCoolingUseTick(level, livingEntity, stack, remainingUseTicks);
+        super.onUseTick(level, livingEntity, stack, remainingUseTicks);
+    }
+
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
+        return stack;
+    }
+
+    @Override
+    public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeLeft) {
+        if (isCoolant(stack)) {
+            int usedTicks = getUseDuration(stack, livingEntity) - timeLeft;
+            if (usedTicks >= getWaterCoolingUseDuration(stack, livingEntity)) {
+                return;
+            }
+        }
+        releaseWaterCooling(stack, level, livingEntity, timeLeft);
+        super.releaseUsing(stack, level, livingEntity, timeLeft);
     }
 
     public boolean tryShoot(Level level, Player player, InteractionHand hand) {
@@ -416,7 +656,16 @@ public class GunItem extends Item {
             }
 
             if (usesOverheatMechanic()) {
+                int beforeHeat = getTrackedHeat(stack);
                 addOverheatForShots(stack, stats.id(), shotsFired, player);
+                JustEnoughGuns.LOGGER.info("[debug/heat] tryShoot server gun={} hand={} shotsFired={} beforeHeat={} afterHeat={} ammoAfter={} cooldown={}",
+                        stats.id(),
+                        hand,
+                        shotsFired,
+                        beforeHeat,
+                        getTrackedHeat(stack),
+                        getAmmo(stack),
+                        Math.max(1, stats.fireDelay()));
             }
 
             if (stack.getItem() instanceof AnimatedGunItem animated) {
@@ -763,8 +1012,12 @@ public class GunItem extends Item {
         return tracked;
     }
 
-    private static boolean isShotgun(ResourceLocation gunId) {
+    public static boolean isShotgunWeapon(ResourceLocation gunId) {
         return SHOTGUN_IDS.contains(gunId.getPath());
+    }
+
+    private static boolean isShotgun(ResourceLocation gunId) {
+        return isShotgunWeapon(gunId);
     }
 
     private static boolean isHeavyBackstepWeapon(ResourceLocation gunId) {
@@ -906,11 +1159,34 @@ public class GunItem extends Item {
         if (level.isClientSide() || !usesOverheatMechanic()) {
             return;
         }
-        boolean coolingBlockedByFiring = selected
-                && entity instanceof Player playerHolder
-                && playerHolder.getCooldowns().isOnCooldown(stack.getItem());
-        if (!coolingBlockedByFiring && (!selected || (level.getGameTime() & 1L) == 0L)) {
-            coolOverheat(stack, selected);
+        if (isCoolingWithWater(stack)) {
+            int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
+            if (remainingCooling > 0) {
+                stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), remainingCooling - 1);
+            }
+            if (remainingCooling <= 1) {
+                if (entity instanceof Player playerHolder) {
+                    ItemStack coolantStack = playerHolder.getOffhandItem().is(ModItems.COOLANT.get()) || playerHolder.getOffhandItem().is(ModItems.ENHANCED_COOLANT.get()) ? playerHolder.getOffhandItem() : ItemStack.EMPTY;
+                    if (!coolantStack.isEmpty()) {
+                        finishWaterCooling(coolantStack, level, playerHolder);
+                        playerHolder.stopUsingItem();
+                    } else {
+                        clearWaterCooling(stack);
+                    }
+                } else {
+                    clearWaterCooling(stack);
+                }
+            }
+        } else {
+            boolean coolingBlockedByFiring = selected
+                    && entity instanceof Player playerHolder
+                    && playerHolder.getCooldowns().isOnCooldown(stack.getItem());
+            if (!coolingBlockedByFiring && (!selected || (level.getGameTime() & 1L) == 0L)) {
+                coolOverheat(stack, selected);
+            }
+        }
+        if (entity instanceof Player player) {
+            cancelWaterCoolingIfInvalid(player);
         }
     }
 

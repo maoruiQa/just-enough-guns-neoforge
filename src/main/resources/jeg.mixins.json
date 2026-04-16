@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "ttv.migami.jeg.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "TargetGoalMixin",
+    "GunnerSunBurnMixin",
+    "GunnerWaterConversionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

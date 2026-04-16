@@ -60,7 +60,7 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            if (RaidEntity.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
+            if (FactionRaidManager.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
                 continue;
             }
 
@@ -71,7 +71,7 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            RaidEntity.summonRaidEntity(currentLevel, faction, respawnCenter, true);
+            FactionRaidManager.startRaid(currentLevel, faction, respawnCenter, true);
             clearOmenFactionTag(player);
             player.removeEffect(ModEffects.FACTION_OMEN);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));

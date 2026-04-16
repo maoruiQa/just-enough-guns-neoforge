@@ -1,13 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "category": "misc",
-  "ingredients": [
-    "minecraft:amethyst_shard",
-    "minecraft:gunpowder",
-    "minecraft:glowstone_dust"
-  ],
-  "result": {
-    "id": "jeg:spectre_round",
-    "count": 4
-  }
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "misc",
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:amethyst_shard"
+                        },
+                        {
+                            "item":  "minecraft:gunpowder"
+                        },
+                        {
+                            "item":  "minecraft:glowstone_dust"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:spectre_round",
+                   "count":  4
+               }
 }

@@ -1,55 +1,28 @@
 package ttv.migami.jeg.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.core.particles.ParticleOptions;
-
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
 
-public class GrenadeEntity extends ThrowableItemProjectile {
-    private static final EntityDataAccessor<Integer> DATA_FUSE = SynchedEntityData.defineId(
-            GrenadeEntity.class,
-            EntityDataSerializers.INT
-    );
-    private static final int DEFAULT_FUSE = 600;
-    private static final float BOUNCE_DAMPING = 0.6F;
-    private static final float SLIDE_DAMPING = 0.7F;
-    private static final double LAUNCHED_GRAVITY = 0.015D;
+public class GrenadeEntity extends TimedThrowableItemProjectile {
     private static final double DAMAGE_RADIUS_MULTIPLIER = 2.0D;
     private static final float BALANCED_DAMAGE_FACTOR = 5.0F;
     private static final float EDGE_DAMAGE_FLOOR = 0.35F;
     private static final double FALLOFF_EXPONENT = 0.8D;
-    private static final int OWNER_COLLISION_SAFE_TICKS = 8;
-
-    @Override
-    protected double getDefaultGravity() {
-        return this.launched ? LAUNCHED_GRAVITY : super.getDefaultGravity();
-    }
 
     private float explosionPower = 3.0F;
-    private boolean launched;
 
     public GrenadeEntity(EntityType<? extends GrenadeEntity> type, Level level) {
         super(type, level);
@@ -59,99 +32,38 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     public GrenadeEntity(Level level, LivingEntity owner, float explosionPower, int fuseTicks, boolean launched) {
         this(ModEntities.GRENADE.get(), level);
         this.setOwner(owner);
-        this.entityData.set(DATA_FUSE, Math.max(5, fuseTicks));
+        this.setFuse(fuseTicks);
         this.explosionPower = explosionPower;
-        this.launched = launched;
+        this.setLaunched(launched);
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(DATA_FUSE, DEFAULT_FUSE);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        // Add flame particle trail for visual effect
-        if (this.level().isClientSide()) {
-            Vec3 motion = this.getDeltaMovement();
-            double speed = motion.length();
-            if (speed > 0.1D) {
-                // Spawn flame particles along the trajectory
-                this.level().addParticle(
-                    net.minecraft.core.particles.ParticleTypes.FLAME,
+    protected void spawnFlightParticles() {
+        Vec3 motion = this.getDeltaMovement();
+        double speed = motion.length();
+        if (speed <= 0.1D) {
+            return;
+        }
+        this.level().addParticle(
+                net.minecraft.core.particles.ParticleTypes.FLAME,
+                this.getX(),
+                this.getY() + 0.1D,
+                this.getZ(),
+                -motion.x * 0.1D,
+                -motion.y * 0.1D,
+                -motion.z * 0.1D
+        );
+        if (this.random.nextInt(2) == 0) {
+            this.level().addParticle(
+                    net.minecraft.core.particles.ParticleTypes.SMOKE,
                     this.getX(),
                     this.getY() + 0.1D,
                     this.getZ(),
-                    -motion.x * 0.1D,
-                    -motion.y * 0.1D,
-                    -motion.z * 0.1D
-                );
-                // Add smoke particles for better visibility
-                if (this.random.nextInt(2) == 0) {
-                    this.level().addParticle(
-                        net.minecraft.core.particles.ParticleTypes.SMOKE,
-                        this.getX(),
-                        this.getY() + 0.1D,
-                        this.getZ(),
-                        -motion.x * 0.05D,
-                        -motion.y * 0.05D,
-                        -motion.z * 0.05D
-                    );
-                }
-            }
+                    -motion.x * 0.05D,
+                    -motion.y * 0.05D,
+                    -motion.z * 0.05D
+            );
         }
-
-        if (!this.level().isClientSide()) {
-            int fuse = this.entityData.get(DATA_FUSE) - 1;
-            if (fuse <= 0) {
-                explode();
-            } else {
-                this.entityData.set(DATA_FUSE, fuse);
-            }
-        }
-
-        if (this.onGround()) {
-            Vec3 motion = this.getDeltaMovement();
-            this.setDeltaMovement(motion.x * SLIDE_DAMPING, motion.y * -BOUNCE_DAMPING, motion.z * SLIDE_DAMPING);
-            if (motion.lengthSqr() < 0.03D) {
-                this.setDeltaMovement(Vec3.ZERO);
-            }
-        }
-    }
-
-    @Override
-    protected void onHitBlock(BlockHitResult result) {
-        super.onHitBlock(result);
-        explode();
-    }
-
-    @Override
-    protected void onHitEntity(EntityHitResult result) {
-        super.onHitEntity(result);
-        Entity hitEntity = result.getEntity();
-        if (hitEntity == this.getOwner() && this.tickCount <= OWNER_COLLISION_SAFE_TICKS) {
-            return;
-        }
-        explode();
-    }
-
-    @Override
-    public void addAdditionalSaveData(CompoundTag output) {
-        super.addAdditionalSaveData(output);
-        output.putInt("Fuse", this.entityData.get(DATA_FUSE));
-        output.putFloat("Power", this.explosionPower);
-        output.putBoolean("Launched", this.launched);
-    }
-
-    @Override
-    public void readAdditionalSaveData(CompoundTag input) {
-        super.readAdditionalSaveData(input);
-        this.entityData.set(DATA_FUSE, Mth.clamp(input.contains("Fuse") ? input.getInt("Fuse") : DEFAULT_FUSE, 5, DEFAULT_FUSE));
-        this.explosionPower = input.contains("Power") ? input.getFloat("Power") : this.explosionPower;
-        this.launched = input.contains("Launched") ? input.getBoolean("Launched") : this.launched;
     }
 
     @Override
@@ -159,57 +71,25 @@ public class GrenadeEntity extends ThrowableItemProjectile {
         return ModItems.AMMO.get(Reference.id("grenade")).get();
     }
 
-    public void initialisePosition(Vec3 position) {
-        this.setPos(position);
-    }
-
     public void setExplosionPower(float power) {
         this.explosionPower = power;
     }
 
-    public void setLaunched(boolean launched) {
-        this.launched = launched;
+    @Override
+    protected void explode() {
+        ExplosionInteraction interaction = this.isLaunched() ? ExplosionInteraction.TNT : ExplosionInteraction.MOB;
+        float visualPower = Math.max(1.2F, this.explosionPower * 0.5F);
+        ServerLevel serverLevel = (ServerLevel) this.level();
+        serverLevel.sendParticles(ModParticleTypes.BIG_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 2, 0.2D, 0.2D, 0.2D, 0.01D);
+        serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 14, 0.8D, 0.8D, 0.8D, 0.12D);
+        serverLevel.sendParticles(ModParticleTypes.SMOKE.get(), this.getX(), this.getY(), this.getZ(), 10, 1.0D, 1.0D, 1.0D, 0.02D);
+        serverLevel.sendParticles(ModParticleTypes.FIRE.get(), this.getX(), this.getY(), this.getZ(), 8, 0.7D, 0.7D, 0.7D, 0.04D);
+        this.level().explode(this, this.getX(), this.getY(), this.getZ(), visualPower, interaction);
+        this.applyBalancedBlastDamage();
+        this.igniteNearby();
     }
-
-    private void explode() {
-        if (!this.level().isClientSide()) {
-            ExplosionInteraction interaction = this.launched ? ExplosionInteraction.TNT : ExplosionInteraction.MOB;
-            float visualPower = Math.max(1.2F, this.explosionPower * 0.5F);
-            ServerLevel serverLevel = (ServerLevel) this.level();
-            sendLongDistanceParticles(serverLevel, ModParticleTypes.BIG_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 2, 0.2D, 0.2D, 0.2D, 0.01D);
-            sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 14, 0.8D, 0.8D, 0.8D, 0.12D);
-            sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), this.getX(), this.getY(), this.getZ(), 10, 1.0D, 1.0D, 1.0D, 0.02D);
-            sendLongDistanceParticles(serverLevel, ModParticleTypes.FIRE.get(), this.getX(), this.getY(), this.getZ(), 8, 0.7D, 0.7D, 0.7D, 0.04D);
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), visualPower, interaction);
-            applyBalancedBlastDamage();
-            igniteNearby();
-        }
-        this.discard();
-    }
-
-    private static <T extends ParticleOptions> void sendLongDistanceParticles(
-            ServerLevel serverLevel,
-            T particle,
-            double x,
-            double y,
-            double z,
-            int count,
-            double xOffset,
-            double yOffset,
-            double zOffset,
-            double speed
-    ) {
-        for (ServerPlayer player : serverLevel.players()) {
-            serverLevel.sendParticles(player, particle, true, x, y, z, count, xOffset, yOffset, zOffset, speed);
-        }
-    }
-
 
     private void applyBalancedBlastDamage() {
-        if (this.level().isClientSide()) {
-            return;
-        }
-
         double radius = Math.max(2.6D, this.explosionPower * DAMAGE_RADIUS_MULTIPLIER);
         float baseDamage = this.explosionPower * BALANCED_DAMAGE_FACTOR;
         Entity owner = this.getOwner();
@@ -241,7 +121,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     }
 
     private void igniteNearby() {
-        if (this.launched) {
+        if (this.isLaunched()) {
             return;
         }
         Level level = this.level();

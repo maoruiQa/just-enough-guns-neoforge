@@ -57,7 +57,7 @@ public final class GunnerRaidSpawner {
             return 0;
         }
 
-        RaidEntity.summonRaidEntity(level, faction, randomPlayer.position(), true);
+        FactionRaidManager.startRaid(level, faction, randomPlayer.position(), true);
         return 1;
     }
 }

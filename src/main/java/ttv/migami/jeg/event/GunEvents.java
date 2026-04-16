@@ -26,7 +26,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
@@ -40,6 +39,7 @@ import ttv.migami.jeg.gun.GunStats;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
+    private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -106,21 +106,27 @@ public final class GunEvents {
     }
 
     private static void grantStartingManual(ServerPlayer player) {
-        if (player.getPersistentData().contains(MANUAL_GRANTED_TAG) && player.getPersistentData().getBoolean(MANUAL_GRANTED_TAG)) {
-            return;
+        boolean manualGranted = player.getPersistentData().contains(MANUAL_GRANTED_TAG) && player.getPersistentData().getBoolean(MANUAL_GRANTED_TAG);
+        if (!manualGranted) {
+            player.awardRecipesByKey(ModItems.manualRecipes().stream().map(ResourceKey::location).toList());
+            player.awardRecipesByKey(ModItems.unlockGunRecipeKeys().stream().map(ResourceKey::location).toList());
+
+            player.getPersistentData().putBoolean(MANUAL_GRANTED_TAG, true);
         }
 
-        player.getPersistentData().putBoolean(MANUAL_GRANTED_TAG, true);
+        boolean fingerGunGranted = player.getPersistentData().contains(FINGER_GUN_RECIPE_GRANTED_TAG) && player.getPersistentData().getBoolean(FINGER_GUN_RECIPE_GRANTED_TAG);
+        if (!fingerGunGranted) {
+            player.awardRecipesByKey(java.util.List.of(Reference.id("finger_gun")));
+            player.getPersistentData().putBoolean(FINGER_GUN_RECIPE_GRANTED_TAG, true);
+        }
     }
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
                 .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
-                .append(Component.literal("Command Console").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
+                .append(Component.literal("Commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
         Component divider = Component.literal("------------------------------")
                 .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
-        Component normalHeader = Component.literal("General Commands")
-                .withStyle(style -> style.withColor(ChatFormatting.GREEN).withBold(true));
         Component unlockLine = Component.empty()
                 .append(Component.literal("/justEnoughGuns unlockGunRecipes")
                         .withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(true)))
@@ -129,64 +135,19 @@ public final class GunEvents {
 
         player.sendSystemMessage(header);
         player.sendSystemMessage(divider);
-        player.sendSystemMessage(normalHeader);
         player.sendSystemMessage(unlockLine);
 
         if (player.hasPermissions(2)) {
-            Component opHeader = Component.empty()
-                    .append(Component.literal("OP Commands")
-                            .withStyle(style -> style.withColor(ChatFormatting.RED).withBold(true)))
-                    .append(Component.literal(" (Admin)")
-                            .withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withItalic(true)));
-            Component spawnLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns spawnPatrol")
+            Component configLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns config")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Spawn a patrol")
+                    .append(Component.literal(" - Configure patrol, mob spawn rates, and combat")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-            Component simulateLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns simulatePatrol")
-                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Simulate a patrol event")
-                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-            Component bulletLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns bulletBlockDestruction")
-                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Toggle bullet block destruction")
-                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-
-            player.sendSystemMessage(opHeader);
-            player.sendSystemMessage(spawnLine);
-            player.sendSystemMessage(simulateLine);
-            player.sendSystemMessage(bulletLine);
+            player.sendSystemMessage(configLine);
         }
         player.sendSystemMessage(divider);
     }
 
-    @SubscribeEvent
-    public static void onSwapHands(LivingSwapItemsEvent.Hands event) {
-        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide()) {
-            return;
-        }
-
-        boolean reloaded = tryReload(player.level(), player, player.getMainHandItem(), InteractionHand.MAIN_HAND);
-        reloaded |= tryReload(player.level(), player, player.getOffhandItem(), InteractionHand.OFF_HAND);
-
-        if (reloaded) {
-            event.setCanceled(true);
-        }
-    }
-
-    private static boolean tryReload(Level level, Player player, ItemStack stack, InteractionHand hand) {
-        if (!(stack.getItem() instanceof GunItem gun)) {
-            return false;
-        }
-
-        boolean reloaded = gun.tryReload(level, player, stack, true);
-        if (reloaded && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.swing(hand, true);
-        }
-        return reloaded;
-    }
 
     @SubscribeEvent
     public static void onPillagerFinalize(FinalizeSpawnEvent event) {
@@ -221,6 +182,7 @@ public final class GunEvents {
         ItemStack stack = new ItemStack(holder.get());
         pillager.setItemInHand(InteractionHand.MAIN_HAND, stack);
         pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+        pillager.setCanPickUpLoot(false);
         // Pillagers use the default crossbow AI which works reasonably well for guns
     }
 

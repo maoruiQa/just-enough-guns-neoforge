@@ -1,17 +1,21 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "BRB",
-    " R ",
-    "  B"
-  ],
-  "key": {
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block"
-  },
-  "result": {
-    "id": "jeg:service_rifle",
-    "count": 1
-  }
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "BRB",
+                    " R ",
+                    "  B"
+                ],
+    "key":  {
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:service_rifle",
+                   "count":  1
+               }
 }

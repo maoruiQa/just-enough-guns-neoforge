@@ -1,19 +1,27 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "III",
-    "FRR",
-    "  L"
-  ],
-  "key": {
-    "I": "minecraft:iron_ingot",
-    "F": "minecraft:flint",
-    "R": "minecraft:redstone",
-    "L": "#minecraft:logs"
-  },
-  "result": {
-    "id": "jeg:semi_auto_pistol",
-    "count": 1
-  }
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "III",
+                    "FRR",
+                    "  L"
+                ],
+    "key":  {
+                "I":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "F":  {
+                          "item":  "minecraft:flint"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone"
+                      },
+                "L":  {
+                          "tag":  "minecraft:logs"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:semi_auto_pistol",
+                   "count":  1
+               }
 }
