@@ -161,13 +161,17 @@ public final class GunEvents {
         }
 
         double conversionChance = Config.pillagerGunnerChance();
-        if (conversionChance <= 0.0D || serverLevel.random.nextDouble() >= conversionChance) {
+
+        // Replaced serverLevel.random with pillager.getRandom()
+        if (conversionChance <= 0.0D || pillager.getRandom().nextDouble() >= conversionChance) {
             return;
         }
 
         // Since GunnerEntity was removed, we just tag the pillager instead
         pillager.addTag("jeg_pillager_gunner");
-        ResourceLocation selected = selectRandomGun(serverLevel.random);
+
+        // Replaced serverLevel.random with pillager.getRandom()
+        ResourceLocation selected = selectRandomGun(pillager.getRandom());
         if (selected != null) {
             equipPillagerWithGun(pillager, selected);
         }
@@ -199,7 +203,7 @@ public final class GunEvents {
 
         if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.NATURAL) {
             double terrorChance = Config.terrorPhantomChance();
-            if (terrorChance > 0.0D && serverLevel.random.nextDouble() < terrorChance) {
+            if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
                 TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
                 if (terror != null) {
                     terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
@@ -214,7 +218,7 @@ public final class GunEvents {
             }
 
             double gunnerChance = Config.phantomGunnerChance();
-            if (gunnerChance <= 0.0D || serverLevel.random.nextDouble() >= gunnerChance) {
+            if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
                 return;
             }
         } else {

@@ -169,7 +169,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
                     0.6D,
                     0.01D
                 );
-                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 0.8F + serverLevel.random.nextFloat() * 0.2F);
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 0.8F + this.random.nextFloat() * 0.2F);
                 serverLevel.explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
             }
         }
