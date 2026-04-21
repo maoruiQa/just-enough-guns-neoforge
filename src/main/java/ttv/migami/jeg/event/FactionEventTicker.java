@@ -15,6 +15,10 @@ public final class FactionEventTicker {
 
     private FactionEventTicker() {}
 
+    public static void reschedulePatrolSpawner() {
+        PATROL_SPAWNER.reschedule();
+    }
+
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         ServerLevel overworld = event.getServer().overworld();
@@ -27,6 +31,7 @@ public final class FactionEventTicker {
             PatrolEncounterManager.tickAll(event.getServer());
             HomeRaidTriggerManager.tick(event.getServer());
         }
+
+        MainThreadLevelActionScheduler.tick(event.getServer());
     }
 }
-
