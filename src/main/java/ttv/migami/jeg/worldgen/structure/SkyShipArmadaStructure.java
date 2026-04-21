@@ -62,6 +62,7 @@ import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.util.LootUtils;
 import net.minecraft.world.level.storage.loot.LootTable;
 import ttv.migami.jeg.JustEnoughGuns;
+import ttv.migami.jeg.event.MainThreadLevelActionScheduler;
 
 public class SkyShipArmadaStructure extends Structure {
     public static final MapCodec<SkyShipArmadaStructure> CODEC = simpleCodec(SkyShipArmadaStructure::new);
@@ -318,13 +319,9 @@ public class SkyShipArmadaStructure extends Structure {
             }
 
             if (level.getLevel() instanceof ServerLevel serverLevel) {
-                var server = serverLevel.getServer();
-                if (server == null) {
-                    return;
-                }
                 BlockPos targetPos = pos.immutable();
                 long spawnSeed = random.nextLong();
-                server.execute(() -> configureGunnerSpawner(serverLevel, targetPos, spawnSeed));
+                MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> configureGunnerSpawner(serverLevel, targetPos, spawnSeed));
             }
         }
 
@@ -352,6 +349,72 @@ public class SkyShipArmadaStructure extends Structure {
 
             RandomSource spawnRandom = RandomSource.create(spawnSeed ^ 0x5deece66dL);
             spawnImmediateGunner(serverLevel, pos, spawnRandom);
+        }
+
+        private void scheduleDamagedElytraFrame(ServerLevel serverLevel, BlockPos marker, Direction facing) {
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> spawnDamagedElytraFrame(serverLevel, marker, facing));
+        }
+
+        private void spawnDamagedElytraFrame(ServerLevel serverLevel, BlockPos marker, Direction facing) {
+            if (!serverLevel.hasChunkAt(marker)) {
+                return;
+            }
+            if (!serverLevel.getEntitiesOfClass(ItemFrame.class, new AABB(marker)).isEmpty()) {
+                JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} already occupied by frame", marker);
+                return;
+            }
+            ItemFrame frame = new ItemFrame(serverLevel, marker, facing);
+            ItemStack stack = new ItemStack(Items.ELYTRA);
+            int maxDamage = stack.getMaxDamage();
+            stack.setDamageValue(maxDamage);
+            frame.setItem(stack, false);
+            serverLevel.addFreshEntity(frame);
+            JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Spawned broken Elytra frame at {}", marker);
+        }
+
+        private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> spawnGuardian(serverLevel, anchorBase, spawnSeed));
+        }
+
+        private void spawnGuardian(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
+            if (!serverLevel.hasChunkAt(anchorBase)) {
+                return;
+            }
+            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
+                return;
+            }
+            TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel, EntitySpawnReason.EVENT);
+            if (guardian == null) {
+                return;
+            }
+            int deckHeight = findDeckHeight(serverLevel, anchorBase);
+            BlockPos deckAnchor = new BlockPos(anchorBase.getX(), deckHeight, anchorBase.getZ());
+            BlockPos spawnAbove = deckAnchor.above(14);
+            RandomSource spawnRandom = RandomSource.create(spawnSeed);
+            guardian.setPos(spawnAbove.getX() + 0.5D, spawnAbove.getY(), spawnAbove.getZ() + 0.5D);
+            guardian.setYRot(spawnRandom.nextFloat() * 360.0F);
+            guardian.setXRot(0.0F);
+            guardian.yRotO = guardian.getYRot();
+            guardian.xRotO = guardian.getXRot();
+            DifficultyInstance difficulty = new DifficultyInstance(serverLevel.getDifficulty(), serverLevel.getOverworldClockTime(), 0L, serverLevel.getMoonBrightness(spawnAbove));
+            guardian.finalizeSpawn(serverLevel, difficulty, EntitySpawnReason.EVENT, null);
+            guardian.initialiseDeckAnchor(deckAnchor, GUARDIAN_TETHER_RADIUS);
+            serverLevel.addFreshEntity(guardian);
+        }
+
+        private int findDeckHeight(ServerLevel serverLevel, BlockPos base) {
+            MutableBlockPos cursor = new MutableBlockPos();
+            int minY = serverLevel.dimensionType().minY();
+            int top = Math.min(minY + serverLevel.dimensionType().logicalHeight() - 1, base.getY() + 48);
+            int bottom = Math.max(minY, base.getY() - 48);
+            for (int y = top; y >= bottom; y--) {
+                cursor.set(base.getX(), y, base.getZ());
+                BlockState state = serverLevel.getBlockState(cursor);
+                if (!state.isAir() && !state.getCollisionShape(serverLevel, cursor).isEmpty()) {
+                    return y;
+                }
+            }
+            return base.getY();
         }
 
         private boolean isInteriorSpawnerPosition(ServerLevelAccessor level, BlockPos pos) {
@@ -419,17 +482,7 @@ public class SkyShipArmadaStructure extends Structure {
                 if (remove) {
                     continue;
                 }
-                if (!serverLevel.getEntitiesOfClass(ItemFrame.class, new AABB(marker)).isEmpty()) {
-                    JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} already occupied by frame", marker);
-                    continue;
-                }
-                ItemFrame frame = new ItemFrame(serverLevel, marker, facing);
-                ItemStack stack = new ItemStack(Items.ELYTRA);
-                int maxDamage = stack.getMaxDamage();
-                stack.setDamageValue(maxDamage);
-                frame.setItem(stack, false);
-                serverLevel.addFreshEntity(frame);
-                JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Spawned broken Elytra frame at {}", marker);
+                scheduleDamagedElytraFrame(serverLevel, marker.immutable(), facing);
             }
             this.elytraMarkers.clear();
         }
@@ -502,41 +555,57 @@ public class SkyShipArmadaStructure extends Structure {
         @Override
         public void postProcess(WorldGenLevel level, StructureManager manager, ChunkGenerator generator, RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pivot) {
             ServerLevel serverLevel = level.getLevel();
-            BlockPos anchorBase = this.spawnPos;
-            if (serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
-                TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel, EntitySpawnReason.EVENT);
-                if (guardian != null) {
-                    int deckHeight = findDeckHeight(level, serverLevel, anchorBase);
-                    BlockPos deckAnchor = new BlockPos(anchorBase.getX(), deckHeight, anchorBase.getZ());
-                    BlockPos spawnAbove = deckAnchor.above(14);
-                    guardian.setPos(spawnAbove.getX() + 0.5D, spawnAbove.getY(), spawnAbove.getZ() + 0.5D);
-                    guardian.setYRot(random.nextFloat() * 360.0F);
-                    guardian.setXRot(0.0F);
-                    guardian.yRotO = guardian.getYRot();
-                    guardian.xRotO = guardian.getXRot();
-                    // Use a fixed difficulty to avoid chunk loading during worldgen (causes deadlock)
-                    // DifficultyInstance params: difficulty, dayTime, chunkInhabitedTime, moonBrightness
-                    DifficultyInstance difficulty = new DifficultyInstance(serverLevel.getDifficulty(), serverLevel.getDayTime(), 0L, serverLevel.getMoonBrightness(spawnAbove));
-                    guardian.finalizeSpawn(serverLevel, difficulty, EntitySpawnReason.EVENT, null);
-                    guardian.initialiseDeckAnchor(deckAnchor, GUARDIAN_TETHER_RADIUS);
-                    serverLevel.addFreshEntity(guardian);
-                }
-            }
+            BlockPos anchorBase = this.spawnPos.immutable();
+            scheduleGuardianSpawn(serverLevel, anchorBase, positionSeed(anchorBase, random.nextLong()));
         }
 
-        private int findDeckHeight(WorldGenLevel level, ServerLevel serverLevel, BlockPos base) {
+        private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> spawnGuardian(serverLevel, anchorBase, spawnSeed));
+        }
+
+        private void spawnGuardian(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
+            if (!serverLevel.hasChunkAt(anchorBase)) {
+                return;
+            }
+            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
+                return;
+            }
+            TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel, EntitySpawnReason.EVENT);
+            if (guardian == null) {
+                return;
+            }
+            int deckHeight = findDeckHeight(serverLevel, anchorBase);
+            BlockPos deckAnchor = new BlockPos(anchorBase.getX(), deckHeight, anchorBase.getZ());
+            BlockPos spawnAbove = deckAnchor.above(14);
+            RandomSource spawnRandom = RandomSource.create(spawnSeed);
+            guardian.setPos(spawnAbove.getX() + 0.5D, spawnAbove.getY(), spawnAbove.getZ() + 0.5D);
+            guardian.setYRot(spawnRandom.nextFloat() * 360.0F);
+            guardian.setXRot(0.0F);
+            guardian.yRotO = guardian.getYRot();
+            guardian.xRotO = guardian.getXRot();
+            DifficultyInstance difficulty = new DifficultyInstance(serverLevel.getDifficulty(), serverLevel.getOverworldClockTime(), 0L, serverLevel.getMoonBrightness(spawnAbove));
+            guardian.finalizeSpawn(serverLevel, difficulty, EntitySpawnReason.EVENT, null);
+            guardian.initialiseDeckAnchor(deckAnchor, GUARDIAN_TETHER_RADIUS);
+            serverLevel.addFreshEntity(guardian);
+        }
+
+        private int findDeckHeight(ServerLevel serverLevel, BlockPos base) {
             MutableBlockPos cursor = new MutableBlockPos();
             int minY = serverLevel.dimensionType().minY();
             int top = Math.min(minY + serverLevel.dimensionType().logicalHeight() - 1, base.getY() + 48);
             int bottom = Math.max(minY, base.getY() - 48);
             for (int y = top; y >= bottom; y--) {
                 cursor.set(base.getX(), y, base.getZ());
-                BlockState state = level.getBlockState(cursor);
-                if (!state.isAir() && !state.getCollisionShape(level, cursor).isEmpty()) {
+                BlockState state = serverLevel.getBlockState(cursor);
+                if (!state.isAir() && !state.getCollisionShape(serverLevel, cursor).isEmpty()) {
                     return y;
                 }
             }
             return base.getY();
+        }
+
+        private static long positionSeed(BlockPos pos, long extraSeed) {
+            return (pos.asLong() ^ 0x9e3779b97f4a7c15L) ^ extraSeed;
         }
     }
 }
