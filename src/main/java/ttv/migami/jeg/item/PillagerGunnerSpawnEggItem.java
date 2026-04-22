@@ -15,6 +15,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.init.ModItems;
 
 /**
@@ -35,6 +36,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
         if (mob instanceof Pillager pillager) {
             // Add special tag to identify as pillager gunner (for reduced spread)
             pillager.addTag("jeg_pillager_gunner");
+            GunnerMobSpawner.normalizeGunnerMob(pillager);
 
             // Equip with a random gun from pillager gun pool
             equipPillagerWithGun(pillager, random);
@@ -72,6 +74,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
             ItemStack gunStack = new ItemStack(holder.get());
             pillager.setItemInHand(InteractionHand.MAIN_HAND, gunStack);
             pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+            pillager.setCanPickUpLoot(false);
         }
     }
 }

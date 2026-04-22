@@ -67,6 +67,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.faction.GroupedGunnerRecovery;
 import ttv.migami.jeg.util.LootUtils;
 
 /**
@@ -91,6 +92,12 @@ final class TerrorRaidManager {
     private static final int UNREACHABLE_REPATH_TICKS = 3;
     private static final int UNREACHABLE_RELOCATE_TICKS = 8;
     private static final int UNREACHABLE_CLEANUP_TICKS = 24;
+    private static final int STATIONARY_STUCK_TICKS = 120;
+    private static final int SPIN_STUCK_TICKS = 120;
+    private static final int DISTANCE_STALL_TICKS = 120;
+    private static final double STATIONARY_MOVEMENT_THRESHOLD_SQ = 0.25D;
+    private static final float SPIN_STUCK_YAW_DELTA_DEGREES = 35.0F;
+    private static final double DISTANCE_STALL_THRESHOLD = 1.5D;
     private static final int MAX_GROUND_SAMPLE_ATTEMPTS = 12;
     private static final double RAID_NAVIGATION_SPEED = 1.2D;
     private static final Map<ServerLevel, List<RaidContext>> ACTIVE_RAIDS = new HashMap<>();
@@ -664,31 +671,105 @@ final class TerrorRaidManager {
             return false;
         }
 
-        double distanceSq = mob.distanceToSqr(preferred);
-        boolean farFromTarget = distanceSq > 24.0D * 24.0D;
-        boolean navDone = pathfinderMob.getNavigation().isDone();
-        boolean noLineOfSight = !mob.hasLineOfSight(preferred);
-        boolean stuck = farFromTarget && (navDone || noLineOfSight);
+        int stationaryTicks = updateStationaryTicks(raid, mobId, mob);
+        int spinTicks = updateSpinTicks(raid, mobId, mob);
+        int distanceStallTicks = updateDistanceStallTicks(raid, mobId, mob, preferred);
+        int stuckSeverity = Math.max(stationaryTicks, Math.max(spinTicks, distanceStallTicks));
+        if (stuckSeverity < 60) {
+            return false;
+        }
+        if (stuckSeverity < STATIONARY_STUCK_TICKS) {
+            forceRepath(pathfinderMob, preferred);
+            return false;
+        }
 
-        if (!stuck) {
+        int eligibleCount = Math.min(3, countEligibleRecoveryMobs(raid, level, preferred));
+        boolean recovered;
+        if (raid.airRaid) {
+            Vec3 relocate = sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), 4, 8, 6, 10);
+            recovered = GroupedGunnerRecovery.tryRecoverAirMob(level, "terror-raid:" + raid.raidId, pathfinderMob, preferred, relocate, eligibleCount);
+        } else {
+            recovered = GroupedGunnerRecovery.tryRecoverGroundMob(
+                    level,
+                    "terror-raid:" + raid.raidId,
+                    raid.origin,
+                    pathfinderMob,
+                    (net.minecraft.server.level.ServerPlayer) preferred,
+                    4,
+                    8,
+                    4,
+                    10,
+                    12,
+                    eligibleCount
+            );
+        }
+        if (recovered) {
+            raid.incrementRelocationCount(mobId);
             raid.clearMobTracking(mobId);
             return false;
         }
 
-        int stuckTicks = raid.incrementUnreachableTicks(mobId);
-        if (stuckTicks % UNREACHABLE_REPATH_TICKS == 0) {
-            forceRepath(pathfinderMob, preferred);
-        }
-        if (stuckTicks % UNREACHABLE_RELOCATE_TICKS == 0) {
-            relocateRaidMob(level, raid, pathfinderMob, preferred);
-            raid.incrementRelocationCount(mobId);
-        }
-
-        if (stuckTicks >= UNREACHABLE_CLEANUP_TICKS || raid.getRelocationCount(mobId) >= 3) {
-            mob.discard();
-            return true;
-        }
+        forceRepath(pathfinderMob, preferred);
         return false;
+    }
+
+    private static int updateStationaryTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob) {
+        Vec3 currentPos = mob.position();
+        Vec3 lastPos = raid.lastPositions.put(mobId, currentPos);
+        if (lastPos == null || lastPos.distanceToSqr(currentPos) >= STATIONARY_MOVEMENT_THRESHOLD_SQ) {
+            raid.stationaryTicks.remove(mobId);
+            return 0;
+        }
+        return raid.stationaryTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int updateSpinTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob) {
+        float currentYaw = mob.getYRot();
+        Float lastYaw = raid.lastYaws.put(mobId, currentYaw);
+        if (lastYaw == null) {
+            raid.spinTicks.remove(mobId);
+            return 0;
+        }
+        float delta = Math.abs(Mth.wrapDegrees(currentYaw - lastYaw));
+        if (delta < SPIN_STUCK_YAW_DELTA_DEGREES) {
+            raid.spinTicks.remove(mobId);
+            return 0;
+        }
+        return raid.spinTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int updateDistanceStallTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob, Player preferred) {
+        double distanceSq = mob.distanceToSqr(preferred);
+        Double lastDistanceSq = raid.lastTargetDistanceSq.put(mobId, distanceSq);
+        if (lastDistanceSq == null || lastDistanceSq - distanceSq > DISTANCE_STALL_THRESHOLD) {
+            raid.distanceStallTicks.remove(mobId);
+            return 0;
+        }
+        return raid.distanceStallTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int countEligibleRecoveryMobs(RaidContext raid, ServerLevel level, Player preferred) {
+        int eligible = 0;
+        for (UUID id : raid.activeMobIds) {
+            var entity = level.getEntity(id);
+            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !(mob instanceof PathfinderMob)) {
+                continue;
+            }
+            if (preferred.hasLineOfSight(mob)) {
+                continue;
+            }
+            int severity = Math.max(
+                    raid.stationaryTicks.getOrDefault(id, 0),
+                    Math.max(raid.spinTicks.getOrDefault(id, 0), raid.distanceStallTicks.getOrDefault(id, 0))
+            );
+            if (severity >= STATIONARY_STUCK_TICKS) {
+                eligible++;
+                if (eligible >= 3) {
+                    return eligible;
+                }
+            }
+        }
+        return eligible;
     }
 
     private static void forceRepath(PathfinderMob mob, Player preferred) {
@@ -767,6 +848,12 @@ final class TerrorRaidManager {
         private final Set<UUID> activeMobIds = new HashSet<>();
         private final Map<UUID, Integer> unreachableTicks = new HashMap<>();
         private final Map<UUID, Integer> relocationCounts = new HashMap<>();
+        private final Map<UUID, Vec3> lastPositions = new HashMap<>();
+        private final Map<UUID, Integer> stationaryTicks = new HashMap<>();
+        private final Map<UUID, Float> lastYaws = new HashMap<>();
+        private final Map<UUID, Integer> spinTicks = new HashMap<>();
+        private final Map<UUID, Double> lastTargetDistanceSq = new HashMap<>();
+        private final Map<UUID, Integer> distanceStallTicks = new HashMap<>();
         private final ServerBossEvent bossBar;
         private int spawnedTotal;
         private int wavesSpawned;
@@ -849,6 +936,12 @@ final class TerrorRaidManager {
         private void clearMobTracking(UUID mobId) {
             this.unreachableTicks.remove(mobId);
             this.relocationCounts.remove(mobId);
+            this.lastPositions.remove(mobId);
+            this.stationaryTicks.remove(mobId);
+            this.lastYaws.remove(mobId);
+            this.spinTicks.remove(mobId);
+            this.lastTargetDistanceSq.remove(mobId);
+            this.distanceStallTicks.remove(mobId);
         }
     }
 

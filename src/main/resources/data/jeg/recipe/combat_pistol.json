@@ -2,14 +2,26 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRG",
-    " R ",
-    "  B"
+    "IIR",
+    "DFD",
+    "S  "
   ],
   "key": {
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone",
-    "G": "minecraft:gold_ingot"
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "F": {
+      "item": "minecraft:flint"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
   },
   "result": {
     "id": "jeg:combat_pistol",

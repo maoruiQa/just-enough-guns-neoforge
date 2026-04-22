@@ -1,18 +1,27 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "EBR",
-    " RB",
-    "  E"
-  ],
-  "key": {
-    "E": "minecraft:echo_shard",
-    "B": "minecraft:iron_block",
-    "R": "minecraft:redstone_block"
-  },
-  "result": {
-    "id": "jeg:supersonic_shotgun",
-    "count": 1
-  }
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "EBR",
+                    "XRB",
+                    "  E"
+                ],
+    "key":  {
+                "E":  {
+                          "item":  "minecraft:echo_shard"
+                      },
+                "X":  {
+                          "item":  "minecraft:diamond"
+                      },
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "R":  {
+                          "item":  "minecraft:redstone_block"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:supersonic_shotgun",
+                   "count":  1
+               }
 }

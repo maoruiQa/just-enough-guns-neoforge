@@ -18,6 +18,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -32,11 +33,14 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.NetworkHandler;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -45,12 +49,19 @@ public final class GunClientEvents {
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final int OVERHEAT_BAR_WIDTH = 82;
     private static final int OVERHEAT_BAR_HEIGHT = 4;
+    private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
+    private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
+    private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
     private static int hudTicker;
+    private static String currentHudText = "";
     private static String lastHudText = "";
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
+    private static boolean swapOffhandHeldLastTick;
+    private static int offhandFullPromptTicks;
     private static long nextVisualShotTickMain;
     private static final java.util.Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new java.util.concurrent.ConcurrentHashMap<>();
+    private static StunRingingSound stunRingingSound;
 
     private GunClientEvents() {}
 
@@ -95,15 +106,22 @@ public final class GunClientEvents {
             return;
         }
 
+        ItemStack held = player.getItemInHand(event.getHand());
         ItemStack heldMain = player.getMainHandItem();
+        if (event.isUseItem() && GunItem.tryStartWaterCooling(player.level(), player, event.getHand())) {
+            player.startUsingItem(event.getHand());
+            return;
+        }
         if (!(heldMain.getItem() instanceof GunItem)) {
             return;
         }
 
         if (event.isUseItem()) {
             // Right click is reserved for aiming (ADS), not firing.
-            event.setCanceled(true);
-            event.setSwingHand(false);
+            if (!held.is(Items.POTION)) {
+                event.setCanceled(true);
+                event.setSwingHand(false);
+            }
         }
 
         if (event.isAttack()) {
@@ -111,6 +129,25 @@ public final class GunClientEvents {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientTickPre(ClientTickEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        boolean swapDown = minecraft.options.keySwapOffhand.isDown();
+        if (player == null || minecraft.level == null) {
+            swapOffhandHeldLastTick = swapDown;
+            return;
+        }
+
+        if (swapDown && !swapOffhandHeldLastTick && shouldInterceptOffhandSwap(player)) {
+            while (minecraft.options.keySwapOffhand.consumeClick()) {
+                NetworkHandler.sendUnloadMagazine();
+            }
+        }
+
+        swapOffhandHeldLastTick = swapDown;
     }
 
     @SubscribeEvent
@@ -125,12 +162,44 @@ public final class GunClientEvents {
             return;
         }
 
+        renderBlindOverlay(event.getGuiGraphics(), player);
+
         ItemStack held = player.getMainHandItem();
+        Component promptText = null;
+        int promptColor = 0xFFFFFFFF;
+        if (held.getItem() instanceof MagazineItem magazine) {
+            if (offhandFullPromptTicks > 0) {
+                promptText = OFFHAND_FULL_PROMPT;
+                promptColor = 0xFFFF5555;
+            } else if (magazine.canShowUnloadPrompt(held, player.getOffhandItem())) {
+                promptText = MAGAZINE_UNLOAD_PROMPT;
+            } else {
+                promptText = magazine.getLoadPromptMessage(held, player.getOffhandItem());
+                if (promptText != null) {
+                    promptColor = 0xFFFF5555;
+                }
+            }
+        }
+
         if (held.getItem() instanceof GunItem gun && gun.usesOverheatMechanic()) {
             int heatPercent = gun.getOverheatPercent(held);
             if (heatPercent > 0) {
                 renderOverheatBar(event.getGuiGraphics(), heatPercent);
             }
+            if (gun.shouldShowWaterCoolingPrompt(held)) {
+                promptText = Component.translatable("jeg.water_cooling.prompt");
+            }
+        }
+
+        ItemStack offhand = player.getOffhandItem();
+        if (GunItem.canWaterCool(held) && GunItem.isCoolingWithWater(held)) {
+            renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(held));
+        } else if (GunItem.canWaterCool(offhand) && GunItem.isCoolingWithWater(offhand)) {
+            renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(offhand));
+        }
+
+        if (promptText != null) {
+            renderCenteredOverlayPrompt(event.getGuiGraphics(), promptText, promptColor);
         }
 
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
@@ -146,19 +215,26 @@ public final class GunClientEvents {
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
         }
         tickMuzzleFlashState();
+        if (offhandFullPromptTicks > 0) {
+            offhandFullPromptTicks--;
+        }
 
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null) {
             hudTicker = 0;
+            currentHudText = "";
             lastHudText = "";
             attackHeldLastTick = false;
             aimingStateLastSent = false;
+            swapOffhandHeldLastTick = false;
+            offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             return;
         }
 
         AimingHandler.get().tick(player);
+        tickThrowableEffectAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -206,6 +282,8 @@ public final class GunClientEvents {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             } else if (heldOff.getItem() instanceof GunItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.OFF_HAND);
+            } else if (heldMain.getItem() instanceof MagazineItem) {
+                NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
 
@@ -214,16 +292,21 @@ public final class GunClientEvents {
             return;
         }
 
-        ItemStack held = heldMain;
-        if (!(held.getItem() instanceof GunItem gun)) {
-            lastHudText = "";
-            return;
+        if (heldMain.getItem() instanceof GunItem gun) {
+            currentHudText = buildAmmoHudText(player, heldMain, gun);
+        } else if (heldMain.getItem() instanceof MagazineItem magazine) {
+            currentHudText = buildMagazineHudText(heldMain, magazine);
+        } else if (heldOff.getItem() instanceof MagazineItem magazine) {
+            currentHudText = buildMagazineHudText(heldOff, magazine);
+        } else {
+            currentHudText = "";
         }
 
-        String hudText = buildAmmoHudText(player, held, gun);
-        if (!hudText.isEmpty() && (!hudText.equals(lastHudText) || hudTicker % 20 == 0)) {
-            player.displayClientMessage(Component.literal(hudText), true);
-            lastHudText = hudText;
+        if (!currentHudText.isEmpty() && (!currentHudText.equals(lastHudText) || hudTicker % 20 == 0)) {
+            minecraft.gui.setOverlayMessage(Component.literal(currentHudText), false);
+            lastHudText = currentHudText;
+        } else if (currentHudText.isEmpty()) {
+            lastHudText = "";
         }
     }
 
@@ -249,16 +332,33 @@ public final class GunClientEvents {
 
     private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
         GunStats stats = gun.getStats();
+        if (gun.usesMagazineSwapReload()) {
+            GunItem.MagazineInventorySummary summary = gun.getMagazineInventorySummary(player);
+            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize()
+                    + " | Mags " + summary.loadedMagazineCount() + "+" + summary.emptyMagazineCount();
+        }
+        if (gun.usesLoadedAmmo()) {
+            int reserve = gun.countInventoryAmmo(player);
+            boolean infinite = reserve == Integer.MAX_VALUE;
+            String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
+            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize() + " | Reserve " + reserveText;
+        }
         int reserve = gun.countInventoryAmmo(player);
         boolean infinite = reserve == Integer.MAX_VALUE;
         String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
-
-        if (stats.usesMagazine()) {
-            int magazine = gun.getMagazineAmmo(stack);
-            return "Ammo " + magazine + "/" + stats.magazineSize() + " | Reserve " + reserveText;
-        }
-
         return "Ammo " + reserveText;
+    }
+
+    private static String buildMagazineHudText(ItemStack stack, MagazineItem magazine) {
+        return "Ammo " + magazine.getAmmoCount(stack) + "/" + magazine.getCapacity();
+    }
+
+    private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
+        ItemStack heldMain = player.getMainHandItem();
+        if (!(heldMain.getItem() instanceof MagazineItem magazine)) {
+            return false;
+        }
+        return magazine.canShowUnloadPrompt(heldMain, player.getOffhandItem());
     }
 
     @SubscribeEvent
@@ -272,7 +372,12 @@ public final class GunClientEvents {
         MUZZLE_FLASHES.clear();
         attackHeldLastTick = false;
         aimingStateLastSent = false;
+        swapOffhandHeldLastTick = false;
+        offhandFullPromptTicks = 0;
         nextVisualShotTickMain = 0L;
+        currentHudText = "";
+        lastHudText = "";
+        stunRingingSound = null;
     }
 
     private static void flushRenderQueue() {
@@ -337,8 +442,7 @@ public final class GunClientEvents {
         if (player.getAbilities().instabuild) {
             return true;
         }
-        GunStats stats = gun.getStats();
-        if (stats.isInventoryFed() || !stats.usesMagazine()) {
+        if (gun.isInventoryFedGun()) {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
@@ -482,6 +586,28 @@ public final class GunClientEvents {
         }
     }
 
+    private static void renderCenteredOverlayPrompt(net.minecraft.client.gui.GuiGraphics guiGraphics, Component text, int color) {
+        Minecraft minecraft = Minecraft.getInstance();
+        int x = (guiGraphics.guiWidth() - minecraft.font.width(text)) / 2;
+        int y = guiGraphics.guiHeight() - 88;
+        guiGraphics.fill(x - 2, y - 2, x + minecraft.font.width(text) + 2, y + minecraft.font.lineHeight + 2, 0x66000000);
+        guiGraphics.drawString(minecraft.font, text, x, y, color);
+    }
+
+    private static void renderWaterCoolingBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int progressPercent) {
+        float ratio = Mth.clamp(progressPercent / 100.0F, 0.0F, 1.0F);
+        int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
+        int y = guiGraphics.guiHeight() - 72;
+        int filled = Math.max(0, Mth.ceil(OVERHEAT_BAR_WIDTH * ratio));
+
+        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
+        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
+
+        if (filled > 0) {
+            guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, coolingColor(ratio));
+        }
+    }
+
     private static int overheatColor(float ratio) {
         float clamped = Mth.clamp(ratio, 0.0F, 1.0F);
         int red;
@@ -499,8 +625,46 @@ public final class GunClientEvents {
         return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
+    private static int coolingColor(float ratio) {
+        float clamped = Mth.clamp(ratio, 0.0F, 1.0F);
+        int red = Mth.floor(255.0F * (1.0F - clamped));
+        int green = Mth.floor(255.0F * clamped);
+        int blue = 32;
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
+    }
+
+    private static void tickThrowableEffectAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean deafened = player.hasEffect(ModEffects.DEAFENED);
+        if (!deafened) {
+            stunRingingSound = null;
+            return;
+        }
+
+        if (stunRingingSound == null || !minecraft.getSoundManager().isActive(stunRingingSound)) {
+            stunRingingSound = new StunRingingSound();
+            minecraft.getSoundManager().play(stunRingingSound);
+        }
+    }
+
+    private static void renderBlindOverlay(net.minecraft.client.gui.GuiGraphics guiGraphics, LocalPlayer player) {
+        var effect = player.getEffect(ModEffects.BLINDED);
+        if (effect == null) {
+            return;
+        }
+
+        float strength = Math.min(1.0F, effect.getDuration() / 40.0F);
+        int alpha = Mth.clamp((int) (strength * 210.0F), 32, 210);
+        int color = (alpha << 24) | 0x00FFFFFF;
+        guiGraphics.fill(0, 0, guiGraphics.guiWidth(), guiGraphics.guiHeight(), color);
+    }
+
     private static boolean isCrosshairLayer(RenderGuiLayerEvent event) {
         return event.getName() != null && "crosshair".equals(event.getName().getPath());
+    }
+
+    public static void showOffhandFullPrompt() {
+        offhandFullPromptTicks = OFFHAND_FULL_PROMPT_TICKS;
     }
 
 }

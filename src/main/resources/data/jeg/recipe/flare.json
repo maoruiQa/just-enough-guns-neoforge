@@ -1,13 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "category": "misc",
-  "ingredients": [
-    "minecraft:glowstone_dust",
-    "minecraft:paper",
-    "minecraft:redstone"
-  ],
-  "result": {
-    "id": "jeg:flare",
-    "count": 4
-  }
+    "type":  "minecraft:crafting_shapeless",
+    "category":  "misc",
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:glowstone_dust"
+                        },
+                        {
+                            "item":  "minecraft:paper"
+                        },
+                        {
+                            "item":  "minecraft:redstone"
+                        }
+                    ],
+    "result":  {
+                   "id":  "jeg:flare",
+                   "count":  4
+               }
 }
