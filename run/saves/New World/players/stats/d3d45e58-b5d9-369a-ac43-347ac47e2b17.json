@@ -1,0 +1,34 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:bone": 2,
+      "minecraft:arrow": 2
+    },
+    "minecraft:mined": {
+      "minecraft:short_grass": 2
+    },
+    "minecraft:used": {
+      "jeg:service_rifle": 200,
+      "jeg:light_machine_gun": 169
+    },
+    "minecraft:killed": {
+      "minecraft:horse": 1,
+      "minecraft:skeleton": 1,
+      "minecraft:pig": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 8204,
+      "minecraft:time_since_rest": 2200,
+      "minecraft:fall_one_cm": 450,
+      "minecraft:walk_one_cm": 2616,
+      "minecraft:total_world_time": 2211,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 19093,
+      "minecraft:mob_kills": 3,
+      "minecraft:play_time": 2200,
+      "minecraft:jump": 20,
+      "minecraft:time_since_death": 2200
+    }
+  },
+  "DataVersion": 4786
+}

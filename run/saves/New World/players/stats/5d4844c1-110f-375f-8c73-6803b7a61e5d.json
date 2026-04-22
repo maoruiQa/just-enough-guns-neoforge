@@ -1,0 +1,29 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 788,
+      "minecraft:time_since_rest": 1958,
+      "minecraft:walk_one_cm": 7939,
+      "minecraft:total_world_time": 1958,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 33,
+      "minecraft:mob_kills": 4,
+      "minecraft:crouch_one_cm": 6,
+      "minecraft:sneak_time": 4,
+      "minecraft:play_time": 1958,
+      "minecraft:jump": 17,
+      "minecraft:time_since_death": 1958
+    },
+    "minecraft:used": {
+      "jeg:rocket_launcher": 2,
+      "jeg:typhoonee": 18
+    },
+    "minecraft:picked_up": {
+      "minecraft:sunflower": 1
+    },
+    "minecraft:killed": {
+      "minecraft:cow": 4
+    }
+  },
+  "DataVersion": 4786
+}

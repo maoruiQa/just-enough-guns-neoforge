@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "jeg:grenade",
+    "minecraft:charcoal",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "jeg:smoke_grenade",
+    "count": 2
+  }
+}

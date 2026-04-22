@@ -1,0 +1,48 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:sheep": 1
+    },
+    "minecraft:custom": {
+      "minecraft:interact_with_crafting_table": 1,
+      "minecraft:time_since_rest": 7783,
+      "minecraft:walk_one_cm": 24565,
+      "minecraft:leave_game": 1,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 7783,
+      "minecraft:jump": 43,
+      "minecraft:time_since_death": 7783,
+      "minecraft:drop": 13,
+      "minecraft:sprint_one_cm": 4043,
+      "minecraft:fall_one_cm": 550,
+      "minecraft:total_world_time": 7783,
+      "minecraft:fly_one_cm": 3398,
+      "minecraft:sneak_time": 4
+    },
+    "minecraft:used": {
+      "jeg:custom_smg": 60,
+      "jeg:rocket_launcher": 2,
+      "jeg:service_rifle": 2,
+      "minecraft:crafting_table": 1,
+      "jeg:typhoonee": 8
+    },
+    "minecraft:dropped": {
+      "minecraft:wheat_seeds": 5,
+      "jeg:bulletproof_helmet_vi": 2,
+      "minecraft:cobblestone": 169,
+      "minecraft:mutton": 3,
+      "jeg:assault_rifle": 1,
+      "minecraft:potion": 1,
+      "minecraft:white_wool": 2,
+      "minecraft:dirt": 192
+    },
+    "minecraft:picked_up": {
+      "minecraft:white_wool": 1,
+      "minecraft:mutton": 1
+    },
+    "minecraft:mined": {
+      "minecraft:short_grass": 1
+    }
+  },
+  "DataVersion": 4786
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "jeg",
+  "version": "1.4.0",
+  "name": "Just Enough Guns",
+  "description": "Port of Just Enough Guns to Fabric.",
+  "authors": [
+    "Rui Mao",
+    "MigaMi",
+    "Leander"
+  ],
+  "license": "GPL-3.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "ttv.migami.jeg.FabricEntrypoint"
+    ],
+    "client": [
+      "ttv.migami.jeg.FabricClientEntrypoint"
+    ]
+  },
+  "mixins": [
+    "jeg.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": ">=26.1 <26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "geckolib": ">=5.5"
+  }
+}

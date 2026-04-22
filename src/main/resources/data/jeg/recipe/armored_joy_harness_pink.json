@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LIL",
+    "SDS",
+    "LIL"
+  ],
+  "key": {
+    "L": "minecraft:leather",
+    "I": "minecraft:iron_ingot",
+    "S": "minecraft:string",
+    "D": "minecraft:pink_dye"
+  },
+  "result": {
+    "id": "jeg:armored_joy_harness_pink"
+  }
+}

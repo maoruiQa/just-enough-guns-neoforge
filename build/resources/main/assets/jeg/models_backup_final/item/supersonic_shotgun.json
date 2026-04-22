@@ -1,0 +1,61 @@
+{
+  "parent": "jeg:item/abstract_gun",
+  "textures": {
+    "layer0": "jeg:item/supersonic_shotgun"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        0,
+        9.25,
+        -8.5
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        -3,
+        0,
+        -3
+      ]
+    },
+    "gui": {
+      "rotation": [
+        90,
+        -45,
+        90
+      ],
+      "translation": [
+        8,
+        -2,
+        0
+      ],
+      "scale": [
+        1.7,
+        1.7,
+        1.7
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        -6,
+        -7.75,
+        -0.25
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    }
+  }
+}

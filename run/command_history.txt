@@ -1,0 +1,50 @@
+/tick rate 20
+/tick rate 60
+/tick rate 20
+/time set 0
+/tick rate 60
+/time set 0
+/tick rate 20
+/give Player297 jeg:rifle_ammo 640
+/gamemode creative
+/gamemode survival
+/justEnoughGuns simulatePatrol lost_souls 4 Player297
+/justEnoughGuns simulatePatrol lost_souls 4 Player981
+/time set 0
+/gamemode creative
+/time set 0
+/gamemode survival
+/give Player934 jeg:minigun
+/gamemode creative
+/give Player308 jeg:coolant
+/gamemode survival
+/give Player308 jeg:light_machine_gun
+/give Player308 jeg:rifle_ammo 64
+/gamemode creative
+/give Player126 jeg:enhanced_coolant
+/gamemode survival
+/give Player126 jeg:pistol_ammo 640
+/gamemode creative
+/give Player928 jeg:coolant
+/time set 0
+/give Player325 jeg:machine_gun_magazine
+/gamemode survival
+/give Player325 jeg:rifle_magazine
+/gamemode creative
+/give Player923 jeg:shotgun_magazine
+/gamemode survival
+/give Player923 jeg:rifle_magazine
+/time set 0
+/gamemode creative
+/gamemode survival
+/give Player5 jeg:rifle_ammo 64
+/give Player5 jeg:rifle_magazine
+/give Player600 jeg:double_barrel_shotgun
+/give Player600 jeg:semi_auto_pistol
+/time set 0
+/give Player600 jeg:revolver
+/give Player600 jeg:custom_smg
+/give Player600 jeg:pistol_ammo 400
+/give Player600 jeg:smg_magazine
+/time set 0
+/weather clear

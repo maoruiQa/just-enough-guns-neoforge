@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "jeg:ghoul": 3
+    },
+    "minecraft:used": {
+      "jeg:custom_smg": 69,
+      "jeg:revolver": 30
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 7821,
+      "minecraft:time_since_rest": 3345,
+      "minecraft:walk_one_cm": 21787,
+      "minecraft:total_world_time": 3345,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 1977,
+      "minecraft:mob_kills": 3,
+      "minecraft:damage_taken": 42,
+      "minecraft:play_time": 3345,
+      "minecraft:jump": 17,
+      "minecraft:time_since_death": 3345,
+      "minecraft:damage_dealt_absorbed": 40
+    }
+  },
+  "DataVersion": 4786
+}

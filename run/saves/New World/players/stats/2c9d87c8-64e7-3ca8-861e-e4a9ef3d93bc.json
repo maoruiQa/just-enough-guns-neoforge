@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 148,
+      "minecraft:time_since_rest": 1883,
+      "minecraft:walk_one_cm": 2741,
+      "minecraft:total_world_time": 1883,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 172,
+      "minecraft:sneak_time": 1,
+      "minecraft:play_time": 1883,
+      "minecraft:jump": 12,
+      "minecraft:time_since_death": 1883
+    },
+    "minecraft:used": {
+      "jeg:light_machine_gun": 92,
+      "jeg:coolant": 3,
+      "jeg:minigun": 165,
+      "minecraft:dirt": 1
+    }
+  },
+  "DataVersion": 4786
+}

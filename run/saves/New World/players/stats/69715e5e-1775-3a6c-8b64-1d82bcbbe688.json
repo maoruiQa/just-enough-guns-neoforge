@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:pig": 2
+    },
+    "minecraft:custom": {
+      "minecraft:open_barrel": 1,
+      "minecraft:sprint_one_cm": 112,
+      "minecraft:time_since_rest": 2531,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:walk_one_cm": 5468,
+      "minecraft:total_world_time": 2531,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 243,
+      "minecraft:mob_kills": 2,
+      "minecraft:play_time": 2531,
+      "minecraft:jump": 10,
+      "minecraft:time_since_death": 2531
+    },
+    "minecraft:used": {
+      "jeg:light_machine_gun": 663
+    }
+  },
+  "DataVersion": 4786
+}

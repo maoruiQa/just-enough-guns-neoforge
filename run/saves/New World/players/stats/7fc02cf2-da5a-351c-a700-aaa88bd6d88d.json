@@ -1,0 +1,19 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "jeg:rocket_launcher": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1605,
+      "minecraft:time_since_rest": 397,
+      "minecraft:walk_one_cm": 720,
+      "minecraft:total_world_time": 397,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 2607,
+      "minecraft:play_time": 397,
+      "minecraft:jump": 9,
+      "minecraft:time_since_death": 397
+    }
+  },
+  "DataVersion": 4786
+}

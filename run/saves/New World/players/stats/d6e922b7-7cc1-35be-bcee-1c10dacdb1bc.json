@@ -1,0 +1,30 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "jeg:light_machine_gun": 53,
+      "jeg:combat_pistol": 4,
+      "jeg:minigun": 8
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 9026,
+      "minecraft:time_since_rest": 4940,
+      "minecraft:fall_one_cm": 975,
+      "minecraft:walk_one_cm": 13750,
+      "minecraft:total_world_time": 4940,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 57483,
+      "minecraft:mob_kills": 2,
+      "minecraft:play_time": 4940,
+      "minecraft:damage_dealt": 9,
+      "minecraft:jump": 91,
+      "minecraft:time_since_death": 4940
+    },
+    "minecraft:picked_up": {
+      "minecraft:leather": 3
+    },
+    "minecraft:killed": {
+      "minecraft:horse": 1
+    }
+  },
+  "DataVersion": 4786
+}

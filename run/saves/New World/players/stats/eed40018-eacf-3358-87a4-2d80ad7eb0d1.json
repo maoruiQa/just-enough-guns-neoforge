@@ -1,0 +1,32 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:horse": 2
+    },
+    "minecraft:used": {
+      "jeg:rocket_launcher": 5,
+      "jeg:light_machine_gun": 143,
+      "jeg:typhoonee": 5
+    },
+    "minecraft:picked_up": {
+      "minecraft:porkchop": 10,
+      "minecraft:sunflower": 2,
+      "minecraft:leather": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 8202,
+      "minecraft:time_since_rest": 3841,
+      "minecraft:walk_one_cm": 4880,
+      "minecraft:total_world_time": 3841,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 51222,
+      "minecraft:mob_kills": 2,
+      "minecraft:crouch_one_cm": 39,
+      "minecraft:sneak_time": 9,
+      "minecraft:play_time": 3841,
+      "minecraft:jump": 40,
+      "minecraft:time_since_death": 3841
+    }
+  },
+  "DataVersion": 4786
+}

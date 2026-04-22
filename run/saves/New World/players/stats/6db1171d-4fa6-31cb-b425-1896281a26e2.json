@@ -1,0 +1,29 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:interact_with_crafting_table": 1,
+      "minecraft:time_since_rest": 3604,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:walk_one_cm": 4191,
+      "minecraft:total_world_time": 3604,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 139,
+      "minecraft:play_time": 3604,
+      "minecraft:jump": 15,
+      "minecraft:time_since_death": 3604,
+      "minecraft:drop": 1
+    },
+    "minecraft:broken": {
+      "jeg:light_machine_gun": 1
+    },
+    "minecraft:used": {
+      "jeg:light_machine_gun": 249,
+      "minecraft:crafting_table": 1,
+      "jeg:minigun": 162
+    },
+    "minecraft:dropped": {
+      "minecraft:red_bed": 1
+    }
+  },
+  "DataVersion": 4786
+}

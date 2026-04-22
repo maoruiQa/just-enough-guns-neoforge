@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SCN",
+    "RAB",
+    "N  "
+  ],
+  "key": {
+    "S": "minecraft:sculk_catalyst",
+    "C": "minecraft:iron_block",
+    "N": "minecraft:netherite_ingot",
+    "B": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "A": "minecraft:amethyst_shard"
+  },
+  "result": {
+    "id": "jeg:hypersonic_cannon",
+    "count": 1
+  }
+}

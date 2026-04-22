@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:stick",
+    "minecraft:stick",
+    "minecraft:iron_nugget",
+    "minecraft:string"
+  ],
+  "result": {
+    "id": "jeg:finger_gun",
+    "count": 1
+  }
+}

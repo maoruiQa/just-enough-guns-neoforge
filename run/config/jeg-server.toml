@@ -1,0 +1,51 @@
+[terrorRaid]
+	waveIntervalSeconds = 18
+	groundWaveCount = 4
+	airWaveCount = 4
+
+[factionPatrol]
+	minimumDays = 5
+	intervalDays = 5
+	randomIntervalMinTicks = 12000
+	randomIntervalMaxTicks = 24000
+	bossBarRange = 64
+	enabled = true
+	spawnChance = 0.5
+
+[factionRaid]
+	homeTriggerRadius = 48
+	minimumDays = 15
+	intervalDays = 30
+	randomIntervalMinTicks = 12000
+	randomIntervalMaxTicks = 24000
+	enabled = true
+
+[combat]
+	boundTerrorPhantomProjectileProtectionLevel = 5
+	bulletLifetimeSeconds = 60
+	gunnerAccuracyStartDay = 5
+	bulletBlockDestructionEnabled = true
+	recoilBackstepScale = 0.5
+	gunnerAccuracyDaysToMax = 40
+	gunnerShotgunSpreadMultiplier = 0.82
+	recoilBackstepEnabled = true
+	gunnerTerrainInteractionEnabled = true
+	blockHitAnimationEnabled = true
+	gunnerTerrainInteractionMaxTier = 2
+	gunnerAccuracyMaxSpreadMultiplier = 2.5
+
+[spawns]
+	spawnScalingDaysToMax = 28
+	spawnScalingStartDay = 3
+	terrorPhantomMaxChance = 0.07
+	piglinGunnerChance = 0.3
+	witherSkeletonGunnerChance = 0.25
+	phantomGunnerChance = 0.12
+	phantomGunnerMaxChance = 0.33
+	terrorPhantomChance = 0.01
+	skeletonGunnerChance = 0.14285714285714285
+	huskGunnerChance = 0.08333333333333333
+	pillagerGunnerMaxChance = 0.35
+	pillagerGunnerChance = 0.14
+	zombifiedPiglinGunnerChance = 0.1
+	zombieGunnerChance = 0.08333333333333333

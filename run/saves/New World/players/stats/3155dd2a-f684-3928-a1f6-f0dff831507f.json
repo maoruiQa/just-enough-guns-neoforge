@@ -1,0 +1,16 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 5401,
+      "minecraft:total_world_time": 5401,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 26,
+      "minecraft:play_time": 5401,
+      "minecraft:time_since_death": 5401
+    },
+    "minecraft:used": {
+      "jeg:service_rifle": 132
+    }
+  },
+  "DataVersion": 4786
+}

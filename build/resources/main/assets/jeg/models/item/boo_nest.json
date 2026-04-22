@@ -1,0 +1,6 @@
+{
+  "parent": "jeg:block/boo_nest",
+  "textures": {
+    "layer0": "jeg:block/boo_nest_front"
+  }
+}
