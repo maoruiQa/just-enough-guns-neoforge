@@ -225,6 +225,46 @@
       }
     ]
   },
+  "item.cooldown_with_water": {
+    "subtitle": "subtitle.jeg.cooldown_with_water",
+    "sounds": [
+      {
+        "name": "jeg:item/cooldown_with_water"
+      }
+    ]
+  },
+  "item.magazine.load1": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load1"
+      }
+    ]
+  },
+  "item.magazine.load2": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load2"
+      }
+    ]
+  },
+  "item.magazine.load3": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load3"
+      }
+    ]
+  },
+  "item.magazine.unload": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/unload_all_the_ammos"
+      }
+    ]
+  },
 
   "item.combat_rifle.fire": {
     "subtitle": "subtitle.jeg.fire",

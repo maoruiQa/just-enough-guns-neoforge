@@ -3,7 +3,7 @@
   "category": "equipment",
   "pattern": [
     "HPB",
-    " PB",
+    "NPB",
     "  P"
   ],
   "key": {
@@ -12,6 +12,9 @@
     },
     "P": {
       "item": "minecraft:prismarine"
+    },
+    "N": {
+      "item": "minecraft:netherite_ingot"
     },
     "B": {
       "item": "minecraft:iron_block"

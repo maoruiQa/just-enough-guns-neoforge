@@ -32,6 +32,7 @@ import net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.event.MainThreadLevelActionScheduler;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
@@ -42,6 +43,7 @@ import ttv.migami.jeg.gun.GunStats;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
+    private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -108,21 +110,23 @@ public final class GunEvents {
     }
 
     private static void grantStartingManual(ServerPlayer player) {
-        if (player.getTags().contains(MANUAL_GRANTED_TAG)) {
-            return;
+        if (!player.getTags().contains(MANUAL_GRANTED_TAG)) {
+            player.awardRecipesByKey(ModItems.unlockGunRecipeKeys().stream().map(ResourceKey::location).toList());
+            player.addTag(MANUAL_GRANTED_TAG);
         }
 
-        player.addTag(MANUAL_GRANTED_TAG);
+        if (!player.getTags().contains(FINGER_GUN_RECIPE_GRANTED_TAG)) {
+            player.awardRecipesByKey(java.util.List.of(Reference.id("finger_gun")));
+            player.addTag(FINGER_GUN_RECIPE_GRANTED_TAG);
+        }
     }
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
                 .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
-                .append(Component.literal("Command Console").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
+                .append(Component.literal("Commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
         Component divider = Component.literal("------------------------------")
                 .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
-        Component normalHeader = Component.literal("General Commands")
-                .withStyle(style -> style.withColor(ChatFormatting.GREEN).withBold(true));
         Component unlockLine = Component.empty()
                 .append(Component.literal("/justEnoughGuns unlockGunRecipes")
                         .withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(true)))
@@ -131,35 +135,15 @@ public final class GunEvents {
 
         player.sendSystemMessage(header);
         player.sendSystemMessage(divider);
-        player.sendSystemMessage(normalHeader);
         player.sendSystemMessage(unlockLine);
 
         if (player.hasPermissions(2)) {
-            Component opHeader = Component.empty()
-                    .append(Component.literal("OP Commands")
-                            .withStyle(style -> style.withColor(ChatFormatting.RED).withBold(true)))
-                    .append(Component.literal(" (Admin)")
-                            .withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withItalic(true)));
-            Component spawnLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns spawnPatrol")
+            Component configLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns config")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Spawn a patrol")
+                    .append(Component.literal(" - Configure patrol, mob spawn rates, and combat")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-            Component simulateLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns simulatePatrol")
-                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Simulate a patrol event")
-                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-            Component bulletLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns bulletBlockDestruction")
-                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Toggle bullet block destruction")
-                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
-
-            player.sendSystemMessage(opHeader);
-            player.sendSystemMessage(spawnLine);
-            player.sendSystemMessage(simulateLine);
-            player.sendSystemMessage(bulletLine);
+            player.sendSystemMessage(configLine);
         }
         player.sendSystemMessage(divider);
     }
@@ -201,7 +185,7 @@ public final class GunEvents {
             return;
         }
 
-        handlePillagerFinalize(pillager, serverLevel);
+        MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> handlePillagerFinalize(pillager, serverLevel));
     }
 
     static void equipPillagerWithGun(Pillager pillager, ResourceLocation gunId) {
@@ -213,6 +197,7 @@ public final class GunEvents {
         ItemStack stack = new ItemStack(holder.get());
         pillager.setItemInHand(InteractionHand.MAIN_HAND, stack);
         pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+        pillager.setCanPickUpLoot(false);
         // Pillagers use the default crossbow AI which works reasonably well for guns
     }
 
@@ -227,29 +212,50 @@ public final class GunEvents {
             return;
         }
 
-        handlePhantomFinalize(phantom, serverLevel, event.getDifficulty(), (net.minecraft.world.entity.MobSpawnType) event.getSpawnType(), event.getSpawnData());
+        MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> handlePhantomFinalize(phantom, serverLevel, event.getDifficulty(), (net.minecraft.world.entity.MobSpawnType) event.getSpawnType(), event.getSpawnData()));
     }
 
     public static void handlePillagerFinalize(Pillager pillager, ServerLevel serverLevel) {
+        if (!pillager.isAlive() || pillager.level() != serverLevel || isHoldingGun(pillager)) {
+            return;
+        }
+
         double conversionChance = Config.pillagerGunnerChance();
-        if (conversionChance <= 0.0D || serverLevel.random.nextDouble() >= conversionChance) {
+        if (conversionChance <= 0.0D || pillager.getRandom().nextDouble() >= conversionChance) {
             return;
         }
 
         pillager.addTag("jeg_pillager_gunner");
-        ResourceLocation selected = selectRandomGun(serverLevel.random);
+        ResourceLocation selected = selectRandomGun(pillager.getRandom());
         if (selected != null) {
             equipPillagerWithGun(pillager, selected);
         }
     }
 
     public static void handlePhantomFinalize(Phantom phantom, ServerLevel serverLevel, DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnType, SpawnGroupData spawnData) {
+        if (!phantom.isAlive() || phantom.level() != serverLevel) {
+            return;
+        }
         if (spawnType != net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            return;
+        }
+        if (phantom instanceof TerrorPhantom || phantom instanceof PhantomGunner) {
+            return;
+        }
+        if (!serverLevel.getEntitiesOfClass(TerrorPhantom.class, phantom.getBoundingBox().inflate(1.0D), existing -> existing.isAlive()).isEmpty()) {
+            phantom.discard();
+            return;
+        }
+        if (!serverLevel.getEntitiesOfClass(PhantomGunner.class, phantom.getBoundingBox().inflate(1.0D), existing -> existing.isAlive()).isEmpty()) {
+            phantom.discard();
+            return;
+        }
+        if (phantom.isRemoved()) {
             return;
         }
 
         double terrorChance = Config.terrorPhantomChance();
-        if (terrorChance > 0.0D && serverLevel.random.nextDouble() < terrorChance) {
+        if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
             TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
             if (terror != null) {
                 terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
@@ -265,7 +271,7 @@ public final class GunEvents {
         }
 
         double gunnerChance = Config.phantomGunnerChance();
-        if (gunnerChance <= 0.0D || serverLevel.random.nextDouble() >= gunnerChance) {
+        if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
             return;
         }
 

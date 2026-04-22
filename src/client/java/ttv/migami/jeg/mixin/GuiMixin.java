@@ -19,8 +19,9 @@ public final class GuiMixin {
         if (player == null) {
             return;
         }
+        FabricClientBootstrap.renderThrowableEffectOverlay(guiGraphics);
+        FabricClientBootstrap.renderOverheatBar(guiGraphics);
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
-            FabricClientBootstrap.renderOverheatBar(guiGraphics);
             ci.cancel();
         }
     }

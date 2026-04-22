@@ -1,9 +1,9 @@
-﻿{
+{
     "type":  "minecraft:crafting_shaped",
     "category":  "equipment",
     "pattern":  [
                     "BBL",
-                    " BR",
+                    "XBR",
                     "  B"
                 ],
     "key":  {
@@ -12,6 +12,9 @@
                       },
                 "L":  {
                           "item":  "minecraft:lava_bucket"
+                      },
+                "X":  {
+                          "item":  "minecraft:diamond"
                       },
                 "R":  {
                           "item":  "minecraft:blaze_rod"

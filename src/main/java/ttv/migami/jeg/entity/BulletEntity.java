@@ -320,6 +320,9 @@ public class BulletEntity extends Projectile {
             else if (gunId.equals(ROCKET_LAUNCHER_ID)) {
                 spawnRocketTrailParticles();
             }
+            else if (gunId.equals(TYPHOONEE_ID)) {
+                spawnTyphooneeTrailParticles();
+            }
 
             this.setDeltaMovement(applyGravity(motion, gunStats));
         }
@@ -520,7 +523,7 @@ public class BulletEntity extends Projectile {
             if (!this.level().isClientSide()) {
                 BlockPos hitPos = result.getBlockPos();
                 BlockPos offsetPos = hitPos.relative(result.getDirection());
-                if (this.level().random.nextFloat() > 0.50F
+                if (this.random.nextFloat() > 0.50F
                         && BaseFireBlock.canBePlacedAt(this.level(), offsetPos, result.getDirection())) {
                     BlockState fireState = BaseFireBlock.getState(this.level(), offsetPos);
                     this.level().setBlock(offsetPos, fireState, 11);
@@ -812,21 +815,21 @@ public class BulletEntity extends Projectile {
 
         // Significantly increase flame particle density for much more impressive effect
         // Spawn 15-25 particles per tick instead of 5 (3x-5x increase)
-        int particleCount = 15 + level.random.nextInt(11); // 15-25 particles
+        int particleCount = 15 + this.random.nextInt(11); // 15-25 particles
 
         for (int i = 0; i < particleCount; i++) {
             // Slightly reduce spread for more concentrated stream
-            double offsetX = (level.random.nextDouble() - 0.5) * 0.3; // Reduced from 0.4
-            double offsetY = (level.random.nextDouble() - 0.5) * 0.3;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 0.3;
+            double offsetX = (this.random.nextDouble() - 0.5) * 0.3; // Reduced from 0.4
+            double offsetY = (this.random.nextDouble() - 0.5) * 0.3;
+            double offsetZ = (this.random.nextDouble() - 0.5) * 0.3;
 
             // Add more velocity variation for dynamic flame effect
-            double velX = motion.x * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
-            double velY = motion.y * 0.15 + 0.03 + level.random.nextDouble() * 0.02; // Stronger upward bias
-            double velZ = motion.z * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
+            double velX = motion.x * 0.15 + (this.random.nextDouble() - 0.5) * 0.08;
+            double velY = motion.y * 0.15 + 0.03 + this.random.nextDouble() * 0.02; // Stronger upward bias
+            double velZ = motion.z * 0.15 + (this.random.nextDouble() - 0.5) * 0.08;
 
             // Mix of flame and smoke particles for more realistic effect
-            if (level.random.nextFloat() < 0.7) {
+            if (this.random.nextFloat() < 0.7) {
                 // 70% flame particles
                 level.addParticle(ParticleTypes.FLAME,
                     this.getX() + offsetX,
@@ -844,11 +847,11 @@ public class BulletEntity extends Projectile {
         }
 
         // Add some extra large flame particles occasionally for visual variety
-        if (level.random.nextFloat() < 0.3) { // 30% chance
+        if (this.random.nextFloat() < 0.3) { // 30% chance
             for (int i = 0; i < 3; i++) {
-                double offsetX = (level.random.nextDouble() - 0.5) * 0.2;
-                double offsetY = (level.random.nextDouble() - 0.5) * 0.2;
-                double offsetZ = (level.random.nextDouble() - 0.5) * 0.2;
+                double offsetX = (this.random.nextDouble() - 0.5) * 0.2;
+                double offsetY = (this.random.nextDouble() - 0.5) * 0.2;
+                double offsetZ = (this.random.nextDouble() - 0.5) * 0.2;
 
                 level.addParticle(ParticleTypes.FLAME,
                     this.getX() + offsetX,
@@ -859,14 +862,14 @@ public class BulletEntity extends Projectile {
         }
 
         // Add more ember particles for extra visibility and dramatic effect
-        if (level.random.nextFloat() < 0.5) { // 50% chance (increased from 25%)
+        if (this.random.nextFloat() < 0.5) { // 50% chance (increased from 25%)
             level.addParticle(ParticleTypes.SMALL_FLAME,
-                this.getX() + (level.random.nextDouble() - 0.5) * 0.4,
-                this.getY() + (level.random.nextDouble() - 0.5) * 0.4,
-                this.getZ() + (level.random.nextDouble() - 0.5) * 0.4,
-                motion.x * 0.1 + (level.random.nextDouble() - 0.5) * 0.05,
+                this.getX() + (this.random.nextDouble() - 0.5) * 0.4,
+                this.getY() + (this.random.nextDouble() - 0.5) * 0.4,
+                this.getZ() + (this.random.nextDouble() - 0.5) * 0.4,
+                motion.x * 0.1 + (this.random.nextDouble() - 0.5) * 0.05,
                 motion.y * 0.1 + 0.05,
-                motion.z * 0.1 + (level.random.nextDouble() - 0.5) * 0.05);
+                motion.z * 0.1 + (this.random.nextDouble() - 0.5) * 0.05);
         }
     }
 
@@ -949,6 +952,31 @@ public class BulletEntity extends Projectile {
             0, 0, 0);
     }
 
+    private void spawnTyphooneeTrailParticles() {
+        Level level = this.level();
+        if (!level.isClientSide() || !canSpawnClientTrailParticles(level)) {
+            return;
+        }
+
+        createTyphooneeTrail(level);
+
+        Vec3 motion = this.getDeltaMovement();
+        double px = this.getX() - motion.x * 0.35D;
+        double py = this.getY() - motion.y * 0.35D;
+        double pz = this.getZ() - motion.z * 0.35D;
+
+        if (this.isUnderWater()) {
+            level.addParticle(ParticleTypes.BUBBLE, px, py, pz, 0.0D, 0.02D, 0.0D);
+            level.addParticle(ParticleTypes.BUBBLE_POP, px, py, pz, 0.0D, 0.0D, 0.0D);
+        } else {
+            level.addParticle(ParticleTypes.SPLASH, px, py, pz, 0.0D, 0.02D, 0.0D);
+            level.addParticle(ParticleTypes.FALLING_WATER, px, py, pz, 0.0D, 0.0D, 0.0D);
+            if (this.random.nextFloat() < 0.35F) {
+                level.addParticle(ParticleTypes.CLOUD, px, py, pz, 0.0D, 0.01D, 0.0D);
+            }
+        }
+    }
+
     private void createRocketSmokeTrail(Level level) {
         // Store trail positions for smoother effect
         if (this.trailPositions == null) {
@@ -972,19 +1000,76 @@ public class BulletEntity extends Projectile {
             int particleCount = Math.max(1, 3 - (this.trailPositions.size() - i) / 10);
 
             for (int j = 0; j < particleCount; j++) {
-                double offsetX = (level.random.nextDouble() - 0.5) * 0.4;
-                double offsetY = (level.random.nextDouble() - 0.5) * 0.4;
-                double offsetZ = (level.random.nextDouble() - 0.5) * 0.4;
+                double offsetX = (this.random.nextDouble() - 0.5) * 0.4;
+                double offsetY = (this.random.nextDouble() - 0.5) * 0.4;
+                double offsetZ = (this.random.nextDouble() - 0.5) * 0.4;
 
                 level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                     trailPos.x + offsetX,
                     trailPos.y + offsetY,
                     trailPos.z + offsetZ,
-                    (level.random.nextDouble() - 0.5) * 0.02,
-                    0.01 + level.random.nextDouble() * 0.02,
-                    (level.random.nextDouble() - 0.5) * 0.02);
+                    (this.random.nextDouble() - 0.5) * 0.02,
+                    0.01 + this.random.nextDouble() * 0.02,
+                    (this.random.nextDouble() - 0.5) * 0.02);
             }
         }
+    }
+
+    private void createTyphooneeTrail(Level level) {
+        if (this.trailPositions == null) {
+            this.trailPositions = new ArrayList<>();
+        }
+
+        this.trailPositions.add(this.position());
+
+        int maxTrailLength = Math.max(12, Mth.ceil(this.getTrailLengthMultiplier() * 14.0F));
+        if (this.trailPositions.size() > maxTrailLength) {
+            this.trailPositions.remove(0);
+        }
+
+        boolean underwater = this.isUnderWater();
+        for (int i = 0; i < this.trailPositions.size(); i++) {
+            Vec3 trailPos = this.trailPositions.get(i);
+            int ageOffset = this.trailPositions.size() - i;
+            int particleCount = ageOffset <= 4 ? 2 : 1;
+
+            for (int j = 0; j < particleCount; j++) {
+                double offsetX = (this.random.nextDouble() - 0.5D) * 0.18D;
+                double offsetY = (this.random.nextDouble() - 0.5D) * 0.18D;
+                double offsetZ = (this.random.nextDouble() - 0.5D) * 0.18D;
+                if (underwater) {
+                    level.addParticle(ParticleTypes.BUBBLE,
+                            trailPos.x + offsetX,
+                            trailPos.y + offsetY,
+                            trailPos.z + offsetZ,
+                            0.0D,
+                            0.01D,
+                            0.0D);
+                } else {
+                    level.addParticle(ParticleTypes.CLOUD,
+                            trailPos.x + offsetX,
+                            trailPos.y + offsetY,
+                            trailPos.z + offsetZ,
+                            0.0D,
+                            0.005D,
+                            0.0D);
+                    if ((i + j) % 2 == 0) {
+                        level.addParticle(ParticleTypes.SPLASH,
+                                trailPos.x + offsetX,
+                                trailPos.y + offsetY,
+                                trailPos.z + offsetZ,
+                                0.0D,
+                                0.01D,
+                                0.0D);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean canSpawnClientTrailParticles(Level level) {
+        BlockState stateAtPos = level.getBlockState(this.blockPosition());
+        return stateAtPos.isAir() || ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, stateAtPos);
     }
 
     private void detonateFlare(ServerLevel serverLevel) {
@@ -1030,7 +1115,7 @@ public class BulletEntity extends Projectile {
             serverLevel.playSound(null, pos.x, pos.y, pos.z,
                 net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
                 net.minecraft.sounds.SoundSource.PLAYERS,
-                4.0F, 0.9F + serverLevel.random.nextFloat() * 0.2F);
+                4.0F, 0.9F + this.random.nextFloat() * 0.2F);
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1074,19 +1159,19 @@ public class BulletEntity extends Projectile {
 
         // Multi-stage burst with different colors for visual clarity
         for (int i = 0; i < 1400; i++) {
-            double speed = 0.65 + level.random.nextDouble() * 3.6;
-            double angle = level.random.nextDouble() * Math.PI * 2;
-            double verticalAngle = (level.random.nextDouble() - 0.5) * Math.PI;
+            double speed = 0.65 + this.random.nextDouble() * 3.6;
+            double angle = this.random.nextDouble() * Math.PI * 2;
+            double verticalAngle = (this.random.nextDouble() - 0.5) * Math.PI;
 
             double offsetX = Math.cos(angle) * Math.cos(verticalAngle) * speed;
             double offsetY = Math.sin(verticalAngle) * speed;
             double offsetZ = Math.sin(angle) * Math.cos(verticalAngle) * speed;
 
-            double spawnScale = 2.2 + level.random.nextDouble() * 1.8;
+            double spawnScale = 2.2 + this.random.nextDouble() * 1.8;
             double jitterScale = 3.0;
-            double spawnX = pos.x + offsetX * spawnScale + (level.random.nextDouble() - 0.5) * jitterScale;
-            double spawnY = pos.y + offsetY * spawnScale + (level.random.nextDouble() - 0.5) * jitterScale;
-            double spawnZ = pos.z + offsetZ * spawnScale + (level.random.nextDouble() - 0.5) * jitterScale;
+            double spawnX = pos.x + offsetX * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
+            double spawnY = pos.y + offsetY * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
+            double spawnZ = pos.z + offsetZ * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
 
             level.addParticle(ParticleTypes.FIREWORK,
                spawnX, spawnY, spawnZ,
@@ -1142,14 +1227,14 @@ public class BulletEntity extends Projectile {
 
         // Secondary halo shell so aerial bursts read from a distance
         for (int halo = 0; halo < 420; halo++) {
-            double radius = 7.5 + level.random.nextDouble() * 6.5;
-            double theta = level.random.nextDouble() * Math.PI * 2;
-            double phi = (level.random.nextDouble() - 0.5) * Math.PI;
+            double radius = 7.5 + this.random.nextDouble() * 6.5;
+            double theta = this.random.nextDouble() * Math.PI * 2;
+            double phi = (this.random.nextDouble() - 0.5) * Math.PI;
             double haloX = pos.x + radius * Math.cos(theta) * Math.cos(phi);
             double haloY = pos.y + radius * Math.sin(phi);
             double haloZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
 
-            int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
+            int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
             level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
                 haloX, haloY, haloZ,
                 0, 0, 0);
@@ -1163,40 +1248,40 @@ public class BulletEntity extends Projectile {
 
         // Cascading sparks to emphasize vertical visibility
         for (int column = 0; column < 320; column++) {
-            double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 0.6 + level.random.nextDouble() * 4.0;
+            double angle = this.random.nextDouble() * Math.PI * 2;
+            double radius = 0.6 + this.random.nextDouble() * 4.0;
             double startX = pos.x + Math.cos(angle) * radius;
             double startZ = pos.z + Math.sin(angle) * radius;
-            double startY = pos.y + level.random.nextDouble() * 3.5;
-            double velocityX = (level.random.nextDouble() - 0.5) * 0.32;
-            double velocityZ = (level.random.nextDouble() - 0.5) * 0.32;
+            double startY = pos.y + this.random.nextDouble() * 3.5;
+            double velocityX = (this.random.nextDouble() - 0.5) * 0.32;
+            double velocityZ = (this.random.nextDouble() - 0.5) * 0.32;
 
             level.addParticle(ParticleTypes.END_ROD,
                 startX, startY, startZ,
-                velocityX, -0.45 - level.random.nextDouble() * 0.38, velocityZ);
+                velocityX, -0.45 - this.random.nextDouble() * 0.38, velocityZ);
 
             if (column % 3 == 0) {
-                int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
+                int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
                 level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
                     startX, startY, startZ,
-                    velocityX * 0.85, -0.38 - level.random.nextDouble() * 0.34, velocityZ * 0.85);
+                    velocityX * 0.85, -0.38 - this.random.nextDouble() * 0.34, velocityZ * 0.85);
             }
         }
 
         // Outer ripple to enhance visibility for distant observers
         for (int ring = 0; ring < 220; ring++) {
-            double radius = 9.0 + level.random.nextDouble() * 5.0;
-            double theta = level.random.nextDouble() * Math.PI * 2;
+            double radius = 9.0 + this.random.nextDouble() * 5.0;
+            double theta = this.random.nextDouble() * Math.PI * 2;
             double ringX = pos.x + Math.cos(theta) * radius;
             double ringZ = pos.z + Math.sin(theta) * radius;
-            double ringY = pos.y + (level.random.nextDouble() - 0.5) * 2.0;
+            double ringY = pos.y + (this.random.nextDouble() - 0.5) * 2.0;
 
             level.addParticle(ParticleTypes.GLOW,
                 ringX, ringY, ringZ,
                 0, 0, 0);
 
             if (ring % 2 == 0) {
-                int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
+                int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
                 level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.8F),
                     ringX, ringY, ringZ,
                     0, 0, 0);
@@ -1205,14 +1290,14 @@ public class BulletEntity extends Projectile {
 
         // Distant shell for high-altitude flares
         for (int distant = 0; distant < 260; distant++) {
-            double radius = 12.0 + level.random.nextDouble() * 6.0;
-            double theta = level.random.nextDouble() * Math.PI * 2;
-            double phi = (level.random.nextDouble() - 0.5) * Math.PI;
+            double radius = 12.0 + this.random.nextDouble() * 6.0;
+            double theta = this.random.nextDouble() * Math.PI * 2;
+            double phi = (this.random.nextDouble() - 0.5) * Math.PI;
             double outerX = pos.x + radius * Math.cos(theta) * Math.cos(phi);
             double outerY = pos.y + radius * Math.sin(phi) * 0.7;
             double outerZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
 
-            int color = FLARE_BLAST_COLORS[level.random.nextInt(FLARE_BLAST_COLORS.length)];
+            int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
             level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.2F),
                 outerX, outerY, outerZ,
                 0, 0, 0);
@@ -1227,12 +1312,12 @@ public class BulletEntity extends Projectile {
         level.playLocalSound(pos.x, pos.y, pos.z,
             net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
             net.minecraft.sounds.SoundSource.PLAYERS,
-            4.0F, (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F), false);
+            4.0F, (1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F), false);
 
         level.playLocalSound(pos.x, pos.y, pos.z,
             net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
             net.minecraft.sounds.SoundSource.PLAYERS,
-            4.0F, 0.9F + level.random.nextFloat() * 0.2F, false);
+            4.0F, 0.9F + this.random.nextFloat() * 0.2F, false);
     }
 
     @Override
@@ -1248,11 +1333,11 @@ public class BulletEntity extends Projectile {
         double spread = 2.2;
         for (int color : FLARE_BLAST_COLORS) {
             for (int i = 0; i < 5; i++) {
-                double velocityScale = 0.9 + level.random.nextDouble() * 2.2;
+                double velocityScale = 0.9 + this.random.nextDouble() * 2.2;
                 level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.6F),
-                    originX + (level.random.nextDouble() - 0.5) * spread,
-                    originY + (level.random.nextDouble() - 0.5) * spread,
-                    originZ + (level.random.nextDouble() - 0.5) * spread,
+                    originX + (this.random.nextDouble() - 0.5) * spread,
+                    originY + (this.random.nextDouble() - 0.5) * spread,
+                    originZ + (this.random.nextDouble() - 0.5) * spread,
                     dirX * velocityScale,
                     dirY * velocityScale,
                     dirZ * velocityScale);

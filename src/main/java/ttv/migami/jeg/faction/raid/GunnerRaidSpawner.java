@@ -78,7 +78,7 @@ public final class GunnerRaidSpawner {
                 "[FactionRaid] Summoning natural raid: faction={} pos={} intervalDays={} nextTick={}",
                 faction.getName(), randomPlayer.blockPosition(), Config.factionRaidIntervalDays(), this.nextTick
         );
-        RaidEntity.summonRaidEntity(level, faction, randomPlayer.position(), true);
+        FactionRaidManager.startRaid(level, faction, randomPlayer.position(), true);
         return 1;
     }
 }

@@ -11,13 +11,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ttv.migami.jeg.event.GunEvents;
+import ttv.migami.jeg.event.MainThreadLevelActionScheduler;
 
 @Mixin(Pillager.class)
 public abstract class PillagerFinalizeSpawnMixin {
     @Inject(method = "finalizeSpawn", at = @At("TAIL"))
     private void jeg$finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnData, CallbackInfoReturnable<SpawnGroupData> cir) {
         if (level instanceof ServerLevel serverLevel) {
-            GunEvents.handlePillagerFinalize((Pillager) (Object) this, serverLevel);
+            Pillager pillager = (Pillager) (Object) this;
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> GunEvents.handlePillagerFinalize(pillager, serverLevel));
         }
     }
 }

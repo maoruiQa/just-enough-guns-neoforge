@@ -28,6 +28,10 @@ public final class ClientNetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(GunFireFxPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> FabricClientBootstrap.showMuzzleFlash(payload.shooterId(), payload.randomValue()));
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(OffhandFullPromptPayload.TYPE, (payload, context) -> {
+            context.client().execute(FabricClientBootstrap::showOffhandFullPrompt);
+        });
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {
@@ -40,6 +44,10 @@ public final class ClientNetworkHandler {
 
     public static void sendReload(InteractionHand hand) {
         ClientPlayNetworking.send(new ReloadRequestPayload(hand));
+    }
+
+    public static void sendUnloadMagazine() {
+        ClientPlayNetworking.send(UnloadMagazineRequestPayload.INSTANCE);
     }
 
     public static void sendAiming(boolean aiming) {

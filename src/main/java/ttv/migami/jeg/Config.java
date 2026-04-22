@@ -1,5 +1,9 @@
 package ttv.migami.jeg;
 
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import ttv.migami.jeg.config.ModConfigSpec;
@@ -27,6 +31,9 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
+    public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
+    public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_INTERACTION_ENABLED;
+    public static final ModConfigSpec.IntValue GUNNER_TERRAIN_INTERACTION_MAX_TIER;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_START_DAY;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_DAYS_TO_MAX;
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER;
@@ -41,6 +48,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_PATROL_RANDOM_INTERVAL_MAX_TICKS;
     public static final ModConfigSpec.IntValue FACTION_PATROL_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_PATROL_BOSSBAR_RANGE;
+    public static final ModConfigSpec.DoubleValue FACTION_PATROL_SPAWN_CHANCE;
     public static final ModConfigSpec.BooleanValue FACTION_RAID_ENABLED;
     public static final ModConfigSpec.IntValue FACTION_RAID_INTERVAL_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MIN_TICKS;
@@ -48,7 +56,9 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
-    private static volatile Boolean bulletBlockDestructionOverride;
+    private static final Path CLIENT_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-client.toml");
+    private static final Path SERVER_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-server.toml");
+    private static final Map<String, ModConfigSpec.Value<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
@@ -132,6 +142,15 @@ public final class Config {
         BULLET_BLOCK_DESTRUCTION_ENABLED = serverBuilder
                 .comment("If true, bullets can destroy hit blocks based on penetration and bullet power rules.")
                 .define("bulletBlockDestructionEnabled", true);
+        MAGAZINE_FEED_ENABLED = serverBuilder
+                .comment("If true, guns that support magazine swaps will reload from compatible magazines instead of using the legacy loose-ammo reload path.")
+                .define("magazineFeedEnabled", true);
+        GUNNER_TERRAIN_INTERACTION_ENABLED = serverBuilder
+                .comment("If true, ground gunners can break and place low-tier blocks to get around simple terrain obstacles.")
+                .define("gunnerTerrainInteractionEnabled", true);
+        GUNNER_TERRAIN_INTERACTION_MAX_TIER = serverBuilder
+                .comment("Maximum bulletproof tier ground gunners are allowed to break while traversing terrain. 0 = penetrable only, 2 = tier 2 and below.")
+                .defineInRange("gunnerTerrainInteractionMaxTier", 2, 0, 3);
         GUNNER_ACCURACY_START_DAY = serverBuilder
                 .comment("In-game day when gunner accuracy scaling starts.")
                 .defineInRange("gunnerAccuracyStartDay", 5, 0, 5000);
@@ -180,6 +199,9 @@ public final class Config {
         FACTION_PATROL_BOSSBAR_RANGE = serverBuilder
                 .comment("Range in blocks where patrol boss bars are visible.")
                 .defineInRange("bossBarRange", 64, 16, 256);
+        FACTION_PATROL_SPAWN_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a patrol attempt actually spawns once all other patrol conditions pass.")
+                .defineInRange("spawnChance", 0.35D, 0.0D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("factionRaid");
@@ -210,9 +232,75 @@ public final class Config {
         serverBuilder.pop();
 
         SERVER_SPEC = serverBuilder.build();
+
+        registerCommandConfig("patrol.enabled", FACTION_PATROL_ENABLED);
+        registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
+        registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
+        registerCommandConfig("patrol.spawnChance", FACTION_PATROL_SPAWN_CHANCE);
+        registerCommandConfig("mob.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
+        registerCommandConfig("mob.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
+        registerCommandConfig("mob.phantomGunner.chance", PHANTOM_GUNNER_NATURAL_CHANCE);
+        registerCommandConfig("mob.phantomGunner.maxChance", PHANTOM_GUNNER_MAX_CHANCE);
+        registerCommandConfig("mob.pillagerGunner.chance", PILLAGER_GUNNER_CHANCE);
+        registerCommandConfig("mob.pillagerGunner.maxChance", PILLAGER_GUNNER_MAX_CHANCE);
+        registerCommandConfig("mob.skeletonGunner.chance", SKELETON_GUNNER_CHANCE);
+        registerCommandConfig("mob.zombieGunner.chance", ZOMBIE_GUNNER_CHANCE);
+        registerCommandConfig("mob.huskGunner.chance", HUSK_GUNNER_CHANCE);
+        registerCommandConfig("mob.zombifiedPiglinGunner.chance", ZOMBIFIED_PIGLIN_GUNNER_CHANCE);
+        registerCommandConfig("mob.piglinGunner.chance", PIGLIN_GUNNER_CHANCE);
+        registerCommandConfig("mob.witherSkeletonGunner.chance", WITHER_SKELETON_GUNNER_CHANCE);
+        registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
+        registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
+        registerCommandConfig("combat.gunnerTerrain.enabled", GUNNER_TERRAIN_INTERACTION_ENABLED);
+        registerCommandConfig("combat.gunnerTerrain.maxTier", GUNNER_TERRAIN_INTERACTION_MAX_TIER);
     }
 
     private Config() {}
+
+    public static void load() {
+        CLIENT_SPEC.load(CLIENT_CONFIG_PATH);
+        SERVER_SPEC.load(SERVER_CONFIG_PATH);
+    }
+
+    public static void saveServerConfig() {
+        SERVER_SPEC.save(SERVER_CONFIG_PATH);
+    }
+
+    public static Object getConfigValue(String key) {
+        ModConfigSpec.Value<?> value = COMMAND_CONFIGS.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Unknown config key: " + key);
+        }
+        return value.get();
+    }
+
+    public static void setConfigValue(String key, Object rawValue) {
+        ModConfigSpec.Value<?> value = COMMAND_CONFIGS.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Unknown config key: " + key);
+        }
+        setValue(value, rawValue);
+    }
+
+    private static void registerCommandConfig(String key, ModConfigSpec.Value<?> value) {
+        COMMAND_CONFIGS.put(key, value);
+    }
+
+    private static void setValue(ModConfigSpec.Value<?> value, Object rawValue) {
+        if (value instanceof ModConfigSpec.BooleanValue booleanValue) {
+            booleanValue.set((Boolean) rawValue);
+            return;
+        }
+        if (value instanceof ModConfigSpec.IntValue intValue) {
+            intValue.set((Integer) rawValue);
+            return;
+        }
+        if (value instanceof ModConfigSpec.DoubleValue doubleValue) {
+            doubleValue.set((Double) rawValue);
+            return;
+        }
+        throw new IllegalArgumentException("Unsupported config value type for " + value.path());
+    }
 
     public static double terrorPhantomChance() {
         return clamp01(TERROR_PHANTOM_NATURAL_CHANCE.get());
@@ -279,12 +367,24 @@ public final class Config {
     }
 
     public static boolean bulletBlockDestructionEnabled() {
-        Boolean override = bulletBlockDestructionOverride;
-        return override != null ? override : BULLET_BLOCK_DESTRUCTION_ENABLED.get();
+        return BULLET_BLOCK_DESTRUCTION_ENABLED.get();
+    }
+
+    public static boolean magazineFeedEnabled() {
+        return MAGAZINE_FEED_ENABLED.get();
+    }
+
+    public static boolean gunnerTerrainInteractionEnabled() {
+        return GUNNER_TERRAIN_INTERACTION_ENABLED.get();
+    }
+
+    public static int gunnerTerrainInteractionMaxTier() {
+        return Mth.clamp(GUNNER_TERRAIN_INTERACTION_MAX_TIER.get(), 0, 3);
     }
 
     public static void setBulletBlockDestructionEnabled(boolean enabled) {
-        bulletBlockDestructionOverride = enabled;
+        setConfigValue("combat.bulletBlockDestruction", enabled);
+        saveServerConfig();
     }
 
     public static int gunnerAccuracyStartDay() {
@@ -354,6 +454,10 @@ public final class Config {
 
     public static int factionPatrolBossBarRange() {
         return Math.max(16, FACTION_PATROL_BOSSBAR_RANGE.get());
+    }
+
+    public static double factionPatrolSpawnChance() {
+        return clamp01(FACTION_PATROL_SPAWN_CHANCE.get());
     }
 
     public static boolean factionRaidEnabled() {

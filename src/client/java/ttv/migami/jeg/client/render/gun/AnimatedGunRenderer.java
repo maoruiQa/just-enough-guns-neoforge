@@ -36,7 +36,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack main = mc.player.getMainHandItem();
         ItemStack off = mc.player.getOffhandItem();
-        return ItemStack.isSameItemSameComponents(stack, main) || ItemStack.isSameItemSameComponents(stack, off);
+        return matchesHeldStack(stack, main) || matchesHeldStack(stack, off);
     }
 
     public HumanoidArm resolveRenderedHand() {
@@ -56,9 +56,22 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack stack = this.getCurrentItemStack();
         ItemStack main = mc.player.getMainHandItem();
-        if (stack != null && ItemStack.isSameItemSameComponents(stack, main)) {
+        if (matchesHeldStack(stack, main)) {
             return mainArm;
         }
         return mainArm == HumanoidArm.LEFT ? HumanoidArm.RIGHT : HumanoidArm.LEFT;
+    }
+
+    private static boolean matchesHeldStack(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == heldStack) {
+            return true;
+        }
+        if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
+            return false;
+        }
+        if (ItemStack.isSameItemSameComponents(renderStack, heldStack)) {
+            return true;
+        }
+        return ItemStack.isSameItem(renderStack, heldStack);
     }
 }

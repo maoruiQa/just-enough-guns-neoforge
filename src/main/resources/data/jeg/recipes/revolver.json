@@ -1,27 +1,27 @@
 ﻿{
-    "type":  "minecraft:crafting_shaped",
-    "category":  "equipment",
-    "pattern":  [
-                    "BI ",
-                    "RL ",
-                    "  L"
-                ],
-    "key":  {
-                "B":  {
-                          "item":  "minecraft:iron_block"
-                      },
-                "I":  {
-                          "item":  "minecraft:iron_ingot"
-                      },
-                "L":  {
-                          "tag":  "minecraft:logs"
-                      },
-                "R":  {
-                          "item":  "minecraft:redstone_block"
-                      }
-            },
-    "result":  {
-                   "id":  "jeg:revolver",
-                   "count":  1
-               }
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "II ",
+    "FR ",
+    " S "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "F": {
+      "item": "minecraft:flint"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "jeg:revolver",
+    "count": 1
+  }
 }

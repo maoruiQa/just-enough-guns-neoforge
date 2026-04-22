@@ -41,6 +41,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
     protected void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {
         // Add JEG gunner tag - the faction system will handle gun equipping automatically
         mob.addTag(GunEvents.JEG_GUNNER_TAG);
+        GunnerMobSpawner.normalizeGunnerMob(mob);
         equipGunnerImmediately(mob);
 
         // Call parent method to handle standard spawn egg behavior (without applyComponentsFromItemStack)
@@ -75,7 +76,9 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         ItemStack gunStack = new ItemStack(gunItem);
         if (gunItem instanceof GunItem gun) {
             GunStats stats = gun.getStats();
-            gunStack.set(ModDataComponents.GUN_AMMO.get(), mob.getRandom().nextInt(Math.max(1, stats.magazineSize())));
+            if (gun.usesLoadedAmmo()) {
+                gunStack.set(ModDataComponents.GUN_AMMO.get(), mob.getRandom().nextInt(Math.max(1, stats.magazineSize())));
+            }
         }
 
         mob.setItemSlot(EquipmentSlot.MAINHAND, gunStack);

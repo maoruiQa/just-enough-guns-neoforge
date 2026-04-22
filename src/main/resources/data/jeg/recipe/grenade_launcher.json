@@ -1,9 +1,9 @@
-﻿{
+{
     "type":  "minecraft:crafting_shaped",
     "category":  "equipment",
     "pattern":  [
                     "IRT",
-                    "IT ",
+                    "ITX",
                     "  B"
                 ],
     "key":  {
@@ -15,6 +15,9 @@
                       },
                 "R":  {
                           "item":  "minecraft:redstone_block"
+                      },
+                "X":  {
+                          "item":  "minecraft:diamond"
                       },
                 "T":  {
                           "item":  "minecraft:tnt"

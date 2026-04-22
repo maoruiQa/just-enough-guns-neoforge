@@ -82,7 +82,7 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            if (RaidEntity.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
+            if (FactionRaidManager.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
                 JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} nearby active raid at {}", player.getGameProfile().getName(), respawnPos);
                 continue;
             }
@@ -102,7 +102,7 @@ public final class HomeRaidTriggerManager {
                     respawnPos,
                     currentLevel.dimension().location()
             );
-            RaidEntity.summonRaidEntity(currentLevel, faction, respawnCenter, true);
+            FactionRaidManager.startRaid(currentLevel, faction, respawnCenter, true);
             clearOmenFactionTag(player);
             player.removeEffect(factionOmen);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));

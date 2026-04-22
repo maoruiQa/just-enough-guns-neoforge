@@ -1,14 +1,17 @@
-﻿{
+{
     "type":  "minecraft:crafting_shaped",
     "category":  "equipment",
     "pattern":  [
                     "BBR",
-                    " RB",
+                    "XRB",
                     "  B"
                 ],
     "key":  {
                 "B":  {
                           "item":  "minecraft:blaze_rod"
+                      },
+                "X":  {
+                          "item":  "minecraft:diamond"
                       },
                 "R":  {
                           "item":  "minecraft:redstone_block"

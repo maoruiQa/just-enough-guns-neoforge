@@ -1,14 +1,17 @@
-﻿{
+{
     "type":  "minecraft:crafting_shaped",
     "category":  "equipment",
     "pattern":  [
                     "ZSB",
                     "RBZ",
-                    "  S"
+                    " NS"
                 ],
     "key":  {
                 "S":  {
                           "item":  "minecraft:soul_sand"
+                      },
+                "N":  {
+                          "item":  "minecraft:netherite_ingot"
                       },
                 "B":  {
                           "item":  "minecraft:iron_block"
