@@ -8,12 +8,25 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.illager.Pillager;
+import net.minecraft.world.entity.monster.illager.Vindicator;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.skeleton.Stray;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
+import net.minecraft.world.entity.monster.zombie.Drowned;
+import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -27,6 +40,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
@@ -36,6 +50,8 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
+import ttv.migami.jeg.faction.raid.FactionRaidHooks;
+import ttv.migami.jeg.faction.raid.RaidEntity;
 import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
 
 import java.util.UUID;
@@ -53,6 +69,7 @@ public class GunnerMobSpawner {
         ItemStack heldItem = mob.getMainHandItem();
 
         if (heldItem.getItem() instanceof GunItem) {
+            enforceGunnerMainHandLock(mob);
             reassessWeaponGoal(mob);
         }
     }
@@ -74,13 +91,18 @@ public class GunnerMobSpawner {
         ItemStack heldItem = mob.getMainHandItem();
 
         // Alternative approach for piglin zombification immunity - since PiglinAi.rideInBoat() doesn't exist
-        if (mob.getTags().contains("MobGunner") && mob instanceof AbstractPiglin abstractPiglin && abstractPiglin.level().dimension() == Level.OVERWORLD) {
+        if (mob.entityTags().contains("MobGunner") && mob instanceof AbstractPiglin abstractPiglin && abstractPiglin.level().dimension() == Level.OVERWORLD) {
             // Give piglin fire resistance to prevent zombification in overworld
             abstractPiglin.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20 * 60, 0, false, true));
         }
 
-        // Prevent baby zombies from getting guns, even if they somehow have the MobGunner tag
-        if (mob.getTags().contains("MobGunner") && !(heldItem.getItem() instanceof GunItem) && !mob.isBaby()) {
+        // Normalize tagged gunners before assigning their weapon.
+        if (mob.entityTags().contains("MobGunner") && !(heldItem.getItem() instanceof GunItem)) {
+            normalizeGunnerMob(mob);
+            if (mob.isBaby()) {
+                return;
+            }
+
             GunnerManager manager = new GunnerManager(GunnerManager.getConfigFactions());
             String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
             Identifier entityTypeLocation = Identifier.tryParse(entityName);
@@ -116,6 +138,7 @@ public class GunnerMobSpawner {
 
                 ItemStack modifiedGun = createModifiedGun(mob, gun);
                 mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
+                enforceGunnerMainHandLock(mob);
 
                 // Equip armor for all gunners (normal and elite)
                 // HELMET PRIORITY: System will prioritize helmets over body armor
@@ -136,38 +159,37 @@ public class GunnerMobSpawner {
 
     @SubscribeEvent
     public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof RaidEntity raidEntity) {
+            FactionRaidHooks.recoverRaidAnchor(raidEntity);
+        }
+
         if (!GunMobValues.enabled) {
             return;
         }
-
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
             return;
         }
 
         if (mob.level() instanceof ServerLevel serverLevel) {
             PatrolEncounterManager.recoverPatrolMob(serverLevel, mob);
+            FactionRaidHooks.recoverRaidMob(mob);
             TerrorRaidHooks.recoverRaidMob(mob);
         }
 
         mob.removeTag("GunAttackAssigned");
 
         // Check if this mob should become a gunner (only for newly spawned mobs)
-        // Prevent baby mobs from becoming gunners
-        if (mob.tickCount <= 5 && !mob.getTags().contains("MobGunner") && mob.getType().is(ModTags.Entities.GUNNER) && !mob.isBaby()) {
-            long totalDayTime = mob.level().getDayTime();
-            int currentDay = (int) (totalDayTime / 24000L);
+        if (mob.tickCount <= 5 && !mob.entityTags().contains("MobGunner") && mob.getType().builtInRegistryHolder().is(ModTags.Entities.GUNNER)) {
+            double gunnerChance = resolveNaturalGunnerChance(mob);
+            if (gunnerChance > 0.0D && mob.getRandom().nextDouble() < gunnerChance) {
+                GunnerManager manager = GunnerManager.getInstance();
+                String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
+                Identifier entityTypeLocation = Identifier.tryParse(entityName);
+                Faction faction = manager.getFactionForMob(entityTypeLocation);
 
-            if (currentDay >= GunMobValues.minDays) {
-                int daysOverMin = currentDay - GunMobValues.minDays;
-                int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
-
-                if (mob.getRandom().nextInt(100) < currentChance) {
-                    GunnerManager manager = GunnerManager.getInstance();
-                    String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                    Identifier entityTypeLocation = Identifier.tryParse(entityName);
-                    Faction faction = manager.getFactionForMob(entityTypeLocation);
-
-                    if (faction != null) {
+                if (faction != null) {
+                    normalizeGunnerMob(mob);
+                    if (!mob.isBaby()) {
                         mob.addTag("MobGunner");
                         ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
                     }
@@ -177,6 +199,7 @@ public class GunnerMobSpawner {
 
         ItemStack heldItem = mob.getMainHandItem();
         if (heldItem.getItem() instanceof GunItem) {
+            enforceGunnerMainHandLock(mob);
             reassessWeaponGoal(mob);
         } else {
             resetFollowRange(mob);
@@ -186,6 +209,41 @@ public class GunnerMobSpawner {
     public static boolean hasGunAttackGoal(PathfinderMob mob) {
         return mob.goalSelector.getAvailableGoals().stream()
                 .anyMatch(goal -> goal.getGoal() instanceof GunAttackGoal<?>);
+    }
+
+    private static double resolveNaturalGunnerChance(PathfinderMob mob) {
+        if (mob instanceof Husk) {
+            return Config.huskGunnerChance();
+        }
+        if (mob instanceof ZombifiedPiglin) {
+            return Config.zombifiedPiglinGunnerChance();
+        }
+        if (mob instanceof ZombieVillager || mob instanceof Drowned || mob instanceof Zombie) {
+            return Config.zombieGunnerChance();
+        }
+        if (mob instanceof Stray || mob instanceof Skeleton) {
+            return Config.skeletonGunnerChance();
+        }
+        if (mob instanceof WitherSkeleton) {
+            return Config.witherSkeletonGunnerChance();
+        }
+        if (mob instanceof PiglinBrute || mob instanceof Piglin) {
+            return Config.piglinGunnerChance();
+        }
+        if (mob instanceof Vindicator || mob instanceof Pillager) {
+            return Config.pillagerGunnerChance(mob.level());
+        }
+        return legacyNaturalGunnerChance(mob.level());
+    }
+
+    private static double legacyNaturalGunnerChance(Level level) {
+        int currentDay = (int) (level.getOverworldClockTime() / 24000L);
+        if (currentDay < GunMobValues.minDays) {
+            return 0.0D;
+        }
+        int daysOverMin = currentDay - GunMobValues.minDays;
+        int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
+        return currentChance / 100.0D;
     }
 
     public static boolean hasTargetGoal(PathfinderMob mob) {
@@ -208,9 +266,16 @@ public class GunnerMobSpawner {
     }
 
     public static void reassessWeaponGoal(PathfinderMob mob) {
-        if (mob.level().isClientSide() || hasGunAttackGoal(mob) || mob.isBaby()) {
+        if (mob.level().isClientSide() || hasGunAttackGoal(mob)) {
             return;
         }
+
+        normalizeGunnerMob(mob);
+        if (mob.isBaby()) {
+            return;
+        }
+
+        enforceGunnerMainHandLock(mob);
 
         AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
         boolean isCloseRange = mob.getRandom().nextBoolean();
@@ -220,6 +285,27 @@ public class GunnerMobSpawner {
         mob.goalSelector.addGoal(2, new GunAttackGoal<>(mob, stopRange, 1.2F, aiType, aiDifficulty));
         mob.addTag("GunAttackAssigned");
         extendFollowRange(mob);
+    }
+
+    public static void normalizeGunnerMob(Mob mob) {
+        if (mob instanceof Zombie zombie && zombie.isBaby()) {
+            zombie.setBaby(false);
+        }
+        if (mob instanceof Piglin piglin && piglin.isBaby()) {
+            piglin.setBaby(false);
+        }
+        if (mob instanceof AbstractPiglin abstractPiglin) {
+            abstractPiglin.setImmuneToZombification(true);
+        }
+        if (mob.isOnFire()) {
+            mob.extinguishFire();
+        }
+    }
+
+    private static void enforceGunnerMainHandLock(PathfinderMob mob) {
+        if (mob.getMainHandItem().getItem() instanceof GunItem) {
+            mob.setCanPickUpLoot(false);
+        }
     }
 
     private static void applyEliteAttributes(PathfinderMob mob) {

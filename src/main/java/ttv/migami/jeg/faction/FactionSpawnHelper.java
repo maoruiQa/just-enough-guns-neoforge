@@ -2,6 +2,7 @@ package ttv.migami.jeg.faction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -9,15 +10,22 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
@@ -33,8 +41,15 @@ public final class FactionSpawnHelper {
     public static final String OMEN_FACTION_TAG_PREFIX = "JEGOmenFaction:";
     private static final int MAX_SPAWN_POSITION_ATTEMPTS = 96;
     private static final int MAX_GROUND_SAMPLE_ATTEMPTS = 12;
+    private static final int CLUSTER_SPAWN_MAX_OFFSET = 4;
     private static final int PATH_SEARCH_RANGE = 32;
     private static final double NAVIGATION_SPEED = 1.2D;
+    private static final double RAID_PLAYER_BUFFER_RADIUS = 20.0D;
+    private static final double STUCK_RECOVERY_MIN_TARGET_DISTANCE = 20.0D;
+    private static final int SOFT_RECOVERY_THRESHOLD_TICKS = 60;
+    private static final int LOCAL_REPOSITION_THRESHOLD_TICKS = 120;
+    private static final int HARD_RECOVERY_THRESHOLD_TICKS = 200;
+    private static final int AIR_RECOVERY_ATTEMPTS = 10;
     private static final int[][] TARGET_PATH_OFFSETS = new int[][] {
             {0, 0},
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
@@ -74,49 +89,53 @@ public final class FactionSpawnHelper {
         int leafBlockedFailures = 0;
         int collisionFailures = 0;
         int addEntityFailures = 0;
+        BlockPos clusterCenter = targetPlayer != null
+                ? sampleGroundPosition(level, targetPlayer.blockPosition(), random, 12, 28)
+                : resolveSurfaceSpawn(level, spawnPos);
 
         while (spawned.size() < size && attempts++ < maxAttempts) {
-            BlockPos candidate = targetPlayer != null
-                    ? sampleGroundPosition(level, targetPlayer.blockPosition(), random, 12, 28)
-                    : resolveSurfaceSpawn(level, spawnPos);
+            BlockPos candidate = resolvePatrolClusterPosition(level, clusterCenter, spawnPos, random, spread, spawned.isEmpty());
             Player spawnTarget = resolveSpawnTarget(level, candidate, targetPlayer);
             if (spawnTarget == null) {
                 noTargetFailures++;
-                int moveSpan = Math.max(1, spread);
-                spawnPos.move(random.nextInt(moveSpan + 1) - random.nextInt(moveSpan + 1), 0, random.nextInt(moveSpan + 1) - random.nextInt(moveSpan + 1));
+                if (spawned.isEmpty()) {
+                    clusterCenter = targetPlayer != null
+                            ? sampleGroundPosition(level, targetPlayer.blockPosition(), random, 12, 28)
+                            : resolveSurfaceSpawn(level, spawnPos);
+                }
                 continue;
             }
 
             Mob mob = createFactionMob(level, faction, candidate, true, forceGuns);
             if (mob == null) {
                 createFailures++;
-            } else {
-                SpawnFailReason spawnResult = prepareAndSpawn(level, mob, candidate, true, false);
-                if (spawnResult == SpawnFailReason.NONE) {
-                    mob.addTag(PATROL_ID_TAG_PREFIX + patrolId);
-                    mob.addTag(PATROL_FACTION_TAG_PREFIX + faction.getName());
-                    if (!configurePatrolBehavior(mob, spawnTarget)) {
-                        pathFailures++;
-                    }
-                    spawned.add(mob);
-                } else {
-                    spawnFailures++;
-                    switch (spawnResult) {
-                        case OUT_OF_BORDER -> borderFailures++;
-                        case FEET_BLOCKED -> feetBlockedFailures++;
-                        case HEAD_BLOCKED -> headBlockedFailures++;
-                        case NO_GROUND -> noGroundFailures++;
-                        case FLUID_BLOCKED -> fluidFailures++;
-                        case LEAF_BLOCKED -> leafBlockedFailures++;
-                        case COLLISION_BLOCKED -> collisionFailures++;
-                        case ADD_ENTITY_FAILED -> addEntityFailures++;
-                        default -> {
-                        }
-                    }
+                continue;
+            }
+
+            SpawnFailReason spawnResult = prepareAndSpawn(level, mob, candidate, true, false, null, null, null, forceGuns);
+            if (spawnResult == SpawnFailReason.NONE) {
+                mob.addTag(PATROL_ID_TAG_PREFIX + patrolId);
+                mob.addTag(PATROL_FACTION_TAG_PREFIX + faction.getName());
+                if (!configurePatrolBehavior(mob, spawnTarget)) {
+                    pathFailures++;
+                }
+                spawned.add(mob);
+                continue;
+            }
+
+            spawnFailures++;
+            switch (spawnResult) {
+                case OUT_OF_BORDER -> borderFailures++;
+                case FEET_BLOCKED -> feetBlockedFailures++;
+                case HEAD_BLOCKED -> headBlockedFailures++;
+                case NO_GROUND -> noGroundFailures++;
+                case FLUID_BLOCKED -> fluidFailures++;
+                case LEAF_BLOCKED -> leafBlockedFailures++;
+                case COLLISION_BLOCKED -> collisionFailures++;
+                case ADD_ENTITY_FAILED -> addEntityFailures++;
+                default -> {
                 }
             }
-            int moveSpan = Math.max(1, spread);
-            spawnPos.move(random.nextInt(moveSpan + 1) - random.nextInt(moveSpan + 1), 0, random.nextInt(moveSpan + 1) - random.nextInt(moveSpan + 1));
         }
 
         lastPatrolDebug = "attempts=" + attempts
@@ -150,16 +169,34 @@ public final class FactionSpawnHelper {
 
     @Nullable
     public static Mob spawnRaidMember(ServerLevel level, Faction faction, BlockPos origin, @Nullable Player preferredTarget) {
+        return spawnRaidMember(level, faction, origin, preferredTarget, null, null, null, true, null);
+    }
+
+    @Nullable
+    public static Mob spawnRaidMember(ServerLevel level, Faction faction, BlockPos origin, @Nullable Player preferredTarget,
+                                      @Nullable String raidId, @Nullable String raidOrigin, @Nullable String factionName, boolean forceGuns) {
+        return spawnRaidMember(level, faction, origin, preferredTarget, raidId, raidOrigin, factionName, forceGuns, null);
+    }
+
+    @Nullable
+    public static Mob spawnRaidMember(ServerLevel level, Faction faction, BlockPos origin, @Nullable Player preferredTarget,
+                                      @Nullable String raidId, @Nullable String raidOrigin, @Nullable String factionName, boolean forceGuns,
+                                      @Nullable BlockPos burstCenter) {
         RandomSource random = level.getRandom();
         for (int attempt = 0; attempt < MAX_SPAWN_POSITION_ATTEMPTS; attempt++) {
-            BlockPos candidate = sampleGroundPosition(level, origin, random, 12, 24);
+            BlockPos candidate = burstCenter != null
+                    ? sampleClusteredRaidPosition(level, burstCenter, random)
+                    : sampleRaidEdgePosition(level, origin, random, 12, 23);
+            if (isTooCloseToRaidPlayers(level, candidate)) {
+                continue;
+            }
             Player target = resolveSpawnTarget(level, candidate, preferredTarget);
             if (target == null) {
                 continue;
             }
 
-            Mob mob = createFactionMob(level, faction, candidate, true, true);
-            if (mob == null || prepareAndSpawn(level, mob, candidate, false, true) != SpawnFailReason.NONE) {
+            Mob mob = createFactionMob(level, faction, candidate, true, forceGuns);
+            if (mob == null || prepareAndSpawn(level, mob, candidate, false, true, raidId, raidOrigin, factionName, forceGuns) != SpawnFailReason.NONE) {
                 continue;
             }
             if (!configureRaidBehavior(mob, target)) {
@@ -171,6 +208,7 @@ public final class FactionSpawnHelper {
 
         return null;
     }
+
 
     @Nullable
     private static Mob createFactionMob(ServerLevel level, Faction faction, BlockPos spawnPos, boolean canBeElite, boolean forceGuns) {
@@ -202,21 +240,25 @@ public final class FactionSpawnHelper {
         }
         mob.setPersistenceRequired();
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
+        if (mob.entityTags().contains(GunEvents.JEG_GUNNER_TAG)) {
+            GunnerMobSpawner.normalizeGunnerMob(mob);
+        }
 
         if (canBeElite && GunMobValues.elitesEnabled && random.nextFloat() < GunMobValues.eliteChance) {
             mob.addTag("EliteGunner");
         }
 
-        long dayTime = level.getDayTime() % 24000L;
+        long dayTime = level.getOverworldClockTime() % 24000L;
         boolean isDay = dayTime >= 0L && dayTime < 12300L;
-        if (mob.getType().is(ModTags.Entities.UNDEAD) && mob.getItemBySlot(EquipmentSlot.HEAD).isEmpty() && isDay) {
+        if (mob.getType().builtInRegistryHolder().is(ModTags.Entities.UNDEAD) && mob.getItemBySlot(EquipmentSlot.HEAD).isEmpty() && isDay) {
             mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
         }
 
         return mob;
     }
 
-    private static SpawnFailReason prepareAndSpawn(ServerLevel level, Mob mob, BlockPos spawnPos, boolean patrol, boolean raid) {
+    private static SpawnFailReason prepareAndSpawn(ServerLevel level, Mob mob, BlockPos spawnPos, boolean patrol, boolean raid,
+                                                   @Nullable String raidId, @Nullable String raidOrigin, @Nullable String factionName, boolean forceGuns) {
         SpawnFailReason spawnCheck = canSpawnAt(level, mob, spawnPos);
         if (spawnCheck != SpawnFailReason.NONE) {
             return spawnCheck;
@@ -227,6 +269,16 @@ public final class FactionSpawnHelper {
         }
         if (raid) {
             mob.addTag(RAID_TAG);
+            if (raidId != null && !raidId.isBlank()) {
+                mob.addTag("JEGFactionRaidId:" + raidId);
+            }
+            if (raidOrigin != null && !raidOrigin.isBlank()) {
+                mob.addTag("JEGFactionRaidOrigin:" + raidOrigin);
+            }
+            if (factionName != null && !factionName.isBlank()) {
+                mob.addTag("JEGFactionRaidFaction:" + factionName);
+            }
+            mob.addTag("JEGFactionRaidForceGuns:" + forceGuns);
         }
 
         if (!level.addFreshEntity(mob)) {
@@ -240,10 +292,67 @@ public final class FactionSpawnHelper {
             return true;
         }
 
-        int currentDay = (int) (level.getDayTime() / 24000L);
+        int currentDay = (int) (level.getOverworldClockTime() / 24000L);
         int daysOverMin = Math.max(0, currentDay - GunMobValues.minDays);
         int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
         return mob.getRandom().nextInt(100) < currentChance;
+    }
+
+    private static BlockPos resolvePatrolClusterPosition(ServerLevel level, BlockPos clusterCenter, BlockPos.MutableBlockPos fallback, RandomSource random, int spread, boolean firstSpawn) {
+        if (firstSpawn) {
+            return clusterCenter;
+        }
+
+        int maxOffset = Math.max(2, Math.min(Math.max(1, spread), CLUSTER_SPAWN_MAX_OFFSET));
+        BlockPos candidate = clusterCenter;
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            int dx = random.nextInt(maxOffset * 2 + 1) - maxOffset;
+            int dz = random.nextInt(maxOffset * 2 + 1) - maxOffset;
+            candidate = resolveSurfaceSpawn(level, clusterCenter.offset(dx, 0, dz));
+            if (isSafeGroundPosition(level, candidate)) {
+                return candidate;
+            }
+        }
+
+        return resolveSurfaceSpawn(level, fallback);
+    }
+
+    private static BlockPos sampleClusteredRaidPosition(ServerLevel level, BlockPos burstCenter, RandomSource random) {
+        BlockPos center = resolveSurfaceSpawn(level, burstCenter);
+        if (isSafeGroundPosition(level, center)) {
+            return center;
+        }
+
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            int dx = random.nextInt(CLUSTER_SPAWN_MAX_OFFSET * 2 + 1) - CLUSTER_SPAWN_MAX_OFFSET;
+            int dz = random.nextInt(CLUSTER_SPAWN_MAX_OFFSET * 2 + 1) - CLUSTER_SPAWN_MAX_OFFSET;
+            BlockPos candidate = resolveSurfaceSpawn(level, burstCenter.offset(dx, 0, dz));
+            if (isSafeGroundPosition(level, candidate)) {
+                return candidate;
+            }
+        }
+
+        return center;
+    }
+
+    public static @Nullable BlockPos resolveRaidBurstCenter(ServerLevel level, BlockPos origin, @Nullable BlockPos burstCenter,
+                                                            RandomSource random, int minRadius, int maxRadius) {
+        if (burstCenter != null) {
+            BlockPos resolved = resolveSurfaceSpawn(level, burstCenter);
+            if (isSafeGroundPosition(level, resolved) && !isTooCloseToRaidPlayers(level, resolved)) {
+                return resolved;
+            }
+        }
+
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            BlockPos candidate = sampleRaidEdgePosition(level, origin, random, minRadius, maxRadius);
+            if (!isSafeGroundPosition(level, candidate) || isTooCloseToRaidPlayers(level, candidate)) {
+                continue;
+            }
+            return candidate;
+        }
+
+        return null;
     }
 
     private static @Nullable Player resolveSpawnTarget(ServerLevel level, BlockPos spawnPos, @Nullable Player preferredTarget) {
@@ -273,11 +382,29 @@ public final class FactionSpawnHelper {
     }
 
     private static boolean isValidTarget(ServerLevel level, @Nullable Player player) {
-        return player != null
-                && player.level() == level
-                && player.isAlive()
-                && !player.isSpectator()
-                && !player.isCreative();
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return false;
+        }
+        return serverPlayer.level() == level
+                && serverPlayer.isAlive()
+                && !serverPlayer.isSpectator()
+                && serverPlayer.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
+    }
+
+    public static boolean isTooCloseToRaidPlayers(ServerLevel level, BlockPos pos) {
+        double minDistanceSq = RAID_PLAYER_BUFFER_RADIUS * RAID_PLAYER_BUFFER_RADIUS;
+        double x = pos.getX() + 0.5D;
+        double y = pos.getY() + 0.5D;
+        double z = pos.getZ() + 0.5D;
+        for (Player player : level.players()) {
+            if (!isValidTarget(level, player)) {
+                continue;
+            }
+            if (player.distanceToSqr(x, y, z) < minDistanceSq) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean configurePatrolBehavior(Mob mob, @Nullable Player targetPlayer) {
@@ -314,7 +441,7 @@ public final class FactionSpawnHelper {
         return moveToTargetWithPathFallback(pathfinderMob, targetPlayer);
     }
 
-    private static boolean moveToTargetWithPathFallback(PathfinderMob pathfinderMob, Player targetPlayer) {
+    public static boolean moveToTargetWithPathFallback(PathfinderMob pathfinderMob, Player targetPlayer) {
         Path directPath = pathfinderMob.getNavigation().createPath(targetPlayer, PATH_SEARCH_RANGE);
         if (directPath != null && pathfinderMob.getNavigation().moveTo(directPath, NAVIGATION_SPEED)) {
             return true;
@@ -330,6 +457,259 @@ public final class FactionSpawnHelper {
         }
 
         return false;
+    }
+
+    public static int updateStationaryTicks(Map<UUID, Vec3> lastPositions, Map<UUID, Integer> stationaryTicks, UUID mobId, Vec3 currentPos, int tickStep, double movementThresholdSq) {
+        Vec3 lastPos = lastPositions.put(mobId, currentPos);
+        if (lastPos == null || lastPos.distanceToSqr(currentPos) >= movementThresholdSq) {
+            stationaryTicks.remove(mobId);
+            return 0;
+        }
+        return stationaryTicks.merge(mobId, tickStep, Integer::sum);
+    }
+
+    public static boolean trySoftTargetRecovery(PathfinderMob pathfinderMob, @Nullable Player targetPlayer) {
+        pathfinderMob.getNavigation().stop();
+        if (targetPlayer == null) {
+            return false;
+        }
+        pathfinderMob.setTarget(targetPlayer);
+        return moveToTargetWithPathFallback(pathfinderMob, targetPlayer);
+    }
+
+    @Nullable
+    public static BlockPos findLocalGroundRecoveryPosition(ServerLevel level, PathfinderMob mob, BlockPos anchor, @Nullable Player targetPlayer,
+                                                           int minDistance, int maxDistance, int attempts, boolean raidPlayerBuffer) {
+        double maxAnchorDistanceSq = (double) maxDistance * (double) maxDistance;
+        BlockPos targetPos = targetPlayer != null ? targetPlayer.blockPosition() : anchor;
+        double minTargetDistanceSq = targetPlayer != null
+                ? STUCK_RECOVERY_MIN_TARGET_DISTANCE * STUCK_RECOVERY_MIN_TARGET_DISTANCE
+                : -1.0D;
+        RandomSource random = level.getRandom();
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            BlockPos candidate = sampleGroundPosition(level, anchor, random, minDistance, maxDistance);
+            if (!isSafeGroundPosition(level, candidate)) {
+                continue;
+            }
+            if (raidPlayerBuffer && isTooCloseToRaidPlayers(level, candidate)) {
+                continue;
+            }
+            if (candidate.distSqr(anchor) > maxAnchorDistanceSq) {
+                continue;
+            }
+            if (targetPlayer != null && candidate.distSqr(targetPos) <= minTargetDistanceSq) {
+                continue;
+            }
+            if (!canNavigateFrom(level, mob, candidate, targetPlayer)) {
+                continue;
+            }
+            return candidate;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static Vec3 findLocalAirRecoveryPosition(ServerLevel level, BlockPos anchor, @Nullable Player targetPlayer,
+                                                    int minRadius, int maxRadius, int minHeight, int maxHeight) {
+        RandomSource random = level.getRandom();
+        BlockPos focus = targetPlayer != null ? targetPlayer.blockPosition() : anchor;
+        for (int attempt = 0; attempt < AIR_RECOVERY_ATTEMPTS; attempt++) {
+            Vec3 candidate = sampleAirPosition(level, focus, random, minRadius, maxRadius, minHeight, maxHeight);
+            BlockPos candidatePos = BlockPos.containing(candidate);
+            if (!level.getWorldBorder().isWithinBounds(candidatePos)) {
+                continue;
+            }
+            if (!level.isEmptyBlock(candidatePos) || !level.isEmptyBlock(candidatePos.above()) || !level.isEmptyBlock(candidatePos.below())) {
+                continue;
+            }
+            return candidate;
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Mob repositionMob(ServerLevel level, Mob original, BlockPos recoveryPos, EntitySpawnReason spawnReason) {
+        var created = original.getType().create(level, spawnReason);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        replacement.setPos(recoveryPos.getX() + 0.5D, recoveryPos.getY(), recoveryPos.getZ() + 0.5D);
+        replacement.setPersistenceRequired();
+        replacement.finalizeSpawn(level, level.getCurrentDifficultyAt(recoveryPos), spawnReason, null);
+        return replacement;
+    }
+
+    @Nullable
+    public static Mob repositionMobInAir(ServerLevel level, Mob original, Vec3 recoveryPos, EntitySpawnReason spawnReason) {
+        var created = original.getType().create(level, spawnReason);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        replacement.setPos(recoveryPos.x, recoveryPos.y, recoveryPos.z);
+        replacement.setYRot(original.getYRot());
+        replacement.setXRot(original.getXRot());
+        replacement.setPersistenceRequired();
+        replacement.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(recoveryPos)), spawnReason, null);
+        return replacement;
+    }
+
+    @Nullable
+    private static Vec3 sampleAirPosition(ServerLevel level, BlockPos origin, RandomSource random, int minRadius, int maxRadius, int minHeight, int maxHeight) {
+        double angle = random.nextDouble() * (Math.PI * 2.0D);
+        double radius = random.nextInt(maxRadius - minRadius + 1) + minRadius;
+        double yOffset = random.nextInt(maxHeight - minHeight + 1) + minHeight;
+        double x = origin.getX() + 0.5D + Math.cos(angle) * radius;
+        double z = origin.getZ() + 0.5D + Math.sin(angle) * radius;
+        double y = origin.getY() + yOffset;
+        return new Vec3(x, y, z);
+    }
+
+    @Nullable
+    public static BlockPos findValidatedGroundRecoveryPosition(ServerLevel level, PathfinderMob mob, BlockPos origin, Player targetPlayer,
+                                                               int minDistance, int maxDistance, int attempts, boolean raidPlayerBuffer) {
+        double minTargetDistanceSq = STUCK_RECOVERY_MIN_TARGET_DISTANCE * STUCK_RECOVERY_MIN_TARGET_DISTANCE;
+        double maxOriginDistanceSq = (double) maxDistance * (double) maxDistance;
+        BlockPos targetPos = targetPlayer.blockPosition();
+        RandomSource random = level.getRandom();
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            BlockPos candidate = sampleGroundPosition(level, origin, random, minDistance, maxDistance);
+            if (!isSafeGroundPosition(level, candidate)) {
+                continue;
+            }
+            if (raidPlayerBuffer && isTooCloseToRaidPlayers(level, candidate)) {
+                continue;
+            }
+            if (candidate.distSqr(targetPos) <= minTargetDistanceSq) {
+                continue;
+            }
+            if (candidate.distSqr(origin) > maxOriginDistanceSq) {
+                continue;
+            }
+            if (!canNavigateFrom(level, mob, candidate, targetPlayer)) {
+                continue;
+            }
+            return candidate;
+        }
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            BlockPos candidate = sampleRaidEdgePosition(level, origin, random, minDistance, maxDistance);
+            if (!isSafeGroundPosition(level, candidate)) {
+                continue;
+            }
+            if (raidPlayerBuffer && isTooCloseToRaidPlayers(level, candidate)) {
+                continue;
+            }
+            if (candidate.distSqr(targetPos) <= minTargetDistanceSq) {
+                continue;
+            }
+            if (candidate.distSqr(origin) > maxOriginDistanceSq) {
+                continue;
+            }
+            if (!canNavigateFrom(level, mob, candidate, targetPlayer)) {
+                continue;
+            }
+            return candidate;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static BlockPos findHiddenCombatRecoveryPosition(ServerLevel level, PathfinderMob mob, BlockPos origin, Player targetPlayer,
+                                                            @Nullable Vec3 lastKnownPosition, int localMinDistance, int localMaxDistance,
+                                                            int validatedMinDistance, int validatedMaxDistance, int attempts) {
+        return findReservedHiddenCombatRecoveryPosition(level, mob, origin, targetPlayer, lastKnownPosition,
+                localMinDistance, localMaxDistance, validatedMinDistance, validatedMaxDistance, attempts, List.of());
+    }
+
+    public static BlockPos findReservedHiddenCombatRecoveryPosition(ServerLevel level, PathfinderMob mob, BlockPos origin, Player targetPlayer,
+                                                                    @Nullable Vec3 lastKnownPosition, int localMinDistance, int localMaxDistance,
+                                                                    int validatedMinDistance, int validatedMaxDistance, int attempts,
+                                                                    List<BlockPos> reservedPositions) {
+        BlockPos candidate = findHiddenCombatRecoveryPositionAround(level, mob, origin, targetPlayer, localMinDistance, localMaxDistance, attempts, true, reservedPositions);
+        if (candidate != null) {
+            return candidate;
+        }
+
+        candidate = findHiddenCombatRecoveryPositionAround(level, mob, origin, targetPlayer, validatedMinDistance, validatedMaxDistance, attempts, false, reservedPositions);
+        if (candidate != null) {
+            return candidate;
+        }
+
+        if (lastKnownPosition != null) {
+            BlockPos lastKnownPos = BlockPos.containing(lastKnownPosition);
+            if (lastKnownPos.distManhattan(origin) >= 6) {
+                candidate = findHiddenCombatRecoveryPositionAround(level, mob, lastKnownPos, targetPlayer, validatedMinDistance, validatedMaxDistance, attempts, false, reservedPositions);
+                if (candidate != null) {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static BlockPos findHiddenCombatRecoveryPositionAround(ServerLevel level, PathfinderMob mob, BlockPos anchor, Player targetPlayer,
+                                                                   int minDistance, int maxDistance, int attempts, boolean localOnly,
+                                                                   List<BlockPos> reservedPositions) {
+        if (localOnly) {
+            BlockPos candidate = findLocalGroundRecoveryPosition(level, mob, anchor, targetPlayer, minDistance, maxDistance, attempts, false);
+            return isHiddenCombatRecoveryCandidate(level, mob, targetPlayer, candidate, reservedPositions) ? candidate : null;
+        }
+
+        BlockPos candidate = findValidatedGroundRecoveryPosition(level, mob, anchor, targetPlayer, minDistance, maxDistance, attempts, false);
+        return isHiddenCombatRecoveryCandidate(level, mob, targetPlayer, candidate, reservedPositions) ? candidate : null;
+    }
+
+    private static boolean isHiddenCombatRecoveryCandidate(ServerLevel level, PathfinderMob mob, Player targetPlayer, @Nullable BlockPos candidate,
+                                                           List<BlockPos> reservedPositions) {
+        if (candidate == null || !isSafeGroundPosition(level, candidate)) {
+            return false;
+        }
+        for (BlockPos reserved : reservedPositions) {
+            if (reserved != null && candidate.closerThan(reserved, 3.0D)) {
+                return false;
+            }
+        }
+        if (!canNavigateFrom(level, mob, candidate, targetPlayer)) {
+            return false;
+        }
+        return !hasImmediateLineOfSight(level, candidate, targetPlayer);
+    }
+
+    private static boolean hasImmediateLineOfSight(ServerLevel level, BlockPos candidate, Player targetPlayer) {
+        Vec3 from = Vec3.atCenterOf(candidate).add(0.0D, 1.4D, 0.0D);
+        Vec3 to = targetPlayer.getEyePosition();
+        BlockHitResult result = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, targetPlayer));
+        return result.getType() == HitResult.Type.MISS;
+    }
+
+    private static boolean canNavigateFrom(ServerLevel level, PathfinderMob mob, BlockPos spawnPos, Player targetPlayer) {
+        double originalX = mob.getX();
+        double originalY = mob.getY();
+        double originalZ = mob.getZ();
+        LivingEntity originalTarget = mob.getTarget();
+        double x = spawnPos.getX() + 0.5D;
+        double y = spawnPos.getY();
+        double z = spawnPos.getZ() + 0.5D;
+
+        mob.getNavigation().stop();
+        mob.setPos(x, y, z);
+        if (!level.noCollision(mob)) {
+            mob.setPos(originalX, originalY, originalZ);
+            mob.setTarget(originalTarget);
+            return false;
+        }
+
+        boolean canNavigate = moveToTargetWithPathFallback(mob, targetPlayer);
+        mob.getNavigation().stop();
+        mob.setPos(originalX, originalY, originalZ);
+        mob.setTarget(originalTarget);
+        return canNavigate;
     }
 
     private static SpawnFailReason canSpawnAt(ServerLevel level, Mob mob, BlockPos spawnPos) {
@@ -354,6 +734,10 @@ public final class FactionSpawnHelper {
         if (!level.getFluidState(spawnPos).isEmpty() || !level.getFluidState(spawnPos.above()).isEmpty()) {
             return SpawnFailReason.FLUID_BLOCKED;
         }
+        if (isLeafBlock(feetState) || isLeafBlock(headState) || isLeafBlock(groundState)) {
+            return SpawnFailReason.LEAF_BLOCKED;
+        }
+        mob.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
         if (!level.noCollision(mob)) {
             return SpawnFailReason.COLLISION_BLOCKED;
         }
@@ -363,17 +747,10 @@ public final class FactionSpawnHelper {
     public static BlockPos sampleGroundPosition(ServerLevel level, BlockPos origin, RandomSource random, int minDistance, int maxDistance) {
         BlockPos fallback = resolveSurfaceSpawn(level, origin);
         for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
-            int dx = random.nextInt(maxDistance - minDistance + 1) + minDistance;
-            int dz = random.nextInt(maxDistance - minDistance + 1) + minDistance;
-            if (random.nextBoolean()) {
-                dx = -dx;
-            }
-            if (random.nextBoolean()) {
-                dz = -dz;
-            }
-
-            int x = origin.getX() + dx;
-            int z = origin.getZ() + dz;
+            double angle = random.nextDouble() * (Math.PI * 2.0D);
+            int radius = random.nextInt(maxDistance - minDistance + 1) + minDistance;
+            int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
             BlockPos candidate = resolveSurfaceSpawn(level, new BlockPos(x, origin.getY(), z));
             if (isSafeGroundPosition(level, candidate)) {
                 return candidate;
@@ -382,6 +759,23 @@ public final class FactionSpawnHelper {
         }
         return fallback;
     }
+
+    public static BlockPos sampleRaidEdgePosition(ServerLevel level, BlockPos origin, RandomSource random, int minRadius, int maxRadius) {
+        BlockPos fallback = resolveSurfaceSpawn(level, origin);
+        for (int attempt = 0; attempt < MAX_GROUND_SAMPLE_ATTEMPTS; attempt++) {
+            double angle = random.nextDouble() * (Math.PI * 2.0D);
+            int radius = random.nextInt(maxRadius - minRadius + 1) + minRadius;
+            int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
+            BlockPos candidate = resolveSurfaceSpawn(level, new BlockPos(x, origin.getY(), z));
+            if (isSafeGroundPosition(level, candidate)) {
+                return candidate;
+            }
+            fallback = candidate;
+        }
+        return fallback;
+    }
+
 
     private static BlockPos resolveSurfaceSpawn(ServerLevel level, BlockPos source) {
         int x = source.getX();
@@ -431,6 +825,80 @@ public final class FactionSpawnHelper {
         COLLISION_BLOCKED,
         ADD_ENTITY_FAILED
     }
+
+    public enum RecoveryStage {
+        NONE,
+        SOFT_REPATH,
+        LOCAL_REPOSITION,
+        HARD_REPOSITION
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

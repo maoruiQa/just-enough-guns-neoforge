@@ -3,11 +3,12 @@
   "category": "equipment",
   "pattern": [
     "BBR",
-    " RB",
+    "XRB",
     "  B"
   ],
   "key": {
     "B": "minecraft:blaze_rod",
+    "X": "minecraft:diamond",
     "R": "minecraft:redstone_block"
   },
   "result": {

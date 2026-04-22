@@ -47,6 +47,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.BossEvent;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -68,6 +69,7 @@ import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.util.LootUtils;
+import ttv.migami.jeg.faction.GroupedGunnerRecovery;
 
 /**
  * Utility that emulates the legacy Terror Phantom post-death raid event.
@@ -88,11 +90,18 @@ final class TerrorRaidManager {
     private static final int RAID_PLAYER_RANGE = 128;
     private static final int RAID_DUPLICATE_GUARD_TICKS = 200;
     private static final int LEGACY_RECOVERY_MERGE_DISTANCE = 192;
-    private static final int UNREACHABLE_REPATH_TICKS = 3;
-    private static final int UNREACHABLE_RELOCATE_TICKS = 8;
-    private static final int UNREACHABLE_CLEANUP_TICKS = 24;
+    private static final int STATIONARY_STUCK_TICKS = 120;
+    private static final int SPIN_STUCK_TICKS = 120;
+    private static final int DISTANCE_STALL_TICKS = 120;
+    private static final double STATIONARY_MOVEMENT_THRESHOLD_SQ = 0.25D;
+    private static final float SPIN_STUCK_YAW_DELTA_DEGREES = 35.0F;
+    private static final double DISTANCE_STALL_THRESHOLD = 1.5D;
     private static final int MAX_GROUND_SAMPLE_ATTEMPTS = 12;
     private static final double RAID_NAVIGATION_SPEED = 1.2D;
+    private static final int GROUND_RECOVERY_MIN_DISTANCE = 12;
+    private static final int GROUND_RECOVERY_MAX_DISTANCE = 28;
+    private static final int AIR_RECOVERY_MIN_DISTANCE = 20;
+    private static final int AIR_RECOVERY_MAX_DISTANCE = 28;
     private static final Map<ServerLevel, List<RaidContext>> ACTIVE_RAIDS = new HashMap<>();
     private static final Map<ServerLevel, Map<BlockPos, Long>> RECENT_RAID_TRIGGERS = new HashMap<>();
 
@@ -142,7 +151,7 @@ final class TerrorRaidManager {
         if (!(mob.level() instanceof ServerLevel level)) {
             return;
         }
-        if (!mob.getTags().contains(TERROR_RAID_MOB_TAG)) {
+        if (!mob.entityTags().contains(TERROR_RAID_MOB_TAG)) {
             return;
         }
 
@@ -429,13 +438,6 @@ final class TerrorRaidManager {
         }
     }
 
-    private static void assignInitialTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, BlockPos origin, double range) {
-        Player target = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(range), null, origin.getX() + 0.5D, origin.getY() + 0.5D, origin.getZ() + 0.5D, new AABB(origin).inflate(range));
-        if (target != null) {
-            mob.setTarget(target);
-        }
-    }
-
     private static void assignDirectTarget(ServerLevel level, net.minecraft.world.entity.Mob mob, @Nullable Player targetPlayer, BlockPos spawnPos, double range, BlockPos raidOrigin) {
         Player target = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(range), null,
                 spawnPos.getX() + 0.5D, spawnPos.getY() + 0.5D, spawnPos.getZ() + 0.5D, new AABB(spawnPos).inflate(range));
@@ -446,16 +448,15 @@ final class TerrorRaidManager {
             target = targetPlayer;
         }
 
-        // Set aggressive target with extended follow range
         if (target != null) {
             mob.setTarget(target);
-
-            // Increase follow range to ensure mobs can track the player over long distances
+            mob.setAggressive(true);
             if (mob instanceof PathfinderMob pathfinderMob) {
                 AttributeInstance followRange = pathfinderMob.getAttribute(Attributes.FOLLOW_RANGE);
                 if (followRange != null && !followRange.hasModifier(GUN_FOLLOW_RANGE_MODIFIER_ID)) {
                     extendFollowRange(pathfinderMob);
                 }
+                ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(pathfinderMob, target);
             }
         }
     }
@@ -502,7 +503,7 @@ final class TerrorRaidManager {
 
     @Nullable
     private static String readTagValue(net.minecraft.world.entity.Mob mob, String prefix) {
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (tag.startsWith(prefix)) {
                 return tag.substring(prefix.length());
             }
@@ -552,7 +553,7 @@ final class TerrorRaidManager {
 
     private static void replaceTagValue(net.minecraft.world.entity.Mob mob, String prefix, @Nullable String value) {
         List<String> stale = new ArrayList<>();
-        for (String tag : mob.getTags()) {
+        for (String tag : mob.entityTags()) {
             if (tag.startsWith(prefix)) {
                 stale.add(tag);
             }
@@ -624,18 +625,30 @@ final class TerrorRaidManager {
 
     private static void maintainRaidTargets(ServerLevel level, RaidContext raid) {
         Player preferred = resolvePreferredTarget(level, raid);
-        if (preferred == null) {
-            return;
-        }
+        Set<UUID> retiredMobs = new HashSet<>();
+        boolean hasPreferred = isValidRaidTarget(preferred, level, raid.origin);
 
-        Set<UUID> timedOut = new HashSet<>();
         for (UUID mobId : new HashSet<>(raid.activeMobIds)) {
             var entity = level.getEntity(mobId);
-            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive()) {
+            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive() || mob.isRemoved()) {
+                retiredMobs.add(mobId);
                 raid.clearMobTracking(mobId);
                 continue;
             }
-            if (!mob.getTags().contains(TERROR_RAID_MOB_TAG)) {
+            if (!mob.entityTags().contains(TERROR_RAID_MOB_TAG)) {
+                retiredMobs.add(mobId);
+                raid.clearMobTracking(mobId);
+                continue;
+            }
+
+            if (!hasPreferred) {
+                if (mob instanceof PathfinderMob pathfinderMob) {
+                    pathfinderMob.getNavigation().stop();
+                }
+                if (mob.getTarget() != null) {
+                    mob.setTarget(null);
+                }
+                mob.setAggressive(false);
                 raid.clearMobTracking(mobId);
                 continue;
             }
@@ -644,18 +657,18 @@ final class TerrorRaidManager {
             if (!(current instanceof Player player) || !isValidRaidTarget(player, level, raid.origin)) {
                 mob.setTarget(preferred);
                 mob.setAggressive(true);
+                if (mob instanceof PathfinderMob pathfinderMob) {
+                    ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(pathfinderMob, preferred);
+                }
             }
 
             if (checkUnreachableAndRecover(level, raid, mobId, mob, preferred)) {
-                timedOut.add(mobId);
+                retiredMobs.add(mobId);
             }
         }
 
-        if (!timedOut.isEmpty()) {
-            raid.activeMobIds.removeAll(timedOut);
-            for (UUID mobId : timedOut) {
-                raid.clearMobTracking(mobId);
-            }
+        if (!retiredMobs.isEmpty()) {
+            raid.activeMobIds.removeAll(retiredMobs);
         }
     }
 
@@ -665,31 +678,105 @@ final class TerrorRaidManager {
             return false;
         }
 
-        double distanceSq = mob.distanceToSqr(preferred);
-        boolean farFromTarget = distanceSq > 24.0D * 24.0D;
-        boolean navDone = pathfinderMob.getNavigation().isDone();
-        boolean noLineOfSight = !mob.hasLineOfSight(preferred);
-        boolean stuck = farFromTarget && (navDone || noLineOfSight);
+        int stationaryTicks = updateStationaryTicks(raid, mobId, mob);
+        int spinTicks = updateSpinTicks(raid, mobId, mob);
+        int distanceStallTicks = updateDistanceStallTicks(raid, mobId, mob, preferred);
+        int stuckSeverity = Math.max(stationaryTicks, Math.max(spinTicks, distanceStallTicks));
+        if (stuckSeverity < 60) {
+            return false;
+        }
+        if (stuckSeverity < STATIONARY_STUCK_TICKS) {
+            forceRepath(pathfinderMob, preferred);
+            return false;
+        }
 
-        if (!stuck) {
+        int eligibleCount = Math.min(3, countEligibleRecoveryMobs(raid, level, preferred));
+        boolean recovered;
+        if (raid.airRaid) {
+            Vec3 relocate = sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), 4, 8, 6, 10);
+            recovered = GroupedGunnerRecovery.tryRecoverAirMob(level, "terror-raid:" + raid.raidId, pathfinderMob, preferred, relocate, eligibleCount);
+        } else {
+            recovered = GroupedGunnerRecovery.tryRecoverGroundMob(
+                    level,
+                    "terror-raid:" + raid.raidId,
+                    raid.origin,
+                    pathfinderMob,
+                    (net.minecraft.server.level.ServerPlayer) preferred,
+                    4,
+                    8,
+                    4,
+                    10,
+                    12,
+                    eligibleCount
+            );
+        }
+        if (recovered) {
+            raid.incrementRelocationCount(mobId);
             raid.clearMobTracking(mobId);
             return false;
         }
 
-        int stuckTicks = raid.incrementUnreachableTicks(mobId);
-        if (stuckTicks % UNREACHABLE_REPATH_TICKS == 0) {
-            forceRepath(pathfinderMob, preferred);
-        }
-        if (stuckTicks % UNREACHABLE_RELOCATE_TICKS == 0) {
-            relocateRaidMob(level, raid, pathfinderMob, preferred);
-            raid.incrementRelocationCount(mobId);
-        }
-
-        if (stuckTicks >= UNREACHABLE_CLEANUP_TICKS || raid.getRelocationCount(mobId) >= 3) {
-            mob.discard();
-            return true;
-        }
+        forceRepath(pathfinderMob, preferred);
         return false;
+    }
+
+    private static int updateStationaryTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob) {
+        Vec3 currentPos = mob.position();
+        Vec3 lastPos = raid.lastPositions.put(mobId, currentPos);
+        if (lastPos == null || lastPos.distanceToSqr(currentPos) >= STATIONARY_MOVEMENT_THRESHOLD_SQ) {
+            raid.stationaryTicks.remove(mobId);
+            return 0;
+        }
+        return raid.stationaryTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int updateSpinTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob) {
+        float currentYaw = mob.getYRot();
+        Float lastYaw = raid.lastYaws.put(mobId, currentYaw);
+        if (lastYaw == null) {
+            raid.spinTicks.remove(mobId);
+            return 0;
+        }
+        float delta = Math.abs(Mth.wrapDegrees(currentYaw - lastYaw));
+        if (delta < SPIN_STUCK_YAW_DELTA_DEGREES) {
+            raid.spinTicks.remove(mobId);
+            return 0;
+        }
+        return raid.spinTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int updateDistanceStallTicks(RaidContext raid, UUID mobId, net.minecraft.world.entity.Mob mob, Player preferred) {
+        double distanceSq = mob.distanceToSqr(preferred);
+        Double lastDistanceSq = raid.lastTargetDistanceSq.put(mobId, distanceSq);
+        if (lastDistanceSq == null || lastDistanceSq - distanceSq > DISTANCE_STALL_THRESHOLD) {
+            raid.distanceStallTicks.remove(mobId);
+            return 0;
+        }
+        return raid.distanceStallTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int countEligibleRecoveryMobs(RaidContext raid, ServerLevel level, Player preferred) {
+        int eligible = 0;
+        for (UUID id : raid.activeMobIds) {
+            var entity = level.getEntity(id);
+            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !(mob instanceof PathfinderMob)) {
+                continue;
+            }
+            if (preferred.hasLineOfSight(mob)) {
+                continue;
+            }
+            int severity = Math.max(
+                    raid.stationaryTicks.getOrDefault(id, 0),
+                    Math.max(raid.spinTicks.getOrDefault(id, 0), raid.distanceStallTicks.getOrDefault(id, 0))
+            );
+            if (severity >= STATIONARY_STUCK_TICKS) {
+                eligible++;
+                if (eligible >= 3) {
+                    return eligible;
+                }
+            }
+        }
+        return eligible;
     }
 
     private static void forceRepath(PathfinderMob mob, Player preferred) {
@@ -702,25 +789,108 @@ final class TerrorRaidManager {
         }
     }
 
-    private static void relocateRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred) {
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
         if (raid.airRaid) {
-            Vec3 relocate = sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), 4, 8, 6, 10);
-            mob.teleportTo(relocate.x, relocate.y, relocate.z);
-        } else {
-            BlockPos relocate = sampleGroundPosition(level, preferred.blockPosition(), level.getRandom(), 4, 10);
-            if (!isSafeGroundPosition(level, relocate)) {
-                return;
-            }
-            mob.teleportTo(relocate.getX() + 0.5D, relocate.getY(), relocate.getZ() + 0.5D);
+            return recreateAirRaidMob(level, raid, mob, preferred, localOnly);
         }
-
-        mob.getNavigation().stop();
-        mob.setTarget(preferred);
-        mob.setAggressive(true);
-        forceRepath(mob, preferred);
+        return recreateGroundRaidMob(level, raid, mob, preferred, localOnly);
     }
 
-    private static @Nullable Player resolvePreferredTarget(ServerLevel level, RaidContext raid) {
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateGroundRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
+        BlockPos recoveryPos = localOnly
+                ? ttv.migami.jeg.faction.FactionSpawnHelper.findLocalGroundRecoveryPosition(
+                        level,
+                        mob,
+                        raid.origin,
+                        preferred,
+                        GROUND_RECOVERY_MIN_DISTANCE,
+                        GROUND_RECOVERY_MAX_DISTANCE,
+                        8,
+                        false
+                )
+                : ttv.migami.jeg.faction.FactionSpawnHelper.findValidatedGroundRecoveryPosition(
+                        level,
+                        mob,
+                        raid.origin,
+                        preferred,
+                        GROUND_RECOVERY_MIN_DISTANCE,
+                        GROUND_RECOVERY_MAX_DISTANCE,
+                        12,
+                        false
+                );
+        if (recoveryPos == null) {
+            return null;
+        }
+
+        var created = ttv.migami.jeg.faction.FactionSpawnHelper.repositionMob(level, mob, recoveryPos, EntitySpawnReason.EVENT);
+        if (!(created instanceof net.minecraft.world.entity.Mob replacement)) {
+            return null;
+        }
+        copyRaidState(mob, replacement);
+        raid.trackReplacement(replacement);
+        replacement.setTarget(preferred);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferred);
+        }
+        return replacement;
+    }
+
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateAirRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
+        Vec3 recoveryPos = localOnly
+                ? ttv.migami.jeg.faction.FactionSpawnHelper.findLocalAirRecoveryPosition(level, raid.origin, preferred, AIR_RECOVERY_MIN_DISTANCE, AIR_RECOVERY_MAX_DISTANCE, 6, 12)
+                : sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), AIR_RECOVERY_MIN_DISTANCE, AIR_RECOVERY_MAX_DISTANCE, 6, 12);
+        if (recoveryPos == null) {
+            return null;
+        }
+        var created = ttv.migami.jeg.faction.FactionSpawnHelper.repositionMobInAir(level, mob, recoveryPos, EntitySpawnReason.EVENT);
+        if (!(created instanceof net.minecraft.world.entity.Mob replacement)) {
+            return null;
+        }
+        copyRaidState(mob, replacement);
+        raid.trackReplacement(replacement);
+        replacement.setTarget(preferred);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferred);
+        }
+        return replacement;
+    }
+
+    private static void copyRaidState(net.minecraft.world.entity.Mob original, net.minecraft.world.entity.Mob replacement) {
+        replacement.setHealth(Math.min(replacement.getMaxHealth(), original.getHealth()));
+        replacement.setCustomName(original.getCustomName());
+        replacement.setCustomNameVisible(original.isCustomNameVisible());
+        replacement.setItemSlot(EquipmentSlot.MAINHAND, original.getMainHandItem().copy());
+        replacement.setItemSlot(EquipmentSlot.OFFHAND, original.getOffhandItem().copy());
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                replacement.setItemSlot(slot, original.getItemBySlot(slot).copy());
+            }
+        }
+        for (MobEffectInstance effect : original.getActiveEffects()) {
+            replacement.addEffect(new MobEffectInstance(effect));
+        }
+        for (String tag : original.entityTags()) {
+            replacement.addTag(tag);
+        }
+    }
+
+    @Nullable
+    private static Player resolvePreferredTarget(ServerLevel level, RaidContext raid) {
         if (raid.targetPlayerId != null) {
             Player preferred = level.getServer().getPlayerList().getPlayer(raid.targetPlayerId);
             if (isValidRaidTarget(preferred, level, raid.origin)) {
@@ -731,11 +901,20 @@ final class TerrorRaidManager {
         AABB search = new AABB(raid.origin).inflate(RAID_PLAYER_RANGE);
         Player nearest = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(RAID_PLAYER_RANGE), null,
                 raid.origin.getX() + 0.5D, raid.origin.getY() + 0.5D, raid.origin.getZ() + 0.5D, search);
-        return isValidRaidTarget(nearest, level, raid.origin) ? nearest : null;
+        if (!isValidRaidTarget(nearest, level, raid.origin)) {
+            return null;
+        }
+        raid.targetPlayerId = nearest.getUUID();
+        return nearest;
     }
 
     private static boolean isValidRaidTarget(@Nullable Player player) {
-        return player != null && player.isAlive() && !player.isCreative() && !player.isSpectator();
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) {
+            return false;
+        }
+        return serverPlayer.isAlive()
+                && !serverPlayer.isSpectator()
+                && serverPlayer.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
     }
 
     private static boolean isValidRaidTarget(@Nullable Player player, ServerLevel level, BlockPos raidOrigin) {
@@ -762,12 +941,18 @@ final class TerrorRaidManager {
     private static final class RaidContext {
         private final UUID raidId;
         private final BlockPos origin;
-        private final @Nullable UUID targetPlayerId;
+        private @Nullable UUID targetPlayerId;
         private final boolean airRaid;
         private final int totalWaves;
         private final Set<UUID> activeMobIds = new HashSet<>();
         private final Map<UUID, Integer> unreachableTicks = new HashMap<>();
         private final Map<UUID, Integer> relocationCounts = new HashMap<>();
+        private final Map<UUID, Vec3> lastPositions = new HashMap<>();
+        private final Map<UUID, Integer> stationaryTicks = new HashMap<>();
+        private final Map<UUID, Float> lastYaws = new HashMap<>();
+        private final Map<UUID, Integer> spinTicks = new HashMap<>();
+        private final Map<UUID, Double> lastTargetDistanceSq = new HashMap<>();
+        private final Map<UUID, Integer> distanceStallTicks = new HashMap<>();
         private final ServerBossEvent bossBar;
         private int spawnedTotal;
         private int wavesSpawned;
@@ -782,14 +967,20 @@ final class TerrorRaidManager {
             Component title = airRaid
                     ? Component.translatable("message.jeg.terror_raid.guardian")
                     : Component.translatable("message.jeg.terror_raid.begin");
-            this.bossBar = new ServerBossEvent(title, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
+            this.bossBar = new ServerBossEvent(UUID.randomUUID(), title, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
             this.bossBar.setProgress(1.0F);
         }
 
-                private void trackSpawn(net.minecraft.world.entity.Mob mob) {
+        private void trackSpawn(net.minecraft.world.entity.Mob mob) {
             if (this.activeMobIds.add(mob.getUUID())) {
                 this.spawnedTotal++;
             }
+            clearMobTracking(mob.getUUID());
+            applyRaidTags(mob);
+        }
+
+        private void trackReplacement(net.minecraft.world.entity.Mob mob) {
+            this.activeMobIds.add(mob.getUUID());
             clearMobTracking(mob.getUUID());
             applyRaidTags(mob);
         }
@@ -816,7 +1007,7 @@ final class TerrorRaidManager {
             Set<UUID> removed = new HashSet<>();
             this.activeMobIds.removeIf(uuid -> {
                 var entity = level.getEntity(uuid);
-                boolean missing = !(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive();
+                boolean missing = !(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive() || mob.isRemoved();
                 if (missing) {
                     removed.add(uuid);
                 }
@@ -850,6 +1041,12 @@ final class TerrorRaidManager {
         private void clearMobTracking(UUID mobId) {
             this.unreachableTicks.remove(mobId);
             this.relocationCounts.remove(mobId);
+            this.lastPositions.remove(mobId);
+            this.stationaryTicks.remove(mobId);
+            this.lastYaws.remove(mobId);
+            this.spinTicks.remove(mobId);
+            this.lastTargetDistanceSq.remove(mobId);
+            this.distanceStallTicks.remove(mobId);
         }
     }
 

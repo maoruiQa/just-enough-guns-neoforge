@@ -3,12 +3,13 @@
   "category": "equipment",
   "pattern": [
     "BBL",
-    " BR",
+    "XBR",
     "  B"
   ],
   "key": {
     "B": "minecraft:iron_block",
     "L": "minecraft:lava_bucket",
+    "X": "minecraft:diamond",
     "R": "minecraft:blaze_rod"
   },
   "result": {

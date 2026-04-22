@@ -151,7 +151,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         stack.hurtAndBreak(1, this, InteractionHand.MAIN_HAND);
         this.gameEvent(GameEvent.ENTITY_ACTION);
 
-        if (stats.usesMagazine()) {
+        if (usesLoadedAmmo(stack, stats)) {
             // Two guns: spend 2 rounds per volley.
             this.magazine = Math.max(0, this.magazine - 2);
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
@@ -379,7 +379,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                 (24 + random.nextInt(24)) * (random.nextBoolean() ? -1 : 1)
             );
 
-            int count = 1 + serverLevel.random.nextInt(1);
+            int count = 1 + serverLevel.getRandom().nextInt(1);
             for (int i = 0; i < count; i++) {
                 PhantomGunner phantom = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), serverLevel);
                 Vec3 pos = Vec3.atCenterOf(spawnPos).add(random.nextGaussian() * 2, 2, random.nextGaussian() * 2);

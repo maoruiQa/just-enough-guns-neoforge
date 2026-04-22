@@ -63,7 +63,7 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            if (RaidEntity.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
+            if (FactionRaidManager.hasActiveRaidNear(currentLevel, respawnPos, 96.0D)) {
                 continue;
             }
 
@@ -74,7 +74,7 @@ public final class HomeRaidTriggerManager {
                 continue;
             }
 
-            RaidEntity.summonRaidEntity(currentLevel, faction, respawnCenter, true);
+            FactionRaidManager.startRaid(currentLevel, faction, respawnCenter, true);
             clearOmenFactionTag(player);
             player.removeEffect(ModEffects.FACTION_OMEN);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));
@@ -84,7 +84,7 @@ public final class HomeRaidTriggerManager {
     @Nullable
     private static Faction resolveFactionFromOmen(ServerPlayer player) {
         GunnerManager manager = GunnerManager.getInstance();
-        for (String tag : player.getTags()) {
+        for (String tag : player.entityTags()) {
             if (!tag.startsWith(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX)) {
                 continue;
             }
@@ -101,7 +101,7 @@ public final class HomeRaidTriggerManager {
     }
 
     private static void clearOmenFactionTag(ServerPlayer player) {
-        for (String tag : java.util.List.copyOf(player.getTags())) {
+        for (String tag : java.util.List.copyOf(player.entityTags())) {
             if (tag.startsWith(FactionSpawnHelper.OMEN_FACTION_TAG_PREFIX)) {
                 player.removeTag(tag);
             }

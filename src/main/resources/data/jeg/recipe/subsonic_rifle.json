@@ -3,11 +3,12 @@
   "category": "equipment",
   "pattern": [
     "EBW",
-    " WB",
+    "XWB",
     "  E"
   ],
   "key": {
     "E": "minecraft:echo_shard",
+    "X": "minecraft:diamond",
     "B": "minecraft:iron_block",
     "W": "#minecraft:wool"
   },

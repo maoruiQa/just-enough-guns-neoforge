@@ -3,13 +3,14 @@
   "category": "equipment",
   "pattern": [
     "IRT",
-    "IT ",
+    "ITX",
     "  B"
   ],
   "key": {
     "I": "minecraft:iron_ingot",
     "B": "minecraft:iron_block",
     "R": "minecraft:redstone_block",
+    "X": "minecraft:diamond",
     "T": "minecraft:tnt"
   },
   "result": {

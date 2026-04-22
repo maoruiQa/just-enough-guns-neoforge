@@ -6,12 +6,12 @@ import java.util.Map;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.PhantomRenderState;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.constant.dataticket.DataTicket;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
-import software.bernie.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 
 public final class PhantomGunnerGeoRenderer extends GeoEntityRenderer<PhantomGunner, PhantomGunnerGeoRenderer.RenderState> {
@@ -117,4 +117,3 @@ public final class PhantomGunnerGeoRenderer extends GeoEntityRenderer<PhantomGun
         super.scaleModelForRender(passInfo, width, height);
     }
 }
-

@@ -3,12 +3,13 @@
   "category": "equipment",
   "pattern": [
     "CCB",
-    " PB",
-    "  C"
+    "XPB",
+    " XC"
   ],
   "key": {
     "C": "minecraft:cherry_log",
     "P": "minecraft:pink_dye",
+    "X": "minecraft:diamond",
     "B": "minecraft:iron_block"
   },
   "result": {

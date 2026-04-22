@@ -75,6 +75,11 @@ public class BulletPenetrationHelper {
         return 4; // Indestructible (tier 4)
     }
 
+    public static boolean canGunnerBreakBlock(Level level, BlockState state, int maxTier) {
+        int tier = getBlockTier(level, state);
+        return tier > 0 && tier <= maxTier;
+    }
+
     /**
      * Get the destructive power multiplier based on ammo type.
      */
@@ -146,7 +151,7 @@ public class BulletPenetrationHelper {
         float destroyChance = getDestructionProbability(tier, bulletPower);
 
         // Roll for destruction
-        if (level.random.nextFloat() < destroyChance) {
+        if (level.getRandom().nextFloat() < destroyChance) {
             // Destroy the block without dropping items
             level.destroyBlock(pos, false);
         }

@@ -39,7 +39,7 @@ public final class GunnerRaidSpawner {
         }
         this.nextTick += random.nextInt(12000);
 
-        long day = level.getDayTime() / 24000L;
+        long day = level.getOverworldClockTime() / 24000L;
         if (day < Config.factionRaidMinimumDays()) {
             return 0;
         }
@@ -57,7 +57,7 @@ public final class GunnerRaidSpawner {
             return 0;
         }
 
-        RaidEntity.summonRaidEntity(level, faction, randomPlayer.position(), true);
+        FactionRaidManager.startRaid(level, faction, randomPlayer.position(), true);
         return 1;
     }
 }

@@ -31,13 +31,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
@@ -199,7 +199,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         stack.hurtAndBreak(1, this, InteractionHand.MAIN_HAND);
         this.gameEvent(GameEvent.ENTITY_ACTION);
 
-        if (stats.usesMagazine()) {
+        if (usesLoadedAmmo(stack, stats)) {
             this.magazine = Math.max(0, this.magazine - 1);
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
             if (this.magazine <= 0) {
@@ -226,7 +226,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
 
     private void configureLoadout(GunStats stats, ItemStack stack) {
         this.cachedStats = stats;
-        if (stats.usesMagazine()) {
+        if (usesLoadedAmmo(stack, stats)) {
             this.magazine = stats.magazineSize();
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
         } else {
@@ -247,7 +247,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         if (stats == null) {
             return;
         }
-        if (stats.usesMagazine()) {
+        if (usesLoadedAmmo(stack, stats)) {
             this.magazine = stats.magazineSize();
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
         } else {
@@ -314,11 +314,16 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         if (this.fireCooldown > 0) {
             return false;
         }
+        ItemStack stack = this.getMainHandItem();
         GunStats stats = getEquippedGunStats().orElse(null);
-        if (stats == null || !stats.usesMagazine()) {
+        if (!usesLoadedAmmo(stack, stats)) {
             return true;
         }
         return this.magazine > 0;
+    }
+
+    private boolean usesLoadedAmmo(ItemStack stack, @Nullable GunStats stats) {
+        return stats != null && stack.getItem() instanceof GunItem gun && gun.usesLoadedAmmo();
     }
 
     private int getCurrentFireDelay() {

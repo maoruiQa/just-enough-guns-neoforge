@@ -1,9 +1,9 @@
 package ttv.migami.jeg.client.render.entity;
 
 import net.minecraft.resources.Identifier;
-import software.bernie.geckolib.constant.dataticket.DataTicket;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 
@@ -38,4 +38,3 @@ public final class PhantomGunnerGeoModel extends GeoModel<PhantomGunner> {
         return ANIM;
     }
 }
-

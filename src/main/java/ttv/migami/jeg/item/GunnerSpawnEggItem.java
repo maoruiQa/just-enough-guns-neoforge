@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.stats.Stats;
 import ttv.migami.jeg.event.GunEvents;
+import ttv.migami.jeg.faction.GunnerMobSpawner;
 
 /**
  * Spawn egg that guarantees a JEG faction gunner when spawned.
@@ -31,6 +32,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
     protected void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {
         // Add JEG gunner tag - the faction system will handle gun equipping automatically
         mob.addTag(GunEvents.JEG_GUNNER_TAG);
+        GunnerMobSpawner.normalizeGunnerMob(mob);
 
         // Call parent method to handle standard spawn egg behavior
         mob.applyComponentsFromItemStack(stack);

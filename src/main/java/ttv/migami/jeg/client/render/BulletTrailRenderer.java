@@ -4,14 +4,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.network.BulletTrailPayload;
 
 import java.util.HashMap;
@@ -36,6 +37,10 @@ public final class BulletTrailRenderer {
     public static void upsertLegacyTrail(BulletTrailPayload payload) {
         Minecraft mc = Minecraft.getInstance();
         long gameTime = mc.level != null ? mc.level.getGameTime() : 0L;
+        int payloadColor = payload.color();
+        if (payloadColor == 0xFFFFFF || payloadColor == 0xFFFFFFFF) {
+            payloadColor = 0xFFFF00;
+        }
         int count = Math.min(
                 payload.entityIds().length,
                 Math.min(payload.positions().length, payload.motions().length)
@@ -50,7 +55,7 @@ public final class BulletTrailRenderer {
 
             state.position = payload.positions()[i];
             state.motion = payload.motions()[i];
-            state.color = payload.color();
+            state.color = payloadColor;
             state.size = payload.size();
             state.maxAge = Math.max(2, payload.life());
             state.gravity = payload.gravity();
@@ -58,6 +63,7 @@ public final class BulletTrailRenderer {
             state.trailVisible = payload.trailVisible();
             state.lastUpdateTick = gameTime;
             state.updateYawPitch();
+            state.age = 0;
         }
     }
 
@@ -141,7 +147,7 @@ public final class BulletTrailRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         Vec3 view = mc.gameRenderer.getMainCamera().position();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutoutNoCull(TRAIL_TEXTURE));
+        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutout(TRAIL_TEXTURE));
 
         for (TrailState trail : TRAILS.values()) {
             if (!trail.trailVisible) {
@@ -164,7 +170,17 @@ public final class BulletTrailRenderer {
         if (trail.age > LOCAL_FLASH_GUARD_TICKS) {
             return false;
         }
-        return cameraPos.distanceToSqr(trail.position) <= LOCAL_FLASH_GUARD_DISTANCE_SQR;
+
+        if (cameraPos.distanceToSqr(trail.position) <= LOCAL_FLASH_GUARD_DISTANCE_SQR) {
+            return true;
+        }
+
+        if (!mc.options.getCameraType().isFirstPerson()) {
+            return false;
+        }
+
+        Vec3 muzzlePos = GunClientEvents.getCurrentFirstPersonMuzzlePosition(mc.player, mc.player.getMainHandItem());
+        return muzzlePos != null && muzzlePos.distanceToSqr(trail.position) <= LOCAL_FLASH_GUARD_DISTANCE_SQR;
     }
 
     private static void renderTrail(TrailState trail, PoseStack poseStack, VertexConsumer consumer, Vec3 view, float partialTick) {
@@ -190,7 +206,7 @@ public final class BulletTrailRenderer {
         int red = (trail.color >> 16) & 0xFF;
         int green = (trail.color >> 8) & 0xFF;
         int blue = trail.color & 0xFF;
-        int light = LightTexture.FULL_BRIGHT;
+        int light = Brightness.FULL_BRIGHT.pack();
 
         Matrix4f matrix = poseStack.last().pose();
         // Leading and trailing quads.

@@ -16,11 +16,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
-    private static final float ADS_YAW_ALIGNED = 0.0F;
-    private static final float HIP_PITCH = 4.0F;
-    private static final float ADS_PITCH_ALIGNED = 0.0F;
-    private static final float ADS_LIFT_Y = 0.03F;
-
+    private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
     private final GunStats stats;
 
     public GunItemClientExtensions(GunItem item) {
@@ -53,14 +49,55 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float xOffset = Mth.lerp(ads, profile.hipX(), profile.adsX());
         float yOffset = Mth.lerp(ads, profile.hipY(), profile.adsY());
         float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
-        float yaw = Mth.lerp(ads, profile.hipYaw(), ADS_YAW_ALIGNED);
-        float pitch = Mth.lerp(ads, HIP_PITCH, ADS_PITCH_ALIGNED);
+        float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
+        float adsWeight = ads * ads;
+        xOffset = Mth.lerp(adsWeight, xOffset, 0.03F);
+        yOffset = Mth.lerp(adsWeight, yOffset, -0.06F);
+        zOffset = Mth.lerp(adsWeight, zOffset, -0.90F);
+        yaw = Mth.lerp(adsWeight, yaw, 0.0F);
 
-        poseStack.translate(direction * xOffset, yOffset + ads * ADS_LIFT_Y, zOffset);
+        boolean isRocketLauncher = "rocket_launcher".equals(gunPath);
+        boolean isTyphoonee = "typhoonee".equals(gunPath);
+        float adsScreenXShift;
+        float adsDownShift;
+        float adsForwardShift;
+        if (isTyphoonee) {
+            adsScreenXShift = 0.03F;
+            adsDownShift = -2.05F;
+            adsForwardShift = 0.24F;
+        } else if (isRocketLauncher) {
+            adsScreenXShift = 0.09F;
+            adsDownShift = -0.24F;
+            adsForwardShift = 0.00F;
+        } else {
+            adsScreenXShift = -0.30F;
+            adsDownShift = -0.36F;
+            adsForwardShift = 0.00F;
+        }
+
+        boolean mediumDownGroup =
+                "hollenfire_mk2".equals(gunPath)
+                        || "semi_auto_pistol".equals(gunPath)
+                        || "combat_pistol".equals(gunPath)
+                        || "combat_rifle".equals(gunPath)
+                        || "flamethrower".equals(gunPath);
+        if (mediumDownGroup) {
+            adsDownShift -= 0.18F;
+        }
+        if ("service_rifle".equals(gunPath)) {
+            adsDownShift -= 0.12F;
+        }
+
+        xOffset += direction * adsScreenXShift * adsWeight;
+        yOffset += adsDownShift * adsWeight;
+        zOffset += adsForwardShift * adsWeight;
+
+        poseStack.translate(direction * xOffset, yOffset, zOffset);
         poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
         poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F * (1.0F - ads)));
-        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
-        poseStack.scale(profile.scale(), profile.scale(), profile.scale());
+        poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsWeight, 4.0F, 0.8F)));
+        float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
+        poseStack.scale(firstPersonScale, firstPersonScale, firstPersonScale);
 
         // Keep vanilla-like equip/swing movement to reduce "hard snap" while switching items.
         float equip = Mth.clamp(equipProcess, 0.0F, 1.0F);

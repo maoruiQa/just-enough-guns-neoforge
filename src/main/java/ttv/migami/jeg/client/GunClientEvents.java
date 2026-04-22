@@ -1,23 +1,40 @@
 package ttv.migami.jeg.client;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -29,28 +46,67 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.NetworkHandler;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
+    private static final Gson GSON = new Gson();
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final int OVERHEAT_BAR_WIDTH = 82;
     private static final int OVERHEAT_BAR_HEIGHT = 4;
+    private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
+    private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
+    private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
+    private static final ByteBufferBuilder WORLD_EFFECT_BUFFER = new ByteBufferBuilder(262_144);
+    private static final float MODEL_FRONT_CLUSTER_DEPTH = 0.45F;
+    private static final float MODEL_FRONT_FACE_EPSILON = 0.02F;
+    private static final List<String> FIRST_PERSON_MUZZLE_BONE_PRIORITY = List.of("front", "barrel", "gun_body", "bow_body");
+    private static final Set<String> HIDDEN_FIRST_PERSON_BONES = Set.of(
+            "left_arm",
+            "right_arm",
+            "fake_left_arm",
+            "fake_right_arm",
+            "attachment_bone",
+            "railing",
+            "silencer",
+            "makeshift_stock",
+            "light_stock",
+            "tactical_stock",
+            "weighted_stock",
+            "light_grip",
+            "vertical_grip",
+            "angled_grip",
+            "extended_mag",
+            "extended_mag_2",
+            "drum_mag",
+            "drum_mag_2"
+    );
     private static int hudTicker;
+    private static String currentHudText = "";
     private static String lastHudText = "";
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
+    private static boolean swapOffhandHeldLastTick;
+    private static int offhandFullPromptTicks;
     private static long nextVisualShotTickMain;
-    private static final java.util.Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
+    private static final Map<Identifier, Optional<Vector3f>> FIRST_PERSON_MUZZLE_ANCHORS = new ConcurrentHashMap<>();
+    private static FirstPersonGunPoseState firstPersonGunPose;
+    private static StunRingingSound stunRingingSound;
 
     private GunClientEvents() {}
 
@@ -95,13 +151,14 @@ public final class GunClientEvents {
             return;
         }
 
+        ItemStack held = player.getItemInHand(event.getHand());
         ItemStack heldMain = player.getMainHandItem();
         if (!(heldMain.getItem() instanceof GunItem)) {
             return;
         }
 
         if (event.isUseItem()) {
-            // Right click is reserved for aiming (ADS), not firing.
+            // Right click is reserved for aiming (ADS), not firing or coolant use.
             event.setCanceled(true);
             event.setSwingHand(false);
         }
@@ -111,6 +168,25 @@ public final class GunClientEvents {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientTickPre(ClientTickEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        boolean swapDown = minecraft.options.keySwapOffhand.isDown();
+        if (player == null || minecraft.level == null) {
+            swapOffhandHeldLastTick = swapDown;
+            return;
+        }
+
+        if (swapDown && !swapOffhandHeldLastTick && shouldInterceptOffhandSwap(player)) {
+            while (minecraft.options.keySwapOffhand.consumeClick()) {
+                NetworkHandler.sendUnloadMagazine();
+            }
+        }
+
+        swapOffhandHeldLastTick = swapDown;
     }
 
     @SubscribeEvent
@@ -125,16 +201,57 @@ public final class GunClientEvents {
             return;
         }
 
-        ItemStack held = player.getMainHandItem();
-        if (held.getItem() instanceof GunItem gun && gun.usesOverheatMechanic()) {
-            int heatPercent = gun.getOverheatPercent(held);
+        renderBlindOverlay(event.getGuiGraphics(), player);
+
+        ItemStack mainhand = player.getMainHandItem();
+        Component promptText = null;
+        int promptColor = 0xFFFFFFFF;
+        if (mainhand.getItem() instanceof MagazineItem magazine) {
+            if (offhandFullPromptTicks > 0) {
+                promptText = OFFHAND_FULL_PROMPT;
+                promptColor = 0xFFFF5555;
+            } else if (magazine.canShowUnloadPrompt(mainhand, player.getOffhandItem())) {
+                promptText = MAGAZINE_UNLOAD_PROMPT;
+            } else {
+                promptText = magazine.getLoadPromptMessage(mainhand, player.getOffhandItem());
+                if (promptText != null) {
+                    promptColor = 0xFFFF5555;
+                }
+            }
+        }
+        if (mainhand.getItem() instanceof GunItem gun && gun.usesOverheatMechanic()) {
+            int heatPercent = gun.getOverheatPercent(mainhand);
             if (heatPercent > 0) {
                 renderOverheatBar(event.getGuiGraphics(), heatPercent);
             }
+            if (gun.shouldShowWaterCoolingPrompt(mainhand)) {
+                promptText = Component.translatable("jeg.water_cooling.prompt");
+            }
+        }
+
+        ItemStack offhand = player.getOffhandItem();
+        if (GunItem.canWaterCool(mainhand) && GunItem.isCoolingWithWater(mainhand)) {
+            renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(mainhand));
+        } else if (GunItem.canWaterCool(offhand) && GunItem.isCoolingWithWater(offhand)) {
+            renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(offhand));
+        }
+
+        if (promptText != null) {
+            renderCenteredOverlayPrompt(event.getGuiGraphics(), promptText, promptColor);
         }
 
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
             event.setCanceled(true);
+        }
+    }
+
+    private static final class FirstPersonGunPoseState {
+        private final HumanoidArm arm;
+        private final Matrix4f pose;
+
+        private FirstPersonGunPoseState(HumanoidArm arm, Matrix4f pose) {
+            this.arm = arm;
+            this.pose = pose;
         }
     }
 
@@ -146,17 +263,27 @@ public final class GunClientEvents {
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
         }
         tickMuzzleFlashState();
+        if (offhandFullPromptTicks > 0) {
+            offhandFullPromptTicks--;
+        }
 
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null) {
             hudTicker = 0;
+            currentHudText = "";
             lastHudText = "";
             attackHeldLastTick = false;
+            aimingStateLastSent = false;
+            swapOffhandHeldLastTick = false;
+            offhandFullPromptTicks = 0;
+            nextVisualShotTickMain = 0L;
+            AimingHandler.get().reset();
             return;
         }
 
         AimingHandler.get().tick(player);
+        tickThrowableEffectAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -198,12 +325,17 @@ public final class GunClientEvents {
             GunRecoilHandler.stopImmediate();
         }
 
-        // R key reload (server-authoritative). Keep swap-hands reload as fallback/compat.
+        // R key reload / coolant use (server-authoritative).
         if (KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
+                attackHeldLastTick = false;
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
             } else if (heldOff.getItem() instanceof GunItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.OFF_HAND);
+            } else if (heldMain.getItem() instanceof MagazineItem) {
+                NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
 
@@ -212,63 +344,103 @@ public final class GunClientEvents {
             return;
         }
 
-        ItemStack held = heldMain;
-        if (!(held.getItem() instanceof GunItem gun)) {
-            lastHudText = "";
-            return;
+        if (heldMain.getItem() instanceof GunItem gun) {
+            currentHudText = buildAmmoHudText(player, heldMain, gun);
+        } else if (heldMain.getItem() instanceof MagazineItem magazine) {
+            currentHudText = buildMagazineHudText(heldMain, magazine);
+        } else if (heldOff.getItem() instanceof MagazineItem magazine) {
+            currentHudText = buildMagazineHudText(heldOff, magazine);
+        } else {
+            currentHudText = "";
         }
 
-        String hudText = buildAmmoHudText(player, held, gun);
-        if (!hudText.isEmpty() && (!hudText.equals(lastHudText) || hudTicker % 20 == 0)) {
-            player.displayClientMessage(Component.literal(hudText), true);
-            lastHudText = hudText;
+        if (!currentHudText.isEmpty() && (!currentHudText.equals(lastHudText) || hudTicker % 20 == 0)) {
+            minecraft.gui.setOverlayMessage(Component.literal(currentHudText), false);
+            lastHudText = currentHudText;
+        } else if (currentHudText.isEmpty()) {
+            lastHudText = "";
         }
     }
 
     @SubscribeEvent
-    public static void onRenderLevelAfterEntities(RenderLevelStageEvent.AfterEntities event) {
+    public static void onRenderLevelAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
         }
 
-        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
-        float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        if (Config.legacyBulletTrailEnabled()) {
-            // Render trails once per frame globally so instant/hitscan shots remain visible.
-            ttv.migami.jeg.client.render.BulletTrailRenderer.render(new PoseStack(), bufferSource, partialTick);
+        boolean renderTrails = Config.legacyBulletTrailEnabled();
+        boolean renderMuzzleFlashes = !MUZZLE_FLASHES.isEmpty();
+        if (!renderTrails && !renderMuzzleFlashes) {
+            return;
         }
-        renderMuzzleFlashes(new PoseStack(), bufferSource, partialTick);
+
+        PoseStack poseStack = event.getPoseStack();
+        // NeoForge 26.1 does not provide the pass-local buffer source here, so use a dedicated
+        // immediate buffer to mirror Fabric's world-render callback semantics.
+        MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(WORLD_EFFECT_BUFFER);
+        float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        if (renderTrails) {
+            // Render trails once per frame globally so instant/hitscan shots remain visible.
+            ttv.migami.jeg.client.render.BulletTrailRenderer.render(poseStack, bufferSource, partialTick);
+        }
+        if (renderMuzzleFlashes) {
+            renderMuzzleFlashes(poseStack, bufferSource, partialTick);
+        }
+        bufferSource.endBatch();
     }
 
     private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
         GunStats stats = gun.getStats();
+        if (gun.usesMagazineSwapReload()) {
+            GunItem.MagazineInventorySummary summary = gun.getMagazineInventorySummary(player);
+            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize()
+                    + " | Mags " + summary.loadedMagazineCount() + "+" + summary.emptyMagazineCount();
+        }
+        if (gun.usesLoadedAmmo()) {
+            int reserve = gun.countInventoryAmmo(player);
+            boolean infinite = reserve == Integer.MAX_VALUE;
+            String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
+            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize() + " | Reserve " + reserveText;
+        }
         int reserve = gun.countInventoryAmmo(player);
         boolean infinite = reserve == Integer.MAX_VALUE;
         String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
-
-        if (stats.usesMagazine()) {
-            int magazine = gun.getMagazineAmmo(stack);
-            return "Ammo " + magazine + "/" + stats.magazineSize() + " | Reserve " + reserveText;
-        }
-
         return "Ammo " + reserveText;
+    }
+
+    private static String buildMagazineHudText(ItemStack stack, MagazineItem magazine) {
+        return "Ammo " + magazine.getAmmoCount(stack) + "/" + magazine.getCapacity();
+    }
+
+    private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
+        ItemStack heldMain = player.getMainHandItem();
+        if (!(heldMain.getItem() instanceof MagazineItem magazine)) {
+            return false;
+        }
+        return magazine.canShowUnloadPrompt(heldMain, player.getOffhandItem());
     }
 
     @SubscribeEvent
     public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!minecraft.hasSingleplayerServer()) {
-            return;
-        }
-
         flushRenderQueue();
         // Clear bullet trails when logging out
         ttv.migami.jeg.client.render.BulletTrailRenderer.clear();
         MUZZLE_FLASHES.clear();
         attackHeldLastTick = false;
         aimingStateLastSent = false;
+        swapOffhandHeldLastTick = false;
+        offhandFullPromptTicks = 0;
         nextVisualShotTickMain = 0L;
+        currentHudText = "";
+        lastHudText = "";
+        AimingHandler.get().reset();
+        GunRecoilHandler.stopImmediate();
+        if (stunRingingSound != null) {
+            minecraft.getSoundManager().stop(stunRingingSound);
+            stunRingingSound = null;
+        }
     }
 
     private static void flushRenderQueue() {
@@ -335,8 +507,7 @@ public final class GunClientEvents {
         if (player.getAbilities().instabuild) {
             return true;
         }
-        GunStats stats = gun.getStats();
-        if (stats.isInventoryFed() || !stats.usesMagazine()) {
+        if (gun.isInventoryFedGun()) {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
@@ -357,10 +528,23 @@ public final class GunClientEvents {
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
     }
 
+    public static void captureFirstPersonGunPose(HumanoidArm arm, Matrix4f pose) {
+        firstPersonGunPose = new FirstPersonGunPoseState(arm, new Matrix4f(pose));
+    }
+
+    public static Vec3 getCurrentFirstPersonMuzzlePosition(LocalPlayer player, ItemStack held) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.options.getCameraType().isFirstPerson()) {
+            return null;
+        }
+        return computeStableFirstPersonMuzzlePosition(player, held, minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+    }
+
     private static void tickMuzzleFlashState() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             MUZZLE_FLASHES.clear();
+            firstPersonGunPose = null;
             return;
         }
         MUZZLE_FLASHES.entrySet().removeIf(entry -> {
@@ -390,7 +574,12 @@ public final class GunClientEvents {
                 continue;
             }
 
-            Vec3 muzzlePos = computeMuzzlePosition(living, held, partialTick);
+            Vec3 muzzlePos = living == minecraft.player && minecraft.options.getCameraType().isFirstPerson()
+                    ? getCurrentFirstPersonMuzzlePosition(minecraft.player, held)
+                    : null;
+            if (muzzlePos == null) {
+                muzzlePos = computeMuzzlePosition(living, held, partialTick);
+            }
             poseStack.pushPose();
             poseStack.translate(muzzlePos.x - cameraPos.x, muzzlePos.y - cameraPos.y, muzzlePos.z - cameraPos.z);
             poseStack.mulPose(camera.rotation());
@@ -403,31 +592,31 @@ public final class GunClientEvents {
             float minU = held.isEnchanted() ? 0.5F : 0.0F;
             float maxU = held.isEnchanted() ? 1.0F : 0.5F;
             Matrix4f matrix = poseStack.last().pose();
-            VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutoutNoCull(MUZZLE_FLASH_TEXTURE));
+            VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE));
 
             consumer.addVertex(matrix, 0.0F, 0.0F, 0.0F)
                     .setColor(255, 255, 255, 255)
                     .setUv(maxU, 1.0F)
                     .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightTexture.FULL_BRIGHT)
+                    .setLight(Brightness.FULL_BRIGHT.pack())
                     .setNormal(0.0F, 0.0F, 1.0F);
             consumer.addVertex(matrix, 1.0F, 0.0F, 0.0F)
                     .setColor(255, 255, 255, 255)
                     .setUv(minU, 1.0F)
                     .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightTexture.FULL_BRIGHT)
+                    .setLight(Brightness.FULL_BRIGHT.pack())
                     .setNormal(0.0F, 0.0F, 1.0F);
             consumer.addVertex(matrix, 1.0F, 1.0F, 0.0F)
                     .setColor(255, 255, 255, 255)
                     .setUv(minU, 0.0F)
                     .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightTexture.FULL_BRIGHT)
+                    .setLight(Brightness.FULL_BRIGHT.pack())
                     .setNormal(0.0F, 0.0F, 1.0F);
             consumer.addVertex(matrix, 0.0F, 1.0F, 0.0F)
                     .setColor(255, 255, 255, 255)
                     .setUv(maxU, 0.0F)
                     .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightTexture.FULL_BRIGHT)
+                    .setLight(Brightness.FULL_BRIGHT.pack())
                     .setNormal(0.0F, 0.0F, 1.0F);
 
             poseStack.popPose();
@@ -451,17 +640,17 @@ public final class GunClientEvents {
             side = side.normalize();
         }
 
-        double forwardMul = 0.66D;
+        double forwardMul = 0.78D;
         double sideMul = 0.06D;
         double heightMul = -0.05D;
         if (held.getItem() instanceof GunItem gun) {
             switch (GunCategory.fromStats(gun.getStats())) {
-                case RIFLE -> forwardMul = 0.84D;
-                case SHOTGUN -> forwardMul = 0.88D;
-                case SNIPER -> forwardMul = 0.95D;
-                case LMG -> forwardMul = 0.90D;
+                case RIFLE -> forwardMul = 1.00D;
+                case SHOTGUN -> forwardMul = 1.05D;
+                case SNIPER -> forwardMul = 1.12D;
+                case LMG -> forwardMul = 1.08D;
                 case HEAVY -> {
-                    forwardMul = 1.00D;
+                    forwardMul = 1.20D;
                     heightMul = -0.02D;
                 }
                 default -> {
@@ -477,7 +666,368 @@ public final class GunClientEvents {
         return eye.add(look.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
     }
 
-    private static void renderOverheatBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int heatPercent) {
+    private static Vec3 computeFirstPersonMuzzlePosition(Minecraft minecraft, LocalPlayer player, ItemStack held) {
+        FirstPersonGunPoseState poseState = firstPersonGunPose;
+        if (poseState == null || poseState.arm != player.getMainArm()) {
+            return null;
+        }
+
+        var camera = minecraft.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.position();
+        Vector3f localAnchor = firstPersonMuzzleAnchor(held);
+        if (localAnchor == null) {
+            return null;
+        }
+
+        Vector3f cameraSpace = poseState.pose.transformPosition(localAnchor, new Vector3f());
+        cameraSpace.rotate(camera.rotation());
+        return cameraPos.add(cameraSpace.x(), cameraSpace.y(), cameraSpace.z());
+    }
+
+    private static Vec3 computeStableFirstPersonMuzzlePosition(LocalPlayer player, ItemStack held, float partialTick) {
+        Vec3 eye = player.getEyePosition(partialTick);
+        Vec3 look = player.getViewVector(partialTick);
+        if (look.lengthSqr() < 1.0E-6D) {
+            return eye;
+        }
+        look = look.normalize();
+
+        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 side = look.cross(up);
+        if (side.lengthSqr() < 1.0E-6D) {
+            side = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            side = side.normalize();
+        }
+
+        double forwardMul = 0.52D;
+        double sideMul = 0.10D;
+        double heightMul = -0.10D;
+        if (held.getItem() instanceof GunItem gun) {
+            switch (GunCategory.fromStats(gun.getStats())) {
+                case RIFLE -> forwardMul = 0.60D;
+                case SHOTGUN -> forwardMul = 0.64D;
+                case SNIPER -> forwardMul = 0.70D;
+                case LMG -> forwardMul = 0.66D;
+                case HEAVY -> {
+                    forwardMul = 0.76D;
+                    heightMul = -0.08D;
+                }
+                default -> {
+                }
+            }
+        }
+
+        if (player.getMainArm() == HumanoidArm.LEFT) {
+            sideMul *= -1.0D;
+        }
+
+        return eye.add(look.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
+    }
+
+    private static Vector3f firstPersonMuzzleAnchor(ItemStack held) {
+        if (!(held.getItem() instanceof GunItem gun)) {
+            return null;
+        }
+
+        Optional<Vector3f> cached = FIRST_PERSON_MUZZLE_ANCHORS.computeIfAbsent(
+                gun.getStats().id(),
+                GunClientEvents::loadFirstPersonMuzzleAnchor
+        );
+        return cached.map(Vector3f::new).orElse(null);
+    }
+
+    private static Optional<Vector3f> loadFirstPersonMuzzleAnchor(Identifier gunId) {
+        Identifier modelId = Reference.id("geckolib/models/item/gun/" + gunId.getPath() + ".geo.json");
+        try {
+            var resource = Minecraft.getInstance().getResourceManager().getResource(modelId);
+            if (resource.isEmpty()) {
+                return Optional.empty();
+            }
+
+            try (var in = resource.get().open();
+                 var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                JsonObject root = GSON.fromJson(reader, JsonObject.class);
+                if (root == null || !root.has("minecraft:geometry") || !root.get("minecraft:geometry").isJsonArray()) {
+                    return Optional.empty();
+                }
+
+                JsonArray geometries = root.getAsJsonArray("minecraft:geometry");
+                if (geometries.isEmpty() || !geometries.get(0).isJsonObject()) {
+                    return Optional.empty();
+                }
+
+                JsonObject geometry = geometries.get(0).getAsJsonObject();
+                if (!geometry.has("bones") || !geometry.get("bones").isJsonArray()) {
+                    return Optional.empty();
+                }
+
+                return resolvePreciseMuzzleAnchor(geometry.getAsJsonArray("bones"));
+            }
+        } catch (Exception ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Vector3f> resolvePreciseMuzzleAnchor(JsonArray bones) {
+        Map<String, BoneDefinition> definitions = parseBoneDefinitions(bones);
+        if (definitions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Map<String, Matrix4f> transformCache = new HashMap<>();
+        for (String candidateName : FIRST_PERSON_MUZZLE_BONE_PRIORITY) {
+            BoneDefinition root = definitions.get(candidateName);
+            if (root == null || shouldSkipFirstPersonBone(root.name())) {
+                continue;
+            }
+
+            List<CubeFrontSample> samples = new ArrayList<>();
+            collectVisibleCubeSamples(root, definitions, transformCache, samples);
+            Vector3f anchor = resolveFrontClusterAnchor(samples);
+            if (anchor != null) {
+                return Optional.of(anchor);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static Map<String, BoneDefinition> parseBoneDefinitions(JsonArray bones) {
+        Map<String, BoneDefinition> definitions = new HashMap<>();
+        for (JsonElement boneElement : bones) {
+            if (!(boneElement instanceof JsonObject boneObject)) {
+                continue;
+            }
+
+            BoneDefinition definition = parseBoneDefinition(boneObject);
+            if (definition != null) {
+                definitions.put(definition.name(), definition);
+            }
+        }
+
+        for (BoneDefinition definition : definitions.values()) {
+            if (!definition.parent().isEmpty()) {
+                BoneDefinition parent = definitions.get(definition.parent());
+                if (parent != null) {
+                    parent.children().add(definition.name());
+                }
+            }
+        }
+
+        return definitions;
+    }
+
+    private static BoneDefinition parseBoneDefinition(JsonObject bone) {
+        if (!bone.has("name") || !bone.get("name").isJsonPrimitive()) {
+            return null;
+        }
+
+        String name = bone.get("name").getAsString();
+        String parent = bone.has("parent") && bone.get("parent").isJsonPrimitive()
+                ? bone.get("parent").getAsString()
+                : "";
+        Vector3f pivot = readVec3f(bone.get("pivot"));
+        Vector3f rotation = readVec3f(bone.get("rotation"));
+        List<CubeDefinition> cubes = new ArrayList<>();
+        if (bone.has("cubes") && bone.get("cubes").isJsonArray()) {
+            for (JsonElement cubeElement : bone.getAsJsonArray("cubes")) {
+                if (!(cubeElement instanceof JsonObject cubeObject)) {
+                    continue;
+                }
+                CubeDefinition cube = parseCubeDefinition(cubeObject);
+                if (cube != null) {
+                    cubes.add(cube);
+                }
+            }
+        }
+
+        return new BoneDefinition(name, parent, pivot, rotation, cubes, new ArrayList<>());
+    }
+
+    private static CubeDefinition parseCubeDefinition(JsonObject cube) {
+        if (!cube.has("origin") || !cube.has("size")) {
+            return null;
+        }
+
+        Vector3f origin = readVec3f(cube.get("origin"));
+        Vector3f size = readVec3f(cube.get("size"));
+        float inflate = cube.has("inflate") && cube.get("inflate").isJsonPrimitive()
+                ? cube.get("inflate").getAsFloat()
+                : 0.0F;
+        if (inflate != 0.0F) {
+            origin.sub(inflate, inflate, inflate);
+            size.add(inflate * 2.0F, inflate * 2.0F, inflate * 2.0F);
+        }
+
+        Vector3f pivot = readVec3f(cube.get("pivot"));
+        Vector3f rotation = readVec3f(cube.get("rotation"));
+        return new CubeDefinition(origin, size, pivot, rotation);
+    }
+
+    private static void collectVisibleCubeSamples(
+            BoneDefinition root,
+            Map<String, BoneDefinition> definitions,
+            Map<String, Matrix4f> transformCache,
+            List<CubeFrontSample> samples
+    ) {
+        if (shouldSkipFirstPersonBone(root.name())) {
+            return;
+        }
+
+        Matrix4f boneTransform = resolveBoneTransform(root, definitions, transformCache);
+        for (CubeDefinition cube : root.cubes()) {
+            CubeFrontSample sample = sampleCubeFront(cube, boneTransform);
+            if (sample != null) {
+                samples.add(sample);
+            }
+        }
+
+        for (String childName : root.children()) {
+            BoneDefinition child = definitions.get(childName);
+            if (child != null) {
+                collectVisibleCubeSamples(child, definitions, transformCache, samples);
+            }
+        }
+    }
+
+    private static Matrix4f resolveBoneTransform(
+            BoneDefinition bone,
+            Map<String, BoneDefinition> definitions,
+            Map<String, Matrix4f> transformCache
+    ) {
+        Matrix4f cached = transformCache.get(bone.name());
+        if (cached != null) {
+            return new Matrix4f(cached);
+        }
+
+        Matrix4f transform = new Matrix4f();
+        if (!bone.parent().isEmpty()) {
+            BoneDefinition parent = definitions.get(bone.parent());
+            if (parent != null) {
+                transform.set(resolveBoneTransform(parent, definitions, transformCache));
+            }
+        }
+        transform.mul(rotationMatrixAroundPivot(bone.pivot(), bone.rotation()));
+        transformCache.put(bone.name(), new Matrix4f(transform));
+        return transform;
+    }
+
+    private static Matrix4f rotationMatrixAroundPivot(Vector3f pivot, Vector3f rotationDeg) {
+        return new Matrix4f()
+                .translate(pivot.x(), pivot.y(), pivot.z())
+                .rotateZ((float) Math.toRadians(rotationDeg.z()))
+                .rotateY((float) Math.toRadians(rotationDeg.y()))
+                .rotateX((float) Math.toRadians(rotationDeg.x()))
+                .translate(-pivot.x(), -pivot.y(), -pivot.z());
+    }
+
+    private static CubeFrontSample sampleCubeFront(CubeDefinition cube, Matrix4f boneTransform) {
+        Matrix4f cubeTransform = new Matrix4f(boneTransform);
+        if (cube.hasRotation()) {
+            cubeTransform.mul(rotationMatrixAroundPivot(cube.pivot(), cube.rotation()));
+        }
+
+        List<Vector3f> vertices = new ArrayList<>(8);
+        float minZ = Float.POSITIVE_INFINITY;
+        Vector3f origin = cube.origin();
+        Vector3f size = cube.size();
+        for (int x = 0; x < 2; x++) {
+            for (int y = 0; y < 2; y++) {
+                for (int z = 0; z < 2; z++) {
+                    Vector3f vertex = new Vector3f(
+                            origin.x() + (x == 0 ? 0.0F : size.x()),
+                            origin.y() + (y == 0 ? 0.0F : size.y()),
+                            origin.z() + (z == 0 ? 0.0F : size.z())
+                    );
+                    cubeTransform.transformPosition(vertex);
+                    vertices.add(vertex);
+                    minZ = Math.min(minZ, vertex.z());
+                }
+            }
+        }
+
+        Vector3f faceCenter = new Vector3f();
+        int faceVertexCount = 0;
+        for (Vector3f vertex : vertices) {
+            if (vertex.z() <= minZ + MODEL_FRONT_FACE_EPSILON) {
+                faceCenter.add(vertex);
+                faceVertexCount++;
+            }
+        }
+        if (faceVertexCount == 0) {
+            return null;
+        }
+
+        faceCenter.div(faceVertexCount);
+        float weight = Math.max(0.001F, Math.abs(size.x() * size.y()));
+        return new CubeFrontSample(faceCenter, minZ, weight);
+    }
+
+    private static Vector3f resolveFrontClusterAnchor(List<CubeFrontSample> samples) {
+        if (samples.isEmpty()) {
+            return null;
+        }
+
+        float frontMostZ = Float.POSITIVE_INFINITY;
+        for (CubeFrontSample sample : samples) {
+            frontMostZ = Math.min(frontMostZ, sample.frontZ());
+        }
+
+        float clusterThreshold = frontMostZ + MODEL_FRONT_CLUSTER_DEPTH;
+        Vector3f weightedCenter = new Vector3f();
+        float totalWeight = 0.0F;
+        for (CubeFrontSample sample : samples) {
+            if (sample.frontZ() > clusterThreshold) {
+                continue;
+            }
+            weightedCenter.fma(sample.weight(), sample.center());
+            totalWeight += sample.weight();
+        }
+
+        if (totalWeight <= 0.0F) {
+            return null;
+        }
+
+        weightedCenter.div(totalWeight);
+        return new Vector3f(weightedCenter.x(), weightedCenter.y(), frontMostZ);
+    }
+
+    private static boolean shouldSkipFirstPersonBone(String boneName) {
+        return HIDDEN_FIRST_PERSON_BONES.contains(boneName);
+    }
+
+    private static Vector3f readVec3f(JsonElement element) {
+        if (!(element instanceof JsonArray array) || array.size() < 3) {
+            return new Vector3f();
+        }
+        return new Vector3f(
+                array.get(0).isJsonPrimitive() ? array.get(0).getAsFloat() : 0.0F,
+                array.get(1).isJsonPrimitive() ? array.get(1).getAsFloat() : 0.0F,
+                array.get(2).isJsonPrimitive() ? array.get(2).getAsFloat() : 0.0F
+        );
+    }
+
+    private record BoneDefinition(
+            String name,
+            String parent,
+            Vector3f pivot,
+            Vector3f rotation,
+            List<CubeDefinition> cubes,
+            List<String> children
+    ) {}
+
+    private record CubeDefinition(Vector3f origin, Vector3f size, Vector3f pivot, Vector3f rotation) {
+        private boolean hasRotation() {
+            return Math.abs(rotation.x()) > 1.0E-4F
+                    || Math.abs(rotation.y()) > 1.0E-4F
+                    || Math.abs(rotation.z()) > 1.0E-4F;
+        }
+    }
+
+    private record CubeFrontSample(Vector3f center, float frontZ, float weight) {}
+
+    private static void renderOverheatBar(GuiGraphicsExtractor guiGraphics, int heatPercent) {
         float ratio = Mth.clamp(heatPercent / 100.0F, 0.0F, 1.0F);
         int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
         int y = guiGraphics.guiHeight() - 66;
@@ -488,6 +1038,28 @@ public final class GunClientEvents {
 
         if (filled > 0) {
             guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, overheatColor(ratio));
+        }
+    }
+
+    private static void renderCenteredOverlayPrompt(GuiGraphicsExtractor guiGraphics, Component text, int color) {
+        Minecraft minecraft = Minecraft.getInstance();
+        int x = (guiGraphics.guiWidth() - minecraft.font.width(text)) / 2;
+        int y = guiGraphics.guiHeight() - 88;
+        guiGraphics.fill(x - 2, y - 2, x + minecraft.font.width(text) + 2, y + minecraft.font.lineHeight + 2, 0x66000000);
+        guiGraphics.text(minecraft.font, text, x, y, color);
+    }
+
+    private static void renderWaterCoolingBar(GuiGraphicsExtractor guiGraphics, int progressPercent) {
+        float ratio = Mth.clamp(progressPercent / 100.0F, 0.0F, 1.0F);
+        int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
+        int y = guiGraphics.guiHeight() - 72;
+        int filled = Math.max(0, Mth.ceil(OVERHEAT_BAR_WIDTH * ratio));
+
+        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
+        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
+
+        if (filled > 0) {
+            guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, coolingColor(ratio));
         }
     }
 
@@ -508,8 +1080,46 @@ public final class GunClientEvents {
         return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
+    private static int coolingColor(float ratio) {
+        float clamped = Mth.clamp(ratio, 0.0F, 1.0F);
+        int red = Mth.floor(255.0F * (1.0F - clamped));
+        int green = Mth.floor(255.0F * clamped);
+        int blue = 32;
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
+    }
+
+    private static void tickThrowableEffectAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean deafened = player.hasEffect(ModEffects.DEAFENED);
+        if (!deafened) {
+            stunRingingSound = null;
+            return;
+        }
+
+        if (stunRingingSound == null || !minecraft.getSoundManager().isActive(stunRingingSound)) {
+            stunRingingSound = new StunRingingSound();
+            minecraft.getSoundManager().play(stunRingingSound);
+        }
+    }
+
+    private static void renderBlindOverlay(GuiGraphicsExtractor guiGraphics, LocalPlayer player) {
+        var effect = player.getEffect(ModEffects.BLINDED);
+        if (effect == null) {
+            return;
+        }
+
+        float strength = Math.min(1.0F, effect.getDuration() / 40.0F);
+        int alpha = Mth.clamp((int) (strength * 210.0F), 32, 210);
+        int color = (alpha << 24) | 0x00FFFFFF;
+        guiGraphics.fill(0, 0, guiGraphics.guiWidth(), guiGraphics.guiHeight(), color);
+    }
+
     private static boolean isCrosshairLayer(RenderGuiLayerEvent event) {
         return event.getName() != null && "crosshair".equals(event.getName().getPath());
+    }
+
+    public static void showOffhandFullPrompt() {
+        offhandFullPromptTicks = OFFHAND_FULL_PROMPT_TICKS;
     }
 
 }

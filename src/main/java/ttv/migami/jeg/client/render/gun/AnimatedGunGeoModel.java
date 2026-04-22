@@ -1,9 +1,8 @@
 package ttv.migami.jeg.client.render.gun;
 
 import net.minecraft.resources.Identifier;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
@@ -24,7 +23,9 @@ public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
     }
 
     private static String gunIdFromState(GeoRenderState renderState) {
-        Object item = renderState.hasGeckolibData(DataTickets.ITEM) ? renderState.getGeckolibData(DataTickets.ITEM) : null;
+        Object item = renderState.hasGeckolibData(AnimatedGunRenderer.ANIMATED_ITEM)
+                ? renderState.getGeckolibData(AnimatedGunRenderer.ANIMATED_ITEM)
+                : null;
         if (item instanceof AnimatedGunItem gun) {
             return gun.getStats().id().getPath();
         }

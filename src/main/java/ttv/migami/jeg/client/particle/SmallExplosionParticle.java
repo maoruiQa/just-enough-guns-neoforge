@@ -25,8 +25,8 @@ public class SmallExplosionParticle extends ExplodeParticle {
     }
 
     @Override
-    public int getLightColor(float partialTick) {
-        return 240;
+    public int getLightCoords(float partialTick) {
+        return net.minecraft.util.Brightness.FULL_BRIGHT.pack();
     }
 
     public static class Provider implements ParticleProvider<SimpleParticleType> {

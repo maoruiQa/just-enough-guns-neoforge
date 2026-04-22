@@ -3,11 +3,12 @@
   "category": "equipment",
   "pattern": [
     "EBR",
-    " RB",
+    "XRB",
     "  E"
   ],
   "key": {
     "E": "minecraft:echo_shard",
+    "X": "minecraft:diamond",
     "B": "minecraft:iron_block",
     "R": "minecraft:redstone_block"
   },

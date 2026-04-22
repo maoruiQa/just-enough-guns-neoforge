@@ -29,7 +29,7 @@ public class ManualItem extends Item {
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.awardRecipesByKey(recipes);
-            player.displayClientMessage(Component.translatable("item.jeg.gunsmith_manual.learned").withStyle(ChatFormatting.GREEN), true);
+            player.sendSystemMessage(Component.translatable("item.jeg.gunsmith_manual.learned").withStyle(ChatFormatting.GREEN));
             return InteractionResult.SUCCESS_SERVER;
         }
 

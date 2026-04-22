@@ -16,9 +16,9 @@ public final class GunnerFactionRelations {
         if (entity == null) {
             return false;
         }
-        return entity.getTags().contains(GunEvents.JEG_GUNNER_TAG)
-                || entity.getTags().contains(GunEvents.JEG_ELITE_GUNNER_TAG)
-                || entity.getTags().contains(LEGACY_PILLAGER_GUNNER_TAG);
+        return entity.entityTags().contains(GunEvents.JEG_GUNNER_TAG)
+                || entity.entityTags().contains(GunEvents.JEG_ELITE_GUNNER_TAG)
+                || entity.entityTags().contains(LEGACY_PILLAGER_GUNNER_TAG);
     }
 
     public static boolean areSameFactionGunners(@Nullable LivingEntity first, @Nullable LivingEntity second) {

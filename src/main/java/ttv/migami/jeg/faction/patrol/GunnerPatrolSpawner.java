@@ -15,6 +15,10 @@ import ttv.migami.jeg.faction.FactionSpawnHelper;
 public final class GunnerPatrolSpawner {
     private int nextTick;
 
+    public void reschedule() {
+        this.nextTick = 0;
+    }
+
     public int tick(ServerLevel level, boolean spawnEnemies, boolean spawnFriendlies) {
         if (!Config.factionPatrolEnabled()) {
             return 0;
@@ -42,7 +46,7 @@ public final class GunnerPatrolSpawner {
         }
         this.nextTick += random.nextInt(12000);
 
-        long day = level.getDayTime() / 24000L;
+        long day = level.getOverworldClockTime() / 24000L;
         if (day < Config.factionPatrolMinimumDays()) {
             return 0;
         }
@@ -52,6 +56,9 @@ public final class GunnerPatrolSpawner {
 
         Player randomPlayer = level.players().get(random.nextInt(level.players().size()));
         if (randomPlayer.isSpectator() || level.isCloseToVillage(randomPlayer.blockPosition(), 2)) {
+            return 0;
+        }
+        if (random.nextDouble() >= Config.factionPatrolSpawnChance()) {
             return 0;
         }
 

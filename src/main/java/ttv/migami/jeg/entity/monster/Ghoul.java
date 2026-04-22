@@ -57,7 +57,7 @@ public class Ghoul extends Zombie {
     @Override
     public void aiStep() {
         if (this.isAlive() && this.level() instanceof ServerLevel serverLevel) {
-            if (serverLevel.random.nextFloat() <= 0.2F) {
+            if (serverLevel.getRandom().nextFloat() <= 0.2F) {
                 serverLevel.sendParticles(
                         ParticleTypes.SOUL,
                         this.getX(),

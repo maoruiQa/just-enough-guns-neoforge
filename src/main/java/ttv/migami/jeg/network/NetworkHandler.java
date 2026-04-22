@@ -12,7 +12,9 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.MagazineItem;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -23,9 +25,11 @@ public final class NetworkHandler {
                 .playToServer(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC, NetworkHandler::handleShootRequest)
                 .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
+                .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
-                .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx);
+                .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
+                .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt);
     }
 
     private static void handleBulletTrail(BulletTrailPayload payload, IPayloadContext context) {
@@ -47,6 +51,10 @@ public final class NetworkHandler {
 
     private static void handleGunFireFx(GunFireFxPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> GunClientEvents.showMuzzleFlash(payload.shooterId(), payload.randomValue()));
+    }
+
+    private static void handleOffhandFullPrompt(OffhandFullPromptPayload payload, IPayloadContext context) {
+        context.enqueueWork(GunClientEvents::showOffhandFullPrompt);
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {
@@ -84,7 +92,27 @@ public final class NetworkHandler {
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
+
+            ItemStack offhand = player.getOffhandItem();
+            ItemStack mainHand = player.getMainHandItem();
+            if (payload.hand() == InteractionHand.MAIN_HAND
+                    && mainHand.getItem() instanceof GunItem
+                    && isCoolant(offhand)
+                    && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
+                player.startUsingItem(InteractionHand.OFF_HAND);
+                return;
+            }
+
             ItemStack stack = player.getItemInHand(payload.hand());
+            if (payload.hand() == InteractionHand.MAIN_HAND && stack.getItem() instanceof MagazineItem magazine) {
+                boolean notify = magazine.getLoadPromptMessage(stack, player.getOffhandItem()) == null;
+                boolean loaded = magazine.tryLoad(player.level(), player, stack, player.getOffhandItem(), notify);
+                if (loaded) {
+                    player.swing(payload.hand(), true);
+                }
+                return;
+            }
+
             if (!(stack.getItem() instanceof GunItem gun)) {
                 return;
             }
@@ -93,6 +121,31 @@ public final class NetworkHandler {
                 player.swing(payload.hand(), true);
             }
         });
+    }
+
+    private static void handleUnloadMagazineRequest(UnloadMagazineRequestPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+
+            ItemStack stack = player.getMainHandItem();
+            if (!(stack.getItem() instanceof MagazineItem magazine)) {
+                return;
+            }
+
+            MagazineItem.UnloadResult result = magazine.tryUnloadToOffhand(player.level(), player, stack);
+            if (result.showOffhandFullPrompt()) {
+                player.connection.send(OffhandFullPromptPayload.INSTANCE);
+            }
+            if (result.transferredAmmo()) {
+                player.swing(InteractionHand.MAIN_HAND, true);
+            }
+        });
+    }
+
+    private static boolean isCoolant(ItemStack stack) {
+        return stack.is(ModItems.COOLANT.get()) || stack.is(ModItems.ENHANCED_COOLANT.get());
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {
@@ -125,6 +178,14 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(new AimingStatePayload(aiming));
+    }
+
+    public static void sendUnloadMagazine() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(UnloadMagazineRequestPayload.INSTANCE);
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {

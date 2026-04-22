@@ -19,20 +19,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.entity.HumanoidArm;
+import org.joml.Matrix4f;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.bernie.geckolib.constant.dataticket.DataTicket;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
-import software.bernie.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.constant.dataticket.DataTicket;
+import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID + ".AnimatedGunRenderer");
     private static final Gson GSON = new Gson();
+    public static final DataTicket<Item> ANIMATED_ITEM = DataTicket.create("jeg:animated_item", Item.class);
     private static final Map<String, Map<String, Transform>> TRANSFORMS_CACHE = new ConcurrentHashMap<>();
     private static final Set<String> VANILLA_FALLBACK_WARNED = ConcurrentHashMap.newKeySet();
     private static volatile boolean VANILLA_FALLBACK_DISABLED = false;
@@ -88,7 +91,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 context != null ? context.itemStack() : ItemStack.EMPTY
         );
         state.addGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, perspective);
-        state.addGeckolibData(DataTickets.ITEM, animatable);
+        state.addGeckolibData(ANIMATED_ITEM, animatable);
         if (context != null) {
             state.addGeckolibData(VANILLA_ITEM_STATE, context.vanillaRenderState());
             state.addGeckolibData(ITEM_STACK, context.itemStack());
@@ -110,7 +113,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 context != null ? context.itemStack() : ItemStack.EMPTY
         );
         renderState.addGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, perspective);
-        renderState.addGeckolibData(DataTickets.ITEM, animatable);
+        renderState.addGeckolibData(ANIMATED_ITEM, animatable);
         if (context != null) {
             renderState.addGeckolibData(VANILLA_ITEM_STATE, context.vanillaRenderState());
             renderState.addGeckolibData(ITEM_STACK, context.itemStack());
@@ -236,12 +239,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         // First-person pose is controlled by IClientItemExtensions.applyForgeHandTransform (1.21.10-style),
         // and re-applying JSON display transforms here will fight that pipeline.
         if (ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            passInfo.poseStack().scale(1.6F, 1.6F, 1.6F);
+            HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
+            GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
         }
 
         String gunId = "abstract_gun";
-        if (renderState.hasGeckolibData(DataTickets.ITEM)) {
-            Item item = renderState.getGeckolibData(DataTickets.ITEM);
+        if (renderState.hasGeckolibData(ANIMATED_ITEM)) {
+            Item item = renderState.getGeckolibData(ANIMATED_ITEM);
             if (item instanceof AnimatedGunItem gun) {
                 gunId = gun.getStats().id().getPath();
             }
@@ -312,8 +318,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static String gunPathFromRenderState(GeoRenderState renderState) {
-        if (renderState.hasGeckolibData(DataTickets.ITEM)) {
-            Item item = renderState.getGeckolibData(DataTickets.ITEM);
+        if (renderState.hasGeckolibData(ANIMATED_ITEM)) {
+            Item item = renderState.getGeckolibData(ANIMATED_ITEM);
             if (item instanceof AnimatedGunItem gun) {
                 return gun.getStats().id().getPath();
             }
@@ -336,7 +342,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return ItemDisplayContext.NONE;
         }
 
-        Item animItem = renderState.getOrDefaultGeckolibData(DataTickets.ITEM, (Item) null);
+        Item animItem = renderState.getOrDefaultGeckolibData(ANIMATED_ITEM, (Item) null);
         if (animItem == null) {
             return ItemDisplayContext.NONE;
         }

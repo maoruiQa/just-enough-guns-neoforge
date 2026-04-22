@@ -39,6 +39,11 @@ public final class AimingHandler {
         return currentAim > 0.0F || previousAim > 0.0F;
     }
 
+    public void reset() {
+        currentAim = 0.0F;
+        previousAim = 0.0F;
+    }
+
     public float getNormalisedAdsProgress(float partialTick) {
         float progress = Mth.lerp(partialTick, previousAim, currentAim) / MAX_AIM_PROGRESS;
         return Mth.clamp(progress, 0.0F, 1.0F);

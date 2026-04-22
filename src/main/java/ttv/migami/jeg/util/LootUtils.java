@@ -41,6 +41,7 @@ public final class LootUtils {
     private static final net.minecraft.resources.Identifier SKY_SHIP_LOOT = Reference.id("chests/sky_ship_armada");
     private static final net.minecraft.resources.Identifier SUPPLY_LOOT = Reference.id("chests/terror_phantom_supply");
     private static final net.minecraft.resources.Identifier REWARD_LOOT = Reference.id("chests/terror_phantom_reward");
+    private static final net.minecraft.resources.Identifier FACTION_RAID_REWARD_LOOT = Reference.id("chests/faction_raid_reward");
     private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
     private static final Identifier ABSTRACT_GUN_ID = Reference.id("abstract_gun");
     private static final Set<Identifier> EXCLUDED_GUN_LOOT = Set.of(PHANTOM_SMG_ID, ABSTRACT_GUN_ID);
@@ -151,6 +152,10 @@ public final class LootUtils {
         }
         if (id.equals(REWARD_LOOT)) {
             fillRewardFallback(container, random, enchantLookup);
+            return true;
+        }
+        if (id.equals(FACTION_RAID_REWARD_LOOT)) {
+            fillFactionRaidRewardFallback(container, random, enchantLookup);
             return true;
         }
         return false;
@@ -335,6 +340,53 @@ public final class LootUtils {
         }
     }
 
+    private static void fillFactionRaidRewardFallback(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        container.clearContent();
+
+        ItemStack primaryGun = createRandomGun(random);
+        if (!primaryGun.isEmpty()) {
+            placeInRandomSlot(container, primaryGun, random);
+        }
+
+        ItemStack secondaryGun = createRandomGun(random);
+        if (!secondaryGun.isEmpty()) {
+            placeInRandomSlot(container, secondaryGun, random);
+        }
+
+        for (int i = 0; i < 2; i++) {
+            ItemStack ammo = createRandomAmmo(random, 20, 40);
+            if (!ammo.isEmpty()) {
+                placeInRandomSlot(container, ammo, random);
+            }
+        }
+
+        ItemStack primaryArmor = createHighTierEnchantedArmor(random, lookup);
+        if (!primaryArmor.isEmpty()) {
+            placeInRandomSlot(container, primaryArmor, random);
+        }
+
+        ItemStack bonusArmor = createHighTierEnchantedArmor(random, lookup);
+        if (!bonusArmor.isEmpty()) {
+            placeInRandomSlot(container, bonusArmor, random);
+        }
+
+        ItemStack guaranteedBook = createHighTierEnchantedBook(random, lookup);
+        if (!guaranteedBook.isEmpty()) {
+            placeInRandomSlot(container, guaranteedBook, random);
+        }
+
+        int extraRolls = 6 + random.nextInt(3);
+        for (int i = 0; i < extraRolls; i++) {
+            ItemStack stack = createFactionRaidRewardLootItem(random, lookup);
+            if (!stack.isEmpty()) {
+                placeInRandomSlot(container, stack, random);
+            }
+        }
+        if (container instanceof BlockEntity blockEntity) {
+            blockEntity.setChanged();
+        }
+    }
+
     private static ItemStack createRewardLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
         int roll = random.nextInt(100);
         if (roll < 18) {
@@ -356,6 +408,35 @@ public final class LootUtils {
             return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
         }
         return new ItemStack(Items.NETHERITE_SCRAP, 1 + random.nextInt(2));
+    }
+
+    private static ItemStack createFactionRaidRewardLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        int roll = random.nextInt(100);
+        if (roll < 16) {
+            return createRandomAmmo(random, 20, 36);
+        }
+        if (roll < 30) {
+            return createRandomGun(random);
+        }
+        if (roll < 46) {
+            return createHighTierEnchantedBook(random, lookup);
+        }
+        if (roll < 62) {
+            return createHighTierEnchantedArmor(random, lookup);
+        }
+        if (roll < 74) {
+            return new ItemStack(Items.DIAMOND, 3 + random.nextInt(4));
+        }
+        if (roll < 84) {
+            return new ItemStack(Items.EMERALD, 6 + random.nextInt(7));
+        }
+        if (roll < 92) {
+            return new ItemStack(Items.GOLDEN_APPLE, 2 + random.nextInt(2));
+        }
+        if (roll < 97) {
+            return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
+        }
+        return new ItemStack(Items.NETHERITE_SCRAP, 1 + random.nextInt(3));
     }
 
     private static ItemStack createRandomGun(RandomSource random) {
@@ -393,6 +474,31 @@ public final class LootUtils {
         return new ItemStack(item, count);
     }
 
+    private static ItemStack createHighTierEnchantedArmor(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        Item item = DIAMOND_ARMOR[random.nextInt(DIAMOND_ARMOR.length)];
+        ItemStack stack = new ItemStack(item);
+        List<Holder.Reference<Enchantment>> available = lookup.listElements()
+            .filter(ref -> ref.value().canEnchant(stack))
+            .collect(Collectors.toCollection(ArrayList::new));
+        if (available.isEmpty()) {
+            return stack;
+        }
+        int enchantments = 3 + random.nextInt(2);
+        for (int i = 0; i < enchantments && !available.isEmpty(); i++) {
+            Holder.Reference<Enchantment> holder = available.remove(random.nextInt(available.size()));
+            Enchantment enchantment = holder.value();
+            int minLevel = enchantment.getMinLevel();
+            int maxLevel = enchantment.getMaxLevel();
+            int level = maxLevel;
+            if (maxLevel > minLevel) {
+                int lowerBound = Math.max(minLevel, maxLevel - 1);
+                level = Mth.nextInt(random, lowerBound, maxLevel);
+            }
+            stack.enchant(holder, level);
+        }
+        return stack;
+    }
+
     private static ItemStack createEnchantedArmor(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
         boolean chooseDiamond = random.nextFloat() < 0.6F;
         Item[] pool = chooseDiamond ? DIAMOND_ARMOR : IRON_ARMOR;
@@ -417,6 +523,24 @@ public final class LootUtils {
             }
             stack.enchant(holder, level);
         }
+        return stack;
+    }
+
+    private static ItemStack createHighTierEnchantedBook(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        List<Holder.Reference<Enchantment>> enchantments = lookup.listElements()
+            .filter(ref -> ref.value().getMaxLevel() >= 3)
+            .collect(Collectors.toCollection(ArrayList::new));
+        if (enchantments.isEmpty()) {
+            return createEnchantedBook(random, lookup);
+        }
+        Holder.Reference<Enchantment> holder = enchantments.get(random.nextInt(enchantments.size()));
+        Enchantment enchantment = holder.value();
+        int minLevel = enchantment.getMinLevel();
+        int maxLevel = enchantment.getMaxLevel();
+        int lowerBound = Math.max(minLevel, maxLevel - 1);
+        int level = Mth.nextInt(random, lowerBound, maxLevel);
+        ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
+        stack.enchant(holder, level);
         return stack;
     }
 

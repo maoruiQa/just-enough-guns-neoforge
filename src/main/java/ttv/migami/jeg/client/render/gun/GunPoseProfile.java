@@ -126,8 +126,8 @@ public record GunPoseProfile(
             0.71F, -0.28F, -0.64F,
             0.42F, -0.44F, -0.80F,
             2.0F, 4.0F, 1.22F,
-            arm(-0.20F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
-            arm(0.20F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
+            arm(0.42F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
+            arm(0.80F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
     );
 
     private static final GunPoseProfile TYPHOONEE_PROFILE = of(
@@ -136,8 +136,8 @@ public record GunPoseProfile(
             0.64F, -1.56F, -1.28F,
             0.35F, -1.72F, -1.44F,
             2.0F, 4.0F, 1.22F,
-            arm(-0.20F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
-            arm(0.20F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
+            arm(0.42F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
+            arm(0.80F, -0.08F, -0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
     );
 
     private static final Map<Identifier, GunPoseProfile> PROFILES = Map.ofEntries(
@@ -180,10 +180,10 @@ public record GunPoseProfile(
             Map.entry(Reference.id("minigun"), of(
                     ArmMode.HEAVY,
                     true,
-                    0.32F, -0.35F, -0.85F,
-                    0.34F, -0.40F, -0.90F,
+                    0.32F, -0.31F, -0.97F,
+                    0.34F, -0.36F, -1.02F,
                     1.8F, 3.0F, 1.10F,
-                    arm(-0.75F, -0.46F, 0.95F, -8.0F, -6.0F, -100.0F, 0.52F, 0.66F, 0.52F),
+                    arm(-1.40F, -0.46F, 1.75F, -8.0F, -31.0F, -75.0F, 0.52F, 0.66F, 0.52F),
                     arm(0.18F, -0.10F, -0.04F, -4.0F, 2.0F, -8.0F, 0.54F, 0.68F, 0.54F)
             )),
             Map.entry(Reference.id("hypersonic_cannon"), of(

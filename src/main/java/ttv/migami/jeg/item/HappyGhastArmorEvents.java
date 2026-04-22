@@ -101,7 +101,7 @@ public final class HappyGhastArmorEvents {
         for (var passenger : ghast.getPassengers()) {
             if (passenger instanceof ServerPlayer player) {
                 JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Notifying passenger {} plating={}", player.getUUID(), plating);
-                player.displayClientMessage(Component.translatable(
+                player.sendSystemMessage(Component.translatable(
                         "tooltip.jeg.harness_status",
                         Math.round(plating),
                         Math.round(max)

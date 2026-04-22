@@ -9,15 +9,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
-import software.bernie.geckolib.cache.model.GeoBone;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.renderer.base.GeoRenderState;
-import software.bernie.geckolib.renderer.base.PerBoneRender;
-import software.bernie.geckolib.renderer.base.RenderPassInfo;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-import software.bernie.geckolib.util.RenderUtil;
+import com.geckolib.cache.model.GeoBone;
+import com.geckolib.constant.DataTickets;
+import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.renderer.base.PerBoneRender;
+import com.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.renderer.layer.GeoRenderLayer;
+import com.geckolib.util.RenderUtil;
+import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
+import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 /**
@@ -27,13 +29,10 @@ import ttv.migami.jeg.item.AnimatedGunItem;
  * Third-person: does not render any arms.
  */
 public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
-    private static final java.util.Set<String> HIDE_ARMS_IN_FIRST_PERSON = java.util.Set.of(
-            "double_barrel_shotgun",
-            "pump_shotgun",
-            "repeating_shotgun",
-            "supersonic_shotgun",
-            "holy_shotgun",
-            "waterpipe_shotgun"
+    private static final java.util.Set<String> FIRST_PERSON_ARMS_ALLOWLIST = java.util.Set.of(
+            "minigun",
+            "rocket_launcher",
+            "typhoonee"
     );
 
     public GunFirstPersonArmsLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
@@ -49,25 +48,34 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
             return;
         }
 
-        Item item = passInfo.renderState().getGeckolibData(DataTickets.ITEM);
-        String id = item instanceof AnimatedGunItem gun ? gun.getStats().id().getPath() : "abstract_gun";
-        if (HIDE_ARMS_IN_FIRST_PERSON.contains(id)) {
+        Item item = passInfo.renderState().getGeckolibData(AnimatedGunRenderer.ANIMATED_ITEM);
+        if (!(item instanceof AnimatedGunItem gun) || !shouldRenderFirstPersonArms(gun)) {
             return;
         }
 
-        GunPoseProfile profile = item instanceof AnimatedGunItem gun
-                ? GunPoseProfile.forGun(gun.getStats().id())
+        String gunId = gun.getStats().id().getPath();
+        boolean suppressLeftArm = "rocket_launcher".equals(gunId) || "typhoonee".equals(gunId);
+        GunPoseProfile profile = item instanceof AnimatedGunItem animatedGun
+                ? GunPoseProfile.forGun(animatedGun.getStats().id())
                 : GunPoseProfile.forGun(Identifier.fromNamespaceAndPath("jeg", "abstract_gun"));
         boolean oneHanded = profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED;
         boolean renderLeftArm = profile.renderLeftArm();
         ArmSide activeSide = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? ArmSide.LEFT : ArmSide.RIGHT;
 
-        if (renderLeftArm && (!oneHanded || activeSide == ArmSide.LEFT)) {
+        if (!suppressLeftArm && renderLeftArm && (!oneHanded || activeSide == ArmSide.LEFT)) {
             registerArmBone(passInfo, ArmSide.LEFT, profile.leftArm());
         }
         if (!oneHanded || activeSide == ArmSide.RIGHT) {
             registerArmBone(passInfo, ArmSide.RIGHT, profile.rightArm());
         }
+    }
+
+    private static boolean shouldRenderFirstPersonArms(AnimatedGunItem gun) {
+        String id = gun.getStats().id().getPath();
+        if (FIRST_PERSON_ARMS_ALLOWLIST.contains(id)) {
+            return true;
+        }
+        return GunCategory.fromStats(gun.getStats()) == GunCategory.PISTOL;
     }
 
     private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side, GunPoseProfile.ArmTransform transform) {

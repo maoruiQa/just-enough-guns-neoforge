@@ -10,6 +10,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
+import ttv.migami.jeg.entity.MolotovCocktailEntity;
+import ttv.migami.jeg.entity.SmokeGrenadeEntity;
+import ttv.migami.jeg.entity.StunGrenadeEntity;
+import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
@@ -50,6 +54,54 @@ public final class ModEntities {
             () -> {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("grenade"));
                 return EntityType.Builder.<GrenadeEntity>of(GrenadeEntity::new, MobCategory.MISC)
+                        .sized(0.25F, 0.25F)
+                        .clientTrackingRange(6)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StunGrenadeEntity>> STUN_GRENADE = REGISTER.register(
+            "stun_grenade",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("stun_grenade"));
+                return EntityType.Builder.<StunGrenadeEntity>of(StunGrenadeEntity::new, MobCategory.MISC)
+                        .sized(0.25F, 0.25F)
+                        .clientTrackingRange(6)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SmokeGrenadeEntity>> SMOKE_GRENADE = REGISTER.register(
+            "smoke_grenade",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("smoke_grenade"));
+                return EntityType.Builder.<SmokeGrenadeEntity>of(SmokeGrenadeEntity::new, MobCategory.MISC)
+                        .sized(0.25F, 0.25F)
+                        .clientTrackingRange(6)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MolotovCocktailEntity>> MOLOTOV_COCKTAIL = REGISTER.register(
+            "molotov_cocktail",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("molotov_cocktail"));
+                return EntityType.Builder.<MolotovCocktailEntity>of(MolotovCocktailEntity::new, MobCategory.MISC)
+                        .sized(0.25F, 0.25F)
+                        .clientTrackingRange(6)
+                        .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<WaterBombEntity>> WATER_BOMB = REGISTER.register(
+            "water_bomb",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("water_bomb"));
+                return EntityType.Builder.<WaterBombEntity>of(WaterBombEntity::new, MobCategory.MISC)
                         .sized(0.25F, 0.25F)
                         .clientTrackingRange(6)
                         .updateInterval(2)

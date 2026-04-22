@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -61,11 +62,16 @@ public final class JoyousArmorPlateItem extends Item {
                 stack.shrink(1);
             }
             HappyGhastArmorEvents.notifyPassengers(ghast);
-            player.displayClientMessage(Component.translatable(
+            Component statusMessage = Component.translatable(
                     "tooltip.jeg.harness_status",
                     Math.round(HappyGhastArmorHelper.getPlating(harness)),
                     Math.round(max)
-            ).withStyle(ChatFormatting.AQUA), true);
+            ).withStyle(ChatFormatting.AQUA);
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(statusMessage, true);
+            } else {
+                player.sendSystemMessage(statusMessage);
+            }
             player.swing(hand, true);
             return InteractionResult.SUCCESS_SERVER;
         }

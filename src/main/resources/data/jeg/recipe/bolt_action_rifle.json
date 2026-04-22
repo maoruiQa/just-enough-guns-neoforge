@@ -4,14 +4,15 @@
   "pattern": [
     "BDR",
     "BLH",
-    "  L"
+    "XLX"
   ],
   "key": {
     "B": "minecraft:iron_block",
     "D": "minecraft:dispenser",
     "H": "minecraft:hopper",
     "L": "#minecraft:logs",
-    "R": "minecraft:redstone"
+    "R": "minecraft:redstone",
+    "X": "minecraft:diamond"
   },
   "result": {
     "id": "jeg:bolt_action_rifle",

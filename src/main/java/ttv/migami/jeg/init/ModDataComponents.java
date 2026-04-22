@@ -79,4 +79,36 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_LONG)
                     .build()
     );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_WATER_COOLING_TICKS_TOTAL = REGISTER.register(
+            "gun_water_cooling_ticks_total",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_WATER_COOLING_TICKS_REMAINING = REGISTER.register(
+            "gun_water_cooling_ticks_remaining",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> MAGAZINE_AMMO_ITEM = REGISTER.register(
+            "magazine_ammo_item",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> MAGAZINE_AMMO_COUNT = REGISTER.register(
+            "magazine_ammo_count",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
 }

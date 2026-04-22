@@ -34,8 +34,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
         this.typeSupplier = () -> type;
     }
 
-    @Override
-    public EntityType<?> getType(ItemStack stack) {
+    private EntityType<?> getSpawnType(ItemStack stack) {
         return this.typeSupplier.get();
     }
 
@@ -53,7 +52,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
 
         BlockEntity blockEntity = level.getBlockEntity(clickedPos);
         if (blockEntity instanceof SpawnerBlockEntity spawner) {
-            EntityType<?> entityType = getType(stack);
+            EntityType<?> entityType = getSpawnType(stack);
             spawner.getSpawner().setEntityId(entityType, level, level.getRandom(), clickedPos);
             level.sendBlockUpdated(clickedPos, state, state, 3);
             level.gameEvent(player, GameEvent.BLOCK_CHANGE, clickedPos);
@@ -65,7 +64,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
                 ? clickedPos
                 : clickedPos.relative(context.getClickedFace());
 
-        EntityType<?> rawType = getType(stack);
+        EntityType<?> rawType = getSpawnType(stack);
         Mob mob = resolveMobType(rawType).spawn(
                 (ServerLevel) level,
                 stack,
@@ -102,7 +101,7 @@ public class ModSpawnEggItem extends SpawnEggItem {
                 return InteractionResult.FAIL;
             }
 
-            EntityType<?> rawType = getType(stack);
+            EntityType<?> rawType = getSpawnType(stack);
             Mob mob = resolveMobType(rawType).spawn(
                     (ServerLevel) level,
                     stack,
@@ -121,13 +120,6 @@ public class ModSpawnEggItem extends SpawnEggItem {
         }
 
         return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public Optional<Mob> spawnOffspringFromSpawnEgg(Player player, Mob parent, EntityType<? extends Mob> type, ServerLevel level, Vec3 pos, ItemStack stack) {
-        Optional<Mob> result = super.spawnOffspringFromSpawnEgg(player, parent, type, level, pos, stack);
-        result.ifPresent(mob -> postSpawn(level, mob, stack, player));
-        return result;
     }
 
     protected void postSpawn(Level level, Mob mob, ItemStack stack, Player player) {

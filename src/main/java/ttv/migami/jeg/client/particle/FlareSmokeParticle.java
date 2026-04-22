@@ -32,8 +32,8 @@ public final class FlareSmokeParticle extends ExplodeParticle {
     }
 
     @Override
-    public int getLightColor(float partialTick) {
-        return 240;
+    public int getLightCoords(float partialTick) {
+        return net.minecraft.util.Brightness.FULL_BRIGHT.pack();
     }
 
     public static final class SmokeProvider implements ParticleProvider<SimpleParticleType> {

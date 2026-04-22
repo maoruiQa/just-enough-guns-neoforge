@@ -3,12 +3,13 @@
   "category": "equipment",
   "pattern": [
     "HPB",
-    " PB",
+    "NPB",
     "  P"
   ],
   "key": {
     "H": "minecraft:heart_of_the_sea",
     "P": "minecraft:prismarine",
+    "N": "minecraft:netherite_ingot",
     "B": "minecraft:iron_block"
   },
   "result": {
