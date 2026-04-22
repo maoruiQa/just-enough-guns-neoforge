@@ -22,20 +22,28 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
+import ttv.migami.jeg.faction.GroupedGunnerRecovery;
 import ttv.migami.jeg.init.ModEffects;
 
 public final class PatrolEncounterManager {
     private static final Map<ServerLevel, List<PatrolContext>> ACTIVE_PATROLS = new HashMap<>();
     private static final int OMEN_DURATION_TICKS = 36000;
     private static final int LEGACY_RECOVERY_MERGE_DISTANCE = 128;
-    private static final int UNREACHABLE_REPATH_TICKS = 80;
-    private static final int UNREACHABLE_RELOCATE_TICKS = 200;
-    private static final int UNREACHABLE_CLEANUP_TICKS = 500;
+    private static final int STATIONARY_STUCK_TICKS = 120;
+    private static final int SPIN_STUCK_TICKS = 120;
+    private static final int DISTANCE_STALL_TICKS = 120;
+    private static final double STATIONARY_MOVEMENT_THRESHOLD_SQ = 0.25D;
+    private static final float SPIN_STUCK_YAW_DELTA_DEGREES = 35.0F;
+    private static final double DISTANCE_STALL_THRESHOLD = 1.5D;
+    private static final int PATROL_NO_PLAYER_TIMEOUT_TICKS = 1200;
     private static final int PATROL_TARGET_RANGE = 96;
-    private static final double PATROL_NAVIGATION_SPEED = 1.2D;
+    private static final int PATROL_RELOCATE_MIN_DISTANCE = 12;
+    private static final int PATROL_RELOCATE_MAX_DISTANCE = 28;
 
     private PatrolEncounterManager() {}
 
@@ -56,9 +64,7 @@ public final class PatrolEncounterManager {
             contexts.add(context);
         }
         for (Mob mob : mobs) {
-            context.mobIds.add(mob.getUUID());
-            replaceTagValue(mob, FactionSpawnHelper.PATROL_ID_TAG_PREFIX, context.patrolId);
-            replaceTagValue(mob, FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX, context.factionName);
+            context.trackMob(mob);
         }
         context.initialCount = Math.max(context.initialCount, context.mobIds.size());
     }
@@ -71,12 +77,15 @@ public final class PatrolEncounterManager {
         String patrolId = readTagValue(mob, FactionSpawnHelper.PATROL_ID_TAG_PREFIX);
         boolean missingPatrolId = patrolId == null || patrolId.isBlank();
         String factionName = readTagValue(mob, FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX);
-        if (factionName == null || factionName.isBlank()) {
-            factionName = "night_of_the_undead";
-        }
 
         List<PatrolContext> contexts = ACTIVE_PATROLS.computeIfAbsent(level, ignored -> new ArrayList<>());
         PatrolContext context = !missingPatrolId ? findContextById(contexts, patrolId) : null;
+        if ((factionName == null || factionName.isBlank()) && context != null) {
+            factionName = context.factionName;
+        }
+        if (factionName == null || factionName.isBlank()) {
+            return;
+        }
         if (context == null) {
             context = findCompatibleLegacyContext(contexts, factionName, mob.blockPosition());
         }
@@ -88,12 +97,8 @@ public final class PatrolEncounterManager {
             contexts.add(context);
         }
 
-        if (context.mobIds.add(mob.getUUID())) {
-            context.initialCount = Math.max(context.initialCount, context.mobIds.size());
-        }
-
-        replaceTagValue(mob, FactionSpawnHelper.PATROL_ID_TAG_PREFIX, context.patrolId);
-        replaceTagValue(mob, FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX, context.factionName);
+        context.trackMob(mob);
+        context.initialCount = Math.max(context.initialCount, context.mobIds.size());
     }
 
     @Nullable
@@ -183,8 +188,15 @@ public final class PatrolEncounterManager {
         boolean hadDeath = false;
         Set<UUID> toRemove = new HashSet<>();
         ServerPlayer preferredTarget = resolvePreferredTarget(level, context);
+        boolean hasPreferredTarget = isValidPatrolTarget(level, preferredTarget);
 
-        for (UUID mobId : context.mobIds) {
+        if (hasPreferredTarget) {
+            context.noPlayerTicks = 0;
+        } else {
+            context.noPlayerTicks++;
+        }
+
+        for (UUID mobId : new HashSet<>(context.mobIds)) {
             Entity entity = level.getEntity(mobId);
             if (!(entity instanceof LivingEntity living)) {
                 toRemove.add(mobId);
@@ -226,17 +238,34 @@ public final class PatrolEncounterManager {
         ));
 
         refreshPlayers(level, context);
-        if (alive > 0) {
+        if (alive > 0 && (hasPreferredTarget || context.noPlayerTicks < PATROL_NO_PLAYER_TIMEOUT_TICKS)) {
             return false;
         }
 
         awardOmen(level, context);
+        clearTrackedMobs(level, context);
         context.bossBar.removeAllPlayers();
         return true;
     }
 
     private static boolean maintainPatrolMob(ServerLevel level, PatrolContext context, UUID mobId, Mob mob, @Nullable ServerPlayer preferredTarget) {
+        if (!(mob instanceof PathfinderMob pathfinderMob)) {
+            context.clearMobTracking(mobId);
+            return false;
+        }
+
+        if (!mob.getTags().contains(FactionSpawnHelper.PATROL_TAG)) {
+            context.clearMobTracking(mobId);
+            return true;
+        }
+
         if (!isValidPatrolTarget(level, preferredTarget)) {
+            mob.getNavigation().stop();
+            if (mob.getTarget() != null) {
+                mob.setTarget(null);
+            }
+            mob.setAggressive(false);
+            context.clearMobTracking(mobId);
             return false;
         }
 
@@ -244,42 +273,117 @@ public final class PatrolEncounterManager {
         if (!(currentTarget instanceof ServerPlayer currentPlayer) || !isValidPatrolTarget(level, currentPlayer)) {
             mob.setTarget(preferredTarget);
             mob.setAggressive(true);
+            FactionSpawnHelper.moveToTargetWithPathFallback(pathfinderMob, preferredTarget);
         }
 
-        if (!(mob instanceof PathfinderMob pathfinderMob)) {
-            context.clearMobTracking(mobId);
+        int stationaryTicks = updateStationaryTicks(context, mobId, mob);
+        int spinTicks = updateSpinTicks(context, mobId, mob);
+        int distanceStallTicks = updateDistanceStallTicks(context, mobId, mob, preferredTarget);
+        int stuckSeverity = Math.max(stationaryTicks, Math.max(spinTicks, distanceStallTicks));
+        if (stuckSeverity < 60) {
+            return false;
+        }
+        if (stuckSeverity < STATIONARY_STUCK_TICKS) {
+            FactionSpawnHelper.trySoftTargetRecovery(pathfinderMob, preferredTarget);
             return false;
         }
 
-        double distanceSq = mob.distanceToSqr(preferredTarget);
-        boolean farFromTarget = distanceSq > 24.0D * 24.0D;
-        boolean navDone = pathfinderMob.getNavigation().isDone();
-        boolean noLineOfSight = !mob.hasLineOfSight(preferredTarget);
-        boolean stuck = farFromTarget && (navDone || noLineOfSight);
-
-        if (!stuck) {
-            context.clearMobTracking(mobId);
-            return false;
-        }
-
-        int stuckTicks = context.incrementUnreachableTicks(mobId);
-        if (stuckTicks % UNREACHABLE_REPATH_TICKS == 0) {
-            forceRepath(pathfinderMob, preferredTarget);
-        }
-        if (stuckTicks % UNREACHABLE_RELOCATE_TICKS == 0) {
-            relocateNearTarget(level, pathfinderMob, preferredTarget);
+        int eligibleCount = Math.min(3, countEligibleRecoveryMobs(context, level, preferredTarget));
+        if (GroupedGunnerRecovery.tryRecoverGroundMob(
+                level,
+                "patrol:" + context.patrolId,
+                context.origin,
+                pathfinderMob,
+                preferredTarget,
+                PATROL_RELOCATE_MIN_DISTANCE,
+                Math.min(PATROL_RELOCATE_MAX_DISTANCE, 12),
+                PATROL_RELOCATE_MIN_DISTANCE,
+                PATROL_RELOCATE_MAX_DISTANCE,
+                12,
+                eligibleCount
+        )) {
             context.incrementRelocationCount(mobId);
+            context.clearMobTracking(mobId);
+            return false;
         }
 
-        if (stuckTicks >= UNREACHABLE_CLEANUP_TICKS || context.getRelocationCount(mobId) >= 3) {
-            mob.discard();
-            context.clearMobTracking(mobId);
-            return true;
-        }
+        FactionSpawnHelper.trySoftTargetRecovery(pathfinderMob, preferredTarget);
         return false;
     }
 
-    private static @Nullable ServerPlayer resolvePreferredTarget(ServerLevel level, PatrolContext context) {
+    private static int updateStationaryTicks(PatrolContext context, UUID mobId, Mob mob) {
+        return FactionSpawnHelper.updateStationaryTicks(
+                context.lastPositions,
+                context.stationaryTicks,
+                mobId,
+                mob.position(),
+                20,
+                STATIONARY_MOVEMENT_THRESHOLD_SQ
+        );
+    }
+
+    private static int updateSpinTicks(PatrolContext context, UUID mobId, Mob mob) {
+        float currentYaw = mob.getYRot();
+        Float lastYaw = context.lastYaws.put(mobId, currentYaw);
+        if (lastYaw == null) {
+            context.spinTicks.remove(mobId);
+            return 0;
+        }
+        float delta = Math.abs(Mth.wrapDegrees(currentYaw - lastYaw));
+        if (delta < SPIN_STUCK_YAW_DELTA_DEGREES) {
+            context.spinTicks.remove(mobId);
+            return 0;
+        }
+        return context.spinTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int updateDistanceStallTicks(PatrolContext context, UUID mobId, Mob mob, ServerPlayer preferredTarget) {
+        double distanceSq = mob.distanceToSqr(preferredTarget);
+        Double lastDistanceSq = context.lastTargetDistanceSq.put(mobId, distanceSq);
+        if (lastDistanceSq == null || lastDistanceSq - distanceSq > DISTANCE_STALL_THRESHOLD) {
+            context.distanceStallTicks.remove(mobId);
+            return 0;
+        }
+        return context.distanceStallTicks.merge(mobId, 20, Integer::sum);
+    }
+
+    private static int countEligibleRecoveryMobs(PatrolContext context, ServerLevel level, ServerPlayer preferredTarget) {
+        int eligible = 0;
+        for (UUID id : context.mobIds) {
+            Entity entity = level.getEntity(id);
+            if (!(entity instanceof Mob mob) || !(mob instanceof PathfinderMob)) {
+                continue;
+            }
+            if (preferredTarget.hasLineOfSight(mob)) {
+                continue;
+            }
+            int severity = Math.max(
+                    context.stationaryTicks.getOrDefault(id, 0),
+                    Math.max(context.spinTicks.getOrDefault(id, 0), context.distanceStallTicks.getOrDefault(id, 0))
+            );
+            if (severity >= STATIONARY_STUCK_TICKS) {
+                eligible++;
+                if (eligible >= 3) {
+                    return eligible;
+                }
+            }
+        }
+        return eligible;
+    }
+
+    private static void clearTrackedMobs(ServerLevel level, PatrolContext context) {
+        for (UUID mobId : new HashSet<>(context.mobIds)) {
+            Entity entity = level.getEntity(mobId);
+            if (entity instanceof Mob mob && mob.isAlive() && !mob.isRemoved()) {
+                mob.discard();
+            }
+            context.clearMobTracking(mobId);
+        }
+        context.mobIds.clear();
+    }
+
+    @Nullable
+    private static ServerPlayer resolvePreferredTarget(ServerLevel level, PatrolContext context) {
         ServerPlayer nearest = null;
         double nearestDistanceSq = Double.MAX_VALUE;
         double cx = context.origin.getX() + 0.5D;
@@ -298,6 +402,7 @@ public final class PatrolEncounterManager {
             nearest = player;
             nearestDistanceSq = distanceSq;
         }
+        context.targetPlayerId = nearest != null ? nearest.getUUID() : context.targetPlayerId;
         return nearest;
     }
 
@@ -307,29 +412,7 @@ public final class PatrolEncounterManager {
                 && player.isAlive()
                 && !player.isDeadOrDying()
                 && !player.isSpectator()
-                && !player.isCreative();
-    }
-
-    private static void forceRepath(PathfinderMob mob, ServerPlayer target) {
-        if (mob.getNavigation().moveTo(target, PATROL_NAVIGATION_SPEED)) {
-            return;
-        }
-        var path = mob.getNavigation().createPath(target, 0);
-        if (path != null) {
-            mob.getNavigation().moveTo(path, PATROL_NAVIGATION_SPEED);
-        }
-    }
-
-    private static void relocateNearTarget(ServerLevel level, PathfinderMob mob, ServerPlayer target) {
-        BlockPos relocatePos = FactionSpawnHelper.sampleGroundPosition(level, target.blockPosition(), level.getRandom(), 4, 10);
-        if (!FactionSpawnHelper.isSafeGroundPosition(level, relocatePos)) {
-            return;
-        }
-        mob.teleportTo(relocatePos.getX() + 0.5D, relocatePos.getY(), relocatePos.getZ() + 0.5D);
-        mob.getNavigation().stop();
-        mob.setTarget(target);
-        mob.setAggressive(true);
-        forceRepath(mob, target);
+                && player.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
     }
 
     private static void refreshPlayers(ServerLevel level, PatrolContext context) {
@@ -387,9 +470,15 @@ public final class PatrolEncounterManager {
         private final BlockPos origin;
         private final Set<UUID> mobIds = new HashSet<>();
         private final ServerBossEvent bossBar;
-        private final Map<UUID, Integer> unreachableTicks = new HashMap<>();
-        private final Map<UUID, Integer> relocationCounts = new HashMap<>();
+        private final Map<UUID, Vec3> lastPositions = new HashMap<>();
+        private final Map<UUID, Integer> stationaryTicks = new HashMap<>();
+        private final Map<UUID, Float> lastYaws = new HashMap<>();
+        private final Map<UUID, Integer> spinTicks = new HashMap<>();
+        private final Map<UUID, Double> lastTargetDistanceSq = new HashMap<>();
+        private final Map<UUID, Integer> distanceStallTicks = new HashMap<>();
+        private @Nullable UUID targetPlayerId;
         private int initialCount;
+        private int noPlayerTicks;
         private UUID lastKiller;
 
         private PatrolContext(String factionName, BlockPos origin, int initialCount, String patrolId) {
@@ -406,21 +495,29 @@ public final class PatrolEncounterManager {
             );
         }
 
-        private int incrementUnreachableTicks(UUID mobId) {
-            return this.unreachableTicks.merge(mobId, 1, Integer::sum);
+        private void trackMob(Mob mob) {
+            this.mobIds.add(mob.getUUID());
+            clearMobTracking(mob.getUUID());
+            applyPatrolTags(mob);
+        }
+
+        private void applyPatrolTags(Mob mob) {
+            mob.addTag(FactionSpawnHelper.PATROL_TAG);
+            replaceTagValue(mob, FactionSpawnHelper.PATROL_ID_TAG_PREFIX, this.patrolId);
+            replaceTagValue(mob, FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX, this.factionName);
         }
 
         private void incrementRelocationCount(UUID mobId) {
-            this.relocationCounts.merge(mobId, 1, Integer::sum);
-        }
-
-        private int getRelocationCount(UUID mobId) {
-            return this.relocationCounts.getOrDefault(mobId, 0);
+            // preserve shape with other branches even if currently only used for bookkeeping
         }
 
         private void clearMobTracking(UUID mobId) {
-            this.unreachableTicks.remove(mobId);
-            this.relocationCounts.remove(mobId);
+            this.lastPositions.remove(mobId);
+            this.stationaryTicks.remove(mobId);
+            this.lastYaws.remove(mobId);
+            this.spinTicks.remove(mobId);
+            this.lastTargetDistanceSq.remove(mobId);
+            this.distanceStallTicks.remove(mobId);
         }
     }
 }

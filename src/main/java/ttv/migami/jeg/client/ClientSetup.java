@@ -34,13 +34,17 @@ public final class ClientSetup {
             event.registerEntityRenderer(ModEntities.GHOUL.get(), GhoulRenderer::new);
             event.registerEntityRenderer(ModEntities.BULLET.get(), BulletRenderer::new);
             event.registerEntityRenderer(ModEntities.GRENADE.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
+            event.registerEntityRenderer(ModEntities.STUN_GRENADE.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
+            event.registerEntityRenderer(ModEntities.SMOKE_GRENADE.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
+            event.registerEntityRenderer(ModEntities.MOLOTOV_COCKTAIL.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
+            event.registerEntityRenderer(ModEntities.WATER_BOMB.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
             event.registerEntityRenderer(ModEntities.PHANTOM_GUNNER.get(), PhantomGunnerGeoRenderer::new);
             event.registerEntityRenderer(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerGeoRenderer::new);
             event.registerEntityRenderer(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
             event.registerEntityRenderer(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
             event.registerEntityRenderer(ModEntities.RAID_ENTITY.get(), RaidEntityRenderer::new);
 
-            LOGGER.debug("Successfully registered {} entity renderers", 8);
+            LOGGER.debug("Successfully registered {} entity renderers", 12);
         } catch (Exception e) {
             LOGGER.error("Failed to register entity renderers", e);
             throw e;

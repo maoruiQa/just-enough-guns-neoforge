@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -73,6 +74,11 @@ public class BulletPenetrationHelper {
             return 3;
         }
         return 4; // Indestructible (tier 4)
+    }
+
+    public static boolean canGunnerBreakBlock(Level level, BlockState state, int maxTier) {
+        int tier = getBlockTier(level, state);
+        return tier > 0 && tier <= maxTier;
     }
 
     /**
@@ -145,8 +151,10 @@ public class BulletPenetrationHelper {
         float bulletPower = getBulletPower(stats);
         float destroyChance = getDestructionProbability(tier, bulletPower);
 
+        RandomSource random = RandomSource.create(level.getGameTime() ^ pos.asLong());
+
         // Roll for destruction
-        if (level.random.nextFloat() < destroyChance) {
+        if (random.nextFloat() < destroyChance) {
             // Destroy the block without dropping items
             level.destroyBlock(pos, false);
         }

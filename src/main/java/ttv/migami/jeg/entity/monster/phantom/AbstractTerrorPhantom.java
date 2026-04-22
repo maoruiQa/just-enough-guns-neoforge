@@ -375,7 +375,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             this.heal(IDLE_HEAL_AMOUNT);
         }
 
-        if (gameTime - this.lastAttackedGameTime >= DESPAWN_IF_UNHIT_TICKS) {
+        if (this.getType() == ModEntities.TERROR_PHANTOM.get() && gameTime - this.lastAttackedGameTime >= DESPAWN_IF_UNHIT_TICKS) {
             this.discard();
             return;
         }
@@ -559,7 +559,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     private void spawnGunnerSkeletons(ServerLevel level) {
-        int count = 2 + level.random.nextInt(2);
+        int count = 2 + this.random.nextInt(2);
         BlockPos origin = this.blockPosition();
 
         // Find and target nearest player
@@ -571,9 +571,9 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             if (skeleton == null) {
                 continue;
             }
-            BlockPos spawnPos = findSupportPosition(level, origin, level.random);
+            BlockPos spawnPos = findSupportPosition(level, origin, this.random);
             skeleton.setPos(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
-            skeleton.setYRot(level.random.nextFloat() * 360.0F);
+            skeleton.setYRot(this.random.nextFloat() * 360.0F);
             skeleton.yRotO = skeleton.getYRot();
             skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
             skeleton.addTag(GunEvents.JEG_GUNNER_TAG);            // JEG faction system will handle gun equipping automatically
@@ -620,7 +620,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     private void spawnPhantomGunners(ServerLevel level) {
-        int count = 1 + level.random.nextInt(2);
+        int count = 1 + this.random.nextInt(2);
         BlockPos origin = this.blockPosition();
 
         // Find and target nearest player
@@ -633,11 +633,11 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
                 continue;
             }
 
-            Vec3 offset = Vec3.directionFromRotation(0.0F, level.random.nextFloat() * 360.0F).scale(6.0D + level.random.nextDouble() * 4.0D);
-            Vec3 spawnCenter = this.position().add(offset.x, 4.0D + level.random.nextInt(4), offset.z);
+            Vec3 offset = Vec3.directionFromRotation(0.0F, this.random.nextFloat() * 360.0F).scale(6.0D + this.random.nextDouble() * 4.0D);
+            Vec3 spawnCenter = this.position().add(offset.x, 4.0D + this.random.nextInt(4), offset.z);
             BlockPos spawnPos = BlockPos.containing(spawnCenter);
             gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
-            gunner.setYRot(level.random.nextFloat() * 360.0F);
+            gunner.setYRot(this.random.nextFloat() * 360.0F);
             gunner.yRotO = gunner.getYRot();
             gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.EVENT, null);
 
@@ -653,11 +653,11 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     private void playSummonEffects(ServerLevel level, BlockPos center) {
-        level.playSound(null, center, SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.8F, 0.6F + level.random.nextFloat() * 0.3F);
+        level.playSound(null, center, SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.8F, 0.6F + this.random.nextFloat() * 0.3F);
         for (int i = 0; i < 12; i++) {
-            double dx = center.getX() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
-            double dy = center.getY() + level.random.nextDouble() * 2.0D;
-            double dz = center.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 4.0D;
+            double dx = center.getX() + 0.5D + (this.random.nextDouble() - 0.5D) * 4.0D;
+            double dy = center.getY() + this.random.nextDouble() * 2.0D;
+            double dz = center.getZ() + 0.5D + (this.random.nextDouble() - 0.5D) * 4.0D;
             level.sendParticles(ParticleTypes.SMOKE, dx, dy, dz, 1, 0.0D, 0.05D, 0.0D, 0.02D);
         }
     }

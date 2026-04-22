@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_coolant": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["jeg:coolant"]
+          }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "jeg:enhanced_coolant"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_coolant",
+      "has_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "jeg:enhanced_coolant"
+    ]
+  }
+}

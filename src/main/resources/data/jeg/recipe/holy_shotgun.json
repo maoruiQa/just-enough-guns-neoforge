@@ -1,19 +1,20 @@
-{
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "GGI",
-    " LB",
-    "  G"
-  ],
-  "key": {
-    "G": "minecraft:gold_block",
-    "I": "minecraft:iron_block",
-    "L": "minecraft:glowstone",
-    "B": "minecraft:iron_block"
-  },
-  "result": {
-    "id": "jeg:holy_shotgun",
-    "count": 1
-  }
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "GGI",
+                    "XLB",
+                    " XG"
+                ],
+    "key":  {
+                "G":  "minecraft:gold_block",
+                "I":  "minecraft:iron_block",
+                "X":  "minecraft:diamond",
+                "L":  "minecraft:glowstone",
+                "B":  "minecraft:iron_block"
+            },
+    "result":  {
+                   "id":  "jeg:holy_shotgun",
+                   "count":  1
+               }
 }

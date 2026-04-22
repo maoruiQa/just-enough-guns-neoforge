@@ -507,7 +507,7 @@ public class BulletEntity extends Projectile {
             if (!this.level().isClientSide()) {
                 BlockPos hitPos = result.getBlockPos();
                 BlockPos offsetPos = hitPos.relative(result.getDirection());
-                if (this.level().random.nextFloat() > 0.50F
+                if (this.random.nextFloat() > 0.50F
                         && BaseFireBlock.canBePlacedAt(this.level(), offsetPos, result.getDirection())) {
                     BlockState fireState = BaseFireBlock.getState(this.level(), offsetPos);
                     this.level().setBlock(offsetPos, fireState, 11);
@@ -782,21 +782,21 @@ public class BulletEntity extends Projectile {
 
         // Significantly increase flame particle density for much more impressive effect
         // Spawn 15-25 particles per tick instead of 5 (3x-5x increase)
-        int particleCount = 15 + level.random.nextInt(11); // 15-25 particles
+        int particleCount = 15 + this.random.nextInt(11); // 15-25 particles
 
         for (int i = 0; i < particleCount; i++) {
             // Slightly reduce spread for more concentrated stream
-            double offsetX = (level.random.nextDouble() - 0.5) * 0.3; // Reduced from 0.4
-            double offsetY = (level.random.nextDouble() - 0.5) * 0.3;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 0.3;
+            double offsetX = (this.random.nextDouble() - 0.5) * 0.3; // Reduced from 0.4
+            double offsetY = (this.random.nextDouble() - 0.5) * 0.3;
+            double offsetZ = (this.random.nextDouble() - 0.5) * 0.3;
 
             // Add more velocity variation for dynamic flame effect
-            double velX = motion.x * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
-            double velY = motion.y * 0.15 + 0.03 + level.random.nextDouble() * 0.02; // Stronger upward bias
-            double velZ = motion.z * 0.15 + (level.random.nextDouble() - 0.5) * 0.08;
+            double velX = motion.x * 0.15 + (this.random.nextDouble() - 0.5) * 0.08;
+            double velY = motion.y * 0.15 + 0.03 + this.random.nextDouble() * 0.02; // Stronger upward bias
+            double velZ = motion.z * 0.15 + (this.random.nextDouble() - 0.5) * 0.08;
 
             // Mix of flame and smoke particles for more realistic effect
-            if (level.random.nextFloat() < 0.7) {
+            if (this.random.nextFloat() < 0.7) {
                 // 70% flame particles
                 level.addParticle(ParticleTypes.FLAME,
                     this.getX() + offsetX,
@@ -814,11 +814,11 @@ public class BulletEntity extends Projectile {
         }
 
         // Add some extra large flame particles occasionally for visual variety
-        if (level.random.nextFloat() < 0.3) { // 30% chance
+        if (this.random.nextFloat() < 0.3) { // 30% chance
             for (int i = 0; i < 3; i++) {
-                double offsetX = (level.random.nextDouble() - 0.5) * 0.2;
-                double offsetY = (level.random.nextDouble() - 0.5) * 0.2;
-                double offsetZ = (level.random.nextDouble() - 0.5) * 0.2;
+                double offsetX = (this.random.nextDouble() - 0.5) * 0.2;
+                double offsetY = (this.random.nextDouble() - 0.5) * 0.2;
+                double offsetZ = (this.random.nextDouble() - 0.5) * 0.2;
 
                 level.addParticle(ParticleTypes.FLAME,
                     this.getX() + offsetX,
@@ -829,14 +829,14 @@ public class BulletEntity extends Projectile {
         }
 
         // Add more ember particles for extra visibility and dramatic effect
-        if (level.random.nextFloat() < 0.5) { // 50% chance (increased from 25%)
+        if (this.random.nextFloat() < 0.5) { // 50% chance (increased from 25%)
             level.addParticle(ParticleTypes.SMALL_FLAME,
-                this.getX() + (level.random.nextDouble() - 0.5) * 0.4,
-                this.getY() + (level.random.nextDouble() - 0.5) * 0.4,
-                this.getZ() + (level.random.nextDouble() - 0.5) * 0.4,
-                motion.x * 0.1 + (level.random.nextDouble() - 0.5) * 0.05,
+                this.getX() + (this.random.nextDouble() - 0.5) * 0.4,
+                this.getY() + (this.random.nextDouble() - 0.5) * 0.4,
+                this.getZ() + (this.random.nextDouble() - 0.5) * 0.4,
+                motion.x * 0.1 + (this.random.nextDouble() - 0.5) * 0.05,
                 motion.y * 0.1 + 0.05,
-                motion.z * 0.1 + (level.random.nextDouble() - 0.5) * 0.05);
+                motion.z * 0.1 + (this.random.nextDouble() - 0.5) * 0.05);
         }
     }
 
@@ -942,17 +942,17 @@ public class BulletEntity extends Projectile {
             int particleCount = Math.max(1, 3 - (this.trailPositions.size() - i) / 10);
 
             for (int j = 0; j < particleCount; j++) {
-                double offsetX = (level.random.nextDouble() - 0.5) * 0.4;
-                double offsetY = (level.random.nextDouble() - 0.5) * 0.4;
-                double offsetZ = (level.random.nextDouble() - 0.5) * 0.4;
+                double offsetX = (this.random.nextDouble() - 0.5) * 0.4;
+                double offsetY = (this.random.nextDouble() - 0.5) * 0.4;
+                double offsetZ = (this.random.nextDouble() - 0.5) * 0.4;
 
                 level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                     trailPos.x + offsetX,
                     trailPos.y + offsetY,
                     trailPos.z + offsetZ,
-                    (level.random.nextDouble() - 0.5) * 0.02,
-                    0.01 + level.random.nextDouble() * 0.02,
-                    (level.random.nextDouble() - 0.5) * 0.02);
+                    (this.random.nextDouble() - 0.5) * 0.02,
+                    0.01 + this.random.nextDouble() * 0.02,
+                    (this.random.nextDouble() - 0.5) * 0.02);
             }
         }
     }

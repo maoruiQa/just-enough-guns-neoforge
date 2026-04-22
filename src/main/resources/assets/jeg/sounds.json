@@ -225,6 +225,14 @@
       }
     ]
   },
+  "item.cooldown_with_water": {
+    "subtitle": "subtitle.jeg.cooldown_with_water",
+    "sounds": [
+      {
+        "name": "jeg:item/cooldown_with_water"
+      }
+    ]
+  },
   "item.combat_rifle.fire": {
     "subtitle": "subtitle.jeg.fire",
     "sounds": [
