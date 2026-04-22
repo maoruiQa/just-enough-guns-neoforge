@@ -73,6 +73,7 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
             ItemStack gunStack = new ItemStack(holder.get());
             pillager.setItemInHand(InteractionHand.MAIN_HAND, gunStack);
             pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+            pillager.setCanPickUpLoot(false);
         }
     }
 }

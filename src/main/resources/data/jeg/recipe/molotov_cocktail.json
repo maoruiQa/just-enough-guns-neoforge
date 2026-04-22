@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:glass_bottle",
+    "minecraft:gunpowder",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "jeg:molotov_cocktail",
+    "count": 1
+  }
+}

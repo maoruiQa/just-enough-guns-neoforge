@@ -2,6 +2,7 @@ package ttv.migami.jeg.init;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.event.FactionEventTicker;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
@@ -50,7 +52,7 @@ public final class ModCommands {
                         .then(unlockGunRecipesCommand())
                         .then(spawnPatrolCommand())
                         .then(simulatePatrolCommand())
-                        .then(bulletBlockDestructionCommand()));
+                        .then(configCommand()));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> unlockGunRecipesCommand() {
@@ -110,22 +112,114 @@ public final class ModCommands {
                                                         BoolArgumentType.getBool(context, "forceGuns")))))));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> bulletBlockDestructionCommand() {
-        return Commands.literal("bulletBlockDestruction")
-                .executes(context -> executeGetBulletBlockDestruction(context.getSource()))
-                .then(Commands.argument("enabled", BoolArgumentType.bool())
-                        .executes(context -> executeSetBulletBlockDestruction(
-                                context.getSource(),
-                                BoolArgumentType.getBool(context, "enabled"))));
+    private static LiteralArgumentBuilder<CommandSourceStack> configCommand() {
+        return Commands.literal("config")
+                .then(configPatrolCommand())
+                .then(configMobCommand())
+                .then(configCombatCommand());
     }
 
-    private static int executeGetBulletBlockDestruction(CommandSourceStack source) {
-        boolean enabled = Config.bulletBlockDestructionEnabled();
-        source.sendSuccess(
-                () -> Component.literal("Bullet block destruction is " + (enabled ? "enabled" : "disabled")),
-                false
-        );
-        return 1;
+    private static LiteralArgumentBuilder<CommandSourceStack> configMobCommand() {
+        return Commands.literal("mob")
+                .then(configScaledMobChanceCommand("terror", "mob.terrorPhantom.chance", "mob.terrorPhantom.maxChance"))
+                .then(configScaledMobChanceCommand("phantom", "mob.phantomGunner.chance", "mob.phantomGunner.maxChance"))
+                .then(configScaledMobChanceCommand("pillager", "mob.pillagerGunner.chance", "mob.pillagerGunner.maxChance"))
+                .then(configSimpleMobChanceCommand("skeleton", "mob.skeletonGunner.chance"))
+                .then(configSimpleMobChanceCommand("zombie", "mob.zombieGunner.chance"))
+                .then(configSimpleMobChanceCommand("husk", "mob.huskGunner.chance"))
+                .then(configSimpleMobChanceCommand("zombifiedPiglin", "mob.zombifiedPiglinGunner.chance"))
+                .then(configSimpleMobChanceCommand("piglin", "mob.piglinGunner.chance"))
+                .then(configSimpleMobChanceCommand("witherSkeleton", "mob.witherSkeletonGunner.chance"));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPatrolCommand() {
+        return Commands.literal("patrol")
+                .then(configPatrolEnabledCommand())
+                .then(configPatrolIntervalDaysCommand())
+                .then(configPatrolMinimumDaysCommand())
+                .then(configPatrolSpawnChanceCommand());
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configCombatCommand() {
+        return Commands.literal("combat")
+                .then(configBulletBlockDestructionCommand());
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {
+        return Commands.literal(name)
+                .then(configDoubleConfigCommand("chance", chanceKey))
+                .then(configDoubleConfigCommand("max", maxChanceKey));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configSimpleMobChanceCommand(String name, String chanceKey) {
+        return Commands.literal(name)
+                .then(configDoubleConfigCommand("chance", chanceKey));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configDoubleConfigCommand(String name, String key) {
+        return Commands.literal(name)
+                .executes(context -> executeGetDoubleConfig(context.getSource(), key, key))
+                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 1.0D))
+                        .executes(context -> executeSetDoubleConfig(
+                                context.getSource(),
+                                key,
+                                DoubleArgumentType.getDouble(context, "value"),
+                                key)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPatrolEnabledCommand() {
+        return Commands.literal("enabled")
+                .executes(context -> executeGetBooleanConfig(context.getSource(), "patrol.enabled", "patrol.enabled"))
+                .then(Commands.argument("value", BoolArgumentType.bool())
+                        .executes(context -> executeSetBooleanConfig(
+                                context.getSource(),
+                                "patrol.enabled",
+                                BoolArgumentType.getBool(context, "value"),
+                                "patrol.enabled")));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPatrolIntervalDaysCommand() {
+        return Commands.literal("intervalDays")
+                .executes(context -> executeGetIntConfig(context.getSource(), "patrol.intervalDays", "patrol.intervalDays"))
+                .then(Commands.argument("value", IntegerArgumentType.integer(0, 30))
+                        .executes(context -> executeSetIntConfig(
+                                context.getSource(),
+                                "patrol.intervalDays",
+                                IntegerArgumentType.getInteger(context, "value"),
+                                "patrol.intervalDays")));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPatrolMinimumDaysCommand() {
+        return Commands.literal("minimumDays")
+                .executes(context -> executeGetIntConfig(context.getSource(), "patrol.minimumDays", "patrol.minimumDays"))
+                .then(Commands.argument("value", IntegerArgumentType.integer(0, 100))
+                        .executes(context -> executeSetIntConfig(
+                                context.getSource(),
+                                "patrol.minimumDays",
+                                IntegerArgumentType.getInteger(context, "value"),
+                                "patrol.minimumDays")));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPatrolSpawnChanceCommand() {
+        return Commands.literal("spawnChance")
+                .executes(context -> executeGetDoubleConfig(context.getSource(), "patrol.spawnChance", "patrol.spawnChance"))
+                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 1.0D))
+                        .executes(context -> executeSetDoubleConfig(
+                                context.getSource(),
+                                "patrol.spawnChance",
+                                DoubleArgumentType.getDouble(context, "value"),
+                                "patrol.spawnChance")));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configBulletBlockDestructionCommand() {
+        return Commands.literal("blockDamage")
+                .executes(context -> executeGetBooleanConfig(context.getSource(), "combat.bulletBlockDestruction", "combat.bulletBlockDestruction"))
+                .then(Commands.argument("value", BoolArgumentType.bool())
+                        .executes(context -> executeSetBooleanConfig(
+                                context.getSource(),
+                                "combat.bulletBlockDestruction",
+                                BoolArgumentType.getBool(context, "value"),
+                                "combat.bulletBlockDestruction")));
     }
 
     private static int executeUnlockGunRecipes(CommandSourceStack source) {
@@ -134,32 +228,72 @@ public final class ModCommands {
             return 0;
         }
 
-        List<ResourceKey<Recipe<?>>> gunRecipeKeys = new ArrayList<>();
-        for (var gunId : GunDefinitions.ALL.keySet()) {
-            gunRecipeKeys.add(ResourceKey.create(Registries.RECIPE, gunId));
-        }
+        List<ResourceKey<Recipe<?>>> gunRecipeKeys = ModItems.unlockGunRecipeKeys();
 
         if (gunRecipeKeys.isEmpty()) {
-            source.sendFailure(Component.literal("No gun recipes were found"));
+            source.sendFailure(Component.literal("No gun or coolant recipes were found"));
             return 0;
         }
 
         player.awardRecipesByKey(gunRecipeKeys);
-        source.sendSuccess(() -> Component.literal("Unlocked " + gunRecipeKeys.size() + " gun recipes."), false);
+        source.sendSuccess(() -> Component.literal("Unlocked " + gunRecipeKeys.size() + " gun/coolant recipes."), false);
         return 1;
     }
 
-    private static int executeSetBulletBlockDestruction(CommandSourceStack source, boolean enabled) {
+    private static int executeGetBooleanConfig(CommandSourceStack source, String key, String displayName) {
+        boolean enabled = (Boolean) Config.getConfigValue(key);
+        source.sendSuccess(() -> Component.literal(displayName + " = " + enabled), false);
+        return 1;
+    }
+
+    private static int executeGetIntConfig(CommandSourceStack source, String key, String displayName) {
+        int value = (Integer) Config.getConfigValue(key);
+        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        return 1;
+    }
+
+    private static int executeGetDoubleConfig(CommandSourceStack source, String key, String displayName) {
+        double value = (Double) Config.getConfigValue(key);
+        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        return 1;
+    }
+
+    private static int executeSetBooleanConfig(CommandSourceStack source, String key, boolean value, String displayName) {
         if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             source.sendFailure(Component.literal("You do not have permission to execute this command"));
             return 0;
         }
+        boolean oldValue = (Boolean) Config.getConfigValue(key);
+        Config.setConfigValue(key, value);
+        Config.saveServerConfig();
+        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
+        return 1;
+    }
 
-        Config.setBulletBlockDestructionEnabled(enabled);
-        source.sendSuccess(
-                () -> Component.literal("Set bullet block destruction to " + enabled),
-                true
-        );
+    private static int executeSetIntConfig(CommandSourceStack source, String key, int value, String displayName) {
+        if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+        int oldValue = (Integer) Config.getConfigValue(key);
+        Config.setConfigValue(key, value);
+        Config.saveServerConfig();
+        if ("patrol.intervalDays".equals(key)) {
+            FactionEventTicker.reschedulePatrolSpawner();
+        }
+        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
+        return 1;
+    }
+
+    private static int executeSetDoubleConfig(CommandSourceStack source, String key, double value, String displayName) {
+        if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+        double oldValue = (Double) Config.getConfigValue(key);
+        Config.setConfigValue(key, value);
+        Config.saveServerConfig();
+        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
         return 1;
     }
 
@@ -215,7 +349,7 @@ public final class ModCommands {
             return 0;
         }
 
-        RandomSource random = level.random;
+        RandomSource random = RandomSource.create(player.getUUID().getLeastSignificantBits() ^ level.getGameTime() ^ player.blockPosition().asLong());
         BlockPos.MutableBlockPos center = player.blockPosition().mutable().move(
                 (24 + random.nextInt(24)) * (random.nextBoolean() ? -1 : 1),
                 0,

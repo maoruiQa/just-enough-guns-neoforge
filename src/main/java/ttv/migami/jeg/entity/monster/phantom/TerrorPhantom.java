@@ -379,7 +379,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                 (24 + random.nextInt(24)) * (random.nextBoolean() ? -1 : 1)
             );
 
-            int count = 1 + serverLevel.random.nextInt(1);
+            int count = 1 + this.random.nextInt(1);
             for (int i = 0; i < count; i++) {
                 PhantomGunner phantom = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), serverLevel);
                 Vec3 pos = Vec3.atCenterOf(spawnPos).add(random.nextGaussian() * 2, 2, random.nextGaussian() * 2);

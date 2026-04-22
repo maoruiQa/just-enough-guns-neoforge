@@ -5,12 +5,14 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 
 public final class NetworkHandler {
@@ -55,6 +57,16 @@ public final class NetworkHandler {
     }
 
     private static void handleReloadRequest(ReloadRequestPayload payload, ServerPlayer player) {
+        ItemStack offhand = player.getOffhandItem();
+        ItemStack mainHand = player.getMainHandItem();
+        if (payload.hand() == InteractionHand.MAIN_HAND
+                && mainHand.getItem() instanceof GunItem
+                && isCoolant(offhand)
+                && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
+            player.startUsingItem(InteractionHand.OFF_HAND);
+            return;
+        }
+
         ItemStack stack = player.getItemInHand(payload.hand());
         if (!(stack.getItem() instanceof GunItem gun)) {
             return;
@@ -63,6 +75,10 @@ public final class NetworkHandler {
         if (reloaded) {
             player.swing(payload.hand(), true);
         }
+    }
+
+    private static boolean isCoolant(ItemStack stack) {
+        return stack.is(ModItems.COOLANT.get()) || stack.is(ModItems.ENHANCED_COOLANT.get());
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, ServerPlayer player) {

@@ -154,6 +154,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         configureLoadout(holder.get().getStats(), stack);
         this.setItemInHand(InteractionHand.MAIN_HAND, stack);
         this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        this.setCanPickUpLoot(false);
     }
 
     public void shootAt(LivingEntity target) {

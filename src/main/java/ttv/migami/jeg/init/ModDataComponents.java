@@ -77,4 +77,20 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_LONG)
                     .build()
     );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_WATER_COOLING_TICKS_TOTAL = REGISTER.register(
+            "gun_water_cooling_ticks_total",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_WATER_COOLING_TICKS_REMAINING = REGISTER.register(
+            "gun_water_cooling_ticks_remaining",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
 }

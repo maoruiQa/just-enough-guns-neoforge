@@ -1,5 +1,6 @@
 package ttv.migami.jeg.faction.raid;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,8 +10,10 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -18,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -27,14 +31,19 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.util.LootUtils;
 
 public class RaidEntity extends Entity {
     private static final int ACTIVE_RADIUS = 64;
@@ -44,17 +53,31 @@ public class RaidEntity extends Entity {
     private static final int SPAWN_INTERVAL_TICKS = 30;
     private static final int WAVE_COOLDOWN_TICKS = 120;
     private static final int MAX_DESPAWN_TICKS = 600;
+    private static final int RAID_RECOVERY_MIN_RADIUS = 12;
+    private static final int RAID_RECOVERY_MAX_RADIUS = 23;
+    private static final int RAID_BURST_SIZE_MIN = 3;
+    private static final int RAID_BURST_SIZE_MAX = 5;
     private static final int UNREACHABLE_REPATH_TICKS = 80;
     private static final int UNREACHABLE_RELOCATE_TICKS = 200;
     private static final int UNREACHABLE_CLEANUP_TICKS = 600;
     private static final double RAID_NAVIGATION_SPEED = 1.2D;
+    private static final int LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD = 3;
+    private static final int LOW_MOB_NO_FIRE_TIMEOUT_TICKS = 400;
+    private static final int MOB_NO_FIRE_STUCK_TIMEOUT_TICKS = 360;
+    private static final int REWARD_MARKER_TICK_INTERVAL = 6;
+    private static final int LEGACY_RESIDUAL_CLEANUP_RADIUS = 512;
+    private static final ResourceKey<LootTable> FACTION_RAID_REWARD_LOOT = ResourceKey.create(Registries.LOOT_TABLE, Reference.id("chests/faction_raid_reward"));
+
+    private static final Map<ServerLevel, Set<UUID>> ACTIVE_RAID_IDS = new HashMap<>();
 
     private final ServerBossEvent bossBar;
     private final Set<UUID> activeMobIds = new HashSet<>();
     private final Set<UUID> spawnedThisWave = new HashSet<>();
     private final Set<UUID> activePlayerIds = new HashSet<>();
+    private final List<BlockPos> rewardBarrelPositions = new ArrayList<>();
     private final Map<UUID, Integer> unreachableTicks = new HashMap<>();
     private final Map<UUID, Integer> relocationCounts = new HashMap<>();
+    private final Map<UUID, Integer> mobNoFireTicks = new HashMap<>();
 
     private String factionName = "night_of_the_undead";
     private boolean forceGuns = true;
@@ -63,10 +86,18 @@ public class RaidEntity extends Entity {
     private int waveCooldown = 20;
     private int spawnCooldown = SPAWN_INTERVAL_TICKS;
     private int despawnTicks = MAX_DESPAWN_TICKS;
+    private int lowMobNoFireTicks;
+    private int rewardMarkerCooldown = REWARD_MARKER_TICK_INTERVAL;
+    private int spawnedInCurrentBurst;
+    private @Nullable BlockPos currentBurstCenter;
     private boolean spawningWave;
     private boolean finished;
     private boolean victory;
     private boolean defeat;
+    private boolean failedNoTargets;
+    private boolean rewardGranted;
+    private boolean rewardMarkerActive;
+    private boolean hadPlayersInRange;
     private boolean resultAnnounced;
 
     public RaidEntity(EntityType<? extends RaidEntity> type, Level level) {
@@ -88,15 +119,22 @@ public class RaidEntity extends Entity {
             return;
         }
 
+        registerRaid(serverLevel);
         refreshActiveMobs(serverLevel);
         refreshPlayers(serverLevel);
 
         if (!this.finished) {
             if (serverLevel.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) {
-                finishDefeat();
-            } else if (hasCombatTargetsInRange(serverLevel)) {
-                maintainRaidMobPressure(serverLevel);
-                tickActiveRaid(serverLevel);
+                finishDefeat(false);
+            } else {
+                boolean hasTargets = hasCombatTargetsInRange(serverLevel);
+                if (hasTargets) {
+                    this.hadPlayersInRange = true;
+                    maintainRaidMobPressure(serverLevel);
+                    tickActiveRaid(serverLevel);
+                } else if (this.hadPlayersInRange) {
+                    finishDefeat(true);
+                }
             }
         }
 
@@ -111,7 +149,7 @@ public class RaidEntity extends Entity {
         if (!this.spawningWave && this.spawnedThisWave.isEmpty()) {
             if (--this.waveCooldown <= 0) {
                 if (this.currentWave >= this.totalWaves) {
-                    finishVictory();
+                    finishVictory(level);
                 } else {
                     startWave(level);
                 }
@@ -130,9 +168,19 @@ public class RaidEntity extends Entity {
         }
 
         boolean waveSpawnedAll = this.spawnedThisWave.size() >= WAVE_MOBS;
+        if (!this.spawningWave && waveSpawnedAll && this.activeMobIds.size() <= LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD) {
+            this.lowMobNoFireTicks++;
+            if (this.lowMobNoFireTicks >= LOW_MOB_NO_FIRE_TIMEOUT_TICKS) {
+                clearActiveWaveMobs(level);
+                this.lowMobNoFireTicks = 0;
+            }
+        } else {
+            this.lowMobNoFireTicks = 0;
+        }
+
         if (!this.spawningWave && waveSpawnedAll && this.activeMobIds.isEmpty()) {
             if (this.currentWave >= this.totalWaves) {
-                finishVictory();
+                finishVictory(level);
             } else {
                 this.spawnedThisWave.clear();
                 this.waveCooldown = WAVE_COOLDOWN_TICKS;
@@ -145,6 +193,9 @@ public class RaidEntity extends Entity {
         this.currentWave++;
         this.spawningWave = true;
         this.spawnCooldown = 1;
+        this.lowMobNoFireTicks = 0;
+        this.spawnedInCurrentBurst = 0;
+        this.currentBurstCenter = null;
         playHorn(level);
     }
 
@@ -154,16 +205,44 @@ public class RaidEntity extends Entity {
             return;
         }
 
+        if (this.currentBurstCenter == null || this.spawnedInCurrentBurst <= 0) {
+            this.spawnedInCurrentBurst = burstSize(level.getRandom());
+        }
+        this.currentBurstCenter = FactionSpawnHelper.resolveRaidBurstCenter(
+                level,
+                this.blockPosition(),
+                this.currentBurstCenter,
+                level.getRandom(),
+                RAID_RECOVERY_MIN_RADIUS,
+                RAID_RECOVERY_MAX_RADIUS
+        );
+        if (this.currentBurstCenter == null) {
+            return;
+        }
+
+        int burstRemaining = Math.min(this.spawnedInCurrentBurst, WAVE_MOBS - this.spawnedThisWave.size());
         int attempts = 0;
-        while (this.activeMobIds.size() < MAX_ACTIVE_MOBS && this.spawnedThisWave.size() < WAVE_MOBS && attempts++ < 8) {
-            Mob mob = FactionSpawnHelper.spawnRaidMember(level, faction, this.blockPosition(), pickPreferredTarget(level));
+        int spawned = 0;
+        while (spawned < burstRemaining && this.activeMobIds.size() < MAX_ACTIVE_MOBS && attempts++ < burstRemaining * 4) {
+            Mob mob = FactionSpawnHelper.spawnRaidMember(level, faction, this.blockPosition(), pickPreferredTarget(level), this.currentBurstCenter);
             if (mob == null) {
                 continue;
             }
             this.activeMobIds.add(mob.getUUID());
             this.spawnedThisWave.add(mob.getUUID());
+            spawned++;
+        }
+
+        this.spawnedInCurrentBurst = Math.max(0, this.spawnedInCurrentBurst - spawned);
+        if (this.spawnedInCurrentBurst <= 0) {
+            this.currentBurstCenter = null;
         }
     }
+
+    private int burstSize(RandomSource random) {
+        return random.nextInt(RAID_BURST_SIZE_MAX - RAID_BURST_SIZE_MIN + 1) + RAID_BURST_SIZE_MIN;
+    }
+
 
     private void refreshActiveMobs(ServerLevel level) {
         Set<UUID> removed = new HashSet<>();
@@ -206,6 +285,13 @@ public class RaidEntity extends Entity {
                 continue;
             }
 
+            int noFireTicks = this.mobNoFireTicks.merge(mobId, 1, Integer::sum);
+            if (noFireTicks >= MOB_NO_FIRE_STUCK_TIMEOUT_TICKS) {
+                forceRepath(pathfinderMob, preferred);
+                resetMobNoFireTicks(mobId);
+                continue;
+            }
+
             double distanceSq = mob.distanceToSqr(preferred);
             boolean farFromTarget = distanceSq > 24.0D * 24.0D;
             boolean navDone = pathfinderMob.getNavigation().isDone();
@@ -220,6 +306,7 @@ public class RaidEntity extends Entity {
             int stuckTicks = this.unreachableTicks.merge(mobId, 1, Integer::sum);
             if (stuckTicks % UNREACHABLE_REPATH_TICKS == 0) {
                 forceRepath(pathfinderMob, preferred);
+                resetMobNoFireTicks(mobId);
             }
             if (stuckTicks % UNREACHABLE_RELOCATE_TICKS == 0) {
                 relocateMobNearPlayer(level, pathfinderMob, preferred);
@@ -294,9 +381,11 @@ public class RaidEntity extends Entity {
         if (this.defeat && this.tickCount % 60 == 0) {
             playHorn(level);
         }
+        tickRewardMarkers(level);
 
         if (--this.despawnTicks <= 0) {
             this.bossBar.removeAllPlayers();
+            unregisterRaid(level);
             this.discard();
         }
     }
@@ -309,22 +398,100 @@ public class RaidEntity extends Entity {
             return;
         }
         if (this.defeat) {
-            Component defeatMessage = Component.translatable("broadcast.jeg.raid.defeat", factionLang).withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED);
+            Component defeatMessage = this.failedNoTargets
+                    ? Component.translatable("broadcast.jeg.raid.no_players").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED)
+                    : Component.translatable("broadcast.jeg.raid.defeat", factionLang).withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED);
             level.getServer().getPlayerList().broadcastSystemMessage(defeatMessage, false);
         }
     }
 
-    private void finishVictory() {
+    private void finishVictory(ServerLevel level) {
         this.finished = true;
         this.victory = true;
         this.defeat = false;
+        this.failedNoTargets = false;
         this.spawningWave = false;
+        grantVictoryRewards(level);
     }
 
-    private void finishDefeat() {
+    private void grantVictoryRewards(ServerLevel level) {
+        if (this.rewardGranted) {
+            return;
+        }
+
+        List<ServerPlayer> eligiblePlayers = new ArrayList<>();
+        for (UUID playerId : this.activePlayerIds) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
+            if (!isValidRaidTarget(player, level)) {
+                continue;
+            }
+            eligiblePlayers.add(player);
+        }
+        if (eligiblePlayers.isEmpty()) {
+            return;
+        }
+
+        this.rewardBarrelPositions.clear();
+        this.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, this.blockPosition())));
+        if (eligiblePlayers.size() > 1) {
+            this.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, this.blockPosition().offset(2, 0, 2))));
+        }
+        this.rewardGranted = true;
+        this.rewardMarkerActive = true;
+        this.rewardMarkerCooldown = REWARD_MARKER_TICK_INTERVAL;
+    }
+
+    private BlockPos placeRewardBarrel(ServerLevel level, BlockPos pos) {
+        level.setBlock(pos, Blocks.BARREL.defaultBlockState(), 3);
+        LootUtils.fillContainer(level, pos, FACTION_RAID_REWARD_LOOT, level.getRandom());
+        return pos.immutable();
+    }
+
+    private BlockPos findRewardTerrain(ServerLevel level, BlockPos pos) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(pos.getX(), pos.getY(), pos.getZ());
+        while (cursor.getY() > level.getMinY() && level.isEmptyBlock(cursor)) {
+            cursor.move(0, -1, 0);
+        }
+        if (!level.getBlockState(cursor).isAir()) {
+            cursor.move(0, 1, 0);
+        }
+        return cursor.immutable();
+    }
+
+    private void tickRewardMarkers(ServerLevel level) {
+        if (!this.rewardMarkerActive || this.rewardBarrelPositions.isEmpty()) {
+            return;
+        }
+        for (BlockPos pos : this.rewardBarrelPositions) {
+            AABB checkZone = new AABB(pos).inflate(4.0D);
+            boolean claimed = !level.getEntitiesOfClass(ServerPlayer.class, checkZone, player -> isValidRaidTarget(player, level)).isEmpty();
+            if (claimed) {
+                this.rewardMarkerActive = false;
+                return;
+            }
+        }
+        if (--this.rewardMarkerCooldown > 0) {
+            return;
+        }
+        this.rewardMarkerCooldown = REWARD_MARKER_TICK_INTERVAL;
+        for (BlockPos pos : this.rewardBarrelPositions) {
+            double x = pos.getX() + 0.5D;
+            double y = pos.getY() + 1.15D;
+            double z = pos.getZ() + 0.5D;
+            level.sendParticles(ModParticleTypes.FLARE_SMOKE.get(), true, false, x, y, z, 2, 0.08D, 0.18D, 0.08D, 0.01D);
+            level.sendParticles(ModParticleTypes.FLARE.get(), true, false, x, y + 0.1D, z, 1, 0.02D, 0.12D, 0.02D, 0.0D);
+        }
+    }
+
+    private void finishDefeat(boolean failedNoTargets) {
+        if (this.level() instanceof ServerLevel level) {
+            clearActiveWaveMobs(level);
+            clearRemainingRaidMobs(level);
+        }
         this.finished = true;
         this.defeat = true;
         this.victory = false;
+        this.failedNoTargets = failedNoTargets;
         this.spawningWave = false;
     }
 
@@ -347,6 +514,37 @@ public class RaidEntity extends Entity {
         }
     }
 
+    private String encodeRewardBarrels() {
+        if (this.rewardBarrelPositions.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (BlockPos pos : this.rewardBarrelPositions) {
+            if (builder.length() > 0) {
+                builder.append(';');
+            }
+            builder.append(pos.getX()).append(',').append(pos.getY()).append(',').append(pos.getZ());
+        }
+        return builder.toString();
+    }
+
+    private void decodeRewardBarrels(String encoded) {
+        this.rewardBarrelPositions.clear();
+        if (encoded == null || encoded.isBlank()) {
+            return;
+        }
+        for (String token : encoded.split(";")) {
+            String[] parts = token.split(",");
+            if (parts.length != 3) {
+                continue;
+            }
+            try {
+                this.rewardBarrelPositions.add(new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+    }
+
     private static void relocateMobNearPlayer(ServerLevel level, PathfinderMob mob, Player target) {
         BlockPos relocatePos = FactionSpawnHelper.sampleGroundPosition(level, target.blockPosition(), level.getRandom(), 4, 10);
         if (!FactionSpawnHelper.isSafeGroundPosition(level, relocatePos)) {
@@ -362,6 +560,36 @@ public class RaidEntity extends Entity {
     private void clearMobTracking(UUID mobId) {
         this.unreachableTicks.remove(mobId);
         this.relocationCounts.remove(mobId);
+        this.mobNoFireTicks.remove(mobId);
+    }
+
+    private void resetMobNoFireTicks(UUID mobId) {
+        this.mobNoFireTicks.remove(mobId);
+    }
+
+    private void clearActiveWaveMobs(ServerLevel level) {
+        Set<UUID> mobIds = new HashSet<>(this.activeMobIds);
+        for (UUID mobId : mobIds) {
+            Entity entity = level.getEntity(mobId);
+            if (entity instanceof Mob mob && mob.isAlive() && !mob.isRemoved()) {
+                mob.discard();
+            }
+            clearMobTracking(mobId);
+        }
+        this.activeMobIds.clear();
+    }
+
+    private void clearRemainingRaidMobs(ServerLevel level) {
+        AABB search = new AABB(this.blockPosition()).inflate(LEGACY_RESIDUAL_CLEANUP_RADIUS);
+        for (Mob mob : level.getEntitiesOfClass(Mob.class, search, mob -> mob.getTags().contains(FactionSpawnHelper.RAID_TAG))) {
+            if (!this.activeMobIds.contains(mob.getUUID())
+                    && mob.distanceToSqr(this.getX(), this.getY(), this.getZ()) > (double) LEGACY_RESIDUAL_CLEANUP_RADIUS * (double) LEGACY_RESIDUAL_CLEANUP_RADIUS) {
+                continue;
+            }
+            if (mob.isAlive() && !mob.isRemoved()) {
+                mob.discard();
+            }
+        }
     }
 
     @Nullable
@@ -415,15 +643,15 @@ public class RaidEntity extends Entity {
     }
 
     private void playHorn(ServerLevel level) {
-        int x = level.random.nextInt(-25, 25);
-        int z = level.random.nextInt(-25, 25);
+        int x = this.random.nextInt(-25, 25);
+        int z = this.random.nextInt(-25, 25);
         level.playSound(null, BlockPos.containing(this.position().add(x, 24, z)), SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(0).value(), SoundSource.HOSTILE, 4.0F, 1.0F);
     }
 
     private void playCelebrationHorn(ServerLevel level) {
-        int x = level.random.nextInt(-25, 25);
-        int z = level.random.nextInt(-25, 25);
-        int soundIndex = level.random.nextBoolean() ? 1 : 2;
+        int x = this.random.nextInt(-25, 25);
+        int z = this.random.nextInt(-25, 25);
+        int soundIndex = this.random.nextBoolean() ? 1 : 2;
         level.playSound(null, BlockPos.containing(this.position().add(x, 24, z)), SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(soundIndex).value(), SoundSource.HOSTILE, 4.0F, 1.0F);
     }
 
@@ -437,7 +665,15 @@ public class RaidEntity extends Entity {
         output.putBoolean("Finished", this.finished);
         output.putBoolean("Victory", this.victory);
         output.putBoolean("Defeat", this.defeat);
+        output.putBoolean("FailedNoTargets", this.failedNoTargets);
+        output.putBoolean("RewardGranted", this.rewardGranted);
+        output.putBoolean("RewardMarkerActive", this.rewardMarkerActive);
+        output.putBoolean("HadPlayersInRange", this.hadPlayersInRange);
         output.putInt("CurrentWave", this.currentWave);
+        output.putInt("LowMobNoFireTicks", this.lowMobNoFireTicks);
+        output.putInt("RewardMarkerCooldown", this.rewardMarkerCooldown);
+        output.putInt("SpawnedInCurrentBurst", this.spawnedInCurrentBurst);
+        output.putString("RewardBarrels", encodeRewardBarrels());
     }
 
     @Override
@@ -446,7 +682,16 @@ public class RaidEntity extends Entity {
         this.finished = input.getBooleanOr("Finished", false);
         this.victory = input.getBooleanOr("Victory", false);
         this.defeat = input.getBooleanOr("Defeat", false);
+        this.failedNoTargets = input.getBooleanOr("FailedNoTargets", false);
+        this.rewardGranted = input.getBooleanOr("RewardGranted", false);
+        this.rewardMarkerActive = input.getBooleanOr("RewardMarkerActive", false);
+        this.hadPlayersInRange = input.getBooleanOr("HadPlayersInRange", false);
         this.currentWave = input.getIntOr("CurrentWave", 0);
+        this.lowMobNoFireTicks = input.getIntOr("LowMobNoFireTicks", 0);
+        this.rewardMarkerCooldown = input.getIntOr("RewardMarkerCooldown", REWARD_MARKER_TICK_INTERVAL);
+        this.spawnedInCurrentBurst = input.getIntOr("SpawnedInCurrentBurst", 0);
+        this.currentBurstCenter = null;
+        decodeRewardBarrels(input.getStringOr("RewardBarrels", ""));
     }
 
     @Override
@@ -460,6 +705,39 @@ public class RaidEntity extends Entity {
                 pos.getX() + radius, pos.getY() + radius, pos.getZ() + radius
         );
         return !level.getEntitiesOfClass(RaidEntity.class, area, raid -> !raid.finished).isEmpty();
+    }
+
+    public static void notifyRaidMobFired(Mob mob) {
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return;
+        }
+        Set<UUID> raidIds = ACTIVE_RAID_IDS.get(level);
+        if (raidIds == null || raidIds.isEmpty()) {
+            return;
+        }
+        for (UUID raidId : raidIds) {
+            Entity entity = level.getEntity(raidId);
+            if (entity instanceof RaidEntity raid && !raid.finished && raid.activeMobIds.contains(mob.getUUID())) {
+                raid.lowMobNoFireTicks = 0;
+                raid.resetMobNoFireTicks(mob.getUUID());
+                return;
+            }
+        }
+    }
+
+    private void registerRaid(ServerLevel level) {
+        ACTIVE_RAID_IDS.computeIfAbsent(level, ignored -> new HashSet<>()).add(this.getUUID());
+    }
+
+    private void unregisterRaid(ServerLevel level) {
+        Set<UUID> raidIds = ACTIVE_RAID_IDS.get(level);
+        if (raidIds == null) {
+            return;
+        }
+        raidIds.remove(this.getUUID());
+        if (raidIds.isEmpty()) {
+            ACTIVE_RAID_IDS.remove(level);
+        }
     }
 
     public static void summonRaidEntity(ServerLevel level, Faction faction, Vec3 startPos, boolean forceGuns) {

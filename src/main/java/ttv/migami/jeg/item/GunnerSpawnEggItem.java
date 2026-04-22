@@ -71,6 +71,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         }
 
         mob.setItemSlot(EquipmentSlot.MAINHAND, gunStack);
+        pathfinderMob.setCanPickUpLoot(false);
         GunnerMobSpawner.reassessWeaponGoal(pathfinderMob);
         GunnerMobSpawner.extendFollowRange(pathfinderMob);
     }

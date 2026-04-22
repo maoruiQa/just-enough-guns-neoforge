@@ -35,6 +35,11 @@ public final class AimingHandler {
         }
     }
 
+    public void reset() {
+        currentAim = 0.0F;
+        previousAim = 0.0F;
+    }
+
     public boolean isAiming() {
         return currentAim > 0.0F || previousAim > 0.0F;
     }

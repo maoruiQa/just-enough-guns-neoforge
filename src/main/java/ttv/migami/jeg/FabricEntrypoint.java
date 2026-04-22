@@ -33,6 +33,8 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class FabricEntrypoint implements ModInitializer {
     @Override
     public void onInitialize() {
+        Config.load();
+
         // Core content registration (the Fabric project reuses small NeoForge-style shims).
         ModEntities.REGISTER.register(NeoForge.EVENT_BUS);
         ModDataComponents.REGISTER.register(NeoForge.EVENT_BUS);

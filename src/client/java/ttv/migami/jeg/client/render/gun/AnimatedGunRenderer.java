@@ -278,6 +278,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         passInfo.poseStack().mulPose(Axis.ZP.rotationDegrees(rz));
         passInfo.poseStack().mulPose(Axis.YP.rotationDegrees(ry));
         passInfo.poseStack().mulPose(Axis.XP.rotationDegrees(rx));
+        if ("minigun".equals(gunId) && (ctx == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND)) {
+            passInfo.poseStack().mulPose(Axis.ZP.rotationDegrees(-90.0F));
+        }
         passInfo.poseStack().scale(t.sx, t.sy, t.sz);
     }
 
@@ -328,7 +331,34 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {
         ItemDisplayContext base = renderState.getOrDefaultGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, ItemDisplayContext.NONE);
         ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
-        return resolveStableContext(base, stack);
+        ItemDisplayContext resolved = resolveStableContext(base, stack);
+        if (resolved != ItemDisplayContext.NONE) {
+            return resolved;
+        }
+
+        // GeckoLib can occasionally provide an empty ITEM_STACK during first-person special rendering.
+        // Fall back to the animatable item type to prevent first-person/non-first-person context flapping.
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || !mc.options.getCameraType().isFirstPerson()) {
+            return ItemDisplayContext.NONE;
+        }
+
+        Item animItem = renderState.getOrDefaultGeckolibData(DataTickets.ITEM, (Item) null);
+        if (animItem == null) {
+            return ItemDisplayContext.NONE;
+        }
+
+        ItemStack mainHand = mc.player.getMainHandItem();
+        if (!mainHand.isEmpty() && mainHand.getItem() == animItem) {
+            return mainHandContext(mc.player.getMainArm());
+        }
+
+        ItemStack offHand = mc.player.getOffhandItem();
+        if (!offHand.isEmpty() && offHand.getItem() == animItem) {
+            return offHandContext(mc.player.getMainArm());
+        }
+
+        return ItemDisplayContext.NONE;
     }
 
     private static ItemDisplayContext resolveStableContext(ItemDisplayContext base, ItemStack stack) {
@@ -346,14 +376,27 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack mainHand = mc.player.getMainHandItem();
         ItemStack offHand = mc.player.getOffhandItem();
-        if (ItemStack.isSameItemSameComponents(stack, mainHand)) {
+        if (matchesHeldStack(stack, mainHand)) {
             return mainHandContext(mc.player.getMainArm());
         }
-        if (ItemStack.isSameItemSameComponents(stack, offHand)) {
+        if (matchesHeldStack(stack, offHand)) {
             return offHandContext(mc.player.getMainArm());
         }
 
         return ItemDisplayContext.NONE;
+    }
+
+    private static boolean matchesHeldStack(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == heldStack) {
+            return true;
+        }
+        if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
+            return false;
+        }
+        if (ItemStack.isSameItemSameComponents(renderStack, heldStack)) {
+            return true;
+        }
+        return ItemStack.isSameItem(renderStack, heldStack);
     }
 
     private static ItemDisplayContext mainHandContext(HumanoidArm mainArm) {

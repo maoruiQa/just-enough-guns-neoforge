@@ -6,7 +6,11 @@
     "MobAccessor",
     "PhantomFinalizeSpawnMixin",
     "PillagerFinalizeSpawnMixin",
-    "ServerGamePacketListenerImplMixin"
+    "ServerGamePacketListenerImplMixin",
+    "TargetGoalMixin",
+    "NearestAttackableTargetGoalMixin",
+    "GunnerSunBurnMixin",
+    "GunnerWaterConversionMixin"
   ],
   "client": [
     "AbstractClientPlayerMixin",

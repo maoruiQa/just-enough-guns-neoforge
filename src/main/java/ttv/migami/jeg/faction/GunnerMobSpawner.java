@@ -14,7 +14,19 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.illager.Pillager;
+import net.minecraft.world.entity.monster.illager.Vindicator;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.skeleton.Stray;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
+import net.minecraft.world.entity.monster.zombie.Drowned;
+import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +40,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
@@ -38,6 +51,7 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
+import ttv.migami.jeg.faction.raid.RaidEntity;
 import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
 import ttv.migami.jeg.mixin.MobAccessor;
 
@@ -56,6 +70,7 @@ public class GunnerMobSpawner {
         ItemStack heldItem = mob.getMainHandItem();
 
         if (heldItem.getItem() instanceof GunItem) {
+            enforceGunnerMainHandLock(mob);
             LivingEntity currentTarget = mob.getTarget();
             if (currentTarget instanceof AbstractTerrorPhantom) {
                 mob.setTarget(null);
@@ -123,6 +138,7 @@ public class GunnerMobSpawner {
 
                 ItemStack modifiedGun = createModifiedGun(mob, gun);
                 mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
+                enforceGunnerMainHandLock(mob);
 
                 // Equip armor for all gunners (normal and elite)
                 // HELMET PRIORITY: System will prioritize helmets over body armor
@@ -165,29 +181,23 @@ public class GunnerMobSpawner {
         // Check if this mob should become a gunner (only for newly spawned mobs)
         // Prevent baby mobs from becoming gunners
         if (mob.tickCount <= 5 && !mob.getTags().contains("MobGunner") && mob.getType().is(ModTags.Entities.GUNNER) && !mob.isBaby()) {
-            long totalDayTime = mob.level().getDayTime();
-            int currentDay = (int) (totalDayTime / 24000L);
+            double gunnerChance = resolveNaturalGunnerChance(mob);
+            if (gunnerChance > 0.0D && mob.getRandom().nextDouble() < gunnerChance) {
+                GunnerManager manager = GunnerManager.getInstance();
+                String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
+                Identifier entityTypeLocation = Identifier.tryParse(entityName);
+                Faction faction = manager.getFactionForMob(entityTypeLocation);
 
-            if (currentDay >= GunMobValues.minDays) {
-                int daysOverMin = currentDay - GunMobValues.minDays;
-                int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
-
-                if (mob.getRandom().nextInt(100) < currentChance) {
-                    GunnerManager manager = GunnerManager.getInstance();
-                    String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                    Identifier entityTypeLocation = Identifier.tryParse(entityName);
-                    Faction faction = manager.getFactionForMob(entityTypeLocation);
-
-                    if (faction != null) {
-                        mob.addTag("MobGunner");
-                        ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
-                    }
+                if (faction != null) {
+                    mob.addTag("MobGunner");
+                    ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
                 }
             }
         }
 
         ItemStack heldItem = mob.getMainHandItem();
         if (heldItem.getItem() instanceof GunItem) {
+            enforceGunnerMainHandLock(mob);
             reassessWeaponGoal(mob);
         } else {
             resetFollowRange(mob);
@@ -197,6 +207,41 @@ public class GunnerMobSpawner {
     public static boolean hasGunAttackGoal(PathfinderMob mob) {
         return getGoalSelector(mob).getAvailableGoals().stream()
                 .anyMatch(goal -> goal.getGoal() instanceof GunAttackGoal<?>);
+    }
+
+    private static double resolveNaturalGunnerChance(PathfinderMob mob) {
+        if (mob instanceof Husk) {
+            return Config.huskGunnerChance();
+        }
+        if (mob instanceof ZombifiedPiglin) {
+            return Config.zombifiedPiglinGunnerChance();
+        }
+        if (mob instanceof ZombieVillager || mob instanceof Drowned || mob instanceof Zombie) {
+            return Config.zombieGunnerChance();
+        }
+        if (mob instanceof Stray || mob instanceof Skeleton) {
+            return Config.skeletonGunnerChance();
+        }
+        if (mob instanceof WitherSkeleton) {
+            return Config.witherSkeletonGunnerChance();
+        }
+        if (mob instanceof PiglinBrute || mob instanceof Piglin) {
+            return Config.piglinGunnerChance();
+        }
+        if (mob instanceof Vindicator || mob instanceof Pillager) {
+            return Config.pillagerGunnerChance(mob.level());
+        }
+        return legacyNaturalGunnerChance(mob.level());
+    }
+
+    private static double legacyNaturalGunnerChance(Level level) {
+        int currentDay = (int) (level.getDayTime() / 24000L);
+        if (currentDay < GunMobValues.minDays) {
+            return 0.0D;
+        }
+        int daysOverMin = currentDay - GunMobValues.minDays;
+        int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
+        return currentChance / 100.0D;
     }
 
     public static boolean hasTargetGoal(PathfinderMob mob) {
@@ -223,6 +268,8 @@ public class GunnerMobSpawner {
             return;
         }
 
+        enforceGunnerMainHandLock(mob);
+
         AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
         boolean isCloseRange = mob.getRandom().nextBoolean();
         int stopRange = isCloseRange ? 7 : 20;
@@ -239,6 +286,12 @@ public class GunnerMobSpawner {
 
     private static GoalSelector getTargetSelector(PathfinderMob mob) {
         return ((MobAccessor) mob).jeg$getTargetSelector();
+    }
+
+    private static void enforceGunnerMainHandLock(PathfinderMob mob) {
+        if (mob.getMainHandItem().getItem() instanceof GunItem) {
+            mob.setCanPickUpLoot(false);
+        }
     }
 
     private static void applyEliteAttributes(PathfinderMob mob) {
