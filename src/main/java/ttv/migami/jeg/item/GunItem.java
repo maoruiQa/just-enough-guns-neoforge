@@ -502,9 +502,7 @@ public class GunItem extends Item {
 
     private static void setTrackedHeat(ItemStack stack, int heat) {
         int clamped = Mth.clamp(heat, 0, OVERHEAT_TRACKED_MAX);
-        int before = stack.getOrDefault(ModDataComponents.GUN_HEAT.get(), 0);
         stack.set(ModDataComponents.GUN_HEAT.get(), clamped);
-        JustEnoughGuns.LOGGER.info("[debug/heat-set] item={} beforeRaw={} requested={} stored={}", stack.getItem(), before, heat, clamped);
     }
 
     private static boolean isOverheated(ItemStack stack) {
