@@ -22,6 +22,7 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue SKELETON_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue ZOMBIE_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue HUSK_GUNNER_CHANCE;
+    public static final ModConfigSpec.DoubleValue PARCHED_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue ZOMBIFIED_PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue PIGLIN_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue WITHER_SKELETON_GUNNER_CHANCE;
@@ -107,6 +108,10 @@ public final class Config {
         HUSK_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Husk converts into a Husk Gunner. Same as Zombie Gunner chance.")
                 .defineInRange("huskGunnerChance", 1.0D / 12.0D, 0.0D, 1.0D);
+
+        PARCHED_GUNNER_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a naturally spawned Parched converts into a Parched Gunner. Defaults to the Husk Gunner chance.")
+                .defineInRange("parchedGunnerChance", 1.0D / 12.0D, 0.0D, 1.0D);
 
         ZOMBIFIED_PIGLIN_GUNNER_CHANCE = serverBuilder
                 .comment("Probability (0-1) that a naturally spawned Zombified Piglin converts into a Zombified Piglin Gunner. Should be lower than Skeleton Gunner chance.")
@@ -246,6 +251,7 @@ public final class Config {
         registerCommandConfig("mob.skeletonGunner.chance", SKELETON_GUNNER_CHANCE);
         registerCommandConfig("mob.zombieGunner.chance", ZOMBIE_GUNNER_CHANCE);
         registerCommandConfig("mob.huskGunner.chance", HUSK_GUNNER_CHANCE);
+        registerCommandConfig("mob.parchedGunner.chance", PARCHED_GUNNER_CHANCE);
         registerCommandConfig("mob.zombifiedPiglinGunner.chance", ZOMBIFIED_PIGLIN_GUNNER_CHANCE);
         registerCommandConfig("mob.piglinGunner.chance", PIGLIN_GUNNER_CHANCE);
         registerCommandConfig("mob.witherSkeletonGunner.chance", WITHER_SKELETON_GUNNER_CHANCE);
@@ -336,6 +342,10 @@ public final class Config {
 
     public static double huskGunnerChance() {
         return clamp01(HUSK_GUNNER_CHANCE.get());
+    }
+
+    public static double parchedGunnerChance() {
+        return clamp01(PARCHED_GUNNER_CHANCE.get());
     }
 
     public static double zombifiedPiglinGunnerChance() {
