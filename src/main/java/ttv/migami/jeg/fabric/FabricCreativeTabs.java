@@ -25,6 +25,7 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.GUNNER_SKELETON_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIE_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_HUSK_SPAWN_EGG.get());
+            entries.accept(ModItems.GUNNER_PARCHED_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_PIGLIN_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
@@ -45,6 +46,7 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.GUNNER_SKELETON_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIE_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_HUSK_SPAWN_EGG.get());
+            entries.accept(ModItems.GUNNER_PARCHED_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_PIGLIN_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
