@@ -132,6 +132,7 @@ public final class ModCommands {
                 .then(configSimpleMobChanceCommand("skeleton", "mob.skeletonGunner.chance"))
                 .then(configSimpleMobChanceCommand("zombie", "mob.zombieGunner.chance"))
                 .then(configSimpleMobChanceCommand("husk", "mob.huskGunner.chance"))
+                .then(configSimpleMobChanceCommand("parched", "mob.parchedGunner.chance"))
                 .then(configSimpleMobChanceCommand("zombifiedPiglin", "mob.zombifiedPiglinGunner.chance"))
                 .then(configSimpleMobChanceCommand("piglin", "mob.piglinGunner.chance"))
                 .then(configSimpleMobChanceCommand("witherSkeleton", "mob.witherSkeletonGunner.chance"));

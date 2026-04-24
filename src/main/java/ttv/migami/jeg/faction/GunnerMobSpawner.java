@@ -220,7 +220,7 @@ public class GunnerMobSpawner {
         }
         Identifier entityTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
         if (PARCHED_ID.equals(entityTypeId)) {
-            return Config.huskGunnerChance();
+            return Config.parchedGunnerChance();
         }
         if (mob instanceof Husk) {
             return Config.huskGunnerChance();
