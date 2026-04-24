@@ -59,6 +59,7 @@ import java.util.UUID;
 public class GunnerMobSpawner {
     public static final UUID GUN_FOLLOW_RANGE_MODIFIER_UUID = UUID.randomUUID();
     public static final Identifier GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+    private static final Identifier PARCHED_ID = Identifier.parse("minecraft:parched");
     private static final String GUNNER_SPAWN_CHECKED_TAG = "jeg_gunner_spawn_checked";
 
     @SubscribeEvent
@@ -216,6 +217,10 @@ public class GunnerMobSpawner {
     private static double resolveNaturalGunnerChance(PathfinderMob mob) {
         if (!hasReachedMinimumGunnerDay(mob.level())) {
             return 0.0D;
+        }
+        Identifier entityTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+        if (PARCHED_ID.equals(entityTypeId)) {
+            return Config.huskGunnerChance();
         }
         if (mob instanceof Husk) {
             return Config.huskGunnerChance();

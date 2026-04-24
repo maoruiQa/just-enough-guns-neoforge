@@ -159,6 +159,14 @@ public final class ModItems {
             )
     );
 
+    public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PARCHED_SPAWN_EGG = REGISTER.register(
+            "gunner_parched_spawn_egg",
+            () -> new GunnerSpawnEggItem(
+                    EntityType.PARCHED,
+                    baseProperties(Reference.id("gunner_parched_spawn_egg")).stacksTo(64)
+            )
+    );
+
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_WITHER_SKELETON_SPAWN_EGG = REGISTER.register(
             "gunner_wither_skeleton_spawn_egg",
             () -> new GunnerSpawnEggItem(
@@ -395,6 +403,7 @@ public final class ModItems {
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());
+            event.accept(GUNNER_PARCHED_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
@@ -417,6 +426,7 @@ public final class ModItems {
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());
+            event.accept(GUNNER_PARCHED_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
