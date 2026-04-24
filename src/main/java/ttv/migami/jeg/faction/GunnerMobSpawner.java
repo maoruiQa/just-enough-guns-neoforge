@@ -172,11 +172,13 @@ public class GunnerMobSpawner {
             return;
         }
 
-        if (mob.level() instanceof ServerLevel serverLevel) {
-            PatrolEncounterManager.recoverPatrolMob(serverLevel, mob);
-            FactionRaidHooks.recoverRaidMob(mob);
-            TerrorRaidHooks.recoverRaidMob(mob);
+        if (!(mob.level() instanceof ServerLevel serverLevel)) {
+            return;
         }
+
+        PatrolEncounterManager.recoverPatrolMob(serverLevel, mob);
+        FactionRaidHooks.recoverRaidMob(mob);
+        TerrorRaidHooks.recoverRaidMob(mob);
 
         mob.removeTag("GunAttackAssigned");
 
