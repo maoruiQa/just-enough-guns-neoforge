@@ -159,8 +159,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
-// Ensure clean build to prevent cached resource issues
+// Ensure clean build to prevent cached resource issues without wiping run data
 clean {
     delete 'build'
-    delete 'run'
 }
