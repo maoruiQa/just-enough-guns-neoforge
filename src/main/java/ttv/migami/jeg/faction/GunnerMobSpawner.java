@@ -58,6 +58,7 @@ import java.util.UUID;
 public class GunnerMobSpawner {
     public static final UUID GUN_FOLLOW_RANGE_MODIFIER_UUID = UUID.randomUUID();
     public static final Identifier GUN_FOLLOW_RANGE_MODIFIER_ID = Reference.id("gun_follow_range_modifier");
+    private static final String GUNNER_SPAWN_CHECKED_TAG = "jeg_gunner_spawn_checked";
 
     @SubscribeEvent
     public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
@@ -186,17 +187,20 @@ public class GunnerMobSpawner {
         mob.removeTag("GunAttackAssigned");
 
         // Check if this mob should become a gunner (only for newly spawned mobs)
-        if (mob.tickCount <= 5 && !mob.getTags().contains("MobGunner") && mob.getType().is(ModTags.Entities.GUNNER) && !mob.isBaby()) {
-            double gunnerChance = resolveNaturalGunnerChance(mob);
-            if (gunnerChance > 0.0D && mob.getRandom().nextDouble() < gunnerChance) {
-                GunnerManager manager = GunnerManager.getInstance();
-                String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                Identifier entityTypeLocation = Identifier.tryParse(entityName);
-                Faction faction = manager.getFactionForMob(entityTypeLocation);
+        if (mob.tickCount <= 5 && !mob.getTags().contains("MobGunner") && !mob.getTags().contains(GUNNER_SPAWN_CHECKED_TAG) && mob.getType().is(ModTags.Entities.GUNNER)) {
+            mob.addTag(GUNNER_SPAWN_CHECKED_TAG);
+            if (!mob.isBaby()) {
+                double gunnerChance = resolveNaturalGunnerChance(mob);
+                if (gunnerChance > 0.0D && mob.getRandom().nextDouble() < gunnerChance) {
+                    GunnerManager manager = GunnerManager.getInstance();
+                    String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
+                    Identifier entityTypeLocation = Identifier.tryParse(entityName);
+                    Faction faction = manager.getFactionForMob(entityTypeLocation);
 
-                if (faction != null) {
-                    mob.addTag("MobGunner");
-                    ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
+                    if (faction != null) {
+                        mob.addTag("MobGunner");
+                        ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
+                    }
                 }
             }
         }
@@ -216,6 +220,9 @@ public class GunnerMobSpawner {
     }
 
     private static double resolveNaturalGunnerChance(PathfinderMob mob) {
+        if (!hasReachedMinimumGunnerDay(mob.level())) {
+            return 0.0D;
+        }
         if (mob instanceof Husk) {
             return Config.huskGunnerChance();
         }
@@ -248,6 +255,11 @@ public class GunnerMobSpawner {
         int daysOverMin = currentDay - GunMobValues.minDays;
         int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
         return currentChance / 100.0D;
+    }
+
+    private static boolean hasReachedMinimumGunnerDay(Level level) {
+        long currentDay = Math.max(0L, level.getDayTime() / 24000L);
+        return currentDay >= Math.max(0, Config.SPAWN_SCALING_START_DAY.get());
     }
 
     public static boolean hasTargetGoal(PathfinderMob mob) {
