@@ -32,6 +32,10 @@ public final class ClientNetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(OffhandFullPromptPayload.TYPE, (payload, context) -> {
             context.client().execute(FabricClientBootstrap::showOffhandFullPrompt);
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(HitMarkerPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> ttv.migami.jeg.client.CrosshairHandler.playHitMarker(payload.critical()));
+        });
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {

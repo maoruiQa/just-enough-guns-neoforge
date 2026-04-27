@@ -36,6 +36,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.playS2C().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -143,5 +144,9 @@ public final class NetworkHandler {
         for (ServerPlayer player : PlayerLookup.world(level)) {
             ServerPlayNetworking.send(player, payload);
         }
+    }
+
+    public static void sendHitMarker(ServerPlayer player, boolean critical) {
+        ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
     }
 }

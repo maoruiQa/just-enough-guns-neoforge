@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.4.2 - 2026-04-27
+
+### Added
+- Added Fabric combat HUD rendering for gun name, current ammo, reserve ammo, magazine reserve counts, overheat/timer status, and hit markers.
+- Added Fabric custom crosshair rendering with dynamic crosshair support tied directly to current ballistic spread.
+- Added S2C hit marker feedback for successful living-entity bullet hits.
+
+### Changed
+- Reworked Fabric dynamic crosshair placement: removed the center dot, equalized all four reticle line lengths, and made reticle expansion proportional to current gun spread.
+- Replaced periodic ammo actionbar spam with the right-side combat HUD while keeping contextual warning prompts.
+- Updated magazine-fed gun reserve display to show magazine counts with a `MAG` label.
+- Rebalanced dynamic spread penalties:
+  - rifle, sniper, and `light_machine_gun` movement spread penalties are doubled from the previous tuning pass,
+  - pistol and SMG movement spread penalties are increased by 1.5x from the previous tuning pass,
+  - rifle, sniper, and `light_machine_gun` firing spread cap is increased to `2.70x`,
+  - pistol and SMG firing spread cap is increased to `1.725x`.
+- Reduced `light_machine_gun` passive cooling speed to 50% of the previous value.
+- Reduced `minigun` overheat gain to 75% of the previous value.
+
+### Fixed
+- Fixed Fabric dynamic crosshair not reflecting movement spread before the first shot.
+- Fixed Fabric dynamic crosshair center-dot alignment issues by removing the dot from the dynamic reticle.
+- Fixed dynamic crosshair asymmetry caused by incorrect 9x9 texture sampling for the right and bottom reticle lines.
+- Fixed magazine-fed guns showing reserve ammo ambiguously instead of loaded magazine count.
+
 ## 1.3.4 - 2026-03-10
 
 ### Fixed

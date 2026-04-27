@@ -92,6 +92,12 @@ public class ModConfigSpec {
             return value;
         }
 
+        public StringValue define(String path, String defaultValue) {
+            StringValue value = new StringValue(fullPath(path), defaultValue);
+            values.add(value);
+            return value;
+        }
+
         public IntValue defineInRange(String path, int defaultValue, int min, int max) {
             IntValue value = new IntValue(fullPath(path), defaultValue, min, max);
             values.add(value);
@@ -187,6 +193,18 @@ public class ModConfigSpec {
                 return bool;
             }
             return Boolean.parseBoolean(String.valueOf(value));
+        }
+    }
+
+    public static class StringValue extends Value<String> {
+        public StringValue(String path, String value) {
+            super(path, value);
+            set(value);
+        }
+
+        @Override
+        protected String normalize(Object value) {
+            return String.valueOf(value);
         }
     }
 
