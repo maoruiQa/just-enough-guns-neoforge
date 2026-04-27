@@ -508,6 +508,10 @@ public final class FabricClientBootstrap {
     }
 
     public static void showMuzzleFlash(int entityId, float random) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null && minecraft.player.getId() == entityId && AimingHandler.get().isAiming()) {
+            return;
+        }
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
     }
 
