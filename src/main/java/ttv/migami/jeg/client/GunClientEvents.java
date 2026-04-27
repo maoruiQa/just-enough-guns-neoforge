@@ -67,6 +67,7 @@ public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final Identifier OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
+    private static final Identifier HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int TIMER_BAR_WIDTH = 64;
     private static final int TIMER_BAR_HEIGHT = 6;
     private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
@@ -101,6 +102,9 @@ public final class GunClientEvents {
     private static boolean swapOffhandHeldLastTick;
     private static int offhandFullPromptTicks;
     private static long nextVisualShotTickMain;
+    private static int rocketHoldTicks;
+    private static boolean rocketHoldStartSent;
+    private static boolean rocketShotSent;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
     private static final Map<Identifier, Optional<Vector3f>> FIRST_PERSON_MUZZLE_ANCHORS = new ConcurrentHashMap<>();
     private static FirstPersonGunPoseState firstPersonGunPose;
@@ -226,6 +230,9 @@ public final class GunClientEvents {
                 promptText = Component.translatable("jeg.water_cooling.prompt");
             }
         }
+        if (Config.showTimersHud() && GunItem.isHoldToFireWeapon(mainhand) && rocketHoldTicks > 0 && !rocketShotSent) {
+            renderHoldBar(event.getGuiGraphics(), rocketHoldTicks, GunItem.holdToFireTicks(mainhand));
+        }
 
         ItemStack offhand = player.getOffhandItem();
         if (Config.showTimersHud() && GunItem.canWaterCool(mainhand) && GunItem.isCoolingWithWater(mainhand)) {
@@ -276,6 +283,7 @@ public final class GunClientEvents {
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
+            resetRocketHold(false);
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             return;
@@ -301,7 +309,10 @@ public final class GunClientEvents {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = minecraft.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            if (attackDown) {
+            if (GunItem.isHoldToFireWeapon(heldMain)) {
+                tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
+            } else if (attackDown) {
+                resetRocketHold(true);
                 if (gun.isAutomatic() || !attackHeldLastTick) {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
@@ -323,6 +334,7 @@ public final class GunClientEvents {
         } else {
             attackHeldLastTick = false;
             nextVisualShotTickMain = 0L;
+            resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
 
@@ -391,6 +403,7 @@ public final class GunClientEvents {
         offhandFullPromptTicks = 0;
         nextVisualShotTickMain = 0L;
         AimingHandler.get().reset();
+        resetRocketHold(false);
         GunRecoilHandler.stopImmediate();
         CrosshairHandler.reset();
         if (stunRingingSound != null) {
@@ -444,6 +457,58 @@ public final class GunClientEvents {
         for (int i = 0; i < shotsPerTrigger; i++) {
             GunRecoilHandler.addShot(recoilKick * 2.20F);
         }
+    }
+
+    private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
+        if (!attackDown) {
+            if (rocketHoldStartSent) {
+                NetworkHandler.sendHoldFire(net.minecraft.world.InteractionHand.MAIN_HAND, false);
+            }
+            if (attackHeldLastTick && GunItem.isTriggerLocked(stack)) {
+                GunItem.clearTriggerLock(stack);
+                NetworkHandler.sendTriggerRelease(net.minecraft.world.InteractionHand.MAIN_HAND);
+            }
+            resetRocketHold(false);
+            nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
+            return;
+        }
+
+        if (rocketShotSent) {
+            return;
+        }
+
+        if (!hasShootableAmmo(player, stack, gun)) {
+            resetRocketHold(true);
+            return;
+        }
+
+        if (!rocketHoldStartSent) {
+            NetworkHandler.sendHoldFire(net.minecraft.world.InteractionHand.MAIN_HAND, true);
+            rocketHoldStartSent = true;
+        }
+
+        rocketHoldTicks++;
+        if (rocketHoldTicks < GunItem.holdToFireTicks(stack)) {
+            return;
+        }
+
+        NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
+        rocketShotSent = true;
+        if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
+            applyLocalVisualRecoil(player, gun);
+            GunItem.recordClientShotSpread(player, gun.getStats());
+            CrosshairHandler.onGunFired();
+        }
+    }
+
+    private static void resetRocketHold(boolean notifyServer) {
+        if (notifyServer && rocketHoldStartSent) {
+            NetworkHandler.sendHoldFire(net.minecraft.world.InteractionHand.MAIN_HAND, false);
+        }
+        rocketHoldTicks = 0;
+        rocketHoldStartSent = false;
+        rocketShotSent = false;
     }
 
     private static boolean canPredictShot(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackHeldLastTick) {
@@ -990,6 +1055,18 @@ public final class GunClientEvents {
         int filled = Math.max(1, Math.round(TIMER_BAR_WIDTH * ratio));
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, OVERHEAT_TEXTURE, x, y, 0.0F, 0.0F, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, OVERHEAT_TEXTURE, x, y, 0.0F, TIMER_BAR_HEIGHT, filled, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
+    }
+
+    private static void renderHoldBar(GuiGraphicsExtractor guiGraphics, int holdTicks, int requiredTicks) {
+        if (requiredTicks <= 0) {
+            return;
+        }
+        float ratio = Mth.clamp(holdTicks / (float) requiredTicks, 0.0F, 1.0F);
+        int x = guiGraphics.guiWidth() / 2 - TIMER_BAR_WIDTH / 2;
+        int y = guiGraphics.guiHeight() / 2 + 24;
+        int filled = Math.max(1, Math.round(TIMER_BAR_WIDTH * ratio));
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, HOLD_TEXTURE, x, y, 0.0F, 0.0F, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, HOLD_TEXTURE, x, y, 0.0F, TIMER_BAR_HEIGHT, filled, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
     }
 
     private static void renderCenteredOverlayPrompt(GuiGraphicsExtractor guiGraphics, Component text, int color) {
