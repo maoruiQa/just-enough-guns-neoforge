@@ -58,6 +58,7 @@ import ttv.migami.jeg.network.NetworkHandler;
 public final class FabricClientBootstrap {
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final ResourceLocation OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
+    private static final ResourceLocation HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int TIMER_BAR_WIDTH = 64;
     private static final int TIMER_BAR_HEIGHT = 6;
     private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
@@ -70,6 +71,9 @@ public final class FabricClientBootstrap {
     private static boolean swapOffhandHeldLastTick;
     private static int offhandFullPromptTicks;
     private static long nextVisualShotTickMain;
+    private static int rocketHoldTicks;
+    private static boolean rocketHoldStartSent;
+    private static boolean rocketShotSent;
     private static String lastContextualPromptText = "";
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
     private static StunRingingSound stunRingingSound;
@@ -165,6 +169,7 @@ public final class FabricClientBootstrap {
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
+            resetRocketHold(false);
             GunRecoilHandler.stopImmediate();
         });
     }
@@ -209,6 +214,7 @@ public final class FabricClientBootstrap {
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
+            resetRocketHold(false);
             stunRingingSound = null;
             MUZZLE_FLASHES.clear();
             AimingHandler.get().reset();
@@ -232,7 +238,10 @@ public final class FabricClientBootstrap {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
 
-            if (attackDown) {
+            if (GunItem.isHoldToFireWeapon(heldMain)) {
+                tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
+            } else if (attackDown) {
+                resetRocketHold(true);
                 if (gun.isAutomatic() || !attackHeldLastTick) {
                     ClientNetworkHandler.sendShoot(InteractionHand.MAIN_HAND);
                 }
@@ -254,6 +263,7 @@ public final class FabricClientBootstrap {
         } else {
             attackHeldLastTick = false;
             nextVisualShotTickMain = 0L;
+            resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
 
@@ -420,6 +430,9 @@ public final class FabricClientBootstrap {
                 guiGraphics.fill(x, coolingY, x + coolingFill, coolingY + TIMER_BAR_HEIGHT, coolingColor(coolingRatio));
             }
         }
+        if (GunItem.isHoldToFireWeapon(held) && rocketHoldTicks > 0 && !rocketShotSent) {
+            renderHoldBar(guiGraphics, x, y, rocketHoldTicks, GunItem.holdToFireTicks(held));
+        }
 
         if (promptText != null) {
             renderCenteredOverlayPrompt(guiGraphics, minecraft, promptText, y - 30, promptColor);
@@ -440,6 +453,16 @@ public final class FabricClientBootstrap {
             return;
         }
         lastContextualPromptText = "";
+    }
+
+    private static void renderHoldBar(GuiGraphics guiGraphics, int x, int y, int holdTicks, int requiredTicks) {
+        if (requiredTicks <= 0) {
+            return;
+        }
+        float ratio = Mth.clamp(holdTicks / (float) requiredTicks, 0.0F, 1.0F);
+        int fill = Math.max(1, Math.round(TIMER_BAR_WIDTH * ratio));
+        guiGraphics.blit(HOLD_TEXTURE, x, y, 0.0F, 0.0F, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
+        guiGraphics.blit(HOLD_TEXTURE, x, y, 0.0F, TIMER_BAR_HEIGHT, fill, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
     }
 
     public static void showOffhandFullPrompt() {
@@ -486,6 +509,58 @@ public final class FabricClientBootstrap {
 
     public static void showMuzzleFlash(int entityId, float random) {
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
+    }
+
+    private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
+        if (!attackDown) {
+            if (rocketHoldStartSent) {
+                ClientNetworkHandler.sendHoldFire(InteractionHand.MAIN_HAND, false);
+            }
+            if (attackHeldLastTick && GunItem.isTriggerLocked(stack)) {
+                GunItem.clearTriggerLock(stack);
+                ClientNetworkHandler.sendTriggerRelease(InteractionHand.MAIN_HAND);
+            }
+            resetRocketHold(false);
+            nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
+            return;
+        }
+
+        if (rocketShotSent) {
+            return;
+        }
+
+        if (!hasShootableAmmo(player, stack, gun)) {
+            resetRocketHold(true);
+            return;
+        }
+
+        if (!rocketHoldStartSent) {
+            ClientNetworkHandler.sendHoldFire(InteractionHand.MAIN_HAND, true);
+            rocketHoldStartSent = true;
+        }
+
+        rocketHoldTicks++;
+        if (rocketHoldTicks < GunItem.holdToFireTicks(stack)) {
+            return;
+        }
+
+        ClientNetworkHandler.sendShoot(InteractionHand.MAIN_HAND);
+        rocketShotSent = true;
+        if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
+            applyLocalVisualRecoil(player, gun);
+            GunItem.recordClientShotSpread(player, gun.getStats());
+            CrosshairHandler.onGunFired();
+        }
+    }
+
+    private static void resetRocketHold(boolean notifyServer) {
+        if (notifyServer && rocketHoldStartSent) {
+            ClientNetworkHandler.sendHoldFire(InteractionHand.MAIN_HAND, false);
+        }
+        rocketHoldTicks = 0;
+        rocketHoldStartSent = false;
+        rocketShotSent = false;
     }
 
     private static void tickMuzzleFlashState() {

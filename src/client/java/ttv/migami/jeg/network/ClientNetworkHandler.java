@@ -46,6 +46,10 @@ public final class ClientNetworkHandler {
         ClientPlayNetworking.send(new ShootRequestPayload(hand));
     }
 
+    public static void sendHoldFire(InteractionHand hand, boolean holding) {
+        ClientPlayNetworking.send(new HoldFirePayload(hand, holding));
+    }
+
     public static void sendReload(InteractionHand hand) {
         ClientPlayNetworking.send(new ReloadRequestPayload(hand));
     }

@@ -54,6 +54,8 @@ import ttv.migami.jeg.util.HudMessageHelper;
 
 public class GunItem extends Item {
     private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
+    private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
+    private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
     private static final int GRENADE_FUSE_TICKS = 600;
@@ -261,6 +263,22 @@ public class GunItem extends Item {
 
     public static boolean hasFlameTrail(ResourceLocation gunId) {
         return "flamethrower".equals(gunId.getPath());
+    }
+
+    public static boolean isRocketLauncher(ItemStack stack) {
+        return stack.getItem() instanceof GunItem gun && isRocketLauncher(gun.getStats().id());
+    }
+
+    public static boolean isRocketLauncher(ResourceLocation gunId) {
+        return ROCKET_LAUNCHER_ID.equals(gunId);
+    }
+
+    public static boolean isHoldToFireWeapon(ItemStack stack) {
+        return isRocketLauncher(stack);
+    }
+
+    public static int holdToFireTicks(ItemStack stack) {
+        return isHoldToFireWeapon(stack) ? ROCKET_LAUNCHER_HOLD_TICKS : 0;
     }
 
     private int shotsPerTrigger() {
@@ -659,11 +677,6 @@ public class GunItem extends Item {
         }
 
         if (level.isClientSide()) {
-            float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
-            float recoilKick = stats.recoilKick() * recoilMultiplier;
-            addClientShotRecoil(recoilKick);
-            float targetPitch = player.getXRot() - recoilKick * getVerticalRecoilPitchMultiplier(stats.id());
-            player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
                 setTriggerLocked(stack, true);
             }
@@ -1125,17 +1138,6 @@ public class GunItem extends Item {
         return category == GunCategory.PISTOL || category == GunCategory.SMG;
     }
 
-    private static float getVerticalRecoilPitchMultiplier(ResourceLocation gunId) {
-        String path = gunId.getPath();
-        if ("light_machine_gun".equals(path)) {
-            return 5.3F;
-        }
-        if ("minigun".equals(path)) {
-            return 4.9F;
-        }
-        return 7.5F;
-    }
-
     private static boolean isPlayerMoving(Player player) {
         Vec3 velocity = player.getDeltaMovement();
         return velocity.horizontalDistanceSqr() > MOVEMENT_THRESHOLD_SQR;
@@ -1575,10 +1577,6 @@ public class GunItem extends Item {
 
     private static void addClientDryFireRecoil(float recoilAmount) {
         invokeClientRecoilMethod("addDryFire", recoilAmount);
-    }
-
-    private static void addClientShotRecoil(float recoilAmount) {
-        invokeClientRecoilMethod("addShot", recoilAmount);
     }
 
     private static void invokeClientRecoilMethod(String methodName, float recoilAmount) {
