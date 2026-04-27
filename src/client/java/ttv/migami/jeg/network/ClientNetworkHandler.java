@@ -2,6 +2,7 @@ package ttv.migami.jeg.network;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.InteractionHand;
+import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -32,6 +33,10 @@ public final class ClientNetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(OffhandFullPromptPayload.TYPE, (payload, context) -> {
             context.client().execute(FabricClientBootstrap::showOffhandFullPrompt);
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(HitMarkerPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> CrosshairHandler.playHitMarker(payload.critical()));
         });
     }
 

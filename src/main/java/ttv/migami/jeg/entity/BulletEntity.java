@@ -59,6 +59,7 @@ import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.BulletTrailPayload;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -346,7 +347,10 @@ public class BulletEntity extends Projectile {
                         : this.damageSources().thrown(this, owner);
                 if (hitEntity instanceof LivingEntity living) {
                     applyBulletproofWear(living);
-                    living.hurtServer((ServerLevel) this.level(), source, this.entityData.get(DATA_DAMAGE));
+                    boolean hurt = living.hurtServer((ServerLevel) this.level(), source, this.entityData.get(DATA_DAMAGE));
+                    if (hurt && livingOwner instanceof ServerPlayer shooter) {
+                        NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                    }
                 } else {
                     hitEntity.hurt(source, this.entityData.get(DATA_DAMAGE));
                 }
@@ -394,7 +398,10 @@ public class BulletEntity extends Projectile {
                 applyBulletproofWear(living);
 
                 ServerLevel serverLevel = (ServerLevel) this.level();
-                living.hurtServer(serverLevel, source, damage);
+                boolean hurt = living.hurtServer(serverLevel, source, damage);
+                if (hurt && livingOwner instanceof ServerPlayer shooter) {
+                    NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                }
 
                 boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
 
@@ -433,6 +440,10 @@ public class BulletEntity extends Projectile {
         }
 
         this.discard();
+    }
+
+    private static boolean isCriticalHit(EntityHitResult result, LivingEntity living) {
+        return result.getLocation().y >= living.getEyeY() - 0.20D;
     }
 
     private float applyLegacyDamageFalloff(float baseDamage, GunStats stats) {
@@ -695,7 +706,15 @@ public class BulletEntity extends Projectile {
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity.isAlive()) {
-                        hitEntity.hurt(this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null), directDamage);
+                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        if (hitEntity instanceof LivingEntity living) {
+                            boolean hurt = living.hurtServer((ServerLevel) this.level(), source, directDamage);
+                            if (hurt && owner instanceof ServerPlayer shooter) {
+                                NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                            }
+                        } else {
+                            hitEntity.hurt(source, directDamage);
+                        }
                     }
                 }
             }
