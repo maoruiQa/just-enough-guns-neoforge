@@ -94,6 +94,9 @@ public final class CrosshairHandler {
         renderHitMarker(guiGraphics, width, height, partialTick);
 
         ItemStack stack = player.getMainHandItem();
+        if (GunItem.isRocketLauncher(stack)) {
+            return;
+        }
         if (!(stack.getItem() instanceof GunItem gun) || minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
             return;
         }

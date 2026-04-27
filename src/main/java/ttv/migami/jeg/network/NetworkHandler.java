@@ -1,5 +1,7 @@
 package ttv.migami.jeg.network;
 
+import java.util.HashMap;
+import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -21,6 +23,7 @@ public final class NetworkHandler {
 
     private static boolean commonRegistered;
     private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
     public static void initCommon() {
         if (commonRegistered) {
@@ -29,6 +32,7 @@ public final class NetworkHandler {
         commonRegistered = true;
 
         PayloadTypeRegistry.serverboundPlay().register(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
@@ -40,6 +44,9 @@ public final class NetworkHandler {
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(HoldFirePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleHoldFire(payload, context.player()));
         });
         ServerPlayNetworking.registerGlobalReceiver(ReloadRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleReloadRequest(payload, context.player()));
@@ -60,7 +67,35 @@ public final class NetworkHandler {
         if (!(stack.getItem() instanceof GunItem gun)) {
             return;
         }
-        gun.tryShoot(player.level(), player, payload.hand());
+        if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
+            return;
+        }
+        boolean shot = gun.tryShoot(player.level(), player, payload.hand());
+        if (shot && GunItem.isHoldToFireWeapon(stack)) {
+            HOLD_FIRE_START_TICKS.remove(player.getUUID());
+        }
+    }
+
+    private static void handleHoldFire(HoldFirePayload payload, ServerPlayer player) {
+        ItemStack stack = player.getItemInHand(payload.hand());
+        if (!payload.holding() || !GunItem.isHoldToFireWeapon(stack)) {
+            HOLD_FIRE_START_TICKS.remove(player.getUUID());
+            return;
+        }
+        HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
+    }
+
+    private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {
+        Long startTick = HOLD_FIRE_START_TICKS.get(player.getUUID());
+        if (startTick == null) {
+            return false;
+        }
+        long elapsed = player.level().getGameTime() - startTick;
+        if (elapsed > 200L) {
+            HOLD_FIRE_START_TICKS.remove(player.getUUID());
+            return false;
+        }
+        return elapsed >= GunItem.holdToFireTicks(stack);
     }
 
     private static void handleReloadRequest(ReloadRequestPayload payload, ServerPlayer player) {
