@@ -1,5 +1,8 @@
 package ttv.migami.jeg.network;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,10 +22,12 @@ import ttv.migami.jeg.item.MagazineItem;
 public final class NetworkHandler {
     private NetworkHandler() {}
     private static final String AIMING_TAG = "jeg_aiming";
+    private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
     public static void register(RegisterPayloadHandlersEvent event) {
         event.registrar(Reference.MOD_ID)
                 .playToServer(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC, NetworkHandler::handleShootRequest)
+                .playToServer(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC, NetworkHandler::handleHoldFire)
                 .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
@@ -78,6 +83,20 @@ public final class NetworkHandler {
         });
     }
 
+    private static void handleHoldFire(HoldFirePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            ItemStack stack = player.getItemInHand(payload.hand());
+            if (!payload.holding() || !GunItem.isHoldToFireWeapon(stack)) {
+                HOLD_FIRE_START_TICKS.remove(player.getUUID());
+                return;
+            }
+            HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
+        });
+    }
+
     private static void handleShootRequest(ShootRequestPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) {
@@ -88,8 +107,28 @@ public final class NetworkHandler {
                 return;
             }
 
-            gun.tryShoot(player.level(), player, payload.hand());
+            if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
+                return;
+            }
+
+            boolean shot = gun.tryShoot(player.level(), player, payload.hand());
+            if (shot && GunItem.isHoldToFireWeapon(stack)) {
+                HOLD_FIRE_START_TICKS.remove(player.getUUID());
+            }
         });
+    }
+
+    private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {
+        Long startTick = HOLD_FIRE_START_TICKS.get(player.getUUID());
+        if (startTick == null) {
+            return false;
+        }
+        long elapsed = player.level().getGameTime() - startTick;
+        if (elapsed > 200L) {
+            HOLD_FIRE_START_TICKS.remove(player.getUUID());
+            return false;
+        }
+        return elapsed >= GunItem.holdToFireTicks(stack);
     }
 
     private static void handleReloadRequest(ReloadRequestPayload payload, IPayloadContext context) {
@@ -175,6 +214,14 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(new ShootRequestPayload(hand));
+    }
+
+    public static void sendHoldFire(InteractionHand hand, boolean holding) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new HoldFirePayload(hand, holding));
     }
 
     public static void sendAiming(boolean aiming) {
