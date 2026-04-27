@@ -36,7 +36,6 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunCategory;
-import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.GunItem;
@@ -47,14 +46,12 @@ import ttv.migami.jeg.network.NetworkHandler;
 public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
-    private static final int OVERHEAT_BAR_WIDTH = 82;
-    private static final int OVERHEAT_BAR_HEIGHT = 4;
+    private static final ResourceLocation OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
+    private static final int TIMER_BAR_WIDTH = 64;
+    private static final int TIMER_BAR_HEIGHT = 6;
     private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
     private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
     private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
-    private static int hudTicker;
-    private static String currentHudText = "";
-    private static String lastHudText = "";
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
     private static boolean swapOffhandHeldLastTick;
@@ -183,7 +180,7 @@ public final class GunClientEvents {
 
         if (held.getItem() instanceof GunItem gun && gun.usesOverheatMechanic()) {
             int heatPercent = gun.getOverheatPercent(held);
-            if (heatPercent > 0) {
+            if (heatPercent > 0 && Config.showTimersHud()) {
                 renderOverheatBar(event.getGuiGraphics(), heatPercent);
             }
             if (gun.shouldShowWaterCoolingPrompt(held)) {
@@ -192,9 +189,9 @@ public final class GunClientEvents {
         }
 
         ItemStack offhand = player.getOffhandItem();
-        if (GunItem.canWaterCool(held) && GunItem.isCoolingWithWater(held)) {
+        if (Config.showTimersHud() && GunItem.canWaterCool(held) && GunItem.isCoolingWithWater(held)) {
             renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(held));
-        } else if (GunItem.canWaterCool(offhand) && GunItem.isCoolingWithWater(offhand)) {
+        } else if (Config.showTimersHud() && GunItem.canWaterCool(offhand) && GunItem.isCoolingWithWater(offhand)) {
             renderWaterCoolingBar(event.getGuiGraphics(), GunItem.getWaterCoolingProgressPercent(offhand));
         }
 
@@ -202,7 +199,9 @@ public final class GunClientEvents {
             renderCenteredOverlayPrompt(event.getGuiGraphics(), promptText, promptColor);
         }
 
+        ClientHudRenderer.render(event.getGuiGraphics());
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
+            CrosshairHandler.render(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
             event.setCanceled(true);
         }
     }
@@ -215,6 +214,7 @@ public final class GunClientEvents {
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
         }
         tickMuzzleFlashState();
+        CrosshairHandler.tick();
         if (offhandFullPromptTicks > 0) {
             offhandFullPromptTicks--;
         }
@@ -222,14 +222,12 @@ public final class GunClientEvents {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null) {
-            hudTicker = 0;
-            currentHudText = "";
-            lastHudText = "";
             attackHeldLastTick = false;
             aimingStateLastSent = false;
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
+            CrosshairHandler.reset();
             return;
         }
 
@@ -259,6 +257,8 @@ public final class GunClientEvents {
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
                     applyLocalVisualRecoil(gun);
+                    GunItem.recordClientShotSpread(player, gun.getStats());
+                    CrosshairHandler.onGunFired();
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -286,28 +286,6 @@ public final class GunClientEvents {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
-
-        hudTicker++;
-        if (hudTicker % 4 != 0) {
-            return;
-        }
-
-        if (heldMain.getItem() instanceof GunItem gun) {
-            currentHudText = buildAmmoHudText(player, heldMain, gun);
-        } else if (heldMain.getItem() instanceof MagazineItem magazine) {
-            currentHudText = buildMagazineHudText(heldMain, magazine);
-        } else if (heldOff.getItem() instanceof MagazineItem magazine) {
-            currentHudText = buildMagazineHudText(heldOff, magazine);
-        } else {
-            currentHudText = "";
-        }
-
-        if (!currentHudText.isEmpty() && (!currentHudText.equals(lastHudText) || hudTicker % 20 == 0)) {
-            minecraft.gui.setOverlayMessage(Component.literal(currentHudText), false);
-            lastHudText = currentHudText;
-        } else if (currentHudText.isEmpty()) {
-            lastHudText = "";
-        }
     }
 
     @SubscribeEvent
@@ -328,29 +306,6 @@ public final class GunClientEvents {
             ttv.migami.jeg.client.render.BulletTrailRenderer.render(new PoseStack(), bufferSource, partialTick);
         }
         renderMuzzleFlashes(new PoseStack(), bufferSource, partialTick);
-    }
-
-    private static String buildAmmoHudText(LocalPlayer player, ItemStack stack, GunItem gun) {
-        GunStats stats = gun.getStats();
-        if (gun.usesMagazineSwapReload()) {
-            GunItem.MagazineInventorySummary summary = gun.getMagazineInventorySummary(player);
-            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize()
-                    + " | Mags " + summary.loadedMagazineCount() + "+" + summary.emptyMagazineCount();
-        }
-        if (gun.usesLoadedAmmo()) {
-            int reserve = gun.countInventoryAmmo(player);
-            boolean infinite = reserve == Integer.MAX_VALUE;
-            String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
-            return "Ammo " + gun.getMagazineAmmo(stack) + "/" + stats.magazineSize() + " | Reserve " + reserveText;
-        }
-        int reserve = gun.countInventoryAmmo(player);
-        boolean infinite = reserve == Integer.MAX_VALUE;
-        String reserveText = infinite ? "INF" : Integer.toString(Math.max(0, reserve));
-        return "Ammo " + reserveText;
-    }
-
-    private static String buildMagazineHudText(ItemStack stack, MagazineItem magazine) {
-        return "Ammo " + magazine.getAmmoCount(stack) + "/" + magazine.getCapacity();
     }
 
     private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
@@ -375,9 +330,8 @@ public final class GunClientEvents {
         swapOffhandHeldLastTick = false;
         offhandFullPromptTicks = 0;
         nextVisualShotTickMain = 0L;
-        currentHudText = "";
-        lastHudText = "";
         stunRingingSound = null;
+        CrosshairHandler.reset();
     }
 
     private static void flushRenderQueue() {
@@ -574,16 +528,11 @@ public final class GunClientEvents {
 
     private static void renderOverheatBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int heatPercent) {
         float ratio = Mth.clamp(heatPercent / 100.0F, 0.0F, 1.0F);
-        int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
-        int y = guiGraphics.guiHeight() - 66;
-        int filled = Math.max(0, Mth.ceil(OVERHEAT_BAR_WIDTH * ratio));
-
-        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
-        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
-
-        if (filled > 0) {
-            guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, overheatColor(ratio));
-        }
+        int x = guiGraphics.guiWidth() / 2 - TIMER_BAR_WIDTH / 2;
+        int y = guiGraphics.guiHeight() / 2 + 24;
+        int filled = Math.max(1, Math.round(TIMER_BAR_WIDTH * ratio));
+        guiGraphics.blit(OVERHEAT_TEXTURE, x, y, 0.0F, 0.0F, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
+        guiGraphics.blit(OVERHEAT_TEXTURE, x, y, 0.0F, TIMER_BAR_HEIGHT, filled, TIMER_BAR_HEIGHT, TIMER_BAR_WIDTH, TIMER_BAR_HEIGHT * 2);
     }
 
     private static void renderCenteredOverlayPrompt(net.minecraft.client.gui.GuiGraphics guiGraphics, Component text, int color) {
@@ -596,33 +545,11 @@ public final class GunClientEvents {
 
     private static void renderWaterCoolingBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int progressPercent) {
         float ratio = Mth.clamp(progressPercent / 100.0F, 0.0F, 1.0F);
-        int x = (guiGraphics.guiWidth() - OVERHEAT_BAR_WIDTH) / 2;
-        int y = guiGraphics.guiHeight() - 72;
-        int filled = Math.max(0, Mth.ceil(OVERHEAT_BAR_WIDTH * ratio));
-
-        guiGraphics.fill(x - 1, y - 1, x + OVERHEAT_BAR_WIDTH + 1, y + OVERHEAT_BAR_HEIGHT + 1, 0xAA000000);
-        guiGraphics.fill(x, y, x + OVERHEAT_BAR_WIDTH, y + OVERHEAT_BAR_HEIGHT, 0x66000000);
-
-        if (filled > 0) {
-            guiGraphics.fill(x, y, x + filled, y + OVERHEAT_BAR_HEIGHT, coolingColor(ratio));
-        }
-    }
-
-    private static int overheatColor(float ratio) {
-        float clamped = Mth.clamp(ratio, 0.0F, 1.0F);
-        int red;
-        int green;
-        if (clamped < 0.5F) {
-            float t = clamped / 0.5F;
-            red = Mth.floor(255.0F * t);
-            green = 255;
-        } else {
-            float t = (clamped - 0.5F) / 0.5F;
-            red = 255;
-            green = Mth.floor(255.0F * (1.0F - t));
-        }
-        int blue = 32;
-        return 0xFF000000 | (red << 16) | (green << 8) | blue;
+        int x = guiGraphics.guiWidth() / 2 - TIMER_BAR_WIDTH / 2;
+        int y = guiGraphics.guiHeight() / 2 + 17;
+        int filled = Math.max(1, Math.round(TIMER_BAR_WIDTH * ratio));
+        guiGraphics.fill(x, y, x + TIMER_BAR_WIDTH, y + TIMER_BAR_HEIGHT, 0x66000000);
+        guiGraphics.fill(x, y, x + filled, y + TIMER_BAR_HEIGHT, coolingColor(ratio));
     }
 
     private static int coolingColor(float ratio) {

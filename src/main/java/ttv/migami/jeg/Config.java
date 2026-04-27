@@ -10,6 +10,12 @@ public final class Config {
     public static final ModConfigSpec CLIENT_SPEC;
     public static final ModConfigSpec SERVER_SPEC;
     public static final ModConfigSpec.BooleanValue LEGACY_BULLET_TRAIL_ENABLED;
+    public static final ModConfigSpec.BooleanValue SHOW_AMMO_HUD;
+    public static final ModConfigSpec.BooleanValue SHOW_TIMERS_HUD;
+    public static final ModConfigSpec.ConfigValue<String> CROSSHAIR;
+    public static final ModConfigSpec.BooleanValue SHOW_HITMARKER;
+    public static final ModConfigSpec.ConfigValue<String> DYNAMIC_CROSSHAIR_DOT_MODE;
+    public static final ModConfigSpec.DoubleValue DYNAMIC_CROSSHAIR_DOT_THRESHOLD;
 
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
@@ -62,6 +68,24 @@ public final class Config {
         LEGACY_BULLET_TRAIL_ENABLED = clientBuilder
                 .comment("If true, use legacy 1.20.1-style bullet trail rendering.")
                 .define("legacyBulletTrailEnabled", true);
+        SHOW_AMMO_HUD = clientBuilder
+                .comment("If true, render the weapon ammo HUD in the lower-right corner.")
+                .define("showAmmoHud", true);
+        SHOW_TIMERS_HUD = clientBuilder
+                .comment("If true, render timer bars such as overheat and water cooling.")
+                .define("showTimersHud", true);
+        CROSSHAIR = clientBuilder
+                .comment("Custom gun crosshair id. Use default, jeg:dynamic, jeg:tech, or a texture id under textures/crosshair.")
+                .define("crosshair", "jeg:dynamic");
+        SHOW_HITMARKER = clientBuilder
+                .comment("If true, render a short marker when a bullet hits a living entity.")
+                .define("showHitmarker", true);
+        DYNAMIC_CROSSHAIR_DOT_MODE = clientBuilder
+                .comment("Dynamic crosshair dot mode: never, at_min_spread, threshold, always.")
+                .define("dynamicCrosshairDotMode", "at_min_spread");
+        DYNAMIC_CROSSHAIR_DOT_THRESHOLD = clientBuilder
+                .comment("Spread threshold where the dynamic crosshair center dot is shown.")
+                .defineInRange("dynamicCrosshairDotThreshold", 0.8D, 0.0D, 90.0D);
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
@@ -481,6 +505,30 @@ public final class Config {
 
     public static boolean legacyBulletTrailEnabled() {
         return LEGACY_BULLET_TRAIL_ENABLED.get();
+    }
+
+    public static boolean showAmmoHud() {
+        return SHOW_AMMO_HUD.get();
+    }
+
+    public static boolean showTimersHud() {
+        return SHOW_TIMERS_HUD.get();
+    }
+
+    public static String crosshair() {
+        return CROSSHAIR.get();
+    }
+
+    public static boolean showHitmarker() {
+        return SHOW_HITMARKER.get();
+    }
+
+    public static String dynamicCrosshairDotMode() {
+        return DYNAMIC_CROSSHAIR_DOT_MODE.get();
+    }
+
+    public static double dynamicCrosshairDotThreshold() {
+        return Mth.clamp(DYNAMIC_CROSSHAIR_DOT_THRESHOLD.get(), 0.0D, 90.0D);
     }
 
     private static double clamp01(double value) {

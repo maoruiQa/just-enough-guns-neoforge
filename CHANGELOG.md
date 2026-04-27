@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.2 - 2026-04-27
+
+### Added
+- Added NeoForge 1.21.1 combat HUD rendering for gun name, current ammo, reserve ammo, magazine reserve counts, timer bars, and hit markers.
+- Added NeoForge custom crosshair rendering with dynamic crosshair support tied to current ballistic spread.
+- Added S2C hit marker feedback for successful living-entity bullet hits.
+
+### Changed
+- Replaced periodic ammo actionbar updates with the right-side combat HUD while keeping contextual warning prompts.
+- Updated timer rendering to use `textures/gui/timer/overheat.png` for overheat and preserve water-cooling progress.
+- Rebalanced dynamic spread penalties:
+  - rifle, sniper, and `light_machine_gun` walking spread uses `3.30x`, sprinting spread uses `5.50x`, and firing spread cap uses `2.70x`,
+  - pistol and SMG walking spread uses `1.425x`, sprinting spread uses `2.475x`, and firing spread cap uses `1.725x`.
+- Reduced `light_machine_gun` passive cooling speed to 50% of the previous value.
+- Reduced `minigun` overheat gain from `8/6` heat per shot to `6/6`.
+
+### Fixed
+- Fixed dynamic crosshair not reflecting movement spread before the first shot.
+- Fixed hit markers triggering on block impacts by only sending them after successful living-entity damage.
+
 ## 1.3.1 - 2026-02-19 (NeoForge 1.21.11 v1.3.1 Sync + Bow Removal)
 
 ### Added

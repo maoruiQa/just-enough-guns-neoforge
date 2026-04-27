@@ -131,24 +131,16 @@ public class GunItem extends Item {
             "rocket_launcher",
             "typhoonee"
     );
-    private static final Set<String> ASSAULT_RIFLE_IDS = Set.of(
-            "assault_rifle",
-            "burst_rifle",
-            "combat_rifle",
-            "service_rifle",
-            "blossom_rifle",
-            "infantry_rifle",
-            "subsonic_rifle",
-            "hollenfire_mk2",
-            "soulhunter_mk2"
-    );
     private static final float MINIGUN_SPREAD_FLOOR = 0.85F;
     private static final double MOVEMENT_THRESHOLD_SQR = 0.0036D;
+    private static final float RIFLE_FIRE_SPREAD_CAP = 2.70F;
+    private static final float SIDEARM_FIRE_SPREAD_CAP = 1.725F;
+    private static final float DEFAULT_FIRE_SPREAD_CAP = 1.0F;
     private static final int OVERHEAT_MAX = 200;
     private static final int OVERHEAT_TRACKED_MAX = 280;
     private static final int OVERHEAT_RECOVERY_BUFFER = 80;
     private static final int OVERHEAT_HEAT_NUMERATOR_LMG = 5;
-    private static final int OVERHEAT_HEAT_NUMERATOR_MINIGUN = 8;
+    private static final int OVERHEAT_HEAT_NUMERATOR_MINIGUN = 6;
     private static final int OVERHEAT_HEAT_DENOMINATOR = 6;
     private static final int OVERHEAT_COOL_NUMERATOR_HELD = 2;
     private static final int OVERHEAT_COOL_NUMERATOR_IDLE = 4;
@@ -574,7 +566,7 @@ public class GunItem extends Item {
         if (current <= 0) {
             return;
         }
-        int numerator = heldInHand ? OVERHEAT_COOL_NUMERATOR_HELD : OVERHEAT_COOL_NUMERATOR_IDLE;
+        int numerator = getOverheatCoolNumerator(stack, heldInHand);
         int stackKey = ItemStack.hashItemAndComponents(stack);
         int scaledNumerator = OVERHEAT_COOL_NUMERATOR.getOrDefault(stackKey, 0) + numerator;
         int cooling = scaledNumerator / OVERHEAT_COOL_DENOMINATOR;
@@ -587,6 +579,14 @@ public class GunItem extends Item {
         if (cooling > 0) {
             setTrackedHeat(stack, current - cooling);
         }
+    }
+
+    private static int getOverheatCoolNumerator(ItemStack stack, boolean heldInHand) {
+        int numerator = heldInHand ? OVERHEAT_COOL_NUMERATOR_HELD : OVERHEAT_COOL_NUMERATOR_IDLE;
+        if (stack.getItem() instanceof GunItem gun && "light_machine_gun".equals(gun.getStats().id().getPath())) {
+            return Math.max(1, numerator / 2);
+        }
+        return numerator;
     }
 
     @Override
@@ -971,12 +971,12 @@ public class GunItem extends Item {
 
         if (shooter instanceof Player player) {
             boolean minigun = isMinigunWeapon(stats.id());
-            gunSpread *= getSpreadMultiplier(player, stats.id());
+            gunSpread *= getSpreadMultiplier(player, stats);
             if (!minigun && NetworkHandler.isAiming(player)) {
                 gunSpread *= 0.5F;
             }
             if (!minigun) {
-                gunSpread *= getMovementSpreadMultiplier(player, stats);
+                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player));
             } else {
                 gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
             }
@@ -1038,8 +1038,13 @@ public class GunItem extends Item {
         entry.lastFireMs = now;
     }
 
-    private static float getSpreadMultiplier(Player player, ResourceLocation gunId) {
+    public static void recordClientShotSpread(Player player, GunStats stats) {
+        updateSpreadTracker(player, stats.id());
+    }
+
+    private static float getSpreadMultiplier(Player player, GunStats stats) {
         SpreadTrackerState playerState = SPREAD_TRACKERS.get(player.getUUID());
+        ResourceLocation gunId = stats.id();
         if (playerState == null) {
             return isMinigunWeapon(gunId) ? MINIGUN_SPREAD_FLOOR : 0.0F;
         }
@@ -1051,7 +1056,30 @@ public class GunItem extends Item {
         if (isMinigunWeapon(gunId)) {
             return Math.max(MINIGUN_SPREAD_FLOOR, tracked);
         }
-        return tracked;
+        return tracked * getFireSpreadCap(stats);
+    }
+
+    public static float getClientSpreadDegrees(Player player, GunStats stats, boolean aiming) {
+        float gunSpread = stats.spread();
+        if (gunSpread <= 0.0F) {
+            return 0.0F;
+        }
+
+        boolean minigun = isMinigunWeapon(stats.id());
+        gunSpread *= getSpreadMultiplier(player, stats);
+        if (!minigun && aiming) {
+            gunSpread *= 0.5F;
+        }
+        if (!minigun) {
+            gunSpread += getMovementSpreadDegrees(player, stats, aiming);
+        } else {
+            gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
+        }
+        if (isShotgun(stats.id())) {
+            float shotgunFloor = stats.spread() * (aiming ? 0.35F : 0.60F);
+            gunSpread = Math.max(gunSpread, shotgunFloor);
+        }
+        return Math.max(0.0F, gunSpread);
     }
 
     public static boolean isShotgunWeapon(ResourceLocation gunId) {
@@ -1075,28 +1103,49 @@ public class GunItem extends Item {
         return "minigun".equals(gunId.getPath());
     }
 
-    private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
+    private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming) {
         if (player.isCrouching() || !isPlayerMoving(player)) {
-            return 1.0F;
+            return 0.0F;
         }
-        if (isAssaultRifleWeapon(stats.id())) {
-            return 1.90F;
+
+        float multiplier = getMovementSpreadMultiplier(player, stats);
+        if (aiming) {
+            multiplier *= 0.65F;
         }
-        ResourceLocation ammoId = stats.ammoItem();
-        if (ammoId != null) {
-            String ammoPath = ammoId.getPath();
-            if ("rifle_ammo".equals(ammoPath)) {
-                return 1.65F;
-            }
-            if ("pistol_ammo".equals(ammoPath)) {
-                return 1.35F;
-            }
-        }
-        return 1.15F;
+        return stats.spread() * multiplier;
     }
 
-    private static boolean isAssaultRifleWeapon(ResourceLocation gunId) {
-        return ASSAULT_RIFLE_IDS.contains(gunId.getPath());
+    private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
+        boolean sprinting = player.isSprinting();
+        if (isLargeMovementSpreadWeapon(stats)) {
+            return sprinting ? 5.50F : 3.30F;
+        }
+        if (isSidearmMovementSpreadWeapon(stats)) {
+            return sprinting ? 2.475F : 1.425F;
+        }
+        return sprinting ? 1.25F : 0.65F;
+    }
+
+    private static float getFireSpreadCap(GunStats stats) {
+        if (isLargeMovementSpreadWeapon(stats)) {
+            return RIFLE_FIRE_SPREAD_CAP;
+        }
+        if (isSidearmMovementSpreadWeapon(stats)) {
+            return SIDEARM_FIRE_SPREAD_CAP;
+        }
+        return DEFAULT_FIRE_SPREAD_CAP;
+    }
+
+    private static boolean isLargeMovementSpreadWeapon(GunStats stats) {
+        GunCategory category = GunCategory.fromStats(stats);
+        return category == GunCategory.RIFLE
+                || category == GunCategory.SNIPER
+                || "light_machine_gun".equals(stats.id().getPath());
+    }
+
+    private static boolean isSidearmMovementSpreadWeapon(GunStats stats) {
+        GunCategory category = GunCategory.fromStats(stats);
+        return category == GunCategory.PISTOL || category == GunCategory.SMG;
     }
 
     private static float getVerticalRecoilPitchMultiplier(ResourceLocation gunId) {
