@@ -10,6 +10,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.init.ModItems;
@@ -29,7 +30,8 @@ public final class NetworkHandler {
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
-                .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt);
+                .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
+                .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker);
     }
 
     private static void handleBulletTrail(BulletTrailPayload payload, IPayloadContext context) {
@@ -55,6 +57,10 @@ public final class NetworkHandler {
 
     private static void handleOffhandFullPrompt(OffhandFullPromptPayload payload, IPayloadContext context) {
         context.enqueueWork(GunClientEvents::showOffhandFullPrompt);
+    }
+
+    private static void handleHitMarker(HitMarkerPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> CrosshairHandler.playHitMarker(payload.critical()));
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {
@@ -195,6 +201,10 @@ public final class NetworkHandler {
                 player.connection.send(payload);
             }
         }
+    }
+
+    public static void sendHitMarker(ServerPlayer player, boolean critical) {
+        player.connection.send(new HitMarkerPayload(critical));
     }
 
     public static boolean isAiming(Player player) {

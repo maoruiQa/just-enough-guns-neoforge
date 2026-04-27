@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.2 - 2026-04-27
+
+### Changed
+- Synced NeoForge 26.1 gun HUD, dynamic crosshair, hit marker, spread, and overheat behavior with the NeoForge 1.21.1 1.4.2 implementation.
+- Added configurable ammo HUD, timer HUD, crosshair, hit marker, and dynamic crosshair dot settings.
+- Updated player gun spread to combine firing spread accumulation with movement spread degrees.
+- Reduced light machine gun passive overheat cooling and lowered minigun heat gain.
+
+### Fixed
+- Hit markers now trigger only after successful living-entity bullet damage, including direct explosive hits, and no longer trigger for block hits or failed/friendly-fire hits.
+- Overheat now renders with the timer texture while preserving water-cooling progress rendering.
+
 ## 1.3.1 - 2026-02-20
 
 ### Added
