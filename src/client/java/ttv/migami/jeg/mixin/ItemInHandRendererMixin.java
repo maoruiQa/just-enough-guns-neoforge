@@ -8,6 +8,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
@@ -61,6 +62,12 @@ public final class ItemInHandRendererMixin {
     @Unique
     private boolean jeg$customTransformApplied;
 
+    @Unique
+    private ItemStack jeg$preTickMainHandItem = ItemStack.EMPTY;
+
+    @Unique
+    private ItemStack jeg$preTickOffHandItem = ItemStack.EMPTY;
+
     @Inject(method = "renderArmWithItem", at = @At("HEAD"))
     private void jeg$captureArmRenderContext(
             AbstractClientPlayer player,
@@ -105,22 +112,30 @@ public final class ItemInHandRendererMixin {
         this.jeg$customTransformApplied = false;
     }
 
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void jeg$capturePreTickHandItems(CallbackInfo ci) {
+        this.jeg$preTickMainHandItem = this.mainHandItem.copy();
+        this.jeg$preTickOffHandItem = this.offHandItem.copy();
+    }
+
     @Inject(method = "tick", at = @At("TAIL"))
-    private void jeg$stabilizeHeatOnlySwaps(CallbackInfo ci) {
+    private void jeg$stabilizeVolatileGunSwaps(CallbackInfo ci) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) {
             return;
         }
 
         ItemStack liveMain = player.getMainHandItem();
-        if (jeg$isHeatOnlyComponentDiff(this.mainHandItem, liveMain)) {
+        if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
+                || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
             this.mainHandItem = liveMain;
             this.mainHandHeight = 1.0F;
             this.oMainHandHeight = 1.0F;
         }
 
         ItemStack liveOff = player.getOffhandItem();
-        if (jeg$isHeatOnlyComponentDiff(this.offHandItem, liveOff)) {
+        if (jeg$isVolatileGunComponentDiff(this.offHandItem, liveOff)
+                || jeg$isVolatileGunComponentDiff(this.jeg$preTickOffHandItem, liveOff)) {
             this.offHandItem = liveOff;
             this.offHandHeight = 1.0F;
             this.oOffHandHeight = 1.0F;
@@ -224,7 +239,7 @@ public final class ItemInHandRendererMixin {
     }
 
     @Unique
-    private static boolean jeg$isHeatOnlyComponentDiff(ItemStack visibleStack, ItemStack liveStack) {
+    private static boolean jeg$isVolatileGunComponentDiff(ItemStack visibleStack, ItemStack liveStack) {
         if (visibleStack == null || liveStack == null || visibleStack.isEmpty() || liveStack.isEmpty()) {
             return false;
         }
@@ -238,10 +253,18 @@ public final class ItemInHandRendererMixin {
             return false;
         }
 
-        ItemStack visibleNoHeat = visibleStack.copy();
-        ItemStack liveNoHeat = liveStack.copy();
-        visibleNoHeat.remove(ModDataComponents.GUN_HEAT.get());
-        liveNoHeat.remove(ModDataComponents.GUN_HEAT.get());
-        return ItemStack.isSameItemSameComponents(visibleNoHeat, liveNoHeat);
+        ItemStack visibleStable = visibleStack.copy();
+        ItemStack liveStable = liveStack.copy();
+        jeg$stripVolatileGunRenderComponents(visibleStable);
+        jeg$stripVolatileGunRenderComponents(liveStable);
+        return ItemStack.isSameItemSameComponents(visibleStable, liveStable);
+    }
+
+    @Unique
+    private static void jeg$stripVolatileGunRenderComponents(ItemStack stack) {
+        stack.remove(DataComponents.DAMAGE);
+        stack.remove(ModDataComponents.GUN_AMMO.get());
+        stack.remove(ModDataComponents.GUN_HEAT.get());
+        stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
     }
 }
