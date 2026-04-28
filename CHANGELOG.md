@@ -6,6 +6,7 @@
 - Added NeoForge 1.21.1 combat HUD rendering for gun name, current ammo, reserve ammo, magazine reserve counts, timer bars, and hit markers.
 - Added NeoForge custom crosshair rendering with dynamic crosshair support tied to current ballistic spread.
 - Added S2C hit marker feedback for successful living-entity bullet hits.
+- Added configurable Phantom Gunner death explosions with `/justEnoughGuns config mob phantom deathExplosion`.
 
 ### Changed
 - Replaced periodic ammo actionbar updates with the right-side combat HUD while keeping contextual warning prompts.
