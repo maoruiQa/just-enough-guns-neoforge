@@ -34,6 +34,7 @@ import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.gun.GunDefinitions;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public final class ModCommands {
     private static final SuggestionProvider<CommandSourceStack> FACTION_SUGGESTIONS = (context, builder) -> {
@@ -119,9 +120,16 @@ public final class ModCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> configCommand() {
         return Commands.literal("config")
+                .then(configUiCommand())
                 .then(configPatrolCommand())
                 .then(configMobCommand())
                 .then(configCombatCommand());
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configUiCommand() {
+        return Commands.literal("ui")
+                .then(configBooleanConfigCommand("crosshair", "ui.showCrosshair"))
+                .then(configBooleanConfigCommand("hitFeedback", "ui.showHitFeedback"));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configMobCommand() {
@@ -313,6 +321,9 @@ public final class ModCommands {
         boolean oldValue = (Boolean) Config.getConfigValue(key);
         Config.setConfigValue(key, value);
         Config.saveServerConfig();
+        if (key.startsWith("ui.")) {
+            NetworkHandler.broadcastUiConfig(source.getServer());
+        }
         source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
         return 1;
     }

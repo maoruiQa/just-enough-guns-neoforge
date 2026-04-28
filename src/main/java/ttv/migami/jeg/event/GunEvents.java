@@ -45,6 +45,7 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
@@ -77,6 +78,7 @@ public final class GunEvents {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
+            NetworkHandler.sendUiConfig(serverPlayer);
         }
     }
 

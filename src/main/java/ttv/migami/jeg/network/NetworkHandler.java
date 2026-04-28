@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +14,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
@@ -36,6 +38,7 @@ public final class NetworkHandler {
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
+                .playToClient(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC, NetworkHandler::handleUiConfig)
                 .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker);
     }
 
@@ -66,6 +69,10 @@ public final class NetworkHandler {
 
     private static void handleHitMarker(HitMarkerPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> CrosshairHandler.playHitMarker(payload.critical()));
+    }
+
+    private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {
@@ -252,6 +259,17 @@ public final class NetworkHandler {
 
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         player.connection.send(new HitMarkerPayload(critical));
+    }
+
+    public static void sendUiConfig(ServerPlayer player) {
+        player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+    }
+
+    public static void broadcastUiConfig(MinecraftServer server) {
+        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            player.connection.send(payload);
+        }
     }
 
     public static boolean isAiming(Player player) {
