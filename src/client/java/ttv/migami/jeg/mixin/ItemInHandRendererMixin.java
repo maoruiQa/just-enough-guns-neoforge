@@ -6,26 +6,53 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
 
 @Mixin(ItemInHandRenderer.class)
 public final class ItemInHandRendererMixin {
+    @Shadow
+    private ItemStack mainHandItem;
+
+    @Shadow
+    private ItemStack offHandItem;
+
+    @Shadow
+    private float mainHandHeight;
+
+    @Shadow
+    private float oMainHandHeight;
+
+    @Shadow
+    private float offHandHeight;
+
+    @Shadow
+    private float oOffHandHeight;
+
     @Unique
     private float jeg$capturedEquipProcess = Float.NaN;
 
     @Unique
     private float jeg$capturedSwingProcess = Float.NaN;
+
+    @Unique
+    private ItemStack jeg$preTickMainHandItem = ItemStack.EMPTY;
+
+    @Unique
+    private ItemStack jeg$preTickOffHandItem = ItemStack.EMPTY;
 
     @Inject(method = "renderArmWithItem", at = @At("HEAD"))
     private void jeg$captureArmRenderContext(
@@ -61,6 +88,36 @@ public final class ItemInHandRendererMixin {
     ) {
         this.jeg$capturedEquipProcess = Float.NaN;
         this.jeg$capturedSwingProcess = Float.NaN;
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void jeg$capturePreTickHandItems(CallbackInfo ci) {
+        this.jeg$preTickMainHandItem = this.mainHandItem.copy();
+        this.jeg$preTickOffHandItem = this.offHandItem.copy();
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void jeg$stabilizeVolatileGunSwaps(CallbackInfo ci) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return;
+        }
+
+        ItemStack liveMain = player.getMainHandItem();
+        if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
+                || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
+            this.mainHandItem = liveMain;
+            this.mainHandHeight = 1.0F;
+            this.oMainHandHeight = 1.0F;
+        }
+
+        ItemStack liveOff = player.getOffhandItem();
+        if (jeg$isVolatileGunComponentDiff(this.offHandItem, liveOff)
+                || jeg$isVolatileGunComponentDiff(this.jeg$preTickOffHandItem, liveOff)) {
+            this.offHandItem = liveOff;
+            this.offHandHeight = 1.0F;
+            this.oOffHandHeight = 1.0F;
+        }
     }
 
     @Inject(method = "renderItem", at = @At("HEAD"))
@@ -110,5 +167,35 @@ public final class ItemInHandRendererMixin {
                     partialTick
             );
         }
+    }
+
+    @Unique
+    private static boolean jeg$isVolatileGunComponentDiff(ItemStack visibleStack, ItemStack liveStack) {
+        if (visibleStack == null || liveStack == null || visibleStack.isEmpty() || liveStack.isEmpty()) {
+            return false;
+        }
+        if (!ItemStack.isSameItem(visibleStack, liveStack)) {
+            return false;
+        }
+        if (!(liveStack.getItem() instanceof GunItem)) {
+            return false;
+        }
+        if (ItemStack.isSameItemSameComponents(visibleStack, liveStack)) {
+            return false;
+        }
+
+        ItemStack visibleStable = visibleStack.copy();
+        ItemStack liveStable = liveStack.copy();
+        jeg$stripVolatileGunRenderComponents(visibleStable);
+        jeg$stripVolatileGunRenderComponents(liveStable);
+        return ItemStack.isSameItemSameComponents(visibleStable, liveStable);
+    }
+
+    @Unique
+    private static void jeg$stripVolatileGunRenderComponents(ItemStack stack) {
+        stack.remove(DataComponents.DAMAGE);
+        stack.remove(ModDataComponents.GUN_AMMO.get());
+        stack.remove(ModDataComponents.GUN_HEAT.get());
+        stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
     }
 }
