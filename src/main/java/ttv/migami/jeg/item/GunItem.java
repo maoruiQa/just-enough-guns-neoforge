@@ -148,9 +148,10 @@ public class GunItem extends Item {
     private static final int OVERHEAT_MAX = 200;
     private static final int OVERHEAT_TRACKED_MAX = 280;
     private static final int OVERHEAT_RECOVERY_BUFFER = 80;
-    private static final int OVERHEAT_HEAT_NUMERATOR_LMG = 5;
+    private static final int OVERHEAT_HEAT_NUMERATOR_LMG = 13;
     private static final int OVERHEAT_HEAT_NUMERATOR_MINIGUN = 6;
     private static final int OVERHEAT_HEAT_DENOMINATOR = 6;
+    private static final int OVERHEAT_HEAT_DENOMINATOR_LMG = 12;
     private static final int OVERHEAT_COOL_NUMERATOR_HELD = 2;
     private static final int OVERHEAT_COOL_NUMERATOR_IDLE = 4;
     private static final int OVERHEAT_COOL_DENOMINATOR = 5;
@@ -213,7 +214,7 @@ public class GunItem extends Item {
     public boolean usesMagazineSwapReload() {
         return Config.magazineFeedEnabled()
                 && usesLoadedAmmo()
-                && (isThirtyRoundRifle() || isCustomSmg() || isMagazineSwapPistol() || isMagazineSwapShotgun());
+                && (isThirtyRoundRifle() || isCustomSmg() || isMagazineSwapPistol() || isMagazineSwapShotgun() || isMachineGunMagazineSwap());
     }
 
     public boolean usesLegacyLoadedReload() {
@@ -235,6 +236,10 @@ public class GunItem extends Item {
 
     private boolean isMagazineSwapShotgun() {
         return GunCategory.fromStats(stats) == GunCategory.SHOTGUN && stats.magazineSize() == 8;
+    }
+
+    private boolean isMachineGunMagazineSwap() {
+        return "light_machine_gun".equals(stats.id().getPath()) && stats.magazineSize() == 150;
     }
 
     private int getAmmo(ItemStack stack) {
@@ -524,6 +529,10 @@ public class GunItem extends Item {
         return "minigun".equals(gunId.getPath()) ? OVERHEAT_HEAT_NUMERATOR_MINIGUN : OVERHEAT_HEAT_NUMERATOR_LMG;
     }
 
+    private static int getHeatDenominatorPerShot(Identifier gunId) {
+        return "light_machine_gun".equals(gunId.getPath()) ? OVERHEAT_HEAT_DENOMINATOR_LMG : OVERHEAT_HEAT_DENOMINATOR;
+    }
+
     private static int getTrackedHeat(ItemStack stack) {
         return Mth.clamp(stack.getOrDefault(ModDataComponents.GUN_HEAT.get(), 0), 0, OVERHEAT_TRACKED_MAX);
     }
@@ -589,7 +598,7 @@ public class GunItem extends Item {
             }
             effectiveShots = applyShots;
         }
-        int next = applyFractionalHeat(stack, getHeatNumeratorPerShot(gunId) * effectiveShots, OVERHEAT_HEAT_DENOMINATOR);
+        int next = applyFractionalHeat(stack, getHeatNumeratorPerShot(gunId) * effectiveShots, getHeatDenominatorPerShot(gunId));
         setTrackedHeat(stack, next);
     }
 
@@ -1386,6 +1395,9 @@ public class GunItem extends Item {
         if (isMagazineSwapShotgun()) {
             return ModItems.SHOTGUN_MAGAZINE.get();
         }
+        if (isMachineGunMagazineSwap()) {
+            return ModItems.MACHINE_GUN_MAGAZINE.get();
+        }
         return null;
     }
 
@@ -1560,6 +1572,17 @@ public class GunItem extends Item {
      * Particles have proper depth testing and won't render through blocks.
      */
     private void spawnBulletTrailParticles(ServerLevel level, Vec3 start, Vec3 direction, GunStats stats, LivingEntity shooter) {
+        if ("minigun".equals(stats.id().getPath())) {
+            if (shooter.getRandom().nextFloat() < 0.15F) {
+                level.sendParticles(
+                    ParticleTypes.SMOKE,
+                    start.x, start.y, start.z,
+                    1, 0.02, 0.02, 0.02, 0.01
+                );
+            }
+            return;
+        }
+
         // Muzzle-only black dust with chance per shot to avoid constant spam.
         if (shooter.getRandom().nextFloat() < 0.25F) {
             int count = shooter.getRandom().nextFloat() < 0.35F ? 2 : 1;
