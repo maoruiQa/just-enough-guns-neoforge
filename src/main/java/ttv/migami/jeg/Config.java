@@ -60,6 +60,8 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
+    public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
+    public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
     private static final Map<String, ModConfigSpec.ConfigValue<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
 
     static {
@@ -90,6 +92,15 @@ public final class Config {
         CLIENT_SPEC = clientBuilder.build();
 
         ModConfigSpec.Builder serverBuilder = new ModConfigSpec.Builder();
+
+        serverBuilder.push("ui");
+        UI_SHOW_CROSSHAIR = serverBuilder
+                .comment("If true, clients render the JEG gun crosshair while holding guns.")
+                .define("showCrosshair", true);
+        UI_SHOW_HIT_FEEDBACK = serverBuilder
+                .comment("If true, clients display hit feedback markers when bullets hit living entities.")
+                .define("showHitFeedback", true);
+        serverBuilder.pop();
 
         serverBuilder.push("spawns");
         TERROR_PHANTOM_NATURAL_CHANCE = serverBuilder
@@ -253,6 +264,8 @@ public final class Config {
 
         SERVER_SPEC = serverBuilder.build();
 
+        registerCommandConfig("ui.showCrosshair", UI_SHOW_CROSSHAIR);
+        registerCommandConfig("ui.showHitFeedback", UI_SHOW_HIT_FEEDBACK);
         registerCommandConfig("patrol.enabled", FACTION_PATROL_ENABLED);
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
@@ -501,6 +514,14 @@ public final class Config {
 
     public static int bulletLifetimeTicks() {
         return Math.max(20, BULLET_LIFETIME_SECONDS.get() * 20);
+    }
+
+    public static boolean showCrosshair() {
+        return UI_SHOW_CROSSHAIR.get();
+    }
+
+    public static boolean showHitFeedback() {
+        return UI_SHOW_HIT_FEEDBACK.get();
     }
 
     public static boolean legacyBulletTrailEnabled() {
