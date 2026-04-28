@@ -1233,7 +1233,7 @@ public class GunItem extends Item {
         MagazineInventoryScan scan = scanCompatibleMagazines(player);
         if (scan.bestMagazineSlot() < 0) {
             if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_ammo"));
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
             }
             return false;
         }
@@ -1246,7 +1246,7 @@ public class GunItem extends Item {
         int newAmmo = magazine.getAmmoCount(magazineStack);
         if (newAmmo <= 0) {
             if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_ammo"));
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
             }
             return false;
         }

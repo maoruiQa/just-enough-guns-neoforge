@@ -25,6 +25,7 @@
 - Fixed Fabric dynamic crosshair center-dot alignment issues by removing the dot from the dynamic reticle.
 - Fixed dynamic crosshair asymmetry caused by incorrect 9x9 texture sampling for the right and bottom reticle lines.
 - Fixed magazine-fed guns showing reserve ammo ambiguously instead of loaded magazine count.
+- Fixed magazine-fed guns showing "No ammo" instead of "No compatible magazine" when no suitable loaded magazine is available for reload.
 
 ## 1.3.4 - 2026-03-10
 
