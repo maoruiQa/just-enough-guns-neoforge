@@ -722,6 +722,10 @@ public class GunItem extends Item {
                         Math.max(1, stats.fireDelay()));
             }
 
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerShoot(level, player, stack);
+            }
+
             applyRecoilBackstep(player);
 
             if (!automatic) {
