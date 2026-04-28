@@ -14,6 +14,7 @@
 ### Fixed
 - Hit markers now trigger only after successful living-entity bullet damage, including direct explosive hits, and no longer trigger for block hits or failed/friendly-fire hits.
 - Overheat now renders with the timer texture while preserving water-cooling progress rendering.
+- Fixed magazine-fed guns showing "No ammo" instead of "No compatible magazine" when no suitable loaded magazine is available for reload.
 
 ## 1.3.1 - 2026-02-20
 
