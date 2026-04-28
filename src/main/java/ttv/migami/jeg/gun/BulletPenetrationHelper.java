@@ -5,7 +5,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -44,10 +43,10 @@ public class BulletPenetrationHelper {
     );
 
     // Bullet type destructive power multipliers
-    private static final float PISTOL_POWER = 0.5F;     // 手枪弹破坏力最低
-    private static final float SHOTGUN_POWER = 1.0F;    // 霰弹枪中等
-    private static final float RIFLE_POWER = 1.5F;      // 步枪破坏力最高
-    private static final float DEFAULT_POWER = 0.8F;    // 默认破坏力
+    private static final float PISTOL_POWER = 0.5F;
+    private static final float SHOTGUN_POWER = 1.0F;
+    private static final float RIFLE_POWER = 1.5F;
+    private static final float DEFAULT_POWER = 0.8F;
 
     /**
      * Check if a block can be penetrated by bullets (like leaves).
@@ -151,10 +150,8 @@ public class BulletPenetrationHelper {
         float bulletPower = getBulletPower(stats);
         float destroyChance = getDestructionProbability(tier, bulletPower);
 
-        RandomSource random = RandomSource.create(level.getGameTime() ^ pos.asLong());
-
         // Roll for destruction
-        if (random.nextFloat() < destroyChance) {
+        if (level.getRandom().nextFloat() < destroyChance) {
             // Destroy the block without dropping items
             level.destroyBlock(pos, false);
         }
