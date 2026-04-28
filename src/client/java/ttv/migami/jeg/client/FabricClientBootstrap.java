@@ -46,7 +46,6 @@ import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
 import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.gun.GunCategory;
-import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
@@ -319,14 +318,7 @@ public final class FabricClientBootstrap {
     }
 
     private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
-        float recoilMultiplier = RecoilProfiles.multiplier(gun.getStats().id());
-        float recoilKick = gun.getStats().recoilKick() * recoilMultiplier;
-        float targetPitch = player.getXRot() - recoilKick * getPitchKickMultiplier(gun);
-        player.setXRot(Math.max(-90.0F, Math.min(90.0F, targetPitch)));
-        int shotsPerTrigger = "minigun".equals(gun.getStats().id().getPath()) ? 5 : 1;
-        for (int i = 0; i < shotsPerTrigger; i++) {
-            GunRecoilHandler.addShot(recoilKick * 2.20F);
-        }
+        GunRecoilHandler.onShot(gun.getStats());
     }
 
     private static boolean canPredictShot(LocalPlayer player, ItemStack stack, GunItem gun, boolean wasHeldLastTick) {
@@ -350,17 +342,6 @@ public final class FabricClientBootstrap {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
-    }
-
-    private static float getPitchKickMultiplier(GunItem gun) {
-        String path = gun.getStats().id().getPath();
-        if ("rocket_launcher".equals(path) || "typhoonee".equals(path)) {
-            return 4.5F;
-        }
-        if ("minigun".equals(path)) {
-            return 1.2F;
-        }
-        return 3.0F;
     }
 
     private static void suppressSwingAnimation(LocalPlayer player, ItemStack main, ItemStack off) {
