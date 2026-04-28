@@ -228,6 +228,7 @@
   "jeg.magazine.unload.prompt": "Press F to unload ammo to offhand",
   "jeg.magazine.offhand_full.prompt": "Offhand is full",
   "item.jeg.gun.no_ammo": "No ammo",
+  "item.jeg.gun.no_compatible_magazine": "No compatible magazine",
   "item.jeg.gun.empty": "Weapon is empty",
   "item.jeg.gun.magazine_full": "Magazine is full",
   "subtitle.jeg.cooldown_with_water": "Cooling weapon with coolant",

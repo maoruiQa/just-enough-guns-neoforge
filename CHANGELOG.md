@@ -20,6 +20,7 @@
 ### Fixed
 - Fixed dynamic crosshair not reflecting movement spread before the first shot.
 - Fixed hit markers triggering on block impacts by only sending them after successful living-entity damage.
+- Fixed magazine-fed guns showing "No ammo" instead of "No compatible magazine" when no suitable loaded magazine is available for reload.
 
 ## 1.3.1 - 2026-02-19 (NeoForge 1.21.11 v1.3.1 Sync + Bow Removal)
 
