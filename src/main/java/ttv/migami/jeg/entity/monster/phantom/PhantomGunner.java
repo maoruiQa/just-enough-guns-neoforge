@@ -38,6 +38,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
@@ -124,7 +125,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
 
     @Override
     public void die(DamageSource source) {
-        if (!this.level().isClientSide()) {
+        if (!this.level().isClientSide() && Config.phantomGunnerDeathExplosionEnabled()) {
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), EXPLOSION_POWER, ExplosionInteraction.MOB);
         }
         super.die(source);

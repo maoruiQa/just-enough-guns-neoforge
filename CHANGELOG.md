@@ -6,6 +6,7 @@
 - Added Fabric combat HUD rendering for gun name, current ammo, reserve ammo, magazine reserve counts, overheat/timer status, and hit markers.
 - Added Fabric custom crosshair rendering with dynamic crosshair support tied directly to current ballistic spread.
 - Added S2C hit marker feedback for successful living-entity bullet hits.
+- Added configurable Phantom Gunner death explosions with `/justEnoughGuns config mob phantom deathExplosion`.
 
 ### Changed
 - Reworked Fabric dynamic crosshair placement: removed the center dot, equalized all four reticle line lengths, and made reticle expansion proportional to current gun spread.

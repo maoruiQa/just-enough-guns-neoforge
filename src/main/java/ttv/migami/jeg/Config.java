@@ -23,6 +23,7 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_MAX_CHANCE;
+    public static final ModConfigSpec.BooleanValue PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED;
     public static final ModConfigSpec.DoubleValue PILLAGER_GUNNER_CHANCE;
     public static final ModConfigSpec.DoubleValue PILLAGER_GUNNER_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue SKELETON_GUNNER_CHANCE;
@@ -122,6 +123,10 @@ public final class Config {
         PHANTOM_GUNNER_MAX_CHANCE = serverBuilder
                 .comment("Upper cap probability (0-1) for Phantom Gunner conversion as game time increases.")
                 .defineInRange("phantomGunnerMaxChance", 0.33D, 0.0D, 1.0D);
+
+        PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED = serverBuilder
+                .comment("If true, Phantom Gunners explode when they die.")
+                .define("phantomGunnerDeathExplosionEnabled", true);
 
         PILLAGER_GUNNER_CHANCE = serverBuilder
                 .comment("Base probability (0-1) that a naturally spawned Pillager converts into a Pillager Gunner.")
@@ -278,6 +283,7 @@ public final class Config {
         registerCommandConfig("mob.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
         registerCommandConfig("mob.phantomGunner.chance", PHANTOM_GUNNER_NATURAL_CHANCE);
         registerCommandConfig("mob.phantomGunner.maxChance", PHANTOM_GUNNER_MAX_CHANCE);
+        registerCommandConfig("mob.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
         registerCommandConfig("mob.pillagerGunner.chance", PILLAGER_GUNNER_CHANCE);
         registerCommandConfig("mob.pillagerGunner.maxChance", PILLAGER_GUNNER_MAX_CHANCE);
         registerCommandConfig("mob.skeletonGunner.chance", SKELETON_GUNNER_CHANCE);
@@ -353,6 +359,10 @@ public final class Config {
 
     public static double phantomGunnerChance(Level level) {
         return scaledChance(level, phantomGunnerChance(), clamp01(PHANTOM_GUNNER_MAX_CHANCE.get()));
+    }
+
+    public static boolean phantomGunnerDeathExplosionEnabled() {
+        return PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED.get();
     }
 
     public static double pillagerGunnerChance() {

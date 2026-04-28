@@ -129,7 +129,7 @@ public final class ModCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> configMobCommand() {
         return Commands.literal("mob")
                 .then(configScaledMobChanceCommand("terror", "mob.terrorPhantom.chance", "mob.terrorPhantom.maxChance"))
-                .then(configScaledMobChanceCommand("phantom", "mob.phantomGunner.chance", "mob.phantomGunner.maxChance"))
+                .then(configPhantomGunnerCommand())
                 .then(configScaledMobChanceCommand("pillager", "mob.pillagerGunner.chance", "mob.pillagerGunner.maxChance"))
                 .then(configSimpleMobChanceCommand("skeleton", "mob.skeletonGunner.chance"))
                 .then(configSimpleMobChanceCommand("zombie", "mob.zombieGunner.chance"))
@@ -157,6 +157,11 @@ public final class ModCommands {
         return Commands.literal(name)
                 .then(configDoubleConfigCommand("chance", chanceKey))
                 .then(configDoubleConfigCommand("max", maxChanceKey));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configPhantomGunnerCommand() {
+        return configScaledMobChanceCommand("phantom", "mob.phantomGunner.chance", "mob.phantomGunner.maxChance")
+                .then(configBooleanConfigCommand("deathExplosion", "mob.phantomGunner.deathExplosion"));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configSimpleMobChanceCommand(String name, String chanceKey) {
