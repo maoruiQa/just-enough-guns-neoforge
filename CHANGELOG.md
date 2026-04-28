@@ -2,6 +2,9 @@
 
 ## 1.4.2 - 2026-04-27
 
+### Added
+- Added configurable Phantom Gunner death explosions with `/justEnoughGuns config mob phantom deathExplosion`.
+
 ### Changed
 - Synced NeoForge 26.1 gun HUD, dynamic crosshair, hit marker, spread, and overheat behavior with the NeoForge 1.21.1 1.4.2 implementation.
 - Added configurable ammo HUD, timer HUD, crosshair, hit marker, and dynamic crosshair dot settings.
