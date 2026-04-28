@@ -38,7 +38,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.client.GunRecoilHandler;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.GunCategory;
@@ -701,11 +700,6 @@ public class GunItem extends Item {
         }
 
         if (level.isClientSide()) {
-            float recoilMultiplier = RecoilProfiles.multiplier(stats.id());
-            float recoilKick = stats.recoilKick() * recoilMultiplier;
-            GunRecoilHandler.addShot(recoilKick);
-            float targetPitch = player.getXRot() - recoilKick * getVerticalRecoilPitchMultiplier(stats.id());
-            player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
             if (!automatic) {
                 setTriggerLocked(stack, true);
             }
@@ -756,6 +750,10 @@ public class GunItem extends Item {
                         getTrackedHeat(stack),
                         getAmmo(stack),
                         Math.max(1, stats.fireDelay()));
+            }
+
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerShoot(level, player, stack);
             }
 
             applyRecoilBackstep(player);
@@ -1182,17 +1180,6 @@ public class GunItem extends Item {
     private static boolean isSidearmMovementSpreadWeapon(GunStats stats) {
         GunCategory category = GunCategory.fromStats(stats);
         return category == GunCategory.PISTOL || category == GunCategory.SMG;
-    }
-
-    private static float getVerticalRecoilPitchMultiplier(Identifier gunId) {
-        String path = gunId.getPath();
-        if ("light_machine_gun".equals(path)) {
-            return 5.3F;
-        }
-        if ("minigun".equals(path)) {
-            return 4.9F;
-        }
-        return 7.5F;
     }
 
     private static boolean isPlayerMoving(Player player) {

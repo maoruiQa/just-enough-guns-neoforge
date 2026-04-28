@@ -54,7 +54,6 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunCategory;
-import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
@@ -449,14 +448,7 @@ public final class GunClientEvents {
     }
 
     private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
-        float recoilMultiplier = RecoilProfiles.multiplier(gun.getStats().id());
-        float recoilKick = gun.getStats().recoilKick() * recoilMultiplier;
-        float targetPitch = player.getXRot() - recoilKick * getPitchKickMultiplier(gun);
-        player.setXRot(Mth.clamp(targetPitch, -90.0F, 90.0F));
-        int shotsPerTrigger = "minigun".equals(gun.getStats().id().getPath()) ? 5 : 1;
-        for (int i = 0; i < shotsPerTrigger; i++) {
-            GunRecoilHandler.addShot(recoilKick * 2.20F);
-        }
+        GunRecoilHandler.onShot(gun.getStats());
     }
 
     private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
@@ -532,17 +524,6 @@ public final class GunClientEvents {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
-    }
-
-    private static float getPitchKickMultiplier(GunItem gun) {
-        String path = gun.getStats().id().getPath();
-        if ("rocket_launcher".equals(path) || "typhoonee".equals(path)) {
-            return 4.5F;
-        }
-        if ("minigun".equals(path)) {
-            return 1.2F;
-        }
-        return 3.0F;
     }
 
     public static void showMuzzleFlash(int entityId, float random) {

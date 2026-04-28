@@ -40,6 +40,18 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             float equipProcess,
             float swingProcess
     ) {
+        return applyForStats(this.stats, poseStack, player, arm, partialTick, equipProcess, swingProcess);
+    }
+
+    public static boolean applyForStats(
+            GunStats stats,
+            PoseStack poseStack,
+            LocalPlayer player,
+            HumanoidArm arm,
+            float partialTick,
+            float equipProcess,
+            float swingProcess
+    ) {
         int direction = arm == HumanoidArm.RIGHT ? 1 : -1;
         String gunPath = stats.id().getPath();
         boolean isBow = gunPath.contains("bow");
@@ -109,12 +121,26 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             poseStack.translate(direction * swingX * 0.08F, swingY * 0.05F, 0.0F);
         }
 
-        float recoil = GunRecoilHandler.getRecoil(partialTick);
-        if (Math.abs(recoil) > 0.0001F) {
-            // Vertical model shake only: no forward tilt and no forward/back translation.
-            poseStack.translate(0.0F, -recoil * 0.1F, 0.0F);
+        applyRecoilTransforms(poseStack, ads);
+        return true;
+    }
+
+    private static void applyRecoilTransforms(PoseStack poseStack, float ads) {
+        double recoilNormal = GunRecoilHandler.getGunRecoilNormal();
+        if (recoilNormal <= 0.0D) {
+            return;
         }
 
-        return true;
+        float adsReduction = GunRecoilHandler.getAdsRecoilReduction();
+        double kick = GunRecoilHandler.getGunRecoilKick() * 0.0625D * recoilNormal * adsReduction;
+        float recoilLift = (float) (GunRecoilHandler.getGunRecoilAngle() * recoilNormal) * adsReduction;
+        float recoilSwayAmount = 2.0F + 1.0F * (1.0F - ads);
+        float recoilSway = (float) ((GunRecoilHandler.getGunRecoilRandom() * recoilSwayAmount - recoilSwayAmount / 2.0F) * recoilNormal);
+        poseStack.translate(0.0D, 0.0D, kick);
+        poseStack.translate(0.0D, 0.0D, 0.15D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(recoilSway));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(recoilSway));
+        poseStack.mulPose(Axis.XP.rotationDegrees(recoilLift));
+        poseStack.translate(0.0D, 0.0D, -0.15D);
     }
 }
