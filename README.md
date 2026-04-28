@@ -1,10 +1,10 @@
-# Just Enough Guns
+# Just Enough Guns New
 
-Vanilla-styled firearms, hostile gunners, faction raids, and late-game aerial threats for modern Minecraft.
+A modern fork and port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, and late-game aerial threats to newer Minecraft versions.
 
 ![Rocket launcher gameplay](screenshots/rocket_launcher.png)
 
-Just Enough Guns brings a large arsenal into Minecraft without replacing the game's blocky style. Weapons use Minecraft-friendly models, survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current maintained ports support both Fabric and NeoForge across the 1.21.1 and 26.1 lines.
+Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current maintained ports support both Fabric and NeoForge across the 1.21.1 and 26.1 lines.
 
 ## Screenshots
 
@@ -46,7 +46,7 @@ Version `1.4.2` focuses on combat readability and tuning:
 | Fabric | 26.1 | Java 25 | 1.4.2 | Fabric API, GeckoLib 5.5+ |
 | NeoForge | 26.1 | Java 25 | 1.4.2 | NeoForge 26.1.x, GeckoLib 5.5 |
 
-Install the file that matches your loader and Minecraft version. Do not mix Fabric and NeoForge builds.
+Install the Just Enough Guns New file that matches your loader and Minecraft version. Do not mix Fabric and NeoForge builds.
 
 ## Controls
 
@@ -79,10 +79,10 @@ Config changes should be tested on a copy of the world before using them on a lo
 
 ## Credits And License
 
-This is a modern Fabric/NeoForge port of Just Enough Guns.
+Just Enough Guns New is a fork and modern Fabric/NeoForge port of the original Just Enough Guns project, which targets Forge 1.20.1.
 
-- Original Just Enough Guns work and assets belong to the original authors.
-- Port and maintenance credits in the mod metadata include Rui Mao, MigaMi, and Leander.
+- Original Just Enough Guns code, design, and assets belong to the original authors.
+- Just Enough Guns New porting and maintenance credits in the mod metadata include Rui Mao, MigaMi, and Leander.
 - Licensed under GPL-3.0.
 
 Suggestions and bug reports are welcome. Clear reproduction steps, Minecraft version, loader, mod version, dependency versions, and crash logs help much more than vague reports.
