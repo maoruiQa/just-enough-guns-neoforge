@@ -5,6 +5,7 @@ import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
@@ -41,6 +42,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -183,5 +185,16 @@ public final class NetworkHandler {
 
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
+    }
+
+    public static void sendUiConfig(ServerPlayer player) {
+        ServerPlayNetworking.send(player, new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+    }
+
+    public static void broadcastUiConfig(MinecraftServer server) {
+        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
+        for (ServerPlayer player : PlayerLookup.all(server)) {
+            ServerPlayNetworking.send(player, payload);
+        }
     }
 }

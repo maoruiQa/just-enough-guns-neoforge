@@ -62,7 +62,7 @@ public final class CrosshairHandler {
     }
 
     public static void playHitMarker(boolean critical) {
-        if (!Config.showHitmarker()) {
+        if (!Config.showHitmarker() || !ClientUiConfig.showHitFeedback()) {
             return;
         }
         playingHitMarker = true;
@@ -92,6 +92,9 @@ public final class CrosshairHandler {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         renderHitMarker(guiGraphics, width, height, partialTick);
+        if (!ClientUiConfig.showCrosshair()) {
+            return;
+        }
 
         ItemStack stack = player.getMainHandItem();
         if (GunItem.isRocketLauncher(stack)) {
@@ -117,7 +120,7 @@ public final class CrosshairHandler {
     }
 
     private static void renderHitMarker(GuiGraphicsExtractor guiGraphics, int width, int height, float partialTick) {
-        if (!playingHitMarker || !Config.showHitmarker()) {
+        if (!playingHitMarker || !Config.showHitmarker() || !ClientUiConfig.showHitFeedback()) {
             return;
         }
         float progress = Mth.clamp(Mth.lerp(partialTick, prevHitMarkerTime, hitMarkerTime) / HIT_MARKER_MAX_TIME, 0.0F, 1.0F);

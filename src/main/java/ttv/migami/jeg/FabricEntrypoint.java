@@ -61,8 +61,10 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> FactionEventTicker.onServerTick(new ServerTickEvent.Post(server)));
 
         // Bridge commonly used event-style handlers used by shared code.
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player)));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player));
+            NetworkHandler.sendUiConfig(handler.player);
+        });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             GunEvents.onPlayerJoinWorld(new EntityJoinLevelEvent(entity, level));
             GunnerMobSpawner.onEntityJoinWorld(new EntityJoinLevelEvent(entity, level));
