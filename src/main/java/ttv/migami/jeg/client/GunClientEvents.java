@@ -36,7 +36,6 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunCategory;
-import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -384,12 +383,7 @@ public final class GunClientEvents {
     }
 
     private static void applyLocalVisualRecoil(GunItem gun) {
-        float recoilMultiplier = RecoilProfiles.multiplier(gun.getStats().id());
-        float recoilKick = gun.getStats().recoilKick() * recoilMultiplier;
-        int shotsPerTrigger = "minigun".equals(gun.getStats().id().getPath()) ? 5 : 1;
-        for (int i = 0; i < shotsPerTrigger; i++) {
-            GunRecoilHandler.addShot(recoilKick * 2.20F);
-        }
+        GunRecoilHandler.onShot(gun.getStats());
     }
 
     private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
