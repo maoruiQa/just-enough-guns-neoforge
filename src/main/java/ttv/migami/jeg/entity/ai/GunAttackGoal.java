@@ -3151,7 +3151,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     protected void finishReload(ItemStack stack, GunStats stats) {
         if (stack.getItem() instanceof GunItem gun && gun.usesLoadedAmmo()) {
-            stack.set(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+            stack.set(ModDataComponents.GUN_AMMO.get(), Math.max(1, stats.magazineSize()));
         }
         stats.reloadEndSoundEvent().ifPresent(sound ->
             this.shooter.level().playSound(null, this.shooter, sound, SoundSource.HOSTILE, 1.0F, 1.0F)
