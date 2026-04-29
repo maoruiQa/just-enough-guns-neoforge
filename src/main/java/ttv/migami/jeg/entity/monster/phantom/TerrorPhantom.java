@@ -287,12 +287,25 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 10.0F, 1.0F);
         }
 
+        BlockPos impactPos = this.level() instanceof ServerLevel impactLevel ? resolveDeathImpactPosition(impactLevel) : this.blockPosition();
+        boolean hitGround = this.getY() + this.getDeltaMovement().y <= impactPos.getY() + 0.25D;
+        boolean nearWorldBottom = this.level() instanceof ServerLevel bottomLevel && this.getY() <= bottomLevel.getMinY() + 2.0D;
+
         // End death animation - trigger explosion and defeat
-        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision)) {
+        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision || hitGround || nearWorldBottom)) {
             this.deathResolved = true;
+            this.setPos(impactPos.getX() + 0.5D, impactPos.getY(), impactPos.getZ() + 0.5D);
             explodeOnDeath();
             this.remove(RemovalReason.KILLED);
         }
+    }
+
+    private BlockPos resolveDeathImpactPosition(ServerLevel level) {
+        BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.blockPosition());
+        if (surface.getY() <= level.getMinY()) {
+            return this.blockPosition();
+        }
+        return surface;
     }
 
     private void explodeOnDeath() {
