@@ -114,13 +114,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
-        // Store the killer for raid targeting
         this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
-        // Trigger ground raid for regular terror phantom death
-        try {
-            TerrorRaidManager.triggerGroundRaid(level, this.blockPosition(), this.killer);
-        } catch (Exception ignored) {
-        }
     }
 
     @Override
