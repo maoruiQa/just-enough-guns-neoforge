@@ -50,6 +50,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
@@ -64,6 +65,7 @@ import ttv.migami.jeg.item.GunItem;
  * Shared behaviour for Terror Phantom variants.
  */
 public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity {
+    private static final float MIN_DAMAGE_TO_HURT = 2.0F;
     private static final int SUMMON_INTERVAL_TICKS = 200;
     private static final int MAX_ACTIVE_GUNNERS = 6; // Increased from 3 to 6 for more intense battles
     private static final double SUMMON_RANGE = 48.0D;
@@ -84,7 +86,10 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private int magazine;
     private int reloadTicks;
     private int fireCooldown;
+    private int sustainedFireShots;
     private int ticksSinceLastDamage = IDLE_HEAL_DELAY_TICKS;
+    private long lastRapidFireResistanceHitTick = Long.MIN_VALUE;
+    private int rapidFireResistanceHitCount;
     private static final String GECKO_CONTROLLER = "Idle";
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -149,13 +154,18 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private void configureLoadout(GunStats stats, ItemStack stack) {
         this.cachedStats = stats;
         if (usesLoadedAmmo(stack, stats)) {
-            this.magazine = stats.magazineSize();
+            this.magazine = getLoadedAmmoCapacity(stats);
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
         } else {
             this.magazine = Math.max(1, stats.projectileAmount());
         }
         this.reloadTicks = 0;
         this.fireCooldown = 0;
+        this.sustainedFireShots = 0;
+    }
+
+    protected int getLoadedAmmoCapacity(GunStats stats) {
+        return stats.magazineSize();
     }
 
     protected Optional<GunStats> getEquippedGunStats() {
@@ -184,7 +194,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         Vec3 aimDirection = targetPos.subtract(myPos).normalize();
 
         // Apply random spread - increase spread for more challenging combat
-        double spreadAmount = 0.03D; // Slightly reduced spread for tighter volleys
+        double spreadAmount = 0.0255D; // 15% tighter spread
         double spreadX = (this.random.nextDouble() - 0.5) * spreadAmount;
         double spreadY = (this.random.nextDouble() - 0.5) * spreadAmount;
         double spreadZ = (this.random.nextDouble() - 0.5) * spreadAmount;
@@ -227,16 +237,18 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         stack.hurtAndBreak(1, this, EquipmentSlot.MAINHAND);
         this.gameEvent(GameEvent.ENTITY_ACTION);
 
+        boolean startedReload = false;
         if (usesLoadedAmmo(stack, stats)) {
             this.magazine = Math.max(0, this.magazine - 1);
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
             if (this.magazine <= 0) {
+                this.sustainedFireShots = 0;
                 startReload(stats, stack);
-            } else {
-                this.fireCooldown = 4; // 5 shots per second (20 ticks / 5 = 4)
+                startedReload = true;
             }
-        } else {
-            this.fireCooldown = 4;
+        }
+        if (!startedReload) {
+            applyPostShotCooldown();
         }
     }
 
@@ -267,8 +279,25 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     }
 
     protected int getCurrentFireDelay() {
-        // Return 4 ticks for 5 shots per second fire rate
         return 4;
+    }
+
+    protected int getSustainedFireShotLimit() {
+        return 0;
+    }
+
+    protected int getSustainedFireCooldown() {
+        return getCurrentFireDelay();
+    }
+
+    protected void applyPostShotCooldown() {
+        int shotLimit = getSustainedFireShotLimit();
+        if (shotLimit > 0 && ++this.sustainedFireShots >= shotLimit) {
+            this.sustainedFireShots = 0;
+            this.fireCooldown = getSustainedFireCooldown();
+            return;
+        }
+        this.fireCooldown = getCurrentFireDelay();
     }
 
     protected void startReload(GunStats stats, ItemStack stack) {
@@ -283,11 +312,12 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             return;
         }
         if (usesLoadedAmmo(stack, stats)) {
-            this.magazine = stats.magazineSize();
+            this.magazine = getLoadedAmmoCapacity(stats);
             stack.set(ModDataComponents.GUN_AMMO.get(), this.magazine);
         } else {
             this.magazine = Math.max(1, stats.projectileAmount());
         }
+        this.sustainedFireShots = 0;
         stats.reloadEndSoundEvent().ifPresent(sound -> this.level().playSound(null, this, sound, SoundSource.HOSTILE, 1.0F, 1.0F));
         this.fireCooldown = Math.max(6, stats.fireDelay());
     }
@@ -420,7 +450,11 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
 
     // @Override removed - method signature changed in 1.21.1
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (amount < MIN_DAMAGE_TO_HURT) {
+            return false;
+        }
         float adjustedAmount = applyDefaultProjectileProtectionReduction(source, amount);
+        adjustedAmount = applyRapidFireResistance(level, source, adjustedAmount);
         boolean damaged = super.hurt(source, adjustedAmount);
         if (damaged && amount > 0.0F) {
             this.ticksSinceLastDamage = 0;
@@ -449,6 +483,46 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             return false;
         }
         return "rocket_launcher".equals(bullet.getGunStats().id().getPath());
+    }
+
+    private float applyRapidFireResistance(ServerLevel level, DamageSource source, float amount) {
+        if (amount <= 0.0F || !isRapidFireResistanceTarget()) {
+            return amount;
+        }
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return amount;
+        }
+        if (!(bullet.getOwner() instanceof Player player) || player.isCreative() || player.isSpectator()) {
+            return amount;
+        }
+
+        String gunPath = bullet.getGunStats().id().getPath();
+        float multiplier;
+        if ("minigun".equals(gunPath)) {
+            multiplier = (float) Config.terrorPhantomMinigunRapidFireDamageMultiplier();
+        } else if ("light_machine_gun".equals(gunPath)) {
+            multiplier = (float) Config.terrorPhantomLightMachineGunRapidFireDamageMultiplier();
+        } else {
+            return amount;
+        }
+
+        long gameTime = level.getGameTime();
+        if (this.lastRapidFireResistanceHitTick == Long.MIN_VALUE
+                || gameTime - this.lastRapidFireResistanceHitTick > Config.terrorPhantomRapidFireResistanceResetTicks()) {
+            this.rapidFireResistanceHitCount = 0;
+        }
+        this.lastRapidFireResistanceHitTick = gameTime;
+        this.rapidFireResistanceHitCount++;
+
+        if (this.rapidFireResistanceHitCount <= Config.terrorPhantomRapidFireResistanceWarmupHits()) {
+            return amount;
+        }
+        return amount * multiplier;
+    }
+
+    private boolean isRapidFireResistanceTarget() {
+        return this.getType() == ModEntities.TERROR_PHANTOM.get()
+                || this.getType() == ModEntities.TERROR_PHANTOM_GUARDIAN.get();
     }
 
     @Override

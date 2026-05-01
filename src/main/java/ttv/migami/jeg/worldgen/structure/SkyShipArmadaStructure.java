@@ -373,7 +373,19 @@ public class SkyShipArmadaStructure extends Structure {
         }
 
         private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
-            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> spawnGuardian(serverLevel, anchorBase, spawnSeed));
+            scheduleGuardianSpawn(serverLevel, anchorBase, spawnSeed, 100);
+        }
+
+        private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed, int attemptsLeft) {
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> {
+                if (!serverLevel.hasChunkAt(anchorBase)) {
+                    if (attemptsLeft > 0) {
+                        scheduleGuardianSpawn(serverLevel, anchorBase, spawnSeed, attemptsLeft - 1);
+                    }
+                    return;
+                }
+                spawnGuardian(serverLevel, anchorBase, spawnSeed);
+            });
         }
 
         private void spawnGuardian(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
@@ -560,7 +572,19 @@ public class SkyShipArmadaStructure extends Structure {
         }
 
         private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
-            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> spawnGuardian(serverLevel, anchorBase, spawnSeed));
+            scheduleGuardianSpawn(serverLevel, anchorBase, spawnSeed, 100);
+        }
+
+        private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed, int attemptsLeft) {
+            MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> {
+                if (!serverLevel.hasChunkAt(anchorBase)) {
+                    if (attemptsLeft > 0) {
+                        scheduleGuardianSpawn(serverLevel, anchorBase, spawnSeed, attemptsLeft - 1);
+                    }
+                    return;
+                }
+                spawnGuardian(serverLevel, anchorBase, spawnSeed);
+            });
         }
 
         private void spawnGuardian(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
