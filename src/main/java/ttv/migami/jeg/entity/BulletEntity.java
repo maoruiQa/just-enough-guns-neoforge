@@ -95,6 +95,7 @@ public class BulletEntity extends Projectile {
             "fire_sweeper"
     );
     private static final double MIN_TRAIL_START_DISTANCE_SQR = 0.45D * 0.45D;
+    private static final double TRAIL_SYNC_RANGE = 256.0D;
     private static final float ROCKET_EXPLOSION_POWER = 6.8F;
     private static final float ROCKET_DIRECT_HIT_DAMAGE = 70.0F;
     private static final float ROCKET_BLAST_BASE_DAMAGE = 32.0F;
@@ -1187,7 +1188,7 @@ public class BulletEntity extends Projectile {
 
         // Send to all nearby players
         for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
-            if (player.level() == serverLevel && player.distanceToSqr(this) <= 64.0 * 64.0) {
+            if (player.level() == serverLevel && player.distanceToSqr(this) <= TRAIL_SYNC_RANGE * TRAIL_SYNC_RANGE) {
                 player.connection.send(payload);
             }
         }

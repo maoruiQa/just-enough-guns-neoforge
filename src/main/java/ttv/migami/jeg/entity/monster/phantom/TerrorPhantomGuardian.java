@@ -116,8 +116,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
-        double extended = 120.0D * 120.0D;
-        return distance <= extended || super.shouldRenderAtSqrDistance(distance);
+        return distance <= 120.0D * 120.0D;
     }
 
     @Override
