@@ -17,9 +17,11 @@ import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AnimatedGunItem extends GunItem implements GeoItem {
@@ -41,9 +43,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation RELOAD_START = RawAnimation.begin().then(ANIM_RELOAD_START, Animation.LoopType.PLAY_ONCE).thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_LOOP = RawAnimation.begin().thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_STOP = RawAnimation.begin().then(ANIM_RELOAD_STOP, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
-    private static final RawAnimation SPRINT = RawAnimation.begin().thenLoop(ANIM_SPRINT);
+    private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, Animation.LoopType.HOLD_ON_LAST_FRAME);
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private static volatile boolean loggedRendererProvider;
+    private static volatile long nextClientReloadDebugNanos;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -56,7 +60,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 CONTROLLER,
                 0,
                 this::animationPredicate
-        )
+        ).receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
                 .triggerableAnim(ANIM_RELOAD, RELOAD)
@@ -73,6 +77,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         ItemStack stack = state.getData(DataTickets.ITEMSTACK);
+        RawAnimation reloadAnimation = reloadAnimationFor(stack);
+        if (reloadAnimation != null) {
+            debugClientReloadPredicate(stack);
+            return state.setAndContinue(reloadAnimation);
+        }
+
         if (isFirstPersonRender(state, stack)) {
             var player = software.bernie.geckolib.util.ClientUtil.getClientPlayer();
             if (player != null && player.isSprinting() && !AimingHandler.get().isAiming()) {
@@ -81,6 +91,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         return state.setAndContinue(IDLE);
+    }
+
+    private static RawAnimation reloadAnimationFor(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            return null;
+        }
+
+        int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
+        return switch (stage) {
+            case RELOAD_STAGE_START -> RELOAD_START;
+            case RELOAD_STAGE_LOOP -> RELOAD_LOOP;
+            case RELOAD_STAGE_STOP -> RELOAD_STOP;
+            default -> RELOAD;
+        };
     }
 
     private static boolean isFirstPersonRender(AnimationState<AnimatedGunItem> state, ItemStack stack) {
@@ -108,6 +137,14 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
+        super.inventoryTick(stack, level, entity, slot, selected);
+        if (level instanceof ServerLevel serverLevel) {
+            GeoItem.getOrAssignId(stack, serverLevel);
+        }
+    }
+
+    @Override
     public boolean isPerspectiveAware() {
         return true;
     }
@@ -122,6 +159,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 if (renderer == null) {
                     renderer = new AnimatedGunRenderer();
                 }
+                if (!loggedRendererProvider) {
+                    loggedRendererProvider = true;
+                    JustEnoughGuns.LOGGER.info("[JEG_RENDER_DEBUG] GeoRenderProvider supplied AnimatedGunRenderer");
+                }
                 return renderer;
             }
         });
@@ -132,7 +173,31 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return;
         }
         long id = GeoItem.getOrAssignId(stack, serverLevel);
+        JustEnoughGuns.LOGGER.info(
+                "[JEG_RELOAD_DEBUG] trigger animation={} id={} item={} entity={} remaining={} stage={}",
+                animation,
+                id,
+                stack.getItem(),
+                triggerEntity.getType().getDescriptionId(),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
+        );
         triggerAnim(triggerEntity, id, CONTROLLER, animation);
+    }
+
+    private static void debugClientReloadPredicate(ItemStack stack) {
+        long now = System.nanoTime();
+        if (now < nextClientReloadDebugNanos) {
+            return;
+        }
+        nextClientReloadDebugNanos = now + 1_000_000_000L;
+        JustEnoughGuns.LOGGER.info(
+                "[JEG_RELOAD_DEBUG] client predicate item={} remaining={} total={} stage={}",
+                stack.getItem(),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), 0),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
+        );
     }
 
     public void triggerShoot(Level level, Entity triggerEntity, ItemStack stack) {

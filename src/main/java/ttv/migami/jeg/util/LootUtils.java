@@ -445,7 +445,7 @@ public final class LootUtils {
         }
         List<Item> guns = new ArrayList<>();
         ModItems.GUNS.forEach((id, holder) -> {
-            if (EXCLUDED_GUN_LOOT.contains(id)) {
+            if (EXCLUDED_GUN_LOOT.contains(id) || ModItems.isDisabledGunId(id)) {
                 return;
             }
             guns.add(holder.get());
