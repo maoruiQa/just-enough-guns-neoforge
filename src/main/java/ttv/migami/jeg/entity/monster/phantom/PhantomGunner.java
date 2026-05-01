@@ -49,6 +49,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
     private static final Identifier DEFAULT_GUN = Reference.id("phantom_smg");
     private static final float EXPLOSION_POWER = 2.6F;
     private static final Identifier GEO_TEXTURE = Reference.id("textures/entity/phantom_gunner/phantom_gunner.png");
+    private static final float PROJECTILE_SPREAD_SCALE = 0.85F;
 
     private static final String GECKO_CONTROLLER = "Idle";
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
@@ -165,7 +166,7 @@ public class PhantomGunner extends Phantom implements GeoEntity {
         }
 
         GunStats stats = getEquippedGunStats().orElseGet(gun::getStats);
-        gun.fireAt(this.level(), this, stack, target);
+        gun.fireDirectionally(this.level(), this, stack, computeProjectileDirection(target, stats));
 
         // Spawn bullet trail particles (fire + smoke)
         if (this.level() instanceof ServerLevel serverLevel) {
@@ -223,6 +224,45 @@ public class PhantomGunner extends Phantom implements GeoEntity {
             return Optional.of(this.cachedStats);
         }
         return Optional.empty();
+    }
+
+    private net.minecraft.world.phys.Vec3 computeProjectileDirection(LivingEntity target, GunStats stats) {
+        net.minecraft.world.phys.Vec3 forwards = target.getEyePosition().subtract(this.getEyePosition()).normalize();
+        if (forwards.lengthSqr() < 1.0E-6D) {
+            forwards = this.getViewVector(1.0F);
+        }
+
+        float gunSpread = stats.spread();
+        if (gunSpread <= 0.0F) {
+            return forwards.normalize();
+        }
+
+        float earlySpreadMultiplier = this.level().getDifficulty() != net.minecraft.world.Difficulty.HARD ? 10.0F : 5.0F;
+        float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(this.level(), earlySpreadMultiplier);
+        gunSpread *= scaledSpreadMultiplier * PROJECTILE_SPREAD_SCALE;
+        if (ttv.migami.jeg.gun.GunCategory.fromStats(stats) == ttv.migami.jeg.gun.GunCategory.SHOTGUN) {
+            gunSpread *= (float) Config.gunnerShotgunSpreadMultiplier();
+        }
+        if (gunSpread <= 0.0F) {
+            return forwards.normalize();
+        }
+
+        float spreadRadians = Math.min(gunSpread, 170.0F) * 0.5F * net.minecraft.util.Mth.DEG_TO_RAD;
+        net.minecraft.world.phys.Vec3 worldUp = new net.minecraft.world.phys.Vec3(0.0D, 1.0D, 0.0D);
+        net.minecraft.world.phys.Vec3 sideways = forwards.cross(worldUp);
+        if (sideways.lengthSqr() < 1.0E-6D) {
+            sideways = new net.minecraft.world.phys.Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            sideways = sideways.normalize();
+        }
+        net.minecraft.world.phys.Vec3 upwards = sideways.cross(forwards).normalize();
+
+        float theta = this.random.nextFloat() * 2.0F * (float) Math.PI;
+        float r = net.minecraft.util.Mth.sqrt(this.random.nextFloat()) * (float) Math.tan(spreadRadians);
+        float a1 = net.minecraft.util.Mth.cos(theta) * r;
+        float a2 = net.minecraft.util.Mth.sin(theta) * r;
+
+        return forwards.add(sideways.scale(a1)).add(upwards.scale(a2)).normalize();
     }
 
     private void configureLoadout(GunStats stats, ItemStack stack) {

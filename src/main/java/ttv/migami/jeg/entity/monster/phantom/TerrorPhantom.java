@@ -61,6 +61,9 @@ import ttv.migami.jeg.util.LootUtils;
  * Free-roaming Terror Phantom with 5-phase AI system.
  */
 public class TerrorPhantom extends AbstractTerrorPhantom {
+    private static final int MINIGUN_FIRE_DELAY_TICKS = 2;
+    private static final int MINIGUN_BURST_SHOTS = 40;
+    private static final int MINIGUN_BURST_COOLDOWN_TICKS = 60;
     // Entity data for syncing
     private static final EntityDataAccessor<Boolean> IS_ROLLING = SynchedEntityData.defineId(TerrorPhantom.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_DYING = SynchedEntityData.defineId(TerrorPhantom.class, EntityDataSerializers.BOOLEAN);
@@ -127,7 +130,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         Vec3 muzzleLeft = base.add(right.scale(-lateral)).add(up.scale(vertical)).add(forward.scale(fwd));
 
         // Balance: slower volleys + more spread than the generic terror phantom shooter.
-        double spreadAmount = 0.065D;
+        double spreadAmount = 0.05525D;
         Vec3 targetPos = target.getEyePosition();
 
         Vec3 dirR = targetPos.subtract(muzzleRight).normalize();
@@ -158,10 +161,10 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             if (this.magazine <= 0) {
                 startReload(stats, stack);
             } else {
-                this.fireCooldown = 20; // 1 volley per second
+                applyPostShotCooldown();
             }
         } else {
-            this.fireCooldown = 20;
+            applyPostShotCooldown();
         }
     }
 
@@ -173,6 +176,34 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     @Override
     protected float getModelScale() {
         return 2.8F;
+    }
+
+    @Override
+    protected Identifier defaultGunId() {
+        return Reference.id("minigun");
+    }
+
+    @Override
+    protected int getLoadedAmmoCapacity(GunStats stats) {
+        if ("minigun".equals(stats.id().getPath())) {
+            return Math.max(super.getLoadedAmmoCapacity(stats), MINIGUN_BURST_SHOTS * 4);
+        }
+        return super.getLoadedAmmoCapacity(stats);
+    }
+
+    @Override
+    protected int getCurrentFireDelay() {
+        return MINIGUN_FIRE_DELAY_TICKS;
+    }
+
+    @Override
+    protected int getSustainedFireShotLimit() {
+        return MINIGUN_BURST_SHOTS;
+    }
+
+    @Override
+    protected int getSustainedFireCooldown() {
+        return MINIGUN_BURST_COOLDOWN_TICKS;
     }
 
     @Override
@@ -287,12 +318,25 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 10.0F, 1.0F);
         }
 
+        BlockPos impactPos = this.level() instanceof ServerLevel impactLevel ? resolveDeathImpactPosition(impactLevel) : this.blockPosition();
+        boolean hitGround = this.getY() + this.getDeltaMovement().y <= impactPos.getY() + 0.25D;
+        boolean nearWorldBottom = this.level() instanceof ServerLevel bottomLevel && this.getY() <= bottomLevel.getMinY() + 2.0D;
+
         // End death animation - trigger explosion and defeat
-        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision)) {
+        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision || hitGround || nearWorldBottom)) {
             this.deathResolved = true;
+            this.setPos(impactPos.getX() + 0.5D, impactPos.getY(), impactPos.getZ() + 0.5D);
             explodeOnDeath();
             this.remove(RemovalReason.KILLED);
         }
+    }
+
+    private BlockPos resolveDeathImpactPosition(ServerLevel level) {
+        BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.blockPosition());
+        if (surface.getY() <= level.getMinY()) {
+            return this.blockPosition();
+        }
+        return surface;
     }
 
     private void explodeOnDeath() {
@@ -489,7 +533,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
                     } else if (this.turnsUntilSwarm <= 0 && TerrorPhantom.this.isHalfHealth) {
                         doSwarm();
                         this.turnsUntilSwarm = 5;
-                    } else if (this.turnsUntilBombing <= 0 && TerrorPhantom.this.isHalfHealth) {
+                    } else if (this.turnsUntilBombing <= 0 && TerrorPhantom.this.isHalfHealth && TerrorPhantom.this.canPerformBombing()) {
                         this.isBombing = true;
                         this.turnsUntilBombing = 2;
                     } else {
@@ -790,6 +834,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         public boolean canUse() {
             return !TerrorPhantom.this.isDying() &&
                    TerrorPhantom.this.getTarget() != null &&
+                   TerrorPhantom.this.canPerformBombing() &&
                    TerrorPhantom.this.attackPhase == AttackPhase.BOMBING;
         }
 
