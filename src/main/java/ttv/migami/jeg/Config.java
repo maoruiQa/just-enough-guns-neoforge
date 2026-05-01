@@ -45,6 +45,10 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue GUNNER_SHOTGUN_SPREAD_MULTIPLIER;
     public static final ModConfigSpec.IntValue BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL;
+    public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS;
+    public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS;
+    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER;
     public static final ModConfigSpec.IntValue TERROR_RAID_WAVE_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue TERROR_RAID_GROUND_WAVE_COUNT;
     public static final ModConfigSpec.IntValue TERROR_RAID_AIR_WAVE_COUNT;
@@ -207,6 +211,18 @@ public final class Config {
         BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = serverBuilder
                 .comment("Projectile Protection level applied to bound terror phantom (guardian). 0 disables this reduction.")
                 .defineInRange("boundTerrorPhantomProjectileProtectionLevel", 5, 0, 20);
+        TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS = serverBuilder
+                .comment("Ticks without qualifying minigun/light machine gun hits before Terror Phantom rapid-fire resistance resets.")
+                .defineInRange("terrorPhantomRapidFireResistanceResetTicks", 25, 1, 200);
+        TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS = serverBuilder
+                .comment("Qualifying hits at the start of each burst before Terror Phantom rapid-fire resistance reduces damage.")
+                .defineInRange("terrorPhantomRapidFireResistanceWarmupHits", 10, 0, 200);
+        TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER = serverBuilder
+                .comment("Extra damage multiplier for player minigun hits after Terror Phantom rapid-fire resistance warms up. 1.0 disables this extra resistance.")
+                .defineInRange("terrorPhantomMinigunRapidFireDamageMultiplier", 0.18D, 0.01D, 1.0D);
+        TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER = serverBuilder
+                .comment("Extra damage multiplier for player light machine gun hits after Terror Phantom rapid-fire resistance warms up. 1.0 disables this extra resistance.")
+                .defineInRange("terrorPhantomLightMachineGunRapidFireDamageMultiplier", 0.35D, 0.01D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("terrorRaid");
@@ -470,6 +486,22 @@ public final class Config {
 
     public static int boundTerrorPhantomProjectileProtectionLevel() {
         return Math.max(0, BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL.get());
+    }
+
+    public static int terrorPhantomRapidFireResistanceResetTicks() {
+        return Mth.clamp(TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS.get(), 1, 200);
+    }
+
+    public static int terrorPhantomRapidFireResistanceWarmupHits() {
+        return Mth.clamp(TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS.get(), 0, 200);
+    }
+
+    public static double terrorPhantomMinigunRapidFireDamageMultiplier() {
+        return Mth.clamp(TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER.get(), 0.01D, 1.0D);
+    }
+
+    public static double terrorPhantomLightMachineGunRapidFireDamageMultiplier() {
+        return Mth.clamp(TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER.get(), 0.01D, 1.0D);
     }
 
     public static int terrorRaidGroundWaveCount() {
