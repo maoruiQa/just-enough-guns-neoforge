@@ -9,7 +9,8 @@
     "ServerGamePacketListenerImplMixin",
     "TargetGoalMixin",
     "GunnerSunBurnMixin",
-    "GunnerWaterConversionMixin"
+    "GunnerWaterConversionMixin",
+    "LivingEntityDeathDropsMixin"
   ],
   "client": [
     "GameRendererMixin",

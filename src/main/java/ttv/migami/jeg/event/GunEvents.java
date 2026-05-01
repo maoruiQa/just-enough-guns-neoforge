@@ -4,6 +4,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import java.util.List;
 import java.util.stream.StreamSupport;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
@@ -294,8 +295,18 @@ public final class GunEvents {
 
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {
-        net.minecraft.world.entity.LivingEntity entity = event.getEntity();
+        handleGunnerDrops(event.getEntity(), event.getDrops());
+    }
 
+    public static void spawnGunnerDrops(net.minecraft.world.entity.LivingEntity entity) {
+        List<ItemEntity> drops = new java.util.ArrayList<>();
+        handleGunnerDrops(entity, drops);
+        for (ItemEntity drop : drops) {
+            entity.level().addFreshEntity(drop);
+        }
+    }
+
+    public static void handleGunnerDrops(net.minecraft.world.entity.LivingEntity entity, List<ItemEntity> drops) {
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
@@ -305,16 +316,16 @@ public final class GunEvents {
         if (!(held.getItem() instanceof GunItem gunItem)) {
             // Remove vanilla ranged weapons from gunner drops
             if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
-                event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+                drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
             }
             return;
         }
 
         // Remove vanilla ranged weapons from all gunner types
         if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
-            event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+            drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
         } else if (entity instanceof net.minecraft.world.entity.monster.Zombie || entity instanceof net.minecraft.world.entity.monster.Husk) {
-            event.getDrops().removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
+            drops.removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
         }
 
         RandomSource random = entity.getRandom();
@@ -328,7 +339,7 @@ public final class GunEvents {
                 int damage = Mth.nextInt(random, Math.max(1, (int) (maxDamage * 0.65F)), Math.max(1, (int) (maxDamage * 0.9F)));
                 dropGun.setDamageValue(Math.min(maxDamage - 1, damage));
             }
-            addDrop(event, entity, dropGun);
+            addDrop(drops, entity, dropGun);
             return;
         }
 
@@ -336,7 +347,7 @@ public final class GunEvents {
         if (random.nextFloat() < 0.60F) {
             ItemStack ammo = buildAmmoDrop(stats, random);
             if (!ammo.isEmpty()) {
-                addDrop(event, entity, ammo);
+                addDrop(drops, entity, ammo);
             }
         }
     }
@@ -353,13 +364,13 @@ public final class GunEvents {
                entity instanceof TerrorPhantom;
     }
 
-    private static void addDrop(LivingDropsEvent event, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
+    private static void addDrop(List<ItemEntity> drops, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
         ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
         item.setDefaultPickUpDelay();
-        event.getDrops().add(item);
+        drops.add(item);
     }
 
     private static ItemStack buildAmmoDrop(GunStats stats, RandomSource random) {
