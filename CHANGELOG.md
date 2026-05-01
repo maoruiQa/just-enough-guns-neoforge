@@ -6,6 +6,9 @@
 - Added Fabric combat HUD rendering for gun name, current ammo, reserve ammo, magazine reserve counts, overheat/timer status, and hit markers.
 - Added Fabric custom crosshair rendering with dynamic crosshair support tied directly to current ballistic spread.
 - Added S2C hit marker feedback for successful living-entity bullet hits.
+- Added Parched gunner support, including a dedicated spawn egg and inclusion in the gunner entity tag.
+- Added configurable Parched gunner conversion chance plus `/jeg config mob parched` command support.
+- Added server-to-client UI config sync for crosshair and hit feedback visibility, along with `/jeg config ui` controls.
 - Added configurable Phantom Gunner death explosions with `/justEnoughGuns config mob phantom deathExplosion`.
 
 ### Changed
@@ -19,6 +22,9 @@
   - pistol and SMG firing spread cap is increased to `1.725x`.
 - Reduced `light_machine_gun` passive cooling speed to 50% of the previous value.
 - Reduced `minigun` overheat gain to 75% of the previous value.
+- Reworked recoil and shoot animation handling to use the migrated 1.20.1-style recoil profiles and first-person gun transforms.
+- Added hold-to-fire behavior for `rocket_launcher`, including a charge-up timer and HUD feedback while the trigger is held.
+- Hid muzzle flash while the local player is aiming down sights.
 
 ### Fixed
 - Fixed Fabric dynamic crosshair not reflecting movement spread before the first shot.
@@ -26,6 +32,8 @@
 - Fixed dynamic crosshair asymmetry caused by incorrect 9x9 texture sampling for the right and bottom reticle lines.
 - Fixed magazine-fed guns showing reserve ammo ambiguously instead of loaded magazine count.
 - Fixed magazine-fed guns showing "No ammo" instead of "No compatible magazine" when no suitable loaded magazine is available for reload.
+- Fixed gunner conversion spawn handling so newly spawned gunner-capable mobs are only processed once and obey minimum spawn-day gating.
+- Fixed bullet block destruction randomness so block damage behavior is deterministic again.
 
 ## 1.3.4 - 2026-03-10
 
