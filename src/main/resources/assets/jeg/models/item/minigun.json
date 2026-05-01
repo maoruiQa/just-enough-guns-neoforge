@@ -4254,15 +4254,10 @@
   ],
   "display": {
     "thirdperson_righthand": {
-      "rotation": [
-        90,
-        0,
-        0
-      ],
       "translation": [
         0,
-        15,
-        5
+        7,
+        -12
       ],
       "scale": [
         1.5,
@@ -4410,5 +4405,6 @@
         74
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

@@ -3239,5 +3239,6 @@
         }
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

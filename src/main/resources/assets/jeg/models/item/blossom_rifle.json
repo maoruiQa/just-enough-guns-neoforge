@@ -3041,5 +3041,6 @@
         }
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

@@ -1566,5 +1566,6 @@
         24
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

@@ -6822,5 +6822,6 @@
         }
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

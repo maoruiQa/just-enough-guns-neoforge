@@ -20,8 +20,8 @@ public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
     @Override
     public ResourceLocation getTextureResource(AnimatedGunItem animatable) {
         String p = path(animatable);
-        ResourceLocation primary = Reference.id(TEXTURE_ITEM_ROOT + p + ".png");
-        ResourceLocation fallback = Reference.id(TEXTURE_ANIM_ROOT + p + ".png");
+        ResourceLocation primary = Reference.id(TEXTURE_ANIM_ROOT + p + ".png");
+        ResourceLocation fallback = Reference.id(TEXTURE_ITEM_ROOT + p + ".png");
         return exists(primary) ? primary : fallback;
     }
 
