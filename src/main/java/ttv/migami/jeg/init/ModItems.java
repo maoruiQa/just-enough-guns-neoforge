@@ -74,6 +74,10 @@ public final class ModItems {
     // public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_NETHERITE = new LinkedHashMap<>();
     private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
     private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
+    private static final Set<ResourceLocation> DISABLED_GUN_IDS = Set.of(
+            Reference.id("holy_shotgun"),
+            Reference.id("typhoonee")
+    );
 
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
@@ -300,7 +304,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
-            if (!id.equals(PHANTOM_SMG_ID)) {
+            if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
             }
         }
@@ -321,6 +325,9 @@ public final class ModItems {
     public static List<ResourceKey<Recipe<?>>> unlockGunRecipeKeys() {
         java.util.ArrayList<ResourceKey<Recipe<?>>> keys = new java.util.ArrayList<>();
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
+            if (isDisabledGunId(id)) {
+                continue;
+            }
             keys.add(ResourceKey.create(Registries.RECIPE, id));
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
@@ -331,6 +338,10 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
         return List.copyOf(keys);
+    }
+
+    public static boolean isDisabledGunId(ResourceLocation id) {
+        return DISABLED_GUN_IDS.contains(id);
     }
 
     private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
@@ -353,7 +364,7 @@ public final class ModItems {
     public static void addToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().equals(CreativeModeTabs.COMBAT)) {
             GUNS.forEach((id, holder) -> {
-                if (!id.equals(PHANTOM_SMG_ID)) {
+                if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                     event.accept(holder.get());
                 }
             });
