@@ -13,7 +13,7 @@ public final class FirstPersonGunArmRenderEvents {
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
         // Align with NeoForge 1.21.11: no event-based first-person arm overlay.
-        // Gun arms are rendered by GeckoLib arm bones in GunFirstPersonArmsLayer.
+        // Gun arms are rendered from GeckoLib arm bones by AnimatedGunRenderer.
         return;
     }
 }
