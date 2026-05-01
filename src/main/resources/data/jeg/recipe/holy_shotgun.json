@@ -1,20 +1,35 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "pattern": [
-    "GGI",
-    "XLB",
-    " XG"
-  ],
-  "key": {
-    "G": "minecraft:gold_block",
-    "I": "minecraft:iron_block",
-    "X": "minecraft:diamond",
-    "L": "minecraft:glowstone",
-    "B": "minecraft:iron_block"
-  },
-  "result": {
-    "id": "jeg:holy_shotgun",
-    "count": 1
-  }
+    "neoforge:conditions":  [
+                                {
+                                    "type":  "neoforge:false"
+                                }
+                            ],
+    "type":  "minecraft:crafting_shaped",
+    "category":  "equipment",
+    "pattern":  [
+                    "GGI",
+                    "XLB",
+                    " XG"
+                ],
+    "key":  {
+                "G":  {
+                          "item":  "minecraft:gold_block"
+                      },
+                "I":  {
+                          "item":  "minecraft:iron_block"
+                      },
+                "X":  {
+                          "item":  "minecraft:diamond"
+                      },
+                "L":  {
+                          "item":  "minecraft:glowstone"
+                      },
+                "B":  {
+                          "item":  "minecraft:iron_block"
+                      }
+            },
+    "result":  {
+                   "id":  "jeg:holy_shotgun",
+                   "count":  1
+               }
 }
