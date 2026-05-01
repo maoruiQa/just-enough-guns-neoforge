@@ -494,6 +494,54 @@ public final class FactionRaidManager {
     }
 
     @Nullable
+    private static Mob recreateRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferredTarget, boolean localOnly) {
+        BlockPos recoveryPos = localOnly
+                ? FactionSpawnHelper.findLocalGroundRecoveryPosition(level, mob, raid.origin, preferredTarget, RAID_RECOVERY_MIN_RADIUS, RAID_RECOVERY_MAX_RADIUS, 8, true)
+                : FactionSpawnHelper.findValidatedGroundRecoveryPosition(level, mob, raid.origin, preferredTarget, RAID_RECOVERY_MIN_RADIUS, RAID_RECOVERY_MAX_RADIUS, 12, true);
+        if (recoveryPos == null) {
+            return null;
+        }
+
+        var created = FactionSpawnHelper.repositionMob(level, mob, recoveryPos, net.minecraft.world.entity.EntitySpawnReason.EVENT);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        copyRaidState(mob, replacement);
+        raid.applyRaidTags(replacement);
+        replacement.setTarget(preferredTarget);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        raid.trackReplacement(replacement);
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferredTarget);
+        }
+        return replacement;
+    }
+
+    private static void copyRaidState(Mob original, Mob replacement) {
+        replacement.setHealth(Math.min(replacement.getMaxHealth(), original.getHealth()));
+        replacement.setCustomName(original.getCustomName());
+        replacement.setCustomNameVisible(original.isCustomNameVisible());
+        replacement.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, original.getMainHandItem().copy());
+        replacement.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, original.getOffhandItem().copy());
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR) {
+                replacement.setItemSlot(slot, original.getItemBySlot(slot).copy());
+            }
+        }
+        for (MobEffectInstance effect : original.getActiveEffects()) {
+            replacement.addEffect(new MobEffectInstance(effect));
+        }
+        for (String tag : original.entityTags()) {
+            replacement.addTag(tag);
+        }
+    }
+
+    @Nullable
     private static Player pickPreferredTarget(ServerLevel level, RaidContext raid) {
         ServerPlayer nearest = null;
         double nearestDistanceSq = Double.MAX_VALUE;
@@ -865,6 +913,14 @@ public final class FactionRaidManager {
             if (preferredTarget != null) {
                 this.targetPlayerId = preferredTarget.getUUID();
                 this.participantPlayerIds.add(preferredTarget.getUUID());
+            }
+            clearMobTracking(mob.getUUID());
+            applyRaidTags(mob);
+        }
+
+        private void trackReplacement(Mob mob) {
+            if (this.activeMobIds.add(mob.getUUID())) {
+                this.spawnedThisWaveCount = Math.max(this.spawnedThisWaveCount, this.activeMobIds.size());
             }
             clearMobTracking(mob.getUUID());
             applyRaidTags(mob);

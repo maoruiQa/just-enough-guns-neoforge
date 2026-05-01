@@ -357,9 +357,9 @@ public class GunnerMobSpawner {
         ItemStack gunStack = new ItemStack(gun);
         if (gun instanceof GunItem gunItem) {
             GunStats stats = gunItem.getStats();
-            // Set random ammo count between 0 and magazine size using stack.set()
+            // Gunners need a loaded weapon on spawn or they can stall before their first reload.
             gunStack.set(ttv.migami.jeg.init.ModDataComponents.GUN_AMMO.get(),
-                        mob.getRandom().nextInt(stats.magazineSize()));
+                        Math.max(1, stats.magazineSize()));
         }
         return gunStack;
     }

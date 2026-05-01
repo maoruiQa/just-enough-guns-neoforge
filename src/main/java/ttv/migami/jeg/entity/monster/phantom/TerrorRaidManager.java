@@ -48,6 +48,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.BossEvent;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -102,6 +103,10 @@ final class TerrorRaidManager {
     private static final double STATIONARY_MOVEMENT_THRESHOLD_SQ = 0.25D;
     private static final float SPIN_STUCK_YAW_DELTA_DEGREES = 35.0F;
     private static final double DISTANCE_STALL_THRESHOLD = 1.5D;
+    private static final int GROUND_RECOVERY_MIN_DISTANCE = 12;
+    private static final int GROUND_RECOVERY_MAX_DISTANCE = 28;
+    private static final int AIR_RECOVERY_MIN_DISTANCE = 20;
+    private static final int AIR_RECOVERY_MAX_DISTANCE = 28;
     private static final Map<ServerLevel, List<RaidContext>> ACTIVE_RAIDS = new HashMap<>();
     private static final Map<ServerLevel, Map<BlockPos, Long>> RECENT_RAID_TRIGGERS = new HashMap<>();
 
@@ -336,9 +341,9 @@ final class TerrorRaidManager {
         ItemStack gunStack = new ItemStack(gun);
         if (gun instanceof GunItem gunItem) {
             GunStats stats = gunItem.getStats();
-            // Set random ammo count between 0 and magazine size using stack.set()
+            // Ground-raid gunners need a loaded weapon on spawn or they can stall before their first reload.
             gunStack.set(ttv.migami.jeg.init.ModDataComponents.GUN_AMMO.get(),
-                        mob.getRandom().nextInt(stats.magazineSize()));
+                        Math.max(1, stats.magazineSize()));
         }
         return gunStack;
     }
@@ -636,18 +641,30 @@ final class TerrorRaidManager {
 
     private static void maintainRaidTargets(ServerLevel level, RaidContext raid) {
         Player preferred = resolvePreferredTarget(level, raid);
-        if (preferred == null) {
-            return;
-        }
+        Set<UUID> retiredMobs = new HashSet<>();
+        boolean hasPreferred = isValidRaidTarget(preferred, level, raid.origin);
 
-        Set<UUID> timedOut = new HashSet<>();
         for (UUID mobId : new HashSet<>(raid.activeMobIds)) {
             var entity = level.getEntity(mobId);
-            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive()) {
+            if (!(entity instanceof net.minecraft.world.entity.Mob mob) || !mob.isAlive() || mob.isRemoved()) {
+                retiredMobs.add(mobId);
                 raid.clearMobTracking(mobId);
                 continue;
             }
             if (!mob.entityTags().contains(TERROR_RAID_MOB_TAG)) {
+                retiredMobs.add(mobId);
+                raid.clearMobTracking(mobId);
+                continue;
+            }
+
+            if (!hasPreferred) {
+                if (mob instanceof PathfinderMob pathfinderMob) {
+                    pathfinderMob.getNavigation().stop();
+                }
+                if (mob.getTarget() != null) {
+                    mob.setTarget(null);
+                }
+                mob.setAggressive(false);
                 raid.clearMobTracking(mobId);
                 continue;
             }
@@ -656,18 +673,18 @@ final class TerrorRaidManager {
             if (!(current instanceof Player player) || !isValidRaidTarget(player, level, raid.origin)) {
                 mob.setTarget(preferred);
                 mob.setAggressive(true);
+                if (mob instanceof PathfinderMob pathfinderMob) {
+                    ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(pathfinderMob, preferred);
+                }
             }
 
             if (checkUnreachableAndRecover(level, raid, mobId, mob, preferred)) {
-                timedOut.add(mobId);
+                retiredMobs.add(mobId);
             }
         }
 
-        if (!timedOut.isEmpty()) {
-            raid.activeMobIds.removeAll(timedOut);
-            for (UUID mobId : timedOut) {
-                raid.clearMobTracking(mobId);
-            }
+        if (!retiredMobs.isEmpty()) {
+            raid.activeMobIds.removeAll(retiredMobs);
         }
     }
 
@@ -788,25 +805,108 @@ final class TerrorRaidManager {
         }
     }
 
-    private static void relocateRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred) {
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
         if (raid.airRaid) {
-            Vec3 relocate = sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), 4, 8, 6, 10);
-            mob.teleportTo(relocate.x, relocate.y, relocate.z);
-        } else {
-            BlockPos relocate = sampleGroundPosition(level, preferred.blockPosition(), level.getRandom(), 4, 10);
-            if (!isSafeGroundPosition(level, relocate)) {
-                return;
-            }
-            mob.teleportTo(relocate.getX() + 0.5D, relocate.getY(), relocate.getZ() + 0.5D);
+            return recreateAirRaidMob(level, raid, mob, preferred, localOnly);
         }
-
-        mob.getNavigation().stop();
-        mob.setTarget(preferred);
-        mob.setAggressive(true);
-        forceRepath(mob, preferred);
+        return recreateGroundRaidMob(level, raid, mob, preferred, localOnly);
     }
 
-    private static @Nullable Player resolvePreferredTarget(ServerLevel level, RaidContext raid) {
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateGroundRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
+        BlockPos recoveryPos = localOnly
+                ? ttv.migami.jeg.faction.FactionSpawnHelper.findLocalGroundRecoveryPosition(
+                        level,
+                        mob,
+                        raid.origin,
+                        preferred,
+                        GROUND_RECOVERY_MIN_DISTANCE,
+                        GROUND_RECOVERY_MAX_DISTANCE,
+                        8,
+                        false
+                )
+                : ttv.migami.jeg.faction.FactionSpawnHelper.findValidatedGroundRecoveryPosition(
+                        level,
+                        mob,
+                        raid.origin,
+                        preferred,
+                        GROUND_RECOVERY_MIN_DISTANCE,
+                        GROUND_RECOVERY_MAX_DISTANCE,
+                        12,
+                        false
+                );
+        if (recoveryPos == null) {
+            return null;
+        }
+
+        var created = ttv.migami.jeg.faction.FactionSpawnHelper.repositionMob(level, mob, recoveryPos, EntitySpawnReason.EVENT);
+        if (!(created instanceof net.minecraft.world.entity.Mob replacement)) {
+            return null;
+        }
+        copyRaidState(mob, replacement);
+        raid.trackReplacement(replacement);
+        replacement.setTarget(preferred);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferred);
+        }
+        return replacement;
+    }
+
+    @Nullable
+    private static net.minecraft.world.entity.Mob recreateAirRaidMob(ServerLevel level, RaidContext raid, PathfinderMob mob, Player preferred, boolean localOnly) {
+        Vec3 recoveryPos = localOnly
+                ? ttv.migami.jeg.faction.FactionSpawnHelper.findLocalAirRecoveryPosition(level, raid.origin, preferred, AIR_RECOVERY_MIN_DISTANCE, AIR_RECOVERY_MAX_DISTANCE, 6, 12)
+                : sampleAirPosition(level, preferred.blockPosition(), level.getRandom(), AIR_RECOVERY_MIN_DISTANCE, AIR_RECOVERY_MAX_DISTANCE, 6, 12);
+        if (recoveryPos == null) {
+            return null;
+        }
+        var created = ttv.migami.jeg.faction.FactionSpawnHelper.repositionMobInAir(level, mob, recoveryPos, EntitySpawnReason.EVENT);
+        if (!(created instanceof net.minecraft.world.entity.Mob replacement)) {
+            return null;
+        }
+        copyRaidState(mob, replacement);
+        raid.trackReplacement(replacement);
+        replacement.setTarget(preferred);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            ttv.migami.jeg.faction.FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferred);
+        }
+        return replacement;
+    }
+
+    private static void copyRaidState(net.minecraft.world.entity.Mob original, net.minecraft.world.entity.Mob replacement) {
+        replacement.setHealth(Math.min(replacement.getMaxHealth(), original.getHealth()));
+        replacement.setCustomName(original.getCustomName());
+        replacement.setCustomNameVisible(original.isCustomNameVisible());
+        replacement.setItemSlot(EquipmentSlot.MAINHAND, original.getMainHandItem().copy());
+        replacement.setItemSlot(EquipmentSlot.OFFHAND, original.getOffhandItem().copy());
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                replacement.setItemSlot(slot, original.getItemBySlot(slot).copy());
+            }
+        }
+        for (MobEffectInstance effect : original.getActiveEffects()) {
+            replacement.addEffect(new MobEffectInstance(effect));
+        }
+        for (String tag : original.entityTags()) {
+            replacement.addTag(tag);
+        }
+    }
+
+    @Nullable
+    private static Player resolvePreferredTarget(ServerLevel level, RaidContext raid) {
         if (raid.targetPlayerId != null) {
             Player preferred = level.getServer().getPlayerList().getPlayer(raid.targetPlayerId);
             if (isValidRaidTarget(preferred, level, raid.origin)) {
@@ -817,11 +917,20 @@ final class TerrorRaidManager {
         AABB search = new AABB(raid.origin).inflate(RAID_PLAYER_RANGE);
         Player nearest = level.getNearestEntity(Player.class, TargetingConditions.forCombat().range(RAID_PLAYER_RANGE), null,
                 raid.origin.getX() + 0.5D, raid.origin.getY() + 0.5D, raid.origin.getZ() + 0.5D, search);
-        return isValidRaidTarget(nearest, level, raid.origin) ? nearest : null;
+        if (!isValidRaidTarget(nearest, level, raid.origin)) {
+            return null;
+        }
+        raid.targetPlayerId = nearest.getUUID();
+        return nearest;
     }
 
     private static boolean isValidRaidTarget(@Nullable Player player) {
-        return player != null && player.isAlive() && !player.isCreative() && !player.isSpectator();
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) {
+            return false;
+        }
+        return serverPlayer.isAlive()
+                && !serverPlayer.isSpectator()
+                && serverPlayer.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
     }
 
     private static boolean isValidRaidTarget(@Nullable Player player, ServerLevel level, BlockPos raidOrigin) {
@@ -848,7 +957,7 @@ final class TerrorRaidManager {
     private static final class RaidContext {
         private final UUID raidId;
         private final BlockPos origin;
-        private final @Nullable UUID targetPlayerId;
+        private @Nullable UUID targetPlayerId;
         private final boolean airRaid;
         private final int totalWaves;
         private final Set<UUID> activeMobIds = new HashSet<>();
@@ -874,13 +983,21 @@ final class TerrorRaidManager {
             Component title = airRaid
                     ? Component.translatable("message.jeg.terror_raid.guardian")
                     : Component.translatable("message.jeg.terror_raid.begin");
-            this.bossBar = new ServerBossEvent(raidId, title, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
+            this.bossBar = new ServerBossEvent(UUID.randomUUID(), title, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
             this.bossBar.setProgress(1.0F);
         }
 
-                private void trackSpawn(net.minecraft.world.entity.Mob mob) {
+        private void trackSpawn(net.minecraft.world.entity.Mob mob) {
             if (this.activeMobIds.add(mob.getUUID())) {
                 this.spawnedTotal++;
+            }
+            clearMobTracking(mob.getUUID());
+            applyRaidTags(mob);
+        }
+
+        private void trackReplacement(net.minecraft.world.entity.Mob mob) {
+            if (this.activeMobIds.add(mob.getUUID())) {
+                this.spawnedTotal = Math.max(this.spawnedTotal, this.activeMobIds.size());
             }
             clearMobTracking(mob.getUUID());
             applyRaidTags(mob);

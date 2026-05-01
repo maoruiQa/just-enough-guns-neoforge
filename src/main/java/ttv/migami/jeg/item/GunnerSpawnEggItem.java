@@ -69,7 +69,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         if (gunItem instanceof GunItem gun) {
             GunStats stats = gun.getStats();
             if (gun.usesLoadedAmmo()) {
-                gunStack.set(ModDataComponents.GUN_AMMO.get(), mob.getRandom().nextInt(Math.max(1, stats.magazineSize())));
+                gunStack.set(ModDataComponents.GUN_AMMO.get(), Math.max(1, stats.magazineSize()));
             }
         }
 
