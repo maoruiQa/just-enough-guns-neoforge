@@ -113,6 +113,7 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem gun)) {
                 return;
             }
+            player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
 
             if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
                 return;
@@ -220,7 +221,8 @@ public final class NetworkHandler {
         if (client == null || client.getConnection() == null) {
             return;
         }
-        client.getConnection().send(new ShootRequestPayload(hand));
+        boolean aiming = ttv.migami.jeg.client.handler.AimingHandler.get().isAiming();
+        client.getConnection().send(new ShootRequestPayload(hand, aiming));
     }
 
     public static void sendHoldFire(InteractionHand hand, boolean holding) {
