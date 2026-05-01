@@ -2,12 +2,14 @@ package ttv.migami.jeg.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import ttv.migami.jeg.client.handler.AimingHandler;
@@ -121,8 +123,54 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             poseStack.translate(direction * swingX * 0.08F, swingY * 0.05F, 0.0F);
         }
 
+        applyBobbingTransforms(poseStack, player, partialTick, ads);
+        applySwayTransforms(poseStack, player, partialTick, ads);
+        applySprintingTransforms(poseStack, player, direction, ads);
         applyRecoilTransforms(poseStack, ads);
         return true;
+    }
+
+    private static void applyBobbingTransforms(PoseStack poseStack, Player player, float partialTick, float ads) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.options.bobView().get() || minecraft.getCameraEntity() != player) {
+            return;
+        }
+
+        float deltaDistanceWalked = player.walkDist - player.walkDistO;
+        float distanceWalked = -(player.walkDist + deltaDistanceWalked * partialTick);
+        float bobbing = Mth.lerp(partialTick, player.oBob, player.bob);
+        float adsDamping = 1.0F - ads * 0.65F;
+        float intensity = player.isSprinting() ? 8.0F : 4.0F;
+        float weaponBob = bobbing * intensity * adsDamping;
+
+        poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(distanceWalked * (float) Math.PI) * weaponBob * 2.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(distanceWalked * (float) Math.PI - 0.2F) * weaponBob) * 3.0F));
+    }
+
+    private static void applySwayTransforms(PoseStack poseStack, LocalPlayer player, float partialTick, float ads) {
+        float adsDamping = 1.0F - ads * 0.5F;
+        float bobPitch = Mth.rotLerp(partialTick, player.xBobO, player.xBob);
+        float headPitch = Mth.rotLerp(partialTick, player.xRotO, player.getXRot());
+        poseStack.mulPose(Axis.XP.rotationDegrees((headPitch - bobPitch) * adsDamping));
+
+        float bobYaw = Mth.rotLerp(partialTick, player.yBobO, player.yBob);
+        float headYaw = Mth.rotLerp(partialTick, player.yHeadRotO, player.yHeadRot);
+        poseStack.mulPose(Axis.YP.rotationDegrees((headYaw - bobYaw) * adsDamping));
+
+        float fallDelta = (float) Mth.clamp(player.yo - player.getY(), -1.0D, 1.0D);
+        fallDelta *= adsDamping * (1.0F - Mth.abs(player.getXRot()) / 90.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
+    }
+
+    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads) {
+        if (!player.isSprinting() || AimingHandler.get().isAiming()) {
+            return;
+        }
+
+        float transition = 1.0F - ads;
+        poseStack.translate(-0.18F * direction * transition, -0.08F * transition, 0.0F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(30.0F * direction * transition));
+        poseStack.mulPose(Axis.XP.rotationDegrees(-18.0F * transition));
     }
 
     private static void applyRecoilTransforms(PoseStack poseStack, float ads) {
