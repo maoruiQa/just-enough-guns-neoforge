@@ -412,6 +412,54 @@ public final class PatrolEncounterManager {
         return eligible;
     }
 
+    @Nullable
+    private static Mob recreatePatrolMob(ServerLevel level, PatrolContext context, PathfinderMob mob, ServerPlayer preferredTarget, boolean localOnly) {
+        BlockPos recoveryPos = localOnly
+                ? FactionSpawnHelper.findLocalGroundRecoveryPosition(level, mob, context.origin, preferredTarget, PATROL_RELOCATE_MIN_DISTANCE, PATROL_RELOCATE_MAX_DISTANCE, 8, false)
+                : FactionSpawnHelper.findValidatedGroundRecoveryPosition(level, mob, context.origin, preferredTarget, PATROL_RELOCATE_MIN_DISTANCE, PATROL_RELOCATE_MAX_DISTANCE, 12, false);
+        if (recoveryPos == null) {
+            return null;
+        }
+
+        var created = FactionSpawnHelper.repositionMob(level, mob, recoveryPos, net.minecraft.world.entity.MobSpawnType.EVENT);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        copyPatrolState(mob, replacement);
+        context.applyPatrolTags(replacement);
+        replacement.setTarget(preferredTarget);
+        replacement.setAggressive(true);
+
+        if (!level.addFreshEntity(replacement)) {
+            return null;
+        }
+
+        context.trackMob(replacement);
+        if (replacement instanceof PathfinderMob replacementPathfinder) {
+            FactionSpawnHelper.moveToTargetWithPathFallback(replacementPathfinder, preferredTarget);
+        }
+        return replacement;
+    }
+
+    private static void copyPatrolState(Mob original, Mob replacement) {
+        replacement.setHealth(Math.min(replacement.getMaxHealth(), original.getHealth()));
+        replacement.setCustomName(original.getCustomName());
+        replacement.setCustomNameVisible(original.isCustomNameVisible());
+        replacement.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, original.getMainHandItem().copy());
+        replacement.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, original.getOffhandItem().copy());
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR) {
+                replacement.setItemSlot(slot, original.getItemBySlot(slot).copy());
+            }
+        }
+        for (MobEffectInstance effect : original.getActiveEffects()) {
+            replacement.addEffect(new MobEffectInstance(effect));
+        }
+        for (String tag : original.getTags()) {
+            replacement.addTag(tag);
+        }
+    }
+
     private static BlockPos samplePatrolRelocationPosition(ServerLevel level, PatrolContext context, PathfinderMob mob, ServerPlayer target) {
         BlockPos fallback = FactionSpawnHelper.sampleGroundPosition(level, context.origin, level.getRandom(), PATROL_RELOCATE_MIN_DISTANCE, PATROL_RELOCATE_MAX_DISTANCE);
         BlockPos targetPos = target.blockPosition();

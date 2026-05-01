@@ -46,6 +46,7 @@ public final class FactionSpawnHelper {
     private static final double NAVIGATION_SPEED = 1.2D;
     private static final double RAID_PLAYER_BUFFER_RADIUS = 20.0D;
     private static final double STUCK_RECOVERY_MIN_TARGET_DISTANCE = 20.0D;
+    private static final int AIR_RECOVERY_ATTEMPTS = 10;
     private static final int[][] TARGET_PATH_OFFSETS = new int[][] {
             {0, 0},
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
@@ -480,6 +481,62 @@ public final class FactionSpawnHelper {
         }
 
         return null;
+    }
+
+    @Nullable
+    public static Vec3 findLocalAirRecoveryPosition(ServerLevel level, BlockPos anchor, @Nullable Player targetPlayer,
+                                                    int minRadius, int maxRadius, int minHeight, int maxHeight) {
+        RandomSource random = level.getRandom();
+        BlockPos focus = targetPlayer != null ? targetPlayer.blockPosition() : anchor;
+        for (int attempt = 0; attempt < AIR_RECOVERY_ATTEMPTS; attempt++) {
+            Vec3 candidate = sampleAirPosition(level, focus, random, minRadius, maxRadius, minHeight, maxHeight);
+            BlockPos candidatePos = BlockPos.containing(candidate);
+            if (!level.getWorldBorder().isWithinBounds(candidatePos)) {
+                continue;
+            }
+            if (!level.isEmptyBlock(candidatePos) || !level.isEmptyBlock(candidatePos.above()) || !level.isEmptyBlock(candidatePos.below())) {
+                continue;
+            }
+            return candidate;
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Mob repositionMob(ServerLevel level, Mob original, BlockPos recoveryPos, MobSpawnType spawnReason) {
+        var created = original.getType().create(level);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        replacement.setPos(recoveryPos.getX() + 0.5D, recoveryPos.getY(), recoveryPos.getZ() + 0.5D);
+        replacement.setPersistenceRequired();
+        replacement.finalizeSpawn(level, level.getCurrentDifficultyAt(recoveryPos), spawnReason, null);
+        return replacement;
+    }
+
+    @Nullable
+    public static Mob repositionMobInAir(ServerLevel level, Mob original, Vec3 recoveryPos, MobSpawnType spawnReason) {
+        var created = original.getType().create(level);
+        if (!(created instanceof Mob replacement)) {
+            return null;
+        }
+        replacement.setPos(recoveryPos.x, recoveryPos.y, recoveryPos.z);
+        replacement.setYRot(original.getYRot());
+        replacement.setXRot(original.getXRot());
+        replacement.setPersistenceRequired();
+        replacement.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(recoveryPos)), spawnReason, null);
+        return replacement;
+    }
+
+    @Nullable
+    private static Vec3 sampleAirPosition(ServerLevel level, BlockPos origin, RandomSource random, int minRadius, int maxRadius, int minHeight, int maxHeight) {
+        double angle = random.nextDouble() * (Math.PI * 2.0D);
+        double radius = random.nextInt(maxRadius - minRadius + 1) + minRadius;
+        double yOffset = random.nextInt(maxHeight - minHeight + 1) + minHeight;
+        double x = origin.getX() + 0.5D + Math.cos(angle) * radius;
+        double z = origin.getZ() + 0.5D + Math.sin(angle) * radius;
+        double y = origin.getY() + yOffset;
+        return new Vec3(x, y, z);
     }
 
     @Nullable
