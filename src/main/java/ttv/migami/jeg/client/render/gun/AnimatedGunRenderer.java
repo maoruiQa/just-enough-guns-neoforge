@@ -46,14 +46,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         ItemDisplayContext ctx = this.renderPerspective;
-        HumanoidArm mainArm = mc.player.getMainArm();
         if (ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
-            return mainArm == HumanoidArm.LEFT ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
+            return HumanoidArm.LEFT;
         }
         if (ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
-            return mainArm == HumanoidArm.RIGHT ? HumanoidArm.RIGHT : HumanoidArm.LEFT;
+            return HumanoidArm.RIGHT;
         }
 
+        HumanoidArm mainArm = mc.player.getMainArm();
         ItemStack stack = this.getCurrentItemStack();
         ItemStack main = mc.player.getMainHandItem();
         if (stack != null && ItemStack.isSameItemSameComponents(stack, main)) {
