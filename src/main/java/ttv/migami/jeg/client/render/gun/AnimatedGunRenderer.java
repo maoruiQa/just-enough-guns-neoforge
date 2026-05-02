@@ -192,6 +192,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static void applyThirdPersonAnimatedTransform(AnimatedGunItem gun, PoseStack poseStack) {
         if ("minigun".equals(gun.getStats().id().getPath())) {
+            // Minigun needs Y correction plus pitch rotation to point forward instead of upward
+            poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION - 0.3D, 1.4D);
+            poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
