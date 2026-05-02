@@ -2,8 +2,8 @@ package ttv.migami.jeg.client.render.gun;
 
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.cache.object.GeoBone;
+import net.minecraft.resources.Identifier;
+import com.geckolib.cache.model.GeoBone;
 import ttv.migami.jeg.Reference;
 
 public final class GunAttachmentVisibility {
@@ -42,33 +42,36 @@ public final class GunAttachmentVisibility {
             "chamber"
     );
 
-    private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
+    private static final Map<Identifier, Rule> RULES = Map.ofEntries(
             rule(Reference.id("service_rifle"),
                     Set.of("railing", "iron_sight", "modified_iron_sight", "stock_iron_sight", "handguard", "light_handguard"),
-                    Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip"))
+                    Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip")),
+            rule(Reference.id("revolver"),
+                    Set.of("chamber"),
+                    Set.of())
     );
 
     private GunAttachmentVisibility() {
     }
 
-    public static void apply(ResourceLocation gunId, GeoBone bone) {
-        String boneName = bone.getName();
+    public static void apply(Identifier gunId, GeoBone bone) {
+        String boneName = bone.name();
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             Boolean hidden = rule.visibility(boneName);
             if (hidden != null) {
-                bone.setHidden(hidden);
+                bone.frameSnapshot.skipRender(hidden);
                 return;
             }
         }
 
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
-            bone.setHidden(true);
+            bone.frameSnapshot.skipRender(true);
         }
     }
 
-    private static Map.Entry<ResourceLocation, Rule> rule(
-            ResourceLocation gunId,
+    private static Map.Entry<Identifier, Rule> rule(
+            Identifier gunId,
             Set<String> visible,
             Set<String> hidden
     ) {
