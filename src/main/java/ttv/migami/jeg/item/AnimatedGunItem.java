@@ -22,6 +22,7 @@ import com.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
+import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.network.NetworkHandler;
