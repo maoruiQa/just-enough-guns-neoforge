@@ -45,7 +45,10 @@ public final class GunAttachmentVisibility {
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
             rule(Reference.id("service_rifle"),
                     Set.of("railing", "iron_sight", "modified_iron_sight", "stock_iron_sight", "handguard", "light_handguard"),
-                    Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip"))
+                    Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip")),
+            rule(Reference.id("revolver"),
+                    Set.of("chamber"),
+                    Set.of())
     );
 
     private GunAttachmentVisibility() {

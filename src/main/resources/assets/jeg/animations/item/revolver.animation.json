@@ -27,6 +27,11 @@
 					"position": {
 						"vector": [0, 0, 0]
 					}
+				},
+				"chamber": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
 				}
 			}
 		},
