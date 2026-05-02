@@ -4256,8 +4256,8 @@
     "thirdperson_righthand": {
       "translation": [
         0,
-        7,
-        -12
+        15,
+        5
       ],
       "scale": [
         1.5,
@@ -4269,7 +4269,12 @@
       "translation": [
         -3,
         0,
-        16
+        -16
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
       ]
     },
     "gui": {
