@@ -20,6 +20,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
+import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -84,7 +85,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (isFirstPersonRender(state, stack)) {
             var player = software.bernie.geckolib.util.ClientUtil.getClientPlayer();
             if (player != null && player.isSprinting() && !AimingHandler.get().isAiming()) {
-                return state.setAndContinue(SPRINT);
+                if (stack.getItem() instanceof AnimatedGunItem gun) {
+                    var profile = GunPoseProfile.forGun(gun.getStats().id());
+                    if (profile.canApplySprintingAnimation()) {
+                        return state.setAndContinue(SPRINT);
+                    }
+                }
             }
         }
 

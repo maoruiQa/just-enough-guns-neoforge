@@ -17,7 +17,8 @@ public record GunPoseProfile(
         float adsYaw,
         float scale,
         ArmTransform leftArm,
-        ArmTransform rightArm
+        ArmTransform rightArm,
+        boolean canApplySprintingAnimation
 ) {
     public record ArmTransform(
             float tx,
@@ -207,7 +208,8 @@ public record GunPoseProfile(
                 adsYaw,
                 scale,
                 DEFAULT_LEFT_ARM,
-                DEFAULT_RIGHT_ARM
+                DEFAULT_RIGHT_ARM,
+                true
         );
     }
 
@@ -239,7 +241,8 @@ public record GunPoseProfile(
                 adsYaw,
                 scale,
                 leftArm,
-                rightArm
+                rightArm,
+                true
         );
     }
 
