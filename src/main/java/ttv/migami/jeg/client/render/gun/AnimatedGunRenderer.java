@@ -58,6 +58,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             Map.entry(Reference.id("hypersonic_cannon"), zoom(0.0D, 3.9D, -2.25D)),
             Map.entry(Reference.id("infantry_rifle"), zoom(0.0D, 3.8D, 1.75D)),
             Map.entry(Reference.id("light_machine_gun"), zoom(0.0D, 4.56D, -1.75D)),
+            Map.entry(Reference.id("minigun"), zoom(0.0D, 4.0D, -1.75D)),
             Map.entry(Reference.id("pump_shotgun"), zoom(0.0D, 3.3D, -1.25D)),
             Map.entry(Reference.id("repeating_shotgun"), zoom(0.0D, 3.75D, -1.75D)),
             Map.entry(Reference.id("revolver"), zoom(0.0D, 3.85D, -1.75D)),
