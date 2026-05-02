@@ -38,11 +38,13 @@ import ttv.migami.jeg.init.ModEntities;
  * Stays within a certain radius of its spawn point and flies higher.
  */
 public class TerrorPhantomGuardian extends TerrorPhantom {
+    private static final float GUARDIAN_MIN_DAMAGE_TO_HURT = 3.0F;
     // Guardian parameters
     private static final double SKYSHIP_VERTICAL_RANGE = 128.0D;
     private static final double SKYSHIP_DETECTION_RADIUS = 160.0D;
     private static final double ACTIVE_DETECTION_RADIUS = 85.0D; // Increased from 56 by 29 blocks
-    private static final double PASSIVE_RETALIATION_RADIUS = 160.0D;
+    private static final double PASSIVE_RETALIATION_RADIUS = 180.0D;
+    private static final int TARGET_LOST_SIGHT_FORGET_TICKS = 20 * 5;
     private static final int DEFAULT_TETHER_RADIUS = 120;
     // Guardian flies above Sky Ship structure: tightened altitude band relative to detected deck height
     private static final int MIN_FLIGHT_HEIGHT_ABOVE_DECK = 55;
@@ -73,6 +75,14 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     private static final int GUARDIAN_DEATH_HOVER_TICKS = 60;
     private static final int GUARDIAN_DEATH_DURATION = 200;
     private static final double PATROL_STEP_RADIANS = Math.toRadians(24.0D);
+    // Guardian support system
+    private static final int SUPPORT_TARGET_COUNT = 4;
+    private static final int SUPPORT_MAX_COUNT = 6;
+    private static final int SUPPORT_SPAWN_COOLDOWN_TICKS = 20 * 25;
+    private static final double SUPPORT_MIN_TRIGGER_DISTANCE = ACTIVE_DETECTION_RADIUS;
+    private static final double SUPPORT_SPAWN_HEIGHT_ABOVE_PLAYER = 48.0D;
+    private static final double SUPPORT_SPAWN_MIN_SPREAD = 14.0D;
+    private static final double SUPPORT_SPAWN_RANDOM_SPREAD = 12.0D;
 
     private BlockPos anchorPos;
     private BlockPos desiredAnchor;
@@ -83,6 +93,11 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     private final java.util.Set<java.util.UUID> engagedPlayers = new java.util.HashSet<>();
     private int idleRecenterTicks = 0;
     private int guardianDeathTicks = 0;
+    private int targetLostSightTicks = 0;
+    private final java.util.List<PhantomGunnerMinion> guardianSupports = new java.util.ArrayList<>();
+    private Vec3 lastEffectiveFirePos;
+    private long lastEffectiveFireTick = Long.MIN_VALUE;
+    private long lastSupportSpawnTick = -SUPPORT_SPAWN_COOLDOWN_TICKS;
 
     // Store the player who killed this phantom for raid targeting
     @Nullable
@@ -557,11 +572,15 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         java.util.List<Player> players = level.getEntitiesOfClass(
                 Player.class,
                 searchArea,
-                player -> player.isAlive() && !player.isSpectator() && !player.isCreative()
+                player -> isValidCombatTarget(player) && this.getSensing().hasLineOfSight(player)
         );
 
         Player currentTarget = this.getTarget() instanceof Player player ? player : null;
         if (currentTarget != null && !isValidCombatTarget(currentTarget)) {
+            disengageCurrentTarget();
+            currentTarget = null;
+        }
+        if (currentTarget != null && !trackCurrentTargetVisibility(currentTarget)) {
             disengageCurrentTarget();
             currentTarget = null;
         }
@@ -613,6 +632,13 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (amount < GUARDIAN_MIN_DAMAGE_TO_HURT) {
+            return false;
+        }
+        if (amount > 0.0F) {
+            handleEffectiveFireSupport(level, source);
+        }
+
         float adjustedAmount = applyProjectileProtectionReduction(source, amount);
         boolean damaged = super.hurtServer(level, source, adjustedAmount);
         if (!damaged || amount <= 0.0F || this.anchorPos == null) {
@@ -675,12 +701,103 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         return player.isAlive() && !player.isSpectator() && !player.isCreative();
     }
 
+    private boolean trackCurrentTargetVisibility(Player player) {
+        if (this.getSensing().hasLineOfSight(player)) {
+            this.targetLostSightTicks = 0;
+            return true;
+        }
+        return ++this.targetLostSightTicks < TARGET_LOST_SIGHT_FORGET_TICKS;
+    }
+
     private void disengageCurrentTarget() {
         if (this.getTarget() instanceof Player player) {
             this.engagedPlayers.remove(player.getUUID());
         }
+        this.targetLostSightTicks = 0;
         this.setTarget(null);
         this.setAggressive(false);
+    }
+
+    private void handleEffectiveFireSupport(ServerLevel level, DamageSource source) {
+        if (this.getType() != ModEntities.TERROR_PHANTOM_GUARDIAN.get()) {
+            return;
+        }
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return;
+        }
+        if (!(bullet.getOwner() instanceof Player player) || !isValidCombatTarget(player)) {
+            return;
+        }
+
+        Vec3 rangeCenter = this.anchorPos != null ? Vec3.atCenterOf(this.anchorPos) : this.position();
+        double playerDistanceSq = player.distanceToSqr(rangeCenter.x, rangeCenter.y, rangeCenter.z);
+        if (playerDistanceSq <= SUPPORT_MIN_TRIGGER_DISTANCE * SUPPORT_MIN_TRIGGER_DISTANCE
+                || playerDistanceSq > PASSIVE_RETALIATION_RADIUS * PASSIVE_RETALIATION_RADIUS) {
+            return;
+        }
+
+        this.lastEffectiveFirePos = player.position();
+        this.lastEffectiveFireTick = level.getGameTime();
+        updateGuardianSupport(level, this.lastEffectiveFirePos);
+    }
+
+    private void updateGuardianSupport(ServerLevel level, Vec3 firePos) {
+        java.util.List<PhantomGunnerMinion> supports = getActiveGuardianSupports(level);
+        for (PhantomGunnerMinion support : supports) {
+            support.assignGuardianSupport(this, firePos);
+        }
+
+        int spawnSlots = Math.min(SUPPORT_TARGET_COUNT - supports.size(), SUPPORT_MAX_COUNT - supports.size());
+        if (spawnSlots <= 0) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (gameTime - this.lastSupportSpawnTick < SUPPORT_SPAWN_COOLDOWN_TICKS) {
+            return;
+        }
+
+        int spawned = 0;
+        for (int i = 0; i < spawnSlots; i++) {
+            if (spawnGuardianSupport(level, firePos, i, spawnSlots)) {
+                spawned++;
+            }
+        }
+        if (spawned > 0) {
+            this.lastSupportSpawnTick = gameTime;
+            playSummonEffects(level, this.blockPosition().above(4));
+        }
+    }
+
+    private java.util.List<PhantomGunnerMinion> getActiveGuardianSupports(ServerLevel level) {
+        this.guardianSupports.removeIf(support -> support == null
+                || support.level() != level
+                || support.isRemoved()
+                || !support.isAlive()
+                || !support.isGuardianSupportFor(this));
+        return this.guardianSupports;
+    }
+
+    private boolean spawnGuardianSupport(ServerLevel level, Vec3 firePos, int index, int total) {
+        PhantomGunnerMinion gunner = new PhantomGunnerMinion(ModEntities.PHANTOM_GUNNER_MINION.get(), level);
+        double angle = Mth.TWO_PI * ((index + level.getRandom().nextDouble() * 0.35D) / Math.max(1, total));
+        double radius = SUPPORT_SPAWN_MIN_SPREAD + level.getRandom().nextDouble() * SUPPORT_SPAWN_RANDOM_SPREAD;
+        Vec3 spawnCenter = firePos.add(
+                Math.cos(angle) * radius,
+                SUPPORT_SPAWN_HEIGHT_ABOVE_PLAYER + level.getRandom().nextInt(5) - 2.0D,
+                Math.sin(angle) * radius
+        );
+        BlockPos spawnPos = BlockPos.containing(spawnCenter);
+        gunner.setPos(spawnCenter.x, spawnCenter.y, spawnCenter.z);
+        gunner.setYRot(level.getRandom().nextFloat() * 360.0F);
+        gunner.yRotO = gunner.getYRot();
+        gunner.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
+        gunner.assignGuardianSupport(this, firePos);
+        boolean added = level.addFreshEntity(gunner);
+        if (added) {
+            this.guardianSupports.add(gunner);
+        }
+        return added;
     }
 
     @Override

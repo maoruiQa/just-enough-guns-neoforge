@@ -2,7 +2,6 @@ package ttv.migami.jeg.entity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -83,17 +82,6 @@ public class BulletEntity extends Projectile {
                 || state.is(Blocks.FERN)
                 || state.is(Blocks.LARGE_FERN);
     }
-    private static final Set<String> DAMAGE_FALLOFF_IDS = Set.of(
-            "pump_shotgun",
-            "holy_shotgun",
-            "repeating_shotgun",
-            "supersonic_shotgun",
-            "minigun",
-            "typhoonee",
-            "atlantean_spear",
-            "vindicator_smg",
-            "fire_sweeper"
-    );
     private static final double MIN_TRAIL_START_DISTANCE_SQR = 0.45D * 0.45D;
     private static final double TRAIL_SYNC_RANGE = 256.0D;
     private static final float ROCKET_EXPLOSION_POWER = 6.8F;
@@ -372,7 +360,7 @@ public class BulletEntity extends Projectile {
 
         // Normal bullet damage logic
         if (!this.level().isClientSide()) {
-            float damage = applyLegacyDamageFalloff(this.entityData.get(DATA_DAMAGE), getGunStats());
+            float damage = applyNormalDamageFalloff(this.entityData.get(DATA_DAMAGE), getGunStats());
 
             // Reduce damage for Terror Phantom and Phantom Gunner to balance fire rate (5 shots/sec)
             if (owner instanceof AbstractTerrorPhantom || owner instanceof PhantomGunner) {
@@ -445,14 +433,34 @@ public class BulletEntity extends Projectile {
         return result.getLocation().y >= living.getEyeY() - 0.20D;
     }
 
-    private float applyLegacyDamageFalloff(float baseDamage, GunStats stats) {
-        if (!DAMAGE_FALLOFF_IDS.contains(stats.id().getPath())) {
+    private float applyNormalDamageFalloff(float baseDamage, GunStats stats) {
+        if (GunRangeHelper.isRangeExempt(stats)) {
             return baseDamage;
         }
 
-        int life = Math.max(1, this.entityData.get(DATA_FALLOFF_LIFE));
-        float modifier = ((float) life - (float) (this.tickCount - 1)) / (float) life;
-        return Math.max(0.0F, baseDamage * Math.min(modifier, 1.0F));
+        double effectiveRange = GunRangeHelper.computeEffectiveRange(stats);
+        if (effectiveRange <= 0.0D) {
+            return baseDamage;
+        }
+
+        double traveled = Math.max(0, this.tickCount - 1) * Math.max(0.0D, stats.projectileSpeed());
+        double fullDamageRange = effectiveRange * 0.7D;
+        if (traveled <= fullDamageRange) {
+            return baseDamage;
+        }
+
+        double scale;
+        if (traveled <= effectiveRange) {
+            double t = Mth.clamp((traveled - fullDamageRange) / Math.max(0.001D, effectiveRange - fullDamageRange), 0.0D, 1.0D);
+            scale = Mth.lerp(t, 1.0D, 0.9D);
+        } else if (traveled <= effectiveRange * 1.8D) {
+            double t = Mth.clamp((traveled - effectiveRange) / Math.max(0.001D, effectiveRange * 0.8D), 0.0D, 1.0D);
+            scale = 0.9D - 0.8D * t * t;
+        } else {
+            scale = 0.1D;
+        }
+
+        return Math.max(0.0F, baseDamage * (float) scale);
     }
 
     private boolean isFriendlyFire(LivingEntity owner, LivingEntity target) {

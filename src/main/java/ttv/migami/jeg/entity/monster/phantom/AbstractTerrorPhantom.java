@@ -50,6 +50,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
@@ -64,6 +65,7 @@ import ttv.migami.jeg.item.GunItem;
  * Shared behaviour for Terror Phantom variants.
  */
 public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity {
+    private static final float MIN_DAMAGE_TO_HURT = 2.0F;
     private static final int SUMMON_INTERVAL_TICKS = 200;
     private static final int MAX_ACTIVE_GUNNERS = 6; // Increased from 3 to 6 for more intense battles
     private static final double SUMMON_RANGE = 48.0D;
@@ -85,6 +87,8 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private int reloadTicks;
     private int fireCooldown;
     private int ticksSinceLastDamage = IDLE_HEAL_DELAY_TICKS;
+    private long lastRapidFireResistanceHitTick = Long.MIN_VALUE;
+    private int rapidFireResistanceHitCount;
     private static final String GECKO_CONTROLLER = "Idle";
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -420,12 +424,24 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
 
     // @Override removed - method signature changed in 1.21.1
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (amount < MIN_DAMAGE_TO_HURT) {
+            return false;
+        }
         float adjustedAmount = applyDefaultProjectileProtectionReduction(source, amount);
+        adjustedAmount = applyRapidFireResistance(level, source, adjustedAmount);
         boolean damaged = super.hurt(source, adjustedAmount);
         if (damaged && amount > 0.0F) {
             this.ticksSinceLastDamage = 0;
         }
         return damaged;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            return hurtServer(serverLevel, source, amount);
+        }
+        return super.hurt(source, amount);
     }
 
     private float applyDefaultProjectileProtectionReduction(DamageSource source, float amount) {
@@ -449,6 +465,46 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             return false;
         }
         return "rocket_launcher".equals(bullet.getGunStats().id().getPath());
+    }
+
+    private float applyRapidFireResistance(ServerLevel level, DamageSource source, float amount) {
+        if (amount <= 0.0F || !isRapidFireResistanceTarget()) {
+            return amount;
+        }
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return amount;
+        }
+        if (!(bullet.getOwner() instanceof Player player) || player.isCreative() || player.isSpectator()) {
+            return amount;
+        }
+
+        String gunPath = bullet.getGunStats().id().getPath();
+        float multiplier;
+        if ("minigun".equals(gunPath)) {
+            multiplier = (float) Config.terrorPhantomMinigunRapidFireDamageMultiplier();
+        } else if ("light_machine_gun".equals(gunPath)) {
+            multiplier = (float) Config.terrorPhantomLightMachineGunRapidFireDamageMultiplier();
+        } else {
+            return amount;
+        }
+
+        long gameTime = level.getGameTime();
+        if (this.lastRapidFireResistanceHitTick == Long.MIN_VALUE
+                || gameTime - this.lastRapidFireResistanceHitTick > Config.terrorPhantomRapidFireResistanceResetTicks()) {
+            this.rapidFireResistanceHitCount = 0;
+        }
+        this.lastRapidFireResistanceHitTick = gameTime;
+        this.rapidFireResistanceHitCount++;
+
+        if (this.rapidFireResistanceHitCount <= Config.terrorPhantomRapidFireResistanceWarmupHits()) {
+            return amount;
+        }
+        return amount * multiplier;
+    }
+
+    private boolean isRapidFireResistanceTarget() {
+        return this.getType() == ModEntities.TERROR_PHANTOM.get()
+                || this.getType() == ModEntities.TERROR_PHANTOM_GUARDIAN.get();
     }
 
     @Override

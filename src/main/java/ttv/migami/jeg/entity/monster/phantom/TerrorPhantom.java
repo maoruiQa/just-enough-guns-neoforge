@@ -25,7 +25,9 @@ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.GrenadeEntity;
@@ -56,6 +58,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     private int deathTimer = 0;
     private boolean deathResolved = false;
     private static final int DEATH_ANIMATION_DURATION = 200;
+    private static final int MIN_DEATH_DIVE_TICKS = 30;
     private double forwardSpeed = 0.1;
     private boolean looted = false;
 
@@ -115,6 +118,24 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
     @Override
     protected void onDefeated(ServerLevel level, DamageSource source) {
         this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        beginDeathDive(source);
+    }
+
+    private void beginDeathDive(DamageSource source) {
+        if (this.isDying || this.deathResolved) {
+            return;
+        }
+        this.killer = source.getEntity() instanceof Player ? (Player) source.getEntity() : this.killer;
+        this.isDying = true;
+        this.setDying(true);
+        this.deathTimer = 0;
+        this.deathTime = 0;
+        this.noPhysics = false;
     }
 
     @Override
@@ -191,17 +212,45 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 10.0F, 1.0F);
         }
 
-        BlockPos impactPos = this.level() instanceof ServerLevel impactLevel ? resolveDeathImpactPosition(impactLevel) : this.blockPosition();
-        boolean hitGround = this.getY() + this.getDeltaMovement().y <= impactPos.getY() + 0.25D;
-        boolean nearWorldBottom = this.level() instanceof ServerLevel bottomLevel && this.getY() <= bottomLevel.getMinBuildHeight() + 2.0D;
+        ServerLevel serverLevel = this.level() instanceof ServerLevel level ? level : null;
+        boolean hitGround = serverLevel != null && hasDeathImpactContact(serverLevel);
+        boolean nearWorldBottom = serverLevel != null && this.getY() <= serverLevel.getMinBuildHeight() + 2.0D;
 
         // End death animation
-        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || this.horizontalCollision || this.verticalCollision || hitGround || nearWorldBottom)) {
+        boolean canResolveImpact = this.deathTimer >= MIN_DEATH_DIVE_TICKS;
+        if (!this.deathResolved && (this.deathTimer >= DEATH_ANIMATION_DURATION || nearWorldBottom || (canResolveImpact && hitGround))) {
             this.deathResolved = true;
+            BlockPos impactPos = serverLevel != null ? resolveDeathImpactPosition(serverLevel) : this.blockPosition();
             this.setPos(impactPos.getX() + 0.5D, impactPos.getY(), impactPos.getZ() + 0.5D);
             explodeOnDeath();
             this.remove(RemovalReason.KILLED);
         }
+    }
+
+    private boolean hasDeathImpactContact(ServerLevel level) {
+        AABB bounds = this.getBoundingBox();
+        AABB footBox = new AABB(
+                bounds.minX + 0.1D,
+                bounds.minY - 0.08D,
+                bounds.minZ + 0.1D,
+                bounds.maxX - 0.1D,
+                bounds.minY + 0.08D,
+                bounds.maxZ - 0.1D
+        );
+        int minX = Mth.floor(footBox.minX);
+        int maxX = Mth.floor(footBox.maxX);
+        int minY = Mth.floor(footBox.minY);
+        int maxY = Mth.floor(footBox.maxY);
+        int minZ = Mth.floor(footBox.minZ);
+        int maxZ = Mth.floor(footBox.maxZ);
+
+        for (BlockPos pos : BlockPos.betweenClosed(minX, minY, minZ, maxX, maxY, maxZ)) {
+            BlockState state = level.getBlockState(pos);
+            if (!state.isAir() && !state.getCollisionShape(level, pos).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private BlockPos resolveDeathImpactPosition(ServerLevel level) {
