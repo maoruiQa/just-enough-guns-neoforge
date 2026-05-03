@@ -237,7 +237,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static ItemTransform staticItemFirstPersonTransform(ResourceLocation itemId, ItemDisplayContext displayContext) {
         Minecraft mc = Minecraft.getInstance();
-        ModelResourceLocation modelId = new ModelResourceLocation(Reference.id("item/" + itemId.getPath()), "standalone");
+        ResourceLocation modelPath = itemId.equals(Reference.id("holy_shotgun"))
+                ? Reference.id("item/first_person/holy_shotgun")
+                : Reference.id("item/" + itemId.getPath());
+        ModelResourceLocation modelId = new ModelResourceLocation(modelPath, "standalone");
         BakedModel model = mc.getModelManager().getModel(modelId);
         if (model == mc.getModelManager().getMissingModel()) {
             return new ItemTransform(
