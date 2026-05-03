@@ -123,7 +123,7 @@ public record GunPoseProfile(
 
     private static final GunPoseProfile ROCKET_LAUNCHER_PROFILE = of(
             ArmMode.HEAVY,
-            false,
+            true,
             0.71F, -0.28F, -0.64F,
             0.42F, -0.44F, -0.80F,
             2.0F, 4.0F, 1.22F,

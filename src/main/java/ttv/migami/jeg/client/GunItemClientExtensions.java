@@ -84,22 +84,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             adsDownShift = -0.24F;
             adsForwardShift = 0.00F;
         } else {
-            adsScreenXShift = -0.30F;
-            adsDownShift = -0.36F;
+            adsScreenXShift = 0.00F;
+            adsDownShift = 0.00F;
             adsForwardShift = 0.00F;
-        }
-
-        boolean mediumDownGroup =
-                "hollenfire_mk2".equals(gunPath)
-                        || "semi_auto_pistol".equals(gunPath)
-                        || "combat_pistol".equals(gunPath)
-                        || "combat_rifle".equals(gunPath)
-                        || "flamethrower".equals(gunPath);
-        if (mediumDownGroup) {
-            adsDownShift -= 0.18F;
-        }
-        if ("service_rifle".equals(gunPath)) {
-            adsDownShift -= 0.12F;
         }
 
         xOffset += direction * adsScreenXShift * adsWeight;

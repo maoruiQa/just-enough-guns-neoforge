@@ -60,7 +60,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         }
 
         String gunId = gun.getStats().id().getPath();
-        boolean suppressLeftArm = "rocket_launcher".equals(gunId) || "typhoonee".equals(gunId);
+        boolean suppressLeftArm = "typhoonee".equals(gunId);
         GunPoseProfile profile = item instanceof AnimatedGunItem animatedGun
                 ? GunPoseProfile.forGun(animatedGun.getStats().id())
                 : GunPoseProfile.forGun(Identifier.fromNamespaceAndPath("jeg", "abstract_gun"));
