@@ -76,20 +76,20 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         );
 
         if (!suppressLeftArm && renderLeftArm && (!oneHanded || activeSide == ArmSide.LEFT)) {
-            registerArmBone(passInfo, ArmSide.LEFT, profile.leftArm());
+            registerArmBone(passInfo, ArmSide.LEFT);
         }
         if (!oneHanded || activeSide == ArmSide.RIGHT) {
-            registerArmBone(passInfo, ArmSide.RIGHT, profile.rightArm());
+            registerArmBone(passInfo, ArmSide.RIGHT);
         }
     }
 
-    private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side, GunPoseProfile.ArmTransform transform) {
+    private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side) {
         String fake = side == ArmSide.LEFT ? "fake_left_arm" : "fake_right_arm";
         String normal = side == ArmSide.LEFT ? "left_arm" : "right_arm";
         // Prefer normal arm bones; fake_* are often emergency anchors that can drift into camera.
         passInfo.model().getBone(normal).ifPresentOrElse(
-                bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side, transform)),
-                () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side, transform)))
+                bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)),
+                () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)))
         );
     }
 
@@ -99,11 +99,9 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
     private static final class ArmRenderTask implements PerBoneRender<GeoRenderState> {
         private final ArmSide side;
-        private final GunPoseProfile.ArmTransform transform;
 
-        private ArmRenderTask(ArmSide side, GunPoseProfile.ArmTransform transform) {
+        private ArmRenderTask(ArmSide side) {
             this.side = side;
-            this.transform = transform;
         }
 
         @Override
@@ -127,7 +125,6 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
             PartState armState = PartState.capture(armPart);
             PartState sleeveState = PartState.capture(sleevePart);
             try {
-                poseStack.scale(transform.sx(), transform.sy(), transform.sz());
                 prepareArmPart(armPart, side);
                 collector.submitModelPart(
                         armPart,

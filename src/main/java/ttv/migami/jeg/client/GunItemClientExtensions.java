@@ -65,6 +65,10 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
         float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
         float adsWeight = ads * ads;
+        xOffset = Mth.lerp(adsWeight, xOffset, 0.03F);
+        yOffset = Mth.lerp(adsWeight, yOffset, -0.06F);
+        zOffset = Mth.lerp(adsWeight, zOffset, -0.90F);
+        yaw = Mth.lerp(adsWeight, yaw, 0.0F);
 
         boolean isRocketLauncher = "rocket_launcher".equals(gunPath);
         boolean isTyphoonee = "typhoonee".equals(gunPath);

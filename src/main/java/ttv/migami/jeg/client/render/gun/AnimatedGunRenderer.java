@@ -48,6 +48,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             DataTicket.create("jeg:item_stack", ItemStack.class);
     private static final DataTicket<Boolean> USING_VANILLA_NON_FIRST_PERSON =
             DataTicket.create("jeg:using_vanilla_non_first_person", Boolean.class);
+    private static final Set<String> FIRST_PERSON_ARM_BONES =
+            Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm");
 
     private static final class VanillaStateAccess {
         private static final Field LAYERS;
@@ -297,6 +299,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         Identifier finalGunId = gunId;
         passInfo.addBoneUpdater((info, snapshots) -> GunAttachmentVisibility.apply(finalGunId, snapshots));
+        if (isFirstPerson(resolveStableContext(renderState))) {
+            passInfo.addBoneUpdater((info, snapshots) ->
+                    FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {
+                        snapshot.skipRender(true);
+                        snapshot.skipChildrenRender(false);
+                    }))
+            );
+        }
 
         super.preRenderPass(passInfo, collector);
     }
