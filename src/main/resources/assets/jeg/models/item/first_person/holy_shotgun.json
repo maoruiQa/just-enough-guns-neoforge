@@ -3,17 +3,32 @@
     "display":  {
                     "firstperson_righthand":  {
                                                   "translation":  [
-                                                                      -3,
-                                                                      0,
-                                                                      -3
-                                                                  ]
+                                                                      -3.25,
+                                                                      1,
+                                                                      -2.75
+                                                                  ],
+                                                  "scale":  [
+                                                                1.2,
+                                                                1.2,
+                                                                1.2
+                                                            ]
                                               },
                     "firstperson_lefthand":  {
+                                                 "rotation":  [
+                                                                  0,
+                                                                  180,
+                                                                  0
+                                                              ],
                                                  "translation":  [
-                                                                     -3,
-                                                                     0,
-                                                                     -3
-                                                                 ]
+                                                                     3.25,
+                                                                     1,
+                                                                     -2.75
+                                                                 ],
+                                                 "scale":  [
+                                                               1.2,
+                                                               1.2,
+                                                               1.2
+                                                           ]
                                              }
                 }
 }
