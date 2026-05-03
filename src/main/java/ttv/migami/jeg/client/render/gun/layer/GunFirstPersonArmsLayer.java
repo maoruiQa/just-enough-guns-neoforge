@@ -16,7 +16,6 @@ import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.PerBoneRender;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.GeoRenderLayer;
-import com.geckolib.util.RenderUtil;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -99,9 +98,6 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
             PoseStack poseStack = passInfo.poseStack();
             poseStack.pushPose();
-
-            // Align to the animated arm bone.
-            RenderUtil.prepMatrixForBone(poseStack, bone);
 
             poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(transform.rx()));
             poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(transform.ry()));
