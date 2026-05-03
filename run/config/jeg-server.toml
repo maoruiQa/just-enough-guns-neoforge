@@ -3,6 +3,10 @@
 	groundWaveCount = 4
 	airWaveCount = 4
 
+[ui]
+	showHitFeedback = true
+	showCrosshair = true
+
 [factionPatrol]
 	minimumDays = 5
 	intervalDays = 5
@@ -25,10 +29,11 @@
 	bulletLifetimeSeconds = 60
 	gunnerAccuracyStartDay = 5
 	bulletBlockDestructionEnabled = true
-	recoilBackstepScale = 0.5
 	gunnerAccuracyDaysToMax = 40
-	gunnerShotgunSpreadMultiplier = 0.82
 	recoilBackstepEnabled = true
+	magazineFeedEnabled = true
+	recoilBackstepScale = 0.5
+	gunnerShotgunSpreadMultiplier = 0.82
 	gunnerTerrainInteractionEnabled = true
 	blockHitAnimationEnabled = true
 	gunnerTerrainInteractionMaxTier = 2
@@ -43,9 +48,11 @@
 	phantomGunnerChance = 0.12
 	phantomGunnerMaxChance = 0.33
 	terrorPhantomChance = 0.01
+	phantomGunnerDeathExplosionEnabled = true
 	skeletonGunnerChance = 0.14285714285714285
 	huskGunnerChance = 0.08333333333333333
 	pillagerGunnerMaxChance = 0.35
 	pillagerGunnerChance = 0.14
 	zombifiedPiglinGunnerChance = 0.1
 	zombieGunnerChance = 0.08333333333333333
+	parchedGunnerChance = 1.0

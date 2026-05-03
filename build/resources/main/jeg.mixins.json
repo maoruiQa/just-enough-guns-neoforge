@@ -10,7 +10,8 @@
     "TargetGoalMixin",
     "NearestAttackableTargetGoalMixin",
     "GunnerSunBurnMixin",
-    "GunnerWaterConversionMixin"
+    "GunnerWaterConversionMixin",
+    "LivingEntityDeathDropsMixin"
   ],
   "client": [
     "AbstractClientPlayerMixin",

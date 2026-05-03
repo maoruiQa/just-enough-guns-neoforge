@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "jeg",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "name": "Just Enough Guns",
   "description": "Port of Just Enough Guns to Fabric.",
   "authors": [
