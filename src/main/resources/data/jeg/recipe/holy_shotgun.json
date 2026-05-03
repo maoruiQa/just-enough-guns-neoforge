@@ -1,9 +1,4 @@
 {
-    "neoforge:conditions":  [
-                                {
-                                    "type":  "neoforge:never"
-                                }
-                            ],
     "type":  "minecraft:crafting_shaped",
     "category":  "equipment",
     "pattern":  [
@@ -12,21 +7,11 @@
                     " XG"
                 ],
     "key":  {
-                "G":  {
-                          "item":  "minecraft:gold_block"
-                      },
-                "I":  {
-                          "item":  "minecraft:iron_block"
-                      },
-                "X":  {
-                          "item":  "minecraft:diamond"
-                      },
-                "L":  {
-                          "item":  "minecraft:glowstone"
-                      },
-                "B":  {
-                          "item":  "minecraft:iron_block"
-                      }
+                "G":  "minecraft:gold_block",
+                "I":  "minecraft:iron_block",
+                "X":  "minecraft:diamond",
+                "L":  "minecraft:glowstone",
+                "B":  "minecraft:iron_block"
             },
     "result":  {
                    "id":  "jeg:holy_shotgun",

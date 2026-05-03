@@ -88,7 +88,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         if (isFirstPersonRender(test)) {
             var player = com.geckolib.util.ClientUtil.getClientPlayer();
-            if (player != null && player.isSprinting() && !AimingHandler.get().isAiming()) {
+            if (player != null && player.isSprinting() && !AimingHandler.get().isAiming() && !isLocalAttackDown(player)) {
                 ItemStack stack = renderStack;
                 var profile = stack.getItem() instanceof AnimatedGunItem gun
                         ? GunPoseProfile.forGun(gun.getStats().id())
@@ -143,6 +143,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         return matchesHeldStack(stack, minecraft.player.getMainHandItem())
                 || matchesHeldStack(stack, minecraft.player.getOffhandItem());
+    }
+
+    private static boolean isLocalAttackDown(Entity entity) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft != null && minecraft.player == entity && minecraft.options.keyAttack.isDown();
     }
 
     private static ItemStack resolveRenderStack(AnimationTest<AnimatedGunItem> test) {

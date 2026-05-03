@@ -169,7 +169,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads) {
-        if (!player.isSprinting() || AimingHandler.get().isAiming()) {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean attackDown = minecraft != null && minecraft.player == player && minecraft.options.keyAttack.isDown();
+        if (!player.isSprinting() || AimingHandler.get().isAiming() || attackDown) {
             return;
         }
 

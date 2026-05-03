@@ -1560,6 +1560,13 @@ public class GunItem extends Item {
                     coolOverheat(stack, heldInHand);
                 }
             }
+        } else {
+            boolean coolingBlockedByFiring = heldInHand
+                    && entity instanceof Player playerHolder
+                    && playerHolder.getCooldowns().isOnCooldown(stack);
+            if (!coolingBlockedByFiring && (!heldInHand || (level.getGameTime() & 1L) == 0L)) {
+                coolOverheat(stack, heldInHand);
+            }
         }
         if (!(entity instanceof Player player)) {
             return;
