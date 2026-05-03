@@ -129,7 +129,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         applyBobbingTransforms(poseStack, player, partialTick, ads);
         applySwayTransforms(poseStack, player, partialTick, ads);
-        applySprintingTransforms(poseStack, player, direction, ads, profile.canApplySprintingAnimation());
+        applySprintingTransforms(poseStack, player, direction, ads);
         applyRecoilTransforms(poseStack, ads);
         return true;
     }
@@ -165,10 +165,10 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
     }
 
-    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads, boolean canApplySprintingAnimation) {
+    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads) {
         Minecraft minecraft = Minecraft.getInstance();
         boolean attackDown = minecraft != null && minecraft.player == player && minecraft.options.keyAttack.isDown();
-        if (!canApplySprintingAnimation || !player.isSprinting() || AimingHandler.get().isAiming() || attackDown) {
+        if (!player.isSprinting() || AimingHandler.get().isAiming() || attackDown) {
             return;
         }
 
