@@ -3,7 +3,6 @@ package ttv.migami.jeg.client.render.gun;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
@@ -11,13 +10,11 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.ItemTransform;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -26,51 +23,11 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final long DEBUG_WINDOW_NANOS = 2_000_000_000L;
-    private static final double FIRST_PERSON_TRANSLATE_X = -3.0D / 16.0D;
-    private static final double FIRST_PERSON_TRANSLATE_Y = 0.0D;
-    private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
     private static final double THIRD_PERSON_ANIMATED_Y_CORRECTION = -8.75D / 16.0D;
-    private static final double FORGE_MODEL_CENTER_OFFSET = 0.5D;
-    private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
-    private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
-    private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
-    private static final Map<ResourceLocation, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
-            Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
-            Map.entry(Reference.id("assault_rifle"), zoom(0.0D, 3.75D, -1.75D)),
-            Map.entry(Reference.id("blossom_rifle"), zoom(0.0D, 4.75D, -1.5D)),
-            Map.entry(Reference.id("bolt_action_rifle"), zoom(0.0D, 4.35D, -1.25D)),
-            Map.entry(Reference.id("burst_rifle"), zoom(0.0D, 4.65D, -1.75D)),
-            Map.entry(Reference.id("combat_pistol"), zoom(0.0D, 5.135D, -1.75D)),
-            Map.entry(Reference.id("combat_rifle"), zoom(0.0D, 5.71D, -1.75D)),
-            Map.entry(Reference.id("custom_smg"), zoom(0.0D, 3.85D, -1.75D)),
-            Map.entry(Reference.id("double_barrel_shotgun"), zoom(0.0D, 5.05D, 0.75D)),
-            Map.entry(Reference.id("finger_gun"), zoom(0.0D, 3.0D, -1.75D)),
-            Map.entry(Reference.id("flamethrower"), zoom(0.0D, 5.71D, -1.75D)),
-            Map.entry(Reference.id("flare_gun"), zoom(0.0D, 4.85D, -1.75D)),
-            Map.entry(Reference.id("grenade_launcher"), zoom(0.0D, 3.61D, 2.0D)),
-            Map.entry(Reference.id("hollenfire_mk2"), zoom(0.0D, 5.2D, -1.75D)),
-            Map.entry(Reference.id("holy_shotgun"), zoom(0.0D, 3.14D, -1.25D)),
-            Map.entry(Reference.id("hypersonic_cannon"), zoom(0.0D, 3.9D, -2.25D)),
-            Map.entry(Reference.id("infantry_rifle"), zoom(0.0D, 3.8D, 1.75D)),
-            Map.entry(Reference.id("light_machine_gun"), zoom(0.0D, 4.56D, -1.75D)),
-            Map.entry(Reference.id("pump_shotgun"), zoom(0.0D, 3.3D, -1.25D)),
-            Map.entry(Reference.id("repeating_shotgun"), zoom(0.0D, 3.75D, -1.75D)),
-            Map.entry(Reference.id("revolver"), zoom(0.0D, 3.85D, -1.75D)),
-            Map.entry(Reference.id("rocket_launcher"), zoom(2.8D, 3.4D, -1.75D)),
-            Map.entry(Reference.id("semi_auto_pistol"), zoom(0.0D, 4.965D, -1.75D)),
-            Map.entry(Reference.id("semi_auto_rifle"), zoom(0.0D, 3.6D, -1.25D)),
-            Map.entry(Reference.id("service_rifle"), zoom(0.0D, 5.2D, -1.75D)),
-            Map.entry(Reference.id("soulhunter_mk2"), zoom(0.0D, 4.415D, 2.0D)),
-            Map.entry(Reference.id("subsonic_rifle"), zoom(0.0D, 3.95D, -0.75D)),
-            Map.entry(Reference.id("supersonic_shotgun"), zoom(0.0D, 4.2D, -3.75D)),
-            Map.entry(Reference.id("typhoonee"), zoom(0.0D, 4.45D, -1.25D)),
-            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D))
-    );
     private static final Set<String> DEBUG_BONES = ConcurrentHashMap.newKeySet();
     private static Method renderModelListsMethod;
     private static volatile long nextRenderByItemDebugNanos;
@@ -162,7 +119,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
             poseStack.pushPose();
             try {
-                applyFirstPersonAdsTransform(gun, displayContext, poseStack);
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
                 }
@@ -198,55 +154,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
-    }
-
-    private static void applyFirstPersonAdsTransform(AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
-        float ads = AimingHandler.get().getRenderAdsProgress();
-        if (ads <= 0.0F) {
-            return;
-        }
-
-        ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
-        if (zoom == null) {
-            return;
-        }
-
-        ItemTransform transform = staticItemFirstPersonTransform(gun.getStats().id(), displayContext);
-        double translateX = transform.translation.x();
-        double translateY = transform.translation.y();
-        double translateZ = transform.translation.z();
-        double scaleX = transform.scale.x();
-        double scaleY = transform.scale.y();
-        double scaleZ = transform.scale.z();
-
-        double transition = easeOutQuad(ads);
-        double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
-                + FORGE_MODEL_CENTER_OFFSET * scaleX
-                - zoom.xOffset() * 0.0625D * scaleX;
-        double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
-                + zoom.yOffset() * 0.0625D * scaleY
-                + FORGE_IRON_SIGHT_Y_OFFSET;
-        double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
-                + FORGE_MODEL_CENTER_OFFSET * scaleZ
-                - zoom.zOffset() * 0.0625D * scaleZ
-                + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
-
-        poseStack.translate(-0.56D * transition, 0.52D * transition, 0.72D * transition);
-        poseStack.translate(-xOffset * transition, -yOffset * transition, -zOffset * transition);
-    }
-
-    private static ItemTransform staticItemFirstPersonTransform(ResourceLocation itemId, ItemDisplayContext displayContext) {
-        Minecraft mc = Minecraft.getInstance();
-        ModelResourceLocation modelId = new ModelResourceLocation(Reference.id("item/" + itemId.getPath()), "standalone");
-        BakedModel model = mc.getModelManager().getModel(modelId);
-        if (model == mc.getModelManager().getMissingModel()) {
-            return new ItemTransform(
-                    new org.joml.Vector3f(),
-                    new org.joml.Vector3f((float) FIRST_PERSON_TRANSLATE_X, (float) FIRST_PERSON_TRANSLATE_Y, (float) FIRST_PERSON_TRANSLATE_Z),
-                    new org.joml.Vector3f(1.0F, 1.0F, 1.0F)
-            );
-        }
-        return model.getTransforms().getTransform(displayContext);
     }
 
     private static boolean renderForgeSpecialModel(
@@ -318,17 +225,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] special model render failed for {} model={}: {}", stack.getItem(), modelPath, exception.toString());
             return false;
         }
-    }
-
-    private static double easeOutQuad(double value) {
-        double inverse = 1.0D - Mth.clamp(value, 0.0D, 1.0D);
-        return 1.0D - inverse * inverse;
-    }
-
-    private record ForgeZoomOffset(double xOffset, double yOffset, double zOffset) {}
-
-    private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
-        return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
 
     @Override
