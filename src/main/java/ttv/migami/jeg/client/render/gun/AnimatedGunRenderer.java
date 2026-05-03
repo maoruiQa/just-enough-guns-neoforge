@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -239,7 +240,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         // First-person pose is controlled by IClientItemExtensions.applyForgeHandTransform (1.21.10-style),
         // and re-applying JSON display transforms here will fight that pipeline.
         if (ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
-            passInfo.poseStack().scale(1.6F, 1.6F, 1.6F);
+            // Do NOT apply additional scale here - GunItemClientExtensions already handles first-person scaling
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
@@ -285,34 +286,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     @Override
     public void preRenderPass(RenderPassInfo<GeoRenderState> passInfo, SubmitNodeCollector collector) {
-        // Hide attachment bones and the modelled arms/hands until the attachments system is ported.
-        // The actual player arms will still render normally in first person and third person.
-        passInfo.addBoneUpdater((info, snapshots) -> {
-            // Extra arms/hands in the geo model.
-            snapshots.ifPresent("left_arm", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("right_arm", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("fake_left_arm", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("fake_right_arm", s -> s.skipRender(true).skipChildrenRender(true));
+        GeoRenderState renderState = passInfo.renderState();
+        Identifier gunId = Reference.id("abstract_gun");
+        if (renderState.hasGeckolibData(ANIMATED_ITEM)) {
+            Item item = renderState.getGeckolibData(ANIMATED_ITEM);
+            if (item instanceof AnimatedGunItem gun) {
+                gunId = gun.getStats().id();
+            }
+        }
 
-            // Attachment system not ported yet: hide all attachment-related bones.
-            snapshots.ifPresent("attachment_bone", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("railing", s -> s.skipRender(true).skipChildrenRender(true));
-
-            snapshots.ifPresent("silencer", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("makeshift_stock", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("light_stock", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("tactical_stock", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("weighted_stock", s -> s.skipRender(true).skipChildrenRender(true));
-
-            snapshots.ifPresent("light_grip", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("vertical_grip", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("angled_grip", s -> s.skipRender(true).skipChildrenRender(true));
-
-            snapshots.ifPresent("extended_mag", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("extended_mag_2", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("drum_mag", s -> s.skipRender(true).skipChildrenRender(true));
-            snapshots.ifPresent("drum_mag_2", s -> s.skipRender(true).skipChildrenRender(true));
-        });
+        Identifier finalGunId = gunId;
+        passInfo.addBoneUpdater((info, snapshots) -> GunAttachmentVisibility.apply(finalGunId, snapshots));
 
         super.preRenderPass(passInfo, collector);
     }

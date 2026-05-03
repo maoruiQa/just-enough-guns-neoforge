@@ -73,8 +73,8 @@ public final class ModItems {
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_HELMETS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_VESTS = new LinkedHashMap<>();
     private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
-    private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
-    private static final Set<ResourceLocation> DISABLED_GUN_IDS = Set.of(
+    private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
+    private static final Set<Identifier> DISABLED_GUN_IDS = Set.of(
             Reference.id("holy_shotgun"),
             Reference.id("typhoonee")
     );
@@ -335,7 +335,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
-        for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
+        for (Identifier id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
             }
@@ -359,14 +359,10 @@ public final class ModItems {
 
     public static List<ResourceKey<Recipe<?>>> unlockGunRecipeKeys() {
         java.util.ArrayList<ResourceKey<Recipe<?>>> keys = new java.util.ArrayList<>();
-<<<<<<< HEAD
         for (Identifier id : GunDefinitions.ALL.keySet()) {
-=======
-        for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
             if (isDisabledGunId(id)) {
                 continue;
             }
->>>>>>> 676e6ce (Add NeoForge attachment visibility controls)
             keys.add(ResourceKey.create(Registries.RECIPE, id));
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
@@ -379,11 +375,11 @@ public final class ModItems {
         return List.copyOf(keys);
     }
 
-    public static boolean isDisabledGunId(ResourceLocation id) {
+    public static boolean isDisabledGunId(Identifier id) {
         return DISABLED_GUN_IDS.contains(id);
     }
 
-    private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
+    private static Item.Properties defaultGunProperties(Identifier id, GunStats stats) {
         int baseDurability = switch (stats.reloadType()) {
             case "jeg:inventory_fed" -> 1024;
             case "jeg:manual" -> 256;

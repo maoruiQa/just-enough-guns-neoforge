@@ -3,7 +3,9 @@ package ttv.migami.jeg.client.render.gun;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.Identifier;
+import com.geckolib.animation.state.BoneSnapshot;
 import com.geckolib.cache.model.GeoBone;
+import com.geckolib.renderer.base.BoneSnapshots;
 import ttv.migami.jeg.Reference;
 
 public final class GunAttachmentVisibility {
@@ -55,18 +57,35 @@ public final class GunAttachmentVisibility {
     }
 
     public static void apply(Identifier gunId, GeoBone bone) {
-        String boneName = bone.name();
+        apply(gunId, bone.name(), bone.frameSnapshot);
+    }
+
+    public static void apply(Identifier gunId, BoneSnapshots snapshots) {
+        Rule rule = RULES.get(gunId);
+        if (rule != null) {
+            rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(false)));
+            rule.hidden().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(true)));
+        }
+
+        DEFAULT_HIDDEN_ATTACHMENT_BONES.forEach(boneName -> {
+            if (rule == null || !rule.visible().contains(boneName)) {
+                snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(true));
+            }
+        });
+    }
+
+    private static void apply(Identifier gunId, String boneName, BoneSnapshot snapshot) {
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             Boolean hidden = rule.visibility(boneName);
             if (hidden != null) {
-                bone.frameSnapshot.skipRender(hidden);
+                snapshot.skipRender(hidden);
                 return;
             }
         }
 
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
-            bone.frameSnapshot.skipRender(true);
+            snapshot.skipRender(true);
         }
     }
 
