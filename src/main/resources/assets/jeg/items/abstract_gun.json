@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/abstract_gun",
+          "base": "jeg:item/first_person/abstract_gun",
           "model": {
             "type": "geckolib:geckolib"
           }

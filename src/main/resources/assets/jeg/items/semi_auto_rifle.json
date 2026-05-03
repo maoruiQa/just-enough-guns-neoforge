@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/semi_auto_rifle",
+          "base": "jeg:item/first_person/semi_auto_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }

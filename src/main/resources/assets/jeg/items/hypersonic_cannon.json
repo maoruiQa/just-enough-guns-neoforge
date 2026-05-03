@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/hypersonic_cannon",
+          "base": "jeg:item/first_person/hypersonic_cannon",
           "model": {
             "type": "geckolib:geckolib"
           }

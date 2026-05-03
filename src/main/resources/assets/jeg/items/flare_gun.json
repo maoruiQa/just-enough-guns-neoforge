@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/flare_gun",
+          "base": "jeg:item/first_person/flare_gun",
           "model": {
             "type": "geckolib:geckolib"
           }

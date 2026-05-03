@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/service_rifle",
+          "base": "jeg:item/first_person/service_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }

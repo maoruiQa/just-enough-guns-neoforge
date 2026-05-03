@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/waterpipe_shotgun",
+          "base": "jeg:item/first_person/waterpipe_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }
