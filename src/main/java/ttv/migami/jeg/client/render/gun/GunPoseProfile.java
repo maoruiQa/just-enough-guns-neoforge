@@ -64,9 +64,9 @@ public record GunPoseProfile(
     private static final GunPoseProfile HOLY_SHOTGUN_PROFILE = of(
             ArmMode.TWO_HANDED,
             true,
-            0.82F, -1.04F, -1.45F,
-            0.34F, -0.64F, -1.32F,
-            3.0F, 3.4F, 1.22F,
+            0.895F, -1.04F, -1.45F,
+            0.29F, -0.64F, -1.32F,
+            3.0F, 1.8F, 1.22F,
             // 1.20.1 custom_smg idle anim drives arm orientation/offset via arm bones;
             // keep profile correction near-neutral so those bone transforms remain dominant.
             arm(0.04F, -0.02F, 0.08F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F),
