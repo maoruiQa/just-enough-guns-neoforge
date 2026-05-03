@@ -2,9 +2,11 @@ package ttv.migami.jeg.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -12,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
@@ -19,6 +22,45 @@ import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
+    private static final double FIRST_PERSON_TRANSLATE_X = -3.0D / 16.0D;
+    private static final double FIRST_PERSON_TRANSLATE_Y = 0.0D;
+    private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
+    private static final double FORGE_MODEL_CENTER_OFFSET = 0.5D;
+    private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
+    private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
+    private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
+    private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
+            Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
+            Map.entry(Reference.id("assault_rifle"), zoom(0.0D, 3.75D, -1.75D)),
+            Map.entry(Reference.id("blossom_rifle"), zoom(0.0D, 4.75D, -1.5D)),
+            Map.entry(Reference.id("bolt_action_rifle"), zoom(0.0D, 4.35D, -1.25D)),
+            Map.entry(Reference.id("burst_rifle"), zoom(0.0D, 4.65D, -1.75D)),
+            Map.entry(Reference.id("combat_pistol"), zoom(0.0D, 5.135D, -1.75D)),
+            Map.entry(Reference.id("combat_rifle"), zoom(0.0D, 5.71D, -1.75D)),
+            Map.entry(Reference.id("custom_smg"), zoom(0.0D, 3.85D, -1.75D)),
+            Map.entry(Reference.id("double_barrel_shotgun"), zoom(0.0D, 5.05D, 0.75D)),
+            Map.entry(Reference.id("finger_gun"), zoom(0.0D, 3.0D, -1.75D)),
+            Map.entry(Reference.id("flamethrower"), zoom(0.0D, 5.71D, -1.75D)),
+            Map.entry(Reference.id("flare_gun"), zoom(0.0D, 4.85D, -1.75D)),
+            Map.entry(Reference.id("grenade_launcher"), zoom(0.0D, 3.61D, 2.0D)),
+            Map.entry(Reference.id("hollenfire_mk2"), zoom(0.0D, 5.2D, -1.75D)),
+            Map.entry(Reference.id("holy_shotgun"), zoom(0.0D, 3.14D, -1.25D)),
+            Map.entry(Reference.id("hypersonic_cannon"), zoom(0.0D, 3.9D, -2.25D)),
+            Map.entry(Reference.id("infantry_rifle"), zoom(0.0D, 3.8D, 1.75D)),
+            Map.entry(Reference.id("light_machine_gun"), zoom(0.0D, 4.56D, -1.75D)),
+            Map.entry(Reference.id("pump_shotgun"), zoom(0.0D, 3.3D, -1.25D)),
+            Map.entry(Reference.id("repeating_shotgun"), zoom(0.0D, 3.75D, -1.75D)),
+            Map.entry(Reference.id("revolver"), zoom(0.0D, 3.85D, -1.75D)),
+            Map.entry(Reference.id("rocket_launcher"), zoom(2.8D, 3.4D, -1.75D)),
+            Map.entry(Reference.id("semi_auto_pistol"), zoom(0.0D, 4.965D, -1.75D)),
+            Map.entry(Reference.id("semi_auto_rifle"), zoom(0.0D, 3.6D, -1.25D)),
+            Map.entry(Reference.id("service_rifle"), zoom(0.0D, 5.2D, -1.75D)),
+            Map.entry(Reference.id("soulhunter_mk2"), zoom(0.0D, 4.415D, 2.0D)),
+            Map.entry(Reference.id("subsonic_rifle"), zoom(0.0D, 3.95D, -0.75D)),
+            Map.entry(Reference.id("supersonic_shotgun"), zoom(0.0D, 4.2D, -3.75D)),
+            Map.entry(Reference.id("typhoonee"), zoom(0.0D, 4.45D, -1.25D)),
+            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D))
+    );
     private final GunStats stats;
 
     public GunItemClientExtensions(GunItem item) {
@@ -64,39 +106,17 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float yOffset = Mth.lerp(ads, profile.hipY(), profile.adsY());
         float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
         float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
-        float adsWeight = ads * ads;
-        xOffset = Mth.lerp(adsWeight, xOffset, 0.03F);
-        yOffset = Mth.lerp(adsWeight, yOffset, -0.06F);
-        zOffset = Mth.lerp(adsWeight, zOffset, -0.90F);
-        yaw = Mth.lerp(adsWeight, yaw, 0.0F);
-
-        boolean isRocketLauncher = "rocket_launcher".equals(gunPath);
-        boolean isTyphoonee = "typhoonee".equals(gunPath);
-        float adsScreenXShift;
-        float adsDownShift;
-        float adsForwardShift;
-        if (isTyphoonee) {
-            adsScreenXShift = 0.03F;
-            adsDownShift = -2.05F;
-            adsForwardShift = 0.24F;
-        } else if (isRocketLauncher) {
-            adsScreenXShift = 0.09F;
-            adsDownShift = -0.24F;
-            adsForwardShift = 0.00F;
-        } else {
-            adsScreenXShift = 0.00F;
-            adsDownShift = 0.00F;
-            adsForwardShift = 0.00F;
-        }
-
-        xOffset += direction * adsScreenXShift * adsWeight;
-        yOffset += adsDownShift * adsWeight;
-        zOffset += adsForwardShift * adsWeight;
+        float adsTransition = (float) easeOutQuad(ads);
+        AdsSightOffset sightOffset = adsSightOffset(stats.id());
+        xOffset = Mth.lerp(adsTransition, xOffset, (float) sightOffset.x());
+        yOffset = Mth.lerp(adsTransition, yOffset, (float) sightOffset.y());
+        zOffset = Mth.lerp(adsTransition, zOffset, (float) sightOffset.z());
+        yaw = Mth.lerp(adsTransition, yaw, 0.0F);
 
         poseStack.translate(direction * xOffset, yOffset, zOffset);
         poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
         poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F * (1.0F - ads)));
-        poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsWeight, 4.0F, 0.8F)));
+        poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsTransition, 4.0F, 0.8F)));
         float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
         poseStack.scale(firstPersonScale, firstPersonScale, firstPersonScale);
 
@@ -176,5 +196,41 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.ZP.rotationDegrees(recoilSway));
         poseStack.mulPose(Axis.XP.rotationDegrees(recoilLift));
         poseStack.translate(0.0D, 0.0D, -0.15D);
+    }
+
+    private static double easeOutQuad(double value) {
+        double inverse = 1.0D - Mth.clamp(value, 0.0D, 1.0D);
+        return 1.0D - inverse * inverse;
+    }
+
+    private static AdsSightOffset adsSightOffset(Identifier gunId) {
+        ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
+        double translateX = FIRST_PERSON_TRANSLATE_X;
+        double translateY = FIRST_PERSON_TRANSLATE_Y;
+        double translateZ = FIRST_PERSON_TRANSLATE_Z;
+        double scaleX = 1.0D;
+        double scaleY = 1.0D;
+        double scaleZ = 1.0D;
+
+        double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
+                + FORGE_MODEL_CENTER_OFFSET * scaleX
+                - zoom.xOffset() * 0.0625D * scaleX;
+        double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
+                + zoom.yOffset() * 0.0625D * scaleY
+                + FORGE_IRON_SIGHT_Y_OFFSET;
+        double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
+                + FORGE_MODEL_CENTER_OFFSET * scaleZ
+                - zoom.zOffset() * 0.0625D * scaleZ
+                + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
+
+        return new AdsSightOffset(-0.56D - xOffset, 0.52D - yOffset, 0.72D - zOffset);
+    }
+
+    private record AdsSightOffset(double x, double y, double z) {}
+
+    private record ForgeZoomOffset(double xOffset, double yOffset, double zOffset) {}
+
+    private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
+        return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
 }
