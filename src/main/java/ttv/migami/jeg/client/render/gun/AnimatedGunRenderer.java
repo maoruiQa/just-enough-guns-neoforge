@@ -162,9 +162,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
             poseStack.pushPose();
             try {
-                if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
-                    applyFirstPersonAdsTransform(gun, displayContext, poseStack);
-                }
+                applyFirstPersonAdsTransform(gun, displayContext, poseStack);
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
                 }
@@ -261,6 +259,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     ) {
         String itemPath = gun.getStats().id().getPath();
         return switch (itemPath) {
+            case "holy_shotgun" -> renderSpecialModel(Reference.id("special/gun/holy_shotgun"), stack, poseStack, bufferSource, packedLight, packedOverlay);
             case "typhoonee" -> renderSpecialModel(Reference.id("special/typhoonee/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
             default -> false;
         };
