@@ -163,7 +163,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             poseStack.pushPose();
             try {
                 applyFirstPersonAdsTransform(gun, displayContext, poseStack);
-                if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
+                if (renderForgeSpecialModel(stack, gun, displayContext, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
                 }
                 super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
@@ -252,6 +252,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static boolean renderForgeSpecialModel(
             ItemStack stack,
             AnimatedGunItem gun,
+            ItemDisplayContext displayContext,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
@@ -259,14 +260,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     ) {
         String itemPath = gun.getStats().id().getPath();
         return switch (itemPath) {
-            case "holy_shotgun" -> renderSpecialModel(Reference.id("special/gun/holy_shotgun"), stack, poseStack, bufferSource, packedLight, packedOverlay);
-            case "typhoonee" -> renderSpecialModel(Reference.id("special/typhoonee/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
+            case "holy_shotgun" -> renderSpecialModel(Reference.id("special/gun/holy_shotgun"), displayContext, stack, poseStack, bufferSource, packedLight, packedOverlay);
+            case "typhoonee" -> renderSpecialModel(Reference.id("special/typhoonee/main"), displayContext, stack, poseStack, bufferSource, packedLight, packedOverlay);
             default -> false;
         };
     }
 
     private static boolean renderSpecialModel(
             ResourceLocation modelPath,
+            ItemDisplayContext displayContext,
             ItemStack stack,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
@@ -281,6 +283,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         try {
+            applyItemTransform(model.getTransforms().getTransform(displayContext), displayContext, poseStack);
             Method renderModelLists = renderModelListsMethod();
             RenderType renderType = ItemBlockRenderTypes.getRenderType(stack, true);
             VertexConsumer buffer = ItemRenderer.getFoilBufferDirect(bufferSource, renderType, true, stack.hasFoil());
@@ -290,6 +293,27 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] special model render failed for {} model={}: {}", stack.getItem(), modelPath, exception.toString());
             return false;
         }
+    }
+
+    private static void applyItemTransform(ItemTransform transform, ItemDisplayContext displayContext, PoseStack poseStack) {
+        boolean leftHand = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        float x = transform.translation.x();
+        float y = transform.translation.y();
+        float z = transform.translation.z();
+        float rotX = transform.rotation.x();
+        float rotY = transform.rotation.y();
+        float rotZ = transform.rotation.z();
+        if (leftHand) {
+            x = -x;
+            rotY = -rotY;
+            rotZ = -rotZ;
+        }
+
+        poseStack.translate(x, y, z);
+        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rotX));
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotY));
+        poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotZ));
+        poseStack.scale(transform.scale.x(), transform.scale.y(), transform.scale.z());
     }
 
     private static double easeOutQuad(double value) {
