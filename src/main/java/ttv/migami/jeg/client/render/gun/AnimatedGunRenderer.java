@@ -163,7 +163,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             poseStack.pushPose();
             try {
                 applyFirstPersonAdsTransform(gun, displayContext, poseStack);
-                if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
+                if (renderForgeSpecialModel(stack, gun, displayContext, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
                 }
                 super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
@@ -252,6 +252,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static boolean renderForgeSpecialModel(
             ItemStack stack,
             AnimatedGunItem gun,
+            ItemDisplayContext displayContext,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
@@ -259,7 +260,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     ) {
         String itemPath = gun.getStats().id().getPath();
         return switch (itemPath) {
-            case "holy_shotgun" -> renderHolyShotgunSpecial(stack, poseStack, bufferSource, packedLight, packedOverlay);
+            case "holy_shotgun" -> renderHolyShotgunSpecial(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
             case "typhoonee" -> renderSpecialModel(Reference.id("special/typhoonee/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
             default -> false;
         };
@@ -267,30 +268,36 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static boolean renderHolyShotgunSpecial(
             ItemStack stack,
+            ItemDisplayContext displayContext,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay
     ) {
-        boolean rendered = renderHolyShotgunPart(Reference.id("special/holy_shotgun/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
-
         poseStack.pushPose();
         try {
+            applyHolyShotgunFirstPersonAnchor(displayContext, poseStack);
+            boolean rendered = renderHolyShotgunPart(Reference.id("special/holy_shotgun/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
+
             poseStack.translate(0.0D, -5.8D * 0.0625D, 0.0D);
             Minecraft mc = Minecraft.getInstance();
             float cooldown = mc.player == null ? 0.0F : mc.player.getCooldowns().getCooldownPercent(stack.getItem(), mc.getTimer().getGameTimeDeltaPartialTick(false));
             poseStack.translate(0.0D, 0.0D, easeHolyShotgunPump(cooldown) / 14.0D);
             poseStack.translate(0.0D, 5.8D * 0.0625D, 0.0D);
             rendered |= renderHolyShotgunPart(Reference.id("special/holy_shotgun/pumpy"), stack, poseStack, bufferSource, packedLight, packedOverlay);
+            return rendered;
         } finally {
             poseStack.popPose();
         }
-
-        return rendered;
     }
 
     private static double easeHolyShotgunPump(double value) {
         return 1.0D - Math.pow(1.0D - 2.0D * value, 4.0D);
+    }
+
+    private static void applyHolyShotgunFirstPersonAnchor(ItemDisplayContext displayContext, PoseStack poseStack) {
+        double direction = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1.0D : 1.0D;
+        poseStack.translate(0.56D * direction, -0.52D, -0.72D);
     }
 
     private static boolean renderHolyShotgunPart(
