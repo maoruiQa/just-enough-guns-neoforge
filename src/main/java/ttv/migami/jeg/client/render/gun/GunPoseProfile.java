@@ -64,8 +64,8 @@ public record GunPoseProfile(
     private static final GunPoseProfile HOLY_SHOTGUN_PROFILE = of(
             ArmMode.TWO_HANDED,
             true,
-            0.18F, -0.30F, -1.30F,
-            0.232F, -0.46F, -0.78F,
+            0.58F, -0.30F, -1.30F,
+            0.58F, -0.46F, -0.78F,
             3.0F, 3.4F, 0.61F,
             arm(0.04F, -0.02F, 0.08F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F),
             arm(0.36F, -0.10F, 0.12F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F)
