@@ -44,7 +44,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     // Store vanilla state so we can fall back to 1.21.10-style (vanilla item model) rendering outside first-person.
     private static final DataTicket<ItemStackRenderState> VANILLA_ITEM_STATE =
             DataTicket.create("jeg:vanilla_item_state", ItemStackRenderState.class);
-    private static final DataTicket<ItemStack> ITEM_STACK =
+    public static final DataTicket<ItemStack> ITEM_STACK =
             DataTicket.create("jeg:item_stack", ItemStack.class);
     private static final DataTicket<Boolean> USING_VANILLA_NON_FIRST_PERSON =
             DataTicket.create("jeg:using_vanilla_non_first_person", Boolean.class);

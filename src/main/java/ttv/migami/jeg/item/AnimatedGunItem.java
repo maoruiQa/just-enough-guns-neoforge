@@ -87,7 +87,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         if (isFirstPersonRender(test)) {
-            Player player = Minecraft.getInstance().player;
+            var player = com.geckolib.util.ClientUtil.getClientPlayer();
             if (player != null && player.isSprinting() && !isClientAiming() && !isLocalAttackDown(player) && canApplySprintingAnimation(renderStack)) {
                 return test.setAndContinue(SPRINT);
             }
@@ -135,6 +135,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private static ItemStack resolveRenderStack(AnimationTest<AnimatedGunItem> test) {
+        ItemStack stack = getItemStackFromRenderer(test);
+        if (!stack.isEmpty()) {
+            return stack;
+        }
+
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null || minecraft.player == null) {
             return ItemStack.EMPTY;
@@ -151,6 +156,20 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         return ItemStack.EMPTY;
+    }
+
+    private static ItemStack getItemStackFromRenderer(AnimationTest<AnimatedGunItem> test) {
+        try {
+            Class<?> rendererClass = Class.forName("ttv.migami.jeg.client.render.gun.AnimatedGunRenderer");
+            java.lang.reflect.Field itemStackField = rendererClass.getDeclaredField("ITEM_STACK");
+            itemStackField.setAccessible(true);
+            Object dataTicket = itemStackField.get(null);
+            java.lang.reflect.Method getDataMethod = test.getClass().getMethod("getDataOrDefault",
+                    Class.forName("com.geckolib.constant.DataTicket"), Object.class);
+            return (ItemStack) getDataMethod.invoke(test, dataTicket, ItemStack.EMPTY);
+        } catch (ReflectiveOperationException ignored) {
+            return ItemStack.EMPTY;
+        }
     }
 
     private static boolean matchesAnimatedGun(AnimatedGunItem item, ItemStack stack) {
@@ -187,9 +206,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
     }
 
-    private static boolean isLocalAttackDown(Player player) {
+    private static boolean isLocalAttackDown(Entity entity) {
         Minecraft minecraft = Minecraft.getInstance();
-        return minecraft != null && minecraft.player == player && minecraft.options.keyAttack.isDown();
+        return minecraft != null && minecraft.player == entity && minecraft.options.keyAttack.isDown();
     }
 
     @Override
