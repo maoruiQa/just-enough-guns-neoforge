@@ -162,10 +162,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
             poseStack.pushPose();
             try {
-                applyFirstPersonAdsTransform(gun, displayContext, poseStack);
-                boolean holyShotgun = "holy_shotgun".equals(gun.getStats().id().getPath());
-                if (holyShotgun) {
-                    applyHolyShotgunGeoTransform(displayContext, poseStack);
+                if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
+                    applyFirstPersonAdsTransform(gun, displayContext, poseStack);
                 }
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
@@ -266,12 +264,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             case "typhoonee" -> renderSpecialModel(Reference.id("special/typhoonee/main"), stack, poseStack, bufferSource, packedLight, packedOverlay);
             default -> false;
         };
-    }
-
-    private static void applyHolyShotgunGeoTransform(ItemDisplayContext displayContext, PoseStack poseStack) {
-        double direction = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1.0D : 1.0D;
-        poseStack.translate(0.18D * direction, -0.30D, -1.30D);
-        poseStack.scale(0.78F, 0.78F, 0.78F);
     }
 
     private static boolean renderSpecialModel(
