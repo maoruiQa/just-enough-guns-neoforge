@@ -19,7 +19,6 @@ import com.geckolib.renderer.layer.GeoRenderLayer;
 import com.geckolib.util.RenderUtil;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
-import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 /**
@@ -29,12 +28,6 @@ import ttv.migami.jeg.item.AnimatedGunItem;
  * Third-person: does not render any arms.
  */
 public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
-    private static final java.util.Set<String> FIRST_PERSON_ARMS_ALLOWLIST = java.util.Set.of(
-            "minigun",
-            "rocket_launcher",
-            "typhoonee"
-    );
-
     public GunFirstPersonArmsLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
         super(renderer);
     }
@@ -49,7 +42,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         }
 
         Item item = passInfo.renderState().getGeckolibData(AnimatedGunRenderer.ANIMATED_ITEM);
-        if (!(item instanceof AnimatedGunItem gun) || !shouldRenderFirstPersonArms(gun)) {
+        if (!(item instanceof AnimatedGunItem gun)) {
             return;
         }
 
@@ -68,14 +61,6 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         if (!oneHanded || activeSide == ArmSide.RIGHT) {
             registerArmBone(passInfo, ArmSide.RIGHT, profile.rightArm());
         }
-    }
-
-    private static boolean shouldRenderFirstPersonArms(AnimatedGunItem gun) {
-        String id = gun.getStats().id().getPath();
-        if (FIRST_PERSON_ARMS_ALLOWLIST.contains(id)) {
-            return true;
-        }
-        return GunCategory.fromStats(gun.getStats()) == GunCategory.PISTOL;
     }
 
     private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side, GunPoseProfile.ArmTransform transform) {

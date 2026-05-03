@@ -136,29 +136,28 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             return;
         }
 
-        float deltaDistanceWalked = player.walkDist - player.walkDistO;
-        float distanceWalked = -(player.walkDist + deltaDistanceWalked * partialTick);
-        float bobbing = Mth.lerp(partialTick, player.oBob, player.bob);
-        float adsDamping = 1.0F - ads * 0.65F;
-        float intensity = player.isSprinting() ? 8.0F : 4.0F;
-        float weaponBob = bobbing * intensity * adsDamping;
-
-        poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(distanceWalked * (float) Math.PI) * weaponBob * 2.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(distanceWalked * (float) Math.PI - 0.2F) * weaponBob) * 3.0F));
+        if (player.onGround() && !player.isPassenger()) {
+            float speed = (float) player.getDeltaMovement().horizontalDistance();
+            float time = (player.tickCount + partialTick) * 0.5F;
+            float bobAmount = Mth.sin(time) * speed * 0.15F;
+            float adsDamping = 1.0F - ads * 0.7F;
+            poseStack.translate(0.0D, bobAmount * adsDamping, 0.0D);
+        }
     }
 
     private static void applySwayTransforms(PoseStack poseStack, LocalPlayer player, float partialTick, float ads) {
-        float adsDamping = 1.0F - ads * 0.5F;
-        float bobPitch = Mth.rotLerp(partialTick, player.xBobO, player.xBob);
-        float headPitch = Mth.rotLerp(partialTick, player.xRotO, player.getXRot());
-        poseStack.mulPose(Axis.XP.rotationDegrees((headPitch - bobPitch) * adsDamping));
-
-        float bobYaw = Mth.rotLerp(partialTick, player.yBobO, player.yBob);
-        float headYaw = Mth.rotLerp(partialTick, player.yHeadRotO, player.yHeadRot);
-        poseStack.mulPose(Axis.YP.rotationDegrees((headYaw - bobYaw) * adsDamping));
+        if (player.onGround() && !player.isPassenger()) {
+            float speed = (float) player.getDeltaMovement().horizontalDistance();
+            float time = (player.tickCount + partialTick) * 0.3F;
+            float swayX = Mth.sin(time) * speed * 2.0F;
+            float swayZ = Mth.cos(time * 0.7F) * speed * 2.0F;
+            float adsDamping = 1.0F - ads * 0.8F;
+            poseStack.mulPose(Axis.XP.rotationDegrees(swayX * adsDamping));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(swayZ * adsDamping));
+        }
 
         float fallDelta = (float) Mth.clamp(player.yo - player.getY(), -1.0D, 1.0D);
-        fallDelta *= adsDamping * (1.0F - Mth.abs(player.getXRot()) / 90.0F);
+        fallDelta *= (1.0F - ads * 0.5F) * (1.0F - Mth.abs(player.getXRot()) / 90.0F);
         poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
     }
 

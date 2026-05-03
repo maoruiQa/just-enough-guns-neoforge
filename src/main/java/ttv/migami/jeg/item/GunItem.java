@@ -1521,15 +1521,22 @@ public class GunItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        super.inventoryTick(stack, level, entity, slot, selected);
-        if (!level.isClientSide() && entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
-            boolean held = selected || stack == player.getMainHandItem() || stack == player.getOffhandItem();
-            updateReloadVisualState(level, player, stack, held);
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+
+        boolean selected = entity instanceof Player player
+                && (stack == player.getMainHandItem() || stack == player.getOffhandItem());
+
+        if (entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
+            updateReloadVisualState(level, player, stack, selected);
         }
-        if (level.isClientSide() || !usesOverheatMechanic()) {
+
+        if (!usesOverheatMechanic()) {
             return;
         }
+
+        boolean heldInHand = selected;
+
         if (isCoolingWithWater(stack)) {
             int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
             if (remainingCooling > 0) {
@@ -1562,54 +1569,6 @@ public class GunItem extends Item {
         }
 
         cancelWaterCoolingIfInvalid(player);
-
-        long endTick = stack.getOrDefault(ModDataComponents.GUN_RELOAD_END_TICK.get(), 0L);
-        int remaining = endTick > 0L
-                ? (int) Math.max(0L, endTick - level.getGameTime())
-                : stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
-        if (remaining <= 0) {
-            // Ensure stale state isn't kept around indefinitely.
-            if (stack.has(ModDataComponents.GUN_RELOAD_STAGE.get())) {
-                clearReloadState(stack);
-            }
-            return;
-        }
-
-        int total = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), remaining);
-        int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
-
-        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), remaining);
-
-        if (!(stack.getItem() instanceof AnimatedGunItem animated)) {
-            if (remaining == 0) {
-                clearReloadState(stack);
-            }
-            return;
-        }
-
-        if (usesSegmentedReloadAnimation()) {
-            int startTicks = Math.max(3, total / 5);
-            int stopTicks = Math.max(3, total / 5);
-            int loopStartRemaining = Math.max(0, total - startTicks);
-
-            // START -> LOOP once the start phase elapses.
-            if (stage == RELOAD_STAGE_START && remaining <= loopStartRemaining) {
-                stage = RELOAD_STAGE_LOOP;
-                stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), stage);
-                animated.triggerReloadLoop(level, player, stack);
-            }
-
-            // LOOP/START -> STOP near the end.
-            if (stage != RELOAD_STAGE_STOP && remaining <= stopTicks) {
-                stage = RELOAD_STAGE_STOP;
-                stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), stage);
-                animated.triggerReloadStop(level, player, stack);
-            }
-        }
-
-        if (remaining == 0) {
-            clearReloadState(stack);
-        }
     }
 
     private int removeAmmoFromInventory(Player player, int needed) {

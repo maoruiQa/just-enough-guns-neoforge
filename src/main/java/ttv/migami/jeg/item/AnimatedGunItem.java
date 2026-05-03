@@ -50,6 +50,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private static volatile boolean loggedRendererProvider;
+    private static volatile long nextClientReloadDebugNanos;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -78,12 +79,20 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return PlayState.CONTINUE;
         }
 
-        // Check if first person and sprinting
-        var perspective = test.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
-        if (perspective != null && perspective.firstPerson()) {
+        ItemStack renderStack = resolveRenderStack(test);
+        RawAnimation reloadAnimation = reloadAnimationFor(renderStack);
+        if (reloadAnimation != null) {
+            debugClientReloadPredicate(renderStack);
+            return test.setAndContinue(reloadAnimation);
+        }
+
+        if (isFirstPersonRender(test)) {
             var player = com.geckolib.util.ClientUtil.getClientPlayer();
             if (player != null && player.isSprinting() && !AimingHandler.get().isAiming()) {
-                var profile = GunPoseProfile.forGun(this.getStats().id());
+                ItemStack stack = renderStack;
+                var profile = stack.getItem() instanceof AnimatedGunItem gun
+                        ? GunPoseProfile.forGun(gun.getStats().id())
+                        : GunPoseProfile.forGun(this.getStats().id());
                 if (profile.canApplySprintingAnimation()) {
                     return test.setAndContinue(SPRINT);
                 }
@@ -91,6 +100,88 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         return test.setAndContinue(IDLE);
+    }
+
+    private static final int RELOAD_STAGE_NONE = 0;
+    private static final int RELOAD_STAGE_START = 1;
+    private static final int RELOAD_STAGE_LOOP = 2;
+    private static final int RELOAD_STAGE_STOP = 3;
+
+    private static RawAnimation reloadAnimationFor(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return null;
+        }
+
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            return null;
+        }
+        int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
+        return switch (stage) {
+            case RELOAD_STAGE_START -> RELOAD_START;
+            case RELOAD_STAGE_LOOP -> RELOAD_LOOP;
+            case RELOAD_STAGE_STOP -> RELOAD_STOP;
+            default -> RELOAD;
+        };
+    }
+
+    private static boolean isFirstPersonRender(AnimationTest<AnimatedGunItem> test) {
+        var perspective = test.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
+        if (perspective != null && perspective.firstPerson()) {
+            return true;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.player == null || !minecraft.options.getCameraType().isFirstPerson()) {
+            return false;
+        }
+
+        ItemStack stack = resolveRenderStack(test);
+        if (stack.isEmpty()) {
+            return false;
+        }
+
+        return matchesHeldStack(stack, minecraft.player.getMainHandItem())
+                || matchesHeldStack(stack, minecraft.player.getOffhandItem());
+    }
+
+    private static ItemStack resolveRenderStack(AnimationTest<AnimatedGunItem> test) {
+        ItemStack stack = test.getDataOrDefault(AnimatedGunRenderer.ITEM_STACK, ItemStack.EMPTY);
+        if (!stack.isEmpty()) {
+            return stack;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.player == null) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack mainHand = minecraft.player.getMainHandItem();
+        if (matchesAnimatedGun(test.animatable(), mainHand)) {
+            return mainHand;
+        }
+
+        ItemStack offHand = minecraft.player.getOffhandItem();
+        if (matchesAnimatedGun(test.animatable(), offHand)) {
+            return offHand;
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    private static boolean matchesAnimatedGun(AnimatedGunItem item, ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() == item;
+    }
+
+    private static boolean matchesHeldStack(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == heldStack) {
+            return true;
+        }
+        if (renderStack.isEmpty() || heldStack.isEmpty()) {
+            return false;
+        }
+        return ItemStack.isSameItemSameComponents(renderStack, heldStack)
+                || ItemStack.isSameItem(renderStack, heldStack);
     }
 
     @Override
@@ -143,6 +234,21 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
         );
         triggerAnim(triggerEntity, id, CONTROLLER, animation);
+    }
+
+    private static void debugClientReloadPredicate(ItemStack stack) {
+        long now = System.nanoTime();
+        if (now < nextClientReloadDebugNanos) {
+            return;
+        }
+        nextClientReloadDebugNanos = now + 1_000_000_000L;
+        JustEnoughGuns.LOGGER.info(
+                "[JEG_RELOAD_DEBUG] client predicate item={} remaining={} total={} stage={}",
+                stack.getItem(),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), 0),
+                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
+        );
     }
 
     public void triggerShoot(Level level, Entity triggerEntity, ItemStack stack) {
