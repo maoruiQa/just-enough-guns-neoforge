@@ -270,8 +270,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static void applyHolyShotgunGeoTransform(ItemDisplayContext displayContext, PoseStack poseStack) {
         double direction = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1.0D : 1.0D;
-        poseStack.translate(0.42D * direction, -0.22D, -1.18D);
-        poseStack.scale(0.95F, 0.95F, 0.95F);
+        poseStack.translate(0.18D * direction, -0.30D, -1.30D);
+        poseStack.scale(0.78F, 0.78F, 0.78F);
     }
 
     private static boolean renderSpecialModel(
