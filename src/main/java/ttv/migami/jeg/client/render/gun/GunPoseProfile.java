@@ -61,6 +61,16 @@ public record GunPoseProfile(
             arm(0.36F, -0.10F, 0.12F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F)
     );
 
+    private static final GunPoseProfile LONG_GUN_PROFILE = of(
+            ArmMode.TWO_HANDED,
+            true,
+            0.42F, -0.44F, -0.60F,
+            0.232F, -0.46F, -0.78F,
+            3.0F, 3.4F, 1.22F,
+            arm(0.04F, -0.02F, 0.08F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F),
+            arm(0.36F, -0.10F, 0.12F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F)
+    );
+
     private static final GunPoseProfile COMBAT_RIFLE_PROFILE = of(
             ArmMode.TWO_HANDED,
             true,
@@ -140,7 +150,7 @@ public record GunPoseProfile(
             Map.entry(Reference.id("pump_shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("repeating_shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("supersonic_shotgun"), SUPERSONIC_SHOTGUN_PROFILE),
-            Map.entry(Reference.id("holy_shotgun"), CUSTOM_SMG_PROFILE),
+            Map.entry(Reference.id("holy_shotgun"), LONG_GUN_PROFILE),
             Map.entry(Reference.id("shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("grenade_launcher"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("typhoonee"), TYPHOONEE_PROFILE),

@@ -27,7 +27,6 @@ public final class ClientModSetup {
             event.register(new ModelResourceLocation(Reference.id("item/first_person/" + id.getPath()), "standalone"));
             event.register(new ModelResourceLocation(Reference.id("item/gui/" + id.getPath()), "standalone"));
         });
-        event.register(new ModelResourceLocation(Reference.id("special/gun/holy_shotgun"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/holy_shotgun/main"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/holy_shotgun/pumpy"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/typhoonee/main"), "standalone"));
