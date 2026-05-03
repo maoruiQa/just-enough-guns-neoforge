@@ -2,7 +2,6 @@ package ttv.migami.jeg.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
@@ -24,18 +23,7 @@ import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
-    private static final double FIRST_PERSON_TRANSLATE_X = -3.0D / 16.0D;
-    private static final double FIRST_PERSON_TRANSLATE_Y = 0.0D;
-    private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
-    private static final double FORGE_MODEL_CENTER_OFFSET = 0.5D;
-    private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
-    private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
-    private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
     private static final ResourceLocation HOLY_SHOTGUN = Reference.id("holy_shotgun");
-    private static final Map<ResourceLocation, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
-            Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
-            Map.entry(HOLY_SHOTGUN, zoom(0.0D, 3.14D, -1.25D))
-    );
     private final GunStats stats;
     private BlockEntityWithoutLevelRenderer renderer;
 
@@ -88,18 +76,13 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         boolean isBow = gunPath.contains("bow");
         float ads = AimingHandler.get().getNormalisedAdsProgress(partialTick);
         GunPoseProfile profile = GunPoseProfile.forGun(stats.id());
-
-        float xOffset = Mth.lerp(ads, profile.hipX(), profile.adsX());
-        float yOffset = Mth.lerp(ads, profile.hipY(), profile.adsY());
-        float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
-        float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
         float adsTransition = (float) easeOutQuad(ads);
+
+        float xOffset = Mth.lerp(adsTransition, profile.hipX(), profile.adsX());
+        float yOffset = Mth.lerp(adsTransition, profile.hipY(), profile.adsY());
+        float zOffset = Mth.lerp(adsTransition, profile.hipZ(), profile.adsZ());
+        float yaw = Mth.lerp(adsTransition, profile.hipYaw(), profile.adsYaw());
         float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
-        AdsSightOffset sightOffset = adsSightOffset(stats.id(), firstPersonScale);
-        xOffset = Mth.lerp(adsTransition, xOffset, (float) sightOffset.x());
-        yOffset = Mth.lerp(adsTransition, yOffset, (float) sightOffset.y());
-        zOffset = Mth.lerp(adsTransition, zOffset, (float) sightOffset.z());
-        yaw = Mth.lerp(adsTransition, yaw, 0.0F);
 
         poseStack.translate(direction * xOffset, yOffset, zOffset);
         poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
@@ -189,40 +172,5 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static double easeOutQuad(double value) {
         double inverse = 1.0D - Mth.clamp(value, 0.0D, 1.0D);
         return 1.0D - inverse * inverse;
-    }
-
-    private static AdsSightOffset adsSightOffset(ResourceLocation gunId, double firstPersonScale) {
-        ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
-        double translateX = FIRST_PERSON_TRANSLATE_X;
-        double translateY = FIRST_PERSON_TRANSLATE_Y;
-        double translateZ = FIRST_PERSON_TRANSLATE_Z;
-        double scaleX = 1.0D;
-        double scaleY = 1.0D;
-        double scaleZ = 1.0D;
-
-        double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
-                + FORGE_MODEL_CENTER_OFFSET * scaleX
-                - zoom.xOffset() * 0.0625D * scaleX;
-        double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
-                + zoom.yOffset() * 0.0625D * scaleY
-                + FORGE_IRON_SIGHT_Y_OFFSET;
-        double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
-                + FORGE_MODEL_CENTER_OFFSET * scaleZ
-                - zoom.zOffset() * 0.0625D * scaleZ
-                + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
-
-        return new AdsSightOffset(
-                -0.56D - xOffset * firstPersonScale,
-                0.52D - yOffset * firstPersonScale,
-                0.72D - zOffset * firstPersonScale
-        );
-    }
-
-    private record AdsSightOffset(double x, double y, double z) {}
-
-    private record ForgeZoomOffset(double xOffset, double yOffset, double zOffset) {}
-
-    private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
-        return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
 }
