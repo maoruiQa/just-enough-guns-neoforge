@@ -121,35 +121,33 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
             boolean sleeveVisible = player.isModelPartShown(sleeve);
 
             PoseStack poseStack = passInfo.poseStack();
-            poseStack.pushPose();
-            PartState armState = PartState.capture(armPart);
-            PartState sleeveState = PartState.capture(sleevePart);
-            try {
-                prepareArmPart(armPart, side);
-                collector.submitModelPart(
-                        armPart,
-                        poseStack,
-                        RenderTypes.entityTranslucent(skin),
-                        light,
-                        OverlayTexture.NO_OVERLAY,
-                        null
-                );
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityTranslucent(skin),
+                    (pose, buffer) -> {
+                        PoseStack armPose = new PoseStack();
+                        armPose.last().set(pose);
+                        renderPreparedArmPart(armPart, armPose, buffer, light, side);
+                        if (sleeveVisible) {
+                            renderPreparedArmPart(sleevePart, armPose, buffer, light, side);
+                        }
+                    }
+            );
+        }
 
-                if (sleeveVisible) {
-                    prepareArmPart(sleevePart, side);
-                    collector.submitModelPart(
-                            sleevePart,
-                            poseStack,
-                            RenderTypes.entityTranslucent(skin),
-                            light,
-                            OverlayTexture.NO_OVERLAY,
-                            null
-                    );
-                }
+        private static void renderPreparedArmPart(
+                ModelPart part,
+                PoseStack poseStack,
+                com.mojang.blaze3d.vertex.VertexConsumer buffer,
+                int light,
+                ArmSide side
+        ) {
+            PartState state = PartState.capture(part);
+            try {
+                prepareArmPart(part, side);
+                part.render(poseStack, buffer, light, OverlayTexture.NO_OVERLAY);
             } finally {
-                armState.restore(armPart);
-                sleeveState.restore(sleevePart);
-                poseStack.popPose();
+                state.restore(part);
             }
         }
 
