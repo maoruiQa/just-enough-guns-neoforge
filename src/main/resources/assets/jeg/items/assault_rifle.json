@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/assault_rifle",
+          "base": "jeg:item/first_person/assault_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }
