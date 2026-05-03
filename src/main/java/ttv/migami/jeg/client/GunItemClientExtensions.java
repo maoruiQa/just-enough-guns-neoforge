@@ -107,7 +107,8 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float zOffset = Mth.lerp(ads, profile.hipZ(), profile.adsZ());
         float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
         float adsTransition = (float) easeOutQuad(ads);
-        AdsSightOffset sightOffset = adsSightOffset(stats.id());
+        float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
+        AdsSightOffset sightOffset = adsSightOffset(stats.id(), firstPersonScale);
         xOffset = Mth.lerp(adsTransition, xOffset, (float) sightOffset.x());
         yOffset = Mth.lerp(adsTransition, yOffset, (float) sightOffset.y());
         zOffset = Mth.lerp(adsTransition, zOffset, (float) sightOffset.z());
@@ -117,7 +118,6 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
         poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F * (1.0F - ads)));
         poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsTransition, 4.0F, 0.8F)));
-        float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
         poseStack.scale(firstPersonScale, firstPersonScale, firstPersonScale);
 
         // Keep vanilla-like equip/swing movement to reduce "hard snap" while switching items.
@@ -203,7 +203,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         return 1.0D - inverse * inverse;
     }
 
-    private static AdsSightOffset adsSightOffset(Identifier gunId) {
+    private static AdsSightOffset adsSightOffset(Identifier gunId, double firstPersonScale) {
         ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
@@ -223,7 +223,11 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
                 - zoom.zOffset() * 0.0625D * scaleZ
                 + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
 
-        return new AdsSightOffset(-0.56D - xOffset, 0.52D - yOffset, 0.72D - zOffset);
+        return new AdsSightOffset(
+                -0.56D - xOffset * firstPersonScale,
+                0.52D - yOffset * firstPersonScale,
+                0.72D - zOffset * firstPersonScale
+        );
     }
 
     private record AdsSightOffset(double x, double y, double z) {}
