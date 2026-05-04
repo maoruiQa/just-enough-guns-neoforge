@@ -197,5 +197,9 @@ public final class ItemInHandRendererMixin {
         stack.remove(ModDataComponents.GUN_AMMO.get());
         stack.remove(ModDataComponents.GUN_HEAT.get());
         stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_END_TICK.get());
     }
 }

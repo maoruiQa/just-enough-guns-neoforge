@@ -19,7 +19,8 @@
     "AvatarRendererMixin",
     "GuiAccessor",
     "ItemInHandRendererMixin",
-    "GuiMixin"
+    "GuiMixin",
+    "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1
