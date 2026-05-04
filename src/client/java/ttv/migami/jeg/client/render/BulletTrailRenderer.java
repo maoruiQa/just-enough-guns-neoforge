@@ -34,10 +34,6 @@ public final class BulletTrailRenderer {
         Minecraft mc = Minecraft.getInstance();
         long gameTime = mc.level != null ? mc.level.getGameTime() : 0L;
         int payloadColor = payload.color();
-        // Preserve legacy yellow fallback for entries that arrive as plain white.
-        if (payloadColor == 0xFFFFFF || payloadColor == 0xFFFFFFFF) {
-            payloadColor = 0xFFFF00;
-        }
         int count = Math.min(
                 payload.entityIds().length,
                 Math.min(payload.positions().length, payload.motions().length)

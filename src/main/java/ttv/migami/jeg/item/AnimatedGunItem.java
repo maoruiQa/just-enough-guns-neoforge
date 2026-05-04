@@ -45,6 +45,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation RELOAD_LOOP = RawAnimation.begin().thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_STOP = RawAnimation.begin().then(ANIM_RELOAD_STOP, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, LoopType.HOLD_ON_LAST_FRAME);
+    private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
 
     private static final int RELOAD_STAGE_NONE = 0;
     private static final int RELOAD_STAGE_START = 1;
@@ -52,6 +53,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final int RELOAD_STAGE_STOP = 3;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private static ItemStack clientShootStack = ItemStack.EMPTY;
+    private static boolean clientShootAiming;
+    private static long clientShootTriggerDeadlineNanos;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -76,14 +80,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private PlayState animationPredicate(AnimationTest<AnimatedGunItem> test) {
-        if (test.controller().isPlayingTriggeredAnimation()) {
+        ItemStack renderStack = resolveRenderStack(test);
+        if (shouldContinueReloadAnimation(test.controller(), renderStack)
+                || test.controller().isPlayingTriggeredAnimation()) {
             return PlayState.CONTINUE;
         }
 
-        ItemStack renderStack = resolveRenderStack(test);
         RawAnimation reloadAnimation = reloadAnimationFor(renderStack);
         if (reloadAnimation != null) {
             return test.setAndContinue(reloadAnimation);
+        }
+
+        if (triggerPendingClientShoot(test, renderStack)) {
+            return PlayState.CONTINUE;
         }
 
         if (isFirstPersonRender(test)) {
@@ -112,6 +121,62 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             case RELOAD_STAGE_STOP -> RELOAD_STOP;
             default -> RELOAD;
         };
+    }
+
+    private static boolean shouldContinueReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
+            return false;
+        }
+        if (!stack.isEmpty() && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            return true;
+        }
+
+        var point = controller.getCurrentAnimationPoint();
+        if (point == null || point.animation() == null || point.hasFinished()) {
+            return false;
+        }
+        String animationName = point.animation().name();
+        return ANIM_RELOAD.equals(animationName)
+                || ANIM_RELOAD_START.equals(animationName)
+                || ANIM_RELOAD_STOP.equals(animationName);
+    }
+
+    private static boolean triggerPendingClientShoot(AnimationTest<AnimatedGunItem> test, ItemStack renderStack) {
+        if (clientShootStack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() > clientShootTriggerDeadlineNanos) {
+            clearPendingClientShoot();
+            return false;
+        }
+        if (!matchesHeldStack(renderStack, clientShootStack)) {
+            return false;
+        }
+
+        String animation = clientShootAiming ? ANIM_AIM_SHOOT : ANIM_SHOOT;
+        if (!test.controller().triggerAnimation(animation)) {
+            return false;
+        }
+        clearPendingClientShoot();
+        return true;
+    }
+
+    private static void clearPendingClientShoot() {
+        clientShootStack = ItemStack.EMPTY;
+        clientShootAiming = false;
+        clientShootTriggerDeadlineNanos = 0L;
+    }
+
+    private static boolean isReloadAnimation(RawAnimation animation) {
+        if (animation == null) {
+            return false;
+        }
+        return animation.getAnimationStages().stream()
+                .map(RawAnimation.Stage::animationName)
+                .anyMatch(name -> ANIM_RELOAD.equals(name)
+                        || ANIM_RELOAD_START.equals(name)
+                        || ANIM_RELOAD_LOOP.equals(name)
+                        || ANIM_RELOAD_STOP.equals(name));
     }
 
     private static boolean isFirstPersonRender(AnimationTest<AnimatedGunItem> test) {
@@ -209,6 +274,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static boolean isLocalAttackDown(Entity entity) {
         Minecraft minecraft = Minecraft.getInstance();
         return minecraft != null && minecraft.player == entity && minecraft.options.keyAttack.isDown();
+    }
+
+    public static void triggerClientShoot(Entity entity, boolean aiming) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(entity instanceof Player) || minecraft == null || minecraft.player != entity) {
+            return;
+        }
+
+        ItemStack mainHand = minecraft.player.getMainHandItem();
+        ItemStack offHand = minecraft.player.getOffhandItem();
+        ItemStack stack = mainHand.getItem() instanceof AnimatedGunItem ? mainHand : offHand;
+        if (!(stack.getItem() instanceof AnimatedGunItem)) {
+            clearPendingClientShoot();
+            return;
+        }
+
+        clientShootStack = stack;
+        clientShootAiming = aiming;
+        clientShootTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
     }
 
     @Override
