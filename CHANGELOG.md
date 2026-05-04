@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0 - 2026-05-04
+
+### Changed
+- Updated Fabric 1.21.1 gun item rendering to use static GUI baked models in inventory and hotbar views.
+
+### Fixed
+- Fixed Fabric 1.21.1 reload, cooling, and first-person render state from driving unintended item-in-hand sinking or cooldown flashes.
+- Fixed Fabric 1.21.1 first-person sprint animation detection to avoid fragile perspective checks.
+- Added third-person reload arm motion for player-held guns during reload progress.
+
 ## 1.4.2 - 2026-04-27
 
 ### Added
