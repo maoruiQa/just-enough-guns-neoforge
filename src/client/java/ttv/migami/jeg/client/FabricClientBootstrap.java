@@ -50,6 +50,7 @@ import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
@@ -496,8 +497,12 @@ public final class FabricClientBootstrap {
 
     public static void showMuzzleFlash(int entityId, float random) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player != null && minecraft.player.getId() == entityId && AimingHandler.get().isAiming()) {
-            return;
+        if (minecraft.player != null && minecraft.player.getId() == entityId) {
+            boolean aiming = AimingHandler.get().isAiming();
+            AnimatedGunItem.triggerClientShoot(minecraft.player, aiming);
+            if (aiming) {
+                return;
+            }
         }
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
     }
