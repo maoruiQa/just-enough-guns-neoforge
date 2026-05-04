@@ -75,7 +75,6 @@ public final class ModItems {
     private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
     private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
     private static final Set<ResourceLocation> DISABLED_GUN_IDS = Set.of(
-            Reference.id("holy_shotgun"),
             Reference.id("typhoonee")
     );
 

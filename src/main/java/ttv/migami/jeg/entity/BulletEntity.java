@@ -1213,7 +1213,7 @@ public class BulletEntity extends Projectile {
             case PISTOL -> 0.030D;
             case SMG -> 0.032D;
             case LMG -> 0.028D;
-            case SHOTGUN -> 0.040D;
+            case SHOTGUN -> 0.028D;
             case HEAVY -> 0.035D;
             case SPECIAL -> 0.050D;
         };
