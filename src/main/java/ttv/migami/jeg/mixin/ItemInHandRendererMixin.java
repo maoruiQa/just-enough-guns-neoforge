@@ -113,6 +113,8 @@ public final class ItemInHandRendererMixin {
         if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
                 || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
             this.mainHandItem = liveMain;
+            // Set to 1.0F (fully equipped) instead of 0.0F to avoid equip animation depression
+            // equipProgress = 1.0F - mainHandHeight, so mainHandHeight=1.0F → equipProgress=0.0F
             this.mainHandHeight = 1.0F;
             this.oMainHandHeight = 1.0F;
         }
@@ -221,4 +223,5 @@ public final class ItemInHandRendererMixin {
         stack.remove(ModDataComponents.GUN_HEAT.get());
         stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
     }
+
 }
