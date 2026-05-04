@@ -208,7 +208,7 @@ public class GunItem extends Item {
 
     public boolean isInventoryFedGun() {
         String path = stats.id().getPath();
-        return "minigun".equals(path) || "rocket_launcher".equals(path);
+        return "minigun".equals(path) || "repeating_shotgun".equals(path);
     }
 
     public boolean usesMagazineSwapReload() {
@@ -1502,8 +1502,8 @@ public class GunItem extends Item {
     private int computeSegmentedReloadStage(ItemStack stack, int remainingTicks) {
         int totalTicks = Math.max(1, stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), stats.totalReloadTime()));
         int elapsedTicks = totalTicks - remainingTicks;
-        int startTicks = Mth.clamp(totalTicks / 4, 4, 12);
-        int stopTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        int startTicks = getSegmentedReloadStartTicks(totalTicks);
+        int stopTicks = getSegmentedReloadStopTicks(totalTicks);
         if (remainingTicks <= stopTicks) {
             return RELOAD_STAGE_STOP;
         }
@@ -1511,6 +1511,20 @@ public class GunItem extends Item {
             return RELOAD_STAGE_LOOP;
         }
         return RELOAD_STAGE_START;
+    }
+
+    private int getSegmentedReloadStartTicks(int totalTicks) {
+        if ("rocket_launcher".equals(stats.id().getPath())) {
+            return 46;
+        }
+        return Mth.clamp(totalTicks / 4, 4, 12);
+    }
+
+    private int getSegmentedReloadStopTicks(int totalTicks) {
+        if ("rocket_launcher".equals(stats.id().getPath())) {
+            return 38;
+        }
+        return Mth.clamp(totalTicks / 4, 4, 12);
     }
 
     private static void clearReloadVisualState(ItemStack stack) {
