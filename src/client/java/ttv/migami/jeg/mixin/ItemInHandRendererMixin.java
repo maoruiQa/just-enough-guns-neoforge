@@ -129,16 +129,16 @@ public final class ItemInHandRendererMixin {
         if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
                 || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
             this.mainHandItem = liveMain;
-            this.mainHandHeight = 0.0F;
-            this.oMainHandHeight = 0.0F;
+            this.mainHandHeight = 1.0F;
+            this.oMainHandHeight = 1.0F;
         }
 
         ItemStack liveOff = player.getOffhandItem();
         if (jeg$isVolatileGunComponentDiff(this.offHandItem, liveOff)
                 || jeg$isVolatileGunComponentDiff(this.jeg$preTickOffHandItem, liveOff)) {
             this.offHandItem = liveOff;
-            this.offHandHeight = 0.0F;
-            this.oOffHandHeight = 0.0F;
+            this.offHandHeight = 1.0F;
+            this.oOffHandHeight = 1.0F;
         }
     }
 
@@ -245,5 +245,10 @@ public final class ItemInHandRendererMixin {
         stack.remove(ModDataComponents.GUN_AMMO.get());
         stack.remove(ModDataComponents.GUN_HEAT.get());
         stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+        stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get());
     }
 }

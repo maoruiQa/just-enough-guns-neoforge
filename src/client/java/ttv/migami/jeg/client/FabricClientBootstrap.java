@@ -7,6 +7,7 @@ import com.mojang.math.Axis;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -95,10 +96,15 @@ public final class FabricClientBootstrap {
         }
         registered = true;
 
+        ModelLoadingPlugin.register(new FabricModelRegistration());
+
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack held = player.getItemInHand(hand);
             if (held.getItem() instanceof GunItem) {
                 return net.minecraft.world.InteractionResultHolder.fail(held);
+            }
+            if (player.getMainHandItem().getItem() instanceof GunItem) {
+                return net.minecraft.world.InteractionResultHolder.pass(held);
             }
             if (GunItem.tryStartWaterCooling(world, player, hand)) {
                 player.startUsingItem(hand);

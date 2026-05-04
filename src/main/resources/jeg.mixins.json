@@ -16,6 +16,7 @@
     "GameRendererMixin",
     "GuiAccessor",
     "GuiMixin",
+    "HumanoidModelMixin",
     "ItemInHandRendererMixin",
     "PlayerRendererMixin"
   ],

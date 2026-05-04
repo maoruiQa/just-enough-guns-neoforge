@@ -6,18 +6,22 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.fabricmc.fabric.api.client.model.loading.v1.FabricBakedModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransform;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -146,8 +150,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int packedLight,
             int packedOverlay
     ) {
-        // For GUI/inventory context, apply transforms to center and scale the animated model properly
+        // GUI/inventory should use the baked static model; keep the animated path as a fallback.
         if (displayContext == ItemDisplayContext.GUI) {
+            if (renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
+                return;
+            }
+
             poseStack.pushPose();
             try {
                 // Center the model in the inventory slot
@@ -464,35 +472,49 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         Minecraft mc = Minecraft.getInstance();
-        // Try empty string variant first (Fabric default), then "inventory", then "standalone"
-        ModelResourceLocation modelId = new ModelResourceLocation(Reference.id("item/gui/" + itemId.getPath()), "");
-        BakedModel model = mc.getModelManager().getModel(modelId);
-        if (model == mc.getModelManager().getMissingModel()) {
-            // Try "inventory" variant
-            modelId = new ModelResourceLocation(Reference.id("item/gui/" + itemId.getPath()), "inventory");
-            model = mc.getModelManager().getModel(modelId);
-            if (model == mc.getModelManager().getMissingModel()) {
-                // Try "standalone" variant (NeoForge convention)
-                modelId = new ModelResourceLocation(Reference.id("item/gui/" + itemId.getPath()), "standalone");
-                model = mc.getModelManager().getModel(modelId);
-                if (model == mc.getModelManager().getMissingModel()) {
-                    JustEnoughGuns.LOGGER.warn("[JEG_GUI_DEBUG] GUI model not found for any variant: {} - falling back to animated model", itemId);
-                    debugGuiModel(stack, modelId, false);
-                    return false;
-                }
-            }
+        ResourceLocation modelId = Reference.id("item/gui/" + itemId.getPath());
+        BakedModel model = ((FabricBakedModelManager) mc.getModelManager()).getModel(modelId);
+        if (model == null || model == mc.getModelManager().getMissingModel()) {
+            JustEnoughGuns.LOGGER.warn("[JEG_GUI_DEBUG] GUI model not found: {} - falling back to animated model", modelId);
+            debugGuiModel(stack, modelId, false);
+            return false;
         }
 
-        try {
-            Method renderModelLists = renderModelListsMethod();
-            RenderType renderType = ItemBlockRenderTypes.getRenderType(stack, true);
-            VertexConsumer buffer = ItemRenderer.getFoilBufferDirect(bufferSource, renderType, true, stack.hasFoil());
-            renderModelLists.invoke(mc.getItemRenderer(), model, stack, packedLight, packedOverlay, poseStack, buffer);
-            debugGuiModel(stack, modelId, true);
-            return true;
-        } catch (ReflectiveOperationException exception) {
-            JustEnoughGuns.LOGGER.warn("[JEG_GUI_DEBUG] static GUI model render failed for {}: {}", stack.getItem(), exception.toString());
-            return false;
+        RenderType renderType = ItemBlockRenderTypes.getRenderType(stack, true);
+        VertexConsumer buffer = ItemRenderer.getFoilBufferDirect(bufferSource, renderType, true, stack.hasFoil());
+        renderStaticModelQuads(model, stack, poseStack, buffer, packedLight, packedOverlay);
+        debugGuiModel(stack, modelId, true);
+        return true;
+    }
+
+    private static void renderStaticModelQuads(
+            BakedModel model,
+            ItemStack stack,
+            PoseStack poseStack,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay
+    ) {
+        RandomSource random = RandomSource.create();
+        for (Direction direction : Direction.values()) {
+            random.setSeed(42L);
+            renderQuadList(model.getQuads(null, direction, random), stack, poseStack, buffer, packedLight, packedOverlay);
+        }
+        random.setSeed(42L);
+        renderQuadList(model.getQuads(null, null, random), stack, poseStack, buffer, packedLight, packedOverlay);
+    }
+
+    private static void renderQuadList(
+            Iterable<BakedQuad> quads,
+            ItemStack stack,
+            PoseStack poseStack,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay
+    ) {
+        PoseStack.Pose pose = poseStack.last();
+        for (BakedQuad quad : quads) {
+            buffer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay);
         }
     }
 
@@ -514,7 +536,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         return method;
     }
 
-    private static void debugGuiModel(ItemStack stack, ModelResourceLocation modelId, boolean rendered) {
+    private static void debugGuiModel(ItemStack stack, ResourceLocation modelId, boolean rendered) {
         long now = System.nanoTime();
         if (now < nextGuiDebugNanos) {
             return;
