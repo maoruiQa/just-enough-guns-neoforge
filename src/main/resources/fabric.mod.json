@@ -17,6 +17,9 @@
     ],
     "client": [
       "ttv.migami.jeg.FabricClientEntrypoint"
+    ],
+    "fabric-model-loading": [
+      "ttv.migami.jeg.client.FabricModelRegistration"
     ]
   },
   "mixins": [

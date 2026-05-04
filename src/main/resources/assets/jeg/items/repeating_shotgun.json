@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/repeating_shotgun",
+          "base": "jeg:item/first_person/repeating_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }

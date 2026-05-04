@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/grenade_launcher",
+          "base": "jeg:item/first_person/grenade_launcher",
           "model": {
             "type": "geckolib:geckolib"
           }

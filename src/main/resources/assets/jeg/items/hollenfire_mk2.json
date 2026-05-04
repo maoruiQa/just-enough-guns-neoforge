@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/hollenfire_mk2",
+          "base": "jeg:item/first_person/hollenfire_mk2",
           "model": {
             "type": "geckolib:geckolib"
           }

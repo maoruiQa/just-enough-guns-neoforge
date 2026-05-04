@@ -4254,10 +4254,11 @@
   ],
   "display": {
     "thirdperson_righthand": {
+      "rotation": [90, 0, 0],
       "translation": [
         0,
-        7,
-        -12
+        10,
+        2
       ],
       "scale": [
         1.5,
@@ -4270,6 +4271,11 @@
         -3,
         0,
         0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
       ]
     },
     "gui": {
@@ -4405,5 +4411,6 @@
         74
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

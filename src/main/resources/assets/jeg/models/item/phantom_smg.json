@@ -1,5 +1,5 @@
 {
-  "parent": "jeg:item/custom_smg",
+  "parent": "builtin/entity",
   "textures": {
     "layer0": "jeg:item/custom_smg"
   }

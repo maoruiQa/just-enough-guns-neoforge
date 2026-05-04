@@ -3983,5 +3983,6 @@
         }
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

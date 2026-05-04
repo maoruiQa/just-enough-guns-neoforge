@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/flamethrower",
+          "base": "jeg:item/first_person/flamethrower",
           "model": {
             "type": "geckolib:geckolib"
           }

@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/pump_shotgun",
+          "base": "jeg:item/first_person/pump_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }

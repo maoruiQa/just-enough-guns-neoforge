@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/holy_shotgun",
+          "base": "jeg:item/first_person/holy_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }

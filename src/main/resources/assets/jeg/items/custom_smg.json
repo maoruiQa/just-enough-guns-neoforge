@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/custom_smg",
+          "base": "jeg:item/first_person/custom_smg",
           "model": {
             "type": "geckolib:geckolib"
           }

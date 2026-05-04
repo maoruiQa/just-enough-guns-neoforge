@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/blossom_rifle",
+          "base": "jeg:item/first_person/blossom_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }

@@ -9,6 +9,7 @@ import ttv.migami.jeg.item.GunItem;
 public final class AimingHandler {
     private static final float MAX_AIM_PROGRESS = 5.0F;
     private static final float AIM_SPEED = 1.0F;
+
     private static final AimingHandler INSTANCE = new AimingHandler();
 
     private float currentAim;
@@ -29,11 +30,6 @@ public final class AimingHandler {
         }
     }
 
-    public void reset() {
-        currentAim = 0.0F;
-        previousAim = 0.0F;
-    }
-
     public boolean isAiming() {
         return currentAim > 0.0F || previousAim > 0.0F;
     }
@@ -43,8 +39,19 @@ public final class AimingHandler {
         return Mth.clamp(progress, 0.0F, 1.0F);
     }
 
+    public float getRenderAdsProgress() {
+        Minecraft minecraft = Minecraft.getInstance();
+        float partialTick = minecraft == null ? 1.0F : minecraft.getTimer().getGameTimeDeltaPartialTick(false);
+        return getNormalisedAdsProgress(partialTick);
+    }
+
     public float getNormalisedAdsProgress() {
         return getNormalisedAdsProgress(1.0F);
+    }
+
+    public void reset() {
+        currentAim = 0.0F;
+        previousAim = 0.0F;
     }
 
     private static boolean shouldAim(LocalPlayer player) {
@@ -53,6 +60,10 @@ public final class AimingHandler {
             return false;
         }
         ItemStack mainHand = player.getMainHandItem();
-        return mainHand.getItem() instanceof GunItem && minecraft.options.keyUse.isDown();
+        if (!(mainHand.getItem() instanceof GunItem)) {
+            return false;
+        }
+
+        return minecraft.options.keyUse.isDown();
     }
 }

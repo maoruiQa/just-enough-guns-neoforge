@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/supersonic_shotgun",
+          "base": "jeg:item/first_person/supersonic_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }

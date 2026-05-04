@@ -1279,11 +1279,10 @@ public class GunItem extends Item {
         playSound(level, player, stats.reloadStartSoundEvent());
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
+            startReloadVisualState(stack, reloadTicks);
             if (usesSegmentedReloadAnimation()) {
-                setReloadAnimState(stack, RELOAD_STAGE_START, reloadTicks);
                 animated.triggerReloadStart(level, player, stack);
             } else {
-                clearReloadAnimState(stack);
                 animated.triggerReload(level, player, stack);
             }
         }
@@ -1387,85 +1386,41 @@ public class GunItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, level, entity, slot, selected);
-
-        if (level.isClientSide()) {
+        if (!level.isClientSide() && entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
+            boolean held = selected || stack == player.getMainHandItem() || stack == player.getOffhandItem();
+            updateReloadVisualState(level, player, stack, held);
+        }
+        if (level.isClientSide() || !usesOverheatMechanic()) {
             return;
         }
-        if (usesOverheatMechanic()) {
-            if (isCoolingWithWater(stack)) {
-                int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
-                if (remainingCooling > 0) {
-                    stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), remainingCooling - 1);
-                }
-                if (remainingCooling <= 1) {
-                    if (entity instanceof Player playerHolder) {
-                        ItemStack coolantStack = playerHolder.getOffhandItem().is(ModItems.COOLANT.get()) || playerHolder.getOffhandItem().is(ModItems.ENHANCED_COOLANT.get())
-                                ? playerHolder.getOffhandItem()
-                                : ItemStack.EMPTY;
-                        if (!coolantStack.isEmpty()) {
-                            finishWaterCooling(coolantStack, level, playerHolder);
-                            playerHolder.stopUsingItem();
-                        } else {
-                            clearWaterCooling(stack);
-                        }
+        if (isCoolingWithWater(stack)) {
+            int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
+            if (remainingCooling > 0) {
+                stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), remainingCooling - 1);
+            }
+            if (remainingCooling <= 1) {
+                if (entity instanceof Player playerHolder) {
+                    ItemStack coolantStack = playerHolder.getOffhandItem().is(ModItems.COOLANT.get()) || playerHolder.getOffhandItem().is(ModItems.ENHANCED_COOLANT.get()) ? playerHolder.getOffhandItem() : ItemStack.EMPTY;
+                    if (!coolantStack.isEmpty()) {
+                        finishWaterCooling(coolantStack, level, playerHolder);
+                        playerHolder.stopUsingItem();
                     } else {
                         clearWaterCooling(stack);
                     }
-                }
-            } else {
-                boolean coolingBlockedByFiring = selected
-                        && entity instanceof Player playerHolder
-                        && playerHolder.getCooldowns().isOnCooldown(stack.getItem());
-                if (!coolingBlockedByFiring && (!selected || (level.getGameTime() & 1L) == 0L)) {
-                    coolOverheat(stack, selected);
+                } else {
+                    clearWaterCooling(stack);
                 }
             }
-        }
-        if (!(entity instanceof Player player)) {
-            clearReloadAnimState(stack);
-            return;
-        }
-        cancelWaterCoolingIfInvalid(player);
-        if (!(stack.getItem() instanceof AnimatedGunItem animated) || !usesSegmentedReloadAnimation()) {
-            clearReloadAnimState(stack);
-            return;
-        }
-
-        int stage = getReloadAnimStage(stack);
-        if (stage == RELOAD_STAGE_NONE) {
-            return;
-        }
-
-        if (!player.getCooldowns().isOnCooldown(stack.getItem())) {
-            clearReloadAnimState(stack);
-            return;
-        }
-
-        int remaining = Math.max(0, getReloadAnimTicks(stack) - 1);
-        setReloadAnimTicks(stack, remaining);
-
-        int totalReloadTicks = Math.max(1, stats.totalReloadTime());
-        int startTicks = Math.min(RELOAD_START_SEGMENT_TICKS, Math.max(1, totalReloadTicks / 3));
-        int stopTicks = Math.min(RELOAD_STOP_SEGMENT_TICKS, Math.max(1, totalReloadTicks / 4));
-
-        if (stage == RELOAD_STAGE_START) {
-            if (remaining <= totalReloadTicks - startTicks) {
-                animated.triggerReloadLoop(level, player, stack);
-                setReloadAnimStage(stack, RELOAD_STAGE_LOOP);
+        } else {
+            boolean coolingBlockedByFiring = selected
+                    && entity instanceof Player playerHolder
+                    && playerHolder.getCooldowns().isOnCooldown(stack.getItem());
+            if (!coolingBlockedByFiring && (!selected || (level.getGameTime() & 1L) == 0L)) {
+                coolOverheat(stack, selected);
             }
-            return;
         }
-
-        if (stage == RELOAD_STAGE_LOOP) {
-            if (remaining <= stopTicks) {
-                animated.triggerReloadStop(level, player, stack);
-                setReloadAnimStage(stack, RELOAD_STAGE_STOP);
-            }
-            return;
-        }
-
-        if (stage == RELOAD_STAGE_STOP && remaining <= 0) {
-            clearReloadAnimState(stack);
+        if (entity instanceof Player player) {
+            cancelWaterCoolingIfInvalid(player);
         }
     }
 
@@ -1473,38 +1428,70 @@ public class GunItem extends Item {
         return SEGMENTED_RELOAD_ANIM_IDS.contains(stats.id().getPath());
     }
 
-    private static int getReloadAnimStage(ItemStack stack) {
-        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get(), RELOAD_STAGE_NONE);
+    private void startReloadVisualState(ItemStack stack, int reloadTicks) {
+        int totalTicks = Math.max(1, reloadTicks);
+        stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), totalTicks);
+        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), totalTicks);
+        stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), usesSegmentedReloadAnimation() ? RELOAD_STAGE_START : RELOAD_STAGE_NONE);
     }
 
-    private static void setReloadAnimStage(ItemStack stack, int stage) {
-        if (stage == RELOAD_STAGE_NONE) {
-            stack.remove(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get());
-        } else {
-            stack.set(ModDataComponents.GUN_RELOAD_ANIM_STAGE.get(), stage);
+    private void updateReloadVisualState(Level level, Player player, ItemStack stack, boolean held) {
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            clearReloadVisualState(stack);
+            return;
+        }
+
+        if (!held) {
+            clearReloadVisualState(stack);
+            return;
+        }
+
+        remainingTicks--;
+        if (remainingTicks <= 0) {
+            clearReloadVisualState(stack);
+            return;
+        }
+
+        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), remainingTicks);
+        if (usesSegmentedReloadAnimation()) {
+            int oldStage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
+            int newStage = computeSegmentedReloadStage(stack, remainingTicks);
+            stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), newStage);
+            if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated) {
+                triggerSegmentedReloadStage(animated, level, player, stack, newStage);
+            }
         }
     }
 
-    private static int getReloadAnimTicks(ItemStack stack) {
-        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get(), 0);
-    }
-
-    private static void setReloadAnimTicks(ItemStack stack, int ticks) {
-        if (ticks <= 0) {
-            stack.remove(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get());
-        } else {
-            stack.set(ModDataComponents.GUN_RELOAD_ANIM_TICKS.get(), ticks);
+    private static void triggerSegmentedReloadStage(AnimatedGunItem animated, Level level, Player player, ItemStack stack, int stage) {
+        if (stage == RELOAD_STAGE_START) {
+            animated.triggerReloadStart(level, player, stack);
+        } else if (stage == RELOAD_STAGE_LOOP) {
+            animated.triggerReloadLoop(level, player, stack);
+        } else if (stage == RELOAD_STAGE_STOP) {
+            animated.triggerReloadStop(level, player, stack);
         }
     }
 
-    private static void setReloadAnimState(ItemStack stack, int stage, int ticks) {
-        setReloadAnimStage(stack, stage);
-        setReloadAnimTicks(stack, ticks);
+    private int computeSegmentedReloadStage(ItemStack stack, int remainingTicks) {
+        int totalTicks = Math.max(1, stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), stats.totalReloadTime()));
+        int elapsedTicks = totalTicks - remainingTicks;
+        int startTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        int stopTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        if (remainingTicks <= stopTicks) {
+            return RELOAD_STAGE_STOP;
+        }
+        if (elapsedTicks >= startTicks) {
+            return RELOAD_STAGE_LOOP;
+        }
+        return RELOAD_STAGE_START;
     }
 
-    private static void clearReloadAnimState(ItemStack stack) {
-        setReloadAnimStage(stack, RELOAD_STAGE_NONE);
-        setReloadAnimTicks(stack, 0);
+    private static void clearReloadVisualState(ItemStack stack) {
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
     }
 
     private int removeAmmoFromInventory(Player player, int needed) {

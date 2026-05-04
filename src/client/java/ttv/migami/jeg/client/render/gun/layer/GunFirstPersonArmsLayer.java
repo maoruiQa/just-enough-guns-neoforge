@@ -12,8 +12,8 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
+import ttv.migami.jeg.client.render.gun.GunAttachmentVisibility;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.client.render.gun.HandRenderInvoker;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -62,15 +62,15 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         String boneName = bone.getName();
         ItemStack stack = renderer.getCurrentItemStack();
         if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            if ("service_rifle".equals(gun.getStats().id().getPath())) {
-                applyServiceRifleVisibility(bone, boneName);
-            }
+            GunAttachmentVisibility.apply(gun.getStats().id(), bone);
         }
 
         if (!"left_arm".equals(boneName) && !"right_arm".equals(boneName)
                 && !"fake_left_arm".equals(boneName) && !"fake_right_arm".equals(boneName)) {
             return;
         }
+        bone.setHidden(true);
+        bone.setChildrenHidden(false);
 
         Minecraft mc = Minecraft.getInstance();
         AbstractClientPlayer player = mc.player;
@@ -100,7 +100,6 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
         GunPoseProfile.ArmTransform t = isLeftBone ? profile.leftArm() : profile.rightArm();
         poseStack.pushPose();
-        RenderUtil.prepMatrixForBone(poseStack, bone);
         poseStack.mulPose(Axis.XP.rotationDegrees(t.rx()));
         poseStack.mulPose(Axis.YP.rotationDegrees(t.ry()));
         poseStack.mulPose(Axis.ZP.rotationDegrees(t.rz()));
@@ -111,7 +110,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
                 ? player.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.LEFT_SLEEVE)
                 : player.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.RIGHT_SLEEVE);
         HumanoidArm arm = isLeftBone ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
-        if (HandRenderInvoker.renderHand(mc, player, poseStack, bufferSource, packedLight, arm, sleeve)) {
+        if (HandRenderInvoker.renderHand(mc, player, poseStack, bufferSource, packedLight, arm, sleeve, bone)) {
             lastArmRenderNanos = System.nanoTime();
         } else {
             // Keep layer alive; event fallback handles frames where bone hand rendering fails.
@@ -134,16 +133,4 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
     ) {
         // Per-bone only.
     }
-
-    private static void applyServiceRifleVisibility(GeoBone bone, String boneName) {
-        switch (boneName) {
-            // Force service_rifle aiming-related parts to remain visible in first person.
-            case "railing", "iron_sight", "modified_iron_sight", "stock_iron_sight" -> bone.setHidden(false);
-            // Hide service_rifle handguard family as requested.
-            case "handguard", "light_handguard", "tactical_handguard", "weighted_handguard" -> bone.setHidden(true);
-            default -> {
-            }
-        }
-    }
-
 }

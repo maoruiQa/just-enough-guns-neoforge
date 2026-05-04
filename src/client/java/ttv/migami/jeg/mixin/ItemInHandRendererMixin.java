@@ -129,16 +129,16 @@ public final class ItemInHandRendererMixin {
         if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
                 || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
             this.mainHandItem = liveMain;
-            this.mainHandHeight = 1.0F;
-            this.oMainHandHeight = 1.0F;
+            this.mainHandHeight = 0.0F;
+            this.oMainHandHeight = 0.0F;
         }
 
         ItemStack liveOff = player.getOffhandItem();
         if (jeg$isVolatileGunComponentDiff(this.offHandItem, liveOff)
                 || jeg$isVolatileGunComponentDiff(this.jeg$preTickOffHandItem, liveOff)) {
             this.offHandItem = liveOff;
-            this.offHandHeight = 1.0F;
-            this.oOffHandHeight = 1.0F;
+            this.offHandHeight = 0.0F;
+            this.oOffHandHeight = 0.0F;
         }
     }
 
@@ -199,6 +199,9 @@ public final class ItemInHandRendererMixin {
         float equipProcess = Float.isNaN(this.jeg$capturedEquipProcess) ? 0.0F : this.jeg$capturedEquipProcess;
         float swingProcess = Float.isNaN(this.jeg$capturedSwingProcess) ? 0.0F : this.jeg$capturedSwingProcess;
 
+        // Match NeoForge behavior: only apply hand transform if the item's extensions explicitly handle it.
+        // For AnimatedGunItem, only holy_shotgun returns true from applyForgeHandTransform.
+        // All other guns return false and rely solely on AnimatedGunRenderer's ADS transform.
         IClientItemExtensions extensions = IClientItemExtensions.of(stack);
         boolean applied = extensions.applyForgeHandTransform(
                 poseStack,
@@ -209,30 +212,6 @@ public final class ItemInHandRendererMixin {
                 equipProcess,
                 swingProcess
         );
-
-        if (!applied) {
-            applied = GunItemClientExtensions.applyForStats(
-                    gun.getStats(),
-                    poseStack,
-                    player,
-                    arm,
-                    partialTick,
-                    equipProcess,
-                    swingProcess
-            );
-        }
-
-        if (!applied) {
-            applied = GunHandTransform.apply(
-                    poseStack,
-                    player,
-                    arm,
-                    gun.getStats(),
-                    partialTick,
-                    equipProcess,
-                    swingProcess
-            );
-        }
 
         this.jeg$customTransformApplied = applied;
         return applied;

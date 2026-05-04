@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/subsonic_rifle",
+          "base": "jeg:item/first_person/subsonic_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }

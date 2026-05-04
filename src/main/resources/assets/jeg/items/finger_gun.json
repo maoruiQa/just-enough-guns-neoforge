@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/finger_gun",
+          "base": "jeg:item/first_person/finger_gun",
           "model": {
             "type": "geckolib:geckolib"
           }

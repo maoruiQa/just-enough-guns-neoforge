@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/bolt_action_rifle",
+          "base": "jeg:item/first_person/bolt_action_rifle",
           "model": {
             "type": "geckolib:geckolib"
           }

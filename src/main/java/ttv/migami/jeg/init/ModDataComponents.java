@@ -45,18 +45,23 @@ public final class ModDataComponents {
                     .build()
     );
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_ANIM_STAGE = REGISTER.register(
-            "gun_reload_anim_stage",
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_TICKS_TOTAL = REGISTER.register(
+            "gun_reload_ticks_total",
             () -> DataComponentType.<Integer>builder()
-                    .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build()
     );
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_ANIM_TICKS = REGISTER.register(
-            "gun_reload_anim_ticks",
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_TICKS_REMAINING = REGISTER.register(
+            "gun_reload_ticks_remaining",
             () -> DataComponentType.<Integer>builder()
-                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_STAGE = REGISTER.register(
+            "gun_reload_stage",
+            () -> DataComponentType.<Integer>builder()
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build()
     );

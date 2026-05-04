@@ -17,7 +17,8 @@ public record GunPoseProfile(
         float adsYaw,
         float scale,
         ArmTransform leftArm,
-        ArmTransform rightArm
+        ArmTransform rightArm,
+        boolean canApplySprintingAnimation
 ) {
     public record ArmTransform(
             float tx,
@@ -54,6 +55,18 @@ public record GunPoseProfile(
             0.42F, -0.44F, -0.60F,
             0.232F, -0.52F, -0.78F,
             3.0F, 3.4F, 1.22F,
+            // 1.20.1 custom_smg idle anim drives arm orientation/offset via arm bones;
+            // keep profile correction near-neutral so those bone transforms remain dominant.
+            arm(0.04F, -0.02F, 0.08F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F),
+            arm(0.36F, -0.10F, 0.12F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F)
+    );
+
+    private static final GunPoseProfile HOLY_SHOTGUN_PROFILE = of(
+            ArmMode.TWO_HANDED,
+            true,
+            0.895F, -1.04F, -1.45F,
+            0.29F, -0.64F, -1.32F,
+            3.0F, 1.8F, 1.22F,
             // 1.20.1 custom_smg idle anim drives arm orientation/offset via arm bones;
             // keep profile correction near-neutral so those bone transforms remain dominant.
             arm(0.04F, -0.02F, 0.08F, 0.0F, 0.0F, 0.0F, 0.60F, 0.74F, 0.60F),
@@ -139,7 +152,7 @@ public record GunPoseProfile(
             Map.entry(Reference.id("pump_shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("repeating_shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("supersonic_shotgun"), SUPERSONIC_SHOTGUN_PROFILE),
-            Map.entry(Reference.id("holy_shotgun"), CUSTOM_SMG_PROFILE),
+            Map.entry(Reference.id("holy_shotgun"), HOLY_SHOTGUN_PROFILE),
             Map.entry(Reference.id("shotgun"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("grenade_launcher"), CUSTOM_SMG_PROFILE),
             Map.entry(Reference.id("typhoonee"), TYPHOONEE_PROFILE),
@@ -155,8 +168,8 @@ public record GunPoseProfile(
             Map.entry(Reference.id("minigun"), of(
                     ArmMode.HEAVY,
                     true,
-                    0.64F, -0.46F, -0.72F,
-                    0.35F, -0.64F, -0.88F,
+                    0.32F, -0.46F, -0.30F,
+                    0.24F, -0.64F, -0.46F,
                     2.0F, 4.0F, 1.22F,
                     arm(-0.08F, -0.10F, 0.02F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
                     arm(0.20F, -0.10F, 0.00F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
@@ -174,7 +187,7 @@ public record GunPoseProfile(
                     ArmMode.HEAVY,
                     true,
                     0.56F, -0.42F, -0.70F,
-                    0.22F, -0.60F, -0.84F,
+                    0.28F, -0.52F, -0.84F,
                     2.0F, 3.0F, 1.22F,
                     arm(0.42F, -0.40F, 0.14F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F),
                     arm(0.82F, -0.40F, 0.14F, 0.0F, 0.0F, 0.0F, 0.58F, 0.72F, 0.58F)
@@ -207,7 +220,8 @@ public record GunPoseProfile(
                 adsYaw,
                 scale,
                 DEFAULT_LEFT_ARM,
-                DEFAULT_RIGHT_ARM
+                DEFAULT_RIGHT_ARM,
+                true
         );
     }
 
@@ -239,7 +253,8 @@ public record GunPoseProfile(
                 adsYaw,
                 scale,
                 leftArm,
-                rightArm
+                rightArm,
+                true
         );
     }
 

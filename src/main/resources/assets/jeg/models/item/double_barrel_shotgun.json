@@ -2395,5 +2395,6 @@
         }
       ]
     }
-  ]
+  ],
+  "parent": "builtin/entity"
 }

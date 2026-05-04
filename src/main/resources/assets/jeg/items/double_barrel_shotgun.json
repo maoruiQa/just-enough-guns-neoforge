@@ -10,7 +10,7 @@
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/double_barrel_shotgun",
+          "base": "jeg:item/first_person/double_barrel_shotgun",
           "model": {
             "type": "geckolib:geckolib"
           }

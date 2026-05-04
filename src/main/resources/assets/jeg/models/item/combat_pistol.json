@@ -1745,5 +1745,6 @@
         3
       ]
     }
-  }
+  },
+  "parent": "builtin/entity"
 }

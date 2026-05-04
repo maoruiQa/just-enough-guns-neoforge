@@ -6,39 +6,36 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
-    private static final String FALLBACK_GUN = "abstract_gun";
-
-    private static ResourceLocation modelPath(String gunId) {
-        return Reference.id("geo/item/gun/" + gunId + ".geo.json");
-    }
-
-    private static ResourceLocation texturePath(String gunId) {
-        return Reference.id("textures/animated/gun/" + gunId + ".png");
-    }
-
-    private static ResourceLocation animationPath(String gunId) {
-        return Reference.id("animations/item/" + gunId + ".animation.json");
-    }
-
-    private static String gunId(AnimatedGunItem animatable) {
-        if (animatable == null || animatable.getStats() == null || animatable.getStats().id() == null) {
-            return FALLBACK_GUN;
-        }
-        return animatable.getStats().id().getPath();
-    }
+    private static final String MODEL_ROOT = "geo/item/gun/";
+    private static final String ANIMATION_ROOT = "animations/item/";
+    private static final String TEXTURE_ITEM_ROOT = "textures/item/";
+    private static final String TEXTURE_ANIM_ROOT = "textures/animated/gun/";
+    private static final String FALLBACK = "abstract_gun";
 
     @Override
     public ResourceLocation getModelResource(AnimatedGunItem animatable) {
-        return modelPath(gunId(animatable));
+        return Reference.id(MODEL_ROOT + path(animatable) + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(AnimatedGunItem animatable) {
-        return texturePath(gunId(animatable));
+        String p = path(animatable);
+        ResourceLocation primary = Reference.id(TEXTURE_ANIM_ROOT + p + ".png");
+        ResourceLocation fallback = Reference.id(TEXTURE_ITEM_ROOT + p + ".png");
+        return exists(primary) ? primary : fallback;
     }
 
     @Override
     public ResourceLocation getAnimationResource(AnimatedGunItem animatable) {
-        return animationPath(gunId(animatable));
+        return Reference.id(ANIMATION_ROOT + path(animatable) + ".animation.json");
+    }
+
+    private static String path(AnimatedGunItem item) {
+        String path = item.getStats().id().getPath();
+        return path == null || path.isBlank() ? FALLBACK : path;
+    }
+
+    private static boolean exists(ResourceLocation id) {
+        return net.minecraft.client.Minecraft.getInstance().getResourceManager().getResource(id).isPresent();
     }
 }
