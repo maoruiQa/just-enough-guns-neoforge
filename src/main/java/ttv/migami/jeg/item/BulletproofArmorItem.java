@@ -1,6 +1,8 @@
 package ttv.migami.jeg.item;
 
 import java.util.function.Consumer;
+import java.util.EnumMap;
+import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
@@ -31,6 +33,13 @@ import org.jetbrains.annotations.Nullable;
  * Uses ArmorItem base class since Equipment API is not available in 1.21.1.
  */
 public class BulletproofArmorItem extends ArmorItem {
+    private static final Holder<ArmorMaterial> TIER_I_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_i");
+    private static final Holder<ArmorMaterial> TIER_II_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_ii");
+    private static final Holder<ArmorMaterial> TIER_III_VEST_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_vest_iii");
+    private static final Holder<ArmorMaterial> TIER_IV_VEST_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_vest_iv");
+    private static final Holder<ArmorMaterial> TIER_V_VEST_MATERIAL = vestMaterial(ArmorMaterials.DIAMOND, "bulletproof_vest_v");
+    private static final Holder<ArmorMaterial> TIER_VI_VEST_MATERIAL = vestMaterial(ArmorMaterials.NETHERITE, "bulletproof_vest_vi");
+
     public enum Tier {
         I("i", 1, 1, 55, 80, 0, 1, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
         II("ii", 2, 2, 55, 80, 1, 2, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
@@ -95,9 +104,37 @@ public class BulletproofArmorItem extends ArmorItem {
     private final ItemAttributeModifiers defaultAttributeModifiers;
 
     public BulletproofArmorItem(Tier tier, EquipmentSlot slot, Properties properties) {
-        super(tier.material(), convertSlotToType(slot), applyProperties(properties, tier, slot));
+        super(materialFor(tier, slot), convertSlotToType(slot), applyProperties(properties, tier, slot));
         this.tier = tier;
         this.defaultAttributeModifiers = buildArmorModifiers(tier, this.getType());
+    }
+
+    private static Holder<ArmorMaterial> materialFor(Tier tier, EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            return switch (tier) {
+                case I -> TIER_I_VEST_MATERIAL;
+                case II -> TIER_II_VEST_MATERIAL;
+                case III -> TIER_III_VEST_MATERIAL;
+                case IV -> TIER_IV_VEST_MATERIAL;
+                case V -> TIER_V_VEST_MATERIAL;
+                case VI -> TIER_VI_VEST_MATERIAL;
+                default -> tier.material();
+            };
+        }
+        return tier.material();
+    }
+
+    private static Holder<ArmorMaterial> vestMaterial(Holder<ArmorMaterial> baseMaterial, String textureName) {
+        ArmorMaterial base = baseMaterial.value();
+        return Holder.direct(new ArmorMaterial(
+                new EnumMap<>(base.defense()),
+                base.enchantmentValue(),
+                base.equipSound(),
+                base.repairIngredient(),
+                List.of(new ArmorMaterial.Layer(ttv.migami.jeg.Reference.id(textureName))),
+                base.toughness(),
+                base.knockbackResistance()
+        ));
     }
 
     private static Type convertSlotToType(EquipmentSlot slot) {
