@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "minecraft:item/netherite_chestplate"
+    "model": "jeg:item/bulletproof_vest_vi"
   }
 }
