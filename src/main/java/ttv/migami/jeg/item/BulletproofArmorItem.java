@@ -98,7 +98,7 @@ public class BulletproofArmorItem extends Item {
     private static Properties applyProperties(Properties base, Tier tier, EquipmentSlot slot) {
         Equippable equippable = Equippable.builder(slot)
                 .setEquipSound(tier.equipSound())
-                .setAsset(assetForTier(tier))
+                .setAsset(assetForTier(tier, slot))
                 .setEquipOnInteract(true)
                 .setDamageOnHurt(true)
                 .build();
@@ -209,7 +209,11 @@ public class BulletproofArmorItem extends Item {
         return tier.projectileLevel();
     }
 
-    private static ResourceKey<EquipmentAsset> assetForTier(Tier tier) {
+    private static ResourceKey<EquipmentAsset> assetForTier(Tier tier, EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            return ResourceKey.create(EquipmentAssets.ROOT_ID, ttv.migami.jeg.Reference.id("bulletproof_vest_" + tier.suffix()));
+        }
+
         // Tier I-II: Leather appearance
         // Tier III+: Enchanted iron appearance (enchanted due to isFoil())
         return switch (tier) {

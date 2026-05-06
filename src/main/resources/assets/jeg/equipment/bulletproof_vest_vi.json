@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "jeg:bulletproof_vest_vi"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "jeg:bulletproof_vest_vi"
+      }
+    ]
+  }
+}
