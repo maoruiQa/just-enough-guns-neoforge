@@ -12,6 +12,7 @@ import ttv.migami.jeg.gun.RecoilProfiles;
  */
 public final class GunRecoilHandler {
     private static final Random RANDOM = new Random();
+    private static final long SPRINT_POSE_SUPPRESSION_NANOS = 250_000_000L;
 
     private static float recoil;
     private static float previous;
@@ -26,6 +27,7 @@ public final class GunRecoilHandler {
     private static int cameraRecoilDirection = 1;
     private static int gunRecoilTicks;
     private static int gunRecoilDuration;
+    private static long suppressSprintPoseUntilNanos;
 
     private GunRecoilHandler() {}
 
@@ -52,6 +54,7 @@ public final class GunRecoilHandler {
         gunRecoilDuration = Math.max(4, stats.fireDelay());
         recoil = (float) gunRecoilNormal;
         previous = recoil;
+        suppressSprintPoseUntilNanos = System.nanoTime() + SPRINT_POSE_SUPPRESSION_NANOS;
     }
 
     public static void addShot(float amount) {
@@ -150,6 +153,10 @@ public final class GunRecoilHandler {
 
     public static float getRecoil(float partialTick) {
         return Mth.lerp(partialTick, previous, recoil);
+    }
+
+    public static boolean isSuppressingSprintPose() {
+        return System.nanoTime() < suppressSprintPoseUntilNanos;
     }
 
     public static float current() {

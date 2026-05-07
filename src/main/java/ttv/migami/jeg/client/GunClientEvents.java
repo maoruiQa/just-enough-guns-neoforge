@@ -450,6 +450,7 @@ public final class GunClientEvents {
 
     private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
         GunRecoilHandler.onShot(gun.getStats());
+        AnimatedGunItem.suppressSprintAnimationBriefly();
     }
 
     private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {

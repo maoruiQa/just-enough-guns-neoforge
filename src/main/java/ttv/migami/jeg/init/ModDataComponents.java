@@ -18,6 +18,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -43,6 +44,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Boolean>builder()
                     .persistent(Codec.BOOL)
                     .networkSynchronized(ByteBufCodecs.BOOL)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -53,6 +55,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -61,6 +64,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -69,6 +73,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -77,6 +82,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Long>builder()
                     .persistent(Codec.LONG)
                     .networkSynchronized(ByteBufCodecs.VAR_LONG)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -85,6 +91,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
@@ -93,6 +100,7 @@ public final class ModDataComponents {
             () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .ignoreSwapAnimation()
                     .build()
     );
 
