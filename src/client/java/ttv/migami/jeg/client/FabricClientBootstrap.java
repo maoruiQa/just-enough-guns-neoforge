@@ -350,6 +350,7 @@ public final class FabricClientBootstrap {
 
     private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
         GunRecoilHandler.onShot(gun.getStats());
+        AnimatedGunItem.suppressSprintAnimationBriefly();
     }
 
     private static boolean canPredictShot(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackHeldLastTick) {
