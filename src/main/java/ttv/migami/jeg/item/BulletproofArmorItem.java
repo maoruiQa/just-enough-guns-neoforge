@@ -33,6 +33,13 @@ import org.jetbrains.annotations.Nullable;
  * Uses ArmorItem base class since Equipment API is not available in 1.21.1.
  */
 public class BulletproofArmorItem extends ArmorItem {
+    private static final Holder<ArmorMaterial> TIER_I_HELMET_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_i");
+    private static final Holder<ArmorMaterial> TIER_II_HELMET_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_ii");
+    private static final Holder<ArmorMaterial> TIER_III_HELMET_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iii");
+    private static final Holder<ArmorMaterial> TIER_IV_HELMET_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iv");
+    private static final Holder<ArmorMaterial> TIER_V_HELMET_MATERIAL = vestMaterial(ArmorMaterials.DIAMOND, "bulletproof_helmet_v");
+    private static final Holder<ArmorMaterial> TIER_VI_HELMET_MATERIAL = vestMaterial(ArmorMaterials.NETHERITE, "bulletproof_helmet_vi");
+
     private static final Holder<ArmorMaterial> TIER_I_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_i");
     private static final Holder<ArmorMaterial> TIER_II_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_ii");
     private static final Holder<ArmorMaterial> TIER_III_VEST_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_vest_iii");
@@ -110,6 +117,17 @@ public class BulletproofArmorItem extends ArmorItem {
     }
 
     private static Holder<ArmorMaterial> materialFor(Tier tier, EquipmentSlot slot) {
+        if (slot == EquipmentSlot.HEAD) {
+            return switch (tier) {
+                case I -> TIER_I_HELMET_MATERIAL;
+                case II -> TIER_II_HELMET_MATERIAL;
+                case III -> TIER_III_HELMET_MATERIAL;
+                case IV -> TIER_IV_HELMET_MATERIAL;
+                case V -> TIER_V_HELMET_MATERIAL;
+                case VI -> TIER_VI_HELMET_MATERIAL;
+                default -> tier.material();
+            };
+        }
         if (slot == EquipmentSlot.CHEST) {
             return switch (tier) {
                 case I -> TIER_I_VEST_MATERIAL;
