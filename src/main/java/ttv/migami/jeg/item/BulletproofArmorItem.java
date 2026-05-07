@@ -210,6 +210,9 @@ public class BulletproofArmorItem extends Item {
     }
 
     private static ResourceKey<EquipmentAsset> assetForTier(Tier tier, EquipmentSlot slot) {
+        if (slot == EquipmentSlot.HEAD) {
+            return ResourceKey.create(EquipmentAssets.ROOT_ID, ttv.migami.jeg.Reference.id("bulletproof_helmet_" + tier.suffix()));
+        }
         if (slot == EquipmentSlot.CHEST) {
             return ResourceKey.create(EquipmentAssets.ROOT_ID, ttv.migami.jeg.Reference.id("bulletproof_vest_" + tier.suffix()));
         }
