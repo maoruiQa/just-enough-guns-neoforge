@@ -1,3 +1,6 @@
 {
-    "parent":  "minecraft:item/iron_helmet"
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "jeg:item/bulletproof_helmet_iii"
+  }
 }
