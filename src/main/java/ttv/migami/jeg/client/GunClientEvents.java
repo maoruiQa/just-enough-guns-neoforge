@@ -35,7 +35,8 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
-import ttv.migami.jeg.gun.GunCategory;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
@@ -45,6 +46,7 @@ import ttv.migami.jeg.network.NetworkHandler;
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
+    private static final float SCOPE_FOV_FACTOR = 1.0F - 20.0F / 70.0F;
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final ResourceLocation OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final ResourceLocation HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
@@ -62,6 +64,40 @@ public final class GunClientEvents {
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
     private static final java.util.Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
+    private static final java.util.Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = java.util.Map.ofEntries(
+            java.util.Map.entry("abstract_gun", DEFAULT_MUZZLE_FLASH),
+            java.util.Map.entry("assault_rifle", DEFAULT_MUZZLE_FLASH),
+            java.util.Map.entry("finger_gun", new MuzzleFlashProfile(0.0D, 0.0D, 3.7D, -4.7D)),
+            java.util.Map.entry("revolver", new MuzzleFlashProfile(0.8D, 0.0D, 4.695D, -2.785D)),
+            java.util.Map.entry("waterpipe_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 3.89D, -7.89D)),
+            java.util.Map.entry("custom_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -2.205D)),
+            java.util.Map.entry("double_barrel_shotgun", new MuzzleFlashProfile(1.3D, 0.0D, 5.6D, -9.255D)),
+            java.util.Map.entry("semi_auto_pistol", new MuzzleFlashProfile(0.8D, 0.0D, 5.645D, -2.2D)),
+            java.util.Map.entry("semi_auto_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.43D, -7.305D)),
+            java.util.Map.entry("pump_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 4.075D, -5.785D)),
+            java.util.Map.entry("combat_pistol", new MuzzleFlashProfile(0.8D, 0.0D, 5.645D, -2.2D)),
+            java.util.Map.entry("burst_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.34D, -5.865D)),
+            java.util.Map.entry("combat_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.59D, -7.955D)),
+            java.util.Map.entry("bolt_action_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.915D, -15.155D)),
+            java.util.Map.entry("flare_gun", new MuzzleFlashProfile(0.8D, 0.0D, 4.695D, -2.04D)),
+            java.util.Map.entry("blossom_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.4D, -9.7D)),
+            java.util.Map.entry("holy_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 3.05D, -3.03D)),
+            java.util.Map.entry("typhoonee", new MuzzleFlashProfile(0.8D, 0.0D, 2.5D, -3.03D)),
+            java.util.Map.entry("repeating_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 4.645D, -10.635D)),
+            java.util.Map.entry("infantry_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.495D, -9.655D)),
+            java.util.Map.entry("service_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.68D, -9.145D)),
+            java.util.Map.entry("hollenfire_mk2", new MuzzleFlashProfile(0.8D, 0.0D, 4.68D, -7.645D)),
+            java.util.Map.entry("soulhunter_mk2", new MuzzleFlashProfile(0.8D, 0.0D, 4.52D, -10.66D)),
+            java.util.Map.entry("supersonic_shotgun", new MuzzleFlashProfile(1.0D, 0.0D, 4.315D, -5.855D)),
+            java.util.Map.entry("hypersonic_cannon", new MuzzleFlashProfile(0.8D, 0.0D, 3.935D, -2.285D)),
+            java.util.Map.entry("rocket_launcher", new MuzzleFlashProfile(1.3D, 0.0D, 4.695D, -8.015D)),
+            java.util.Map.entry("grenade_launcher", new MuzzleFlashProfile(1.0D, 0.0D, 4.86D, -7.0D)),
+            java.util.Map.entry("light_machine_gun", new MuzzleFlashProfile(0.8D, 0.0D, 4.88D, -10.0D)),
+            java.util.Map.entry("flamethrower", new MuzzleFlashProfile(0.8D, 0.0D, 4.1D, -11.8D)),
+            java.util.Map.entry("minigun", new MuzzleFlashProfile(1.0D, 0.0D, -1.1D, -13.0D)),
+            java.util.Map.entry("phantom_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -2.205D))
+    );
     private static StunRingingSound stunRingingSound;
 
     private GunClientEvents() {}
@@ -84,7 +120,7 @@ public final class GunClientEvents {
         }
 
         ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem)) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
             return;
         }
 
@@ -92,7 +128,9 @@ public final class GunClientEvents {
         if (ads <= 0.0F) {
             return;
         }
-        float factor = 1.0F - ADS_FOV_FACTOR * ads;
+        float fovFactor = Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled() ? SCOPE_FOV_FACTOR : ADS_FOV_FACTOR;
+        float factor = 1.0F - fovFactor * ads;
         event.setNewFovModifier(Math.max(0.1F, event.getNewFovModifier() * factor));
     }
 
@@ -208,6 +246,7 @@ public final class GunClientEvents {
 
         ClientHudRenderer.render(event.getGuiGraphics());
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
+            ScopeOverlayRenderer.render(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
             CrosshairHandler.render(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
             event.setCanceled(true);
         }
@@ -464,6 +503,10 @@ public final class GunClientEvents {
 
     public static void showMuzzleFlash(int entityId, float random) {
         Minecraft minecraft = Minecraft.getInstance();
+        Entity entity = minecraft.level != null ? minecraft.level.getEntity(entityId) : null;
+        if (entity instanceof PhantomGunner) {
+            return;
+        }
         if (minecraft.player != null && minecraft.player.getId() == entityId) {
             boolean aiming = AimingHandler.get().isAiming();
             AnimatedGunItem.triggerClientShoot(minecraft.player, aiming);
@@ -473,6 +516,8 @@ public final class GunClientEvents {
         }
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
     }
+
+    private record MuzzleFlashProfile(double size, double xOffset, double yOffset, double zOffset) {}
 
     private static void tickMuzzleFlashState() {
         Minecraft minecraft = Minecraft.getInstance();
@@ -508,12 +553,14 @@ public final class GunClientEvents {
             }
 
             Vec3 muzzlePos = computeMuzzlePosition(living, held, partialTick);
+            MuzzleFlashProfile flash = muzzleFlashProfile(held);
             poseStack.pushPose();
             poseStack.translate(muzzlePos.x - cameraPos.x, muzzlePos.y - cameraPos.y, muzzlePos.z - cameraPos.z);
             poseStack.mulPose(camera.rotation());
             poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
 
-            float size = 0.45F + entry.getValue().random * 0.25F;
+            float size = (float) flash.size();
             poseStack.scale(size, size, 1.0F);
             poseStack.translate(-0.5F, -0.5F, 0.0F);
 
@@ -568,30 +615,23 @@ public final class GunClientEvents {
             side = side.normalize();
         }
 
-        double forwardMul = 0.66D;
-        double sideMul = 0.06D;
-        double heightMul = -0.05D;
-        if (held.getItem() instanceof GunItem gun) {
-            switch (GunCategory.fromStats(gun.getStats())) {
-                case RIFLE -> forwardMul = 0.84D;
-                case SHOTGUN -> forwardMul = 0.88D;
-                case SNIPER -> forwardMul = 0.95D;
-                case LMG -> forwardMul = 0.90D;
-                case HEAVY -> {
-                    forwardMul = 1.00D;
-                    heightMul = -0.02D;
-                }
-                default -> {
-                    // Pistols/SMGs/special keep the baseline offset.
-                }
-            }
-        }
+        MuzzleFlashProfile flash = muzzleFlashProfile(held);
+        double forwardMul = 0.36D - flash.zOffset() * 0.0625D;
+        double sideMul = flash.xOffset() * 0.0625D;
+        double heightMul = (flash.yOffset() - 4.75D) * 0.0625D;
 
         if (shooter instanceof Player player && player.getMainArm() == HumanoidArm.LEFT) {
             sideMul *= -1.0D;
         }
 
         return eye.add(look.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
+    }
+
+    private static MuzzleFlashProfile muzzleFlashProfile(ItemStack held) {
+        if (held.getItem() instanceof GunItem gun) {
+            return MUZZLE_FLASH_PROFILES.getOrDefault(gun.getStats().id().getPath(), DEFAULT_MUZZLE_FLASH);
+        }
+        return DEFAULT_MUZZLE_FLASH;
     }
 
     private static void renderOverheatBar(net.minecraft.client.gui.GuiGraphics guiGraphics, int heatPercent) {

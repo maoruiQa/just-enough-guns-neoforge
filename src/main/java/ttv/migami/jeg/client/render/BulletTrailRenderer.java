@@ -177,9 +177,9 @@ public final class BulletTrailRenderer {
         poseStack.translate(-4.0F, 0.0F, 0.0F);
 
         float size = Math.min((trail.age + 1) * 30.0F, 200.0F);
-        float tailX = -size;
-        float headX = 0.0F;
-        float radius = Math.max(1.7F, trail.size * 34.0F);
+        float tailX = -1.0F - size;
+        float headX = 1.0F;
+        float radius = 1.0F;
         int red = (trail.color >> 16) & 0xFF;
         int green = (trail.color >> 8) & 0xFF;
         int blue = trail.color & 0xFF;
