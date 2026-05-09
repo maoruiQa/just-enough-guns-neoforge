@@ -4,7 +4,7 @@
   "max_health": 40.0,
   "auto_repair_per_tick": 0.02,
   "auto_repair_cooldown_ticks": 100,
-  "max_energy": 0,
+  "max_energy": 100,
   "allow_free_cam": true,
   "container_type": "none",
   "engine": {

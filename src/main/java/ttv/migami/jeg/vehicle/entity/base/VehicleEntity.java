@@ -36,8 +36,10 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
+    private static final String TAG_ENERGY = "Energy";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
     private static final double GRAVITY = 0.08D;
 
@@ -54,6 +56,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_VEHICLE_ID, DefaultVehicleData.TEST_WHEEL.id().toString());
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
+        builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
     }
 
     public VehicleData vehicleData() {
@@ -64,6 +67,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         VehicleData data = VehicleDataManager.get(id);
         this.entityData.set(DATA_VEHICLE_ID, data.id().toString());
         this.entityData.set(DATA_HEALTH, data.defaults().maxHealth());
+        this.entityData.set(DATA_ENERGY, data.defaults().maxEnergy());
     }
 
     public float vehicleHealth() {
@@ -72,6 +76,26 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     public float maxVehicleHealth() {
         return this.vehicleData().defaults().maxHealth();
+    }
+
+    public int vehicleEnergy() {
+        return this.entityData.get(DATA_ENERGY);
+    }
+
+    public int maxVehicleEnergy() {
+        return this.vehicleData().defaults().maxEnergy();
+    }
+
+    public boolean consumeEnergy(int amount) {
+        if (amount <= 0) {
+            return true;
+        }
+        int current = this.vehicleEnergy();
+        if (current < amount) {
+            return false;
+        }
+        this.entityData.set(DATA_ENERGY, current - amount);
+        return true;
     }
 
     public boolean isFreeLookInputDown() {
@@ -168,6 +192,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     protected void addAdditionalSaveData(CompoundTag output) {
         output.putString(TAG_VEHICLE_ID, this.entityData.get(DATA_VEHICLE_ID));
         output.putFloat(TAG_HEALTH, this.vehicleHealth());
+        output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
     }
 
@@ -178,6 +203,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
         }
         float health = input.contains(TAG_HEALTH) ? input.getFloat(TAG_HEALTH) : this.maxVehicleHealth();
         this.entityData.set(DATA_HEALTH, Mth.clamp(health, 0.0F, this.maxVehicleHealth()));
+        int energy = input.contains(TAG_ENERGY) ? input.getInt(TAG_ENERGY) : this.maxVehicleEnergy();
+        this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
     }
 

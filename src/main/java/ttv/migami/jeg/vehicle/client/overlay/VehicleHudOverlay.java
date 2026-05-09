@@ -44,5 +44,9 @@ public final class VehicleHudOverlay {
 
         Component health = Component.translatable("hud.jeg.vehicle.health", Math.round(vehicle.vehicleHealth()), Math.round(vehicle.maxVehicleHealth()));
         guiGraphics.drawString(minecraft.font, health, (width - minecraft.font.width(health)) / 2, y + 11, 0xFFE6E6E6);
+        if (vehicle.maxVehicleEnergy() > 0) {
+            Component energy = Component.translatable("hud.jeg.vehicle.energy", vehicle.vehicleEnergy(), vehicle.maxVehicleEnergy());
+            guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, y + 22, 0xFF8FC7FF);
+        }
     }
 }

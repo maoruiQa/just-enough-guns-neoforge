@@ -316,6 +316,7 @@
   "entity.jeg.test_wheel_vehicle": "Test Wheel Vehicle",
   "hud.jeg.vehicle.test_wheel_vehicle": "Test Wheel Vehicle",
   "hud.jeg.vehicle.health": "Hull: %s / %s",
+  "hud.jeg.vehicle.energy": "Energy: %s / %s",
   "container.jeg.vehicle": "Vehicle Inventory",
   "block.jeg.vehicle_container": "Vehicle Container",
   "item.jeg.crowbar": "Crowbar",

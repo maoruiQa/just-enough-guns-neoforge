@@ -37,7 +37,7 @@ public record DefaultVehicleData(
             40.0F,
             0.02F,
             100,
-            0,
+            100,
             EngineInfo.WHEEL_TEST,
             List.of(SeatInfo.DRIVER),
             true,
