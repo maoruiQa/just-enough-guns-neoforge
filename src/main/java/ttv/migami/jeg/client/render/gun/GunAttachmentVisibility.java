@@ -7,6 +7,7 @@ import com.geckolib.animation.state.BoneSnapshot;
 import com.geckolib.cache.model.GeoBone;
 import com.geckolib.renderer.base.BoneSnapshots;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.gun.GunScopeSupport;
 
 public final class GunAttachmentVisibility {
     private static final Set<String> DEFAULT_HIDDEN_ATTACHMENT_BONES = Set.of(
@@ -45,6 +46,9 @@ public final class GunAttachmentVisibility {
     );
 
     private static final Map<Identifier, Rule> RULES = Map.ofEntries(
+            rule(Reference.id("combat_rifle"),
+                    Set.of("iron_sight"),
+                    Set.of("hidden_iron_sight")),
             rule(Reference.id("service_rifle"),
                     Set.of("railing", "iron_sight", "modified_iron_sight", "stock_iron_sight", "handguard", "light_handguard"),
                     Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip")),
@@ -57,10 +61,25 @@ public final class GunAttachmentVisibility {
     }
 
     public static void apply(Identifier gunId, GeoBone bone) {
+        if (Reference.id("bolt_action_rifle").equals(gunId)) {
+            applyBoltActionRifle(bone.name(), bone.frameSnapshot);
+            return;
+        }
         apply(gunId, bone.name(), bone.frameSnapshot);
     }
 
     public static void apply(Identifier gunId, BoneSnapshots snapshots) {
+        if (Reference.id("bolt_action_rifle").equals(gunId)) {
+            snapshots.ifPresent("attachment_bone", snapshot -> snapshot.skipRender(!GunScopeSupport.isBoltActionRifleScopeEnabled()));
+            snapshots.ifPresent("iron_sight", snapshot -> snapshot.skipRender(GunScopeSupport.isBoltActionRifleScopeEnabled()));
+            DEFAULT_HIDDEN_ATTACHMENT_BONES.forEach(boneName -> {
+                if (!"attachment_bone".equals(boneName) && !"iron_sight".equals(boneName)) {
+                    snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(true));
+                }
+            });
+            return;
+        }
+
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(false)));
@@ -75,6 +94,11 @@ public final class GunAttachmentVisibility {
     }
 
     private static void apply(Identifier gunId, String boneName, BoneSnapshot snapshot) {
+        if (Reference.id("bolt_action_rifle").equals(gunId)) {
+            applyBoltActionRifle(boneName, snapshot);
+            return;
+        }
+
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             Boolean hidden = rule.visibility(boneName);
@@ -84,6 +108,20 @@ public final class GunAttachmentVisibility {
             }
         }
 
+        if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
+            snapshot.skipRender(true);
+        }
+    }
+
+    private static void applyBoltActionRifle(String boneName, BoneSnapshot snapshot) {
+        if ("attachment_bone".equals(boneName)) {
+            snapshot.skipRender(!GunScopeSupport.isBoltActionRifleScopeEnabled());
+            return;
+        }
+        if ("iron_sight".equals(boneName)) {
+            snapshot.skipRender(GunScopeSupport.isBoltActionRifleScopeEnabled());
+            return;
+        }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             snapshot.skipRender(true);
         }

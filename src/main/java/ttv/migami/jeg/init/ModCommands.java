@@ -158,7 +158,9 @@ public final class ModCommands {
         return Commands.literal("combat")
                 .then(configBulletBlockDestructionCommand())
                 .then(configMagazineFeedCommand())
-                .then(configGunnerTerrainCommand());
+                .then(configGunnerTerrainCommand())
+                .then(configGunnerAccuracyCommand())
+                .then(configGunnerProgressionCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {
@@ -258,6 +260,25 @@ public final class ModCommands {
         return Commands.literal("gunnerTerrain")
                 .then(configBooleanConfigCommand("enabled", "combat.gunnerTerrain.enabled"))
                 .then(configIntConfigCommand("maxTier", "combat.gunnerTerrain.maxTier", 0, 3));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerProgressionCommand() {
+        return Commands.literal("gunnerProgression")
+                .then(configIntConfigCommand("maxDay", "combat.gunnerProgression.maxDay", 1, 5000));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerAccuracyCommand() {
+        return Commands.literal("gunnerAccuracy")
+                .then(configIntConfigCommand("startDay", "combat.gunnerAccuracy.startDay", 0, 5000))
+                .then(configIntConfigCommand("maxDay", "combat.gunnerAccuracy.maxDay", 1, 5000))
+                .then(Commands.literal("maxPercent")
+                        .executes(context -> executeGetDoubleConfig(context.getSource(), "combat.gunnerAccuracy.maxPercent", "combat.gunnerAccuracy.maxPercent"))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 0.95D))
+                                .executes(context -> executeSetDoubleConfig(
+                                        context.getSource(),
+                                        "combat.gunnerAccuracy.maxPercent",
+                                        DoubleArgumentType.getDouble(context, "value"),
+                                        "combat.gunnerAccuracy.maxPercent"))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configBooleanConfigCommand(String name, String key) {

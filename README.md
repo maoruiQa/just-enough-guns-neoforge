@@ -23,3 +23,41 @@ Additional Resources:
 ==========
 Community Documentation: https://docs.neoforged.net/  
 NeoForged Discord: https://discord.neoforged.net/
+
+Ballistic Armor Interception
+==========
+
+Bulletproof helmets and vests use a ballistic interception model for gun damage instead of vanilla Projectile Protection. Each shot resolves an effective armor-piercing value from the ammo type and the gun multiplier:
+
+```
+effectiveAP = ammoArmorPiercing * gunArmorPiercingMultiplier
+```
+
+On a protected hit, headshots use the bulletproof helmet first. Other protected body hits use the bulletproof vest. If no matching bulletproof armor piece is equipped, gun damage is unchanged.
+
+For the selected armor piece, the damage multiplier depends on whether the shot undermatches or overmatches the armor rating:
+
+```
+apRatio = effectiveAP / armorRating
+
+if effectiveAP < armorRating:
+    damageMultiplier = undermatchMultiplier * (0.55 + apRatio * 0.45)
+else:
+    damageMultiplier = overmatchMultiplier * min(1.25, 0.85 + (apRatio - 1.0) * 0.18)
+    damageMultiplier = min(damageMultiplier, 0.95)
+
+finalDamage = rawDamage * damageMultiplier
+```
+
+Armor durability loss scales with raw damage and AP pressure. Under-matching shots still wear armor down, while over-matching shots punish armor more heavily:
+
+```
+pressure = effectiveAP / armorRating
+
+if effectiveAP < armorRating:
+    durabilityDamage = rawDamage * (0.65 + pressure * 0.35)
+else:
+    durabilityDamage = rawDamage * (1.00 + min(1.50, pressure - 1.0) * 0.85)
+```
+
+The result is then scaled by the armor slot and armor tier durability multipliers and capped before being applied to the armor item.

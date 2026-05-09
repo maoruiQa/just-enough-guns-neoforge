@@ -3,6 +3,7 @@ package ttv.migami.jeg.faction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.BulletproofArmorItem;
 
@@ -45,63 +46,39 @@ public class GunnerArmorEquiper {
     }
 
     private static BulletproofArmorItem.Tier determineHelmetTier(RandomSource random, GunnerArmorContext context) {
-        if (context.isSpecialSituation) {
-            // Special situations: guaranteed level 1, increased chance for level 2
-            float roll = random.nextFloat();
-            if (roll < 0.60f) return BulletproofArmorItem.Tier.I;      // 60% level 1
-            if (roll < 0.85f) return BulletproofArmorItem.Tier.II;     // 25% level 2
-            if (roll < 0.95f) return BulletproofArmorItem.Tier.III;    // 10% level 3
-            return BulletproofArmorItem.Tier.IV;                       // 5% level 4
-        } else {
-            // Normal spawning: most gunners have no armor, limited helmet chances
-            float roll = random.nextFloat();
-            if (roll < 0.85f) return null;                             // 85% no helmet (increased from 70%)
-            if (roll < 0.95f) return BulletproofArmorItem.Tier.I;      // 10% level 1 helmet ONLY (decreased from 15%)
-            if (roll < 0.98f) return BulletproofArmorItem.Tier.II;     // 3% level 2 helmet ONLY (decreased from 10%)
-            if (roll < 0.995f) return BulletproofArmorItem.Tier.III;   // 1.5% level 3 helmet ONLY (decreased from 4%)
-            return BulletproofArmorItem.Tier.IV;                       // 0.5% level 4 helmet ONLY (decreased from 1%)
-        }
+        return randomTier(random, context, context.isElite ? 2 : 1);
     }
 
     private static BulletproofArmorItem.Tier determineBodyArmorTier(RandomSource random, GunnerArmorContext context) {
-        if (context.isElite) {
-            // Elite gunners get better armor
-            float roll = random.nextFloat();
-            if (roll < 0.40f) return BulletproofArmorItem.Tier.II;     // 40% level 2
-            if (roll < 0.70f) return BulletproofArmorItem.Tier.III;    // 30% level 3
-            if (roll < 0.90f) return BulletproofArmorItem.Tier.IV;     // 20% level 4
-            if (roll < 0.98f) return BulletproofArmorItem.Tier.V;      // 8% level 5
-            return BulletproofArmorItem.Tier.VI;                       // 2% level 6
-        } else if (context.isSpecialSituation) {
-            // Special situations have moderate armor
-            float roll = random.nextFloat();
-            if (roll < 0.30f) return null;                             // 30% no body armor
-            if (roll < 0.65f) return BulletproofArmorItem.Tier.I;      // 35% level 1
-            if (roll < 0.85f) return BulletproofArmorItem.Tier.II;     // 20% level 2
-            if (roll < 0.95f) return BulletproofArmorItem.Tier.III;    // 10% level 3
-            if (roll < 0.99f) return BulletproofArmorItem.Tier.IV;     // 4% level 4
-            return BulletproofArmorItem.Tier.V;                        // 1% level 5
-        } else {
-            // Normal spawning: very rare body armor - only if they already have a helmet
-            float roll = random.nextFloat();
-            if (roll < 0.92f) return null;                             // 92% no body armor (increased from 85%)
-            if (roll < 0.975f) return BulletproofArmorItem.Tier.I;     // 5.5% level 1 (decreased from 9%)
-            if (roll < 0.992f) return BulletproofArmorItem.Tier.II;    // 1.7% level 2 (decreased from 4%)
-            if (roll < 0.998f) return BulletproofArmorItem.Tier.III;   // 0.6% level 3 (decreased from 1.5%)
-            return BulletproofArmorItem.Tier.IV;                       // 0.2% level 4 (decreased from 0.5%)
-        }
+        return randomTier(random, context, context.isElite ? 2 : 1);
     }
 
     private static float getHelmetEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        if (context.isSpecialSituation) return 0.8f;                   // 80% for special situations
-        return 0.15f;                                                  // 15% for normal spawning (decreased from 30%)
+        float scale = progressionScale(context);
+        if (context.isSpecialSituation) return 0.80f + 0.15f * scale;
+        return 0.15f + 0.50f * scale;
     }
 
     private static float getBodyArmorEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        if (context.isSpecialSituation) return 0.6f;                   // 60% for special situations
-        return 0.08f;                                                  // 8% for normal spawning (decreased from 15%)
+        float scale = progressionScale(context);
+        if (context.isSpecialSituation) return 0.60f + 0.30f * scale;
+        return 0.08f + 0.37f * scale;
+    }
+
+    private static BulletproofArmorItem.Tier randomTier(RandomSource random, GunnerArmorContext context, int minimumTier) {
+        float scale = progressionScale(context);
+        int maximumTier = context.isElite ? 6 : context.isSpecialSituation ? 5 : 2 + (int) Math.floor(scale * 4.0F);
+        maximumTier = Math.max(minimumTier, Math.min(6, maximumTier));
+        int count = maximumTier - minimumTier + 1;
+        float biased = (float) Math.pow(random.nextFloat(), 1.8D - 1.2D * scale);
+        int tierNumber = minimumTier + Math.min(count - 1, (int) (biased * count));
+        return BulletproofArmorItem.Tier.values()[tierNumber - 1];
+    }
+
+    private static float progressionScale(GunnerArmorContext context) {
+        return Config.gunnerProgressionScale(context.mob.level());
     }
 
     /**

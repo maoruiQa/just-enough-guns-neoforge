@@ -114,13 +114,13 @@ public class GunnerMobSpawner {
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
-                Item gun = faction.getRandomGun(isCloseRange);
+                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom());
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
                 boolean elite = (mob.getRandom().nextFloat() < GunMobValues.eliteChance && GunMobValues.elitesEnabled);
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
                 if (elite) {
-                    gun = faction.getEliteGun();
+                    gun = faction.getEliteGun(mob.level(), mob.getRandom());
                     applyEliteAttributes(mob);
                 }
 
@@ -343,6 +343,7 @@ public class GunnerMobSpawner {
             gunStack.set(ttv.migami.jeg.init.ModDataComponents.GUN_AMMO.get(),
                         Math.max(1, stats.magazineSize()));
         }
+        GunnerProgression.prepareDroppedWeapon(mob, gunStack);
         return gunStack;
     }
 

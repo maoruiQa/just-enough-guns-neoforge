@@ -24,6 +24,11 @@ public final class GunRangeHelper {
     }
 
     public static int computeEffectiveLife(GunStats stats) {
+        int override = BallisticProtection.projectileLifeOverride(stats);
+        if (override > 0) {
+            return override;
+        }
+
         int scaledLifeCap = Math.max(MINIMUM_LIFE_TICKS, (int) Math.ceil(stats.projectileLife() * RANGE_MULTIPLIER));
         if (isRangeExempt(stats)) {
             return scaledLifeCap;
@@ -59,5 +64,13 @@ public final class GunRangeHelper {
 
         double cappedRange = GunCategory.fromStats(stats).maxRange() * RANGE_MULTIPLIER;
         return Math.min(rawRange, cappedRange);
+    }
+
+    public static double computeFullDamageRange(GunStats stats) {
+        double effectiveRange = computeEffectiveRange(stats);
+        if (effectiveRange <= 0.0D || isRangeExempt(stats)) {
+            return effectiveRange;
+        }
+        return effectiveRange * (BallisticProtection.isSonic(stats) ? 0.2D : 0.7D);
     }
 }

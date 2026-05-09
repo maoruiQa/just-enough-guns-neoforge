@@ -18,6 +18,7 @@ import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -124,7 +125,16 @@ public final class NetworkHandler {
             if (shot && GunItem.isHoldToFireWeapon(stack)) {
                 HOLD_FIRE_START_TICKS.remove(player.getUUID());
             }
+            if (shot && shouldForceExitAdsAfterShot(gun)) {
+                player.getPersistentData().putBoolean(AIMING_TAG, false);
+                player.stopUsingItem();
+            }
         });
+    }
+
+    private static boolean shouldForceExitAdsAfterShot(GunItem gun) {
+        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled();
     }
 
     private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {

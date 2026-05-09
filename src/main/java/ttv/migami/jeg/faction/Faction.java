@@ -1,9 +1,11 @@
 package ttv.migami.jeg.faction;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Faction {
     private final String name;
@@ -35,18 +37,32 @@ public class Faction {
     }
 
     public Item getRandomGun(boolean isCloseRange) {
+        return getRandomGun(isCloseRange, null, null);
+    }
+
+    public Item getRandomGun(boolean isCloseRange, Level level, RandomSource random) {
         List<Item> pool = isCloseRange ? closeGuns : longGuns;
         if (pool.isEmpty()) {
             return null;
         }
-        return pool.get(new Random().nextInt(pool.size()));
+        if (level != null && random != null) {
+            return GunnerProgression.selectGun(pool, level, random);
+        }
+        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
 
     public Item getEliteGun() {
+        return getEliteGun(null, null);
+    }
+
+    public Item getEliteGun(Level level, RandomSource random) {
         List<Item> pool = eliteGuns;
         if (pool.isEmpty()) {
             return null;
         }
-        return pool.get(new Random().nextInt(pool.size()));
+        if (level != null && random != null) {
+            return GunnerProgression.selectGun(pool, level, random);
+        }
+        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
 }
