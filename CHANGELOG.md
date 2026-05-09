@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.2-pre2+neoforge+26.1 - 2026-05-09
+
+### Changed
+- Aligned muzzle flash and trail rendering with the current branch behavior.
+
+## 1.5.1 - 2026-05-07
+
+### Added
+- Added custom bulletproof helmet and vest textures.
+- Added ballistic armor interception for bulletproof helmets, bulletproof vests, and Bound Terror Phantom protection.
+- Added gun tooltip armor-piercing display and bulletproof armor tooltip values for rating, undermatch multiplier, and overmatch multiplier.
+
+### Changed
+- Replaced bulletproof armor Projectile Protection behavior with ammo AP versus armor rating mitigation.
+- Set helmet ballistic ratings to 80% of the same-tier vest rating.
+- Restored balanced gun stats and preserved recent NeoForge ADS transform fixes.
+
+### Documentation
+- Documented the ballistic armor interception formula and durability pressure model.
+
 ## 1.4.2 - 2026-04-27
 
 ### Added
