@@ -78,7 +78,9 @@ public final class VehicleInputHandler {
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
         float base = (float) event.getMouseSensitivity();
         float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
-        if (vehicle.isSelectedVehicleWeaponGuided() && minecraft.options.getCameraType().isFirstPerson()) {
+        if (VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.zoomDown()) {
             sensitivity = seat.sensitivityX();
         }
         event.setMouseSensitivity(Math.max(0.0F, base * sensitivity));
