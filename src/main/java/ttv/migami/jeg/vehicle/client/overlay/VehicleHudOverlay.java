@@ -1,5 +1,6 @@
 package ttv.migami.jeg.vehicle.client.overlay;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -7,6 +8,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,8 +22,15 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class VehicleHudOverlay {
     private static final ResourceLocation ARMOR_ICON = Reference.id("textures/overlay/vehicle/base/armor.png");
     private static final ResourceLocation ENERGY_ICON = Reference.id("textures/overlay/vehicle/base/energy.png");
+    private static final ResourceLocation DRIVER_ICON = Reference.id("textures/overlay/vehicle/base/driver.png");
+    private static final ResourceLocation PASSENGER_ICON = Reference.id("textures/overlay/vehicle/base/passenger.png");
     private static final ResourceLocation VALUE_BAR = Reference.id("textures/overlay/vehicle/base/value_bar.png");
     private static final ResourceLocation VALUE_FRAME = Reference.id("textures/overlay/vehicle/base/value_frame.png");
+    private static final ResourceLocation LAND_BODY = Reference.id("textures/overlay/vehicle/land/body.png");
+    private static final ResourceLocation LAND_LEFT_WHEEL = Reference.id("textures/overlay/vehicle/land/left_wheel.png");
+    private static final ResourceLocation LAND_RIGHT_WHEEL = Reference.id("textures/overlay/vehicle/land/right_wheel.png");
+    private static final ResourceLocation LAND_ENGINE = Reference.id("textures/overlay/vehicle/land/engine.png");
+    private static final ResourceLocation LAND_LINE = Reference.id("textures/overlay/vehicle/land/line.png");
     private static final ResourceLocation CROSSHAIR_GUN = Reference.id("textures/overlay/vehicle/crosshair/common_gun.png");
     private static final ResourceLocation CROSSHAIR_CANNON = Reference.id("textures/overlay/vehicle/crosshair/common_cannon.png");
     private static final ResourceLocation CROSSHAIR_CANNON_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/common_cannon_zooming.png");
@@ -49,6 +58,8 @@ public final class VehicleHudOverlay {
 
     private static void render(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
         renderReticle(guiGraphics, vehicle);
+        renderPassengerInfo(guiGraphics, minecraft, vehicle);
+        renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
         int width = guiGraphics.guiWidth();
         int y = guiGraphics.guiHeight() - 58;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
@@ -87,13 +98,7 @@ public final class VehicleHudOverlay {
             lineY += 11;
         }
         if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged() || vehicle.isTurretDamaged()) {
-            Component damage = Component.translatable(
-                    "hud.jeg.vehicle.parts",
-                    vehicle.isEngineDamaged() ? "!" : "-",
-                    vehicle.isLeftWheelDamaged() ? "!" : "-",
-                    vehicle.isRightWheelDamaged() ? "!" : "-",
-                    vehicle.isTurretDamaged() ? "!" : "-"
-            );
+            Component damage = Component.translatable("hud.jeg.vehicle.parts_compact");
             guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, lineY, 0xFFFF7777);
         }
     }
@@ -140,5 +145,50 @@ public final class VehicleHudOverlay {
             return CROSSHAIR_US_APC;
         }
         return CROSSHAIR_GUN;
+    }
+
+    private static void renderPassengerInfo(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        int seatCount = vehicle.vehicleData().defaults().seats().size();
+        int screenHeight = guiGraphics.guiHeight();
+        for (int seat = seatCount - 1; seat >= 0; seat--) {
+            int row = seatCount - 1 - seat;
+            int y = screenHeight - 35 - row * 12;
+            Entity passenger = seat < vehicle.getPassengers().size() ? vehicle.getPassengers().get(seat) : null;
+            Component name = passenger == null ? Component.literal("---") : passenger.getName();
+            String number = "[" + (seat + 1) + "]";
+            guiGraphics.drawString(minecraft.font, number, 25 - minecraft.font.width(number), y, 0xFF66FF00);
+            guiGraphics.blit(seat == 0 ? DRIVER_ICON : PASSENGER_ICON, 30, y, 0.0F, 0.0F, 8, 8, 8, 8);
+            guiGraphics.drawString(minecraft.font, name, 42, y, passenger == null ? 0xFF4F8740 : 0xFF66FF00);
+        }
+    }
+
+    private static void renderLandVehicleStatus(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        String vehiclePath = vehicle.vehicleDataId().getPath();
+        if (!"lav150".equals(vehiclePath) && !"bmp2".equals(vehiclePath)) {
+            return;
+        }
+
+        int x = guiGraphics.guiWidth() / 2 + 96;
+        int y = guiGraphics.guiHeight() - 72;
+        guiGraphics.blit(LAND_LINE, guiGraphics.guiWidth() / 2 - 64, guiGraphics.guiHeight() - 56, 0.0F, 0.0F, 128, 1, 128, 1);
+        blitVehiclePart(guiGraphics, LAND_BODY, x, y, vehicle.vehicleHealth() <= vehicle.maxVehicleHealth() * 0.35F);
+        blitVehiclePart(guiGraphics, LAND_LEFT_WHEEL, x, y, vehicle.isLeftWheelDamaged());
+        blitVehiclePart(guiGraphics, LAND_RIGHT_WHEEL, x, y, vehicle.isRightWheelDamaged());
+        blitVehiclePart(guiGraphics, LAND_ENGINE, x, y, vehicle.isEngineDamaged());
+        if (vehicle.isTurretDamaged()) {
+            guiGraphics.fill(guiGraphics.guiWidth() / 2 + 112, guiGraphics.guiHeight() - 71, guiGraphics.guiWidth() / 2 + 113, guiGraphics.guiHeight() - 55, 0xFFFF4033);
+        }
+
+        int speed = (int) Math.round(vehicle.getDeltaMovement().horizontalDistance() * 72.0D);
+        Component speedText = Component.literal(speed + " km/h");
+        guiGraphics.drawString(minecraft.font, speedText, x + 64, guiGraphics.guiHeight() / 2 - 48, 0xFF66FF00);
+    }
+
+    private static void blitVehiclePart(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, boolean damaged) {
+        if (damaged) {
+            RenderSystem.setShaderColor(1.0F, 0.25F, 0.2F, 1.0F);
+        }
+        guiGraphics.blit(texture, x, y, 0.0F, 0.0F, 32, 32, 32, 32);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 }
