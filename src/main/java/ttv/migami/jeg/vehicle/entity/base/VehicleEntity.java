@@ -881,14 +881,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
+        boolean hasThrottle = this.consumeEngineEnergy(engine, forwardAxis != 0 || strafeAxis != 0);
         if (engine.steeringSpeed() > 0.0D) {
-            this.tickServerSteeredLandMovement(engine, velocity, forwardAxis, strafeAxis);
+            this.tickServerSteeredLandMovement(engine, velocity, hasThrottle ? forwardAxis : 0, strafeAxis);
             return;
         }
         boolean grounded = this.onGround();
         double mobility = this.mobilityMultiplier();
 
-        if (forwardAxis != 0 || strafeAxis != 0) {
+        if (hasThrottle && (forwardAxis != 0 || strafeAxis != 0)) {
             float yaw = this.getYRot();
             double yawRadians = Math.toRadians(yaw);
             Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
@@ -919,6 +920,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.98D, 0.98D));
         this.tickEngineSound();
+    }
+
+    private boolean consumeEngineEnergy(EngineInfo engine, boolean active) {
+        int cost = engine.energyCostRate();
+        return !active || cost <= 0 || this.consumeEnergy(cost);
     }
 
     private void tickServerSteeredLandMovement(EngineInfo engine, Vec3 velocity, int forwardAxis, int steeringAxis) {
@@ -998,6 +1004,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
         int verticalAxis = this.input.verticalAxis();
+        boolean hasThrottle = this.consumeEngineEnergy(engine, forwardAxis != 0 || strafeAxis != 0 || verticalAxis != 0);
         double mobility = this.mobilityMultiplier();
 
         float yaw = this.getYRot();
@@ -1005,7 +1012,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
         Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
         Vec3 desired = forward.scale(forwardAxis).add(right.scale(strafeAxis * 0.65D)).add(0.0D, verticalAxis * 0.8D, 0.0D);
-        if (desired.lengthSqr() > 1.0E-4D) {
+        if (hasThrottle && desired.lengthSqr() > 1.0E-4D) {
             velocity = velocity.add(desired.normalize().scale(engine.acceleration() * mobility));
         }
 
@@ -1028,9 +1035,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
         boolean inWater = this.isInWater();
+        boolean hasThrottle = this.consumeEngineEnergy(engine, forwardAxis != 0 || strafeAxis != 0);
         double mobility = this.mobilityMultiplier();
 
-        if (forwardAxis != 0 || strafeAxis != 0) {
+        if (hasThrottle && (forwardAxis != 0 || strafeAxis != 0)) {
             float yaw = this.getYRot();
             double yawRadians = Math.toRadians(yaw);
             Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));

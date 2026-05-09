@@ -165,7 +165,8 @@ public final class VehicleDataManager {
                 getDouble(object, "max_forward_speed", fallback.maxForwardSpeed()),
                 getDouble(object, "max_reverse_speed", fallback.maxReverseSpeed()),
                 getDouble(object, "friction", fallback.friction()),
-                getDouble(object, "steering_speed", fallback.steeringSpeed())
+                getDouble(object, "steering_speed", fallback.steeringSpeed()),
+                getInt(object, "energy_cost_rate", fallback.energyCostRate())
         );
     }
 
