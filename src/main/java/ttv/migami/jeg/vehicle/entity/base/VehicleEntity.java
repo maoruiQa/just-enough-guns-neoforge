@@ -137,6 +137,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean weaponFireInput;
     private int seekControllerId = -1;
     private boolean seekInput;
+    private double wheelSteering;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -782,6 +783,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
+        if (engine.steeringSpeed() > 0.0D) {
+            this.tickServerSteeredLandMovement(engine, velocity, forwardAxis, strafeAxis);
+            return;
+        }
         boolean grounded = this.onGround();
         double mobility = this.mobilityMultiplier();
 
@@ -806,6 +811,54 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
         double friction = this.input.brake() ? 0.55D : engine.friction();
         if (grounded) {
+            velocity = new Vec3(velocity.x * friction, velocity.y, velocity.z * friction);
+        }
+        if (!this.isNoGravity()) {
+            velocity = velocity.add(0.0D, -GRAVITY, 0.0D);
+        }
+
+        this.setDeltaMovement(velocity);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.98D, 0.98D));
+        this.tickEngineSound();
+    }
+
+    private void tickServerSteeredLandMovement(EngineInfo engine, Vec3 velocity, int forwardAxis, int steeringAxis) {
+        double mobility = this.mobilityMultiplier();
+        float yaw = this.getYRot();
+        double yawRadians = Math.toRadians(yaw);
+        Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+        if (forwardAxis != 0) {
+            velocity = velocity.add(forward.scale(engine.acceleration() * forwardAxis * mobility));
+        }
+
+        Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
+        double horizontalSpeed = horizontal.length();
+        if (steeringAxis != 0 && horizontalSpeed > 0.01D) {
+            this.wheelSteering += steeringAxis * engine.steeringSpeed();
+        } else {
+            this.wheelSteering *= 0.75D;
+        }
+        this.wheelSteering *= Math.max(0.78D - 0.25D * horizontalSpeed, 0.1D);
+
+        if (Math.abs(this.wheelSteering) > 1.0E-4D && horizontalSpeed > 0.01D) {
+            double forwardDirection = Math.signum(horizontal.dot(forward));
+            if (forwardDirection == 0.0D) {
+                forwardDirection = forwardAxis < 0 ? -1.0D : 1.0D;
+            }
+            double yawDelta = Math.max(12.0D * horizontalSpeed, 0.0D) * this.wheelSteering * forwardDirection;
+            this.setYRot(this.getYRot() + (float) yawDelta);
+            this.yRotO = this.getYRot();
+        }
+
+        double maxSpeed = (horizontal.dot(forward) < 0.0D ? engine.maxReverseSpeed() : engine.maxForwardSpeed()) * mobility;
+        if (horizontalSpeed > maxSpeed) {
+            horizontal = horizontal.normalize().scale(maxSpeed);
+            velocity = new Vec3(horizontal.x, velocity.y, horizontal.z);
+        }
+
+        double friction = this.input.brake() ? 0.55D : engine.friction();
+        if (this.onGround()) {
             velocity = new Vec3(velocity.x * friction, velocity.y, velocity.z * friction);
         }
         if (!this.isNoGravity()) {
