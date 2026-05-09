@@ -8,8 +8,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
@@ -45,9 +47,11 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         for (int index = start; index < end; index++) {
             VehicleAssemblyRecipe recipe = this.recipes.get(index);
             int row = index - start;
-            this.addRenderableWidget(Button.builder(vehicleName(recipe.resultVehicle()), button -> NetworkHandler.sendAssembleVehicle(recipe.id()))
+            Button button = Button.builder(vehicleName(recipe.resultVehicle()), clicked -> NetworkHandler.sendAssembleVehicle(recipe.id()))
                     .bounds(this.leftPos + 12, this.topPos + 24 + row * 24, 152, 20)
-                    .build());
+                    .build();
+            button.active = this.hasCost(recipe);
+            this.addRenderableWidget(button);
         }
     }
 
@@ -116,5 +120,31 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
             cost.append(item.getDescription());
         }
         return cost;
+    }
+
+    private boolean hasCost(VehicleAssemblyRecipe recipe) {
+        Player player = this.minecraft == null ? null : this.minecraft.player;
+        if (player == null) {
+            return false;
+        }
+        for (VehicleAssemblyRecipe.Ingredient ingredient : recipe.ingredients()) {
+            Item item = BuiltInRegistries.ITEM.get(ingredient.item());
+            if (this.countItem(player, item) < ingredient.count()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int countItem(Player player, Item item) {
+        int count = 0;
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.is(item)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
     }
 }
