@@ -1,0 +1,32 @@
+{
+  "entity_type": "jeg:speedboat",
+  "vehicle_type": "boat",
+  "max_health": 58.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 120,
+  "max_energy": 110,
+  "allow_free_cam": true,
+  "container_type": "mini",
+  "seats": [
+    {"index": 0, "x": 0.0, "y": 0.72, "z": 0.15, "driver": true, "enclosed": false}
+  ],
+  "engine": {"type": "boat", "acceleration": 0.038, "max_forward_speed": 0.42, "max_reverse_speed": 0.14, "friction": 0.88},
+  "third_person_camera": {"x": 0.0, "y": 2.8, "z": -6.5},
+  "dismount": {"x": 1.15, "y": 0.1, "z": 0.0},
+  "collision_level": "light",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.65, "z": 0.0, "half_width": 0.85, "half_height": 0.42, "half_depth": 1.45},
+    {"part": "main_engine", "x": 0.0, "y": 0.5, "z": -1.1, "half_width": 0.45, "half_height": 0.25, "half_depth": 0.3}
+  ],
+  "weapons": [
+    {"weapon": "jeg:combat_pistol", "ammo": "jeg:pistol_ammo", "energy_cost": 0, "guided": false},
+    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false}
+  ],
+  "destroy": {"explodes": false, "explosion_power": 0.0},
+  "armor": {
+    "fallback": {"rating": 1.8, "undermatch_multiplier": 0.3, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.22, "part_damage_multiplier": 1.0},
+    "parts": {
+      "main_engine": {"rating": 1.2, "undermatch_multiplier": 0.45, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.4}
+    }
+  }
+}

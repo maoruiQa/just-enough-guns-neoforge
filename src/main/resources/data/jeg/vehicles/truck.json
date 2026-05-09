@@ -1,0 +1,35 @@
+{
+  "entity_type": "jeg:truck",
+  "vehicle_type": "land",
+  "max_health": 60.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 120,
+  "max_energy": 100,
+  "allow_free_cam": true,
+  "container_type": "small",
+  "seats": [
+    {"index": 0, "x": -0.3, "y": 0.85, "z": 0.15, "driver": true, "enclosed": false},
+    {"index": 1, "x": 0.35, "y": 0.85, "z": 0.15, "driver": false, "enclosed": false}
+  ],
+  "engine": {"type": "wheel", "acceleration": 0.034, "max_forward_speed": 0.32, "max_reverse_speed": 0.12, "friction": 0.82},
+  "third_person_camera": {"x": 0.0, "y": 2.6, "z": -6.0},
+  "dismount": {"x": 1.25, "y": 0.1, "z": 0.0},
+  "collision_level": "medium",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.8, "z": 0.0, "half_width": 0.9, "half_height": 0.6, "half_depth": 1.45},
+    {"part": "wheel_left", "x": -0.78, "y": 0.35, "z": 0.0, "half_width": 0.2, "half_height": 0.28, "half_depth": 1.25},
+    {"part": "wheel_right", "x": 0.78, "y": 0.35, "z": 0.0, "half_width": 0.2, "half_height": 0.28, "half_depth": 1.25},
+    {"part": "main_engine", "x": 0.0, "y": 0.55, "z": -1.1, "half_width": 0.5, "half_height": 0.3, "half_depth": 0.3}
+  ],
+  "weapons": [
+    {"weapon": "jeg:combat_pistol", "ammo": "jeg:pistol_ammo", "energy_cost": 0, "guided": false}
+  ],
+  "destroy": {"explodes": false, "explosion_power": 0.0},
+  "armor": {
+    "fallback": {"rating": 2.0, "undermatch_multiplier": 0.28, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.18, "part_damage_multiplier": 1.0},
+    "parts": {
+      "wheel_left": {"rating": 1.0, "undermatch_multiplier": 0.5, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.5},
+      "wheel_right": {"rating": 1.0, "undermatch_multiplier": 0.5, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.5}
+    }
+  }
+}

@@ -18,6 +18,7 @@ import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunnerMinion;
 import ttv.migami.jeg.faction.raid.RaidEntity;
+import ttv.migami.jeg.vehicle.entity.ConfiguredVehicleEntity;
 import ttv.migami.jeg.vehicle.entity.LightCombatVehicleEntity;
 import ttv.migami.jeg.vehicle.entity.TestAircraftEntity;
 import ttv.migami.jeg.vehicle.entity.TestArtilleryEntity;
@@ -194,6 +195,51 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("test_aircraft")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> TRUCK = REGISTER.register(
+            "truck",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("truck")), MobCategory.MISC)
+                    .sized(1.8F, 1.35F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("truck")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> LAV150 = REGISTER.register(
+            "lav150",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("lav150")), MobCategory.MISC)
+                    .sized(2.0F, 1.45F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("lav150")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> SPEEDBOAT = REGISTER.register(
+            "speedboat",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("speedboat")), MobCategory.MISC)
+                    .sized(2.0F, 0.8F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("speedboat")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> AH6 = REGISTER.register(
+            "ah6",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("ah6")), MobCategory.MISC)
+                    .sized(2.2F, 1.25F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("ah6")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> A10 = REGISTER.register(
+            "a10",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("a10")), MobCategory.MISC)
+                    .sized(2.8F, 1.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("a10")
     );
 
     public static final DeferredHolder<EntityType<?>, EntityType<VehicleDecoyEntity>> VEHICLE_DECOY = REGISTER.register(
