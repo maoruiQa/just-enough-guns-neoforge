@@ -64,12 +64,13 @@ public final class VehicleHudOverlay {
             guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88);
             lineY += 11;
         }
-        if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged()) {
+        if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged() || vehicle.isTurretDamaged()) {
             Component damage = Component.translatable(
                     "hud.jeg.vehicle.parts",
                     vehicle.isEngineDamaged() ? "!" : "-",
                     vehicle.isLeftWheelDamaged() ? "!" : "-",
-                    vehicle.isRightWheelDamaged() ? "!" : "-"
+                    vehicle.isRightWheelDamaged() ? "!" : "-",
+                    vehicle.isTurretDamaged() ? "!" : "-"
             );
             guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, lineY, 0xFFFF7777);
         }

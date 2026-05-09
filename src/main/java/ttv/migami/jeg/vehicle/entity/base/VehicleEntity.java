@@ -84,6 +84,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_TURRET_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final int DECOY_COOLDOWN_TICKS = 60;
@@ -104,6 +105,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_LEFT_WHEEL_HEALTH = "LeftWheelHealth";
     private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
+    private static final String TAG_TURRET_HEALTH = "TurretHealth";
     private static final String GECKO_CONTROLLER = "Vehicle";
     private static final float PART_MAX_HEALTH = 10.0F;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
@@ -128,6 +130,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
+    private float turretHealth = PART_MAX_HEALTH;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -167,6 +170,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
+        builder.define(DATA_TURRET_DAMAGED, false);
     }
 
     public VehicleData vehicleData() {
@@ -264,6 +268,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_ENGINE_DAMAGED);
     }
 
+    public boolean isTurretDamaged() {
+        return this.entityData.get(DATA_TURRET_DAMAGED);
+    }
+
     public boolean isFreeLookInputDown() {
         return this.vehicleData().defaults().allowFreeCam() && this.input.freeLook();
     }
@@ -333,6 +341,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.fireCooldown--;
         }
         if (!this.input.fire() || this.fireCooldown > 0 || !(this.getControllingPassenger() instanceof LivingEntity shooter)) {
+            return;
+        }
+        if (this.isTurretDamaged()) {
             return;
         }
         VehicleWeaponInfo weapon = this.selectedWeapon();
@@ -634,6 +645,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + repair);
             repaired = true;
         }
+        if (this.turretHealth < PART_MAX_HEALTH) {
+            this.turretHealth = Math.min(PART_MAX_HEALTH, this.turretHealth + repair);
+            repaired = true;
+        }
         if (repaired) {
             this.syncPartDamageFlags();
         }
@@ -825,6 +840,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         output.putFloat(TAG_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
         output.putFloat(TAG_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
         output.putFloat(TAG_ENGINE_HEALTH, this.engineHealth);
+        output.putFloat(TAG_TURRET_HEALTH, this.turretHealth);
         ListTag seats = new ListTag();
         for (Map.Entry<UUID, Integer> assignment : this.seatAssignments.entrySet()) {
             CompoundTag seat = new CompoundTag();
@@ -853,6 +869,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.leftWheelHealth = input.contains(TAG_LEFT_WHEEL_HEALTH) ? input.getFloat(TAG_LEFT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.rightWheelHealth = input.contains(TAG_RIGHT_WHEEL_HEALTH) ? input.getFloat(TAG_RIGHT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.engineHealth = input.contains(TAG_ENGINE_HEALTH) ? input.getFloat(TAG_ENGINE_HEALTH) : PART_MAX_HEALTH;
+        this.turretHealth = input.contains(TAG_TURRET_HEALTH) ? input.getFloat(TAG_TURRET_HEALTH) : PART_MAX_HEALTH;
         this.readSeatAssignments(input);
         this.syncPartDamageFlags();
         if (input.contains(TAG_ITEMS)) {
@@ -1041,6 +1058,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             case WHEEL_LEFT -> this.leftWheelHealth = Math.max(0.0F, this.leftWheelHealth - partDamage);
             case WHEEL_RIGHT -> this.rightWheelHealth = Math.max(0.0F, this.rightWheelHealth - partDamage);
             case MAIN_ENGINE, SUB_ENGINE -> this.engineHealth = Math.max(0.0F, this.engineHealth - partDamage);
+            case TURRET -> this.turretHealth = Math.max(0.0F, this.turretHealth - partDamage);
             default -> {
             }
         }
@@ -1051,6 +1069,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, this.leftWheelHealth <= 0.0F);
         this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, this.rightWheelHealth <= 0.0F);
         this.entityData.set(DATA_ENGINE_DAMAGED, this.engineHealth <= 0.0F);
+        this.entityData.set(DATA_TURRET_DAMAGED, this.turretHealth <= 0.0F);
     }
 
     private boolean repairWithKit() {
@@ -1069,6 +1088,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.engineHealth < PART_MAX_HEALTH) {
             this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + REPAIR_KIT_PART_REPAIR);
+            repaired = true;
+        }
+        if (this.turretHealth < PART_MAX_HEALTH) {
+            this.turretHealth = Math.min(PART_MAX_HEALTH, this.turretHealth + REPAIR_KIT_PART_REPAIR);
             repaired = true;
         }
         if (repaired) {
