@@ -324,6 +324,10 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
@@ -358,6 +362,10 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         return List.copyOf(keys);
     }
 
