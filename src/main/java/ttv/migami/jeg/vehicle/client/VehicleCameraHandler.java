@@ -13,6 +13,8 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleCameraHandler {
+    private static final double VEHICLE_ZOOM_DIVISOR = 3.0D;
+
     private VehicleCameraHandler() {}
 
     @SubscribeEvent
@@ -43,5 +45,17 @@ public final class VehicleCameraHandler {
         if (camera.x() != 0.0D || camera.y() != 0.0D) {
             event.getCamera().move(0.0F, (float) camera.y(), (float) -camera.x());
         }
+    }
+
+    @SubscribeEvent
+    public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || event.getCamera().getEntity() != player || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return;
+        }
+        if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId() || !VehicleClientState.zoomDown()) {
+            return;
+        }
+        event.setFOV(event.getFOV() / VEHICLE_ZOOM_DIVISOR);
     }
 }

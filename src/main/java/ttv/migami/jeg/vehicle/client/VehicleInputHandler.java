@@ -26,7 +26,7 @@ public final class VehicleInputHandler {
         }
 
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
-        VehicleClientState.update(vehicle, freeLook);
+        VehicleClientState.update(vehicle, freeLook, minecraft.options.keyUse.isDown());
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
         }
