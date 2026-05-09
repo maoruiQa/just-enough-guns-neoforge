@@ -17,7 +17,9 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
+import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
+import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineType;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
@@ -95,6 +97,8 @@ public final class VehicleDataManager {
         boolean allowFreeCam = getBoolean(object, "allow_free_cam", fallback.allowFreeCam());
         VehicleContainerType containerType = getEnum(object, "container_type", VehicleContainerType.class, fallback.containerType());
         CameraPos camera = parseCamera(getObject(object, "third_person_camera"), fallback.thirdPersonCamera());
+        DismountInfo dismount = parseDismount(getObject(object, "dismount"), fallback.dismount());
+        CollisionLevel collisionLevel = getEnum(object, "collision_level", CollisionLevel.class, fallback.collisionLevel());
         OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
@@ -113,6 +117,8 @@ public final class VehicleDataManager {
                 allowFreeCam,
                 containerType,
                 camera,
+                dismount,
+                collisionLevel,
                 obb,
                 armor,
                 weapons,
@@ -139,6 +145,17 @@ public final class VehicleDataManager {
             return fallback;
         }
         return new CameraPos(
+                getDouble(object, "x", fallback.x()),
+                getDouble(object, "y", fallback.y()),
+                getDouble(object, "z", fallback.z())
+        );
+    }
+
+    private static DismountInfo parseDismount(JsonObject object, DismountInfo fallback) {
+        if (object == null) {
+            return fallback;
+        }
+        return new DismountInfo(
                 getDouble(object, "x", fallback.x()),
                 getDouble(object, "y", fallback.y()),
                 getDouble(object, "z", fallback.z())

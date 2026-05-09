@@ -29,6 +29,12 @@
     "y": 2.8,
     "z": -6.0
   },
+  "dismount": {
+    "x": 0.0,
+    "y": 0.1,
+    "z": 0.0
+  },
+  "collision_level": "light",
   "obb": [
     {
       "part": "body",

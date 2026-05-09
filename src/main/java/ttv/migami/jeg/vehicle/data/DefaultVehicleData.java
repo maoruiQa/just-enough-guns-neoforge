@@ -4,7 +4,9 @@ import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
+import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
+import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineType;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
@@ -27,6 +29,8 @@ public record DefaultVehicleData(
         boolean allowFreeCam,
         VehicleContainerType containerType,
         CameraPos thirdPersonCamera,
+        DismountInfo dismount,
+        CollisionLevel collisionLevel,
         OBBInfo obb,
         VehicleArmorProfile armor,
         List<VehicleWeaponInfo> weapons,
@@ -46,6 +50,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             CameraPos.DEFAULT,
+            DismountInfo.DEFAULT,
+            CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
@@ -69,6 +75,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             new CameraPos(0.0D, 2.8D, -6.0D),
+            DismountInfo.DEFAULT,
+            CollisionLevel.HEAVY,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
@@ -93,6 +101,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             new CameraPos(0.0D, 3.2D, -7.0D),
+            DismountInfo.DEFAULT,
+            CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
@@ -116,6 +126,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             new CameraPos(0.0D, 2.8D, -6.0D),
+            DismountInfo.DEFAULT,
+            CollisionLevel.LIGHT,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
@@ -138,6 +150,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             new CameraPos(0.0D, 2.6D, -5.0D),
+            DismountInfo.DEFAULT,
+            CollisionLevel.HEAVY,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
@@ -161,6 +175,8 @@ public record DefaultVehicleData(
             true,
             VehicleContainerType.NONE,
             new CameraPos(0.0D, 3.0D, -8.0D),
+            DismountInfo.DEFAULT,
+            CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
             List.of(
