@@ -57,7 +57,7 @@ These records are JEG test or compatibility vehicles. They do not have direct SW
 
 ## Remaining Mapping Gaps
 
-- Vehicle icons from `textures/vehicle_icon/*_icon.png` are not yet wired into the JEG assembling screen.
+- Vehicle icons from `textures/vehicle_icon/*_icon.png` are copied for mapped SW vehicles and shown in the JEG assembling preview; they are not yet used for category/filter UI.
 - SW JSON behavior data under `assets/superbwarfare/sbw/vehicles/*.json` has not been fully translated into JEG `data/jeg/vehicles/*.json`.
 - SW sound sets under `sounds/vehicle/*`, `sounds/hpj11`, `sounds/waveforce_tower`, and `laser_tower_shoot.ogg` are not yet mapped into JEG sound registration.
 - SW GUI inventory textures under `textures/gui/vehicle/inventory/*.png` are available as references, but JEG slot layout must be changed before using them directly.
