@@ -14,7 +14,7 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+version = "${mod_version}+neoforge26.1"
 group = mod_group_id
 
 repositories {
@@ -27,7 +27,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = mod_name
 }
 
 // Mojang ships Java 25 to end users in 26.1, so mods should target Java 25.
