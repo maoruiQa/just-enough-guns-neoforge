@@ -1373,11 +1373,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return InteractionResult.PASS;
         }
         if (!this.level().isClientSide && player.isShiftKeyDown() && stack.is(ModItems.CROWBAR.get()) && player instanceof ServerPlayer serverPlayer) {
+            if (!this.getPassengers().isEmpty()) {
+                serverPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.occupied"), true);
+                return InteractionResult.CONSUME;
+            }
             ItemStack container = VehicleContainerBlockEntity.createItemFor(this);
             if (!serverPlayer.getInventory().add(container)) {
                 serverPlayer.drop(container, false);
             }
-            stack.hurtAndBreak(1, serverPlayer, LivingEntity.getSlotForHand(hand));
+            if (!serverPlayer.getAbilities().instabuild) {
+                stack.hurtAndBreak(1, serverPlayer, LivingEntity.getSlotForHand(hand));
+            }
             this.discard();
             return InteractionResult.CONSUME;
         }

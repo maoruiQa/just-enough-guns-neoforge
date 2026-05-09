@@ -381,6 +381,7 @@
   "message.jeg.vehicle_assembling.completed": "Vehicle container assembled",
   "message.jeg.vehicle_container.blocked": "The vehicle container needs clear space above it",
   "message.jeg.vehicle.repaired": "Vehicle repaired",
+  "message.jeg.vehicle.occupied": "Cannot recover an occupied vehicle",
   "message.jeg.vehicle.lock_warning": "Missile lock warning",
   "tooltip.jeg.vehicle_container.empty": "No vehicle loaded",
   "tooltip.jeg.vehicle_container.vehicle": "Contains: %s",
