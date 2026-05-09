@@ -20,6 +20,7 @@ import ttv.migami.jeg.entity.monster.phantom.PhantomGunnerMinion;
 import ttv.migami.jeg.faction.raid.RaidEntity;
 import ttv.migami.jeg.vehicle.entity.TestWheelVehicleEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
+import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 
 public final class ModEntities {
     private ModEntities() {}
@@ -152,6 +153,15 @@ public final class ModEntities {
                     .clientTrackingRange(8)
                     .updateInterval(1)
                     .build("vehicle_decoy")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<VehicleMissileEntity>> VEHICLE_MISSILE = REGISTER.register(
+            "vehicle_missile",
+            () -> EntityType.Builder.<VehicleMissileEntity>of(VehicleMissileEntity::new, MobCategory.MISC)
+                    .sized(0.45F, 0.45F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("vehicle_missile")
     );
 }
 

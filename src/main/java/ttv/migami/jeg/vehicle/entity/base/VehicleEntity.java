@@ -42,6 +42,7 @@ import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
+import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 
 public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -55,12 +56,15 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
     private static final ResourceLocation VEHICLE_SECONDARY_WEAPON = Reference.id("combat_pistol");
+    private static final ResourceLocation VEHICLE_MISSILE_WEAPON = Reference.id("rocket_launcher");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation PISTOL_AMMO = Reference.id("pistol_ammo");
+    private static final ResourceLocation ROCKET_AMMO = Reference.id("rocket");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final VehicleWeapon[] VEHICLE_WEAPONS = {
-            new VehicleWeapon(VEHICLE_TEST_WEAPON, RIFLE_AMMO, 1),
-            new VehicleWeapon(VEHICLE_SECONDARY_WEAPON, PISTOL_AMMO, 0)
+            new VehicleWeapon(VEHICLE_TEST_WEAPON, RIFLE_AMMO, 1, false),
+            new VehicleWeapon(VEHICLE_SECONDARY_WEAPON, PISTOL_AMMO, 0, false),
+            new VehicleWeapon(VEHICLE_MISSILE_WEAPON, ROCKET_AMMO, 2, true)
     };
     private static final int DECOY_COOLDOWN_TICKS = 60;
     private static final int REDSTONE_ENERGY_VALUE = 20;
@@ -233,6 +237,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (direction.lengthSqr() < 1.0E-4D) {
             return;
         }
+        if (weapon.guidedMissile()) {
+            this.launchMissile(shooter, direction, stats);
+            return;
+        }
         Vec3 muzzle = this.position().add(0.0D, 0.9D, 0.0D).add(direction.scale(1.15D));
         BulletEntity bullet = new BulletEntity(this.level(), shooter, stats, direction.scale(stats.projectileSpeed()));
         bullet.initialisePosition(muzzle);
@@ -241,6 +249,36 @@ public class VehicleEntity extends Entity implements MenuProvider {
             bullet.sendTrailToClients(serverLevel);
         }
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
+        Vec3 muzzle = this.position().add(0.0D, 0.95D, 0.0D).add(direction.scale(1.25D));
+        Vec3 velocity = direction.scale(0.72D).add(this.getDeltaMovement().scale(0.15D));
+        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, this.findLookTarget(shooter, direction, 64.0D), muzzle, velocity));
+        this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    @Nullable
+    private Entity findLookTarget(LivingEntity shooter, Vec3 direction, double range) {
+        Vec3 eye = shooter.getEyePosition();
+        Entity bestTarget = null;
+        double bestScore = 0.985D;
+        for (LivingEntity candidate : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(range))) {
+            if (candidate == shooter || candidate.getVehicle() == this || !candidate.isAlive()) {
+                continue;
+            }
+            Vec3 toTarget = candidate.getEyePosition().subtract(eye);
+            double distance = toTarget.length();
+            if (distance <= 0.0D || distance > range) {
+                continue;
+            }
+            double dot = toTarget.normalize().dot(direction);
+            if (dot > bestScore) {
+                bestScore = dot;
+                bestTarget = candidate;
+            }
+        }
+        return bestTarget;
     }
 
     private void tickDecoyCooldown() {
@@ -687,6 +725,6 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private record ArmorHit(float finalDamage, boolean penetrated) {
     }
 
-    private record VehicleWeapon(ResourceLocation weaponId, ResourceLocation ammoId, int energyCost) {
+    private record VehicleWeapon(ResourceLocation weaponId, ResourceLocation ammoId, int energyCost, boolean guidedMissile) {
     }
 }
