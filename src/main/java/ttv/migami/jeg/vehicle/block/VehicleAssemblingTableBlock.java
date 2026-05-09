@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -23,9 +24,9 @@ public final class VehicleAssemblingTableBlock extends Block {
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.openMenu(new SimpleMenuProvider(
-                    (containerId, inventory, menuPlayer) -> new VehicleAssemblingMenu(containerId, inventory),
+                    (containerId, inventory, menuPlayer) -> new VehicleAssemblingMenu(containerId, inventory, ContainerLevelAccess.create(level, pos)),
                     Component.translatable("container.jeg.vehicle_assembling_table")
-            ));
+            ), buffer -> buffer.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

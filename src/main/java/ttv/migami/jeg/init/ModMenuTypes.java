@@ -1,6 +1,7 @@
 package ttv.migami.jeg.init;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -22,11 +23,20 @@ public final class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleAssemblingMenu>> VEHICLE_ASSEMBLING_MENU = REGISTER.register(
             "vehicle_assembling_menu",
-            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleAssemblingMenu(windowId, inventory))
+            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleAssemblingMenu(
+                    windowId,
+                    inventory,
+                    ContainerLevelAccess.create(inventory.player.level(), data.readBlockPos())
+            ))
     );
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleChargingStationMenu>> VEHICLE_CHARGING_STATION_MENU = REGISTER.register(
             "vehicle_charging_station_menu",
-            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleChargingStationMenu(windowId, inventory))
+            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleChargingStationMenu(
+                    windowId,
+                    inventory,
+                    new net.minecraft.world.inventory.SimpleContainerData(3),
+                    ContainerLevelAccess.create(inventory.player.level(), data.readBlockPos())
+            ))
     );
 }

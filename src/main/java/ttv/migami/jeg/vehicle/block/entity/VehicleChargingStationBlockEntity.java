@@ -6,6 +6,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -90,6 +91,6 @@ public final class VehicleChargingStationBlockEntity extends BlockEntity impleme
     @Override
     @Nullable
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new VehicleChargingStationMenu(containerId, playerInventory, this.data);
+        return new VehicleChargingStationMenu(containerId, playerInventory, this.data, ContainerLevelAccess.create(this.getLevel(), this.getBlockPos()));
     }
 }

@@ -6,10 +6,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
@@ -22,10 +24,16 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     private final Inventory playerInventory;
+    private final ContainerLevelAccess access;
 
     public VehicleAssemblingMenu(int containerId, Inventory playerInventory) {
+        this(containerId, playerInventory, ContainerLevelAccess.NULL);
+    }
+
+    public VehicleAssemblingMenu(int containerId, Inventory playerInventory, ContainerLevelAccess access) {
         super(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), containerId);
         this.playerInventory = playerInventory;
+        this.access = access;
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -125,6 +133,6 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return true;
+        return stillValid(this.access, player, ModBlocks.VEHICLE_ASSEMBLING_TABLE.get());
     }
 }

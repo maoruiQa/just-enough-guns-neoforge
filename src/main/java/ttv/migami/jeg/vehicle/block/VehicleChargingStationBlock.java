@@ -39,7 +39,7 @@ public final class VehicleChargingStationBlock extends BaseEntityBlock {
     @Override
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof VehicleChargingStationBlockEntity station) {
-            serverPlayer.openMenu(station);
+            serverPlayer.openMenu(station, buffer -> buffer.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
