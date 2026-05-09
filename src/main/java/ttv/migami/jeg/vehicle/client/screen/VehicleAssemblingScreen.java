@@ -1,18 +1,28 @@
 package ttv.migami.jeg.vehicle.client.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
@@ -21,13 +31,18 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     private static final int RECIPES_PER_PAGE = 6;
     private static final Component PREVIOUS_PAGE = Component.literal("<");
     private static final Component NEXT_PAGE = Component.literal(">");
+    private static final int PREVIEW_X = 176;
+    private static final int PREVIEW_Y = 24;
+    private static final int PREVIEW_SIZE = 64;
 
     private List<VehicleAssemblyRecipe> recipes = List.of();
     private int page;
+    private ResourceLocation previewVehicleId;
+    private Entity previewEntity;
 
     public VehicleAssemblingScreen(VehicleAssemblingMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
+        this.imageWidth = 256;
         this.imageHeight = 248;
         this.inventoryLabelY = 154;
     }
@@ -37,6 +52,7 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         super.init();
         this.recipes = VehicleAssemblyRecipeManager.recipes();
         this.page = Math.min(this.page, this.maxPage());
+        this.resetPreview();
         this.addRecipeButtons();
         this.addPageButtons();
     }
@@ -63,13 +79,13 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
                     this.page = Math.max(0, this.page - 1);
                     this.refreshWidgets();
                 })
-                .bounds(this.leftPos + 116, this.topPos + 4, 22, 18)
+                .bounds(this.leftPos + 196, this.topPos + 4, 22, 18)
                 .build());
         this.addRenderableWidget(Button.builder(NEXT_PAGE, button -> {
                     this.page = Math.min(this.maxPage(), this.page + 1);
                     this.refreshWidgets();
                 })
-                .bounds(this.leftPos + 142, this.topPos + 4, 22, 18)
+                .bounds(this.leftPos + 222, this.topPos + 4, 22, 18)
                 .build());
     }
 
@@ -89,6 +105,7 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         guiGraphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xDD20252B);
         guiGraphics.fill(x + 6, y + 18, x + this.imageWidth - 6, y + 172, 0xAA111418);
         guiGraphics.fill(x + 6, y + 162, x + this.imageWidth - 6, y + this.imageHeight - 6, 0xAA111418);
+        guiGraphics.fill(x + PREVIEW_X - 6, y + PREVIEW_Y - 6, x + this.imageWidth - 10, y + PREVIEW_Y + PREVIEW_SIZE + 12, 0xCC20252B);
         int start = this.page * RECIPES_PER_PAGE;
         int end = Math.min(this.recipes.size(), start + RECIPES_PER_PAGE);
         for (int index = start; index < end; index++) {
@@ -101,7 +118,78 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        VehicleAssemblyRecipe previewRecipe = this.previewRecipe(mouseX, mouseY);
+        if (previewRecipe != null) {
+            this.renderVehiclePreview(guiGraphics, previewRecipe, partialTick);
+        }
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderVehiclePreview(GuiGraphics guiGraphics, VehicleAssemblyRecipe recipe, float partialTick) {
+        Entity entity = this.previewEntity(recipe.resultVehicle());
+        if (entity == null) {
+            return;
+        }
+        entity.setYRot((this.minecraft == null ? 0.0F : this.minecraft.player == null ? 0.0F : this.minecraft.player.tickCount + partialTick) * 1.5F);
+        entity.yRotO = entity.getYRot();
+
+        Minecraft minecraft = Minecraft.getInstance();
+        EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
+        MultiBufferSource.BufferSource buffer = minecraft.renderBuffers().bufferSource();
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(this.leftPos + PREVIEW_X + PREVIEW_SIZE / 2.0F, this.topPos + PREVIEW_Y + PREVIEW_SIZE - 8.0F, 80.0F);
+        poseStack.scale(22.0F, 22.0F, -22.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(35.0F));
+        RenderSystem.runAsFancy(() -> {
+            dispatcher.setRenderShadow(false);
+            dispatcher.render(entity, 0.0D, 0.0D, 0.0D, entity.getYRot(), partialTick, poseStack, buffer, LightTexture.FULL_BRIGHT);
+            buffer.endBatch();
+            dispatcher.setRenderShadow(true);
+        });
+        poseStack.popPose();
+    }
+
+    private Entity previewEntity(ResourceLocation vehicleId) {
+        if (this.previewEntity != null && vehicleId.equals(this.previewVehicleId)) {
+            return this.previewEntity;
+        }
+        if (this.minecraft == null || this.minecraft.level == null) {
+            return null;
+        }
+        ResourceLocation entityTypeId = ResourceLocation.parse(VehicleDataManager.get(vehicleId).defaults().entityType());
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(entityTypeId);
+        Entity entity = type.create(this.minecraft.level);
+        if (entity == null) {
+            return null;
+        }
+        this.previewVehicleId = vehicleId;
+        this.previewEntity = entity;
+        return entity;
+    }
+
+    private VehicleAssemblyRecipe previewRecipe(int mouseX, int mouseY) {
+        if (this.recipes.isEmpty()) {
+            return null;
+        }
+        int start = this.page * RECIPES_PER_PAGE;
+        int end = Math.min(this.recipes.size(), start + RECIPES_PER_PAGE);
+        if (mouseX >= this.leftPos + 12 && mouseX < this.leftPos + 164) {
+            for (int index = start; index < end; index++) {
+                int row = index - start;
+                int top = this.topPos + 24 + row * 24;
+                if (mouseY >= top && mouseY < top + 20) {
+                    return this.recipes.get(index);
+                }
+            }
+        }
+        return this.recipes.get(Math.min(start, this.recipes.size() - 1));
+    }
+
+    private void resetPreview() {
+        this.previewVehicleId = null;
+        this.previewEntity = null;
     }
 
     private static Component vehicleName(ResourceLocation vehicleId) {
