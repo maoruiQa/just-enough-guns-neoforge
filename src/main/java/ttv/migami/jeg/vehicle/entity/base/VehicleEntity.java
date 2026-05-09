@@ -1040,7 +1040,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void applyPassengerYaw() {
         Entity passenger = this.getControllingPassenger();
-        if (passenger == null || this.isFreeLookInputDown()) {
+        if (passenger == null || this.isFreeLookInputDown() || this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
             return;
         }
         this.setYRot(passenger.getYRot());
