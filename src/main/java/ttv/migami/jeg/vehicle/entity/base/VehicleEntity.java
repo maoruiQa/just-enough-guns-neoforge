@@ -336,6 +336,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.previousWeapon() && this.selectWeaponFor(player, -1)) {
             this.weaponControllerId = player.getId();
         }
+        if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size() && this.selectWeaponSlot(player, input.weaponSlot())) {
+            this.weaponControllerId = player.getId();
+        }
         if (this.canUseSelectedWeapon(player, this.selectedWeapon())) {
             this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(player.getYRot() - this.getYRot()));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
@@ -689,6 +692,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return true;
         }
         return false;
+    }
+
+    private boolean selectWeaponSlot(Player player, int slot) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (slot < 0 || slot >= weapons.size()) {
+            return false;
+        }
+        int seatIndex = this.seatIndexForPassenger(player, this.getPassengers().indexOf(player));
+        if (!weapons.get(slot).usableBySeat(seatIndex)) {
+            return false;
+        }
+        this.entityData.set(DATA_SELECTED_WEAPON, slot);
+        return true;
     }
 
     private int countRifleAmmo() {

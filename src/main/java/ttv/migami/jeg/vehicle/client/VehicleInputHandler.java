@@ -27,6 +27,13 @@ public final class VehicleInputHandler {
 
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
+        int weaponSlot = -1;
+        for (int index = 0; index < minecraft.options.keyHotbarSlots.length; index++) {
+            if (minecraft.options.keyHotbarSlots[index].consumeClick()) {
+                weaponSlot = index;
+                break;
+            }
+        }
         VehicleClientState.update(vehicle, freeLook, minecraft.options.keyUse.isDown(), seek);
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
@@ -50,6 +57,7 @@ public final class VehicleInputHandler {
                 freeLook,
                 KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick(),
                 KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick(),
+                weaponSlot,
                 seek,
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
         ));
