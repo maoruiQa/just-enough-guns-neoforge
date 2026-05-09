@@ -36,6 +36,8 @@ import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
 import ttv.migami.jeg.item.WaterBombItem;
+import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.item.VehicleContainerItem;
 // import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 // import ttv.migami.jeg.item.JoyousArmorPlateItem;
@@ -422,6 +424,10 @@ public final class ModItems {
             event.accept(VEHICLE_ASSEMBLING_TABLE.get());
             event.accept(VEHICLE_CHARGING_STATION.get());
             event.accept(VEHICLE_CONTAINER.get());
+            VehicleDataManager.all().keySet().stream()
+                    .sorted()
+                    .map(VehicleContainerBlockEntity::createItemForVehicle)
+                    .forEach(event::accept);
             event.accept(CROWBAR.get());
             event.accept(REPAIR_KIT.get());
             event.accept(COOLANT.get());

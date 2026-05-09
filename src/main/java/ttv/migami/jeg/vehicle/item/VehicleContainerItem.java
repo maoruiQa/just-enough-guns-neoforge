@@ -11,7 +11,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.Block;
-import ttv.migami.jeg.Reference;
 
 public final class VehicleContainerItem extends BlockItem {
     private static final String TAG_ENTITY_TYPE = "EntityType";
@@ -21,6 +20,22 @@ public final class VehicleContainerItem extends BlockItem {
 
     public VehicleContainerItem(Block block, Item.Properties properties) {
         super(block, properties);
+    }
+
+    @Override
+    public Component getName(ItemStack stack) {
+        CompoundTag blockEntityTag = blockEntityTag(stack);
+        if (blockEntityTag == null) {
+            return super.getName(stack);
+        }
+        String vehicleId = containedVehicleId(blockEntityTag);
+        if (vehicleId.isBlank()) {
+            return super.getName(stack);
+        }
+        return Component.translatable(
+                "item.jeg.vehicle_container.named",
+                Component.translatable("entity." + vehicleId.replace(':', '.'))
+        );
     }
 
     @Override
@@ -55,7 +70,7 @@ public final class VehicleContainerItem extends BlockItem {
         if (blockEntityTag.contains(TAG_ENTITY_TYPE)) {
             return blockEntityTag.getString(TAG_ENTITY_TYPE);
         }
-        return Reference.id("test_wheel_vehicle").toString();
+        return "";
     }
 
     private static CompoundTag blockEntityTag(ItemStack stack) {

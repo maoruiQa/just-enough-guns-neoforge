@@ -22,6 +22,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class VehicleContainerBlockEntity extends BlockEntity {
     private static final String TAG_ENTITY_TYPE = "EntityType";
     private static final String TAG_ENTITY = "Entity";
+    private static final String TAG_VEHICLE_ID = "VehicleDataId";
 
     private String entityType = "jeg:test_wheel_vehicle";
     private CompoundTag entityTag;
@@ -46,7 +47,10 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
     public static ItemStack createItemForVehicle(ResourceLocation vehicleId) {
         ItemStack stack = new ItemStack(ModItems.VEHICLE_CONTAINER.get());
         CompoundTag tag = new CompoundTag();
+        CompoundTag entityTag = new CompoundTag();
         tag.putString(TAG_ENTITY_TYPE, ttv.migami.jeg.vehicle.data.VehicleDataManager.get(vehicleId).defaults().entityType());
+        entityTag.putString(TAG_VEHICLE_ID, vehicleId.toString());
+        tag.put(TAG_ENTITY, entityTag);
         BlockItem.setBlockEntityData(stack, ModBlockEntities.VEHICLE_CONTAINER.get(), tag);
         return stack;
     }

@@ -17,12 +17,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -34,6 +36,8 @@ import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 
 public final class ModCommands {
     private static final SuggestionProvider<CommandSourceStack> FACTION_SUGGESTIONS = (context, builder) -> {
@@ -42,6 +46,13 @@ public final class ModCommands {
             String factionName = factionConfig.split("\\|")[0];
             builder.suggest(factionName);
         }
+        return builder.buildFuture();
+    };
+    private static final SuggestionProvider<CommandSourceStack> VEHICLE_ID_SUGGESTIONS = (context, builder) -> {
+        VehicleDataManager.all().keySet().stream()
+                .sorted()
+                .map(ResourceLocation::toString)
+                .forEach(builder::suggest);
         return builder.buildFuture();
     };
 
@@ -55,6 +66,7 @@ public final class ModCommands {
         dispatcher.register(
                 Commands.literal("justEnoughGuns")
                         .then(unlockGunRecipesCommand())
+                        .then(giveVehicleContainerCommand())
                         .then(spawnPatrolCommand())
                         .then(simulatePatrolCommand())
                         .then(configCommand()));
@@ -94,6 +106,17 @@ public final class ModCommands {
                                                                 Vec3Argument.getVec3(context, "pos"),
                                                                 BoolArgumentType.getBool(context, "forceGuns"),
                                                                 IntegerArgumentType.getInteger(context, "spawnRadius"))))))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> giveVehicleContainerCommand() {
+        return Commands.literal("giveVehicleContainer")
+                .then(Commands.argument("player", EntityArgument.player())
+                        .then(Commands.argument("vehicleId", StringArgumentType.string())
+                                .suggests(VEHICLE_ID_SUGGESTIONS)
+                                .executes(context -> executeGiveVehicleContainer(
+                                        context.getSource(),
+                                        EntityArgument.getPlayer(context, "player"),
+                                        StringArgumentType.getString(context, "vehicleId")))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> simulatePatrolCommand() {
@@ -340,6 +363,27 @@ public final class ModCommands {
 
         player.awardRecipesByKey(gunRecipeKeys.stream().map(ResourceKey::location).toList());
         source.sendSuccess(() -> Component.literal("Unlocked " + gunRecipeKeys.size() + " gun/coolant recipes."), false);
+        return 1;
+    }
+
+    private static int executeGiveVehicleContainer(CommandSourceStack source, ServerPlayer player, String vehicleIdValue) {
+        if (!source.hasPermission(2)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+
+        ResourceLocation vehicleId = ResourceLocation.tryParse(vehicleIdValue);
+        if (vehicleId == null || !VehicleDataManager.all().containsKey(vehicleId)) {
+            source.sendFailure(Component.literal("Unknown vehicle id: " + vehicleIdValue));
+            return 0;
+        }
+
+        ItemStack stack = VehicleContainerBlockEntity.createItemForVehicle(vehicleId);
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
+        }
+        player.containerMenu.broadcastChanges();
+        source.sendSuccess(() -> Component.literal("Gave " + vehicleId + " container to " + player.getScoreboardName()), true);
         return 1;
     }
 
