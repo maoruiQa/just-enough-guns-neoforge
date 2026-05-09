@@ -419,6 +419,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
             this.tickServerAirMovement(engine);
             return;
         }
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.BOAT) {
+            this.tickServerBoatMovement(engine);
+            return;
+        }
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
@@ -481,6 +485,40 @@ public class VehicleEntity extends Entity implements MenuProvider {
         velocity = velocity.multiply(drag, 0.90D, drag);
         if (verticalAxis == 0) {
             velocity = velocity.add(0.0D, -0.01D, 0.0D);
+        }
+
+        this.setDeltaMovement(velocity);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+    }
+
+    private void tickServerBoatMovement(EngineInfo engine) {
+        Vec3 velocity = this.getDeltaMovement();
+        int forwardAxis = this.input.forwardAxis();
+        int strafeAxis = this.input.strafeAxis();
+        boolean inWater = this.isInWater();
+        double mobility = this.mobilityMultiplier();
+
+        if (forwardAxis != 0 || strafeAxis != 0) {
+            float yaw = this.getYRot();
+            double yawRadians = Math.toRadians(yaw);
+            Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+            Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+            Vec3 desired = forward.scale(forwardAxis).add(right.scale(strafeAxis * 0.45D));
+            if (desired.lengthSqr() > 1.0E-4D) {
+                velocity = velocity.add(desired.normalize().scale(engine.acceleration() * mobility * (inWater ? 1.0D : 0.25D)));
+            }
+        }
+
+        double maxSpeed = engine.maxForwardSpeed() * mobility * (inWater ? 1.0D : 0.35D);
+        Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
+        if (horizontal.length() > maxSpeed) {
+            horizontal = horizontal.normalize().scale(maxSpeed);
+            velocity = new Vec3(horizontal.x, velocity.y, horizontal.z);
+        }
+        if (inWater) {
+            velocity = new Vec3(velocity.x * engine.friction(), Math.min(0.05D, velocity.y + 0.02D), velocity.z * engine.friction());
+        } else {
+            velocity = velocity.add(0.0D, -GRAVITY, 0.0D).multiply(0.92D, 0.98D, 0.92D);
         }
 
         this.setDeltaMovement(velocity);

@@ -102,4 +102,26 @@ public record DefaultVehicleData(
             SeekInfo.NONE,
             new DestroyInfo(true, 2.0F)
     );
+
+    public static final DefaultVehicleData TEST_BOAT = new DefaultVehicleData(
+            Reference.id("test_boat"),
+            "jeg:test_boat",
+            VehicleType.BOAT,
+            55.0F,
+            0.012F,
+            120,
+            100,
+            new EngineInfo(EngineType.BOAT, 0.035D, 0.36D, 0.14D, 0.86D),
+            List.of(new SeatInfo(0, 0.0D, 0.72D, 0.0D, true, false)),
+            true,
+            VehicleContainerType.NONE,
+            new CameraPos(0.0D, 2.8D, -6.0D),
+            OBBInfo.DEFAULT,
+            VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
+            ),
+            SeekInfo.NONE,
+            new DestroyInfo(false, 0.0F)
+    );
 }

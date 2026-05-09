@@ -37,6 +37,7 @@ public final class VehicleAssemblyRecipeManager {
     private static Map<ResourceLocation, VehicleAssemblyRecipe> defaultsOnly() {
         ResourceLocation lightCombatRecipe = Reference.id("light_combat_vehicle");
         ResourceLocation testHelicopterRecipe = Reference.id("test_helicopter");
+        ResourceLocation testBoatRecipe = Reference.id("test_boat");
         return Map.of(
                 TEST_WHEEL_RECIPE, new VehicleAssemblyRecipe(
                         TEST_WHEEL_RECIPE,
@@ -63,6 +64,15 @@ public final class VehicleAssemblyRecipeManager {
                                 new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 16),
                                 new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 10),
                                 new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("feather"), 8)
+                        )
+                ),
+                testBoatRecipe, new VehicleAssemblyRecipe(
+                        testBoatRecipe,
+                        Reference.id("test_boat"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 16),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("oak_planks"), 12),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 4)
                         )
                 )
         );
