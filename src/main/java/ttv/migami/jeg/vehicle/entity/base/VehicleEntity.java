@@ -93,6 +93,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final int DECOY_COOLDOWN_TICKS = 60;
+    private static final int LAND_DECOY_COOLDOWN_TICKS = 500;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
@@ -620,6 +621,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         Vec3 look = player.getViewVector(1.0F).normalize();
+        if (this.hasBuiltInDecoy() && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
+            for (int index = 0; index < 8; index++) {
+                double yaw = Math.toRadians(-78.75D + 22.5D * index);
+                Vec3 direction = look.yRot((float) yaw).normalize();
+                Vec3 position = this.position().add(0.0D, this.getBbHeight(), 0.0D);
+                Vec3 velocity = direction.scale(0.28D).add(0.0D, 0.08D, 0.0D).add(this.getDeltaMovement().scale(0.25D));
+                this.level().addFreshEntity(new VehicleDecoyEntity(this.level(), position, velocity));
+            }
+            this.decoyCooldown = LAND_DECOY_COOLDOWN_TICKS;
+            return;
+        }
         Vec3 side = new Vec3(-look.z, 0.0D, look.x).normalize();
         if (side.lengthSqr() < 1.0E-4D) {
             side = new Vec3(1.0D, 0.0D, 0.0D);
