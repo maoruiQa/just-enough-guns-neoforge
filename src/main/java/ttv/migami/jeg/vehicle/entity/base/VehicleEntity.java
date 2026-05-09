@@ -701,6 +701,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapon.usableBySeat(this.seatIndexForPassenger(passenger, this.getPassengers().indexOf(passenger)));
     }
 
+    public boolean shouldHidePassenger(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).hidePassenger();
+    }
+
     private void tickAutoRepair() {
         if (this.tickLowHealthDecay()) {
             return;
