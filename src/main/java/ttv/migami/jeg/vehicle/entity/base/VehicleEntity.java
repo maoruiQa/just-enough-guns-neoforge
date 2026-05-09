@@ -296,7 +296,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (player.getVehicle() != this) {
             return;
         }
-        if (input.switchWeapon() && this.selectNextWeaponFor(player)) {
+        if (input.switchWeapon() && this.selectWeaponFor(player, 1)) {
+            this.weaponControllerId = player.getId();
+        }
+        if (input.previousWeapon() && this.selectWeaponFor(player, -1)) {
             this.weaponControllerId = player.getId();
         }
         if (input.deployDecoy()) {
@@ -648,15 +651,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapons.get(index);
     }
 
-    private boolean selectNextWeaponFor(Player player) {
+    private boolean selectWeaponFor(Player player, int direction) {
         var weapons = this.vehicleData().defaults().weapons();
         if (weapons.isEmpty()) {
             return false;
         }
         int seatIndex = this.seatIndexForPassenger(player, this.getPassengers().indexOf(player));
         int current = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
+        int step = direction < 0 ? -1 : 1;
         for (int offset = 1; offset <= weapons.size(); offset++) {
-            int next = (current + offset) % weapons.size();
+            int next = Mth.positiveModulo(current + offset * step, weapons.size());
             if (weapons.get(next).usableBySeat(seatIndex)) {
                 this.entityData.set(DATA_SELECTED_WEAPON, next);
                 return true;

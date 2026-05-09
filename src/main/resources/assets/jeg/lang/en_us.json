@@ -324,6 +324,7 @@
   "hud.jeg.vehicle.locked": "MISSILE LOCK",
   "hud.jeg.vehicle.parts": "Damage E:%s L:%s R:%s T:%s",
   "key.jeg.vehicle_switch_weapon": "Vehicle Switch Weapon",
+  "key.jeg.vehicle_previous_weapon": "Vehicle Previous Weapon",
   "key.jeg.vehicle_deploy_decoy": "Vehicle Deploy Decoy",
   "key.jeg.vehicle_brake_descend": "Vehicle Brake / Descend",
   "key.jeg.vehicle_change_seat": "Vehicle Change Seat",

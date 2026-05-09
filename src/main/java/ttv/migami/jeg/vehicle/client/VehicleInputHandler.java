@@ -48,6 +48,7 @@ public final class VehicleInputHandler {
                 minecraft.options.keyAttack.isDown(),
                 freeLook,
                 KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick(),
+                KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick(),
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
         ));
     }

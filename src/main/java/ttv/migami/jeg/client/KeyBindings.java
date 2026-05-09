@@ -34,6 +34,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_PREVIOUS_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_previous_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Z,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_DEPLOY_DECOY = new KeyMapping(
             "key.jeg.vehicle_deploy_decoy",
             InputConstants.Type.KEYSYM,
@@ -69,6 +76,7 @@ public final class KeyBindings {
         event.register(RELOAD);
         event.register(VEHICLE_FREE_LOOK);
         event.register(VEHICLE_SWITCH_WEAPON);
+        event.register(VEHICLE_PREVIOUS_WEAPON);
         event.register(VEHICLE_DEPLOY_DECOY);
         event.register(VEHICLE_BRAKE_DESCEND);
         event.register(VEHICLE_CHANGE_SEAT);
