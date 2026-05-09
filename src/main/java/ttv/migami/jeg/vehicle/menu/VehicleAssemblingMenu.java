@@ -1,21 +1,20 @@
 package ttv.migami.jeg.vehicle.menu;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 public final class VehicleAssemblingMenu extends AbstractContainerMenu {
-    private static final int IRON_COST = 16;
-    private static final int REDSTONE_COST = 4;
-
     private final Inventory playerInventory;
 
     public VehicleAssemblingMenu(int containerId, Inventory playerInventory) {
@@ -33,17 +32,27 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
     }
 
     public boolean assembleTestVehicle(Player player) {
-        if (!this.hasCost(Items.IRON_INGOT, IRON_COST) || !this.hasCost(Items.REDSTONE, REDSTONE_COST)) {
+        VehicleAssemblyRecipe recipe = VehicleAssemblyRecipeManager.testWheelRecipe();
+        if (recipe == null || !this.hasCost(recipe)) {
             player.displayClientMessage(Component.translatable("message.jeg.vehicle_assembling.missing_materials"), true);
             return false;
         }
-        this.removeCost(Items.IRON_INGOT, IRON_COST);
-        this.removeCost(Items.REDSTONE, REDSTONE_COST);
+        this.removeCost(recipe);
         ItemStack result = VehicleContainerBlockEntity.createDefaultItem();
         if (!player.getInventory().add(result)) {
             player.drop(result, false);
         }
         player.displayClientMessage(Component.translatable("message.jeg.vehicle_assembling.completed"), true);
+        return true;
+    }
+
+    private boolean hasCost(VehicleAssemblyRecipe recipe) {
+        for (VehicleAssemblyRecipe.Ingredient ingredient : recipe.ingredients()) {
+            Item item = BuiltInRegistries.ITEM.get(ingredient.item());
+            if (!this.hasCost(item, ingredient.count())) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -59,6 +68,12 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
             }
         }
         return false;
+    }
+
+    private void removeCost(VehicleAssemblyRecipe recipe) {
+        for (VehicleAssemblyRecipe.Ingredient ingredient : recipe.ingredients()) {
+            this.removeCost(BuiltInRegistries.ITEM.get(ingredient.item()), ingredient.count());
+        }
     }
 
     private void removeCost(Item item, int amount) {

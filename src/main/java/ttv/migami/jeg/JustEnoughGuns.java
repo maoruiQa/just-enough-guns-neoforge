@@ -28,6 +28,7 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 @Mod(Reference.MOD_ID)
 public final class JustEnoughGuns {
@@ -75,6 +76,7 @@ public final class JustEnoughGuns {
         NeoForge.EVENT_BUS.register(FactionEventTicker.class);
         NeoForge.EVENT_BUS.addListener(ModCommands::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(VehicleDataManager::onAddReloadListeners);
+        NeoForge.EVENT_BUS.addListener(VehicleAssemblyRecipeManager::onAddReloadListeners);
 
         LOGGER.debug("Game events registered successfully");
     }
