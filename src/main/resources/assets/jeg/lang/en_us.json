@@ -317,6 +317,7 @@
   "hud.jeg.vehicle.test_wheel_vehicle": "Test Wheel Vehicle",
   "hud.jeg.vehicle.health": "Hull: %s / %s",
   "hud.jeg.vehicle.energy": "Energy: %s / %s",
+  "hud.jeg.vehicle.rifle_ammo": "Rifle Ammo: %s",
   "container.jeg.vehicle": "Vehicle Inventory",
   "container.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
   "block.jeg.vehicle_assembling_table": "Vehicle Assembling Table",

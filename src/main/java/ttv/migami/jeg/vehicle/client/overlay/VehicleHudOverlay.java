@@ -48,5 +48,7 @@ public final class VehicleHudOverlay {
             Component energy = Component.translatable("hud.jeg.vehicle.energy", vehicle.vehicleEnergy(), vehicle.maxVehicleEnergy());
             guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, y + 22, 0xFF8FC7FF);
         }
+        Component ammo = Component.translatable("hud.jeg.vehicle.rifle_ammo", vehicle.vehicleRifleAmmo());
+        guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, y + 33, 0xFFFFDD88);
     }
 }

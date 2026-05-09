@@ -30,6 +30,7 @@ public final class VehicleInputHandler {
                 minecraft.options.keyLeft.isDown(),
                 minecraft.options.keyRight.isDown(),
                 minecraft.options.keyJump.isDown(),
+                minecraft.options.keyAttack.isDown(),
                 KeyBindings.VEHICLE_FREE_LOOK.isDown()
         ));
     }

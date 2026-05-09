@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -25,8 +26,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
+import ttv.migami.jeg.gun.GunDefinitions;
+import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
@@ -41,6 +45,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
+    private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final String TAG_ENERGY = "Energy";
@@ -51,6 +58,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
+    private int fireCooldown;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -62,6 +70,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         builder.define(DATA_VEHICLE_ID, DefaultVehicleData.TEST_WHEEL.id().toString());
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
+        builder.define(DATA_RIFLE_AMMO, 0);
     }
 
     public VehicleData vehicleData() {
@@ -103,6 +112,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return true;
     }
 
+    public int vehicleRifleAmmo() {
+        return this.entityData.get(DATA_RIFLE_AMMO);
+    }
+
     public boolean isFreeLookInputDown() {
         return this.input.freeLook();
     }
@@ -120,9 +133,63 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.tickServerMovement();
+            this.tickServerWeapon();
             this.tickAutoRepair();
+            this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
         }
         this.updateRiderPosition();
+    }
+
+    private void tickServerWeapon() {
+        if (this.fireCooldown > 0) {
+            this.fireCooldown--;
+        }
+        if (!this.input.fire() || this.fireCooldown > 0 || !(this.getControllingPassenger() instanceof LivingEntity shooter)) {
+            return;
+        }
+        GunStats stats = GunDefinitions.ALL.get(VEHICLE_TEST_WEAPON);
+        if (stats == null || !this.consumeRifleAmmo()) {
+            return;
+        }
+        Vec3 direction = shooter.getViewVector(1.0F).normalize();
+        if (direction.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+        Vec3 muzzle = this.position().add(0.0D, 0.9D, 0.0D).add(direction.scale(1.15D));
+        BulletEntity bullet = new BulletEntity(this.level(), shooter, stats, direction.scale(stats.projectileSpeed()));
+        bullet.initialisePosition(muzzle);
+        this.level().addFreshEntity(bullet);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            bullet.sendTrailToClients(serverLevel);
+        }
+        this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private int countRifleAmmo() {
+        int count = 0;
+        for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
+            ItemStack stack = this.inventory.getItem(slot);
+            if (stack.is(ModItems.AMMO.get(RIFLE_AMMO).get())) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private boolean consumeRifleAmmo() {
+        for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
+            ItemStack stack = this.inventory.getItem(slot);
+            if (!stack.is(ModItems.AMMO.get(RIFLE_AMMO).get())) {
+                continue;
+            }
+            stack.shrink(1);
+            if (stack.isEmpty()) {
+                this.inventory.setItem(slot, ItemStack.EMPTY);
+            }
+            this.inventory.setChanged();
+            return true;
+        }
+        return false;
     }
 
     private void tickAutoRepair() {

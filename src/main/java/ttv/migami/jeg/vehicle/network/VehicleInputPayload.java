@@ -13,6 +13,7 @@ public record VehicleInputPayload(
         boolean left,
         boolean right,
         boolean brake,
+        boolean fire,
         boolean freeLook
 ) implements CustomPacketPayload {
     public static final Type<VehicleInputPayload> TYPE = new Type<>(Reference.id("vehicle_input"));
@@ -24,10 +25,12 @@ public record VehicleInputPayload(
                 buf.writeBoolean(payload.left());
                 buf.writeBoolean(payload.right());
                 buf.writeBoolean(payload.brake());
+                buf.writeBoolean(payload.fire());
                 buf.writeBoolean(payload.freeLook());
             },
             buf -> new VehicleInputPayload(
                     buf.readVarInt(),
+                    buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
@@ -38,7 +41,7 @@ public record VehicleInputPayload(
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.freeLook);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.fire, this.freeLook);
     }
 
     @Override
