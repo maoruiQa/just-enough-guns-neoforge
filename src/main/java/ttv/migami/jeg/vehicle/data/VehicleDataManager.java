@@ -215,7 +215,10 @@ public final class VehicleDataManager {
                     getBoolean(seat, "hide_passenger", fallbackSeat.hidePassenger()),
                     getBoolean(seat, "ban_hand", fallbackSeat.banHand()),
                     (float) getDouble(seat, "min_pitch", fallbackSeat.minPitch()),
-                    (float) getDouble(seat, "max_pitch", fallbackSeat.maxPitch())
+                    (float) getDouble(seat, "max_pitch", fallbackSeat.maxPitch()),
+                    (float) getDouble(seat, "sensitivity_x", fallbackSeat.sensitivityX()),
+                    (float) getDouble(seat, "sensitivity_y", fallbackSeat.sensitivityY()),
+                    (float) getDouble(seat, "sensitivity_z", fallbackSeat.sensitivityZ())
             ));
         }
         seats.sort(Comparator.comparingInt(SeatInfo::index));

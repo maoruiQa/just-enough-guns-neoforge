@@ -6,6 +6,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -61,5 +62,25 @@ public final class VehicleInputHandler {
                 seek,
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
         ));
+    }
+
+    @SubscribeEvent
+    public static void onCalculatePlayerTurn(CalculatePlayerTurnEvent event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
+            return;
+        }
+        var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
+        float base = (float) event.getMouseSensitivity();
+        float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
+        if (vehicle.isSelectedVehicleWeaponGuided() && minecraft.options.getCameraType().isFirstPerson()) {
+            sensitivity = seat.sensitivityX();
+        }
+        event.setMouseSensitivity(Math.max(0.0F, base * sensitivity));
     }
 }
