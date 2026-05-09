@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.client.render;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleGeoModel extends GeoModel<VehicleEntity> {
@@ -17,7 +18,11 @@ public final class VehicleGeoModel extends GeoModel<VehicleEntity> {
     @Override
     public ResourceLocation getModelResource(VehicleEntity animatable) {
         ResourceLocation model = Reference.id(MODEL_ROOT + path(animatable) + ".geo.json");
-        return exists(model) ? model : FALLBACK_MODEL;
+        if (exists(model)) {
+            return model;
+        }
+        ResourceLocation typeModel = Reference.id(MODEL_ROOT + typeFallback(animatable) + ".geo.json");
+        return exists(typeModel) ? typeModel : FALLBACK_MODEL;
     }
 
     @Override
@@ -35,6 +40,17 @@ public final class VehicleGeoModel extends GeoModel<VehicleEntity> {
     private static String path(VehicleEntity vehicle) {
         String path = vehicle.vehicleDataId().getPath();
         return path == null || path.isBlank() ? FALLBACK : path;
+    }
+
+    private static String typeFallback(VehicleEntity vehicle) {
+        VehicleType type = vehicle.vehicleData().defaults().vehicleType();
+        return switch (type) {
+            case BOAT -> "boat_vehicle";
+            case HELICOPTER -> "helicopter_vehicle";
+            case AIRCRAFT -> "aircraft_vehicle";
+            case ARTILLERY -> "artillery_vehicle";
+            case LAND -> "land_vehicle";
+        };
     }
 
     private static boolean exists(ResourceLocation id) {
