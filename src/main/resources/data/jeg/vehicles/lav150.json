@@ -1,10 +1,10 @@
 {
   "entity_type": "jeg:lav150",
   "vehicle_type": "land",
-  "max_health": 95.0,
+  "max_health": 270.0,
   "auto_repair_per_tick": 0.014,
   "auto_repair_cooldown_ticks": 150,
-  "max_energy": 180,
+  "max_energy": 5000000,
   "up_step": 1.5,
   "allow_free_cam": true,
   "has_decoy": true,
