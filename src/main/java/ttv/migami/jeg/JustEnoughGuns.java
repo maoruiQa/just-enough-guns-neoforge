@@ -5,6 +5,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -28,6 +30,7 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.energy.VehicleEnergyStorage;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 @Mod(Reference.MOD_ID)
@@ -59,6 +62,7 @@ public final class JustEnoughGuns {
         modBus.addListener(ModEntityEvents::onAttributeCreation);
         modBus.addListener(ModEntityEvents::onSpawnPlacement);
         modBus.addListener(NetworkHandler::register);
+        modBus.addListener(this::registerCapabilities);
 
         // FIXED: Register game events immediately after mod content registration
         // This prevents timing issues with ModelManager.reload() in NeoForge 1.21.10
@@ -94,6 +98,15 @@ public final class JustEnoughGuns {
             LOGGER.error("JEG common setup failed: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    private void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_WHEEL_VEHICLE.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.LIGHT_COMBAT_VEHICLE.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_HELICOPTER.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_BOAT.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_ARTILLERY.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_AIRCRAFT.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
     }
 
     private void onBuildCreativeTab(BuildCreativeModeTabContentsEvent event) {
