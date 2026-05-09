@@ -5,6 +5,7 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.GeoBone;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.gun.GunScopeSupport;
 
 public final class GunAttachmentVisibility {
     private static final Set<String> DEFAULT_HIDDEN_ATTACHMENT_BONES = Set.of(
@@ -43,6 +44,9 @@ public final class GunAttachmentVisibility {
     );
 
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
+            rule(Reference.id("combat_rifle"),
+                    Set.of("iron_sight"),
+                    Set.of("hidden_iron_sight")),
             rule(Reference.id("service_rifle"),
                     Set.of("railing", "iron_sight", "modified_iron_sight", "stock_iron_sight", "handguard", "light_handguard"),
                     Set.of("tactical_handguard", "weighted_handguard", "light_hg_grip", "tactical_hg_grip", "weighted_hg_grip")),
@@ -56,6 +60,11 @@ public final class GunAttachmentVisibility {
 
     public static void apply(ResourceLocation gunId, GeoBone bone) {
         String boneName = bone.getName();
+        if (Reference.id("bolt_action_rifle").equals(gunId)) {
+            applyBoltActionRifle(bone, boneName);
+            return;
+        }
+
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             Boolean hidden = rule.visibility(boneName);
@@ -65,6 +74,20 @@ public final class GunAttachmentVisibility {
             }
         }
 
+        if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
+            bone.setHidden(true);
+        }
+    }
+
+    private static void applyBoltActionRifle(GeoBone bone, String boneName) {
+        if ("attachment_bone".equals(boneName)) {
+            bone.setHidden(!GunScopeSupport.isBoltActionRifleScopeEnabled());
+            return;
+        }
+        if ("iron_sight".equals(boneName)) {
+            bone.setHidden(GunScopeSupport.isBoltActionRifleScopeEnabled());
+            return;
+        }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             bone.setHidden(true);
         }

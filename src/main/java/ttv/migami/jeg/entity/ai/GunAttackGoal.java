@@ -42,6 +42,7 @@ import ttv.migami.jeg.gun.BulletPenetrationHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.network.NetworkHandler;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -3058,6 +3059,9 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 }
                 heldItem.set(ModDataComponents.GUN_AMMO.get(), Math.max(0, currentAmmo - 1));
             }
+            if (this.shooter.level() instanceof ServerLevel serverLevel) {
+                NetworkHandler.sendGunFireFx(serverLevel, this.shooter.getId(), random.nextFloat());
+            }
 
             for (int i = 0; i < pellets; i++) {
                 Vec3 direction = computeDirection(this.shooter, origin, target, random, stats);
@@ -3072,7 +3076,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 } else {
                     Vec3 velocity = direction.scale(stats.projectileSpeed());
                     BulletEntity bullet = new BulletEntity(this.shooter.level(), this.shooter, stats, velocity);
-                    bullet.setPos(muzzle);
+                    bullet.initialisePosition(muzzle);
                     this.shooter.level().addFreshEntity(bullet);
                     if (this.shooter.level() instanceof ServerLevel serverLevel && GunItem.isBulletClassWeapon(stats.id())) {
                         bullet.sendTrailToClients(serverLevel);
@@ -3086,7 +3090,6 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             }
 
             playGunshotSound(stats);
-            heldItem.hurtAndBreak(1, this.shooter, this.shooter.getUsedItemHand() == InteractionHand.MAIN_HAND ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
         }
     }
 
@@ -3107,18 +3110,19 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         }
 
         if (!(shooter instanceof Player)) {
-            float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
-            float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
-            gunSpread *= scaledSpreadMultiplier;
             if (GunItem.isShotgun(stats.id())) {
-                gunSpread *= (float) Config.gunnerShotgunSpreadMultiplier();
+                gunSpread = stats.spread() * 0.60F;
+            } else {
+                float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
+                float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
+                gunSpread *= scaledSpreadMultiplier;
             }
         }
         if (gunSpread <= 0.0F) {
             return forwards.normalize();
         }
 
-        float spreadRadians = Math.min(gunSpread, 170.0F) * 0.5F * Mth.DEG_TO_RAD;
+        float spreadRadians = Math.min(gunSpread, 170.0F) * Mth.DEG_TO_RAD;
         Vec3 worldUp = new Vec3(0.0D, 1.0D, 0.0D);
         Vec3 sideways = forwards.cross(worldUp);
         if (sideways.lengthSqr() < 1.0E-6D) {

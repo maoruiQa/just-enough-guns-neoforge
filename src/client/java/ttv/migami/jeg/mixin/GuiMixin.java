@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.ClientHudRenderer;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.ScopeOverlayRenderer;
 import ttv.migami.jeg.item.GunItem;
 
 @Mixin(Gui.class)
@@ -25,6 +26,7 @@ public final class GuiMixin {
         FabricClientBootstrap.renderOverheatBar(guiGraphics);
         ClientHudRenderer.render(guiGraphics);
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
+            ScopeOverlayRenderer.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
             CrosshairHandler.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
             ci.cancel();
         }

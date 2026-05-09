@@ -47,6 +47,7 @@ import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
 import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
@@ -291,6 +292,7 @@ public final class FabricClientBootstrap {
                     applyLocalVisualRecoil(player, gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
+                    forceExitScopedAdsAfterShot(gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -385,6 +387,13 @@ public final class FabricClientBootstrap {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
+    }
+
+    private static void forceExitScopedAdsAfterShot(GunItem gun) {
+        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+            AimingHandler.get().suppressUntilUseReleased();
+        }
     }
 
     private static void suppressSwingAnimation(LocalPlayer player, ItemStack main, ItemStack off) {
@@ -587,6 +596,7 @@ public final class FabricClientBootstrap {
             applyLocalVisualRecoil(player, gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
+            forceExitScopedAdsAfterShot(gun);
         }
     }
 

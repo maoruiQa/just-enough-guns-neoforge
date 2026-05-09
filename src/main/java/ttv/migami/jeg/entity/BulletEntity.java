@@ -48,6 +48,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.GunnerFactionRelations;
+import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
@@ -74,6 +75,7 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
     private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
     private static final ResourceLocation HYPERSONIC_ID = Reference.id("hypersonic_cannon");
+    private static final ResourceLocation SUPERSONIC_SHOTGUN_ID = Reference.id("supersonic_shotgun");
     private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
     private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
             && (state.getBlock() instanceof LeavesBlock || isGrassLikeFoliage(state));
@@ -126,7 +128,7 @@ public class BulletEntity extends Projectile {
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.entityData.set(DATA_GUN, stats.id().toString());
         this.entityData.set(DATA_DAMAGE, stats.damage());
-        this.entityData.set(DATA_LIFE, Config.bulletLifetimeTicks());
+        this.entityData.set(DATA_LIFE, projectileLifeFor(stats));
         this.entityData.set(DATA_FALLOFF_LIFE, Math.max(1, stats.projectileLife()));
         this.entityData.set(DATA_TRAIL_COLOR, stats.trailColor());
         this.entityData.set(DATA_TRAIL_LENGTH, stats.clampedTrailLength());
@@ -347,8 +349,9 @@ public class BulletEntity extends Projectile {
                         ? this.damageSources().mobProjectile(this, livingOwner)
                         : this.damageSources().thrown(this, owner);
                 if (hitEntity instanceof LivingEntity living) {
-                    applyBulletproofWear(living);
-                    boolean hurt = living.hurt(source, this.entityData.get(DATA_DAMAGE));
+                    GunStats stats = getGunStats();
+                    float damage = applyBallisticArmor(living, result, this.entityData.get(DATA_DAMAGE), stats, false);
+                    boolean hurt = living.hurt(source, damage);
                     if (hurt && livingOwner instanceof ServerPlayer shooter) {
                         NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
                     }
@@ -373,7 +376,8 @@ public class BulletEntity extends Projectile {
 
         // Normal bullet damage logic
         if (!this.level().isClientSide()) {
-            float damage = applyNormalDamageFalloff(this.entityData.get(DATA_DAMAGE), getGunStats());
+            GunStats stats = getGunStats();
+            float damage = applyNormalDamageFalloff(this.entityData.get(DATA_DAMAGE), stats);
 
             // Reduce damage for Terror Phantom and Phantom Gunner to balance fire rate (5 shots/sec)
             if (owner instanceof AbstractTerrorPhantom || owner instanceof PhantomGunner) {
@@ -396,7 +400,7 @@ public class BulletEntity extends Projectile {
             }
 
             if (entity instanceof LivingEntity living) {
-                applyBulletproofWear(living);
+                damage = applyBallisticArmor(living, result, damage, stats, false);
 
                 ServerLevel serverLevel = (ServerLevel) this.level();
                 boolean hurt = living.hurt(source, damage);
@@ -458,6 +462,10 @@ public class BulletEntity extends Projectile {
         }
 
         double traveled = Math.max(0, this.tickCount - 1) * Math.max(0.0D, stats.projectileSpeed());
+        if (BallisticProtection.isSonic(stats)) {
+            return applySonicDamageFalloff(baseDamage, traveled, effectiveRange);
+        }
+
         double fullDamageRange = effectiveRange * 0.7D;
         if (traveled <= fullDamageRange) {
             return baseDamage;
@@ -472,6 +480,27 @@ public class BulletEntity extends Projectile {
             scale = 0.9D - 0.8D * t * t;
         } else {
             scale = 0.1D;
+        }
+
+        return Math.max(0.0F, baseDamage * (float) scale);
+    }
+
+    private static float applySonicDamageFalloff(float baseDamage, double traveled, double effectiveRange) {
+        double fullDamageRange = effectiveRange * 0.2D;
+        if (traveled <= fullDamageRange) {
+            return baseDamage;
+        }
+
+        double scale;
+        double heavyFalloffRange = effectiveRange * 0.4D;
+        if (traveled <= heavyFalloffRange) {
+            double t = Mth.clamp((traveled - fullDamageRange) / Math.max(0.001D, heavyFalloffRange - fullDamageRange), 0.0D, 1.0D);
+            scale = Mth.lerp(t * t, 1.0D, 0.15D);
+        } else if (traveled <= effectiveRange) {
+            double t = Mth.clamp((traveled - heavyFalloffRange) / Math.max(0.001D, effectiveRange - heavyFalloffRange), 0.0D, 1.0D);
+            scale = Mth.lerp(t, 0.15D, 0.05D);
+        } else {
+            scale = 0.05D;
         }
 
         return Math.max(0.0F, baseDamage * (float) scale);
@@ -502,13 +531,40 @@ public class BulletEntity extends Projectile {
         return owner.getTags().contains(TERROR_RAID_MOB_TAG) && target.getTags().contains(TERROR_RAID_MOB_TAG);
     }
 
-    private void applyBulletproofWear(LivingEntity target) {
-        for (EquipmentSlot slot : new EquipmentSlot[] { EquipmentSlot.HEAD, EquipmentSlot.CHEST }) {
-            ItemStack stack = target.getItemBySlot(slot);
-            if (!stack.isEmpty() && BulletproofArmorItem.isBulletproof(stack)) {
-                stack.hurtAndBreak(1, target, slot);
-            }
+    private float applyBallisticArmor(LivingEntity target, EntityHitResult hit, float rawDamage, GunStats stats, boolean rocketDirectHit) {
+        EquipmentSlot slot = getBallisticHitSlot(target, hit);
+        if (slot == null) {
+            return rawDamage;
         }
+
+        ItemStack stack = target.getItemBySlot(slot);
+        if (stack.isEmpty() || !BulletproofArmorItem.isBulletproof(stack)) {
+            return rawDamage;
+        }
+
+        BallisticProtection.BallisticResult result = BallisticProtection.applyToArmorHit(rawDamage, stats, stack, slot, rocketDirectHit);
+        if (result.durabilityDamage() > 0) {
+            stack.hurtAndBreak(result.durabilityDamage(), target, slot);
+        }
+        return result.finalDamage();
+    }
+
+    @Nullable
+    private static EquipmentSlot getBallisticHitSlot(LivingEntity target, EntityHitResult hit) {
+        AABB bounds = target.getBoundingBox();
+        double height = bounds.getYsize();
+        if (height <= 0.0D) {
+            return EquipmentSlot.CHEST;
+        }
+
+        double relativeY = (hit.getLocation().y - bounds.minY) / height;
+        if (relativeY >= 0.75D) {
+            return EquipmentSlot.HEAD;
+        }
+        if (relativeY >= 0.20D) {
+            return EquipmentSlot.CHEST;
+        }
+        return null;
     }
 
     private static double getEffectiveFollowRange(Mob mob) {
@@ -616,7 +672,7 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TRAIL_LENGTH, input.contains("TrailLength") ? input.getFloat("TrailLength") : this.entityData.get(DATA_TRAIL_LENGTH));
         this.entityData.set(DATA_SIZE, input.contains("ProjectileSize") ? input.getFloat("ProjectileSize") : this.entityData.get(DATA_SIZE));
         this.entityData.set(DATA_TICKS_LIVED, input.contains("Ticks") ? input.getInt("Ticks") : this.entityData.get(DATA_TICKS_LIVED));
-        this.entityData.set(DATA_LIFE, Config.bulletLifetimeTicks());
+        this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
     }
@@ -727,9 +783,15 @@ public class BulletEntity extends Projectile {
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity.isAlive()) {
-                        boolean hurt = hitEntity.hurt(this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null), directDamage);
-                        if (hurt && owner instanceof ServerPlayer shooter && hitEntity instanceof LivingEntity living) {
-                            NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        if (hitEntity instanceof LivingEntity living) {
+                            float damage = applyBallisticArmor(living, entityHit, directDamage, stats, id.equals(ROCKET_LAUNCHER_ID));
+                            boolean hurt = living.hurt(source, damage);
+                            if (hurt && owner instanceof ServerPlayer shooter) {
+                                NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                            }
+                        } else {
+                            hitEntity.hurt(source, directDamage);
                         }
                     }
                 }
@@ -769,6 +831,11 @@ public class BulletEntity extends Projectile {
                 target.hurt(this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null), damage);
             }
         }
+    }
+
+    private static int projectileLifeFor(GunStats stats) {
+        int override = BallisticProtection.projectileLifeOverride(stats);
+        return override > 0 ? override : Config.bulletLifetimeTicks();
     }
 
     private void spawnCustomExplosionEffects(ServerLevel serverLevel, Vec3 pos, ResourceLocation weaponId) {
@@ -1501,6 +1568,10 @@ public class BulletEntity extends Projectile {
     }
 
     private static double getGravityAcceleration(GunStats stats) {
+        if (stats.id().equals(SUPERSONIC_SHOTGUN_ID)) {
+            return 0.0D;
+        }
+
         double gravity;
         if (shouldSendBulletTrail(stats)) {
             gravity = stats.gravity() ? 0.040D : 0.0D;
@@ -1523,6 +1594,3 @@ public class BulletEntity extends Projectile {
         return !GunItem.hasFlameTrail(stats.id()) && GunItem.isBulletClassWeapon(stats.id());
     }
 }
-
-
-

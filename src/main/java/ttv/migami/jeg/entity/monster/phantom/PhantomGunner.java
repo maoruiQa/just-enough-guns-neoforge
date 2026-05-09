@@ -237,17 +237,18 @@ public class PhantomGunner extends Phantom implements GeoEntity {
             return forwards.normalize();
         }
 
-        float earlySpreadMultiplier = this.level().getDifficulty() != net.minecraft.world.Difficulty.HARD ? 10.0F : 5.0F;
-        float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(this.level(), earlySpreadMultiplier);
-        gunSpread *= scaledSpreadMultiplier * PROJECTILE_SPREAD_SCALE;
         if (ttv.migami.jeg.gun.GunCategory.fromStats(stats) == ttv.migami.jeg.gun.GunCategory.SHOTGUN) {
-            gunSpread *= (float) Config.gunnerShotgunSpreadMultiplier();
+            gunSpread = stats.spread() * 0.60F;
+        } else {
+            float earlySpreadMultiplier = this.level().getDifficulty() != net.minecraft.world.Difficulty.HARD ? 10.0F : 5.0F;
+            float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(this.level(), earlySpreadMultiplier);
+            gunSpread *= scaledSpreadMultiplier * PROJECTILE_SPREAD_SCALE;
         }
         if (gunSpread <= 0.0F) {
             return forwards.normalize();
         }
 
-        float spreadRadians = Math.min(gunSpread, 170.0F) * 0.5F * net.minecraft.util.Mth.DEG_TO_RAD;
+        float spreadRadians = Math.min(gunSpread, 170.0F) * net.minecraft.util.Mth.DEG_TO_RAD;
         net.minecraft.world.phys.Vec3 worldUp = new net.minecraft.world.phys.Vec3(0.0D, 1.0D, 0.0D);
         net.minecraft.world.phys.Vec3 sideways = forwards.cross(worldUp);
         if (sideways.lengthSqr() < 1.0E-6D) {

@@ -3,10 +3,13 @@
   "category": "equipment",
   "pattern": [
     "IIR",
-    " F ",
+    "DFD",
     "S  "
   ],
   "key": {
+    "D": {
+      "item": "minecraft:diamond"
+    },
     "I": {
       "item": "minecraft:iron_ingot"
     },

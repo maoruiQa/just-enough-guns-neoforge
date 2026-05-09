@@ -33,6 +33,8 @@ public record GunStats(
         int trailColor,
         float trailLengthMultiplier
 ) {
+    public static final float STANDARD_BULLET_PROJECTILE_SIZE = 0.05F;
+
     public boolean usesMagazine() {
         return switch (reloadType) {
             case "jeg:mag_fed", "jeg:magazine" -> true;

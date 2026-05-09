@@ -31,6 +31,8 @@ import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
@@ -84,6 +86,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
+        this.addRenderLayer(new GunBuiltinScopeLayer(this));
     }
 
     public ItemDisplayContext currentPerspective() {
@@ -184,6 +187,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             );
         }
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
+            if (shouldHideScopedFirstPersonGun(gun)) {
+                return;
+            }
+
             poseStack.pushPose();
             try {
                 if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
@@ -232,7 +239,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
+        ForgeZoomOffset zoom = scopedBoltActionRifle(gun)
+                ? zoom(0.0D, 5.0D, -4.4D)
+                : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
         if (zoom == null) {
             return;
         }
@@ -326,6 +335,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
+    }
+
+    private static boolean scopedBoltActionRifle(AnimatedGunItem gun) {
+        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled();
+    }
+
+    private static boolean shouldHideScopedFirstPersonGun(AnimatedGunItem gun) {
+        return scopedBoltActionRifle(gun) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 
     @Override

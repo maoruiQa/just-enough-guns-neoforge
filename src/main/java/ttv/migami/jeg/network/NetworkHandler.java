@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -76,6 +78,15 @@ public final class NetworkHandler {
         if (shot && GunItem.isHoldToFireWeapon(stack)) {
             HOLD_FIRE_START_TICKS.remove(player.getUUID());
         }
+        if (shot && shouldForceExitAdsAfterShot(gun)) {
+            AIMING_PLAYERS.remove(player.getUUID());
+            player.stopUsingItem();
+        }
+    }
+
+    private static boolean shouldForceExitAdsAfterShot(GunItem gun) {
+        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled();
     }
 
     private static void handleHoldFire(HoldFirePayload payload, ServerPlayer player) {

@@ -14,6 +14,7 @@ public final class AimingHandler {
 
     private float currentAim;
     private float previousAim;
+    private boolean suppressedUntilUseReleased;
 
     private AimingHandler() {}
 
@@ -52,12 +53,25 @@ public final class AimingHandler {
     public void reset() {
         currentAim = 0.0F;
         previousAim = 0.0F;
+        suppressedUntilUseReleased = false;
     }
 
-    private static boolean shouldAim(LocalPlayer player) {
+    public void suppressUntilUseReleased() {
+        currentAim = 0.0F;
+        previousAim = 0.0F;
+        suppressedUntilUseReleased = true;
+    }
+
+    private boolean shouldAim(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null || minecraft.screen != null || player.isSpectator()) {
             return false;
+        }
+        if (suppressedUntilUseReleased) {
+            if (minecraft.options.keyUse.isDown()) {
+                return false;
+            }
+            suppressedUntilUseReleased = false;
         }
         ItemStack mainHand = player.getMainHandItem();
         if (!(mainHand.getItem() instanceof GunItem)) {

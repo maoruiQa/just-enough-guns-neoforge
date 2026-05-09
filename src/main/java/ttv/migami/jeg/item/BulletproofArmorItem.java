@@ -1,44 +1,33 @@
-﻿package ttv.migami.jeg.item;
+package ttv.migami.jeg.item;
 
-import java.util.function.Consumer;
 import java.util.EnumMap;
 import java.util.List;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.gun.BallisticProtection;
 
 /**
  * Bulletproof armor for 1.21.1 - Adapted from 1.21.8 version.
  * Uses ArmorItem base class since Equipment API is not available in 1.21.1.
  */
 public class BulletproofArmorItem extends ArmorItem {
-    private static final Holder<ArmorMaterial> TIER_I_HELMET_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_i");
-    private static final Holder<ArmorMaterial> TIER_II_HELMET_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_ii");
-    private static final Holder<ArmorMaterial> TIER_III_HELMET_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iii");
-    private static final Holder<ArmorMaterial> TIER_IV_HELMET_MATERIAL = vestMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iv");
-    private static final Holder<ArmorMaterial> TIER_V_HELMET_MATERIAL = vestMaterial(ArmorMaterials.DIAMOND, "bulletproof_helmet_v");
-    private static final Holder<ArmorMaterial> TIER_VI_HELMET_MATERIAL = vestMaterial(ArmorMaterials.NETHERITE, "bulletproof_helmet_vi");
+    private static final Holder<ArmorMaterial> TIER_I_HELMET_MATERIAL = armorMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_i");
+    private static final Holder<ArmorMaterial> TIER_II_HELMET_MATERIAL = armorMaterial(ArmorMaterials.LEATHER, "bulletproof_helmet_ii");
+    private static final Holder<ArmorMaterial> TIER_III_HELMET_MATERIAL = armorMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iii");
+    private static final Holder<ArmorMaterial> TIER_IV_HELMET_MATERIAL = armorMaterial(ArmorMaterials.IRON, "bulletproof_helmet_iv");
+    private static final Holder<ArmorMaterial> TIER_V_HELMET_MATERIAL = armorMaterial(ArmorMaterials.DIAMOND, "bulletproof_helmet_v");
+    private static final Holder<ArmorMaterial> TIER_VI_HELMET_MATERIAL = armorMaterial(ArmorMaterials.NETHERITE, "bulletproof_helmet_vi");
 
     private static final Holder<ArmorMaterial> TIER_I_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_i");
     private static final Holder<ArmorMaterial> TIER_II_VEST_MATERIAL = vestMaterial(ArmorMaterials.LEATHER, "bulletproof_vest_ii");
@@ -48,16 +37,19 @@ public class BulletproofArmorItem extends ArmorItem {
     private static final Holder<ArmorMaterial> TIER_VI_VEST_MATERIAL = vestMaterial(ArmorMaterials.NETHERITE, "bulletproof_vest_vi");
 
     public enum Tier {
-        I("i", 1, 1, 55, 80, 0, 1, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
-        II("ii", 2, 2, 55, 80, 1, 2, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
-        III("iii", 3, 4, 165, 240, 1, 3, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
-        IV("iv", 4, 5, 165, 240, 1, 4, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
-        V("v", 5, 7, 165, 240, 2, 4, SoundEvents.ARMOR_EQUIP_DIAMOND, ArmorMaterials.DIAMOND),
-        VI("vi", 6, 8, 203, 320, 2, 5, SoundEvents.ARMOR_EQUIP_NETHERITE, ArmorMaterials.NETHERITE);
+        I("i", 1, 2.10F, 0.30F, 0.85F, 1.20F, 55, 80, 0, 1, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
+        II("ii", 2, 3.10F, 0.25F, 0.80F, 1.10F, 55, 80, 1, 2, SoundEvents.ARMOR_EQUIP_LEATHER, ArmorMaterials.LEATHER),
+        III("iii", 3, 3.60F, 0.22F, 0.76F, 1.00F, 165, 240, 1, 3, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
+        IV("iv", 4, 4.10F, 0.18F, 0.70F, 0.90F, 165, 240, 1, 4, SoundEvents.ARMOR_EQUIP_IRON, ArmorMaterials.IRON),
+        V("v", 5, 5.20F, 0.15F, 0.64F, 0.80F, 165, 240, 2, 4, SoundEvents.ARMOR_EQUIP_DIAMOND, ArmorMaterials.DIAMOND),
+        VI("vi", 6, 6.20F, 0.12F, 0.58F, 0.70F, 203, 320, 2, 5, SoundEvents.ARMOR_EQUIP_NETHERITE, ArmorMaterials.NETHERITE);
 
         private final String suffix;
         private final int tierNumber;
-        private final int projectileLevel;
+        private final float ballisticRating;
+        private final float undermatchMultiplier;
+        private final float overmatchMultiplier;
+        private final float durabilityScale;
         private final int helmetDurability;
         private final int vestDurability;
         private final int helmetArmor;
@@ -65,11 +57,14 @@ public class BulletproofArmorItem extends ArmorItem {
         private final Holder<SoundEvent> equipSound;
         private final Holder<ArmorMaterial> material;
 
-        Tier(String suffix, int tierNumber, int projectileLevel, int helmetDurability, int vestDurability, int helmetArmor, int vestArmor,
+        Tier(String suffix, int tierNumber, float ballisticRating, float undermatchMultiplier, float overmatchMultiplier, float durabilityScale, int helmetDurability, int vestDurability, int helmetArmor, int vestArmor,
               Holder<SoundEvent> equipSound, Holder<ArmorMaterial> material) {
             this.suffix = suffix;
             this.tierNumber = tierNumber;
-            this.projectileLevel = projectileLevel;
+            this.ballisticRating = ballisticRating;
+            this.undermatchMultiplier = undermatchMultiplier;
+            this.overmatchMultiplier = overmatchMultiplier;
+            this.durabilityScale = durabilityScale;
             this.helmetDurability = helmetDurability;
             this.vestDurability = vestDurability;
             this.helmetArmor = helmetArmor;
@@ -86,8 +81,20 @@ public class BulletproofArmorItem extends ArmorItem {
             return tierNumber;
         }
 
-        public int projectileLevel() {
-            return projectileLevel;
+        public float ballisticRating() {
+            return ballisticRating;
+        }
+
+        public float undermatchMultiplier() {
+            return undermatchMultiplier;
+        }
+
+        public float overmatchMultiplier() {
+            return overmatchMultiplier;
+        }
+
+        public float durabilityScale() {
+            return durabilityScale;
         }
 
         public int durability(Type armorType) {
@@ -143,6 +150,10 @@ public class BulletproofArmorItem extends ArmorItem {
     }
 
     private static Holder<ArmorMaterial> vestMaterial(Holder<ArmorMaterial> baseMaterial, String textureName) {
+        return armorMaterial(baseMaterial, textureName);
+    }
+
+    private static Holder<ArmorMaterial> armorMaterial(Holder<ArmorMaterial> baseMaterial, String textureName) {
         ArmorMaterial base = baseMaterial.value();
         return Holder.direct(new ArmorMaterial(
                 new EnumMap<>(base.defense()),
@@ -211,59 +222,26 @@ public class BulletproofArmorItem extends ArmorItem {
 
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
-        return true;
+        return false;
     }
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, @NotNull java.util.List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_tier", tier.tierNumber()).withStyle(net.minecraft.ChatFormatting.GRAY));
-        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_projectile", tier.projectileLevel()).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
-    }
-
-    @Nullable
-    private static Holder<Enchantment> resolveProjectileProtection(RegistryAccess registryAccess) {
-        HolderLookup<Enchantment> lookup = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
-        return lookup.get(Enchantments.PROJECTILE_PROTECTION).orElse(null);
-    }
-
-    private void ensureDefaultEnchant(ItemStack stack, RegistryAccess registryAccess) {
-        Holder<Enchantment> protection = resolveProjectileProtection(registryAccess);
-        if (protection == null) {
-            return;
-        }
-
-        ItemEnchantments current = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        ItemEnchantments.Mutable updated = new ItemEnchantments.Mutable(current);
-        updated.removeIf(holder -> holder.is(Enchantments.PROJECTILE_PROTECTION));
-        if (tier.projectileLevel() > 0) {
-            updated.set(protection, tier.projectileLevel());
-        }
-        ItemEnchantments normalized = updated.toImmutable();
-        if (!normalized.equals(current)) {
-            stack.set(DataComponents.ENCHANTMENTS, normalized);
-        }
+        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_ballistic_rating", String.format(java.util.Locale.US, "%.1f", BallisticProtection.effectiveArmorRating(tier, this.getType().getSlot()))).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipComponents.add(Component.literal("Undermatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.undermatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipComponents.add(Component.literal("Overmatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.overmatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
     }
 
     @Override
     public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.world.level.Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide() && entity instanceof LivingEntity living) {
-            // Check if this item is equipped in the correct slot
-            EquipmentSlot correctSlot = this.getType().getSlot();
-            ItemStack equipped = living.getItemBySlot(correctSlot);
-            if (ItemStack.isSameItemSameComponents(equipped, stack) && level instanceof ServerLevel serverLevel) {
-                ensureDefaultEnchant(stack, serverLevel.registryAccess());
-            }
-        }
     }
 
     @Override
     public void onCraftedBy(@NotNull ItemStack stack, @NotNull net.minecraft.world.level.Level level, @NotNull Player player) {
         super.onCraftedBy(stack, level, player);
-        if (!level.isClientSide()) {
-            ensureDefaultEnchant(stack, player.registryAccess());
-        }
     }
 
     public static boolean isBulletproof(ItemStack stack) {
@@ -277,7 +255,4 @@ public class BulletproofArmorItem extends ArmorItem {
         return item.tier == tier;
     }
 
-    public int projectileLevel() {
-        return tier.projectileLevel();
-    }
 }
