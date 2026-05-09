@@ -37,6 +37,14 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
         return stack;
     }
 
+    public static ItemStack createDefaultItem() {
+        ItemStack stack = new ItemStack(ModItems.VEHICLE_CONTAINER.get());
+        CompoundTag tag = new CompoundTag();
+        tag.putString(TAG_ENTITY_TYPE, "jeg:test_wheel_vehicle");
+        BlockItem.setBlockEntityData(stack, ModBlockEntities.VEHICLE_CONTAINER.get(), tag);
+        return stack;
+    }
+
     public boolean deploy(Player player) {
         Level level = this.getLevel();
         if (level == null || level.isClientSide) {

@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
 import ttv.migami.jeg.vehicle.block.VehicleContainerBlock;
 
 public final class ModBlocks {
@@ -17,5 +18,10 @@ public final class ModBlocks {
     public static final DeferredHolder<Block, VehicleContainerBlock> VEHICLE_CONTAINER = REGISTER.register(
             "vehicle_container",
             () -> new VehicleContainerBlock(BlockBehaviour.Properties.of().strength(3.0F).sound(SoundType.METAL).noOcclusion())
+    );
+
+    public static final DeferredHolder<Block, VehicleAssemblingTableBlock> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
+            "vehicle_assembling_table",
+            () -> new VehicleAssemblingTableBlock(BlockBehaviour.Properties.of().strength(3.5F).sound(SoundType.METAL))
     );
 }

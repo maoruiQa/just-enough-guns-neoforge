@@ -22,6 +22,8 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 public final class NetworkHandler {
@@ -38,6 +40,7 @@ public final class NetworkHandler {
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
+                .playToServer(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC, NetworkHandler::handleAssembleTestVehicle)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
@@ -54,6 +57,14 @@ public final class NetworkHandler {
                 return;
             }
             vehicle.processInput(player, payload.toInput());
+        });
+    }
+
+    private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof VehicleAssemblingMenu menu) {
+                menu.assembleTestVehicle(player);
+            }
         });
     }
 
@@ -272,6 +283,14 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(UnloadMagazineRequestPayload.INSTANCE);
+    }
+
+    public static void sendAssembleTestVehicle() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(AssembleTestVehiclePayload.INSTANCE);
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {
