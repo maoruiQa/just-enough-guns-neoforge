@@ -429,7 +429,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
         if (weapon.hasMuzzle()) {
-            return this.position().add(this.rotateLocalOffset(weapon.muzzleX(), weapon.muzzleY(), weapon.muzzleZ()));
+            Vec3 aim = direction.normalize();
+            Vec3 side = new Vec3(aim.z, 0.0D, -aim.x);
+            if (side.lengthSqr() < 1.0E-4D) {
+                side = this.rotateLocalOffset(1.0D, 0.0D, 0.0D);
+            } else {
+                side = side.normalize();
+            }
+            return this.position()
+                    .add(0.0D, weapon.muzzleY(), 0.0D)
+                    .add(side.scale(weapon.muzzleX()))
+                    .add(aim.scale(weapon.muzzleZ()));
         }
         return this.position().add(0.0D, fallbackHeight, 0.0D).add(direction.scale(fallbackForwardOffset));
     }
