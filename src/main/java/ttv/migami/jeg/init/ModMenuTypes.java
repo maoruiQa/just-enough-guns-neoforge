@@ -7,6 +7,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class ModMenuTypes {
@@ -22,5 +23,10 @@ public final class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleAssemblingMenu>> VEHICLE_ASSEMBLING_MENU = REGISTER.register(
             "vehicle_assembling_menu",
             () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleAssemblingMenu(windowId, inventory))
+    );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<VehicleChargingStationMenu>> VEHICLE_CHARGING_STATION_MENU = REGISTER.register(
+            "vehicle_charging_station_menu",
+            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleChargingStationMenu(windowId, inventory))
     );
 }
