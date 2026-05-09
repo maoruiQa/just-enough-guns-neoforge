@@ -19,6 +19,7 @@ import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
+import ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
@@ -102,6 +103,7 @@ public final class VehicleDataManager {
         CollisionLevel collisionLevel = getEnum(object, "collision_level", CollisionLevel.class, fallback.collisionLevel());
         OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
+        DamageModifierInfo damageModifier = parseDamageModifier(getObject(object, "damage_modifier"), fallback.damageModifier());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
         SeekInfo seek = parseSeek(getObject(object, "seek"), fallback.seek());
         DestroyInfo destroy = parseDestroy(getObject(object, "destroy"), fallback.destroy());
@@ -123,6 +125,7 @@ public final class VehicleDataManager {
                 collisionLevel,
                 obb,
                 armor,
+                damageModifier,
                 weapons,
                 seek,
                 destroy
@@ -306,6 +309,13 @@ public final class VehicleDataManager {
                 getFloat(object, "passenger_leak_multiplier", fallback.passengerLeakMultiplier()),
                 getFloat(object, "part_damage_multiplier", fallback.partDamageMultiplier())
         );
+    }
+
+    private static DamageModifierInfo parseDamageModifier(JsonObject object, DamageModifierInfo fallback) {
+        if (object == null) {
+            return fallback;
+        }
+        return new DamageModifierInfo(getFloat(object, "global_multiplier", fallback.globalMultiplier()));
     }
 
     private static JsonObject getObject(JsonObject object, String name) {

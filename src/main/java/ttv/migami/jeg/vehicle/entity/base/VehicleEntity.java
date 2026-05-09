@@ -985,7 +985,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
-        float finalDamage = armorHit.finalDamage();
+        float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
         if (finalDamage <= 0.0F) {
             return false;
         }

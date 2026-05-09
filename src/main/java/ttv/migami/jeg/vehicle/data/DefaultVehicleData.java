@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
+import ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
@@ -33,6 +34,7 @@ public record DefaultVehicleData(
         CollisionLevel collisionLevel,
         OBBInfo obb,
         VehicleArmorProfile armor,
+        DamageModifierInfo damageModifier,
         List<VehicleWeaponInfo> weapons,
         SeekInfo seek,
         DestroyInfo destroy
@@ -54,6 +56,7 @@ public record DefaultVehicleData(
             CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("assault_rifle"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
@@ -79,6 +82,7 @@ public record DefaultVehicleData(
             CollisionLevel.HEAVY,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("assault_rifle"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
@@ -105,6 +109,7 @@ public record DefaultVehicleData(
             CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
@@ -130,6 +135,7 @@ public record DefaultVehicleData(
             CollisionLevel.LIGHT,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
             ),
@@ -154,6 +160,7 @@ public record DefaultVehicleData(
             CollisionLevel.HEAVY,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
@@ -179,6 +186,7 @@ public record DefaultVehicleData(
             CollisionLevel.MEDIUM,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            DamageModifierInfo.DEFAULT,
             List.of(
                     new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
