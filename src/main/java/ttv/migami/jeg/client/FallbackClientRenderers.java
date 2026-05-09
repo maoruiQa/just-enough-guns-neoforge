@@ -26,6 +26,7 @@ import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.vehicle.client.render.TestVehicleRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class FallbackClientRenderers {
@@ -45,6 +46,7 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.RAID_ENTITY.get(), NullEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_WHEEL_VEHICLE.get(), TestVehicleRenderer::new);
     }
 
     private static final class FallbackGhoulRenderer extends MobRenderer<Ghoul, ZombieModel<Ghoul>> {

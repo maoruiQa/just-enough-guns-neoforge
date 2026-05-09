@@ -15,15 +15,19 @@ import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModBlockEntities;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModEntityEvents;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 
 @Mod(Reference.MOD_ID)
 public final class JustEnoughGuns {
@@ -36,6 +40,9 @@ public final class JustEnoughGuns {
         LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.11");
 
         // Register mod content first
+        ModBlocks.REGISTER.register(modBus);
+        ModBlockEntities.REGISTER.register(modBus);
+        ModMenuTypes.REGISTER.register(modBus);
         ModItems.REGISTER.register(modBus);
         ModDataComponents.REGISTER.register(modBus);
         ModEntities.REGISTER.register(modBus);
@@ -67,6 +74,7 @@ public final class JustEnoughGuns {
         NeoForge.EVENT_BUS.register(GunnerMobSpawner.class);
         NeoForge.EVENT_BUS.register(FactionEventTicker.class);
         NeoForge.EVENT_BUS.addListener(ModCommands::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(VehicleDataManager::onAddReloadListeners);
 
         LOGGER.debug("Game events registered successfully");
     }
