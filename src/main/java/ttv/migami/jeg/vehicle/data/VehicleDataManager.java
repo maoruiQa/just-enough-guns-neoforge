@@ -90,6 +90,7 @@ public final class VehicleDataManager {
         boolean allowFreeCam = getBoolean(object, "allow_free_cam", fallback.allowFreeCam());
         VehicleContainerType containerType = getEnum(object, "container_type", VehicleContainerType.class, fallback.containerType());
         CameraPos camera = parseCamera(getObject(object, "third_person_camera"), fallback.thirdPersonCamera());
+        OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
 
         return new VehicleData(new DefaultVehicleData(
@@ -105,7 +106,7 @@ public final class VehicleDataManager {
                 allowFreeCam,
                 containerType,
                 camera,
-                OBBInfo.DEFAULT,
+                obb,
                 armor,
                 SeekInfo.NONE,
                 DestroyInfo.NONE
@@ -159,6 +160,32 @@ public final class VehicleDataManager {
             ));
         }
         return List.copyOf(seats);
+    }
+
+    private static OBBInfo parseObb(JsonObject object, OBBInfo fallback) {
+        JsonElement element = object.get("obb");
+        if (element == null || !element.isJsonArray()) {
+            return fallback;
+        }
+        JsonArray array = element.getAsJsonArray();
+        if (array.isEmpty()) {
+            return fallback;
+        }
+        java.util.ArrayList<OBBInfo.Box> boxes = new java.util.ArrayList<>();
+        for (JsonElement boxElement : array) {
+            JsonObject box = boxElement.getAsJsonObject();
+            OBBInfo.Part part = getEnum(box, "part", OBBInfo.Part.class, OBBInfo.Part.BODY);
+            boxes.add(new OBBInfo.Box(
+                    part,
+                    getDouble(box, "x", 0.0D),
+                    getDouble(box, "y", 0.75D),
+                    getDouble(box, "z", 0.0D),
+                    getDouble(box, "half_width", 0.5D),
+                    getDouble(box, "half_height", 0.5D),
+                    getDouble(box, "half_depth", 0.5D)
+            ));
+        }
+        return new OBBInfo(List.copyOf(boxes));
     }
 
     private static VehicleArmorProfile parseArmor(JsonObject object, VehicleArmorProfile fallback) {

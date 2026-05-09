@@ -608,16 +608,31 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (direct == null) {
             return OBBInfo.Part.BODY;
         }
-        double relativeY = direct.getY() - this.getY();
-        double relativeX = direct.getX() - this.getX();
-        double relativeZ = direct.getZ() - this.getZ();
-        if (relativeY < 0.65D && Math.abs(relativeX) > 0.35D) {
-            return relativeX < 0.0D ? OBBInfo.Part.WHEEL_LEFT : OBBInfo.Part.WHEEL_RIGHT;
+        Vec3 local = this.toLocalVehiclePosition(direct.position());
+        for (OBBInfo.Box box : this.vehicleData().defaults().obb().boxes()) {
+            if (Math.abs(local.x - box.x()) <= box.halfWidth()
+                    && Math.abs(local.y - box.y()) <= box.halfHeight()
+                    && Math.abs(local.z - box.z()) <= box.halfDepth()) {
+                return box.part();
+            }
         }
-        if (relativeY < 0.9D && relativeZ < -0.35D) {
+        if (local.y < 0.65D && Math.abs(local.x) > 0.35D) {
+            return local.x < 0.0D ? OBBInfo.Part.WHEEL_LEFT : OBBInfo.Part.WHEEL_RIGHT;
+        }
+        if (local.y < 0.9D && local.z < -0.35D) {
             return OBBInfo.Part.MAIN_ENGINE;
         }
         return OBBInfo.Part.BODY;
+    }
+
+    private Vec3 toLocalVehiclePosition(Vec3 worldPosition) {
+        double dx = worldPosition.x - this.getX();
+        double dy = worldPosition.y - this.getY();
+        double dz = worldPosition.z - this.getZ();
+        double yaw = Math.toRadians(this.getYRot());
+        double cos = Math.cos(yaw);
+        double sin = Math.sin(yaw);
+        return new Vec3(dx * cos + dz * sin, dy, -dx * sin + dz * cos);
     }
 
     private void applyPartDamage(OBBInfo.Part hitPart, float finalDamage) {

@@ -37,6 +37,53 @@
     "y": 2.8,
     "z": -6.0
   },
+  "obb": [
+    {
+      "part": "body",
+      "x": 0.0,
+      "y": 0.85,
+      "z": 0.05,
+      "half_width": 0.95,
+      "half_height": 0.65,
+      "half_depth": 1.25
+    },
+    {
+      "part": "turret",
+      "x": 0.0,
+      "y": 1.35,
+      "z": -0.2,
+      "half_width": 0.55,
+      "half_height": 0.28,
+      "half_depth": 0.55
+    },
+    {
+      "part": "wheel_left",
+      "x": -0.78,
+      "y": 0.42,
+      "z": 0.05,
+      "half_width": 0.2,
+      "half_height": 0.34,
+      "half_depth": 1.15
+    },
+    {
+      "part": "wheel_right",
+      "x": 0.78,
+      "y": 0.42,
+      "z": 0.05,
+      "half_width": 0.2,
+      "half_height": 0.34,
+      "half_depth": 1.15
+    },
+    {
+      "part": "main_engine",
+      "x": 0.0,
+      "y": 0.62,
+      "z": -0.92,
+      "half_width": 0.55,
+      "half_height": 0.35,
+      "half_depth": 0.35
+    }
+  ],
   "armor": {
     "fallback": {
       "rating": 4.0,
