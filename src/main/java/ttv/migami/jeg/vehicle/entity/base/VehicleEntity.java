@@ -39,6 +39,7 @@ import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
+import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public class VehicleEntity extends Entity implements MenuProvider {
@@ -386,11 +387,13 @@ public class VehicleEntity extends Entity implements MenuProvider {
             return false;
         }
         OBBInfo.Part hitPart = this.estimateHitPart(source);
-        float finalDamage = this.applyVehicleArmor(source, amount, hitPart);
+        ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
+        float finalDamage = armorHit.finalDamage();
         if (finalDamage <= 0.0F) {
             return false;
         }
         this.applyPartDamage(hitPart, finalDamage);
+        this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
         float newHealth = this.vehicleHealth() - finalDamage;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
@@ -401,9 +404,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return true;
     }
 
-    private float applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
+    private ArmorHit applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
         if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
-            return amount;
+            return new ArmorHit(amount, true);
         }
         VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
         BallisticProtection.IntrinsicArmorProfile intrinsic = new BallisticProtection.IntrinsicArmorProfile(
@@ -411,12 +414,42 @@ public class VehicleEntity extends Entity implements MenuProvider {
                 armor.undermatchMultiplier(),
                 armor.overmatchMultiplier()
         );
-        return BallisticProtection.applyToIntrinsicArmor(
+        BallisticProtection.BallisticResult result = BallisticProtection.applyToIntrinsicArmor(
                 amount,
                 bullet.getGunStats(),
                 intrinsic,
                 BallisticProtection.isRocketDirectHit(bullet.getGunStats())
-        ).finalDamage();
+        );
+        return new ArmorHit(result.finalDamage(), !result.armorApplied() || result.overmatched());
+    }
+
+    private void applyPassengerLeakDamage(DamageSource source, float finalDamage, OBBInfo.Part hitPart, boolean penetrated) {
+        VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
+        float leakMultiplier = armor.passengerLeakMultiplier();
+        if (leakMultiplier <= 0.0F || this.getPassengers().isEmpty()) {
+            return;
+        }
+        Entity sourceEntity = source.getEntity();
+        Entity directEntity = source.getDirectEntity();
+        for (int index = 0; index < this.getPassengers().size(); index++) {
+            Entity passenger = this.getPassengers().get(index);
+            if (!(passenger instanceof LivingEntity living) || passenger == sourceEntity || passenger == directEntity) {
+                continue;
+            }
+            SeatInfo seat = this.seatForPassenger(index);
+            if (seat.enclosed() && !penetrated) {
+                continue;
+            }
+            living.hurt(source, finalDamage * leakMultiplier);
+        }
+    }
+
+    private SeatInfo seatForPassenger(int index) {
+        var seats = this.vehicleData().defaults().seats();
+        if (index >= 0 && index < seats.size()) {
+            return seats.get(index);
+        }
+        return SeatInfo.DRIVER;
     }
 
     private OBBInfo.Part estimateHitPart(DamageSource source) {
@@ -507,5 +540,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
     @Override
     public boolean isPickable() {
         return true;
+    }
+
+    private record ArmorHit(float finalDamage, boolean penetrated) {
     }
 }
