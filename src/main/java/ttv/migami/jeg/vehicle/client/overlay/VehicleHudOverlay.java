@@ -42,6 +42,8 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
     private static final ResourceLocation CROSSHAIR_THIRD_CAMERA = Reference.id("textures/overlay/vehicle/crosshair/third_camera.png");
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
+    private static final ResourceLocation WEAPON_ICON_CANNON_20MM = Reference.id("textures/overlay/vehicle/weapon/icons/cannon_20mm.png");
+    private static final ResourceLocation WEAPON_ICON_COAX_762 = Reference.id("textures/overlay/vehicle/weapon/icons/gun_7_62mm.png");
 
     private VehicleHudOverlay() {}
 
@@ -85,6 +87,7 @@ public final class VehicleHudOverlay {
         }
         Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
         Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
+        renderSelectedWeaponIcon(guiGraphics, vehicle, width / 2 - 128, lineY - 4);
         guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
         lineY += 11;
         Component decoy = vehicle.hasBuiltInDecoy()
@@ -114,6 +117,20 @@ public final class VehicleHudOverlay {
         guiGraphics.blit(VALUE_FRAME, x + 11, y + 2, 60, 6, 0.0F, 0.0F, 120, 12, 120, 12);
         if (filled > 0) {
             guiGraphics.blit(VALUE_BAR, x + 11, y + 2, 0.0F, 0.0F, filled, 6, 60, 6);
+        }
+    }
+
+    private static void renderSelectedWeaponIcon(GuiGraphics guiGraphics, VehicleEntity vehicle, int x, int y) {
+        if (!"lav150".equals(vehicle.vehicleDataId().getPath())) {
+            return;
+        }
+        ResourceLocation icon = switch (vehicle.selectedVehicleWeaponId().getPath()) {
+            case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
+            case "vehicle_coax_machine_gun" -> WEAPON_ICON_COAX_762;
+            default -> null;
+        };
+        if (icon != null) {
+            guiGraphics.blit(icon, x, y, 0.0F, 0.0F, 75, 16, 300, 64);
         }
     }
 
