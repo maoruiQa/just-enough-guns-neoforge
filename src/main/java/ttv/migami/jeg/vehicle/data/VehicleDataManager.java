@@ -86,7 +86,7 @@ public final class VehicleDataManager {
     }
 
     private static VehicleData parse(ResourceLocation id, JsonObject object) {
-        DefaultVehicleData fallback = DefaultVehicleData.TEST_WHEEL;
+        DefaultVehicleData fallback = fallbackFor(id);
         String entityType = getString(object, "entity_type", fallback.entityType());
         VehicleType vehicleType = getEnum(object, "vehicle_type", VehicleType.class, fallback.vehicleType());
         float maxHealth = getFloat(object, "max_health", fallback.maxHealth());
@@ -127,6 +127,25 @@ public final class VehicleDataManager {
                 seek,
                 destroy
         ));
+    }
+
+    private static DefaultVehicleData fallbackFor(ResourceLocation id) {
+        if (id.equals(DefaultVehicleData.LIGHT_COMBAT.id())) {
+            return DefaultVehicleData.LIGHT_COMBAT;
+        }
+        if (id.equals(DefaultVehicleData.TEST_HELICOPTER.id())) {
+            return DefaultVehicleData.TEST_HELICOPTER;
+        }
+        if (id.equals(DefaultVehicleData.TEST_BOAT.id())) {
+            return DefaultVehicleData.TEST_BOAT;
+        }
+        if (id.equals(DefaultVehicleData.TEST_ARTILLERY.id())) {
+            return DefaultVehicleData.TEST_ARTILLERY;
+        }
+        if (id.equals(DefaultVehicleData.TEST_AIRCRAFT.id())) {
+            return DefaultVehicleData.TEST_AIRCRAFT;
+        }
+        return DefaultVehicleData.TEST_WHEEL;
     }
 
     private static EngineInfo parseEngine(JsonObject object, EngineInfo fallback) {
