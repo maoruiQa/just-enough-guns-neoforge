@@ -414,6 +414,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     private void tickServerMovement() {
         EngineInfo engine = this.vehicleData().defaults().engine();
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.ARTILLERY) {
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+        }
         if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
                 || this.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT) {
             this.tickServerAirMovement(engine);

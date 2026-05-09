@@ -124,4 +124,27 @@ public record DefaultVehicleData(
             SeekInfo.NONE,
             new DestroyInfo(false, 0.0F)
     );
+
+    public static final DefaultVehicleData TEST_ARTILLERY = new DefaultVehicleData(
+            Reference.id("test_artillery"),
+            "jeg:test_artillery",
+            VehicleType.ARTILLERY,
+            70.0F,
+            0.01F,
+            140,
+            120,
+            new EngineInfo(EngineType.STATIC, 0.0D, 0.0D, 0.0D, 1.0D),
+            List.of(new SeatInfo(0, 0.0D, 0.9D, 0.0D, true, true)),
+            true,
+            VehicleContainerType.NONE,
+            new CameraPos(0.0D, 2.6D, -5.0D),
+            OBBInfo.DEFAULT,
+            VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
+                    new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
+            ),
+            SeekInfo.NONE,
+            new DestroyInfo(true, 2.2F)
+    );
 }

@@ -54,7 +54,8 @@ public final class VehicleDataManager {
                 DefaultVehicleData.TEST_WHEEL.id(), new VehicleData(DefaultVehicleData.TEST_WHEEL),
                 DefaultVehicleData.LIGHT_COMBAT.id(), new VehicleData(DefaultVehicleData.LIGHT_COMBAT),
                 DefaultVehicleData.TEST_HELICOPTER.id(), new VehicleData(DefaultVehicleData.TEST_HELICOPTER),
-                DefaultVehicleData.TEST_BOAT.id(), new VehicleData(DefaultVehicleData.TEST_BOAT)
+                DefaultVehicleData.TEST_BOAT.id(), new VehicleData(DefaultVehicleData.TEST_BOAT),
+                DefaultVehicleData.TEST_ARTILLERY.id(), new VehicleData(DefaultVehicleData.TEST_ARTILLERY)
         );
     }
 
