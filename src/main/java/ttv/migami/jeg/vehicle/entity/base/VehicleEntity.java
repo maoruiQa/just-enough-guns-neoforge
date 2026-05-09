@@ -20,6 +20,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
@@ -39,6 +40,7 @@ import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
@@ -597,12 +599,16 @@ public class VehicleEntity extends Entity implements MenuProvider {
     }
 
     private Vec3 rotateSeatOffset(SeatInfo seat) {
+        return this.rotateLocalOffset(seat.x(), seat.y(), seat.z());
+    }
+
+    private Vec3 rotateLocalOffset(double localX, double localY, double localZ) {
         double yaw = Math.toRadians(this.getYRot());
         double cos = Math.cos(yaw);
         double sin = Math.sin(yaw);
-        double x = seat.x() * cos - seat.z() * sin;
-        double z = seat.x() * sin + seat.z() * cos;
-        return new Vec3(x, seat.y(), z);
+        double x = localX * cos - localZ * sin;
+        double z = localX * sin + localZ * cos;
+        return new Vec3(x, localY, z);
     }
 
     @Override
@@ -860,6 +866,17 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     public double getPassengersRidingOffset() {
         return 0.45D;
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+        DismountInfo dismount = this.vehicleData().defaults().dismount();
+        Vec3 offset = this.rotateLocalOffset(dismount.x(), dismount.y(), dismount.z());
+        Vec3 candidate = this.position().add(offset);
+        if (DismountHelper.canDismountTo(this.level(), candidate, passenger, passenger.getPose())) {
+            return candidate;
+        }
+        return super.getDismountLocationForPassenger(passenger);
     }
 
     @Override
