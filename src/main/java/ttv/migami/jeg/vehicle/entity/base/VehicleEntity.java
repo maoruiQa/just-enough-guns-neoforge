@@ -1222,7 +1222,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new VehicleMenu(containerId, playerInventory, this.inventory, this.vehicleContainerSlots(), this);
     }
 
-    private int vehicleContainerSlots() {
+    public int vehicleContainerSlots() {
         VehicleContainerType containerType = this.vehicleData().defaults().containerType();
         return Math.min(containerType.slots(), this.inventory.getContainerSize());
     }

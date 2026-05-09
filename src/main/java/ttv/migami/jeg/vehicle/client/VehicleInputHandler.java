@@ -33,6 +33,9 @@ public final class VehicleInputHandler {
         if (KeyBindings.VEHICLE_DISMOUNT.consumeClick()) {
             NetworkHandler.sendVehicleDismount(vehicle.getId());
         }
+        if (minecraft.options.keyInventory.consumeClick()) {
+            NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+        }
         minecraft.getConnection().send(new VehicleInputPayload(
                 vehicle.getId(),
                 minecraft.options.keyUp.isDown(),

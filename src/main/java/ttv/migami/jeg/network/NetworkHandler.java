@@ -28,6 +28,7 @@ import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
 import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
 import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
+import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -45,6 +46,7 @@ public final class NetworkHandler {
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
                 .playToServer(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC, NetworkHandler::handleVehicleDismount)
+                .playToServer(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC, NetworkHandler::handleVehicleOpenMenu)
                 .playToServer(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC, NetworkHandler::handleAssembleTestVehicle)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
@@ -91,6 +93,17 @@ public final class NetworkHandler {
             }
             if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
                 player.stopRiding();
+            }
+        });
+    }
+
+    private static void handleVehicleOpenMenu(VehicleOpenMenuPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                player.openMenu(vehicle, buffer -> buffer.writeVarInt(vehicle.vehicleContainerSlots()));
             }
         });
     }
@@ -334,6 +347,14 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(new VehicleDismountPayload(vehicleId));
+    }
+
+    public static void sendVehicleOpenMenu(int vehicleId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new VehicleOpenMenuPayload(vehicleId));
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {
