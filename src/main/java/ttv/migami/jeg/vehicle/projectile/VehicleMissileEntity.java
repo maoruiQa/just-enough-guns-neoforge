@@ -6,7 +6,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -21,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public final class VehicleMissileEntity extends Entity {
     private static final int LIFE_TICKS = 120;
@@ -97,7 +97,7 @@ public final class VehicleMissileEntity extends Entity {
                 player.getX(),
                 player.getY(),
                 player.getZ(),
-                SoundEvents.NOTE_BLOCK_PLING,
+                VehicleSoundHelper.lockWarning(),
                 SoundSource.PLAYERS,
                 0.8F,
                 1.7F

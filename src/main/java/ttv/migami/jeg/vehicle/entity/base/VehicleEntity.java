@@ -14,7 +14,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -69,6 +68,7 @@ import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
+import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -415,7 +415,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 lockedPlayer.getX(),
                 lockedPlayer.getY(),
                 lockedPlayer.getZ(),
-                SoundEvents.NOTE_BLOCK_PLING,
+                VehicleSoundHelper.lockWarning(),
                 SoundSource.PLAYERS,
                 0.8F,
                 1.7F

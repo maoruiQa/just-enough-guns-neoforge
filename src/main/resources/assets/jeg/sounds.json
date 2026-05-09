@@ -1307,6 +1307,15 @@
     ]
   },
 
+  "vehicle.lock_warning": {
+    "subtitle": "subtitle.jeg.vehicle.lock_warning",
+    "sounds": [
+      {
+        "name": "minecraft:note/pling"
+      }
+    ]
+  },
+
   "event.phantom.distant": {
     "sounds": [
       {
