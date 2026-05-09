@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
@@ -20,11 +21,14 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
+import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
@@ -40,6 +44,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final String TAG_ENERGY = "Energy";
+    private static final String TAG_ITEMS = "Items";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
     private static final double GRAVITY = 0.08D;
 
@@ -194,6 +199,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         output.putFloat(TAG_HEALTH, this.vehicleHealth());
         output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
+        CompoundTag inventoryTag = new CompoundTag();
+        ContainerHelper.saveAllItems(inventoryTag, this.inventory.getItems(), this.level().registryAccess());
+        output.put(TAG_ITEMS, inventoryTag);
     }
 
     @Override
@@ -206,6 +214,19 @@ public class VehicleEntity extends Entity implements MenuProvider {
         int energy = input.contains(TAG_ENERGY) ? input.getInt(TAG_ENERGY) : this.maxVehicleEnergy();
         this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
+        if (input.contains(TAG_ITEMS)) {
+            ContainerHelper.loadAllItems(input.getCompound(TAG_ITEMS), this.inventory.getItems(), this.level().registryAccess());
+        }
+    }
+
+    public CompoundTag saveVehicleContainerState() {
+        CompoundTag tag = new CompoundTag();
+        this.addAdditionalSaveData(tag);
+        return tag;
+    }
+
+    public void loadVehicleContainerState(CompoundTag tag) {
+        this.readAdditionalSaveData(tag);
     }
 
     @Override
@@ -247,6 +268,16 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!this.level().isClientSide && player.isShiftKeyDown() && stack.is(ModItems.CROWBAR.get()) && player instanceof ServerPlayer serverPlayer) {
+            ItemStack container = VehicleContainerBlockEntity.createItemFor(this);
+            if (!serverPlayer.getInventory().add(container)) {
+                serverPlayer.drop(container, false);
+            }
+            stack.hurtAndBreak(1, serverPlayer, LivingEntity.getSlotForHand(hand));
+            this.discard();
+            return InteractionResult.CONSUME;
+        }
         if (!this.level().isClientSide && player.isShiftKeyDown() && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.openMenu(this);
             return InteractionResult.CONSUME;
