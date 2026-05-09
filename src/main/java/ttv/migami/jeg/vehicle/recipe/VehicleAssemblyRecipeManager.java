@@ -2,8 +2,6 @@ package ttv.migami.jeg.vehicle.recipe;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +114,7 @@ public final class VehicleAssemblyRecipeManager {
             Map<ResourceLocation, VehicleAssemblyRecipe> loaded = new HashMap<>(defaultsOnly());
             for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
                 try {
-                    loaded.put(entry.getKey(), parse(entry.getKey(), entry.getValue().getAsJsonObject()));
+                    loaded.put(entry.getKey(), VehicleAssemblyRecipeSerializer.fromJson(entry.getKey(), entry.getValue().getAsJsonObject()));
                 } catch (RuntimeException exception) {
                     JustEnoughGuns.LOGGER.error("Failed to load vehicle assembly recipe {}: {}", entry.getKey(), exception.getMessage());
                 }
@@ -124,18 +122,5 @@ public final class VehicleAssemblyRecipeManager {
             recipes = Map.copyOf(loaded);
             JustEnoughGuns.LOGGER.info("Loaded {} JEG vehicle assembly recipes", recipes.size());
         }
-    }
-
-    private static VehicleAssemblyRecipe parse(ResourceLocation id, JsonObject object) {
-        ResourceLocation resultVehicle = ResourceLocation.parse(object.get("result_vehicle").getAsString());
-        List<VehicleAssemblyRecipe.Ingredient> ingredients = new ArrayList<>();
-        for (JsonElement element : object.getAsJsonArray("ingredients")) {
-            JsonObject ingredient = element.getAsJsonObject();
-            ingredients.add(new VehicleAssemblyRecipe.Ingredient(
-                    ResourceLocation.parse(ingredient.get("item").getAsString()),
-                    ingredient.get("count").getAsInt()
-            ));
-        }
-        return new VehicleAssemblyRecipe(id, resultVehicle, List.copyOf(ingredients));
     }
 }
