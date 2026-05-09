@@ -771,10 +771,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
                 || this.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT) {
             this.tickServerAirMovement(engine);
+            this.tickEngineSound();
             return;
         }
         if (this.vehicleData().defaults().vehicleType() == VehicleType.BOAT) {
             this.tickServerBoatMovement(engine);
+            this.tickEngineSound();
             return;
         }
         Vec3 velocity = this.getDeltaMovement();
@@ -813,6 +815,31 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setDeltaMovement(velocity);
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.98D, 0.98D));
+        this.tickEngineSound();
+    }
+
+    private void tickEngineSound() {
+        if (this.tickCount % 20 != 0) {
+            return;
+        }
+        SoundEvent sound = VehicleSoundHelper.engineSound(this);
+        if (sound == null) {
+            return;
+        }
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        Vec3 movement = this.getDeltaMovement();
+        boolean active = this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0;
+        if (!active) {
+            active = switch (type) {
+                case LAND, BOAT -> movement.x * movement.x + movement.z * movement.z > 0.0025D;
+                case HELICOPTER, AIRCRAFT -> movement.lengthSqr() > 0.0025D;
+                case ARTILLERY -> false;
+            };
+        }
+        if (!active) {
+            return;
+        }
+        this.level().playSound(null, this, sound, SoundSource.AMBIENT, 1.0F, 1.0F);
     }
 
     private void tickServerAirMovement(EngineInfo engine) {

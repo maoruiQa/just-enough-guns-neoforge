@@ -26,6 +26,16 @@ public final class VehicleSoundHelper {
     private static final Map<String, ResourceLocation> GUIDED_FIRE_SOUNDS = Map.of(
             "bmp2", Reference.id("vehicle.bmp2.missile_fire")
     );
+    private static final Map<String, ResourceLocation> ENGINE_SOUNDS = Map.ofEntries(
+            Map.entry("a10", Reference.id("vehicle.a10.engine")),
+            Map.entry("ah6", Reference.id("vehicle.ah6.engine")),
+            Map.entry("bmp2", Reference.id("vehicle.bmp2.engine")),
+            Map.entry("lav150", Reference.id("vehicle.lav150.engine")),
+            Map.entry("mi28", Reference.id("vehicle.mi28.engine")),
+            Map.entry("speedboat", Reference.id("vehicle.speedboat.engine")),
+            Map.entry("tom6", Reference.id("vehicle.tom6.engine")),
+            Map.entry("truck", Reference.id("vehicle.truck.engine"))
+    );
 
     private VehicleSoundHelper() {}
 
@@ -45,5 +55,10 @@ public final class VehicleSoundHelper {
             return sound.get();
         }
         return fallbackStats.fireSoundEvent().orElse(SoundEvents.CROSSBOW_SHOOT);
+    }
+
+    public static SoundEvent engineSound(VehicleEntity vehicle) {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(ENGINE_SOUNDS.get(vehicle.vehicleDataId().getPath()));
+        return sound == null ? null : sound.get();
     }
 }
