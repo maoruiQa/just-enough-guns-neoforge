@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModBlockEntities;
@@ -69,6 +70,10 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
         if (!(entity instanceof VehicleEntity vehicle)) {
             return false;
         }
+        if (!this.hasDeploymentSpace(level, type)) {
+            player.displayClientMessage(Component.translatable("message.jeg.vehicle_container.blocked"), true);
+            return false;
+        }
         if (this.entityTag != null) {
             vehicle.loadVehicleContainerState(this.entityTag);
         }
@@ -79,6 +84,26 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
         }
         level.addFreshEntity(vehicle);
         level.removeBlock(this.getBlockPos(), false);
+        return true;
+    }
+
+    private boolean hasDeploymentSpace(Level level, EntityType<?> type) {
+        int radius = (int) (type.getDimensions().width() / 2.0F + 1.0F);
+        int height = (int) (type.getDimensions().height() + 1.0F);
+        BlockPos origin = this.getBlockPos();
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = 0; y < height; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    if (x == 0 && y == 0 && z == 0) {
+                        continue;
+                    }
+                    BlockState state = level.getBlockState(origin.offset(x, y, z));
+                    if (state.canOcclude() && !state.is(Blocks.SNOW)) {
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 
