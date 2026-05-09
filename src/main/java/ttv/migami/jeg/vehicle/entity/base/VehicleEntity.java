@@ -472,11 +472,21 @@ public class VehicleEntity extends Entity implements MenuProvider {
     }
 
     private void updateRiderPosition() {
-        Entity passenger = this.getControllingPassenger();
-        if (passenger == null) {
-            return;
+        for (int index = 0; index < this.getPassengers().size(); index++) {
+            Entity passenger = this.getPassengers().get(index);
+            SeatInfo seat = this.seatForPassenger(index);
+            Vec3 offset = this.rotateSeatOffset(seat);
+            passenger.setPos(this.getX() + offset.x, this.getY() + offset.y, this.getZ() + offset.z);
         }
-        passenger.setPos(this.getX(), this.getY() + this.getPassengersRidingOffset(), this.getZ());
+    }
+
+    private Vec3 rotateSeatOffset(SeatInfo seat) {
+        double yaw = Math.toRadians(this.getYRot());
+        double cos = Math.cos(yaw);
+        double sin = Math.sin(yaw);
+        double x = seat.x() * cos - seat.z() * sin;
+        double z = seat.x() * sin + seat.z() * cos;
+        return new Vec3(x, seat.y(), z);
     }
 
     @Override
@@ -703,7 +713,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     @Override
     protected boolean canAddPassenger(Entity passenger) {
-        return this.getPassengers().isEmpty();
+        return this.getPassengers().size() < this.vehicleData().defaults().seats().size();
     }
 
     public double getPassengersRidingOffset() {
@@ -713,7 +723,16 @@ public class VehicleEntity extends Entity implements MenuProvider {
     @Override
     @Nullable
     public LivingEntity getControllingPassenger() {
-        Entity passenger = this.getFirstPassenger();
+        Entity passenger = null;
+        for (int index = 0; index < this.getPassengers().size(); index++) {
+            if (this.seatForPassenger(index).driver()) {
+                passenger = this.getPassengers().get(index);
+                break;
+            }
+        }
+        if (passenger == null) {
+            passenger = this.getFirstPassenger();
+        }
         return passenger instanceof LivingEntity living ? living : null;
     }
 

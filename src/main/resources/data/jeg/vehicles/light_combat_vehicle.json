@@ -7,6 +7,24 @@
   "max_energy": 160,
   "allow_free_cam": true,
   "container_type": "none",
+  "seats": [
+    {
+      "index": 0,
+      "x": -0.25,
+      "y": 0.78,
+      "z": 0.05,
+      "driver": true,
+      "enclosed": true
+    },
+    {
+      "index": 1,
+      "x": 0.35,
+      "y": 0.78,
+      "z": -0.15,
+      "driver": false,
+      "enclosed": true
+    }
+  ],
   "engine": {
     "type": "wheel",
     "acceleration": 0.038,

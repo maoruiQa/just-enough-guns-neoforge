@@ -2,6 +2,7 @@ package ttv.migami.jeg.vehicle.data;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import java.util.EnumMap;
@@ -85,6 +86,7 @@ public final class VehicleDataManager {
         int autoRepairCooldownTicks = getInt(object, "auto_repair_cooldown_ticks", fallback.autoRepairCooldownTicks());
         int maxEnergy = getInt(object, "max_energy", fallback.maxEnergy());
         EngineInfo engine = parseEngine(getObject(object, "engine"), fallback.engine());
+        List<SeatInfo> seats = parseSeats(object, fallback.seats());
         boolean allowFreeCam = getBoolean(object, "allow_free_cam", fallback.allowFreeCam());
         VehicleContainerType containerType = getEnum(object, "container_type", VehicleContainerType.class, fallback.containerType());
         CameraPos camera = parseCamera(getObject(object, "third_person_camera"), fallback.thirdPersonCamera());
@@ -99,7 +101,7 @@ public final class VehicleDataManager {
                 autoRepairCooldownTicks,
                 maxEnergy,
                 engine,
-                List.of(SeatInfo.DRIVER),
+                seats,
                 allowFreeCam,
                 containerType,
                 camera,
@@ -132,6 +134,31 @@ public final class VehicleDataManager {
                 getDouble(object, "y", fallback.y()),
                 getDouble(object, "z", fallback.z())
         );
+    }
+
+    private static List<SeatInfo> parseSeats(JsonObject object, List<SeatInfo> fallback) {
+        JsonElement element = object.get("seats");
+        if (element == null || !element.isJsonArray()) {
+            return fallback;
+        }
+        JsonArray array = element.getAsJsonArray();
+        if (array.isEmpty()) {
+            return fallback;
+        }
+        java.util.ArrayList<SeatInfo> seats = new java.util.ArrayList<>();
+        for (int index = 0; index < array.size(); index++) {
+            JsonObject seat = array.get(index).getAsJsonObject();
+            SeatInfo fallbackSeat = index < fallback.size() ? fallback.get(index) : SeatInfo.DRIVER;
+            seats.add(new SeatInfo(
+                    getInt(seat, "index", index),
+                    getDouble(seat, "x", fallbackSeat.x()),
+                    getDouble(seat, "y", fallbackSeat.y()),
+                    getDouble(seat, "z", fallbackSeat.z()),
+                    getBoolean(seat, "driver", index == 0),
+                    getBoolean(seat, "enclosed", fallbackSeat.enclosed())
+            ));
+        }
+        return List.copyOf(seats);
     }
 
     private static VehicleArmorProfile parseArmor(JsonObject object, VehicleArmorProfile fallback) {
