@@ -147,4 +147,27 @@ public record DefaultVehicleData(
             SeekInfo.NONE,
             new DestroyInfo(true, 2.2F)
     );
+
+    public static final DefaultVehicleData TEST_AIRCRAFT = new DefaultVehicleData(
+            Reference.id("test_aircraft"),
+            "jeg:test_aircraft",
+            VehicleType.AIRCRAFT,
+            65.0F,
+            0.01F,
+            120,
+            150,
+            new EngineInfo(EngineType.JET, 0.03D, 0.65D, 0.12D, 0.94D),
+            List.of(new SeatInfo(0, 0.0D, 0.8D, 0.0D, true, false)),
+            true,
+            VehicleContainerType.NONE,
+            new CameraPos(0.0D, 3.0D, -8.0D),
+            OBBInfo.DEFAULT,
+            VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
+                    new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
+            ),
+            SeekInfo.NONE,
+            new DestroyInfo(true, 2.4F)
+    );
 }
