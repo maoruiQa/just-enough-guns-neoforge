@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+version = "${project.mod_version}+fabric26.1"
 group = project.mod_group
 
 base {
@@ -23,7 +23,9 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     implementation "maven.modrinth:geckolib:yUpAp23B"
     implementation "com.electronwill.night-config:toml:3.8.1"
+    implementation "com.electronwill.night-config:core:3.8.1"
     include "com.electronwill.night-config:toml:3.8.1"
+    include "com.electronwill.night-config:core:3.8.1"
     compileOnly files("C:/Users/user/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-clientonly-deobf/${project.minecraft_version}/minecraft-clientonly-deobf-${project.minecraft_version}.jar")
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
@@ -49,11 +51,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    inputs.property "version", project.version
+    inputs.property "version", project.mod_version
     inputs.property "minecraft_version_range", project.minecraft_version_range
     filesMatching("fabric.mod.json") {
         expand(
-                "version": project.version,
+                "version": project.mod_version,
                 "minecraft_version_range": project.minecraft_version_range
         )
     }
