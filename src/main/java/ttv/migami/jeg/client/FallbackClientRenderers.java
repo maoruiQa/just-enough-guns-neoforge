@@ -26,7 +26,7 @@ import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.init.ModEntities;
-import ttv.migami.jeg.vehicle.client.render.TestVehicleRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class FallbackClientRenderers {
@@ -46,12 +46,12 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.RAID_ENTITY.get(), NullEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.TEST_WHEEL_VEHICLE.get(), TestVehicleRenderer::new);
-        event.registerEntityRenderer(ModEntities.LIGHT_COMBAT_VEHICLE.get(), TestVehicleRenderer::new);
-        event.registerEntityRenderer(ModEntities.TEST_HELICOPTER.get(), TestVehicleRenderer::new);
-        event.registerEntityRenderer(ModEntities.TEST_BOAT.get(), TestVehicleRenderer::new);
-        event.registerEntityRenderer(ModEntities.TEST_ARTILLERY.get(), TestVehicleRenderer::new);
-        event.registerEntityRenderer(ModEntities.TEST_AIRCRAFT.get(), TestVehicleRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_WHEEL_VEHICLE.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.LIGHT_COMBAT_VEHICLE.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_HELICOPTER.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_BOAT.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), NullEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), NullEntityRenderer::new);
     }

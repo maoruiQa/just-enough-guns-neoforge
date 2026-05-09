@@ -28,6 +28,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -51,7 +58,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 
-public class VehicleEntity extends Entity implements MenuProvider {
+public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
@@ -78,6 +85,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final String TAG_LEFT_WHEEL_HEALTH = "LeftWheelHealth";
     private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
+    private static final String GECKO_CONTROLLER = "Vehicle";
     private static final float PART_MAX_HEALTH = 10.0F;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
@@ -85,8 +93,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double GRAVITY = 0.08D;
+    private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
+    private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
@@ -100,6 +110,24 @@ public class VehicleEntity extends Entity implements MenuProvider {
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
         this.blocksBuilding = true;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(
+                this,
+                GECKO_CONTROLLER,
+                0,
+                state -> {
+                    state.setAndContinue(GECKO_IDLE);
+                    return PlayState.CONTINUE;
+                }
+        ));
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.geckoCache;
     }
 
     @Override
