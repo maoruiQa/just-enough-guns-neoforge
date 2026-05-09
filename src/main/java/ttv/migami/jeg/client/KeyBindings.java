@@ -41,6 +41,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_BRAKE_DESCEND = new KeyMapping(
+            "key.jeg.vehicle_brake_descend",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_CONTROL,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
             "key.jeg.vehicle_change_seat",
             InputConstants.Type.KEYSYM,
@@ -56,6 +63,7 @@ public final class KeyBindings {
         event.register(VEHICLE_FREE_LOOK);
         event.register(VEHICLE_SWITCH_WEAPON);
         event.register(VEHICLE_DEPLOY_DECOY);
+        event.register(VEHICLE_BRAKE_DESCEND);
         event.register(VEHICLE_CHANGE_SEAT);
     }
 }
