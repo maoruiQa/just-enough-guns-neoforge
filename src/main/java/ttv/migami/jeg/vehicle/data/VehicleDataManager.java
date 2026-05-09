@@ -94,6 +94,7 @@ public final class VehicleDataManager {
         float autoRepairPerTick = getFloat(object, "auto_repair_per_tick", fallback.autoRepairPerTick());
         int autoRepairCooldownTicks = getInt(object, "auto_repair_cooldown_ticks", fallback.autoRepairCooldownTicks());
         int maxEnergy = getInt(object, "max_energy", fallback.maxEnergy());
+        float upStep = getFloat(object, "up_step", fallback.upStep());
         EngineInfo engine = parseEngine(getObject(object, "engine"), fallback.engine());
         List<SeatInfo> seats = parseSeats(object, fallback.seats());
         boolean allowFreeCam = getBoolean(object, "allow_free_cam", fallback.allowFreeCam());
@@ -117,6 +118,7 @@ public final class VehicleDataManager {
                 autoRepairPerTick,
                 autoRepairCooldownTicks,
                 maxEnergy,
+                upStep,
                 engine,
                 seats,
                 allowFreeCam,

@@ -307,6 +307,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.vehicleData().defaults().hasDecoy();
     }
 
+    @Override
+    public float maxUpStep() {
+        return this.vehicleData().defaults().upStep();
+    }
+
     public boolean isFreeLookInputDown() {
         return this.vehicleData().defaults().allowFreeCam() && this.input.freeLook();
     }
