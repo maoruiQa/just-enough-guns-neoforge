@@ -86,6 +86,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TURRET_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> DATA_TURRET_YAW = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_TURRET_PITCH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final int DECOY_COOLDOWN_TICKS = 60;
@@ -187,6 +189,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
         builder.define(DATA_TURRET_DAMAGED, false);
+        builder.define(DATA_TURRET_YAW, 0.0F);
+        builder.define(DATA_TURRET_PITCH, 0.0F);
     }
 
     public VehicleData vehicleData() {
@@ -291,6 +295,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_TURRET_DAMAGED);
     }
 
+    public float turretYaw() {
+        return this.entityData.get(DATA_TURRET_YAW);
+    }
+
+    public float turretPitch() {
+        return this.entityData.get(DATA_TURRET_PITCH);
+    }
+
     public boolean hasBuiltInDecoy() {
         return this.vehicleData().defaults().hasDecoy();
     }
@@ -312,6 +324,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (input.previousWeapon() && this.selectWeaponFor(player, -1)) {
             this.weaponControllerId = player.getId();
+        }
+        if (this.canUseSelectedWeapon(player, this.selectedWeapon())) {
+            this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(player.getYRot() - this.getYRot()));
+            this.entityData.set(DATA_TURRET_PITCH, player.getXRot());
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
