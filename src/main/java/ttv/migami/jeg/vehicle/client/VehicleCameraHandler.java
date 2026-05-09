@@ -6,6 +6,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent;
+import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
@@ -57,5 +58,19 @@ public final class VehicleCameraHandler {
             return;
         }
         event.setFOV(event.getFOV() / VEHICLE_ZOOM_DIVISOR);
+    }
+
+    @SubscribeEvent
+    public static void onRenderHand(RenderHandEvent event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return;
+        }
+        if (VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.freeLookDown()
+                && vehicle.vehicleData().defaults().allowFreeCam()) {
+            event.setCanceled(true);
+        }
     }
 }
