@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -185,6 +186,7 @@ public final class VehicleDataManager {
                     getBoolean(seat, "enclosed", fallbackSeat.enclosed())
             ));
         }
+        seats.sort(Comparator.comparingInt(SeatInfo::index));
         return List.copyOf(seats);
     }
 
