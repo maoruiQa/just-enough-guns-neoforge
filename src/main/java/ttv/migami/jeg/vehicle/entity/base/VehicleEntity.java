@@ -1263,6 +1263,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return Mth.clamp(fallbackIndex, 0, Math.max(0, seatCount - 1));
     }
 
+    @Nullable
+    public Entity passengerForSeat(int seatIndex) {
+        for (int index = 0; index < this.getPassengers().size(); index++) {
+            Entity passenger = this.getPassengers().get(index);
+            if (this.seatIndexForPassenger(passenger, index) == seatIndex) {
+                return passenger;
+            }
+        }
+        return null;
+    }
+
     private boolean isSeatOccupied(int seatIndex, @Nullable Entity except) {
         for (int index = 0; index < this.getPassengers().size(); index++) {
             Entity passenger = this.getPassengers().get(index);

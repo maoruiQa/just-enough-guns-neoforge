@@ -175,7 +175,7 @@ public final class VehicleHudOverlay {
         for (int seat = seatCount - 1; seat >= 0; seat--) {
             int row = seatCount - 1 - seat;
             int y = screenHeight - 35 - row * 12;
-            Entity passenger = seat < vehicle.getPassengers().size() ? vehicle.getPassengers().get(seat) : null;
+            Entity passenger = vehicle.passengerForSeat(seat);
             Component name = passenger == null ? Component.literal("---") : passenger.getName();
             String number = "[" + (seat + 1) + "]";
             guiGraphics.drawString(minecraft.font, number, 25 - minecraft.font.width(number), y, 0xFF66FF00);
