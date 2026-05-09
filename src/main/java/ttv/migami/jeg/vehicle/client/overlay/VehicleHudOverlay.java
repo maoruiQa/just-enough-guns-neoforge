@@ -12,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -76,8 +77,13 @@ public final class VehicleHudOverlay {
         guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
         lineY += 11;
         if (vehicle.isSelectedVehicleWeaponGuided()) {
-            Component lock = Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking");
-            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88);
+            boolean seeking = VehicleClientState.isRidingVehicle()
+                    && VehicleClientState.vehicleId() == vehicle.getId()
+                    && VehicleClientState.seekDown();
+            Component lock = seeking
+                    ? Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking")
+                    : Component.translatable("hud.jeg.vehicle.seek_prompt", KeyBindings.VEHICLE_SEEK.getTranslatedKeyMessage());
+            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, seeking ? vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88 : 0xFFB8E0FF);
             lineY += 11;
         }
         if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged() || vehicle.isTurretDamaged()) {
