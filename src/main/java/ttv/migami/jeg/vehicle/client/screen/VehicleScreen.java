@@ -3,10 +3,14 @@ package ttv.migami.jeg.vehicle.client.screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
+    private static final ResourceLocation PLAYER_INVENTORY = Reference.id("textures/gui/vehicle/inventory/player_inventory.png");
+
     public VehicleScreen(VehicleMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
@@ -22,7 +26,7 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
         if (this.menu.vehicleRows() > 0) {
             guiGraphics.fill(x + 6, y + 16, x + this.imageWidth - 6, y + 24 + this.menu.vehicleRows() * 18, 0xAA111418);
         }
-        guiGraphics.fill(x + 6, y + this.menu.playerInventoryY() - 4, x + this.imageWidth - 6, y + this.imageHeight - 6, 0xAA111418);
+        guiGraphics.blit(PLAYER_INVENTORY, x, y + this.menu.playerInventoryY() - 4, 0, 0, 175, 90, 256, 256);
     }
 
     @Override

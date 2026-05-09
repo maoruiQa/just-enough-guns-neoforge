@@ -60,5 +60,5 @@ These records are JEG test or compatibility vehicles. They do not have direct SW
 - Vehicle icons from `textures/vehicle_icon/*_icon.png` are copied for mapped SW vehicles and shown in the JEG assembling preview; they are not yet used for category/filter UI.
 - SW JSON behavior data under `assets/superbwarfare/sbw/vehicles/*.json` has not been fully translated into JEG `data/jeg/vehicles/*.json`.
 - Representative SW weapon-fire sounds are copied and registered for `a10`, `ah6`, `bmp2`, `hpj11`, `laser_tower`, `lav150`, `mi28`, and `waveforce_tower`; engine loops, horns, distance variants, and remaining vehicle-specific sounds are not yet mapped.
-- SW GUI inventory textures under `textures/gui/vehicle/inventory/*.png` are available as references, but JEG slot layout must be changed before using them directly.
+- SW `player_inventory.png` is used for the JEG vehicle screen player inventory area; full vehicle container textures under `textures/gui/vehicle/inventory/*.png` still need JEG slot layout changes before direct use.
 - SW container/rendering assets for vehicle deployers, charging station, and vehicle assembling table are only partly copied into JEG block model usage.
