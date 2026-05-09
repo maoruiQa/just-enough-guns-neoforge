@@ -46,17 +46,23 @@ public final class VehicleHudOverlay {
 
         Component health = Component.translatable("hud.jeg.vehicle.health", Math.round(vehicle.vehicleHealth()), Math.round(vehicle.maxVehicleHealth()));
         guiGraphics.drawString(minecraft.font, health, (width - minecraft.font.width(health)) / 2, y + 11, 0xFFE6E6E6);
+        int lineY = y + 22;
         if (vehicle.maxVehicleEnergy() > 0) {
             Component energy = Component.translatable("hud.jeg.vehicle.energy", vehicle.vehicleEnergy(), vehicle.maxVehicleEnergy());
-            guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, y + 22, 0xFF8FC7FF);
+            guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY, 0xFF8FC7FF);
+            lineY += 11;
         }
         Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
         Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
-        guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, y + 33, 0xFFFFDD88);
+        guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
+        lineY += 11;
+        Component decoy = Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
+        guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
+        lineY += 11;
         if (vehicle.isSelectedVehicleWeaponGuided()) {
             Component lock = Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking");
-            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, y + 44, vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88);
-            y += 11;
+            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88);
+            lineY += 11;
         }
         if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged()) {
             Component damage = Component.translatable(
@@ -65,7 +71,7 @@ public final class VehicleHudOverlay {
                     vehicle.isLeftWheelDamaged() ? "!" : "-",
                     vehicle.isRightWheelDamaged() ? "!" : "-"
             );
-            guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, y + 44, 0xFFFF7777);
+            guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, lineY, 0xFFFF7777);
         }
     }
 

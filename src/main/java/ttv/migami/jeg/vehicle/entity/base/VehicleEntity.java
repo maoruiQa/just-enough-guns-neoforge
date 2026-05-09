@@ -75,6 +75,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_FLARE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_DECOY_COOLDOWN = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_MISSILE_LOCK_TARGET = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -151,6 +153,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_RIFLE_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON, 0);
         builder.define(DATA_SELECTED_WEAPON_AMMO, 0);
+        builder.define(DATA_FLARE_AMMO, 0);
+        builder.define(DATA_DECOY_COOLDOWN, 0);
         builder.define(DATA_MISSILE_LOCKED, false);
         builder.define(DATA_MISSILE_LOCK_TARGET, -1);
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
@@ -219,6 +223,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public int selectedVehicleWeaponAmmo() {
         return this.entityData.get(DATA_SELECTED_WEAPON_AMMO);
+    }
+
+    public int vehicleFlareAmmo() {
+        return this.entityData.get(DATA_FLARE_AMMO);
+    }
+
+    public int vehicleDecoyCooldown() {
+        return this.entityData.get(DATA_DECOY_COOLDOWN);
     }
 
     public ResourceLocation selectedVehicleWeaponId() {
@@ -303,6 +315,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickAutoRepair();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
             this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.countAmmo(this.selectedWeapon().ammoId()));
+            this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
+            this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         }
         this.updateRiderPosition();
     }
@@ -316,11 +330,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         VehicleWeaponInfo weapon = this.selectedWeapon();
         GunStats stats = GunDefinitions.ALL.get(weapon.weaponId());
-        if (stats == null || !this.consumeEnergy(weapon.energyCost()) || !this.consumeAmmo(weapon.ammoId())) {
+        if (stats == null || !this.hasEnergy(weapon.energyCost()) || !this.hasAmmo(weapon.ammoId())) {
             return;
         }
         Vec3 direction = shooter.getViewVector(1.0F).normalize();
         if (direction.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+        if (!this.consumeEnergy(weapon.energyCost()) || !this.consumeAmmo(weapon.ammoId())) {
             return;
         }
         if (weapon.guided()) {
@@ -525,6 +542,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         return count;
+    }
+
+    private boolean hasAmmo(ResourceLocation ammoId) {
+        return this.countAmmo(ammoId) > 0;
+    }
+
+    private boolean hasEnergy(int amount) {
+        return amount <= 0 || this.vehicleEnergy() >= amount;
     }
 
     private boolean consumeAmmo(ResourceLocation ammoId) {
