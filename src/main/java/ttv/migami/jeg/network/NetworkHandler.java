@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,7 +64,7 @@ public final class NetworkHandler {
     private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof VehicleAssemblingMenu menu) {
-                menu.assembleTestVehicle(player);
+                menu.assembleVehicle(player, payload.recipeId());
             }
         });
     }
@@ -285,12 +286,12 @@ public final class NetworkHandler {
         client.getConnection().send(UnloadMagazineRequestPayload.INSTANCE);
     }
 
-    public static void sendAssembleTestVehicle() {
+    public static void sendAssembleVehicle(ResourceLocation recipeId) {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.getConnection() == null) {
             return;
         }
-        client.getConnection().send(AssembleTestVehiclePayload.INSTANCE);
+        client.getConnection().send(new AssembleTestVehiclePayload(recipeId));
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {

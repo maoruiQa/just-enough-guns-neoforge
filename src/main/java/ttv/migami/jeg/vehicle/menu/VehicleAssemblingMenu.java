@@ -2,6 +2,7 @@ package ttv.migami.jeg.vehicle.menu;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -31,14 +32,14 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
         }
     }
 
-    public boolean assembleTestVehicle(Player player) {
-        VehicleAssemblyRecipe recipe = VehicleAssemblyRecipeManager.testWheelRecipe();
+    public boolean assembleVehicle(Player player, ResourceLocation recipeId) {
+        VehicleAssemblyRecipe recipe = VehicleAssemblyRecipeManager.get(recipeId);
         if (recipe == null || !this.hasCost(recipe)) {
             player.displayClientMessage(Component.translatable("message.jeg.vehicle_assembling.missing_materials"), true);
             return false;
         }
         this.removeCost(recipe);
-        ItemStack result = VehicleContainerBlockEntity.createDefaultItem();
+        ItemStack result = VehicleContainerBlockEntity.createItemForVehicle(recipe.resultVehicle());
         if (!player.getInventory().add(result)) {
             player.drop(result, false);
         }

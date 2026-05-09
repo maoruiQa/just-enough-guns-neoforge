@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -39,9 +40,13 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
     }
 
     public static ItemStack createDefaultItem() {
+        return createItemForVehicle(Reference.id("test_wheel_vehicle"));
+    }
+
+    public static ItemStack createItemForVehicle(ResourceLocation vehicleId) {
         ItemStack stack = new ItemStack(ModItems.VEHICLE_CONTAINER.get());
         CompoundTag tag = new CompoundTag();
-        tag.putString(TAG_ENTITY_TYPE, "jeg:test_wheel_vehicle");
+        tag.putString(TAG_ENTITY_TYPE, ttv.migami.jeg.vehicle.data.VehicleDataManager.get(vehicleId).defaults().entityType());
         BlockItem.setBlockEntityData(stack, ModBlockEntities.VEHICLE_CONTAINER.get(), tag);
         return stack;
     }

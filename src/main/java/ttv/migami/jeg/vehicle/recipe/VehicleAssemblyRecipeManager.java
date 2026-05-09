@@ -30,15 +30,31 @@ public final class VehicleAssemblyRecipeManager {
         return recipes.get(TEST_WHEEL_RECIPE);
     }
 
+    public static VehicleAssemblyRecipe get(ResourceLocation id) {
+        return recipes.get(id);
+    }
+
     private static Map<ResourceLocation, VehicleAssemblyRecipe> defaultsOnly() {
-        return Map.of(TEST_WHEEL_RECIPE, new VehicleAssemblyRecipe(
-                TEST_WHEEL_RECIPE,
-                Reference.id("test_wheel_vehicle"),
-                List.of(
-                        new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 16),
-                        new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 4)
+        ResourceLocation lightCombatRecipe = Reference.id("light_combat_vehicle");
+        return Map.of(
+                TEST_WHEEL_RECIPE, new VehicleAssemblyRecipe(
+                        TEST_WHEEL_RECIPE,
+                        Reference.id("test_wheel_vehicle"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 16),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 4)
+                        )
+                ),
+                lightCombatRecipe, new VehicleAssemblyRecipe(
+                        lightCombatRecipe,
+                        Reference.id("light_combat_vehicle"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 32),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 12),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 8)
+                        )
                 )
-        ));
+        );
     }
 
     private static final class Loader extends SimpleJsonResourceReloadListener {
