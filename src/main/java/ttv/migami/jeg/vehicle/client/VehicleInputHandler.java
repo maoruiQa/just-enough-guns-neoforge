@@ -8,6 +8,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
+import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
@@ -23,6 +24,9 @@ public final class VehicleInputHandler {
             return;
         }
 
+        if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
+            NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
+        }
         minecraft.getConnection().send(new VehicleInputPayload(
                 vehicle.getId(),
                 minecraft.options.keyUp.isDown(),

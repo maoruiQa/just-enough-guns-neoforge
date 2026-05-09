@@ -1,5 +1,8 @@
 package ttv.migami.jeg.vehicle.entity.base;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -27,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -97,6 +101,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
+    private final Map<UUID, Integer> seatAssignments = new HashMap<>();
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
@@ -254,6 +259,26 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tryDeployDecoy(player);
         }
         this.input = input;
+    }
+
+    public void changeSeat(ServerPlayer player) {
+        if (player.getVehicle() != this) {
+            return;
+        }
+        int seatCount = this.vehicleData().defaults().seats().size();
+        if (seatCount < 2) {
+            return;
+        }
+        int fallbackIndex = this.getPassengers().indexOf(player);
+        int currentSeat = this.seatIndexForPassenger(player, fallbackIndex);
+        for (int offset = 1; offset < seatCount; offset++) {
+            int nextSeat = (currentSeat + offset) % seatCount;
+            if (!this.isSeatOccupied(nextSeat, player)) {
+                this.seatAssignments.put(player.getUUID(), nextSeat);
+                this.input = VehicleInput.EMPTY;
+                return;
+            }
+        }
     }
 
     @Override
@@ -664,7 +689,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void updateRiderPosition() {
         for (int index = 0; index < this.getPassengers().size(); index++) {
             Entity passenger = this.getPassengers().get(index);
-            SeatInfo seat = this.seatForPassenger(index);
+            SeatInfo seat = this.seatForPassenger(passenger, index);
             Vec3 offset = this.rotateSeatOffset(seat);
             passenger.setPos(this.getX() + offset.x, this.getY() + offset.y, this.getZ() + offset.z);
         }
@@ -792,7 +817,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!(passenger instanceof LivingEntity living) || passenger == sourceEntity || passenger == directEntity) {
                 continue;
             }
-            SeatInfo seat = this.seatForPassenger(index);
+            SeatInfo seat = this.seatForPassenger(passenger, index);
             if (seat.enclosed() && !penetrated) {
                 continue;
             }
@@ -806,6 +831,29 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return seats.get(index);
         }
         return SeatInfo.DRIVER;
+    }
+
+    private SeatInfo seatForPassenger(Entity passenger, int fallbackIndex) {
+        return this.seatForPassenger(this.seatIndexForPassenger(passenger, fallbackIndex));
+    }
+
+    private int seatIndexForPassenger(Entity passenger, int fallbackIndex) {
+        int seatCount = this.vehicleData().defaults().seats().size();
+        int assignedSeat = this.seatAssignments.getOrDefault(passenger.getUUID(), fallbackIndex);
+        if (assignedSeat >= 0 && assignedSeat < seatCount) {
+            return assignedSeat;
+        }
+        return Mth.clamp(fallbackIndex, 0, Math.max(0, seatCount - 1));
+    }
+
+    private boolean isSeatOccupied(int seatIndex, @Nullable Entity except) {
+        for (int index = 0; index < this.getPassengers().size(); index++) {
+            Entity passenger = this.getPassengers().get(index);
+            if (passenger != except && this.seatIndexForPassenger(passenger, index) == seatIndex) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private OBBInfo.Part estimateHitPart(DamageSource source) {
@@ -936,6 +984,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.getPassengers().size() < this.vehicleData().defaults().seats().size();
     }
 
+    @Override
+    protected void addPassenger(@NotNull Entity passenger) {
+        super.addPassenger(passenger);
+        int seatCount = this.vehicleData().defaults().seats().size();
+        for (int seat = 0; seat < seatCount; seat++) {
+            if (!this.isSeatOccupied(seat, passenger)) {
+                this.seatAssignments.put(passenger.getUUID(), seat);
+                return;
+            }
+        }
+    }
+
+    @Override
+    protected void removePassenger(@NotNull Entity passenger) {
+        this.seatAssignments.remove(passenger.getUUID());
+        super.removePassenger(passenger);
+    }
+
     public double getPassengersRidingOffset() {
         return 0.45D;
     }
@@ -955,13 +1021,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     public LivingEntity getControllingPassenger() {
         Entity passenger = null;
+        boolean hasDriverSeat = false;
         for (int index = 0; index < this.getPassengers().size(); index++) {
-            if (this.seatForPassenger(index).driver()) {
+            if (this.seatForPassenger(this.getPassengers().get(index), index).driver()) {
                 passenger = this.getPassengers().get(index);
                 break;
             }
         }
-        if (passenger == null) {
+        for (SeatInfo seat : this.vehicleData().defaults().seats()) {
+            hasDriverSeat |= seat.driver();
+        }
+        if (passenger == null && !hasDriverSeat) {
             passenger = this.getFirstPassenger();
         }
         return passenger instanceof LivingEntity living ? living : null;

@@ -41,6 +41,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
+            "key.jeg.vehicle_change_seat",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            CATEGORY
+    );
+
     private KeyBindings() {}
 
     @SubscribeEvent
@@ -49,5 +56,6 @@ public final class KeyBindings {
         event.register(VEHICLE_FREE_LOOK);
         event.register(VEHICLE_SWITCH_WEAPON);
         event.register(VEHICLE_DEPLOY_DECOY);
+        event.register(VEHICLE_CHANGE_SEAT);
     }
 }
