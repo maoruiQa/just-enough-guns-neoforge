@@ -8,7 +8,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.init.ModMenuTypes;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleMenu extends AbstractContainerMenu {
     public static final int MAX_VEHICLE_SLOT_COUNT = 54;
@@ -17,6 +19,8 @@ public final class VehicleMenu extends AbstractContainerMenu {
     private final Container vehicleInventory;
     private final int vehicleSlotCount;
     private final int playerInventoryY;
+    @Nullable
+    private final VehicleEntity vehicle;
 
     public VehicleMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, DEFAULT_VEHICLE_SLOT_COUNT);
@@ -31,10 +35,15 @@ public final class VehicleMenu extends AbstractContainerMenu {
     }
 
     public VehicleMenu(int containerId, Inventory playerInventory, Container vehicleInventory, int vehicleSlotCount) {
+        this(containerId, playerInventory, vehicleInventory, vehicleSlotCount, null);
+    }
+
+    public VehicleMenu(int containerId, Inventory playerInventory, Container vehicleInventory, int vehicleSlotCount, @Nullable VehicleEntity vehicle) {
         super(ModMenuTypes.VEHICLE_MENU.get(), containerId);
         this.vehicleSlotCount = Math.max(0, Math.min(vehicleSlotCount, MAX_VEHICLE_SLOT_COUNT));
         checkContainerSize(vehicleInventory, this.vehicleSlotCount);
         this.vehicleInventory = vehicleInventory;
+        this.vehicle = vehicle;
         this.vehicleInventory.startOpen(playerInventory.player);
         int rows = this.vehicleRows();
         this.playerInventoryY = 20 + rows * 18 + 24;
@@ -94,6 +103,9 @@ public final class VehicleMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
+        if (this.vehicle != null) {
+            return this.vehicle.isAlive() && player.distanceToSqr(this.vehicle) <= 64.0D;
+        }
         return this.vehicleInventory.stillValid(player);
     }
 

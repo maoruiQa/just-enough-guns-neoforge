@@ -1167,7 +1167,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     @Nullable
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new VehicleMenu(containerId, playerInventory, this.inventory, this.vehicleContainerSlots());
+        return new VehicleMenu(containerId, playerInventory, this.inventory, this.vehicleContainerSlots(), this);
     }
 
     private int vehicleContainerSlots() {
