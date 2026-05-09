@@ -128,6 +128,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
+    private static final ResourceLocation LAV150_ID = Reference.id("lav150");
+    private static final float LAV150_MIN_WEAPON_X_ROT = -32.5F;
+    private static final float LAV150_MAX_WEAPON_X_ROT = 15.0F;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -335,7 +338,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.canUseSelectedWeapon(player, this.selectedWeapon())) {
             this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(player.getYRot() - this.getYRot()));
-            this.entityData.set(DATA_TURRET_PITCH, player.getXRot());
+            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -424,7 +427,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (stats == null || !this.hasEnergy(weapon.energyCost()) || !this.hasAmmo(weapon.ammoId())) {
             return;
         }
-        Vec3 direction = shooter.getViewVector(1.0F).normalize();
+        Vec3 direction = this.weaponAimDirection(shooter);
         if (direction.lengthSqr() < 1.0E-4D) {
             return;
         }
@@ -506,6 +509,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()) : null;
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity));
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private Vec3 weaponAimDirection(LivingEntity shooter) {
+        return Vec3.directionFromRotation(this.weaponPitch(shooter), shooter.getYRot()).normalize();
+    }
+
+    private float weaponPitch(LivingEntity shooter) {
+        if (this.vehicleDataId().equals(LAV150_ID)) {
+            return Mth.clamp(shooter.getXRot(), LAV150_MIN_WEAPON_X_ROT, LAV150_MAX_WEAPON_X_ROT);
+        }
+        return shooter.getXRot();
     }
 
     @Nullable
