@@ -27,9 +27,11 @@ public final class VehicleHudOverlay {
             return;
         }
         render(event.getGuiGraphics(), minecraft, vehicle);
+        event.setCanceled(true);
     }
 
     private static void render(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        renderReticle(guiGraphics, vehicle);
         int width = guiGraphics.guiWidth();
         int y = guiGraphics.guiHeight() - 58;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
@@ -64,6 +66,29 @@ public final class VehicleHudOverlay {
                     vehicle.isRightWheelDamaged() ? "!" : "-"
             );
             guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, y + 44, 0xFFFF7777);
+        }
+    }
+
+    private static void renderReticle(GuiGraphics guiGraphics, VehicleEntity vehicle) {
+        int centerX = guiGraphics.guiWidth() / 2;
+        int centerY = guiGraphics.guiHeight() / 2;
+        int color = vehicle.isSelectedVehicleWeaponGuided()
+                ? (vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88)
+                : 0xFFE6E6E6;
+        guiGraphics.fill(centerX - 1, centerY - 1, centerX + 1, centerY + 1, color);
+        guiGraphics.fill(centerX - 13, centerY, centerX - 5, centerY + 1, color);
+        guiGraphics.fill(centerX + 5, centerY, centerX + 13, centerY + 1, color);
+        guiGraphics.fill(centerX, centerY - 13, centerX + 1, centerY - 5, color);
+        guiGraphics.fill(centerX, centerY + 5, centerX + 1, centerY + 13, color);
+        if (vehicle.isSelectedVehicleWeaponGuided()) {
+            guiGraphics.fill(centerX - 18, centerY - 18, centerX - 10, centerY - 17, color);
+            guiGraphics.fill(centerX - 18, centerY - 18, centerX - 17, centerY - 10, color);
+            guiGraphics.fill(centerX + 10, centerY - 18, centerX + 18, centerY - 17, color);
+            guiGraphics.fill(centerX + 17, centerY - 18, centerX + 18, centerY - 10, color);
+            guiGraphics.fill(centerX - 18, centerY + 17, centerX - 10, centerY + 18, color);
+            guiGraphics.fill(centerX - 18, centerY + 10, centerX - 17, centerY + 18, color);
+            guiGraphics.fill(centerX + 10, centerY + 17, centerX + 18, centerY + 18, color);
+            guiGraphics.fill(centerX + 17, centerY + 10, centerX + 18, centerY + 18, color);
         }
     }
 }
