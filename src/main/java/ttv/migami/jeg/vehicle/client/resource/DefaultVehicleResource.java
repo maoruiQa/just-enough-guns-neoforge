@@ -37,7 +37,11 @@ public final class DefaultVehicleResource {
 
     public static ResourceLocation animation(VehicleEntity vehicle) {
         ResourceLocation animation = Reference.id(ANIMATION_ROOT + vehiclePath(vehicle) + ".animation.json");
-        return exists(animation) ? animation : FALLBACK_ANIMATION;
+        if (exists(animation)) {
+            return animation;
+        }
+        ResourceLocation typeAnimation = Reference.id(ANIMATION_ROOT + typeFallback(vehicle) + ".animation.json");
+        return exists(typeAnimation) ? typeAnimation : FALLBACK_ANIMATION;
     }
 
     public static ResourceLocation glowTexture(VehicleEntity vehicle) {
