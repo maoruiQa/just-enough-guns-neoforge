@@ -105,6 +105,7 @@ public final class VehicleDataManager {
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
         DamageModifierInfo damageModifier = parseDamageModifier(getObject(object, "damage_modifier"), fallback.damageModifier());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
+        boolean hasDecoy = getBoolean(object, "has_decoy", fallback.hasDecoy());
         SeekInfo seek = parseSeek(getObject(object, "seek"), fallback.seek());
         DestroyInfo destroy = parseDestroy(getObject(object, "destroy"), fallback.destroy());
 
@@ -127,6 +128,7 @@ public final class VehicleDataManager {
                 armor,
                 damageModifier,
                 weapons,
+                hasDecoy,
                 seek,
                 destroy
         ));

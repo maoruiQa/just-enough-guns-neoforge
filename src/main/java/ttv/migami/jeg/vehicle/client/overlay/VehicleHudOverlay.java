@@ -84,7 +84,9 @@ public final class VehicleHudOverlay {
         Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
         guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
         lineY += 11;
-        Component decoy = Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
+        Component decoy = vehicle.hasBuiltInDecoy()
+                ? Component.translatable("hud.jeg.vehicle.decoy_smoke", vehicle.vehicleDecoyCooldown() == 0 ? Component.translatable("hud.jeg.vehicle.ready") : Component.literal(Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20) + "s"))
+                : Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
         guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
         lineY += 11;
         if (vehicle.isSelectedVehicleWeaponGuided()) {

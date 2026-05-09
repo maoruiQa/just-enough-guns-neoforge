@@ -323,6 +323,8 @@
   "hud.jeg.vehicle.rifle_ammo": "Rifle Ammo: %s",
   "hud.jeg.vehicle.weapon": "%s Ammo: %s",
   "hud.jeg.vehicle.decoy": "Flares: %s Cooldown: %ss",
+  "hud.jeg.vehicle.decoy_smoke": "Smoke: %s",
+  "hud.jeg.vehicle.ready": "Ready",
   "hud.jeg.vehicle.seek_prompt": "Hold %s to seek",
   "hud.jeg.vehicle.locking": "MISSILE SEEK",
   "hud.jeg.vehicle.locked": "MISSILE LOCK",

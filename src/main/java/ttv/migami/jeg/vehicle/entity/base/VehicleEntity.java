@@ -253,6 +253,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public int vehicleFlareAmmo() {
+        if (this.hasBuiltInDecoy()) {
+            return this.decoyCooldown == 0 ? 1 : 0;
+        }
         return this.entityData.get(DATA_FLARE_AMMO);
     }
 
@@ -286,6 +289,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public boolean isTurretDamaged() {
         return this.entityData.get(DATA_TURRET_DAMAGED);
+    }
+
+    public boolean hasBuiltInDecoy() {
+        return this.vehicleData().defaults().hasDecoy();
     }
 
     public boolean isFreeLookInputDown() {
@@ -565,7 +572,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tryDeployDecoy(ServerPlayer player) {
-        if (this.decoyCooldown > 0 || !this.consumeAmmo(FLARE_AMMO)) {
+        if (this.decoyCooldown > 0) {
+            return;
+        }
+        if (!this.hasBuiltInDecoy() && !this.consumeAmmo(FLARE_AMMO)) {
             return;
         }
         Vec3 look = player.getViewVector(1.0F).normalize();

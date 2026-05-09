@@ -6,6 +6,7 @@
   "auto_repair_cooldown_ticks": 150,
   "max_energy": 180,
   "allow_free_cam": true,
+  "has_decoy": true,
   "container_type": "medium",
   "seats": [
     {"index": 0, "x": -0.3, "y": 0.82, "z": 0.1, "driver": true, "enclosed": true, "hide_passenger": true},
