@@ -321,6 +321,7 @@
   "hud.jeg.vehicle.weapon": "%s Ammo: %s",
   "hud.jeg.vehicle.parts": "Damage E:%s L:%s R:%s",
   "key.jeg.vehicle_switch_weapon": "Vehicle Switch Weapon",
+  "key.jeg.vehicle_deploy_decoy": "Vehicle Deploy Decoy",
   "container.jeg.vehicle": "Vehicle Inventory",
   "container.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
   "block.jeg.vehicle_assembling_table": "Vehicle Assembling Table",

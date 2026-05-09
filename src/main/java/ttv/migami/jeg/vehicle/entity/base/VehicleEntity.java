@@ -41,6 +41,7 @@ import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
+import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 
 public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -56,10 +57,12 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final ResourceLocation VEHICLE_SECONDARY_WEAPON = Reference.id("combat_pistol");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation PISTOL_AMMO = Reference.id("pistol_ammo");
+    private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final VehicleWeapon[] VEHICLE_WEAPONS = {
             new VehicleWeapon(VEHICLE_TEST_WEAPON, RIFLE_AMMO, 1),
             new VehicleWeapon(VEHICLE_SECONDARY_WEAPON, PISTOL_AMMO, 0)
     };
+    private static final int DECOY_COOLDOWN_TICKS = 60;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
@@ -82,6 +85,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
+    private int decoyCooldown;
     private int energyRechargeTick;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
@@ -191,6 +195,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (input.switchWeapon()) {
             this.entityData.set(DATA_SELECTED_WEAPON, (this.entityData.get(DATA_SELECTED_WEAPON) + 1) % VEHICLE_WEAPONS.length);
         }
+        if (input.deployDecoy()) {
+            this.tryDeployDecoy(player);
+        }
         this.input = input;
     }
 
@@ -201,6 +208,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (!this.level().isClientSide) {
             this.tickServerMovement();
             this.tickServerWeapon();
+            this.tickDecoyCooldown();
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
@@ -233,6 +241,27 @@ public class VehicleEntity extends Entity implements MenuProvider {
             bullet.sendTrailToClients(serverLevel);
         }
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private void tickDecoyCooldown() {
+        if (this.decoyCooldown > 0) {
+            this.decoyCooldown--;
+        }
+    }
+
+    private void tryDeployDecoy(ServerPlayer player) {
+        if (this.decoyCooldown > 0 || !this.consumeAmmo(FLARE_AMMO)) {
+            return;
+        }
+        Vec3 look = player.getViewVector(1.0F).normalize();
+        Vec3 side = new Vec3(-look.z, 0.0D, look.x).normalize();
+        if (side.lengthSqr() < 1.0E-4D) {
+            side = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+        Vec3 position = this.position().add(0.0D, 0.8D, 0.0D).add(side.scale(0.65D));
+        Vec3 velocity = side.scale(0.16D).add(0.0D, 0.08D, 0.0D).add(this.getDeltaMovement().scale(0.25D));
+        this.level().addFreshEntity(new VehicleDecoyEntity(this.level(), position, velocity));
+        this.decoyCooldown = DECOY_COOLDOWN_TICKS;
     }
 
     private void tickInventoryEnergyRecharge() {

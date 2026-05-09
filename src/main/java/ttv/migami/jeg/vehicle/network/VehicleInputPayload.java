@@ -15,7 +15,8 @@ public record VehicleInputPayload(
         boolean brake,
         boolean fire,
         boolean freeLook,
-        boolean switchWeapon
+        boolean switchWeapon,
+        boolean deployDecoy
 ) implements CustomPacketPayload {
     public static final Type<VehicleInputPayload> TYPE = new Type<>(Reference.id("vehicle_input"));
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleInputPayload> STREAM_CODEC = StreamCodec.of(
@@ -29,9 +30,11 @@ public record VehicleInputPayload(
                 buf.writeBoolean(payload.fire());
                 buf.writeBoolean(payload.freeLook());
                 buf.writeBoolean(payload.switchWeapon());
+                buf.writeBoolean(payload.deployDecoy());
             },
             buf -> new VehicleInputPayload(
                     buf.readVarInt(),
+                    buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
@@ -44,7 +47,7 @@ public record VehicleInputPayload(
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.fire, this.freeLook, this.switchWeapon);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.fire, this.freeLook, this.switchWeapon, this.deployDecoy);
     }
 
     @Override
