@@ -5,6 +5,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -26,7 +27,8 @@ public final class VehicleChargingStationBlockEntity extends BlockEntity {
 
         AABB range = new AABB(pos).inflate(2.0D, 1.0D, 2.0D).expandTowards(0.0D, 2.0D, 0.0D);
         for (VehicleEntity vehicle : level.getEntitiesOfClass(VehicleEntity.class, range)) {
-            if (vehicle.addEnergy(CHARGE_PER_INTERVAL)) {
+            var energy = vehicle.getCapability(Capabilities.EnergyStorage.ENTITY, null);
+            if (energy != null && energy.receiveEnergy(CHARGE_PER_INTERVAL, false) > 0) {
                 station.setChanged();
                 return;
             }
