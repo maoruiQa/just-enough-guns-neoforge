@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.entity.base;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.DismountHelper;
@@ -1411,10 +1413,62 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         DismountInfo dismount = this.vehicleData().defaults().dismount();
         Vec3 offset = this.rotateLocalOffset(dismount.x(), dismount.y(), dismount.z());
         Vec3 candidate = this.position().add(offset);
-        if (DismountHelper.canDismountTo(this.level(), candidate, passenger, passenger.getPose())) {
-            return candidate;
+        Vec3 configured = this.findValidDismountPosition(passenger, candidate);
+        if (configured != null) {
+            return configured;
+        }
+
+        Vec3 side = this.findSideDismountPosition(passenger);
+        if (side != null) {
+            return side;
         }
         return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Nullable
+    private Vec3 findSideDismountPosition(LivingEntity passenger) {
+        double clearance = (this.getBbWidth() + passenger.getBbWidth()) * 0.5D + 0.2D;
+        Vec3[] offsets = {
+                this.rotateLocalOffset(clearance, 0.0D, 0.0D),
+                this.rotateLocalOffset(-clearance, 0.0D, 0.0D)
+        };
+        for (Vec3 offset : offsets) {
+            Vec3 base = this.position().add(offset);
+            Vec3 candidate = this.findGroundedDismountPosition(passenger, base);
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private Vec3 findGroundedDismountPosition(LivingEntity passenger, Vec3 base) {
+        BlockPos exitPos = BlockPos.containing(base.x, this.getY(), base.z);
+        BlockPos floorPos = exitPos.below();
+        double exitHeight = this.level().getBlockFloorHeight(exitPos);
+        if (DismountHelper.isBlockFloorValid(exitHeight)) {
+            Vec3 candidate = this.findValidDismountPosition(passenger, new Vec3(base.x, exitPos.getY() + exitHeight, base.z));
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        double floorHeight = this.level().getBlockFloorHeight(floorPos);
+        if (DismountHelper.isBlockFloorValid(floorHeight)) {
+            return this.findValidDismountPosition(passenger, new Vec3(base.x, floorPos.getY() + floorHeight, base.z));
+        }
+        return null;
+    }
+
+    @Nullable
+    private Vec3 findValidDismountPosition(LivingEntity passenger, Vec3 candidate) {
+        for (Pose pose : passenger.getDismountPoses()) {
+            if (DismountHelper.canDismountTo(this.level(), candidate, passenger, pose)) {
+                passenger.setPose(pose);
+                return candidate;
+            }
+        }
+        return null;
     }
 
     @Override
