@@ -134,6 +134,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private int ramDamageCooldown;
     private int weaponControllerId = -1;
     private boolean weaponFireInput;
+    private int seekControllerId = -1;
+    private boolean seekInput;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -305,6 +307,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
         }
+        if (input.seekTarget()) {
+            this.seekControllerId = player.getId();
+            this.seekInput = true;
+        } else if (this.seekControllerId == player.getId()) {
+            this.seekInput = false;
+        }
         if (input.fire()) {
             this.weaponControllerId = player.getId();
             this.weaponFireInput = true;
@@ -407,7 +415,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void tickMissileLock() {
         Entity target = null;
         VehicleWeaponInfo weapon = this.selectedWeapon();
-        LivingEntity shooter = this.weaponUserFor(weapon);
+        LivingEntity shooter = this.seekInput ? this.seekController() : null;
         if (shooter != null && weapon.guided()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
@@ -438,7 +446,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
         Vec3 muzzle = this.position().add(0.0D, 0.95D, 0.0D).add(direction.scale(1.25D));
         Vec3 velocity = direction.scale(0.72D).add(this.getDeltaMovement().scale(0.15D));
-        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()), muzzle, velocity));
+        Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()) : null;
+        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity));
         this.fireCooldown = Math.max(1, stats.fireDelay());
     }
 
@@ -450,6 +459,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.weaponControllerId = -1;
         this.weaponFireInput = false;
+        return null;
+    }
+
+    @Nullable
+    private LivingEntity seekController() {
+        Entity controller = this.seekControllerId < 0 ? null : this.level().getEntity(this.seekControllerId);
+        if (controller instanceof LivingEntity living && living.getVehicle() == this && this.canUseSelectedWeapon(living, this.selectedWeapon())) {
+            return living;
+        }
+        this.seekControllerId = -1;
+        this.seekInput = false;
         return null;
     }
 
@@ -667,19 +687,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         return false;
-    }
-
-    @Nullable
-    private LivingEntity weaponUserFor(VehicleWeaponInfo weapon) {
-        LivingEntity controller = this.weaponController();
-        if (controller != null && this.canUseSelectedWeapon(controller, weapon)) {
-            return controller;
-        }
-        LivingEntity driver = this.getControllingPassenger();
-        if (driver != null && this.canUseSelectedWeapon(driver, weapon)) {
-            return driver;
-        }
-        return null;
     }
 
     private boolean canUseSelectedWeapon(LivingEntity passenger, VehicleWeaponInfo weapon) {

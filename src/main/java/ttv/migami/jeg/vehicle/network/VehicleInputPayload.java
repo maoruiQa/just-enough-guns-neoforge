@@ -19,6 +19,7 @@ public record VehicleInputPayload(
         boolean freeLook,
         boolean switchWeapon,
         boolean previousWeapon,
+        boolean seekTarget,
         boolean deployDecoy
 ) implements CustomPacketPayload {
     public static final Type<VehicleInputPayload> TYPE = new Type<>(Reference.id("vehicle_input"));
@@ -36,10 +37,12 @@ public record VehicleInputPayload(
                 buf.writeBoolean(payload.freeLook());
                 buf.writeBoolean(payload.switchWeapon());
                 buf.writeBoolean(payload.previousWeapon());
+                buf.writeBoolean(payload.seekTarget());
                 buf.writeBoolean(payload.deployDecoy());
             },
             buf -> new VehicleInputPayload(
                     buf.readVarInt(),
+                    buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
@@ -56,7 +59,7 @@ public record VehicleInputPayload(
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.freeLook, this.switchWeapon, this.previousWeapon, this.deployDecoy);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.freeLook, this.switchWeapon, this.previousWeapon, this.seekTarget, this.deployDecoy);
     }
 
     @Override
