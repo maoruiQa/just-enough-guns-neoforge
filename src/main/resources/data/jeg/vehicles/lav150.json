@@ -32,8 +32,8 @@
     {"part": "turret", "x": 0.0, "y": 0.3625, "z": 0.0, "half_width": 0.875, "half_height": 0.3625, "half_depth": 1.25}
   ],
   "weapons": [
-    {"weapon": "jeg:vehicle_20mm_cannon", "ammo": "jeg:small_shell", "energy_cost": 2, "guided": false, "seat": 0, "muzzle": {"x": 0.02, "y": 1.45, "z": 1.15}},
-    {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.3, "y": 1.45, "z": 0.55}}
+    {"weapon": "jeg:vehicle_20mm_cannon", "ammo": "jeg:small_shell", "energy_cost": 2, "guided": false, "seat": 0, "muzzle": {"x": 0.0434375, "y": 2.78995, "z": 4.025}},
+    {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.3234375, "y": 2.78995, "z": 1.325}}
   ],
   "destroy": {"explodes": true, "explosion_power": 2.6},
   "seek": {"range": 72.0, "angle": 10.0, "warns_target": true},
