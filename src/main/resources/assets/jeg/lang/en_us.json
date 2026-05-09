@@ -316,6 +316,7 @@
   "entity.jeg.test_wheel_vehicle": "Test Wheel Vehicle",
   "hud.jeg.vehicle.test_wheel_vehicle": "Test Wheel Vehicle",
   "hud.jeg.vehicle.health": "Hull: %s / %s",
+  "container.jeg.vehicle": "Vehicle Inventory",
   "key.jeg.unload": "Unload",
   "key.jeg.attachments": "Modify Attachments",
   "key.jeg.melee": "Melee Attack",

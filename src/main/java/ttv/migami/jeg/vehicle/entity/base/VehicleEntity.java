@@ -1,6 +1,7 @@
 package ttv.migami.jeg.vehicle.entity.base;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -9,11 +10,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -21,14 +26,16 @@ import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
+import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
-public class VehicleEntity extends Entity {
+public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final double GRAVITY = 0.08D;
 
+    private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
     private VehicleInput input = VehicleInput.EMPTY;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
@@ -154,10 +161,25 @@ public class VehicleEntity extends Entity {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
+        if (!this.level().isClientSide && player.isShiftKeyDown() && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.openMenu(this);
+            return InteractionResult.CONSUME;
+        }
         if (!this.level().isClientSide && !player.isPassenger()) {
             player.startRiding(this);
         }
         return InteractionResult.sidedSuccess(this.level().isClientSide);
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("container.jeg.vehicle");
+    }
+
+    @Override
+    @Nullable
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new VehicleMenu(containerId, playerInventory, this.inventory);
     }
 
     @Override
