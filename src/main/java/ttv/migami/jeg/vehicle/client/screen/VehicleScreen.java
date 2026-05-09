@@ -9,12 +9,21 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
+    private static final int TEXTURE_X_OFFSET = 8;
+    private static final ResourceLocation MINI = Reference.id("textures/gui/vehicle/inventory/mini.png");
+    private static final ResourceLocation SMALL = Reference.id("textures/gui/vehicle/inventory/small.png");
+    private static final ResourceLocation MEDIUM = Reference.id("textures/gui/vehicle/inventory/medium.png");
+    private static final ResourceLocation LARGE = Reference.id("textures/gui/vehicle/inventory/large.png");
+    private static final ResourceLocation HUGE = Reference.id("textures/gui/vehicle/inventory/huge.png");
     private static final ResourceLocation PLAYER_INVENTORY = Reference.id("textures/gui/vehicle/inventory/player_inventory.png");
 
     public VehicleScreen(VehicleMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
+        this.imageWidth = menu.vehicleColumns() > 13 ? 320 : 222;
         this.imageHeight = menu.screenHeight();
+        this.titleLabelX = 15;
+        this.titleLabelY = 5;
+        this.inventoryLabelX = menu.playerInventoryXOffset() + this.titleLabelX;
         this.inventoryLabelY = menu.playerInventoryY() - 12;
     }
 
@@ -22,11 +31,14 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
-        guiGraphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xDD20252B);
-        if (this.menu.vehicleRows() > 0) {
-            guiGraphics.fill(x + 6, y + 16, x + this.imageWidth - 6, y + 24 + this.menu.vehicleRows() * 18, 0xAA111418);
+        ResourceLocation texture = this.vehicleInventoryTexture();
+        if (texture != null) {
+            int textureSize = this.menu.vehicleColumns() > 13 ? 328 : 256;
+            guiGraphics.blit(texture, x + TEXTURE_X_OFFSET, y, 0, 0, this.imageWidth, this.imageHeight, textureSize, textureSize);
+        } else {
+            guiGraphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xDD20252B);
         }
-        guiGraphics.blit(PLAYER_INVENTORY, x, y + this.menu.playerInventoryY() - 4, 0, 0, 175, 90, 256, 256);
+        guiGraphics.blit(PLAYER_INVENTORY, x + TEXTURE_X_OFFSET + this.menu.playerInventoryXOffset(), y + this.menu.playerInventoryY() - 8, 0, 0, 175, 90, 256, 256);
     }
 
     @Override
@@ -34,5 +46,23 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private ResourceLocation vehicleInventoryTexture() {
+        if (this.menu.vehicleRows() <= 0) {
+            return null;
+        }
+        if (this.menu.vehicleColumns() == 17) {
+            return HUGE;
+        }
+        if (this.menu.vehicleColumns() == 13) {
+            return LARGE;
+        }
+        return switch (this.menu.vehicleRows()) {
+            case 1 -> MINI;
+            case 3 -> SMALL;
+            case 6 -> MEDIUM;
+            default -> null;
+        };
     }
 }

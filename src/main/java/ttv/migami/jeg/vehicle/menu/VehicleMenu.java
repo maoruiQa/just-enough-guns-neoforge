@@ -13,11 +13,18 @@ import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleMenu extends AbstractContainerMenu {
-    public static final int MAX_VEHICLE_SLOT_COUNT = 54;
+    public static final int MAX_VEHICLE_SLOT_COUNT = 102;
     private static final int DEFAULT_VEHICLE_SLOT_COUNT = 9;
+    private static final int SLOT_SIZE = 18;
+    private static final int VEHICLE_SLOT_X = 16;
+    private static final int VEHICLE_SLOT_Y = 18;
+    private static final int PLAYER_SLOT_Y = 104;
+    private static final int HOTBAR_SLOT_Y = 162;
 
     private final Container vehicleInventory;
     private final int vehicleSlotCount;
+    private final int vehicleRows;
+    private final int vehicleColumns;
     private final int playerInventoryY;
     @Nullable
     private final VehicleEntity vehicle;
@@ -44,27 +51,38 @@ public final class VehicleMenu extends AbstractContainerMenu {
         checkContainerSize(vehicleInventory, this.vehicleSlotCount);
         this.vehicleInventory = vehicleInventory;
         this.vehicle = vehicle;
+        this.vehicleColumns = columnsFor(this.vehicleSlotCount);
+        this.vehicleRows = this.vehicleColumns == 0 ? 0 : (this.vehicleSlotCount + this.vehicleColumns - 1) / this.vehicleColumns;
         this.vehicleInventory.startOpen(playerInventory.player);
-        int rows = this.vehicleRows();
-        this.playerInventoryY = 20 + rows * 18 + 24;
+        int rowOffset = (this.vehicleRows - 4) * SLOT_SIZE;
+        int columnOffset = this.playerInventoryXOffset();
+        this.playerInventoryY = PLAYER_SLOT_Y + rowOffset;
 
         for (int slot = 0; slot < this.vehicleSlotCount; slot++) {
-            this.addSlot(new Slot(vehicleInventory, slot, 8 + slot % 9 * 18, 20 + slot / 9 * 18));
+            this.addSlot(new Slot(vehicleInventory, slot, VEHICLE_SLOT_X + slot % this.vehicleColumns * SLOT_SIZE, VEHICLE_SLOT_Y + slot / this.vehicleColumns * SLOT_SIZE));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, this.playerInventoryY + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, VEHICLE_SLOT_X + columnOffset + col * SLOT_SIZE, this.playerInventoryY + row * SLOT_SIZE));
             }
         }
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, this.playerInventoryY + 58));
+            this.addSlot(new Slot(playerInventory, col, VEHICLE_SLOT_X + columnOffset + col * SLOT_SIZE, HOTBAR_SLOT_Y + rowOffset));
         }
     }
 
     public int vehicleRows() {
-        return (this.vehicleSlotCount + 8) / 9;
+        return this.vehicleRows;
+    }
+
+    public int vehicleColumns() {
+        return this.vehicleColumns;
+    }
+
+    public int playerInventoryXOffset() {
+        return Math.max(0, (this.vehicleColumns - 9) / 2 * SLOT_SIZE);
     }
 
     public int playerInventoryY() {
@@ -72,7 +90,7 @@ public final class VehicleMenu extends AbstractContainerMenu {
     }
 
     public int screenHeight() {
-        return this.playerInventoryY + 82;
+        return 222;
     }
 
     @Override
@@ -113,5 +131,18 @@ public final class VehicleMenu extends AbstractContainerMenu {
     public void removed(@NotNull Player player) {
         super.removed(player);
         this.vehicleInventory.stopOpen(player);
+    }
+
+    private static int columnsFor(int slotCount) {
+        if (slotCount <= 0) {
+            return 0;
+        }
+        if (slotCount > 78) {
+            return 17;
+        }
+        if (slotCount > 54) {
+            return 13;
+        }
+        return 9;
     }
 }
