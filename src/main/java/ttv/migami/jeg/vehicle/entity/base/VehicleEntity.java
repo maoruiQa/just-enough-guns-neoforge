@@ -40,6 +40,7 @@ import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
@@ -68,6 +69,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
+    private static final int RAM_DAMAGE_COOLDOWN_TICKS = 10;
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final String TAG_ENERGY = "Energy";
@@ -81,6 +83,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
     private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
+    private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double GRAVITY = 0.08D;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
@@ -89,6 +92,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private int fireCooldown;
     private int decoyCooldown;
     private int energyRechargeTick;
+    private int ramDamageCooldown;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -230,6 +234,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.tickServerMovement();
+            this.tickRammingDamage();
             this.tickMissileLock();
             this.tickServerWeapon();
             this.tickDecoyCooldown();
@@ -322,6 +327,45 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (this.decoyCooldown > 0) {
             this.decoyCooldown--;
         }
+    }
+
+    private void tickRammingDamage() {
+        if (this.ramDamageCooldown > 0) {
+            this.ramDamageCooldown--;
+            return;
+        }
+        CollisionLevel collisionLevel = this.vehicleData().defaults().collisionLevel();
+        if (collisionLevel == CollisionLevel.NONE) {
+            return;
+        }
+        double speed = this.getDeltaMovement().horizontalDistance();
+        if (speed < RAM_DAMAGE_MIN_SPEED) {
+            return;
+        }
+        float damage = this.ramDamageAmount(collisionLevel, speed);
+        if (damage <= 0.0F) {
+            return;
+        }
+        boolean damaged = false;
+        for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.25D, 0.15D, 0.25D))) {
+            if (!target.isAlive() || target.getVehicle() == this) {
+                continue;
+            }
+            damaged |= target.hurt(this.damageSources().cramming(), damage);
+        }
+        if (damaged) {
+            this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+        }
+    }
+
+    private float ramDamageAmount(CollisionLevel collisionLevel, double speed) {
+        float baseDamage = switch (collisionLevel) {
+            case LIGHT -> 3.0F;
+            case MEDIUM -> 5.0F;
+            case HEAVY -> 8.0F;
+            case NONE -> 0.0F;
+        };
+        return baseDamage * (float) Mth.clamp(speed / 0.35D, 0.35D, 1.5D);
     }
 
     private void tryDeployDecoy(ServerPlayer player) {
