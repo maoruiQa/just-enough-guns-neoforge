@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "jeg",
   "version": "${version}",
-  "name": "Just Enough Guns",
+  "name": "jegn",
   "description": "Port of Just Enough Guns to Fabric.",
   "authors": [
     "Rui Mao",
