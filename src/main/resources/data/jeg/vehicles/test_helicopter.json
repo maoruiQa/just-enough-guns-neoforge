@@ -73,6 +73,11 @@
     "explodes": true,
     "explosion_power": 2.0
   },
+  "seek": {
+    "range": 72.0,
+    "angle": 12.0,
+    "warns_target": true
+  },
   "armor": {
     "fallback": {
       "rating": 2.0,

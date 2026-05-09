@@ -56,6 +56,7 @@ import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
+import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
@@ -97,6 +98,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
+    private static final double DEFAULT_SEEK_RANGE = 64.0D;
+    private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
 
@@ -337,12 +340,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (shooter != null && weapon.guided()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
-                target = this.findLookTarget(shooter, direction, 64.0D);
+                target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot());
             }
         }
         this.entityData.set(DATA_MISSILE_LOCKED, target != null);
         this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
-        if (target instanceof ServerPlayer lockedPlayer && this.tickCount % 20 == 0) {
+        if (this.shouldWarnSeekTarget() && target instanceof ServerPlayer lockedPlayer && this.tickCount % 20 == 0) {
             lockedPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
         }
     }
@@ -350,15 +353,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
         Vec3 muzzle = this.position().add(0.0D, 0.95D, 0.0D).add(direction.scale(1.25D));
         Vec3 velocity = direction.scale(0.72D).add(this.getDeltaMovement().scale(0.15D));
-        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, this.findLookTarget(shooter, direction, 64.0D), muzzle, velocity));
+        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()), muzzle, velocity));
         this.fireCooldown = Math.max(1, stats.fireDelay());
     }
 
     @Nullable
-    private Entity findLookTarget(LivingEntity shooter, Vec3 direction, double range) {
+    private Entity findLookTarget(LivingEntity shooter, Vec3 direction, double range, double minDot) {
         Vec3 eye = shooter.getEyePosition();
         Entity bestTarget = null;
-        double bestScore = 0.985D;
+        double bestScore = minDot;
         for (LivingEntity candidate : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(range))) {
             if (candidate == shooter || candidate.getVehicle() == this || !candidate.isAlive()) {
                 continue;
@@ -375,6 +378,21 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         return bestTarget;
+    }
+
+    private double seekRange() {
+        SeekInfo seek = this.vehicleData().defaults().seek();
+        return seek.range() > 0.0D ? seek.range() : DEFAULT_SEEK_RANGE;
+    }
+
+    private double seekMinDot() {
+        SeekInfo seek = this.vehicleData().defaults().seek();
+        return seek.angle() > 0.0D ? Math.cos(Math.toRadians(seek.angle())) : DEFAULT_SEEK_MIN_DOT;
+    }
+
+    private boolean shouldWarnSeekTarget() {
+        SeekInfo seek = this.vehicleData().defaults().seek();
+        return seek.warnsTarget() || seek == SeekInfo.NONE;
     }
 
     private void tickDecoyCooldown() {
