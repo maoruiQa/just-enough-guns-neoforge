@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,12 @@ public final class VehicleAssemblyRecipeManager {
 
     public static VehicleAssemblyRecipe get(ResourceLocation id) {
         return recipes.get(id);
+    }
+
+    public static List<VehicleAssemblyRecipe> recipes() {
+        return recipes.values().stream()
+                .sorted(Comparator.comparing(recipe -> recipe.id().toString()))
+                .toList();
     }
 
     private static Map<ResourceLocation, VehicleAssemblyRecipe> defaultsOnly() {
