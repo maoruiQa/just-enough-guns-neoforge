@@ -9,7 +9,10 @@
   "container_type": "medium",
   "seats": [
     {"index": 0, "x": -0.3, "y": 0.82, "z": 0.1, "driver": true, "enclosed": true},
-    {"index": 1, "x": 0.35, "y": 0.82, "z": -0.15, "driver": false, "enclosed": true}
+    {"index": 1, "x": 0.35, "y": 0.82, "z": -0.15, "driver": false, "enclosed": true},
+    {"index": 2, "x": -0.35, "y": 0.82, "z": -0.55, "driver": false, "enclosed": true},
+    {"index": 3, "x": 0.35, "y": 0.82, "z": -0.75, "driver": false, "enclosed": true},
+    {"index": 4, "x": 0.0, "y": 0.82, "z": -1.05, "driver": false, "enclosed": true}
   ],
   "engine": {"type": "wheel", "acceleration": 0.035, "max_forward_speed": 0.33, "max_reverse_speed": 0.13, "friction": 0.8},
   "third_person_camera": {"x": 0.0, "y": 2.9, "z": -6.5},

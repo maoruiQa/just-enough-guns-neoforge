@@ -8,7 +8,11 @@
   "allow_free_cam": true,
   "container_type": "mini",
   "seats": [
-    {"index": 0, "x": 0.0, "y": 0.72, "z": 0.15, "driver": true, "enclosed": false}
+    {"index": 0, "x": 0.0, "y": 0.72, "z": 0.15, "driver": true, "enclosed": false},
+    {"index": 1, "x": -0.45, "y": 0.68, "z": -0.25, "driver": false, "enclosed": false},
+    {"index": 2, "x": 0.45, "y": 0.68, "z": -0.25, "driver": false, "enclosed": false},
+    {"index": 3, "x": -0.35, "y": 0.68, "z": -0.75, "driver": false, "enclosed": false},
+    {"index": 4, "x": 0.35, "y": 0.68, "z": -0.75, "driver": false, "enclosed": false}
   ],
   "engine": {"type": "boat", "acceleration": 0.038, "max_forward_speed": 0.42, "max_reverse_speed": 0.14, "friction": 0.88},
   "third_person_camera": {"x": 0.0, "y": 2.8, "z": -6.5},

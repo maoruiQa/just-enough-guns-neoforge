@@ -61,4 +61,5 @@ These records are JEG test or compatibility vehicles. They do not have direct SW
 - SW JSON behavior data under `assets/superbwarfare/sbw/vehicles/*.json` has not been fully translated into JEG `data/jeg/vehicles/*.json`.
 - Representative SW weapon-fire sounds are copied and registered for `a10`, `ah6`, `bmp2`, `hpj11`, `laser_tower`, `lav150`, `mi28`, and `waveforce_tower`; engine loops, horns, distance variants, and remaining vehicle-specific sounds are not yet mapped.
 - SW vehicle inventory textures are copied and the JEG vehicle menu now uses SW-style row/column sizes for container types (`mini=1x9`, `small=3x9`, `medium=6x9`, `large=6x13`, `huge=6x17`); upgrade slots are still not implemented.
+- Seat counts now match SW for `ah6`, `bmp2`, `lav150`, and `speedboat`; seat transforms, camera constraints, passenger hiding, and per-seat weapon station controls still need deeper porting.
 - SW container/rendering assets for vehicle deployers, charging station, and vehicle assembling table are only partly copied into JEG block model usage.
