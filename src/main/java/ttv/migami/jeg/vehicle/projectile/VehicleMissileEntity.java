@@ -11,8 +11,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.init.ModEntities;
@@ -54,6 +57,13 @@ public final class VehicleMissileEntity extends Entity {
         }
         if (!this.level().isClientSide) {
             this.steerServer();
+            if (this.isRemoved()) {
+                return;
+            }
+            Vec3 nextPosition = this.position().add(this.getDeltaMovement());
+            if (this.hitAlongPath(this.position(), nextPosition)) {
+                return;
+            }
         }
         this.setPos(this.position().add(this.getDeltaMovement()));
         if (this.level().isClientSide) {
@@ -92,6 +102,42 @@ public final class VehicleMissileEntity extends Entity {
                 0.8F,
                 1.7F
         );
+    }
+
+    private boolean hitAlongPath(Vec3 start, Vec3 end) {
+        HitResult blockHit = this.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (blockHit.getType() != HitResult.Type.MISS) {
+            this.setPos(blockHit.getLocation());
+            this.explode();
+            return true;
+        }
+
+        Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+        Entity ownerVehicle = owner == null ? null : owner.getVehicle();
+        AABB path = new AABB(start, end).inflate(0.55D);
+        Entity closest = null;
+        double closestDistance = Double.MAX_VALUE;
+        for (Entity target : this.level().getEntities(this, path, target -> this.canImpact(target, owner, ownerVehicle))) {
+            double distance = target.distanceToSqr(start);
+            if (distance < closestDistance) {
+                closest = target;
+                closestDistance = distance;
+            }
+        }
+        if (closest != null) {
+            this.setPos(closest.position().add(0.0D, closest.getBbHeight() * 0.5D, 0.0D));
+            this.explode();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean canImpact(Entity target, @Nullable Entity owner, @Nullable Entity ownerVehicle) {
+        return target.isAlive()
+                && target != owner
+                && target != ownerVehicle
+                && target.getVehicle() != ownerVehicle
+                && (target instanceof LivingEntity || target instanceof VehicleEntity);
     }
 
     @Nullable
