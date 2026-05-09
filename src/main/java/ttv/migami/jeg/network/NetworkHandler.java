@@ -26,6 +26,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
 import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 public final class NetworkHandler {
@@ -43,6 +44,7 @@ public final class NetworkHandler {
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
+                .playToServer(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC, NetworkHandler::handleVehicleDismount)
                 .playToServer(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC, NetworkHandler::handleAssembleTestVehicle)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
@@ -78,6 +80,17 @@ public final class NetworkHandler {
             }
             if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
                 vehicle.changeSeat(player);
+            }
+        });
+    }
+
+    private static void handleVehicleDismount(VehicleDismountPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                player.stopRiding();
             }
         });
     }
@@ -313,6 +326,14 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(new VehicleChangeSeatPayload(vehicleId));
+    }
+
+    public static void sendVehicleDismount(int vehicleId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new VehicleDismountPayload(vehicleId));
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {

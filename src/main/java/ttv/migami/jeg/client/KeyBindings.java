@@ -23,7 +23,7 @@ public final class KeyBindings {
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_ALT,
+            GLFW.GLFW_KEY_C,
             CATEGORY
     );
 
@@ -51,7 +51,14 @@ public final class KeyBindings {
     public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
             "key.jeg.vehicle_change_seat",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
+            GLFW.GLFW_KEY_B,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_DISMOUNT = new KeyMapping(
+            "key.jeg.vehicle_dismount",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_ALT,
             CATEGORY
     );
 
@@ -65,5 +72,6 @@ public final class KeyBindings {
         event.register(VEHICLE_DEPLOY_DECOY);
         event.register(VEHICLE_BRAKE_DESCEND);
         event.register(VEHICLE_CHANGE_SEAT);
+        event.register(VEHICLE_DISMOUNT);
     }
 }

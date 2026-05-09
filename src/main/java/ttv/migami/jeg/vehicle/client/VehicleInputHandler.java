@@ -30,6 +30,9 @@ public final class VehicleInputHandler {
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
         }
+        if (KeyBindings.VEHICLE_DISMOUNT.consumeClick()) {
+            NetworkHandler.sendVehicleDismount(vehicle.getId());
+        }
         minecraft.getConnection().send(new VehicleInputPayload(
                 vehicle.getId(),
                 minecraft.options.keyUp.isDown(),
