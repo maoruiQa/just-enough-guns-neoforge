@@ -11,6 +11,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -346,8 +348,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_MISSILE_LOCKED, target != null);
         this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
         if (this.shouldWarnSeekTarget() && target instanceof ServerPlayer lockedPlayer && this.tickCount % 20 == 0) {
-            lockedPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
+            this.warnLockedPlayer(lockedPlayer);
         }
+    }
+
+    private void warnLockedPlayer(ServerPlayer lockedPlayer) {
+        lockedPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
+        lockedPlayer.level().playSound(
+                null,
+                lockedPlayer.getX(),
+                lockedPlayer.getY(),
+                lockedPlayer.getZ(),
+                SoundEvents.NOTE_BLOCK_PLING,
+                SoundSource.PLAYERS,
+                0.8F,
+                1.7F
+        );
     }
 
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
