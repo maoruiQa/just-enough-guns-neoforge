@@ -12,6 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.Recipe;
@@ -44,6 +45,14 @@ public final class ModItems {
     public static final DeferredRegister<Item> REGISTER = DeferredRegister.create(Registries.ITEM, Reference.MOD_ID);
 
     public static final Map<ResourceLocation, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
+    public static final DeferredHolder<Item, BlockItem> VEHICLE_CONTAINER = REGISTER.register(
+            "vehicle_container",
+            () -> new BlockItem(ModBlocks.VEHICLE_CONTAINER.get(), baseProperties(Reference.id("vehicle_container")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, Item> CROWBAR = REGISTER.register(
+            "crowbar",
+            () -> new Item(baseProperties(Reference.id("crowbar")).stacksTo(1).durability(128))
+    );
     public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, MagazineItem> PISTOL_MAGAZINE = REGISTER.register(
@@ -389,6 +398,8 @@ public final class ModItems {
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(GUNSMITH_MANUAL.get());
+            event.accept(VEHICLE_CONTAINER.get());
+            event.accept(CROWBAR.get());
             event.accept(COOLANT.get());
             event.accept(ENHANCED_COOLANT.get());
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
