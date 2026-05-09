@@ -55,6 +55,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_MISSILE_LOCK_TARGET = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -102,6 +104,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
         builder.define(DATA_RIFLE_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON, 0);
         builder.define(DATA_SELECTED_WEAPON_AMMO, 0);
+        builder.define(DATA_MISSILE_LOCKED, false);
+        builder.define(DATA_MISSILE_LOCK_TARGET, -1);
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
@@ -170,6 +174,14 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return this.selectedWeapon().weaponId();
     }
 
+    public boolean isSelectedVehicleWeaponGuided() {
+        return this.selectedWeapon().guided();
+    }
+
+    public boolean hasMissileLock() {
+        return this.entityData.get(DATA_MISSILE_LOCKED);
+    }
+
     public boolean isLeftWheelDamaged() {
         return this.entityData.get(DATA_LEFT_WHEEL_DAMAGED);
     }
@@ -208,6 +220,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.tickServerMovement();
+            this.tickMissileLock();
             this.tickServerWeapon();
             this.tickDecoyCooldown();
             this.tickInventoryEnergyRecharge();
@@ -246,6 +259,23 @@ public class VehicleEntity extends Entity implements MenuProvider {
             bullet.sendTrailToClients(serverLevel);
         }
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private void tickMissileLock() {
+        Entity target = null;
+        LivingEntity shooter = this.getControllingPassenger();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (shooter != null && weapon.guided()) {
+            Vec3 direction = shooter.getViewVector(1.0F).normalize();
+            if (direction.lengthSqr() >= 1.0E-4D) {
+                target = this.findLookTarget(shooter, direction, 64.0D);
+            }
+        }
+        this.entityData.set(DATA_MISSILE_LOCKED, target != null);
+        this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
+        if (target instanceof ServerPlayer lockedPlayer && this.tickCount % 20 == 0) {
+            lockedPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
+        }
     }
 
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {

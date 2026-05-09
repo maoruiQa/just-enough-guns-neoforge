@@ -51,6 +51,11 @@ public final class VehicleHudOverlay {
         Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
         Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
         guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, y + 33, 0xFFFFDD88);
+        if (vehicle.isSelectedVehicleWeaponGuided()) {
+            Component lock = Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking");
+            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, y + 44, vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88);
+            y += 11;
+        }
         if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged()) {
             Component damage = Component.translatable(
                     "hud.jeg.vehicle.parts",
