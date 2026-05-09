@@ -1,6 +1,24 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "credit": "Made with Blockbench",
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "texture_size": [32, 32],
   "textures": {
-    "all": "minecraft:block/copper_block"
-  }
+    "4": "jeg:block/vehicle_charging_station",
+    "particle": "jeg:block/vehicle_charging_station"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 8, 8], "texture": "#4"},
+        "east": {"uv": [0, 8, 8, 16], "texture": "#4"},
+        "south": {"uv": [0, 8, 8, 16], "texture": "#4"},
+        "west": {"uv": [0, 8, 8, 16], "texture": "#4"},
+        "up": {"uv": [16, 8, 8, 0], "texture": "#4"},
+        "down": {"uv": [16, 8, 8, 16], "texture": "#4"}
+      }
+    }
+  ]
 }

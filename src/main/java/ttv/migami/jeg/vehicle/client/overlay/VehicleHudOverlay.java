@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -14,6 +15,14 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleHudOverlay {
+    private static final ResourceLocation ARMOR_ICON = Reference.id("textures/overlay/vehicle/base/armor.png");
+    private static final ResourceLocation ENERGY_ICON = Reference.id("textures/overlay/vehicle/base/energy.png");
+    private static final ResourceLocation VALUE_BAR = Reference.id("textures/overlay/vehicle/base/value_bar.png");
+    private static final ResourceLocation VALUE_FRAME = Reference.id("textures/overlay/vehicle/base/value_frame.png");
+    private static final ResourceLocation CROSSHAIR_GUN = Reference.id("textures/overlay/vehicle/crosshair/common_gun.png");
+    private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
+    private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
+
     private VehicleHudOverlay() {}
 
     @SubscribeEvent
@@ -35,22 +44,22 @@ public final class VehicleHudOverlay {
         int width = guiGraphics.guiWidth();
         int y = guiGraphics.guiHeight() - 58;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
-        int barWidth = 112;
-        int filled = Math.round(barWidth * healthRatio);
+        int barWidth = 60;
         int x = width / 2 - barWidth / 2;
 
         Component title = Component.translatable("entity." + vehicle.vehicleDataId().getNamespace() + "." + vehicle.vehicleDataId().getPath());
         guiGraphics.drawString(minecraft.font, title, (width - minecraft.font.width(title)) / 2, y - 12, 0xFFFFFFFF);
-        guiGraphics.fill(x, y, x + barWidth, y + 7, 0xAA101010);
-        guiGraphics.fill(x + 1, y + 1, x + Math.max(1, filled - 1), y + 6, 0xFF42B35A);
+        renderValueBar(guiGraphics, ARMOR_ICON, x - 12, y - 1, healthRatio);
 
         Component health = Component.translatable("hud.jeg.vehicle.health", Math.round(vehicle.vehicleHealth()), Math.round(vehicle.maxVehicleHealth()));
         guiGraphics.drawString(minecraft.font, health, (width - minecraft.font.width(health)) / 2, y + 11, 0xFFE6E6E6);
         int lineY = y + 22;
         if (vehicle.maxVehicleEnergy() > 0) {
+            float energyRatio = Mth.clamp((float) vehicle.vehicleEnergy() / (float) vehicle.maxVehicleEnergy(), 0.0F, 1.0F);
+            renderValueBar(guiGraphics, ENERGY_ICON, x - 12, lineY - 1, energyRatio);
             Component energy = Component.translatable("hud.jeg.vehicle.energy", vehicle.vehicleEnergy(), vehicle.maxVehicleEnergy());
-            guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY, 0xFF8FC7FF);
-            lineY += 11;
+            guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY + 8, 0xFF8FC7FF);
+            lineY += 19;
         }
         Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
         Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
@@ -76,26 +85,22 @@ public final class VehicleHudOverlay {
         }
     }
 
-    private static void renderReticle(GuiGraphics guiGraphics, VehicleEntity vehicle) {
-        int centerX = guiGraphics.guiWidth() / 2;
-        int centerY = guiGraphics.guiHeight() / 2;
-        int color = vehicle.isSelectedVehicleWeaponGuided()
-                ? (vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88)
-                : 0xFFE6E6E6;
-        guiGraphics.fill(centerX - 1, centerY - 1, centerX + 1, centerY + 1, color);
-        guiGraphics.fill(centerX - 13, centerY, centerX - 5, centerY + 1, color);
-        guiGraphics.fill(centerX + 5, centerY, centerX + 13, centerY + 1, color);
-        guiGraphics.fill(centerX, centerY - 13, centerX + 1, centerY - 5, color);
-        guiGraphics.fill(centerX, centerY + 5, centerX + 1, centerY + 13, color);
-        if (vehicle.isSelectedVehicleWeaponGuided()) {
-            guiGraphics.fill(centerX - 18, centerY - 18, centerX - 10, centerY - 17, color);
-            guiGraphics.fill(centerX - 18, centerY - 18, centerX - 17, centerY - 10, color);
-            guiGraphics.fill(centerX + 10, centerY - 18, centerX + 18, centerY - 17, color);
-            guiGraphics.fill(centerX + 17, centerY - 18, centerX + 18, centerY - 10, color);
-            guiGraphics.fill(centerX - 18, centerY + 17, centerX - 10, centerY + 18, color);
-            guiGraphics.fill(centerX - 18, centerY + 10, centerX - 17, centerY + 18, color);
-            guiGraphics.fill(centerX + 10, centerY + 17, centerX + 18, centerY + 18, color);
-            guiGraphics.fill(centerX + 17, centerY + 10, centerX + 18, centerY + 18, color);
+    private static void renderValueBar(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, float ratio) {
+        int filled = Mth.clamp(Math.round(60.0F * ratio), 0, 60);
+        guiGraphics.blit(icon, x, y, 0.0F, 0.0F, 10, 10, 10, 10);
+        guiGraphics.blit(VALUE_FRAME, x + 11, y + 2, 60, 6, 0.0F, 0.0F, 120, 12, 120, 12);
+        if (filled > 0) {
+            guiGraphics.blit(VALUE_BAR, x + 11, y + 2, 0.0F, 0.0F, filled, 6, 60, 6);
         }
+    }
+
+    private static void renderReticle(GuiGraphics guiGraphics, VehicleEntity vehicle) {
+        int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
+        int x = (guiGraphics.guiWidth() - size) / 2;
+        int y = (guiGraphics.guiHeight() - size) / 2;
+        ResourceLocation texture = vehicle.isSelectedVehicleWeaponGuided()
+                ? CROSSHAIR_SEEK_MISSILE
+                : "lav150".equals(vehicle.vehicleDataId().getPath()) ? CROSSHAIR_US_APC : CROSSHAIR_GUN;
+        guiGraphics.blit(texture, x, y, size, size, 0.0F, 0.0F, 512, 512, 512, 512);
     }
 }

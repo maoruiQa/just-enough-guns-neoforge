@@ -107,6 +107,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
     private static final String TAG_TURRET_HEALTH = "TurretHealth";
     private static final String GECKO_CONTROLLER = "Vehicle";
+    private static final Map<String, String> VEHICLE_IDLE_ANIMATIONS = Map.of(
+            "lav150", "animation.lav_150.idle",
+            "speedboat", "animation.speedboat.idle",
+            "laser_tower", "animation.lt.idle",
+            "waveforce_tower", "animation.waveforce_tower.idle"
+    );
     private static final float PART_MAX_HEALTH = 10.0F;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
@@ -116,7 +122,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
-    private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -146,10 +151,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 GECKO_CONTROLLER,
                 0,
                 state -> {
-                    state.setAndContinue(GECKO_IDLE);
+                    state.setAndContinue(RawAnimation.begin().thenLoop(this.idleAnimationName()));
                     return PlayState.CONTINUE;
                 }
         ));
+    }
+
+    private String idleAnimationName() {
+        String path = this.vehicleDataId().getPath();
+        return VEHICLE_IDLE_ANIMATIONS.getOrDefault(path, "idle");
     }
 
     @Override
