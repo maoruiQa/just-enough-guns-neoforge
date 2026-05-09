@@ -242,6 +242,60 @@ public final class ModEntities {
                     .build("a10")
     );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> BMP2 = REGISTER.register(
+            "bmp2",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("bmp2")), MobCategory.MISC)
+                    .sized(2.0F, 1.4F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("bmp2")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> MI28 = REGISTER.register(
+            "mi28",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("mi28")), MobCategory.MISC)
+                    .sized(2.4F, 1.35F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("mi28")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> TOM6 = REGISTER.register(
+            "tom6",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("tom6")), MobCategory.MISC)
+                    .sized(2.8F, 1.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("tom6")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> LASER_TOWER = REGISTER.register(
+            "laser_tower",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("laser_tower")), MobCategory.MISC)
+                    .sized(1.4F, 2.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("laser_tower")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> HPJ11 = REGISTER.register(
+            "hpj11",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("hpj11")), MobCategory.MISC)
+                    .sized(1.5F, 1.8F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("hpj11")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> WAVEFORCE_TOWER = REGISTER.register(
+            "waveforce_tower",
+            () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("waveforce_tower")), MobCategory.MISC)
+                    .sized(1.5F, 2.1F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("waveforce_tower")
+    );
+
     public static final DeferredHolder<EntityType<?>, EntityType<VehicleDecoyEntity>> VEHICLE_DECOY = REGISTER.register(
             "vehicle_decoy",
             () -> EntityType.Builder.<VehicleDecoyEntity>of(VehicleDecoyEntity::new, MobCategory.MISC)

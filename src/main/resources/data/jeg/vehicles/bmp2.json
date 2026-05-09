@@ -1,0 +1,40 @@
+{
+  "entity_type": "jeg:bmp2",
+  "vehicle_type": "land",
+  "max_health": 115.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 160,
+  "max_energy": 190,
+  "allow_free_cam": true,
+  "container_type": "medium",
+  "seats": [
+    {"index": 0, "x": -0.35, "y": 0.82, "z": 0.35, "driver": true, "enclosed": true},
+    {"index": 1, "x": 0.25, "y": 0.9, "z": -0.25, "driver": false, "enclosed": true}
+  ],
+  "engine": {"type": "track", "acceleration": 0.032, "max_forward_speed": 0.3, "max_reverse_speed": 0.12, "friction": 0.82},
+  "third_person_camera": {"x": 0.0, "y": 3.0, "z": -6.8},
+  "dismount": {"x": 1.55, "y": 0.1, "z": 0.0},
+  "collision_level": "heavy",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.82, "z": 0.05, "half_width": 1.0, "half_height": 0.62, "half_depth": 1.45},
+    {"part": "turret", "x": 0.0, "y": 1.32, "z": -0.28, "half_width": 0.52, "half_height": 0.28, "half_depth": 0.52},
+    {"part": "wheel_left", "x": -0.82, "y": 0.38, "z": 0.0, "half_width": 0.2, "half_height": 0.32, "half_depth": 1.3},
+    {"part": "wheel_right", "x": 0.82, "y": 0.38, "z": 0.0, "half_width": 0.2, "half_height": 0.32, "half_depth": 1.3},
+    {"part": "main_engine", "x": 0.0, "y": 0.6, "z": -1.12, "half_width": 0.55, "half_height": 0.34, "half_depth": 0.35}
+  ],
+  "weapons": [
+    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false},
+    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 2, "guided": true}
+  ],
+  "destroy": {"explodes": true, "explosion_power": 2.8},
+  "seek": {"range": 76.0, "angle": 10.0, "warns_target": true},
+  "armor": {
+    "fallback": {"rating": 5.0, "undermatch_multiplier": 0.14, "overmatch_multiplier": 0.78, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 0.75},
+    "parts": {
+      "turret": {"rating": 5.4, "undermatch_multiplier": 0.12, "overmatch_multiplier": 0.76, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 0.8},
+      "wheel_left": {"rating": 1.8, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.55},
+      "wheel_right": {"rating": 1.8, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.55},
+      "main_engine": {"rating": 2.4, "undermatch_multiplier": 0.34, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 1.4}
+    }
+  }
+}

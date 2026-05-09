@@ -1,0 +1,9 @@
+{
+  "result_vehicle": "jeg:tom6",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 56},
+    {"item": "minecraft:copper_ingot", "count": 26},
+    {"item": "minecraft:redstone", "count": 20},
+    {"item": "minecraft:feather", "count": 24}
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "entity_type": "jeg:mi28",
+  "vehicle_type": "helicopter",
+  "max_health": 110.0,
+  "auto_repair_per_tick": 0.01,
+  "auto_repair_cooldown_ticks": 160,
+  "max_energy": 220,
+  "allow_free_cam": true,
+  "container_type": "small",
+  "seats": [
+    {"index": 0, "x": 0.0, "y": 0.9, "z": 0.25, "driver": true, "enclosed": true},
+    {"index": 1, "x": 0.0, "y": 1.0, "z": -0.25, "driver": false, "enclosed": true}
+  ],
+  "engine": {"type": "rotor", "acceleration": 0.038, "max_forward_speed": 0.55, "max_reverse_speed": 0.2, "friction": 0.92},
+  "third_person_camera": {"x": 0.0, "y": 3.6, "z": -8.0},
+  "dismount": {"x": 1.55, "y": 0.1, "z": 0.0},
+  "collision_level": "heavy",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.85, "z": 0.0, "half_width": 1.05, "half_height": 0.48, "half_depth": 1.55},
+    {"part": "turret", "x": 0.0, "y": 0.65, "z": 1.0, "half_width": 0.45, "half_height": 0.28, "half_depth": 0.38},
+    {"part": "main_engine", "x": 0.0, "y": 1.3, "z": -0.45, "half_width": 0.72, "half_height": 0.3, "half_depth": 0.55}
+  ],
+  "weapons": [
+    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false},
+    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true}
+  ],
+  "destroy": {"explodes": true, "explosion_power": 3.0},
+  "seek": {"range": 96.0, "angle": 12.0, "warns_target": true},
+  "armor": {
+    "fallback": {"rating": 3.4, "undermatch_multiplier": 0.2, "overmatch_multiplier": 0.95, "passenger_leak_multiplier": 0.16, "part_damage_multiplier": 0.9},
+    "parts": {
+      "main_engine": {"rating": 2.2, "undermatch_multiplier": 0.34, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.45},
+      "turret": {"rating": 2.4, "undermatch_multiplier": 0.32, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 1.1}
+    }
+  }
+}

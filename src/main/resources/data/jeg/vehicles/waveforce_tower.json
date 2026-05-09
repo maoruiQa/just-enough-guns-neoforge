@@ -1,0 +1,31 @@
+{
+  "entity_type": "jeg:waveforce_tower",
+  "vehicle_type": "artillery",
+  "max_health": 145.0,
+  "auto_repair_per_tick": 0.009,
+  "auto_repair_cooldown_ticks": 190,
+  "max_energy": 300,
+  "allow_free_cam": true,
+  "container_type": "mini",
+  "seats": [
+    {"index": 0, "x": 0.0, "y": 1.05, "z": 0.0, "driver": true, "enclosed": true}
+  ],
+  "engine": {"type": "static", "acceleration": 0.0, "max_forward_speed": 0.0, "max_reverse_speed": 0.0, "friction": 1.0},
+  "third_person_camera": {"x": 0.0, "y": 3.6, "z": -6.2},
+  "dismount": {"x": 1.35, "y": 0.1, "z": 0.0},
+  "collision_level": "heavy",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.75, "z": 0.0, "half_width": 0.78, "half_height": 0.55, "half_depth": 0.78},
+    {"part": "turret", "x": 0.0, "y": 1.5, "z": 0.0, "half_width": 0.62, "half_height": 0.5, "half_depth": 0.62}
+  ],
+  "weapons": [
+    {"weapon": "jeg:hypersonic_cannon", "ammo": "minecraft:sculk_catalyst", "energy_cost": 8, "guided": false}
+  ],
+  "destroy": {"explodes": true, "explosion_power": 3.2},
+  "armor": {
+    "fallback": {"rating": 5.2, "undermatch_multiplier": 0.12, "overmatch_multiplier": 0.76, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 0.8},
+    "parts": {
+      "turret": {"rating": 6.0, "undermatch_multiplier": 0.1, "overmatch_multiplier": 0.72, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 0.72}
+    }
+  }
+}

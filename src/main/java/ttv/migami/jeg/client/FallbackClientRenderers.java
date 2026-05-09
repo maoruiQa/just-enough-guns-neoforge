@@ -59,6 +59,12 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.SPEEDBOAT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.AH6.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.A10.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.BMP2.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.MI28.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TOM6.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.LASER_TOWER.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.HPJ11.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.WAVEFORCE_TOWER.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
     }

@@ -1,0 +1,8 @@
+{
+  "result_vehicle": "jeg:hpj11",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 42},
+    {"item": "minecraft:copper_ingot", "count": 20},
+    {"item": "minecraft:redstone", "count": 18}
+  ]
+}

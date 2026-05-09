@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.entity.base;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -28,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
@@ -485,7 +487,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
-    private boolean consumeInventoryItem(net.minecraft.world.item.Item item, int count) {
+    private boolean consumeInventoryItem(Item item, int count) {
         int remaining = count;
         for (int slot = 0; slot < this.inventory.getContainerSize() && remaining > 0; slot++) {
             ItemStack stack = this.inventory.getItem(slot);
@@ -511,14 +513,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private int countAmmo(ResourceLocation ammoId) {
-        var ammo = ModItems.AMMO.get(ammoId);
+        Item ammo = this.resolveAmmoItem(ammoId);
         if (ammo == null) {
             return 0;
         }
         int count = 0;
         for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
             ItemStack stack = this.inventory.getItem(slot);
-            if (stack.is(ammo.get())) {
+            if (stack.is(ammo)) {
                 count += stack.getCount();
             }
         }
@@ -526,13 +528,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean consumeAmmo(ResourceLocation ammoId) {
-        var ammo = ModItems.AMMO.get(ammoId);
+        Item ammo = this.resolveAmmoItem(ammoId);
         if (ammo == null) {
             return false;
         }
         for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
             ItemStack stack = this.inventory.getItem(slot);
-            if (!stack.is(ammo.get())) {
+            if (!stack.is(ammo)) {
                 continue;
             }
             stack.shrink(1);
@@ -543,6 +545,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return true;
         }
         return false;
+    }
+
+    @Nullable
+    private Item resolveAmmoItem(ResourceLocation ammoId) {
+        var modAmmo = ModItems.AMMO.get(ammoId);
+        if (modAmmo != null) {
+            return modAmmo.get();
+        }
+        return BuiltInRegistries.ITEM.getOptional(ammoId).orElse(null);
     }
 
     private VehicleWeaponInfo selectedWeapon() {
