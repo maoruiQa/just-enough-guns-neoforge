@@ -11,6 +11,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -20,6 +21,10 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation VALUE_BAR = Reference.id("textures/overlay/vehicle/base/value_bar.png");
     private static final ResourceLocation VALUE_FRAME = Reference.id("textures/overlay/vehicle/base/value_frame.png");
     private static final ResourceLocation CROSSHAIR_GUN = Reference.id("textures/overlay/vehicle/crosshair/common_gun.png");
+    private static final ResourceLocation CROSSHAIR_CANNON = Reference.id("textures/overlay/vehicle/crosshair/common_cannon.png");
+    private static final ResourceLocation CROSSHAIR_CANNON_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/common_cannon_zooming.png");
+    private static final ResourceLocation CROSSHAIR_CN_HPJ_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/cn_hpj_zooming.png");
+    private static final ResourceLocation CROSSHAIR_LASER_CANNON = Reference.id("textures/overlay/vehicle/crosshair/laser_cannon.png");
     private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
 
@@ -98,9 +103,31 @@ public final class VehicleHudOverlay {
         int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
         int x = (guiGraphics.guiWidth() - size) / 2;
         int y = (guiGraphics.guiHeight() - size) / 2;
-        ResourceLocation texture = vehicle.isSelectedVehicleWeaponGuided()
-                ? CROSSHAIR_SEEK_MISSILE
-                : "lav150".equals(vehicle.vehicleDataId().getPath()) ? CROSSHAIR_US_APC : CROSSHAIR_GUN;
+        ResourceLocation texture = reticleTexture(vehicle);
         guiGraphics.blit(texture, x, y, size, size, 0.0F, 0.0F, 512, 512, 512, 512);
+    }
+
+    private static ResourceLocation reticleTexture(VehicleEntity vehicle) {
+        String vehiclePath = vehicle.vehicleDataId().getPath();
+        String weaponPath = vehicle.selectedVehicleWeaponId().getPath();
+        boolean zooming = VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.zoomDown();
+        if (zooming && "hpj11".equals(vehiclePath)) {
+            return CROSSHAIR_CN_HPJ_ZOOMING;
+        }
+        if (vehicle.isSelectedVehicleWeaponGuided()) {
+            return CROSSHAIR_SEEK_MISSILE;
+        }
+        if ("hypersonic_cannon".equals(weaponPath) || "grenade_launcher".equals(weaponPath)) {
+            return zooming ? CROSSHAIR_CANNON_ZOOMING : CROSSHAIR_CANNON;
+        }
+        if ("laser_tower".equals(vehiclePath) || "waveforce_tower".equals(vehiclePath)) {
+            return CROSSHAIR_LASER_CANNON;
+        }
+        if ("lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath)) {
+            return CROSSHAIR_US_APC;
+        }
+        return CROSSHAIR_GUN;
     }
 }
