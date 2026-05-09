@@ -26,7 +26,9 @@ import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class FallbackClientRenderers {
@@ -52,8 +54,8 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.TEST_BOAT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), NullEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), NullEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
+        event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
     }
 
     private static final class FallbackGhoulRenderer extends MobRenderer<Ghoul, ZombieModel<Ghoul>> {
