@@ -242,7 +242,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public boolean isFreeLookInputDown() {
-        return this.input.freeLook();
+        return this.vehicleData().defaults().allowFreeCam() && this.input.freeLook();
     }
 
     public SimpleContainer vehicleInventory() {
@@ -698,7 +698,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void applyPassengerYaw() {
         Entity passenger = this.getControllingPassenger();
-        if (passenger == null || this.input.freeLook()) {
+        if (passenger == null || this.isFreeLookInputDown()) {
             return;
         }
         this.setYRot(passenger.getYRot());
