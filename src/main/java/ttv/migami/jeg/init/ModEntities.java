@@ -209,7 +209,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> LAV150 = REGISTER.register(
             "lav150",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("lav150")), MobCategory.MISC)
-                    .sized(2.0F, 1.45F)
+                    .sized(2.8F, 3.1F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("lav150")
