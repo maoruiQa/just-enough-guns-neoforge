@@ -53,6 +53,10 @@ public final class ModItems {
             "vehicle_assembling_table",
             () -> new BlockItem(ModBlocks.VEHICLE_ASSEMBLING_TABLE.get(), baseProperties(Reference.id("vehicle_assembling_table")).stacksTo(64))
     );
+    public static final DeferredHolder<Item, BlockItem> VEHICLE_CHARGING_STATION = REGISTER.register(
+            "vehicle_charging_station",
+            () -> new BlockItem(ModBlocks.VEHICLE_CHARGING_STATION.get(), baseProperties(Reference.id("vehicle_charging_station")).stacksTo(64))
+    );
     public static final DeferredHolder<Item, Item> CROWBAR = REGISTER.register(
             "crowbar",
             () -> new Item(baseProperties(Reference.id("crowbar")).stacksTo(1).durability(128))
@@ -403,6 +407,7 @@ public final class ModItems {
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(GUNSMITH_MANUAL.get());
             event.accept(VEHICLE_ASSEMBLING_TABLE.get());
+            event.accept(VEHICLE_CHARGING_STATION.get());
             event.accept(VEHICLE_CONTAINER.get());
             event.accept(CROWBAR.get());
             event.accept(COOLANT.get());

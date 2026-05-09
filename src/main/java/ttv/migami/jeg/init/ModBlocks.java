@@ -8,6 +8,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
+import ttv.migami.jeg.vehicle.block.VehicleChargingStationBlock;
 import ttv.migami.jeg.vehicle.block.VehicleContainerBlock;
 
 public final class ModBlocks {
@@ -23,5 +24,10 @@ public final class ModBlocks {
     public static final DeferredHolder<Block, VehicleAssemblingTableBlock> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
             "vehicle_assembling_table",
             () -> new VehicleAssemblingTableBlock(BlockBehaviour.Properties.of().strength(3.5F).sound(SoundType.METAL))
+    );
+
+    public static final DeferredHolder<Block, VehicleChargingStationBlock> VEHICLE_CHARGING_STATION = REGISTER.register(
+            "vehicle_charging_station",
+            () -> new VehicleChargingStationBlock(BlockBehaviour.Properties.of().strength(3.5F).sound(SoundType.METAL))
     );
 }

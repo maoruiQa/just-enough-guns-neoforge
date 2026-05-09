@@ -130,6 +130,18 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return true;
     }
 
+    public boolean addEnergy(int amount) {
+        if (amount <= 0 || this.maxVehicleEnergy() <= 0) {
+            return false;
+        }
+        int current = this.vehicleEnergy();
+        if (current >= this.maxVehicleEnergy()) {
+            return false;
+        }
+        this.entityData.set(DATA_ENERGY, Math.min(this.maxVehicleEnergy(), current + amount));
+        return true;
+    }
+
     public int vehicleRifleAmmo() {
         return this.entityData.get(DATA_RIFLE_AMMO);
     }

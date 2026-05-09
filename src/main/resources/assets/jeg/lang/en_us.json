@@ -322,6 +322,7 @@
   "container.jeg.vehicle": "Vehicle Inventory",
   "container.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
   "block.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
+  "block.jeg.vehicle_charging_station": "Vehicle Charging Station",
   "block.jeg.vehicle_container": "Vehicle Container",
   "item.jeg.crowbar": "Crowbar",
   "gui.jeg.vehicle_assembling.assemble_test_vehicle": "Assemble Test Vehicle",
