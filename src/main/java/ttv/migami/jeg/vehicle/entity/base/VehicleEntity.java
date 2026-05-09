@@ -286,8 +286,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (player.getVehicle() != this) {
             return;
         }
-        if (input.switchWeapon()) {
-            this.selectNextWeaponFor(player);
+        if (input.switchWeapon() && this.selectNextWeaponFor(player)) {
+            this.weaponControllerId = player.getId();
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -393,8 +393,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void tickMissileLock() {
         Entity target = null;
-        LivingEntity shooter = this.getControllingPassenger();
         VehicleWeaponInfo weapon = this.selectedWeapon();
+        LivingEntity shooter = this.weaponUserFor(weapon);
         if (shooter != null && weapon.guided()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
@@ -638,10 +638,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapons.get(index);
     }
 
-    private void selectNextWeaponFor(Player player) {
+    private boolean selectNextWeaponFor(Player player) {
         var weapons = this.vehicleData().defaults().weapons();
         if (weapons.isEmpty()) {
-            return;
+            return false;
         }
         int seatIndex = this.seatIndexForPassenger(player, this.getPassengers().indexOf(player));
         int current = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
@@ -649,9 +649,27 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             int next = (current + offset) % weapons.size();
             if (weapons.get(next).usableBySeat(seatIndex)) {
                 this.entityData.set(DATA_SELECTED_WEAPON, next);
-                return;
+                return true;
             }
         }
+        return false;
+    }
+
+    @Nullable
+    private LivingEntity weaponUserFor(VehicleWeaponInfo weapon) {
+        LivingEntity controller = this.weaponController();
+        if (controller != null && this.canUseSelectedWeapon(controller, weapon)) {
+            return controller;
+        }
+        LivingEntity driver = this.getControllingPassenger();
+        if (driver != null && this.canUseSelectedWeapon(driver, weapon)) {
+            return driver;
+        }
+        return null;
+    }
+
+    private boolean canUseSelectedWeapon(LivingEntity passenger, VehicleWeaponInfo weapon) {
+        return weapon.usableBySeat(this.seatIndexForPassenger(passenger, this.getPassengers().indexOf(passenger)));
     }
 
     private void tickAutoRepair() {
