@@ -28,7 +28,11 @@ public final class DefaultVehicleResource {
 
     public static ResourceLocation texture(VehicleEntity vehicle) {
         ResourceLocation texture = Reference.id(TEXTURE_ROOT + vehiclePath(vehicle) + ".png");
-        return exists(texture) ? texture : FALLBACK_TEXTURE;
+        if (exists(texture)) {
+            return texture;
+        }
+        ResourceLocation typeTexture = Reference.id(TEXTURE_ROOT + typeFallback(vehicle) + ".png");
+        return exists(typeTexture) ? typeTexture : FALLBACK_TEXTURE;
     }
 
     public static ResourceLocation animation(VehicleEntity vehicle) {
