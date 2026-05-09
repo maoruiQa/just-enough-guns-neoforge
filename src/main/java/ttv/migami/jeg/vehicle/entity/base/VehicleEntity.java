@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -94,6 +96,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_ENERGY = "Energy";
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
+    private static final String TAG_SELECTED_WEAPON = "SelectedWeapon";
+    private static final String TAG_DECOY_COOLDOWN = "DecoyCooldown";
+    private static final String TAG_SEAT_ASSIGNMENTS = "SeatAssignments";
+    private static final String TAG_SEAT_PASSENGER = "Passenger";
+    private static final String TAG_SEAT_INDEX = "Seat";
     private static final String TAG_LEFT_WHEEL_HEALTH = "LeftWheelHealth";
     private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
@@ -813,9 +820,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         output.putFloat(TAG_HEALTH, this.vehicleHealth());
         output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
+        output.putInt(TAG_SELECTED_WEAPON, this.entityData.get(DATA_SELECTED_WEAPON));
+        output.putInt(TAG_DECOY_COOLDOWN, this.decoyCooldown);
         output.putFloat(TAG_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
         output.putFloat(TAG_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
         output.putFloat(TAG_ENGINE_HEALTH, this.engineHealth);
+        ListTag seats = new ListTag();
+        for (Map.Entry<UUID, Integer> assignment : this.seatAssignments.entrySet()) {
+            CompoundTag seat = new CompoundTag();
+            seat.putUUID(TAG_SEAT_PASSENGER, assignment.getKey());
+            seat.putInt(TAG_SEAT_INDEX, assignment.getValue());
+            seats.add(seat);
+        }
+        output.put(TAG_SEAT_ASSIGNMENTS, seats);
         CompoundTag inventoryTag = new CompoundTag();
         ContainerHelper.saveAllItems(inventoryTag, this.inventory.getItems(), this.level().registryAccess());
         output.put(TAG_ITEMS, inventoryTag);
@@ -831,12 +848,42 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         int energy = input.contains(TAG_ENERGY) ? input.getInt(TAG_ENERGY) : this.maxVehicleEnergy();
         this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
+        this.entityData.set(DATA_SELECTED_WEAPON, this.readSelectedWeapon(input));
+        this.decoyCooldown = input.getInt(TAG_DECOY_COOLDOWN);
         this.leftWheelHealth = input.contains(TAG_LEFT_WHEEL_HEALTH) ? input.getFloat(TAG_LEFT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.rightWheelHealth = input.contains(TAG_RIGHT_WHEEL_HEALTH) ? input.getFloat(TAG_RIGHT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.engineHealth = input.contains(TAG_ENGINE_HEALTH) ? input.getFloat(TAG_ENGINE_HEALTH) : PART_MAX_HEALTH;
+        this.readSeatAssignments(input);
         this.syncPartDamageFlags();
         if (input.contains(TAG_ITEMS)) {
             ContainerHelper.loadAllItems(input.getCompound(TAG_ITEMS), this.inventory.getItems(), this.level().registryAccess());
+        }
+    }
+
+    private int readSelectedWeapon(CompoundTag input) {
+        int weaponCount = this.vehicleData().defaults().weapons().size();
+        if (!input.contains(TAG_SELECTED_WEAPON) || weaponCount <= 0) {
+            return 0;
+        }
+        return Mth.clamp(input.getInt(TAG_SELECTED_WEAPON), 0, weaponCount - 1);
+    }
+
+    private void readSeatAssignments(CompoundTag input) {
+        this.seatAssignments.clear();
+        if (!input.contains(TAG_SEAT_ASSIGNMENTS, Tag.TAG_LIST)) {
+            return;
+        }
+        int seatCount = this.vehicleData().defaults().seats().size();
+        ListTag seats = input.getList(TAG_SEAT_ASSIGNMENTS, Tag.TAG_COMPOUND);
+        for (int index = 0; index < seats.size(); index++) {
+            CompoundTag seat = seats.getCompound(index);
+            if (!seat.hasUUID(TAG_SEAT_PASSENGER)) {
+                continue;
+            }
+            int seatIndex = seat.getInt(TAG_SEAT_INDEX);
+            if (seatIndex >= 0 && seatIndex < seatCount) {
+                this.seatAssignments.put(seat.getUUID(TAG_SEAT_PASSENGER), seatIndex);
+            }
         }
     }
 
