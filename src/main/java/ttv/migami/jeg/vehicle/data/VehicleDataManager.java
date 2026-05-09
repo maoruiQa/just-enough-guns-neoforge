@@ -251,7 +251,8 @@ public final class VehicleDataManager {
                     ResourceLocation.parse(getString(weapon, "weapon", "jeg:assault_rifle")),
                     ResourceLocation.parse(getString(weapon, "ammo", "jeg:rifle_ammo")),
                     getInt(weapon, "energy_cost", 0),
-                    getBoolean(weapon, "guided", false)
+                    getBoolean(weapon, "guided", false),
+                    getInt(weapon, "seat", getInt(weapon, "seat_index", -1))
             ));
         }
         return List.copyOf(weapons);

@@ -287,10 +287,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (input.switchWeapon()) {
-            int weaponCount = this.vehicleData().defaults().weapons().size();
-            if (weaponCount > 0) {
-                this.entityData.set(DATA_SELECTED_WEAPON, (this.entityData.get(DATA_SELECTED_WEAPON) + 1) % weaponCount);
-            }
+            this.selectNextWeaponFor(player);
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -365,6 +362,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         VehicleWeaponInfo weapon = this.selectedWeapon();
+        int shooterSeat = this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter));
+        if (!weapon.usableBySeat(shooterSeat)) {
+            return;
+        }
         GunStats stats = GunDefinitions.ALL.get(weapon.weaponId());
         if (stats == null || !this.hasEnergy(weapon.energyCost()) || !this.hasAmmo(weapon.ammoId())) {
             return;
@@ -635,6 +636,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
         return weapons.get(index);
+    }
+
+    private void selectNextWeaponFor(Player player) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (weapons.isEmpty()) {
+            return;
+        }
+        int seatIndex = this.seatIndexForPassenger(player, this.getPassengers().indexOf(player));
+        int current = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
+        for (int offset = 1; offset <= weapons.size(); offset++) {
+            int next = (current + offset) % weapons.size();
+            if (weapons.get(next).usableBySeat(seatIndex)) {
+                this.entityData.set(DATA_SELECTED_WEAPON, next);
+                return;
+            }
+        }
     }
 
     private void tickAutoRepair() {

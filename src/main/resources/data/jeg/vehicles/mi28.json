@@ -22,7 +22,7 @@
   ],
   "weapons": [
     {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false},
-    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true}
+    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true, "seat": 1}
   ],
   "destroy": {"explodes": true, "explosion_power": 3.0},
   "seek": {"range": 96.0, "angle": 12.0, "warns_target": true},
