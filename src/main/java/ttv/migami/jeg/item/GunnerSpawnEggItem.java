@@ -13,8 +13,10 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.stats.Stats;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.Faction;
+import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
+import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -60,7 +62,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         }
 
         boolean closeRange = mob.getRandom().nextBoolean();
-        var gunItem = faction.getRandomGun(closeRange);
+        var gunItem = faction.getRandomGun(closeRange, mob.level(), mob.getRandom());
         if (gunItem == null) {
             return;
         }
@@ -74,6 +76,8 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         }
 
         mob.setItemSlot(EquipmentSlot.MAINHAND, gunStack);
+        GunnerProgression.prepareDroppedWeapon(mob, gunStack);
+        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.special(pathfinderMob));
         pathfinderMob.setCanPickUpLoot(false);
         GunnerMobSpawner.reassessWeaponGoal(pathfinderMob);
         GunnerMobSpawner.extendFollowRange(pathfinderMob);

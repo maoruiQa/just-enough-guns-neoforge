@@ -17,11 +17,13 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
+    private static final float SCOPED_BOLT_ACTION_SCALE_MULTIPLIER = 1.1F;
     private static final double FIRST_PERSON_TRANSLATE_X = -3.0D / 16.0D;
     private static final double FIRST_PERSON_TRANSLATE_Y = 0.0D;
     private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
@@ -106,6 +108,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
         float adsTransition = (float) easeOutQuad(ads);
         float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
+        if (Reference.id("bolt_action_rifle").equals(stats.id()) && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+            firstPersonScale *= SCOPED_BOLT_ACTION_SCALE_MULTIPLIER;
+        }
         AdsSightOffset sightOffset = adsSightOffset(stats.id(), firstPersonScale);
         xOffset = Mth.lerp(adsTransition, xOffset, (float) sightOffset.x());
         yOffset = Mth.lerp(adsTransition, yOffset, (float) sightOffset.y());
@@ -204,7 +209,10 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static AdsSightOffset adsSightOffset(Identifier gunId, double firstPersonScale) {
-        ForgeZoomOffset zoom = FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
+        ForgeZoomOffset zoom = Reference.id("bolt_action_rifle").equals(gunId)
+                && GunScopeSupport.isBoltActionRifleScopeEnabled()
+                ? zoom(0.0D, 5.0D, -4.4D)
+                : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
         double translateZ = FIRST_PERSON_TRANSLATE_Z;

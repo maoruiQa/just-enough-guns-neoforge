@@ -15,6 +15,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.init.ModItems;
 
@@ -69,12 +70,17 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
                 ttv.migami.jeg.Reference.id("minigun")
         };
 
-        Identifier choice = guns[random.nextInt(guns.length)];
-        var holder = ModItems.GUNS.get(choice);
-        if (holder != null) {
-            ItemStack gunStack = new ItemStack(holder.get());
+        java.util.List<net.minecraft.world.item.Item> pool = new java.util.ArrayList<>();
+        for (Identifier gunId : guns) {
+            var holder = ModItems.GUNS.get(gunId);
+            if (holder != null) {
+                pool.add(holder.get());
+            }
+        }
+        if (!pool.isEmpty()) {
+            ItemStack gunStack = new ItemStack(GunnerProgression.selectGun(pool, pillager.level(), random));
             pillager.setItemInHand(InteractionHand.MAIN_HAND, gunStack);
-            pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+            GunnerProgression.prepareDroppedWeapon(pillager, gunStack);
         }
     }
 }

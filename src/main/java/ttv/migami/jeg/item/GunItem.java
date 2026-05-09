@@ -40,6 +40,7 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
+import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
@@ -881,7 +882,7 @@ public class GunItem extends Item {
         float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
-        if (level instanceof ServerLevel serverLevel) {
+        if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
         }
 
@@ -934,7 +935,7 @@ public class GunItem extends Item {
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         Vec3 normalized = direction.normalize();
-        if (level instanceof ServerLevel serverLevel) {
+        if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
         }
 
@@ -1001,20 +1002,19 @@ public class GunItem extends Item {
                 float shotgunFloor = stats.spread() * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
                 gunSpread = Math.max(gunSpread, shotgunFloor);
             }
+        } else if (isShotgunWeapon(stats.id())) {
+            gunSpread = stats.spread() * 0.60F;
         } else {
             float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
             float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
             gunSpread *= scaledSpreadMultiplier;
-            if (isShotgunWeapon(stats.id())) {
-                gunSpread *= (float) Config.gunnerShotgunSpreadMultiplier();
-            }
         }
 
         if (gunSpread <= 0.0F) {
             return forwards.normalize();
         }
 
-        float spreadRadians = Math.min(gunSpread, 170.0F) * 0.5F * Mth.DEG_TO_RAD;
+        float spreadRadians = Math.min(gunSpread, 170.0F) * Mth.DEG_TO_RAD;
         Vec3 worldUp = new Vec3(0.0D, 1.0D, 0.0D);
         Vec3 sideways = forwards.cross(worldUp);
         if (sideways.lengthSqr() < 1.0E-6D) {
@@ -1611,7 +1611,10 @@ public class GunItem extends Item {
             tooltipAdder.accept(Component.translatable("info.jeg.ammo_type", ammoName));
         }
 
-        double effectiveRange = GunRangeHelper.computeEffectiveRange(this.stats);
+        float armorPiercing = BallisticProtection.effectiveArmorPiercing(this.stats, BallisticProtection.isRocketDirectHit(this.stats));
+        tooltipAdder.accept(Component.literal("Armor Piercing: " + String.format(Locale.US, "%.2f", armorPiercing)));
+
+        double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
         if (effectiveRange > 0.0D) {
             tooltipAdder.accept(Component.translatable("info.jeg.range", String.format(Locale.US, "%.0f", effectiveRange)));
         }
@@ -1622,4 +1625,3 @@ public class GunItem extends Item {
         }
     }
 }
-

@@ -8,7 +8,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -28,10 +27,10 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.projectile.Projectile;
-import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.entity.GrenadeEntity;
 
@@ -40,7 +39,6 @@ import ttv.migami.jeg.entity.GrenadeEntity;
  * Stays within a certain radius of its spawn point and flies higher.
  */
 public class TerrorPhantomGuardian extends TerrorPhantom {
-    private static final float GUARDIAN_MIN_DAMAGE_TO_HURT = 3.0F;
     // Guardian parameters
     private static final double SKYSHIP_VERTICAL_RANGE = 128.0D;
     private static final double SKYSHIP_DETECTION_RADIUS = 160.0D;
@@ -756,14 +754,11 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        if (amount < GUARDIAN_MIN_DAMAGE_TO_HURT) {
-            return false;
-        }
         if (amount > 0.0F) {
             handleEffectiveFireSupport(level, source);
         }
 
-        float adjustedAmount = applyProjectileProtectionReduction(source, amount);
+        float adjustedAmount = applyBallisticProtectionReduction(source, amount);
         boolean damaged = super.hurtServer(level, source, adjustedAmount);
         if (!damaged || amount <= 0.0F || this.anchorPos == null) {
             return damaged;
@@ -878,30 +873,16 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
         return added;
     }
 
-    private static float applyProjectileProtectionReduction(DamageSource source, float amount) {
-        if (isRocketDirectDamageSource(source)) {
-            return amount;
-        }
-        if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
-            return amount;
-        }
-
-        int level = Config.boundTerrorPhantomProjectileProtectionLevel();
-        if (level <= 0) {
-            return amount;
-        }
-
-        // Match vanilla-like projectile protection scaling: EPF = level * 2, capped at 20; reduction = EPF / 25.
-        int epf = Math.min(20, level * 2);
-        float reduction = (float) epf / 25.0F;
-        return amount * (1.0F - reduction);
-    }
-
-    private static boolean isRocketDirectDamageSource(DamageSource source) {
+    private static float applyBallisticProtectionReduction(DamageSource source, float amount) {
         if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
-            return false;
+            return amount;
         }
-        return "rocket_launcher".equals(bullet.getGunStats().id().getPath());
+        return BallisticProtection.applyToIntrinsicArmor(
+                amount,
+                bullet.getGunStats(),
+                BallisticProtection.BOUND_TERROR_PHANTOM,
+                BallisticProtection.isRocketDirectHit(bullet.getGunStats())
+        ).finalDamage();
     }
 
     private boolean isValidCombatTarget(Player player) {

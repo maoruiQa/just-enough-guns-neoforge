@@ -30,7 +30,10 @@ import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
@@ -81,6 +84,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
+        this.withRenderLayer(new GunBuiltinScopeLayer(this));
         // Render player-skin arms in first-person, driven by GeckoLib arm bones in the gun animations.
         this.withRenderLayer(new GunFirstPersonArmsLayer(this));
     }
@@ -127,6 +131,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     @Override
     public void submit(GeoRenderState renderState, com.mojang.blaze3d.vertex.PoseStack poseStack, SubmitNodeCollector collector, int glowColour) {
         ItemDisplayContext ctx = resolveStableContext(renderState);
+        if (isFirstPerson(ctx) && shouldHideScopedFirstPersonGun(renderState)) {
+            return;
+        }
 
         // Only use GeckoLib for first-person. Everything else should render like NeoForge 1.21.10
         // (vanilla item model + its "display" transforms), which fixes the broken inventory/GUI/third-person renders.
@@ -320,6 +327,21 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             }
         }
         return "unknown";
+    }
+
+    private static boolean shouldHideScopedFirstPersonGun(GeoRenderState renderState) {
+        if (!renderState.hasGeckolibData(ANIMATED_ITEM)) {
+            return false;
+        }
+
+        Item item = renderState.getGeckolibData(ANIMATED_ITEM);
+        if (!(item instanceof AnimatedGunItem gun)) {
+            return false;
+        }
+
+        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled()
+                && AimingHandler.get().getNormalisedAdsProgress() > 0.5F;
     }
 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {

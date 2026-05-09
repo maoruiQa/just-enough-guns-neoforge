@@ -48,6 +48,7 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.faction.GunnerProgression;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
@@ -99,7 +100,7 @@ public final class GunEvents {
             if (pillager.entityTags().contains("jeg_pillager_gunner")) {
                 // Only equip if pillager doesn't already have a gun
                 if (!isHoldingGun(pillager)) {
-                    Identifier selected = selectRandomGun(pillager.getRandom());
+                    Identifier selected = selectRandomGun(pillager.level(), pillager.getRandom());
                     if (selected != null) {
                         equipPillagerWithGun(pillager, selected);
                     }
@@ -184,7 +185,7 @@ public final class GunEvents {
 
         ItemStack stack = new ItemStack(holder.get());
         pillager.setItemInHand(InteractionHand.MAIN_HAND, stack);
-        pillager.setDropChance(EquipmentSlot.MAINHAND, 0.085F);
+        GunnerProgression.prepareDroppedWeapon(pillager, stack);
         // Pillagers use the default crossbow AI which works reasonably well for guns
     }
 
@@ -213,7 +214,7 @@ public final class GunEvents {
         }
 
         pillager.addTag("jeg_pillager_gunner");
-        Identifier selected = selectRandomGun(pillager.getRandom());
+        Identifier selected = selectRandomGun(serverLevel, pillager.getRandom());
         if (selected != null) {
             equipPillagerWithGun(pillager, selected);
         }
@@ -343,14 +344,9 @@ public final class GunEvents {
         RandomSource random = entity.getRandom();
         GunStats stats = gunItem.getStats();
 
-        // Reduced gun drop chance from 12% to 8% for better balance
-        if (random.nextFloat() < 0.08F) {
+        if (random.nextFloat() < 0.06F) {
             ItemStack dropGun = held.copy();
-            if (dropGun.isDamageableItem()) {
-                int maxDamage = dropGun.getMaxDamage();
-                int damage = Mth.nextInt(random, Math.max(1, (int) (maxDamage * 0.65F)), Math.max(1, (int) (maxDamage * 0.9F)));
-                dropGun.setDamageValue(Math.min(maxDamage - 1, damage));
-            }
+            GunnerProgression.damageWeaponToLowDurability(dropGun, random);
             addDrop(drops, entity, dropGun);
             return;
         }
@@ -401,11 +397,18 @@ public final class GunEvents {
         return new ItemStack(Items.GUNPOWDER, fallback);
     }
 
-    private static Identifier selectRandomGun(RandomSource random) {
-        if (DEFAULT_PILLAGER_GUNS.length == 0) {
+    private static Identifier selectRandomGun(Level level, RandomSource random) {
+        List<Item> guns = new java.util.ArrayList<>();
+        for (Identifier gunId : DEFAULT_PILLAGER_GUNS) {
+            var holder = ModItems.GUNS.get(gunId);
+            if (holder != null) {
+                guns.add(holder.get());
+            }
+        }
+        if (guns.isEmpty()) {
             return null;
         }
-        return DEFAULT_PILLAGER_GUNS[random.nextInt(DEFAULT_PILLAGER_GUNS.length)];
+        return BuiltInRegistries.ITEM.getKey(GunnerProgression.selectGun(guns, level, random));
     }
 
     /**
