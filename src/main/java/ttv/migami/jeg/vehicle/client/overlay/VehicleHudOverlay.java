@@ -50,5 +50,14 @@ public final class VehicleHudOverlay {
         }
         Component ammo = Component.translatable("hud.jeg.vehicle.rifle_ammo", vehicle.vehicleRifleAmmo());
         guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, y + 33, 0xFFFFDD88);
+        if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged()) {
+            Component damage = Component.translatable(
+                    "hud.jeg.vehicle.parts",
+                    vehicle.isEngineDamaged() ? "!" : "-",
+                    vehicle.isLeftWheelDamaged() ? "!" : "-",
+                    vehicle.isRightWheelDamaged() ? "!" : "-"
+            );
+            guiGraphics.drawString(minecraft.font, damage, (width - minecraft.font.width(damage)) / 2, y + 44, 0xFFFF7777);
+        }
     }
 }

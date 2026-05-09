@@ -46,6 +46,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
@@ -53,12 +56,19 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final String TAG_ENERGY = "Energy";
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
+    private static final String TAG_LEFT_WHEEL_HEALTH = "LeftWheelHealth";
+    private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
+    private static final String TAG_ENGINE_HEALTH = "EngineHealth";
+    private static final float PART_MAX_HEALTH = 10.0F;
     private static final double GRAVITY = 0.08D;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
+    private float leftWheelHealth = PART_MAX_HEALTH;
+    private float rightWheelHealth = PART_MAX_HEALTH;
+    private float engineHealth = PART_MAX_HEALTH;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -71,6 +81,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
         builder.define(DATA_RIFLE_AMMO, 0);
+        builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
+        builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
+        builder.define(DATA_ENGINE_DAMAGED, false);
     }
 
     public VehicleData vehicleData() {
@@ -114,6 +127,18 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     public int vehicleRifleAmmo() {
         return this.entityData.get(DATA_RIFLE_AMMO);
+    }
+
+    public boolean isLeftWheelDamaged() {
+        return this.entityData.get(DATA_LEFT_WHEEL_DAMAGED);
+    }
+
+    public boolean isRightWheelDamaged() {
+        return this.entityData.get(DATA_RIGHT_WHEEL_DAMAGED);
+    }
+
+    public boolean isEngineDamaged() {
+        return this.entityData.get(DATA_ENGINE_DAMAGED);
     }
 
     public boolean isFreeLookInputDown() {
@@ -210,6 +235,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
         boolean grounded = this.onGround();
+        double mobility = this.mobilityMultiplier();
 
         if (forwardAxis != 0 || strafeAxis != 0) {
             float yaw = this.getYRot();
@@ -218,12 +244,12 @@ public class VehicleEntity extends Entity implements MenuProvider {
             Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
             Vec3 desired = forward.scale(forwardAxis).add(right.scale(strafeAxis * 0.55D));
             if (desired.lengthSqr() > 1.0E-4D) {
-                desired = desired.normalize().scale(engine.acceleration());
+                desired = desired.normalize().scale(engine.acceleration() * mobility);
                 velocity = velocity.add(desired.x, 0.0D, desired.z);
             }
         }
 
-        double maxSpeed = forwardAxis < 0 ? engine.maxReverseSpeed() : engine.maxForwardSpeed();
+        double maxSpeed = (forwardAxis < 0 ? engine.maxReverseSpeed() : engine.maxForwardSpeed()) * mobility;
         Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
         if (horizontal.length() > maxSpeed) {
             horizontal = horizontal.normalize().scale(maxSpeed);
@@ -241,6 +267,17 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.setDeltaMovement(velocity);
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.98D, 0.98D));
+    }
+
+    private double mobilityMultiplier() {
+        double multiplier = this.isEngineDamaged() ? 0.35D : 1.0D;
+        if (this.isLeftWheelDamaged()) {
+            multiplier *= 0.75D;
+        }
+        if (this.isRightWheelDamaged()) {
+            multiplier *= 0.75D;
+        }
+        return Math.max(0.2D, multiplier);
     }
 
     private void applyPassengerYaw() {
@@ -266,6 +303,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         output.putFloat(TAG_HEALTH, this.vehicleHealth());
         output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
+        output.putFloat(TAG_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
+        output.putFloat(TAG_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
+        output.putFloat(TAG_ENGINE_HEALTH, this.engineHealth);
         CompoundTag inventoryTag = new CompoundTag();
         ContainerHelper.saveAllItems(inventoryTag, this.inventory.getItems(), this.level().registryAccess());
         output.put(TAG_ITEMS, inventoryTag);
@@ -281,6 +321,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
         int energy = input.contains(TAG_ENERGY) ? input.getInt(TAG_ENERGY) : this.maxVehicleEnergy();
         this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
+        this.leftWheelHealth = input.contains(TAG_LEFT_WHEEL_HEALTH) ? input.getFloat(TAG_LEFT_WHEEL_HEALTH) : PART_MAX_HEALTH;
+        this.rightWheelHealth = input.contains(TAG_RIGHT_WHEEL_HEALTH) ? input.getFloat(TAG_RIGHT_WHEEL_HEALTH) : PART_MAX_HEALTH;
+        this.engineHealth = input.contains(TAG_ENGINE_HEALTH) ? input.getFloat(TAG_ENGINE_HEALTH) : PART_MAX_HEALTH;
+        this.syncPartDamageFlags();
         if (input.contains(TAG_ITEMS)) {
             ContainerHelper.loadAllItems(input.getCompound(TAG_ITEMS), this.inventory.getItems(), this.level().registryAccess());
         }
@@ -301,10 +345,12 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (this.level().isClientSide || this.isRemoved() || this.isInvulnerableTo(source)) {
             return false;
         }
-        float finalDamage = this.applyVehicleArmor(source, amount);
+        OBBInfo.Part hitPart = this.estimateHitPart(source);
+        float finalDamage = this.applyVehicleArmor(source, amount, hitPart);
         if (finalDamage <= 0.0F) {
             return false;
         }
+        this.applyPartDamage(hitPart, finalDamage);
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
         float newHealth = this.vehicleHealth() - finalDamage;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
@@ -315,11 +361,11 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return true;
     }
 
-    private float applyVehicleArmor(DamageSource source, float amount) {
+    private float applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
         if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
             return amount;
         }
-        VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(OBBInfo.Part.BODY);
+        VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
         BallisticProtection.IntrinsicArmorProfile intrinsic = new BallisticProtection.IntrinsicArmorProfile(
                 armor.rating(),
                 armor.undermatchMultiplier(),
@@ -331,6 +377,42 @@ public class VehicleEntity extends Entity implements MenuProvider {
                 intrinsic,
                 BallisticProtection.isRocketDirectHit(bullet.getGunStats())
         ).finalDamage();
+    }
+
+    private OBBInfo.Part estimateHitPart(DamageSource source) {
+        Entity direct = source.getDirectEntity();
+        if (direct == null) {
+            return OBBInfo.Part.BODY;
+        }
+        double relativeY = direct.getY() - this.getY();
+        double relativeX = direct.getX() - this.getX();
+        double relativeZ = direct.getZ() - this.getZ();
+        if (relativeY < 0.65D && Math.abs(relativeX) > 0.35D) {
+            return relativeX < 0.0D ? OBBInfo.Part.WHEEL_LEFT : OBBInfo.Part.WHEEL_RIGHT;
+        }
+        if (relativeY < 0.9D && relativeZ < -0.35D) {
+            return OBBInfo.Part.MAIN_ENGINE;
+        }
+        return OBBInfo.Part.BODY;
+    }
+
+    private void applyPartDamage(OBBInfo.Part hitPart, float finalDamage) {
+        VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
+        float partDamage = finalDamage * armor.partDamageMultiplier();
+        switch (hitPart) {
+            case WHEEL_LEFT -> this.leftWheelHealth = Math.max(0.0F, this.leftWheelHealth - partDamage);
+            case WHEEL_RIGHT -> this.rightWheelHealth = Math.max(0.0F, this.rightWheelHealth - partDamage);
+            case MAIN_ENGINE, SUB_ENGINE -> this.engineHealth = Math.max(0.0F, this.engineHealth - partDamage);
+            default -> {
+            }
+        }
+        this.syncPartDamageFlags();
+    }
+
+    private void syncPartDamageFlags() {
+        this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, this.leftWheelHealth <= 0.0F);
+        this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, this.rightWheelHealth <= 0.0F);
+        this.entityData.set(DATA_ENGINE_DAMAGED, this.engineHealth <= 0.0F);
     }
 
     @Override
