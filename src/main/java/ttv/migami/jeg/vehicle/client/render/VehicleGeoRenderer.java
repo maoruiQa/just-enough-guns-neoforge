@@ -9,6 +9,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class VehicleGeoRenderer extends GeoEntityRenderer<VehicleEntity> {
     public VehicleGeoRenderer(EntityRendererProvider.Context context) {
         super(context, new VehicleGeoModel());
+        this.addRenderLayer(new VehicleBoatWaterMaskLayer(this));
         this.addRenderLayer(new VehicleGlowLayer(this));
         this.shadowRadius = 0.9F;
     }
