@@ -76,6 +76,7 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
     private static final ResourceLocation COMPOUND_BOW_ID = Reference.id("compound_bow");
     private static final ResourceLocation PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
+    private static final ResourceLocation VEHICLE_20MM_CANNON_ID = Reference.id("vehicle_20mm_cannon");
     private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
             && (state.getBlock() instanceof LeavesBlock || isGrassLikeFoliage(state));
     private static boolean isGrassLikeFoliage(BlockState state) {
@@ -93,6 +94,9 @@ public class BulletEntity extends Projectile {
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
     private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
     private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
+    private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.0F;
+    private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 12.0F;
+    private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.0D;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
@@ -785,7 +789,59 @@ public class BulletEntity extends Projectile {
             return true;
         }
 
+        if (id.equals(VEHICLE_20MM_CANNON_ID)) {
+            if (!this.level().isClientSide()) {
+                Entity owner = this.getOwner();
+                Vec3 pos = result.getLocation();
+                spawnVehicleCannonExplosionEffects((ServerLevel) this.level(), pos);
+                this.level().explode(this, pos.x, pos.y, pos.z, VEHICLE_20MM_EXPLOSION_POWER, ExplosionInteraction.NONE);
+
+                if (result instanceof EntityHitResult entityHit) {
+                    Entity hitEntity = entityHit.getEntity();
+                    if (hitEntity.isAlive()) {
+                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        if (hitEntity instanceof LivingEntity living) {
+                            float directDamage = applyBallisticArmor(living, entityHit, stats.damage(), stats, false);
+                            boolean hurt = living.hurt(source, directDamage);
+                            if (hurt && owner instanceof ServerPlayer shooter) {
+                                NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                            }
+                        } else {
+                            hitEntity.hurt(source, stats.damage());
+                        }
+                    }
+                }
+
+                applyVehicleCannonBlastDamage(pos, owner);
+            }
+            return true;
+        }
+
         return false;
+    }
+
+    private void applyVehicleCannonBlastDamage(Vec3 pos, @Nullable Entity owner) {
+        AABB area = new AABB(
+                pos.x - VEHICLE_20MM_EXPLOSION_RADIUS,
+                pos.y - VEHICLE_20MM_EXPLOSION_RADIUS,
+                pos.z - VEHICLE_20MM_EXPLOSION_RADIUS,
+                pos.x + VEHICLE_20MM_EXPLOSION_RADIUS,
+                pos.y + VEHICLE_20MM_EXPLOSION_RADIUS,
+                pos.z + VEHICLE_20MM_EXPLOSION_RADIUS
+        );
+        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+        for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
+            double distance = target.position().distanceTo(pos);
+            if (distance > VEHICLE_20MM_EXPLOSION_RADIUS) {
+                continue;
+            }
+
+            float scale = 1.0F - (float) (distance / VEHICLE_20MM_EXPLOSION_RADIUS);
+            float damage = VEHICLE_20MM_EXPLOSION_DAMAGE * scale;
+            if (damage > 0.5F) {
+                target.hurt(source, damage);
+            }
+        }
     }
 
     private void applyRocketBlastDamage(@Nullable Entity owner) {
@@ -832,6 +888,11 @@ public class BulletEntity extends Projectile {
         sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), pos.x, pos.y, pos.z, smallCount, 1.1D, 1.1D, 1.1D, 0.12D);
         sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), pos.x, pos.y, pos.z, 12, 1.2D, 1.2D, 1.2D, 0.02D);
         sendLongDistanceParticles(serverLevel, ModParticleTypes.FIRE.get(), pos.x, pos.y, pos.z, 10, 0.9D, 0.9D, 0.9D, 0.04D);
+    }
+
+    private void spawnVehicleCannonExplosionEffects(ServerLevel serverLevel, Vec3 pos) {
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), pos.x, pos.y, pos.z, 8, 0.7D, 0.7D, 0.7D, 0.08D);
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), pos.x, pos.y, pos.z, 6, 0.8D, 0.8D, 0.8D, 0.02D);
     }
 
     private static <T extends ParticleOptions> void sendLongDistanceParticles(
