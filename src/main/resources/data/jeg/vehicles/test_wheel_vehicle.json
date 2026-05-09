@@ -81,6 +81,10 @@
       "guided": false
     }
   ],
+  "destroy": {
+    "explodes": false,
+    "explosion_power": 0.0
+  },
   "armor": {
     "fallback": {
       "rating": 2.0,

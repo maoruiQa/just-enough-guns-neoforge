@@ -24,6 +24,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
@@ -32,6 +33,7 @@ import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
@@ -403,7 +405,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
             this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
             this.hurtMarked = true;
             if (newHealth <= 0.0F) {
-                this.discard();
+                this.destroyVehicle();
             }
         }
         return true;
@@ -548,9 +550,20 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
         this.hurtMarked = true;
         if (newHealth <= 0.0F) {
-            this.discard();
+            this.destroyVehicle();
         }
         return true;
+    }
+
+    private void destroyVehicle() {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY() + 0.6D, this.getZ(), 12, 0.8D, 0.5D, 0.8D, 0.08D);
+            var destroy = this.vehicleData().defaults().destroy();
+            if (destroy.explodes() && destroy.explosionPower() > 0.0F) {
+                this.level().explode(this, this.getX(), this.getY() + 0.4D, this.getZ(), destroy.explosionPower(), ExplosionInteraction.MOB);
+            }
+        }
+        this.discard();
     }
 
     private ArmorHit applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {

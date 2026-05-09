@@ -94,6 +94,7 @@ public final class VehicleDataManager {
         OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
+        DestroyInfo destroy = parseDestroy(getObject(object, "destroy"), fallback.destroy());
 
         return new VehicleData(new DefaultVehicleData(
                 id,
@@ -112,7 +113,7 @@ public final class VehicleDataManager {
                 armor,
                 weapons,
                 SeekInfo.NONE,
-                DestroyInfo.NONE
+                destroy
         ));
     }
 
@@ -211,6 +212,16 @@ public final class VehicleDataManager {
             ));
         }
         return List.copyOf(weapons);
+    }
+
+    private static DestroyInfo parseDestroy(JsonObject object, DestroyInfo fallback) {
+        if (object == null) {
+            return fallback;
+        }
+        return new DestroyInfo(
+                getBoolean(object, "explodes", fallback.explodes()),
+                getFloat(object, "explosion_power", fallback.explosionPower())
+        );
     }
 
     private static VehicleArmorProfile parseArmor(JsonObject object, VehicleArmorProfile fallback) {
