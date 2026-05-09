@@ -36,6 +36,7 @@ import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
 import ttv.migami.jeg.item.WaterBombItem;
+import ttv.migami.jeg.vehicle.item.VehicleContainerItem;
 // import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 // import ttv.migami.jeg.item.JoyousArmorPlateItem;
 
@@ -45,9 +46,9 @@ public final class ModItems {
     public static final DeferredRegister<Item> REGISTER = DeferredRegister.create(Registries.ITEM, Reference.MOD_ID);
 
     public static final Map<ResourceLocation, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
-    public static final DeferredHolder<Item, BlockItem> VEHICLE_CONTAINER = REGISTER.register(
+    public static final DeferredHolder<Item, VehicleContainerItem> VEHICLE_CONTAINER = REGISTER.register(
             "vehicle_container",
-            () -> new BlockItem(ModBlocks.VEHICLE_CONTAINER.get(), baseProperties(Reference.id("vehicle_container")).stacksTo(16))
+            () -> new VehicleContainerItem(ModBlocks.VEHICLE_CONTAINER.get(), baseProperties(Reference.id("vehicle_container")).stacksTo(1))
     );
     public static final DeferredHolder<Item, BlockItem> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
             "vehicle_assembling_table",
