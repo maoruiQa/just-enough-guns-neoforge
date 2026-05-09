@@ -47,12 +47,19 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
+    private static final ResourceLocation VEHICLE_SECONDARY_WEAPON = Reference.id("combat_pistol");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
-    private static final int FIRE_ENERGY_COST = 1;
+    private static final ResourceLocation PISTOL_AMMO = Reference.id("pistol_ammo");
+    private static final VehicleWeapon[] VEHICLE_WEAPONS = {
+            new VehicleWeapon(VEHICLE_TEST_WEAPON, RIFLE_AMMO, 1),
+            new VehicleWeapon(VEHICLE_SECONDARY_WEAPON, PISTOL_AMMO, 0)
+    };
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
@@ -91,6 +98,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
         builder.define(DATA_RIFLE_AMMO, 0);
+        builder.define(DATA_SELECTED_WEAPON, 0);
+        builder.define(DATA_SELECTED_WEAPON_AMMO, 0);
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
@@ -151,6 +160,14 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return this.entityData.get(DATA_RIFLE_AMMO);
     }
 
+    public int selectedVehicleWeaponAmmo() {
+        return this.entityData.get(DATA_SELECTED_WEAPON_AMMO);
+    }
+
+    public ResourceLocation selectedVehicleWeaponId() {
+        return this.selectedWeapon().weaponId();
+    }
+
     public boolean isLeftWheelDamaged() {
         return this.entityData.get(DATA_LEFT_WHEEL_DAMAGED);
     }
@@ -171,6 +188,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (player != this.getControllingPassenger()) {
             return;
         }
+        if (input.switchWeapon()) {
+            this.entityData.set(DATA_SELECTED_WEAPON, (this.entityData.get(DATA_SELECTED_WEAPON) + 1) % VEHICLE_WEAPONS.length);
+        }
         this.input = input;
     }
 
@@ -184,6 +204,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
+            this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.countAmmo(this.selectedWeapon().ammoId()));
         }
         this.updateRiderPosition();
     }
@@ -195,8 +216,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (!this.input.fire() || this.fireCooldown > 0 || !(this.getControllingPassenger() instanceof LivingEntity shooter)) {
             return;
         }
-        GunStats stats = GunDefinitions.ALL.get(VEHICLE_TEST_WEAPON);
-        if (stats == null || !this.consumeEnergy(FIRE_ENERGY_COST) || !this.consumeRifleAmmo()) {
+        VehicleWeapon weapon = this.selectedWeapon();
+        GunStats stats = GunDefinitions.ALL.get(weapon.weaponId());
+        if (stats == null || !this.consumeEnergy(weapon.energyCost()) || !this.consumeAmmo(weapon.ammoId())) {
             return;
         }
         Vec3 direction = shooter.getViewVector(1.0F).normalize();
@@ -249,20 +271,32 @@ public class VehicleEntity extends Entity implements MenuProvider {
     }
 
     private int countRifleAmmo() {
+        return this.countAmmo(RIFLE_AMMO);
+    }
+
+    private int countAmmo(ResourceLocation ammoId) {
+        var ammo = ModItems.AMMO.get(ammoId);
+        if (ammo == null) {
+            return 0;
+        }
         int count = 0;
         for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
             ItemStack stack = this.inventory.getItem(slot);
-            if (stack.is(ModItems.AMMO.get(RIFLE_AMMO).get())) {
+            if (stack.is(ammo.get())) {
                 count += stack.getCount();
             }
         }
         return count;
     }
 
-    private boolean consumeRifleAmmo() {
+    private boolean consumeAmmo(ResourceLocation ammoId) {
+        var ammo = ModItems.AMMO.get(ammoId);
+        if (ammo == null) {
+            return false;
+        }
         for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
             ItemStack stack = this.inventory.getItem(slot);
-            if (!stack.is(ModItems.AMMO.get(RIFLE_AMMO).get())) {
+            if (!stack.is(ammo.get())) {
                 continue;
             }
             stack.shrink(1);
@@ -273,6 +307,11 @@ public class VehicleEntity extends Entity implements MenuProvider {
             return true;
         }
         return false;
+    }
+
+    private VehicleWeapon selectedWeapon() {
+        int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, VEHICLE_WEAPONS.length - 1);
+        return VEHICLE_WEAPONS[index];
     }
 
     private void tickAutoRepair() {
@@ -617,5 +656,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
     }
 
     private record ArmorHit(float finalDamage, boolean penetrated) {
+    }
+
+    private record VehicleWeapon(ResourceLocation weaponId, ResourceLocation ammoId, int energyCost) {
     }
 }

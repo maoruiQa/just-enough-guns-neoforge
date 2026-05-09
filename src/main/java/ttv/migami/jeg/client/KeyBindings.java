@@ -27,11 +27,19 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_SWITCH_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_switch_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
+            CATEGORY
+    );
+
     private KeyBindings() {}
 
     @SubscribeEvent
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(RELOAD);
         event.register(VEHICLE_FREE_LOOK);
+        event.register(VEHICLE_SWITCH_WEAPON);
     }
 }

@@ -31,7 +31,8 @@ public final class VehicleInputHandler {
                 minecraft.options.keyRight.isDown(),
                 minecraft.options.keyJump.isDown(),
                 minecraft.options.keyAttack.isDown(),
-                KeyBindings.VEHICLE_FREE_LOOK.isDown()
+                KeyBindings.VEHICLE_FREE_LOOK.isDown(),
+                KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick()
         ));
     }
 }
