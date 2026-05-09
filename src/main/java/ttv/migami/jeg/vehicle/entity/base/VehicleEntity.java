@@ -331,6 +331,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         super.tick();
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
+            this.clearStaleDriverInput();
             this.tickServerMovement();
             this.tickRammingDamage();
             this.tickMissileLock();
@@ -344,6 +345,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         }
         this.updateRiderPosition();
+    }
+
+    private void clearStaleDriverInput() {
+        if (this.getControllingPassenger() == null) {
+            this.input = VehicleInput.EMPTY;
+        }
     }
 
     private void tickServerWeapon() {
