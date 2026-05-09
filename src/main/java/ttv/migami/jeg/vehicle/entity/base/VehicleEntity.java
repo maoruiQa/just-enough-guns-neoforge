@@ -48,7 +48,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
-import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -70,6 +69,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
+import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 
 public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -389,7 +389,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!weapon.usableBySeat(shooterSeat)) {
             return;
         }
-        GunStats stats = GunDefinitions.ALL.get(weapon.weaponId());
+        GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
         if (stats == null || !this.hasEnergy(weapon.energyCost()) || !this.hasAmmo(weapon.ammoId())) {
             return;
         }
