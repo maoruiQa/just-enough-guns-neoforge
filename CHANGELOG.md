@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.2-pre2+fabric+26.1 - 2026-05-09
+## 1.5.1pre2 - 2026-05-09
 
 ### Changed
 - Aligned muzzle flash and trail rendering with the current branch behavior.
