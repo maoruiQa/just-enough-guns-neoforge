@@ -61,6 +61,10 @@ public final class ModItems {
             "crowbar",
             () -> new Item(baseProperties(Reference.id("crowbar")).stacksTo(1).durability(128))
     );
+    public static final DeferredHolder<Item, Item> REPAIR_KIT = REGISTER.register(
+            "repair_kit",
+            () -> new Item(baseProperties(Reference.id("repair_kit")).stacksTo(16))
+    );
     public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, MagazineItem> PISTOL_MAGAZINE = REGISTER.register(
@@ -410,6 +414,7 @@ public final class ModItems {
             event.accept(VEHICLE_CHARGING_STATION.get());
             event.accept(VEHICLE_CONTAINER.get());
             event.accept(CROWBAR.get());
+            event.accept(REPAIR_KIT.get());
             event.accept(COOLANT.get());
             event.accept(ENHANCED_COOLANT.get());
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));

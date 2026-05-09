@@ -330,6 +330,7 @@
   "message.jeg.vehicle_assembling.missing_materials": "Missing materials for test vehicle",
   "message.jeg.vehicle_assembling.completed": "Vehicle container assembled",
   "message.jeg.vehicle_container.blocked": "The vehicle container needs clear space above it",
+  "message.jeg.vehicle.repaired": "Vehicle repaired",
   "key.jeg.unload": "Unload",
   "key.jeg.attachments": "Modify Attachments",
   "key.jeg.melee": "Melee Attack",

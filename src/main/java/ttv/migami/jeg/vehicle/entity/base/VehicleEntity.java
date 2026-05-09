@@ -55,6 +55,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final int FIRE_ENERGY_COST = 1;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
+    private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final String TAG_ENERGY = "Energy";
@@ -64,6 +65,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
     private static final float PART_MAX_HEALTH = 10.0F;
+    private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
+    private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
+    private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
+    private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double GRAVITY = 0.08D;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
@@ -271,6 +276,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
     }
 
     private void tickAutoRepair() {
+        if (this.tickLowHealthDecay()) {
+            return;
+        }
         if (this.repairCooldown > 0) {
             this.repairCooldown--;
             return;
@@ -280,6 +288,21 @@ public class VehicleEntity extends Entity implements MenuProvider {
             return;
         }
         this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + repair));
+    }
+
+    private boolean tickLowHealthDecay() {
+        if (this.vehicleHealth() <= 0.0F || this.vehicleHealth() >= this.maxVehicleHealth() * LOW_HEALTH_DECAY_THRESHOLD) {
+            return false;
+        }
+        if (this.tickCount % LOW_HEALTH_DECAY_INTERVAL == 0) {
+            float newHealth = this.vehicleHealth() - LOW_HEALTH_DECAY_DAMAGE;
+            this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+            this.hurtMarked = true;
+            if (newHealth <= 0.0F) {
+                this.discard();
+            }
+        }
+        return true;
     }
 
     private void tickServerMovement() {
@@ -500,9 +523,48 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.entityData.set(DATA_ENGINE_DAMAGED, this.engineHealth <= 0.0F);
     }
 
+    private boolean repairWithKit() {
+        boolean repaired = false;
+        if (this.vehicleHealth() < this.maxVehicleHealth()) {
+            this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + REPAIR_KIT_HULL_REPAIR));
+            repaired = true;
+        }
+        if (this.leftWheelHealth < PART_MAX_HEALTH) {
+            this.leftWheelHealth = Math.min(PART_MAX_HEALTH, this.leftWheelHealth + REPAIR_KIT_PART_REPAIR);
+            repaired = true;
+        }
+        if (this.rightWheelHealth < PART_MAX_HEALTH) {
+            this.rightWheelHealth = Math.min(PART_MAX_HEALTH, this.rightWheelHealth + REPAIR_KIT_PART_REPAIR);
+            repaired = true;
+        }
+        if (this.engineHealth < PART_MAX_HEALTH) {
+            this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + REPAIR_KIT_PART_REPAIR);
+            repaired = true;
+        }
+        if (repaired) {
+            this.repairCooldown = 0;
+            this.syncPartDamageFlags();
+            this.hurtMarked = true;
+        }
+        return repaired;
+    }
+
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (stack.is(ModItems.REPAIR_KIT.get())) {
+            if (this.level().isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            if (this.repairWithKit()) {
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                player.displayClientMessage(Component.translatable("message.jeg.vehicle.repaired"), true);
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.PASS;
+        }
         if (!this.level().isClientSide && player.isShiftKeyDown() && stack.is(ModItems.CROWBAR.get()) && player instanceof ServerPlayer serverPlayer) {
             ItemStack container = VehicleContainerBlockEntity.createItemFor(this);
             if (!serverPlayer.getInventory().add(container)) {
