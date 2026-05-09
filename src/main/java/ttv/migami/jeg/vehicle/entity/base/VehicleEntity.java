@@ -51,6 +51,9 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
+    private static final int FIRE_ENERGY_COST = 1;
+    private static final int REDSTONE_ENERGY_VALUE = 20;
+    private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
     private static final String TAG_ENERGY = "Energy";
@@ -66,6 +69,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
+    private int energyRechargeTick;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -159,6 +163,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (!this.level().isClientSide) {
             this.tickServerMovement();
             this.tickServerWeapon();
+            this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
         }
@@ -173,7 +178,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
             return;
         }
         GunStats stats = GunDefinitions.ALL.get(VEHICLE_TEST_WEAPON);
-        if (stats == null || !this.consumeRifleAmmo()) {
+        if (stats == null || !this.consumeEnergy(FIRE_ENERGY_COST) || !this.consumeRifleAmmo()) {
             return;
         }
         Vec3 direction = shooter.getViewVector(1.0F).normalize();
@@ -188,6 +193,41 @@ public class VehicleEntity extends Entity implements MenuProvider {
             bullet.sendTrailToClients(serverLevel);
         }
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private void tickInventoryEnergyRecharge() {
+        if (this.maxVehicleEnergy() <= 0 || this.vehicleEnergy() >= this.maxVehicleEnergy()) {
+            return;
+        }
+        this.energyRechargeTick++;
+        if (this.energyRechargeTick < ENERGY_RECHARGE_INTERVAL) {
+            return;
+        }
+        this.energyRechargeTick = 0;
+        if (this.consumeInventoryItem(net.minecraft.world.item.Items.REDSTONE, 1)) {
+            this.entityData.set(DATA_ENERGY, Math.min(this.maxVehicleEnergy(), this.vehicleEnergy() + REDSTONE_ENERGY_VALUE));
+        }
+    }
+
+    private boolean consumeInventoryItem(net.minecraft.world.item.Item item, int count) {
+        int remaining = count;
+        for (int slot = 0; slot < this.inventory.getContainerSize() && remaining > 0; slot++) {
+            ItemStack stack = this.inventory.getItem(slot);
+            if (!stack.is(item)) {
+                continue;
+            }
+            int removed = Math.min(remaining, stack.getCount());
+            stack.shrink(removed);
+            if (stack.isEmpty()) {
+                this.inventory.setItem(slot, ItemStack.EMPTY);
+            }
+            remaining -= removed;
+        }
+        if (remaining == 0) {
+            this.inventory.setChanged();
+            return true;
+        }
+        return false;
     }
 
     private int countRifleAmmo() {
