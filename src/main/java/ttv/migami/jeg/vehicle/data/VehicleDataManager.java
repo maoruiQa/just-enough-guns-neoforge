@@ -254,12 +254,16 @@ public final class VehicleDataManager {
         java.util.ArrayList<VehicleWeaponInfo> weapons = new java.util.ArrayList<>();
         for (JsonElement weaponElement : array) {
             JsonObject weapon = weaponElement.getAsJsonObject();
+            JsonObject muzzle = getObject(weapon, "muzzle");
             weapons.add(new VehicleWeaponInfo(
                     ResourceLocation.parse(getString(weapon, "weapon", "jeg:assault_rifle")),
                     ResourceLocation.parse(getString(weapon, "ammo", "jeg:rifle_ammo")),
                     getInt(weapon, "energy_cost", 0),
                     getBoolean(weapon, "guided", false),
-                    getInt(weapon, "seat", getInt(weapon, "seat_index", -1))
+                    getInt(weapon, "seat", getInt(weapon, "seat_index", -1)),
+                    muzzle == null ? Double.NaN : getDouble(muzzle, "x", Double.NaN),
+                    muzzle == null ? Double.NaN : getDouble(muzzle, "y", Double.NaN),
+                    muzzle == null ? Double.NaN : getDouble(muzzle, "z", Double.NaN)
             ));
         }
         return List.copyOf(weapons);

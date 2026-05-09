@@ -412,7 +412,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.launchMissile(shooter, direction, stats);
             return;
         }
-        Vec3 muzzle = this.position().add(0.0D, 0.9D, 0.0D).add(direction.scale(1.15D));
+        Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.15D, 0.9D);
         BulletEntity bullet = new BulletEntity(this.level(), shooter, stats, direction.scale(stats.projectileSpeed()));
         bullet.initialisePosition(muzzle);
         this.level().addFreshEntity(bullet);
@@ -425,6 +425,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void playWeaponFireSound(VehicleWeaponInfo weapon, GunStats stats) {
         SoundEvent sound = VehicleSoundHelper.fireSound(this, weapon, stats);
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 7.5F, 1.0F);
+    }
+
+    private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
+        if (weapon.hasMuzzle()) {
+            return this.position().add(this.rotateLocalOffset(weapon.muzzleX(), weapon.muzzleY(), weapon.muzzleZ()));
+        }
+        return this.position().add(0.0D, fallbackHeight, 0.0D).add(direction.scale(fallbackForwardOffset));
     }
 
     private void tickMissileLock() {
@@ -459,7 +466,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
-        Vec3 muzzle = this.position().add(0.0D, 0.95D, 0.0D).add(direction.scale(1.25D));
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
         Vec3 velocity = direction.scale(0.72D).add(this.getDeltaMovement().scale(0.15D));
         Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()) : null;
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity));
