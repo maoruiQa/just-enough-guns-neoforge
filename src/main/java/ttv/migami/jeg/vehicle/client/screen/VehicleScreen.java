@@ -10,8 +10,8 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     public VehicleScreen(VehicleMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 144;
-        this.inventoryLabelY = 50;
+        this.imageHeight = menu.screenHeight();
+        this.inventoryLabelY = menu.playerInventoryY() - 12;
     }
 
     @Override
@@ -19,8 +19,10 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
         int x = this.leftPos;
         int y = this.topPos;
         guiGraphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xDD20252B);
-        guiGraphics.fill(x + 6, y + 16, x + this.imageWidth - 6, y + 39, 0xAA111418);
-        guiGraphics.fill(x + 6, y + 58, x + this.imageWidth - 6, y + this.imageHeight - 6, 0xAA111418);
+        if (this.menu.vehicleRows() > 0) {
+            guiGraphics.fill(x + 6, y + 16, x + this.imageWidth - 6, y + 24 + this.menu.vehicleRows() * 18, 0xAA111418);
+        }
+        guiGraphics.fill(x + 6, y + this.menu.playerInventoryY() - 4, x + this.imageWidth - 6, y + this.imageHeight - 6, 0xAA111418);
     }
 
     @Override

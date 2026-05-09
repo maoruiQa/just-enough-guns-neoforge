@@ -6,7 +6,7 @@
   "auto_repair_cooldown_ticks": 140,
   "max_energy": 120,
   "allow_free_cam": true,
-  "container_type": "none",
+  "container_type": "small",
   "seats": [
     {
       "index": 0,

@@ -56,6 +56,7 @@ import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
@@ -99,7 +100,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double GRAVITY = 0.08D;
     private static final RawAnimation GECKO_IDLE = RawAnimation.begin().thenLoop("idle");
 
-    private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
+    private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
     private VehicleInput input = VehicleInput.EMPTY;
@@ -959,7 +960,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return InteractionResult.CONSUME;
         }
         if (!this.level().isClientSide && player.isShiftKeyDown() && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(this);
+            serverPlayer.openMenu(this, buffer -> buffer.writeVarInt(this.vehicleContainerSlots()));
             return InteractionResult.CONSUME;
         }
         if (!this.level().isClientSide && !player.isPassenger()) {
@@ -976,7 +977,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     @Nullable
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new VehicleMenu(containerId, playerInventory, this.inventory);
+        return new VehicleMenu(containerId, playerInventory, this.inventory, this.vehicleContainerSlots());
+    }
+
+    private int vehicleContainerSlots() {
+        VehicleContainerType containerType = this.vehicleData().defaults().containerType();
+        return Math.min(containerType.slots(), this.inventory.getContainerSize());
     }
 
     @Override

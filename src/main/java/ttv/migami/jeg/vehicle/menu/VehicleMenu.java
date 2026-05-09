@@ -11,36 +11,59 @@ import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.init.ModMenuTypes;
 
 public final class VehicleMenu extends AbstractContainerMenu {
-    public static final int VEHICLE_SLOT_COUNT = 9;
-    private static final int PLAYER_INVENTORY_START = VEHICLE_SLOT_COUNT;
-    private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
-    private static final int HOTBAR_END = PLAYER_INVENTORY_END + 9;
+    public static final int MAX_VEHICLE_SLOT_COUNT = 54;
+    private static final int DEFAULT_VEHICLE_SLOT_COUNT = 9;
 
     private final Container vehicleInventory;
+    private final int vehicleSlotCount;
+    private final int playerInventoryY;
 
     public VehicleMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, new SimpleContainer(VEHICLE_SLOT_COUNT));
+        this(containerId, playerInventory, DEFAULT_VEHICLE_SLOT_COUNT);
+    }
+
+    public VehicleMenu(int containerId, Inventory playerInventory, int vehicleSlotCount) {
+        this(containerId, playerInventory, new SimpleContainer(vehicleSlotCount), vehicleSlotCount);
     }
 
     public VehicleMenu(int containerId, Inventory playerInventory, Container vehicleInventory) {
+        this(containerId, playerInventory, vehicleInventory, Math.min(vehicleInventory.getContainerSize(), MAX_VEHICLE_SLOT_COUNT));
+    }
+
+    public VehicleMenu(int containerId, Inventory playerInventory, Container vehicleInventory, int vehicleSlotCount) {
         super(ModMenuTypes.VEHICLE_MENU.get(), containerId);
-        checkContainerSize(vehicleInventory, VEHICLE_SLOT_COUNT);
+        this.vehicleSlotCount = Math.max(0, Math.min(vehicleSlotCount, MAX_VEHICLE_SLOT_COUNT));
+        checkContainerSize(vehicleInventory, this.vehicleSlotCount);
         this.vehicleInventory = vehicleInventory;
         this.vehicleInventory.startOpen(playerInventory.player);
+        int rows = this.vehicleRows();
+        this.playerInventoryY = 20 + rows * 18 + 24;
 
-        for (int slot = 0; slot < VEHICLE_SLOT_COUNT; slot++) {
-            this.addSlot(new Slot(vehicleInventory, slot, 8 + slot * 18, 20));
+        for (int slot = 0; slot < this.vehicleSlotCount; slot++) {
+            this.addSlot(new Slot(vehicleInventory, slot, 8 + slot % 9 * 18, 20 + slot / 9 * 18));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 62 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, this.playerInventoryY + row * 18));
             }
         }
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 120));
+            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, this.playerInventoryY + 58));
         }
+    }
+
+    public int vehicleRows() {
+        return (this.vehicleSlotCount + 8) / 9;
+    }
+
+    public int playerInventoryY() {
+        return this.playerInventoryY;
+    }
+
+    public int screenHeight() {
+        return this.playerInventoryY + 82;
     }
 
     @Override
@@ -50,11 +73,13 @@ public final class VehicleMenu extends AbstractContainerMenu {
         if (slot.hasItem()) {
             ItemStack stack = slot.getItem();
             copy = stack.copy();
-            if (index < VEHICLE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(stack, PLAYER_INVENTORY_START, HOTBAR_END, true)) {
+            int playerInventoryStart = this.vehicleSlotCount;
+            int hotbarEnd = playerInventoryStart + 36;
+            if (index < this.vehicleSlotCount) {
+                if (!this.moveItemStackTo(stack, playerInventoryStart, hotbarEnd, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.moveItemStackTo(stack, 0, VEHICLE_SLOT_COUNT, false)) {
+            } else if (!this.moveItemStackTo(stack, 0, this.vehicleSlotCount, false)) {
                 return ItemStack.EMPTY;
             }
 

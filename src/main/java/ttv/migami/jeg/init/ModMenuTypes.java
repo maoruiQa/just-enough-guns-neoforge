@@ -17,7 +17,7 @@ public final class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleMenu>> VEHICLE_MENU = REGISTER.register(
             "vehicle_menu",
-            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleMenu(windowId, inventory))
+            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new VehicleMenu(windowId, inventory, data.readVarInt()))
     );
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleAssemblingMenu>> VEHICLE_ASSEMBLING_MENU = REGISTER.register(
