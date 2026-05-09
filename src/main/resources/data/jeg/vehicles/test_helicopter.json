@@ -1,0 +1,88 @@
+{
+  "entity_type": "jeg:test_helicopter",
+  "vehicle_type": "helicopter",
+  "max_health": 60.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 120,
+  "max_energy": 140,
+  "allow_free_cam": true,
+  "container_type": "none",
+  "seats": [
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 0.85,
+      "z": 0.0,
+      "driver": true,
+      "enclosed": false
+    }
+  ],
+  "engine": {
+    "type": "rotor",
+    "acceleration": 0.035,
+    "max_forward_speed": 0.48,
+    "max_reverse_speed": 0.18,
+    "friction": 0.92
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 3.2,
+    "z": -7.0
+  },
+  "obb": [
+    {
+      "part": "body",
+      "x": 0.0,
+      "y": 0.75,
+      "z": 0.0,
+      "half_width": 0.9,
+      "half_height": 0.45,
+      "half_depth": 1.25
+    },
+    {
+      "part": "main_engine",
+      "x": 0.0,
+      "y": 1.2,
+      "z": -0.25,
+      "half_width": 0.55,
+      "half_height": 0.28,
+      "half_depth": 0.45
+    }
+  ],
+  "weapons": [
+    {
+      "weapon": "jeg:combat_pistol",
+      "ammo": "jeg:pistol_ammo",
+      "energy_cost": 0,
+      "guided": false
+    },
+    {
+      "weapon": "jeg:rocket_launcher",
+      "ammo": "jeg:rocket",
+      "energy_cost": 2,
+      "guided": true
+    }
+  ],
+  "destroy": {
+    "explodes": true,
+    "explosion_power": 2.0
+  },
+  "armor": {
+    "fallback": {
+      "rating": 2.0,
+      "undermatch_multiplier": 0.25,
+      "overmatch_multiplier": 1.0,
+      "passenger_leak_multiplier": 0.25,
+      "part_damage_multiplier": 1.0
+    },
+    "parts": {
+      "main_engine": {
+        "rating": 1.5,
+        "undermatch_multiplier": 0.4,
+        "overmatch_multiplier": 1.1,
+        "passenger_leak_multiplier": 0.12,
+        "part_damage_multiplier": 1.4
+      }
+    }
+  }
+}

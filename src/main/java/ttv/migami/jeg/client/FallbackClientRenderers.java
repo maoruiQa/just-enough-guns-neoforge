@@ -48,6 +48,7 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.RAID_ENTITY.get(), NullEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_WHEEL_VEHICLE.get(), TestVehicleRenderer::new);
         event.registerEntityRenderer(ModEntities.LIGHT_COMBAT_VEHICLE.get(), TestVehicleRenderer::new);
+        event.registerEntityRenderer(ModEntities.TEST_HELICOPTER.get(), TestVehicleRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), NullEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), NullEntityRenderer::new);
     }

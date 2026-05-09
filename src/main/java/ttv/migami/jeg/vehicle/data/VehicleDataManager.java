@@ -52,7 +52,8 @@ public final class VehicleDataManager {
     private static Map<ResourceLocation, VehicleData> defaultsOnly() {
         return Map.of(
                 DefaultVehicleData.TEST_WHEEL.id(), new VehicleData(DefaultVehicleData.TEST_WHEEL),
-                DefaultVehicleData.LIGHT_COMBAT.id(), new VehicleData(DefaultVehicleData.LIGHT_COMBAT)
+                DefaultVehicleData.LIGHT_COMBAT.id(), new VehicleData(DefaultVehicleData.LIGHT_COMBAT),
+                DefaultVehicleData.TEST_HELICOPTER.id(), new VehicleData(DefaultVehicleData.TEST_HELICOPTER)
         );
     }
 

@@ -43,6 +43,7 @@ import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
@@ -413,6 +414,11 @@ public class VehicleEntity extends Entity implements MenuProvider {
 
     private void tickServerMovement() {
         EngineInfo engine = this.vehicleData().defaults().engine();
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                || this.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT) {
+            this.tickServerAirMovement(engine);
+            return;
+        }
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
@@ -449,6 +455,36 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.setDeltaMovement(velocity);
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.98D, 0.98D));
+    }
+
+    private void tickServerAirMovement(EngineInfo engine) {
+        Vec3 velocity = this.getDeltaMovement();
+        int forwardAxis = this.input.forwardAxis();
+        int strafeAxis = this.input.strafeAxis();
+        int verticalAxis = this.input.verticalAxis();
+        double mobility = this.mobilityMultiplier();
+
+        float yaw = this.getYRot();
+        double yawRadians = Math.toRadians(yaw);
+        Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+        Vec3 desired = forward.scale(forwardAxis).add(right.scale(strafeAxis * 0.65D)).add(0.0D, verticalAxis * 0.8D, 0.0D);
+        if (desired.lengthSqr() > 1.0E-4D) {
+            velocity = velocity.add(desired.normalize().scale(engine.acceleration() * mobility));
+        }
+
+        double maxSpeed = engine.maxForwardSpeed() * mobility;
+        if (velocity.length() > maxSpeed) {
+            velocity = velocity.normalize().scale(maxSpeed);
+        }
+        double drag = this.input.brake() ? 0.82D : 0.94D;
+        velocity = velocity.multiply(drag, 0.90D, drag);
+        if (verticalAxis == 0) {
+            velocity = velocity.add(0.0D, -0.01D, 0.0D);
+        }
+
+        this.setDeltaMovement(velocity);
+        this.move(MoverType.SELF, this.getDeltaMovement());
     }
 
     private double mobilityMultiplier() {

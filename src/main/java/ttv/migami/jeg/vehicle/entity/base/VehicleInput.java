@@ -6,12 +6,14 @@ public record VehicleInput(
         boolean left,
         boolean right,
         boolean brake,
+        boolean ascend,
+        boolean descend,
         boolean fire,
         boolean freeLook,
         boolean switchWeapon,
         boolean deployDecoy
 ) {
-    public static final VehicleInput EMPTY = new VehicleInput(false, false, false, false, false, false, false, false, false);
+    public static final VehicleInput EMPTY = new VehicleInput(false, false, false, false, false, false, false, false, false, false, false);
 
     public int forwardAxis() {
         return (this.forward ? 1 : 0) - (this.backward ? 1 : 0);
@@ -19,5 +21,9 @@ public record VehicleInput(
 
     public int strafeAxis() {
         return (this.left ? 1 : 0) - (this.right ? 1 : 0);
+    }
+
+    public int verticalAxis() {
+        return (this.ascend ? 1 : 0) - (this.descend ? 1 : 0);
     }
 }

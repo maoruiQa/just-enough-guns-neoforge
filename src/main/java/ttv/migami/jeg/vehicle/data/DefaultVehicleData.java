@@ -6,6 +6,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
+import ttv.migami.jeg.vehicle.data.subdata.EngineType;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
@@ -77,5 +78,28 @@ public record DefaultVehicleData(
             ),
             SeekInfo.NONE,
             DestroyInfo.NONE
+    );
+
+    public static final DefaultVehicleData TEST_HELICOPTER = new DefaultVehicleData(
+            Reference.id("test_helicopter"),
+            "jeg:test_helicopter",
+            VehicleType.HELICOPTER,
+            60.0F,
+            0.012F,
+            120,
+            140,
+            new EngineInfo(EngineType.ROTOR, 0.035D, 0.48D, 0.18D, 0.92D),
+            List.of(new SeatInfo(0, 0.0D, 0.85D, 0.0D, true, false)),
+            true,
+            VehicleContainerType.NONE,
+            new CameraPos(0.0D, 3.2D, -7.0D),
+            OBBInfo.DEFAULT,
+            VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
+                    new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
+            ),
+            SeekInfo.NONE,
+            new DestroyInfo(true, 2.0F)
     );
 }
