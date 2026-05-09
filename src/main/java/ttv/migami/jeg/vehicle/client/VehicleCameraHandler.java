@@ -68,8 +68,8 @@ public final class VehicleCameraHandler {
         }
         if (VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
-                && VehicleClientState.freeLookDown()
-                && vehicle.vehicleData().defaults().allowFreeCam()) {
+                && ((VehicleClientState.freeLookDown() && vehicle.vehicleData().defaults().allowFreeCam())
+                || vehicle.shouldBanPassengerHand(player))) {
             event.setCanceled(true);
         }
     }

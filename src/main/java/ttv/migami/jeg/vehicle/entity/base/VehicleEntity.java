@@ -799,6 +799,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).hidePassenger();
     }
 
+    public boolean shouldBanPassengerHand(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).banHand();
+    }
+
     private void tickAutoRepair() {
         if (this.tickLowHealthDecay()) {
             return;

@@ -212,7 +212,8 @@ public final class VehicleDataManager {
                     getDouble(seat, "z", fallbackSeat.z()),
                     getBoolean(seat, "driver", index == 0),
                     getBoolean(seat, "enclosed", fallbackSeat.enclosed()),
-                    getBoolean(seat, "hide_passenger", fallbackSeat.hidePassenger())
+                    getBoolean(seat, "hide_passenger", fallbackSeat.hidePassenger()),
+                    getBoolean(seat, "ban_hand", fallbackSeat.banHand())
             ));
         }
         seats.sort(Comparator.comparingInt(SeatInfo::index));
