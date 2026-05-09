@@ -18,14 +18,19 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
+import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
+import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public class VehicleEntity extends Entity implements MenuProvider {
@@ -33,10 +38,12 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
+    private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
     private static final double GRAVITY = 0.08D;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.VEHICLE_SLOT_COUNT);
     private VehicleInput input = VehicleInput.EMPTY;
+    private int repairCooldown;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -84,8 +91,21 @@ public class VehicleEntity extends Entity implements MenuProvider {
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.tickServerMovement();
+            this.tickAutoRepair();
         }
         this.updateRiderPosition();
+    }
+
+    private void tickAutoRepair() {
+        if (this.repairCooldown > 0) {
+            this.repairCooldown--;
+            return;
+        }
+        float repair = this.vehicleData().defaults().autoRepairPerTick();
+        if (repair <= 0.0F || this.vehicleHealth() >= this.maxVehicleHealth()) {
+            return;
+        }
+        this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + repair));
     }
 
     private void tickServerMovement() {
@@ -148,6 +168,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
     protected void addAdditionalSaveData(CompoundTag output) {
         output.putString(TAG_VEHICLE_ID, this.entityData.get(DATA_VEHICLE_ID));
         output.putFloat(TAG_HEALTH, this.vehicleHealth());
+        output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
     }
 
     @Override
@@ -157,6 +178,44 @@ public class VehicleEntity extends Entity implements MenuProvider {
         }
         float health = input.contains(TAG_HEALTH) ? input.getFloat(TAG_HEALTH) : this.maxVehicleHealth();
         this.entityData.set(DATA_HEALTH, Mth.clamp(health, 0.0F, this.maxVehicleHealth()));
+        this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.level().isClientSide || this.isRemoved() || this.isInvulnerableTo(source)) {
+            return false;
+        }
+        float finalDamage = this.applyVehicleArmor(source, amount);
+        if (finalDamage <= 0.0F) {
+            return false;
+        }
+        this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
+        float newHealth = this.vehicleHealth() - finalDamage;
+        this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+        this.hurtMarked = true;
+        if (newHealth <= 0.0F) {
+            this.discard();
+        }
+        return true;
+    }
+
+    private float applyVehicleArmor(DamageSource source, float amount) {
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            return amount;
+        }
+        VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(OBBInfo.Part.BODY);
+        BallisticProtection.IntrinsicArmorProfile intrinsic = new BallisticProtection.IntrinsicArmorProfile(
+                armor.rating(),
+                armor.undermatchMultiplier(),
+                armor.overmatchMultiplier()
+        );
+        return BallisticProtection.applyToIntrinsicArmor(
+                amount,
+                bullet.getGunStats(),
+                intrinsic,
+                BallisticProtection.isRocketDirectHit(bullet.getGunStats())
+        ).finalDamage();
     }
 
     @Override
