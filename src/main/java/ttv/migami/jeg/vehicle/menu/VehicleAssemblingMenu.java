@@ -16,6 +16,11 @@ import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 public final class VehicleAssemblingMenu extends AbstractContainerMenu {
+    private static final int PLAYER_INVENTORY_START = 0;
+    private static final int PLAYER_INVENTORY_END = 27;
+    private static final int HOTBAR_START = PLAYER_INVENTORY_END;
+    private static final int HOTBAR_END = HOTBAR_START + 9;
+
     private final Inventory playerInventory;
 
     public VehicleAssemblingMenu(int containerId, Inventory playerInventory) {
@@ -96,7 +101,26 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
 
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
-        return ItemStack.EMPTY;
+        ItemStack copy = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+        if (slot.hasItem()) {
+            ItemStack stack = slot.getItem();
+            copy = stack.copy();
+            if (index < PLAYER_INVENTORY_END) {
+                if (!this.moveItemStackTo(stack, HOTBAR_START, HOTBAR_END, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (!this.moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (stack.isEmpty()) {
+                slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+        return copy;
     }
 
     @Override
