@@ -21,9 +21,12 @@ public final class VehicleInputHandler {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.getConnection() == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            VehicleClientState.clear();
             return;
         }
 
+        boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
+        VehicleClientState.update(vehicle, freeLook);
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
         }
@@ -37,7 +40,7 @@ public final class VehicleInputHandler {
                 minecraft.options.keyJump.isDown(),
                 minecraft.options.keyShift.isDown(),
                 minecraft.options.keyAttack.isDown(),
-                KeyBindings.VEHICLE_FREE_LOOK.isDown(),
+                freeLook,
                 KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick(),
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
         ));

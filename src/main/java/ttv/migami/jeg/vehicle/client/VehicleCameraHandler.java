@@ -19,6 +19,9 @@ public final class VehicleCameraHandler {
         if (player == null || event.getCamera().getEntity() != player || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
         }
+        if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId()) {
+            return;
+        }
         double configuredDistance = Math.abs(vehicle.vehicleData().defaults().thirdPersonCamera().z());
         if (configuredDistance > 0.0D) {
             event.setDistance((float) configuredDistance);
