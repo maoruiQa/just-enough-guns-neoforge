@@ -115,6 +115,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return VehicleDataManager.get(ResourceLocation.parse(this.entityData.get(DATA_VEHICLE_ID)));
     }
 
+    public ResourceLocation vehicleDataId() {
+        return this.vehicleData().id();
+    }
+
     protected void setVehicleData(ResourceLocation id) {
         VehicleData data = VehicleDataManager.get(id);
         this.entityData.set(DATA_VEHICLE_ID, data.id().toString());

@@ -37,7 +37,7 @@ public final class VehicleHudOverlay {
         int filled = Math.round(barWidth * healthRatio);
         int x = width / 2 - barWidth / 2;
 
-        Component title = Component.translatable("hud.jeg.vehicle.test_wheel_vehicle");
+        Component title = Component.translatable("entity." + vehicle.vehicleDataId().getNamespace() + "." + vehicle.vehicleDataId().getPath());
         guiGraphics.drawString(minecraft.font, title, (width - minecraft.font.width(title)) / 2, y - 12, 0xFFFFFFFF);
         guiGraphics.fill(x, y, x + barWidth, y + 7, 0xAA101010);
         guiGraphics.fill(x + 1, y + 1, x + Math.max(1, filled - 1), y + 6, 0xFF42B35A);
