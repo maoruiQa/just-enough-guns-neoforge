@@ -22,10 +22,13 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class VehicleHudOverlay {
     private static final ResourceLocation ARMOR_ICON = Reference.id("textures/overlay/vehicle/base/armor.png");
     private static final ResourceLocation ENERGY_ICON = Reference.id("textures/overlay/vehicle/base/energy.png");
+    private static final ResourceLocation COMPASS = Reference.id("textures/overlay/vehicle/base/compass.png");
     private static final ResourceLocation DRIVER_ICON = Reference.id("textures/overlay/vehicle/base/driver.png");
     private static final ResourceLocation PASSENGER_ICON = Reference.id("textures/overlay/vehicle/base/passenger.png");
     private static final ResourceLocation VALUE_BAR = Reference.id("textures/overlay/vehicle/base/value_bar.png");
     private static final ResourceLocation VALUE_FRAME = Reference.id("textures/overlay/vehicle/base/value_frame.png");
+    private static final ResourceLocation ROLL_INDICATOR = Reference.id("textures/overlay/vehicle/helicopter/roll_ind.png");
+    private static final ResourceLocation LAND_FRAME = Reference.id("textures/overlay/vehicle/land/tv_frame.png");
     private static final ResourceLocation LAND_BODY = Reference.id("textures/overlay/vehicle/land/body.png");
     private static final ResourceLocation LAND_LEFT_WHEEL = Reference.id("textures/overlay/vehicle/land/left_wheel.png");
     private static final ResourceLocation LAND_RIGHT_WHEEL = Reference.id("textures/overlay/vehicle/land/right_wheel.png");
@@ -168,6 +171,21 @@ public final class VehicleHudOverlay {
         String vehiclePath = vehicle.vehicleDataId().getPath();
         if (!"lav150".equals(vehiclePath) && !"bmp2".equals(vehiclePath)) {
             return;
+        }
+
+        boolean focusedSight = Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON
+                || (VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.zoomDown());
+        if (focusedSight && "lav150".equals(vehiclePath)) {
+            int screenWidth = guiGraphics.guiWidth();
+            int screenHeight = guiGraphics.guiHeight();
+            int frameWidth = Math.max(screenWidth, screenHeight * 16 / 9);
+            int frameHeight = Math.max(screenHeight, screenWidth * 9 / 16);
+            guiGraphics.blit(LAND_FRAME, (screenWidth - frameWidth) / 2, (screenHeight - frameHeight) / 2, frameWidth, frameHeight, 0.0F, 0.0F, 1920, 1080, 1920, 1080);
+            int compassOffset = Mth.floor(128.0F + 64.0F / 45.0F * minecraft.player.getYRot());
+            guiGraphics.blit(COMPASS, screenWidth / 2 - 128, 10, compassOffset, 0.0F, 256, 16, 1024, 32);
+            guiGraphics.blit(ROLL_INDICATOR, screenWidth / 2 - 8, 30, 0.0F, 0.0F, 16, 16, 16, 16);
         }
 
         int x = guiGraphics.guiWidth() / 2 + 96;
