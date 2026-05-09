@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleMissileEntity extends Entity {
     private static final int LIFE_TICKS = 120;
@@ -103,6 +104,12 @@ public final class VehicleMissileEntity extends Entity {
             serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 8, 0.4D, 0.4D, 0.4D, 0.06D);
             Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), 2.4F, ExplosionInteraction.MOB);
+            Entity ownerVehicle = owner == null ? null : owner.getVehicle();
+            for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(3.5D))) {
+                if (target != ownerVehicle) {
+                    target.hurt(this.damageSources().explosion(this, owner), 18.0F);
+                }
+            }
             for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0D))) {
                 if (target != owner) {
                     target.hurt(this.damageSources().explosion(this, owner), 12.0F);
