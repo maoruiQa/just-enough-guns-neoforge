@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -36,7 +37,13 @@ public final class VehicleContainerBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof VehicleContainerBlockEntity container)) {
             return ItemInteractionResult.FAIL;
         }
-        return container.deploy(player) ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+        if (!container.deploy(player)) {
+            return ItemInteractionResult.FAIL;
+        }
+        if (!player.getAbilities().instabuild) {
+            stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+        }
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override

@@ -57,11 +57,6 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
             return false;
         }
         BlockPos spawnPos = this.getBlockPos().above();
-        if (!level.getBlockState(spawnPos).isAir()) {
-            player.displayClientMessage(Component.translatable("message.jeg.vehicle_container.blocked"), true);
-            return false;
-        }
-
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(this.entityType));
         Entity entity = type.create(level);
         if (!(entity instanceof VehicleEntity vehicle)) {
@@ -71,6 +66,10 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
             vehicle.loadVehicleContainerState(this.entityTag);
         }
         vehicle.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, player.getYRot(), 0.0F);
+        if (!level.noCollision(vehicle, vehicle.getBoundingBox())) {
+            player.displayClientMessage(Component.translatable("message.jeg.vehicle_container.blocked"), true);
+            return false;
+        }
         level.addFreshEntity(vehicle);
         level.removeBlock(this.getBlockPos(), false);
         return true;
