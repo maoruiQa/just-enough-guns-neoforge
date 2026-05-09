@@ -21,6 +21,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
@@ -120,9 +122,18 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         VehicleAssemblyRecipe previewRecipe = this.previewRecipe(mouseX, mouseY);
         if (previewRecipe != null) {
+            this.renderVehicleIcon(guiGraphics, previewRecipe.resultVehicle());
             this.renderVehiclePreview(guiGraphics, previewRecipe, partialTick);
         }
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderVehicleIcon(GuiGraphics guiGraphics, ResourceLocation vehicleId) {
+        ResourceLocation icon = vehicleIcon(vehicleId);
+        if (icon == null) {
+            return;
+        }
+        guiGraphics.blit(icon, this.leftPos + PREVIEW_X, this.topPos + PREVIEW_Y - 18, 64, 16, 0.0F, 0.0F, 256, 64, 256, 64);
     }
 
     private void renderVehiclePreview(GuiGraphics guiGraphics, VehicleAssemblyRecipe recipe, float partialTick) {
@@ -194,6 +205,15 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
 
     private static Component vehicleName(ResourceLocation vehicleId) {
         return Component.translatable("entity." + vehicleId.getNamespace() + "." + vehicleId.getPath());
+    }
+
+    @Nullable
+    private static ResourceLocation vehicleIcon(ResourceLocation vehicleId) {
+        return switch (vehicleId.getPath()) {
+            case "a10", "ah6", "bmp2", "hpj11", "laser_tower", "lav150", "mi28", "speedboat", "tom6", "truck", "waveforce_tower" ->
+                    Reference.id("textures/vehicle_icon/" + vehicleId.getPath() + "_icon.png");
+            default -> null;
+        };
     }
 
     private static Component costText(VehicleAssemblyRecipe recipe) {
