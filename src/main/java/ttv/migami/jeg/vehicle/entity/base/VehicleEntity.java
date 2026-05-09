@@ -129,8 +129,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
     private static final ResourceLocation LAV150_ID = Reference.id("lav150");
-    private static final float LAV150_MIN_WEAPON_X_ROT = -32.5F;
-    private static final float LAV150_MAX_WEAPON_X_ROT = 15.0F;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -520,7 +518,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private float weaponPitch(LivingEntity shooter) {
         if (this.vehicleDataId().equals(LAV150_ID)) {
-            return Mth.clamp(shooter.getXRot(), LAV150_MIN_WEAPON_X_ROT, LAV150_MAX_WEAPON_X_ROT);
+            SeatInfo seat = this.seatForPassenger(shooter, this.getPassengers().indexOf(shooter));
+            return Mth.clamp(shooter.getXRot(), seat.minPitch(), seat.maxPitch());
         }
         return shooter.getXRot();
     }
