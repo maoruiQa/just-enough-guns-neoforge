@@ -1,5 +1,6 @@
 package ttv.migami.jeg.vehicle.client.overlay;
 
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -26,6 +27,7 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation CROSSHAIR_CN_HPJ_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/cn_hpj_zooming.png");
     private static final ResourceLocation CROSSHAIR_LASER_CANNON = Reference.id("textures/overlay/vehicle/crosshair/laser_cannon.png");
     private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
+    private static final ResourceLocation CROSSHAIR_THIRD_CAMERA = Reference.id("textures/overlay/vehicle/crosshair/third_camera.png");
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
 
     private VehicleHudOverlay() {}
@@ -113,6 +115,9 @@ public final class VehicleHudOverlay {
         boolean zooming = VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
+        if (!zooming && Minecraft.getInstance().options.getCameraType() != CameraType.FIRST_PERSON) {
+            return CROSSHAIR_THIRD_CAMERA;
+        }
         if (zooming && "hpj11".equals(vehiclePath)) {
             return CROSSHAIR_CN_HPJ_ZOOMING;
         }
