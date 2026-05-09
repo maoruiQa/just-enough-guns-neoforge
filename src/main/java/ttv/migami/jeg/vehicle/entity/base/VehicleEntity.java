@@ -202,6 +202,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return this.input.freeLook();
     }
 
+    public SimpleContainer vehicleInventory() {
+        return this.inventory;
+    }
+
     public void processInput(ServerPlayer player, VehicleInput input) {
         if (player != this.getControllingPassenger()) {
             return;

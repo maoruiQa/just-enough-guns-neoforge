@@ -10,6 +10,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ttv.migami.jeg.event.FactionEventTicker;
@@ -107,6 +108,18 @@ public final class JustEnoughGuns {
         event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_BOAT.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
         event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_ARTILLERY.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
         event.registerEntity(Capabilities.EnergyStorage.ENTITY, ModEntities.TEST_AIRCRAFT.get(), (vehicle, side) -> new VehicleEnergyStorage(vehicle));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.TEST_WHEEL_VEHICLE.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.LIGHT_COMBAT_VEHICLE.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.TEST_HELICOPTER.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.TEST_BOAT.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.TEST_ARTILLERY.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY, ModEntities.TEST_AIRCRAFT.get(), (vehicle, context) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.TEST_WHEEL_VEHICLE.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.LIGHT_COMBAT_VEHICLE.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.TEST_HELICOPTER.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.TEST_BOAT.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.TEST_ARTILLERY.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
+        event.registerEntity(Capabilities.ItemHandler.ENTITY_AUTOMATION, ModEntities.TEST_AIRCRAFT.get(), (vehicle, side) -> new InvWrapper(vehicle.vehicleInventory()));
     }
 
     private void onBuildCreativeTab(BuildCreativeModeTabContentsEvent event) {
