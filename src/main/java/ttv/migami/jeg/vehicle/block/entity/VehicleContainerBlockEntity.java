@@ -3,6 +3,8 @@ package ttv.migami.jeg.vehicle.block.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -11,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -80,6 +83,18 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
     }
 
     @Override
+    protected void collectImplicitComponents(DataComponentMap.Builder components) {
+        super.collectImplicitComponents(components);
+        components.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(this.saveDataToTag()));
+    }
+
+    @Override
+    public void saveToItem(ItemStack stack, HolderLookup.Provider registries) {
+        super.saveToItem(stack, registries);
+        BlockItem.setBlockEntityData(stack, ModBlockEntities.VEHICLE_CONTAINER.get(), this.saveDataToTag());
+    }
+
+    @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains(TAG_ENTITY_TYPE)) {
@@ -93,6 +108,16 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        this.saveDataToTag(tag);
+    }
+
+    private CompoundTag saveDataToTag() {
+        CompoundTag tag = new CompoundTag();
+        this.saveDataToTag(tag);
+        return tag;
+    }
+
+    private void saveDataToTag(CompoundTag tag) {
         tag.putString(TAG_ENTITY_TYPE, this.entityType);
         if (this.entityTag != null) {
             tag.put(TAG_ENTITY, this.entityTag);
