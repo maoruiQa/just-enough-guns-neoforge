@@ -1,0 +1,54 @@
+{
+  "entity_type": "jeg:light_combat_vehicle",
+  "vehicle_type": "land",
+  "max_health": 80.0,
+  "auto_repair_per_tick": 0.015,
+  "auto_repair_cooldown_ticks": 140,
+  "max_energy": 160,
+  "allow_free_cam": true,
+  "container_type": "none",
+  "engine": {
+    "type": "wheel",
+    "acceleration": 0.038,
+    "max_forward_speed": 0.34,
+    "max_reverse_speed": 0.14,
+    "friction": 0.8
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 2.8,
+    "z": -6.0
+  },
+  "armor": {
+    "fallback": {
+      "rating": 4.0,
+      "undermatch_multiplier": 0.18,
+      "overmatch_multiplier": 0.85,
+      "passenger_leak_multiplier": 0.16,
+      "part_damage_multiplier": 0.85
+    },
+    "parts": {
+      "wheel_left": {
+        "rating": 1.5,
+        "undermatch_multiplier": 0.45,
+        "overmatch_multiplier": 1.05,
+        "passenger_leak_multiplier": 0.0,
+        "part_damage_multiplier": 1.5
+      },
+      "wheel_right": {
+        "rating": 1.5,
+        "undermatch_multiplier": 0.45,
+        "overmatch_multiplier": 1.05,
+        "passenger_leak_multiplier": 0.0,
+        "part_damage_multiplier": 1.5
+      },
+      "main_engine": {
+        "rating": 2.0,
+        "undermatch_multiplier": 0.35,
+        "overmatch_multiplier": 1.0,
+        "passenger_leak_multiplier": 0.08,
+        "part_damage_multiplier": 1.35
+      }
+    }
+  }
+}

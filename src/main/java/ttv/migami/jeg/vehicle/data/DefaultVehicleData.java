@@ -48,4 +48,23 @@ public record DefaultVehicleData(
             SeekInfo.NONE,
             DestroyInfo.NONE
     );
+
+    public static final DefaultVehicleData LIGHT_COMBAT = new DefaultVehicleData(
+            Reference.id("light_combat_vehicle"),
+            "jeg:light_combat_vehicle",
+            VehicleType.LAND,
+            80.0F,
+            0.015F,
+            140,
+            160,
+            new EngineInfo(EngineInfo.WHEEL_TEST.type(), 0.038D, 0.34D, 0.14D, 0.80D),
+            List.of(new SeatInfo(0, 0.0D, 0.75D, 0.0D, true, true)),
+            true,
+            VehicleContainerType.NONE,
+            new CameraPos(0.0D, 2.8D, -6.0D),
+            OBBInfo.DEFAULT,
+            VehicleArmorProfile.LIGHT,
+            SeekInfo.NONE,
+            DestroyInfo.NONE
+    );
 }

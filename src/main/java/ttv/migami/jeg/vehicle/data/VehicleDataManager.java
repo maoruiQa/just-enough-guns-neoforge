@@ -48,7 +48,10 @@ public final class VehicleDataManager {
     }
 
     private static Map<ResourceLocation, VehicleData> defaultsOnly() {
-        return Map.of(DefaultVehicleData.TEST_WHEEL.id(), new VehicleData(DefaultVehicleData.TEST_WHEEL));
+        return Map.of(
+                DefaultVehicleData.TEST_WHEEL.id(), new VehicleData(DefaultVehicleData.TEST_WHEEL),
+                DefaultVehicleData.LIGHT_COMBAT.id(), new VehicleData(DefaultVehicleData.LIGHT_COMBAT)
+        );
     }
 
     private static final class Loader extends SimpleJsonResourceReloadListener {

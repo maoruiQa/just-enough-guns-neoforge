@@ -323,6 +323,7 @@
   "key.jeg.vehicle_switch_weapon": "Vehicle Switch Weapon",
   "key.jeg.vehicle_deploy_decoy": "Vehicle Deploy Decoy",
   "container.jeg.vehicle": "Vehicle Inventory",
+  "entity.jeg.light_combat_vehicle": "Light Combat Vehicle",
   "container.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
   "block.jeg.vehicle_assembling_table": "Vehicle Assembling Table",
   "block.jeg.vehicle_charging_station": "Vehicle Charging Station",

@@ -10,9 +10,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.vehicle.entity.TestWheelVehicleEntity;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
-public final class TestVehicleRenderer extends EntityRenderer<TestWheelVehicleEntity> {
+public final class TestVehicleRenderer extends EntityRenderer<VehicleEntity> {
     private static final ResourceLocation TEXTURE = Reference.id("textures/entity/vehicle/test_wheel_vehicle.png");
 
     public TestVehicleRenderer(EntityRendererProvider.Context context) {
@@ -20,7 +20,7 @@ public final class TestVehicleRenderer extends EntityRenderer<TestWheelVehicleEn
     }
 
     @Override
-    public void render(TestWheelVehicleEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    public void render(VehicleEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         poseStack.pushPose();
         poseStack.translate(0.0D, 0.35D, 0.0D);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entityYaw));
@@ -38,7 +38,7 @@ public final class TestVehicleRenderer extends EntityRenderer<TestWheelVehicleEn
     }
 
     @Override
-    public ResourceLocation getTextureLocation(TestWheelVehicleEntity entity) {
+    public ResourceLocation getTextureLocation(VehicleEntity entity) {
         return TEXTURE;
     }
 }

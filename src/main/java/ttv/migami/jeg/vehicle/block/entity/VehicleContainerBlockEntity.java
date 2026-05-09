@@ -5,6 +5,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -12,9 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import ttv.migami.jeg.init.ModBlockEntities;
-import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
-import ttv.migami.jeg.vehicle.entity.TestWheelVehicleEntity;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleContainerBlockEntity extends BlockEntity {
@@ -56,8 +57,9 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
             return false;
         }
 
-        TestWheelVehicleEntity vehicle = ModEntities.TEST_WHEEL_VEHICLE.get().create(level);
-        if (vehicle == null) {
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(this.entityType));
+        Entity entity = type.create(level);
+        if (!(entity instanceof VehicleEntity vehicle)) {
             return false;
         }
         if (this.entityTag != null) {
