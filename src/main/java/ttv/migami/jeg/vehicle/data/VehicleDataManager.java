@@ -25,6 +25,7 @@ import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 
 public final class VehicleDataManager {
     private static final Gson GSON = new Gson();
@@ -92,6 +93,7 @@ public final class VehicleDataManager {
         CameraPos camera = parseCamera(getObject(object, "third_person_camera"), fallback.thirdPersonCamera());
         OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
+        List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
 
         return new VehicleData(new DefaultVehicleData(
                 id,
@@ -108,6 +110,7 @@ public final class VehicleDataManager {
                 camera,
                 obb,
                 armor,
+                weapons,
                 SeekInfo.NONE,
                 DestroyInfo.NONE
         ));
@@ -186,6 +189,28 @@ public final class VehicleDataManager {
             ));
         }
         return new OBBInfo(List.copyOf(boxes));
+    }
+
+    private static List<VehicleWeaponInfo> parseWeapons(JsonObject object, List<VehicleWeaponInfo> fallback) {
+        JsonElement element = object.get("weapons");
+        if (element == null || !element.isJsonArray()) {
+            return fallback;
+        }
+        JsonArray array = element.getAsJsonArray();
+        if (array.isEmpty()) {
+            return fallback;
+        }
+        java.util.ArrayList<VehicleWeaponInfo> weapons = new java.util.ArrayList<>();
+        for (JsonElement weaponElement : array) {
+            JsonObject weapon = weaponElement.getAsJsonObject();
+            weapons.add(new VehicleWeaponInfo(
+                    ResourceLocation.parse(getString(weapon, "weapon", "jeg:assault_rifle")),
+                    ResourceLocation.parse(getString(weapon, "ammo", "jeg:rifle_ammo")),
+                    getInt(weapon, "energy_cost", 0),
+                    getBoolean(weapon, "guided", false)
+            ));
+        }
+        return List.copyOf(weapons);
     }
 
     private static VehicleArmorProfile parseArmor(JsonObject object, VehicleArmorProfile fallback) {

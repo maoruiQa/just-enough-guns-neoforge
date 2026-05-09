@@ -11,6 +11,7 @@ import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 
 public record DefaultVehicleData(
         ResourceLocation id,
@@ -27,6 +28,7 @@ public record DefaultVehicleData(
         CameraPos thirdPersonCamera,
         OBBInfo obb,
         VehicleArmorProfile armor,
+        List<VehicleWeaponInfo> weapons,
         SeekInfo seek,
         DestroyInfo destroy
 ) {
@@ -45,6 +47,10 @@ public record DefaultVehicleData(
             CameraPos.DEFAULT,
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("assault_rifle"), Reference.id("rifle_ammo"), 1, false),
+                    new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
+            ),
             SeekInfo.NONE,
             DestroyInfo.NONE
     );
@@ -64,6 +70,11 @@ public record DefaultVehicleData(
             new CameraPos(0.0D, 2.8D, -6.0D),
             OBBInfo.DEFAULT,
             VehicleArmorProfile.LIGHT,
+            List.of(
+                    new VehicleWeaponInfo(Reference.id("assault_rifle"), Reference.id("rifle_ammo"), 1, false),
+                    new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
+                    new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
+            ),
             SeekInfo.NONE,
             DestroyInfo.NONE
     );

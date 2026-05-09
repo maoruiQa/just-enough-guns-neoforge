@@ -84,6 +84,26 @@
       "half_depth": 0.35
     }
   ],
+  "weapons": [
+    {
+      "weapon": "jeg:assault_rifle",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false
+    },
+    {
+      "weapon": "jeg:combat_pistol",
+      "ammo": "jeg:pistol_ammo",
+      "energy_cost": 0,
+      "guided": false
+    },
+    {
+      "weapon": "jeg:rocket_launcher",
+      "ammo": "jeg:rocket",
+      "energy_cost": 2,
+      "guided": true
+    }
+  ],
   "armor": {
     "fallback": {
       "rating": 4.0,

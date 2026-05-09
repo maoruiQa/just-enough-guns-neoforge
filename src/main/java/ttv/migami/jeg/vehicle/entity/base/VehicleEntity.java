@@ -40,6 +40,7 @@ import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
@@ -54,18 +55,8 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final ResourceLocation VEHICLE_TEST_WEAPON = Reference.id("assault_rifle");
-    private static final ResourceLocation VEHICLE_SECONDARY_WEAPON = Reference.id("combat_pistol");
-    private static final ResourceLocation VEHICLE_MISSILE_WEAPON = Reference.id("rocket_launcher");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
-    private static final ResourceLocation PISTOL_AMMO = Reference.id("pistol_ammo");
-    private static final ResourceLocation ROCKET_AMMO = Reference.id("rocket");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
-    private static final VehicleWeapon[] VEHICLE_WEAPONS = {
-            new VehicleWeapon(VEHICLE_TEST_WEAPON, RIFLE_AMMO, 1, false),
-            new VehicleWeapon(VEHICLE_SECONDARY_WEAPON, PISTOL_AMMO, 0, false),
-            new VehicleWeapon(VEHICLE_MISSILE_WEAPON, ROCKET_AMMO, 2, true)
-    };
     private static final int DECOY_COOLDOWN_TICKS = 60;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
@@ -197,7 +188,10 @@ public class VehicleEntity extends Entity implements MenuProvider {
             return;
         }
         if (input.switchWeapon()) {
-            this.entityData.set(DATA_SELECTED_WEAPON, (this.entityData.get(DATA_SELECTED_WEAPON) + 1) % VEHICLE_WEAPONS.length);
+            int weaponCount = this.vehicleData().defaults().weapons().size();
+            if (weaponCount > 0) {
+                this.entityData.set(DATA_SELECTED_WEAPON, (this.entityData.get(DATA_SELECTED_WEAPON) + 1) % weaponCount);
+            }
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -228,7 +222,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (!this.input.fire() || this.fireCooldown > 0 || !(this.getControllingPassenger() instanceof LivingEntity shooter)) {
             return;
         }
-        VehicleWeapon weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
         GunStats stats = GunDefinitions.ALL.get(weapon.weaponId());
         if (stats == null || !this.consumeEnergy(weapon.energyCost()) || !this.consumeAmmo(weapon.ammoId())) {
             return;
@@ -237,7 +231,7 @@ public class VehicleEntity extends Entity implements MenuProvider {
         if (direction.lengthSqr() < 1.0E-4D) {
             return;
         }
-        if (weapon.guidedMissile()) {
+        if (weapon.guided()) {
             this.launchMissile(shooter, direction, stats);
             return;
         }
@@ -376,9 +370,13 @@ public class VehicleEntity extends Entity implements MenuProvider {
         return false;
     }
 
-    private VehicleWeapon selectedWeapon() {
-        int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, VEHICLE_WEAPONS.length - 1);
-        return VEHICLE_WEAPONS[index];
+    private VehicleWeaponInfo selectedWeapon() {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (weapons.isEmpty()) {
+            return DefaultVehicleData.TEST_WHEEL.weapons().getFirst();
+        }
+        int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
+        return weapons.get(index);
     }
 
     private void tickAutoRepair() {
@@ -759,6 +757,4 @@ public class VehicleEntity extends Entity implements MenuProvider {
     private record ArmorHit(float finalDamage, boolean penetrated) {
     }
 
-    private record VehicleWeapon(ResourceLocation weaponId, ResourceLocation ammoId, int energyCost, boolean guidedMissile) {
-    }
 }
