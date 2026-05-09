@@ -46,7 +46,7 @@ import ttv.migami.jeg.network.NetworkHandler;
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
-    private static final float SCOPE_FOV_FACTOR = 1.0F - 20.0F / 70.0F;
+    private static final float SCOPE_VIEWPORT_FOV = 20.0F;
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final ResourceLocation OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final ResourceLocation HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
@@ -128,10 +128,25 @@ public final class GunClientEvents {
         if (ads <= 0.0F) {
             return;
         }
-        float fovFactor = Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled() ? SCOPE_FOV_FACTOR : ADS_FOV_FACTOR;
+        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+            float current = event.getNewFovModifier();
+            float target = SCOPE_VIEWPORT_FOV / configuredFov();
+            event.setNewFovModifier(Math.max(0.1F, Mth.lerp(ads, current, target)));
+            return;
+        }
+
+        float fovFactor = ADS_FOV_FACTOR;
         float factor = 1.0F - fovFactor * ads;
         event.setNewFovModifier(Math.max(0.1F, event.getNewFovModifier() * factor));
+    }
+
+    private static float configuredFov() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.options == null) {
+            return 70.0F;
+        }
+        return Math.max(1.0F, minecraft.options.fov().get());
     }
 
     @SubscribeEvent
@@ -309,6 +324,7 @@ public final class GunClientEvents {
                     applyLocalVisualRecoil(gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
+                    forceExitScopedAdsAfterShot(gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -466,6 +482,7 @@ public final class GunClientEvents {
             applyLocalVisualRecoil(gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
+            forceExitScopedAdsAfterShot(gun);
         }
     }
 
@@ -499,6 +516,13 @@ public final class GunClientEvents {
             return gun.countInventoryAmmo(player) > 0;
         }
         return gun.getMagazineAmmo(stack) > 0;
+    }
+
+    private static void forceExitScopedAdsAfterShot(GunItem gun) {
+        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
+                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+            AimingHandler.get().suppressUntilUseReleased();
+        }
     }
 
     public static void showMuzzleFlash(int entityId, float random) {

@@ -424,7 +424,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
 
     // @Override removed - method signature changed in 1.21.1
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        if (amount < MIN_DAMAGE_TO_HURT) {
+        if (this.getType() == ModEntities.TERROR_PHANTOM.get() && amount < MIN_DAMAGE_TO_HURT) {
             return false;
         }
         float adjustedAmount = applyDefaultProjectileProtectionReduction(source, amount);

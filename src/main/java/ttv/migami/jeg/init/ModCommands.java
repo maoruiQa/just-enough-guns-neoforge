@@ -156,7 +156,9 @@ public final class ModCommands {
         return Commands.literal("combat")
                 .then(configBulletBlockDestructionCommand())
                 .then(configMagazineFeedCommand())
-                .then(configGunnerTerrainCommand());
+                .then(configGunnerTerrainCommand())
+                .then(configGunnerAccuracyCommand())
+                .then(configGunnerProgressionCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {
@@ -281,6 +283,46 @@ public final class ModCommands {
                                         "combat.gunnerTerrain.maxTier",
                                         IntegerArgumentType.getInteger(context, "value"),
                                         "combat.gunnerTerrain.maxTier"))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerProgressionCommand() {
+        return Commands.literal("gunnerProgression")
+                .then(Commands.literal("maxDay")
+                        .executes(context -> executeGetIntConfig(context.getSource(), "combat.gunnerProgression.maxDay", "combat.gunnerProgression.maxDay"))
+                        .then(Commands.argument("value", IntegerArgumentType.integer(1, 5000))
+                                .executes(context -> executeSetIntConfig(
+                                        context.getSource(),
+                                        "combat.gunnerProgression.maxDay",
+                                        IntegerArgumentType.getInteger(context, "value"),
+                                        "combat.gunnerProgression.maxDay"))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerAccuracyCommand() {
+        return Commands.literal("gunnerAccuracy")
+                .then(Commands.literal("startDay")
+                        .executes(context -> executeGetIntConfig(context.getSource(), "combat.gunnerAccuracy.startDay", "combat.gunnerAccuracy.startDay"))
+                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 5000))
+                                .executes(context -> executeSetIntConfig(
+                                        context.getSource(),
+                                        "combat.gunnerAccuracy.startDay",
+                                        IntegerArgumentType.getInteger(context, "value"),
+                                        "combat.gunnerAccuracy.startDay"))))
+                .then(Commands.literal("maxDay")
+                        .executes(context -> executeGetIntConfig(context.getSource(), "combat.gunnerAccuracy.maxDay", "combat.gunnerAccuracy.maxDay"))
+                        .then(Commands.argument("value", IntegerArgumentType.integer(1, 5000))
+                                .executes(context -> executeSetIntConfig(
+                                        context.getSource(),
+                                        "combat.gunnerAccuracy.maxDay",
+                                        IntegerArgumentType.getInteger(context, "value"),
+                                        "combat.gunnerAccuracy.maxDay"))))
+                .then(Commands.literal("maxPercent")
+                        .executes(context -> executeGetDoubleConfig(context.getSource(), "combat.gunnerAccuracy.maxPercent", "combat.gunnerAccuracy.maxPercent"))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 0.95D))
+                                .executes(context -> executeSetDoubleConfig(
+                                        context.getSource(),
+                                        "combat.gunnerAccuracy.maxPercent",
+                                        DoubleArgumentType.getDouble(context, "value"),
+                                        "combat.gunnerAccuracy.maxPercent"))));
     }
 
     private static int executeUnlockGunRecipes(CommandSourceStack source) {

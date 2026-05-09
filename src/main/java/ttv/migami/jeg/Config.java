@@ -40,10 +40,10 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_INTERACTION_ENABLED;
     public static final ModConfigSpec.IntValue GUNNER_TERRAIN_INTERACTION_MAX_TIER;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_START_DAY;
-    public static final ModConfigSpec.IntValue GUNNER_ACCURACY_DAYS_TO_MAX;
-    public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER;
+    public static final ModConfigSpec.IntValue GUNNER_ACCURACY_MAX_DAY;
+    public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_PERCENT;
     public static final ModConfigSpec.DoubleValue GUNNER_SHOTGUN_SPREAD_MULTIPLIER;
-    public static final ModConfigSpec.IntValue BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL;
+    public static final ModConfigSpec.IntValue GUNNER_PROGRESSION_MAX_DAY;
     public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS;
     public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS;
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER;
@@ -194,18 +194,18 @@ public final class Config {
         GUNNER_ACCURACY_START_DAY = serverBuilder
                 .comment("In-game day when gunner accuracy scaling starts.")
                 .defineInRange("gunnerAccuracyStartDay", 5, 0, 5000);
-        GUNNER_ACCURACY_DAYS_TO_MAX = serverBuilder
-                .comment("In-game days needed for gunner accuracy to reach configured max value.")
-                .defineInRange("gunnerAccuracyDaysToMax", 40, 1, 5000);
-        GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER = serverBuilder
-                .comment("Late-game gunner spread multiplier. Lower = more accurate. Typical range: 1.5-4.0.")
-                .defineInRange("gunnerAccuracyMaxSpreadMultiplier", 2.5D, 0.1D, 20.0D);
+        GUNNER_ACCURACY_MAX_DAY = serverBuilder
+                .comment("In-game day when gunner accuracy reaches configured max value.")
+                .defineInRange("gunnerAccuracyMaxDay", 60, 1, 5000);
+        GUNNER_ACCURACY_MAX_PERCENT = serverBuilder
+                .comment("Late-game gunner accuracy increase as a percent from the day-5 spread baseline. 0.70 means 70% more accurate.")
+                .defineInRange("gunnerAccuracyMaxPercent", 0.70D, 0.0D, 0.95D);
         GUNNER_SHOTGUN_SPREAD_MULTIPLIER = serverBuilder
                 .comment("Additional spread multiplier for gunner-fired shotguns. Lower = tighter pellet grouping.")
                 .defineInRange("gunnerShotgunSpreadMultiplier", 0.82D, 0.2D, 1.0D);
-        BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL = serverBuilder
-                .comment("Projectile Protection level applied to bound terror phantom (guardian). 0 disables this reduction.")
-                .defineInRange("boundTerrorPhantomProjectileProtectionLevel", 5, 0, 20);
+        GUNNER_PROGRESSION_MAX_DAY = serverBuilder
+                .comment("In-game day when gunner weapon strength, armor chance, and armor tier reach their maximum.")
+                .defineInRange("gunnerProgressionMaxDay", 60, 1, 5000);
         TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS = serverBuilder
                 .comment("Ticks without qualifying minigun/light machine gun hits before Terror Phantom rapid-fire resistance resets.")
                 .defineInRange("terrorPhantomRapidFireResistanceResetTicks", 25, 1, 200);
@@ -308,6 +308,10 @@ public final class Config {
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.gunnerTerrain.enabled", GUNNER_TERRAIN_INTERACTION_ENABLED);
         registerCommandConfig("combat.gunnerTerrain.maxTier", GUNNER_TERRAIN_INTERACTION_MAX_TIER);
+        registerCommandConfig("combat.gunnerAccuracy.startDay", GUNNER_ACCURACY_START_DAY);
+        registerCommandConfig("combat.gunnerAccuracy.maxDay", GUNNER_ACCURACY_MAX_DAY);
+        registerCommandConfig("combat.gunnerAccuracy.maxPercent", GUNNER_ACCURACY_MAX_PERCENT);
+        registerCommandConfig("combat.gunnerProgression.maxDay", GUNNER_PROGRESSION_MAX_DAY);
     }
 
     private Config() {}
@@ -445,16 +449,25 @@ public final class Config {
         return Math.max(0, GUNNER_ACCURACY_START_DAY.get());
     }
 
-    public static int gunnerAccuracyDaysToMax() {
-        return Math.max(1, GUNNER_ACCURACY_DAYS_TO_MAX.get());
+    public static int gunnerAccuracyMaxDay() {
+        return Math.max(1, GUNNER_ACCURACY_MAX_DAY.get());
     }
 
-    public static double gunnerAccuracyMaxSpreadMultiplier() {
-        return Math.max(0.1D, GUNNER_ACCURACY_MAX_SPREAD_MULTIPLIER.get());
+    public static double gunnerAccuracyMaxPercent() {
+        return Mth.clamp(GUNNER_ACCURACY_MAX_PERCENT.get(), 0.0D, 0.95D);
     }
 
     public static double gunnerShotgunSpreadMultiplier() {
         return Mth.clamp(GUNNER_SHOTGUN_SPREAD_MULTIPLIER.get(), 0.2D, 1.0D);
+    }
+
+    public static int gunnerProgressionMaxDay() {
+        return Math.max(1, GUNNER_PROGRESSION_MAX_DAY.get());
+    }
+
+    public static float gunnerProgressionScale(Level level) {
+        long day = Math.max(0L, level.getGameTime() / 24000L);
+        return Mth.clamp((float) day / (float) gunnerProgressionMaxDay(), 0.0F, 1.0F);
     }
 
     public static float scaleGunnerSpreadMultiplier(Level level, float earlyMultiplier) {
@@ -468,14 +481,10 @@ public final class Config {
             return earlyMultiplier;
         }
 
-        int daysToMax = gunnerAccuracyDaysToMax();
+        int daysToMax = Math.max(1, gunnerAccuracyMaxDay() - startDay);
         double progress = Math.min(1.0D, (double) (day - startDay) / (double) daysToMax);
-        double maxSpreadMultiplier = Math.min((double) earlyMultiplier, gunnerAccuracyMaxSpreadMultiplier());
+        double maxSpreadMultiplier = earlyMultiplier * (1.0D - gunnerAccuracyMaxPercent());
         return (float) (earlyMultiplier + (maxSpreadMultiplier - earlyMultiplier) * progress);
-    }
-
-    public static int boundTerrorPhantomProjectileProtectionLevel() {
-        return Math.max(0, BOUND_TERROR_PHANTOM_PROJECTILE_PROTECTION_LEVEL.get());
     }
 
     public static int terrorPhantomRapidFireResistanceResetTicks() {
