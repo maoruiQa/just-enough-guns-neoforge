@@ -25,20 +25,25 @@ import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipe;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 public final class VehicleAssemblingScreen extends AbstractContainerScreen<VehicleAssemblingMenu> {
     private static final int RECIPES_PER_PAGE = 6;
+    private static final Component ALL_FILTER = Component.literal("All");
     private static final Component PREVIOUS_PAGE = Component.literal("<");
     private static final Component NEXT_PAGE = Component.literal(">");
     private static final int PREVIEW_X = 176;
     private static final int PREVIEW_Y = 24;
     private static final int PREVIEW_SIZE = 64;
 
+    private List<VehicleAssemblyRecipe> allRecipes = List.of();
     private List<VehicleAssemblyRecipe> recipes = List.of();
     private int page;
+    @Nullable
+    private VehicleType filterType;
     private ResourceLocation previewVehicleId;
     private Entity previewEntity;
 
@@ -52,11 +57,28 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     @Override
     protected void init() {
         super.init();
-        this.recipes = VehicleAssemblyRecipeManager.recipes();
+        this.allRecipes = VehicleAssemblyRecipeManager.recipes();
+        this.recipes = this.filteredRecipes();
         this.page = Math.min(this.page, this.maxPage());
         this.resetPreview();
+        this.addFilterButtons();
         this.addRecipeButtons();
         this.addPageButtons();
+    }
+
+    private void addFilterButtons() {
+        int x = this.leftPos + 10;
+        int y = this.topPos + 4;
+        this.addRenderableWidget(Button.builder(ALL_FILTER, button -> this.setFilter(null))
+                .bounds(x, y, 28, 18)
+                .build());
+        x += 31;
+        for (FilterButton filter : FilterButton.values()) {
+            this.addRenderableWidget(Button.builder(filter.label, button -> this.setFilter(filter.type))
+                    .bounds(x, y, 34, 18)
+                    .build());
+            x += 37;
+        }
     }
 
     private void addRecipeButtons() {
@@ -81,19 +103,37 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
                     this.page = Math.max(0, this.page - 1);
                     this.refreshWidgets();
                 })
-                .bounds(this.leftPos + 196, this.topPos + 4, 22, 18)
+                .bounds(this.leftPos + 196, this.topPos + 176, 22, 18)
                 .build());
         this.addRenderableWidget(Button.builder(NEXT_PAGE, button -> {
                     this.page = Math.min(this.maxPage(), this.page + 1);
                     this.refreshWidgets();
                 })
-                .bounds(this.leftPos + 222, this.topPos + 4, 22, 18)
+                .bounds(this.leftPos + 222, this.topPos + 176, 22, 18)
                 .build());
     }
 
     private void refreshWidgets() {
         this.clearWidgets();
         this.init();
+    }
+
+    private void setFilter(@Nullable VehicleType type) {
+        if (this.filterType == type) {
+            return;
+        }
+        this.filterType = type;
+        this.page = 0;
+        this.refreshWidgets();
+    }
+
+    private List<VehicleAssemblyRecipe> filteredRecipes() {
+        if (this.filterType == null) {
+            return this.allRecipes;
+        }
+        return this.allRecipes.stream()
+                .filter(recipe -> VehicleDataManager.get(recipe.resultVehicle()).defaults().vehicleType() == this.filterType)
+                .toList();
     }
 
     private int maxPage() {
@@ -254,5 +294,21 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
             }
         }
         return count;
+    }
+
+    private enum FilterButton {
+        LAND(VehicleType.LAND, Component.literal("Land")),
+        HELICOPTER(VehicleType.HELICOPTER, Component.literal("Heli")),
+        AIRCRAFT(VehicleType.AIRCRAFT, Component.literal("Air")),
+        BOAT(VehicleType.BOAT, Component.literal("Boat")),
+        ARTILLERY(VehicleType.ARTILLERY, Component.literal("Art"));
+
+        private final VehicleType type;
+        private final Component label;
+
+        FilterButton(VehicleType type, Component label) {
+            this.type = type;
+            this.label = label;
+        }
     }
 }
