@@ -2,8 +2,12 @@ package ttv.migami.jeg.vehicle.projectile;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -63,12 +67,30 @@ public final class VehicleMissileEntity extends Entity {
         VehicleDecoyEntity.findNearest(this.level(), this.position(), SEEK_RANGE).ifPresent(decoy -> this.targetId = decoy.getId());
         target = this.currentTarget();
         if (target != null && target.isAlive()) {
+            this.warnTrackedTarget(target);
             Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(MAX_SPEED);
             this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - TURN_RATE).add(desired.scale(TURN_RATE)));
             if (this.distanceToSqr(target) < 1.4D) {
                 this.explode();
             }
         }
+    }
+
+    private void warnTrackedTarget(Entity target) {
+        if (!(target instanceof ServerPlayer player) || this.tickCount % 20 != 0) {
+            return;
+        }
+        player.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
+        player.level().playSound(
+                null,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                SoundEvents.NOTE_BLOCK_PLING,
+                SoundSource.PLAYERS,
+                0.8F,
+                1.7F
+        );
     }
 
     @Nullable
