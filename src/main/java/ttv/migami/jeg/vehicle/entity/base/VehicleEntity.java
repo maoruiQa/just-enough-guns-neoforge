@@ -339,7 +339,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size() && this.selectWeaponSlot(player, input.weaponSlot())) {
             this.weaponControllerId = player.getId();
         }
-        if (this.canUseSelectedWeapon(player, this.selectedWeapon())) {
+        if (!this.isFreeLookInputDown() && this.canUseSelectedWeapon(player, this.selectedWeapon())) {
             this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(player.getYRot() - this.getYRot()));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
