@@ -574,10 +574,38 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         float repair = this.vehicleData().defaults().autoRepairPerTick();
-        if (repair <= 0.0F || this.vehicleHealth() >= this.maxVehicleHealth()) {
+        if (repair <= 0.0F) {
             return;
         }
-        this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + repair));
+        boolean repaired = false;
+        if (this.vehicleHealth() < this.maxVehicleHealth()) {
+            this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + repair));
+            repaired = true;
+        }
+        repaired |= this.autoRepairParts(repair);
+        if (repaired) {
+            this.hurtMarked = true;
+        }
+    }
+
+    private boolean autoRepairParts(float repair) {
+        boolean repaired = false;
+        if (this.leftWheelHealth < PART_MAX_HEALTH) {
+            this.leftWheelHealth = Math.min(PART_MAX_HEALTH, this.leftWheelHealth + repair);
+            repaired = true;
+        }
+        if (this.rightWheelHealth < PART_MAX_HEALTH) {
+            this.rightWheelHealth = Math.min(PART_MAX_HEALTH, this.rightWheelHealth + repair);
+            repaired = true;
+        }
+        if (this.engineHealth < PART_MAX_HEALTH) {
+            this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + repair);
+            repaired = true;
+        }
+        if (repaired) {
+            this.syncPartDamageFlags();
+        }
+        return repaired;
     }
 
     private boolean tickLowHealthDecay() {
