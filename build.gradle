@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+version = "${project.mod_version}+fabric1.21.1"
 group = project.mod_group
 
 base {
@@ -23,7 +23,9 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-1.21.1:4.8.3"
     implementation "com.electronwill.night-config:toml:3.8.1"
+    implementation "com.electronwill.night-config:core:3.8.1"
     include "com.electronwill.night-config:toml:3.8.1"
+    include "com.electronwill.night-config:core:3.8.1"
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 
@@ -48,9 +50,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    inputs.property "version", project.version
+    inputs.property "version", project.mod_version
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand "version": project.mod_version
     }
 }
 
