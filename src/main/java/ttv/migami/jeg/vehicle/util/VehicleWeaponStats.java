@@ -8,8 +8,10 @@ import ttv.migami.jeg.gun.GunStats;
 
 public final class VehicleWeaponStats {
     private static final ResourceLocation SMALL_SHELL = Reference.id("small_shell");
+    private static final ResourceLocation AUTOCANNON_SHELL = Reference.id("autocannon_shell");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation LAV150_CANNON_FIRE = Reference.id("vehicle.lav150.cannon_fire");
+    private static final ResourceLocation BMP2_CANNON_FIRE = Reference.id("vehicle.bmp2.cannon_fire");
     private static final ResourceLocation MACHINE_GUN_FIRE = Reference.id("item.light_machine_gun.fire");
 
     private static final Map<ResourceLocation, GunStats> STATS = Map.of(
@@ -39,6 +41,33 @@ public final class VehicleWeaponStats {
                     0.12F,
                     0x66FF00,
                     2.0F
+            ),
+            Reference.id("vehicle_30mm_cannon"), new GunStats(
+                    Reference.id("vehicle_30mm_cannon"),
+                    AUTOCANNON_SHELL,
+                    "jeg:vehicle",
+                    1,
+                    0,
+                    0,
+                    10,
+                    78.0F,
+                    24.0F,
+                    90,
+                    true,
+                    false,
+                    0.35F,
+                    1,
+                    BMP2_CANNON_FIRE,
+                    null,
+                    BMP2_CANNON_FIRE,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    0.16F,
+                    0xFFC700,
+                    2.8F
             ),
             Reference.id("vehicle_coax_machine_gun"), new GunStats(
                     Reference.id("vehicle_coax_machine_gun"),

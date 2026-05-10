@@ -164,12 +164,13 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderSelectedWeaponIcon(GuiGraphics guiGraphics, VehicleEntity vehicle, int x, int y) {
-        if (!"lav150".equals(vehicle.vehicleDataId().getPath())) {
+        if (!hasApcWeaponHud(vehicle)) {
             return;
         }
         ResourceLocation icon = switch (vehicle.selectedVehicleWeaponId().getPath()) {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
-            case "vehicle_coax_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
+            case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
             default -> null;
         };
         if (icon != null) {
@@ -178,7 +179,7 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderWeaponSelector(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        if (!"lav150".equals(vehicle.vehicleDataId().getPath())) {
+        if (!hasApcWeaponHud(vehicle)) {
             return;
         }
         var weapons = vehicle.vehicleData().defaults().weapons();
@@ -215,7 +216,8 @@ public final class VehicleHudOverlay {
     private static ResourceLocation weaponIcon(ResourceLocation weaponId) {
         return switch (weaponId.getPath()) {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
-            case "vehicle_coax_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
+            case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
             default -> null;
         };
     }
@@ -300,7 +302,7 @@ public final class VehicleHudOverlay {
 
         String vehiclePath = vehicle.vehicleDataId().getPath();
         boolean focusedSight = isFocusedVehicleSight(vehicle);
-        if (focusedSight && "lav150".equals(vehiclePath)) {
+        if (focusedSight && hasApcFocusedSightFrame(vehiclePath)) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
             int addW = (screenWidth / screenHeight) * 48;
@@ -327,8 +329,21 @@ public final class VehicleHudOverlay {
         guiGraphics.drawString(minecraft.font, speedText, x + 64, guiGraphics.guiHeight() / 2 - 48, 0xFF66FF00);
     }
 
+    private static boolean hasApcWeaponHud(VehicleEntity vehicle) {
+        String vehiclePath = vehicle.vehicleDataId().getPath();
+        return "lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath);
+    }
+
+    private static boolean hasApcFocusedSightFrame(String vehiclePath) {
+        return "lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath);
+    }
+
     private static boolean isFocusedVehicleSight(VehicleEntity vehicle) {
-        return "lav150".equals(vehicle.vehicleDataId().getPath())
+        LocalPlayer player = Minecraft.getInstance().player;
+        return player != null
+                && player.getVehicle() == vehicle
+                && vehicle.passengerForSeat(0) == player
+                && hasApcFocusedSightFrame(vehicle.vehicleDataId().getPath())
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();

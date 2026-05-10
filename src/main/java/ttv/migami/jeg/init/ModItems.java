@@ -106,6 +106,7 @@ public final class ModItems {
             "pistol_ammo",
             "rifle_ammo",
             "small_shell",
+            "autocannon_shell",
             "shotgun_shell",
             "handmade_shell",
             "spectre_round",

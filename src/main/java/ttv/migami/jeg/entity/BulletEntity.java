@@ -77,6 +77,7 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation COMPOUND_BOW_ID = Reference.id("compound_bow");
     private static final ResourceLocation PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
     private static final ResourceLocation VEHICLE_20MM_CANNON_ID = Reference.id("vehicle_20mm_cannon");
+    private static final ResourceLocation VEHICLE_30MM_CANNON_ID = Reference.id("vehicle_30mm_cannon");
     private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
             && (state.getBlock() instanceof LeavesBlock || isGrassLikeFoliage(state));
     private static boolean isGrassLikeFoliage(BlockState state) {
@@ -789,7 +790,7 @@ public class BulletEntity extends Projectile {
             return true;
         }
 
-        if (id.equals(VEHICLE_20MM_CANNON_ID)) {
+        if (id.equals(VEHICLE_20MM_CANNON_ID) || id.equals(VEHICLE_30MM_CANNON_ID)) {
             if (!this.level().isClientSide()) {
                 Entity owner = this.getOwner();
                 Vec3 pos = result.getLocation();
