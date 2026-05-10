@@ -26,10 +26,20 @@ import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.vehicle.client.render.A10Renderer;
+import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
+import ttv.migami.jeg.vehicle.client.render.Bmp2Renderer;
+import ttv.migami.jeg.vehicle.client.render.Hpj11Renderer;
+import ttv.migami.jeg.vehicle.client.render.LaserTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.Lav150Renderer;
+import ttv.migami.jeg.vehicle.client.render.Mi28Renderer;
+import ttv.migami.jeg.vehicle.client.render.SpeedboatRenderer;
+import ttv.migami.jeg.vehicle.client.render.Tom6Renderer;
+import ttv.migami.jeg.vehicle.client.render.TruckRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
-import ttv.migami.jeg.vehicle.client.render.Lav150Renderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
+import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class FallbackClientRenderers {
@@ -55,17 +65,17 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.TEST_BOAT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.TRUCK.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.TRUCK.get(), TruckRenderer::new);
         event.registerEntityRenderer(ModEntities.LAV150.get(), Lav150Renderer::new);
-        event.registerEntityRenderer(ModEntities.SPEEDBOAT.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.AH6.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.A10.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.BMP2.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.MI28.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.TOM6.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.LASER_TOWER.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.HPJ11.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.WAVEFORCE_TOWER.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.SPEEDBOAT.get(), SpeedboatRenderer::new);
+        event.registerEntityRenderer(ModEntities.AH6.get(), Ah6Renderer::new);
+        event.registerEntityRenderer(ModEntities.A10.get(), A10Renderer::new);
+        event.registerEntityRenderer(ModEntities.BMP2.get(), Bmp2Renderer::new);
+        event.registerEntityRenderer(ModEntities.MI28.get(), Mi28Renderer::new);
+        event.registerEntityRenderer(ModEntities.TOM6.get(), Tom6Renderer::new);
+        event.registerEntityRenderer(ModEntities.LASER_TOWER.get(), LaserTowerRenderer::new);
+        event.registerEntityRenderer(ModEntities.HPJ11.get(), Hpj11Renderer::new);
+        event.registerEntityRenderer(ModEntities.WAVEFORCE_TOWER.get(), WaveforceTowerRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
         event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
     }

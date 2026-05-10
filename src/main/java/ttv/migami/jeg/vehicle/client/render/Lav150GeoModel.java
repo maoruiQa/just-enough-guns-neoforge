@@ -1,27 +1,13 @@
 package ttv.migami.jeg.vehicle.client.render;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.model.GeoModel;
-import ttv.migami.jeg.vehicle.client.resource.DefaultVehicleResource;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
-public final class Lav150GeoModel extends GeoModel<VehicleEntity> {
-    @Override
-    public ResourceLocation getModelResource(VehicleEntity animatable) {
-        return DefaultVehicleResource.model(animatable);
-    }
-
-    @Override
-    public ResourceLocation getTextureResource(VehicleEntity animatable) {
-        return DefaultVehicleResource.texture(animatable);
-    }
-
-    @Override
-    public ResourceLocation getAnimationResource(VehicleEntity animatable) {
-        return DefaultVehicleResource.animation(animatable);
+public final class Lav150GeoModel extends NamedVehicleGeoModel {
+    public Lav150GeoModel() {
+        super("lav150");
     }
 
     @Override
