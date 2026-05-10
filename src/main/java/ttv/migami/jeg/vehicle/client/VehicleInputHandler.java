@@ -8,6 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -18,6 +19,8 @@ import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleInputHandler {
+    private static boolean suppressPlayerInventoryClick;
+
     private VehicleInputHandler() {}
 
     @SubscribeEvent
@@ -53,7 +56,12 @@ public final class VehicleInputHandler {
                 NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
             }
         }
-        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
+        boolean playerInventoryClick = KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick();
+        if (suppressPlayerInventoryClick) {
+            suppressPlayerInventoryClick = false;
+            playerInventoryClick = false;
+        }
+        if (playerInventoryClick) {
             if (minecraft.screen instanceof InventoryScreen) {
                 player.closeContainer();
                 minecraft.setScreen(null);
@@ -117,5 +125,20 @@ public final class VehicleInputHandler {
             sensitivity = seat.sensitivityX();
         }
         event.setMouseSensitivity(Math.max(0.0F, base * sensitivity));
+    }
+
+    @SubscribeEvent
+    public static void onScreenKeyPressed(ScreenEvent.KeyPressed.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || !(player.getVehicle() instanceof VehicleEntity) || !(event.getScreen() instanceof InventoryScreen)) {
+            return;
+        }
+        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event.getKeyCode(), event.getScanCode())) {
+            player.closeContainer();
+            minecraft.setScreen(null);
+            suppressPlayerInventoryClick = true;
+            event.setCanceled(true);
+        }
     }
 }

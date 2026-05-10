@@ -1443,6 +1443,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void destroyVehicle() {
+        this.ejectPassengers();
         if (this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY() + 0.6D, this.getZ(), 12, 0.8D, 0.5D, 0.8D, 0.08D);
             var destroy = this.vehicleData().defaults().destroy();
