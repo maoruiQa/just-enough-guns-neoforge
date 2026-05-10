@@ -28,6 +28,7 @@ import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
+import ttv.migami.jeg.vehicle.client.render.Lav150Renderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -55,7 +56,7 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TRUCK.get(), VehicleGeoRenderer::new);
-        event.registerEntityRenderer(ModEntities.LAV150.get(), VehicleGeoRenderer::new);
+        event.registerEntityRenderer(ModEntities.LAV150.get(), Lav150Renderer::new);
         event.registerEntityRenderer(ModEntities.SPEEDBOAT.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.AH6.get(), VehicleGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.A10.get(), VehicleGeoRenderer::new);
