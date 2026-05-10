@@ -29,6 +29,7 @@ import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
 import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
+import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -52,7 +53,8 @@ public final class NetworkHandler {
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
                 .playToClient(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC, NetworkHandler::handleUiConfig)
-                .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker);
+                .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
+                .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState);
     }
 
     private static void handleVehicleInput(VehicleInputPayload payload, IPayloadContext context) {
@@ -93,6 +95,7 @@ public final class NetworkHandler {
             }
             if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
                 player.stopRiding();
+                syncVehicleState(player, vehicle, true);
             }
         });
     }
@@ -139,6 +142,42 @@ public final class NetworkHandler {
 
     private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
+    }
+
+    private static void syncVehicleState(ServerPlayer player, VehicleEntity vehicle, boolean forceApply) {
+        player.connection.send(new VehicleStatePayload(
+                vehicle.getId(),
+                vehicle.getX(),
+                vehicle.getY(),
+                vehicle.getZ(),
+                vehicle.getDeltaMovement().x,
+                vehicle.getDeltaMovement().y,
+                vehicle.getDeltaMovement().z,
+                vehicle.getYRot(),
+                vehicle.getXRot(),
+                forceApply
+        ));
+    }
+
+    public static void sendVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, false);
+    }
+
+    public static void sendForcedVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, true);
+    }
+
+    private static void handleVehicleState(VehicleStatePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (Minecraft.getInstance().level == null) {
+                return;
+            }
+            var entity = Minecraft.getInstance().level.getEntity(payload.vehicleId());
+            if (!(entity instanceof VehicleEntity vehicle)) {
+                return;
+            }
+            vehicle.syncAuthoritativeState(payload.x(), payload.y(), payload.z(), payload.motionX(), payload.motionY(), payload.motionZ(), payload.yaw(), payload.pitch(), payload.forceApply());
+        });
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {

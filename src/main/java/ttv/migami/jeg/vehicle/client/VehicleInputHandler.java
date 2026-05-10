@@ -46,7 +46,10 @@ public final class VehicleInputHandler {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
         }
         if (KeyBindings.VEHICLE_DISMOUNT.consumeClick()) {
+            vehicle.clearClientControlState();
+            VehicleClientState.clear();
             NetworkHandler.sendVehicleDismount(vehicle.getId());
+            return;
         }
         if (minecraft.options.keyInventory.consumeClick()) {
             if (minecraft.screen instanceof VehicleScreen) {

@@ -66,6 +66,7 @@ public final class BallisticProtection {
             case "combat_rifle" -> 1.24F;
             case "burst_rifle" -> 0.90F;
             case "light_machine_gun" -> 1.10F;
+            case "vehicle_30mm_cannon" -> 2.40F;
             default -> 1.00F;
         };
     }

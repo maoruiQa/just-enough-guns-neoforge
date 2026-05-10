@@ -47,6 +47,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -54,6 +55,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
@@ -74,6 +76,13 @@ import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 
 public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
+    private static final double CLIENT_RESYNC_DISTANCE_SQR = 4.0D;
+    private static final double CLIENT_RESYNC_HORIZONTAL_MOTION_DELTA_SQR = 0.16D;
+    private static final float CLIENT_RESYNC_YAW_DELTA = 12.0F;
+    private static final float CLIENT_RESYNC_PITCH_DELTA = 12.0F;
+    private static final int DRIVER_STATE_SYNC_INTERVAL = 5;
+    private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 30;
+
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
@@ -158,6 +167,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private double enginePower;
     private float turretYawO;
     private float turretPitchO;
+    private int dismountLerpSuppressionTicks;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -437,6 +447,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.turretYawO = this.turretYaw();
         this.turretPitchO = this.turretPitch();
         super.tick();
+        if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
+            this.dismountLerpSuppressionTicks--;
+        }
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.clearStaleDriverInput();
@@ -447,19 +460,106 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickDecoyCooldown();
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
+            this.tickDriverStateSync();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
             this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.countAmmo(this.selectedWeapon().ammoId()));
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
-        } else if (this.isControlledByLocalInstance()) {
+        } else if (this.shouldRunClientPrediction()) {
             this.tickClientPredictedLandMovement();
         }
     }
 
+    private void tickDriverStateSync() {
+        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+            return;
+        }
+        if (this.getControllingPassenger() instanceof ServerPlayer player) {
+            NetworkHandler.sendVehicleState(player, this);
+        }
+    }
+
+    private boolean shouldRunClientPrediction() {
+        return this.isControlledByLocalInstance()
+                && VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == this.getId();
+    }
+
     private void clearStaleDriverInput() {
         if (this.getControllingPassenger() == null) {
-            this.input = VehicleInput.EMPTY;
+            this.clearControlState(false);
         }
+    }
+
+    private void clearControlState(boolean stopHorizontalMotion) {
+        this.input = VehicleInput.EMPTY;
+        this.weaponFireInput = false;
+        this.seekInput = false;
+        this.weaponControllerId = -1;
+        this.seekControllerId = -1;
+        this.enginePower = 0.0D;
+        this.wheelSteering = 0.0D;
+        if (stopHorizontalMotion) {
+            Vec3 motion = this.getDeltaMovement();
+            this.setDeltaMovement(0.0D, motion.y, 0.0D);
+            this.hasImpulse = true;
+        }
+    }
+
+    public void clearClientControlState() {
+        this.clearControlState(true);
+    }
+
+    public void syncAuthoritativeState(double x, double y, double z, double motionX, double motionY, double motionZ, float yaw, float pitch, boolean forceApply) {
+        if (!this.shouldApplyAuthoritativeState(x, y, z, motionX, motionY, motionZ, yaw, pitch, forceApply)) {
+            return;
+        }
+        this.setPos(x, y, z);
+        this.setDeltaMovement(motionX, motionY, motionZ);
+        this.setYRot(yaw);
+        this.setXRot(pitch);
+        this.yRotO = yaw;
+        this.xRotO = pitch;
+        this.xo = x;
+        this.yo = y;
+        this.zo = z;
+        this.hasImpulse = true;
+        if (forceApply && this.level().isClientSide) {
+            this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
+        }
+    }
+
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
+            return;
+        }
+        super.lerpTo(x, y, z, yRot, xRot, steps);
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
+            return;
+        }
+        super.lerpMotion(x, y, z);
+    }
+
+    private boolean shouldApplyAuthoritativeState(double x, double y, double z, double motionX, double motionY, double motionZ, float yaw, float pitch, boolean forceApply) {
+        if (forceApply || !this.level().isClientSide || !this.shouldRunClientPrediction()) {
+            return true;
+        }
+        Vec3 syncedPosition = new Vec3(x, y, z);
+        Vec3 syncedMotion = new Vec3(motionX, motionY, motionZ);
+        Vec3 horizontalMotionDelta = new Vec3(this.getDeltaMovement().x - motionX, 0.0D, this.getDeltaMovement().z - motionZ);
+        if (this.position().distanceToSqr(syncedPosition) >= CLIENT_RESYNC_DISTANCE_SQR) {
+            return true;
+        }
+        if (horizontalMotionDelta.lengthSqr() >= CLIENT_RESYNC_HORIZONTAL_MOTION_DELTA_SQR) {
+            return true;
+        }
+        return Math.abs(Mth.wrapDegrees(this.getYRot() - yaw)) >= CLIENT_RESYNC_YAW_DELTA
+                || Math.abs(Mth.wrapDegrees(this.getXRot() - pitch)) >= CLIENT_RESYNC_PITCH_DELTA;
     }
 
     private void tickServerWeapon() {
@@ -1809,20 +1909,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     protected void removePassenger(@NotNull Entity passenger) {
+        boolean controllingPassenger = passenger == this.getControllingPassenger();
         this.seatAssignments.remove(passenger.getUUID());
-        if (passenger == this.getControllingPassenger()) {
-            this.input = VehicleInput.EMPTY;
-            this.weaponFireInput = false;
-            this.seekInput = false;
-            this.weaponControllerId = -1;
-            this.seekControllerId = -1;
-            this.enginePower = 0.0D;
-            this.wheelSteering = 0.0D;
-            Vec3 motion = this.getDeltaMovement();
-            this.setDeltaMovement(0.0D, motion.y, 0.0D);
-            this.hasImpulse = true;
+        if (controllingPassenger) {
+            this.clearControlState(true);
+            if (!this.level().isClientSide && passenger instanceof ServerPlayer player) {
+                NetworkHandler.sendForcedVehicleState(player, this);
+            }
         }
         super.removePassenger(passenger);
+        if (controllingPassenger && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
+            Vec3 passengerMotion = passenger.getDeltaMovement();
+            passenger.setDeltaMovement(0.0D, passengerMotion.y, 0.0D);
+        }
     }
 
     public double getPassengersRidingOffset() {
