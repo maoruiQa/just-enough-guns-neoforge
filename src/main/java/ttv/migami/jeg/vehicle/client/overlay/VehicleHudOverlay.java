@@ -1,9 +1,16 @@
 package ttv.migami.jeg.vehicle.client.overlay;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -17,6 +24,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import org.joml.Matrix4f;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleHudOverlay {
@@ -86,10 +94,19 @@ public final class VehicleHudOverlay {
     }
 
     private static void render(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        boolean focusedSight = isFocusedVehicleSight(vehicle);
+        renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
         renderReticle(guiGraphics, vehicle);
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
-        renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
+        if (focusedSight) {
+            return;
+        }
         int width = guiGraphics.guiWidth();
         int y = guiGraphics.guiHeight() - 58;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
@@ -230,7 +247,7 @@ public final class VehicleHudOverlay {
         int x = (guiGraphics.guiWidth() - size) / 2;
         int y = (guiGraphics.guiHeight() - size) / 2;
         ResourceLocation texture = reticleTexture(vehicle);
-        guiGraphics.blit(texture, x, y, size, size, 0.0F, 0.0F, 512, 512, 512, 512);
+        preciseBlit(guiGraphics, texture, x, y, size, size, 0.0F, 0.0F, 512.0F, 512.0F, 512.0F, 512.0F);
     }
 
     private static ResourceLocation reticleTexture(VehicleEntity vehicle) {
@@ -281,15 +298,13 @@ public final class VehicleHudOverlay {
             return;
         }
 
-        boolean focusedSight = VehicleClientState.isRidingVehicle()
-                && VehicleClientState.vehicleId() == vehicle.getId()
-                && VehicleClientState.zoomDown();
+        boolean focusedSight = isFocusedVehicleSight(vehicle);
         if (focusedSight && "lav150".equals(vehiclePath)) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
-            int frameWidth = Math.max(screenWidth, screenHeight * 16 / 9);
-            int frameHeight = Math.max(screenHeight, screenWidth * 9 / 16);
-            guiGraphics.blit(LAND_FRAME, (screenWidth - frameWidth) / 2, (screenHeight - frameHeight) / 2, frameWidth, frameHeight, 0.0F, 0.0F, 1920, 1080, 1920, 1080);
+            int addW = (screenWidth / screenHeight) * 48;
+            int addH = (screenWidth / screenHeight) * 27;
+            preciseBlit(guiGraphics, LAND_FRAME, -addW / 2.0F, -addH / 2.0F, screenWidth + addW, screenHeight + addH, 0.0F, 0.0F, 1920.0F, 1080.0F, 1920.0F, 1080.0F);
             int compassOffset = Mth.floor(128.0F + 64.0F / 45.0F * minecraft.player.getYRot());
             guiGraphics.blit(COMPASS, screenWidth / 2 - 128, 10, compassOffset, 0.0F, 256, 16, 1024, 32);
             guiGraphics.blit(ROLL_INDICATOR, screenWidth / 2 - 8, 30, 0.0F, 0.0F, 16, 16, 16, 16);
@@ -309,6 +324,29 @@ public final class VehicleHudOverlay {
         int speed = (int) Math.round(Math.sqrt(vehicle.distanceToSqr(vehicle.xOld, vehicle.getY(), vehicle.zOld)) * 72.0D);
         Component speedText = Component.literal(speed + " km/h");
         guiGraphics.drawString(minecraft.font, speedText, x + 64, guiGraphics.guiHeight() / 2 - 48, 0xFF66FF00);
+    }
+
+    private static boolean isFocusedVehicleSight(VehicleEntity vehicle) {
+        return "lav150".equals(vehicle.vehicleDataId().getPath())
+                && VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.zoomDown();
+    }
+
+    private static void preciseBlit(GuiGraphics guiGraphics, ResourceLocation texture, float x, float y, float width, float height, float uOffset, float vOffset, float uWidth, float vHeight, float textureWidth, float textureHeight) {
+        RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        Matrix4f matrix = guiGraphics.pose().last().pose();
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        float minU = uOffset / textureWidth;
+        float maxU = (uOffset + uWidth) / textureWidth;
+        float minV = vOffset / textureHeight;
+        float maxV = (vOffset + vHeight) / textureHeight;
+        buffer.addVertex(matrix, x, y, 0.0F).setUv(minU, minV);
+        buffer.addVertex(matrix, x, y + height, 0.0F).setUv(minU, maxV);
+        buffer.addVertex(matrix, x + width, y + height, 0.0F).setUv(maxU, maxV);
+        buffer.addVertex(matrix, x + width, y, 0.0F).setUv(maxU, minV);
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     private static void blitVehiclePart(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, boolean damaged) {
