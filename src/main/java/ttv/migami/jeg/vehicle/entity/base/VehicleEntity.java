@@ -150,6 +150,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean seekInput;
     private double wheelSteering;
     private double enginePower;
+    private float turretYawO;
+    private float turretPitchO;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -321,6 +323,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_TURRET_PITCH);
     }
 
+    public float turretYaw(float partialTick) {
+        return Mth.rotLerp(partialTick, this.turretYawO, this.turretYaw());
+    }
+
+    public float turretPitch(float partialTick) {
+        return Mth.lerp(partialTick, this.turretPitchO, this.turretPitch());
+    }
+
     public boolean hasBuiltInDecoy() {
         return this.vehicleData().defaults().hasDecoy();
     }
@@ -418,6 +428,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public void tick() {
+        this.turretYawO = this.turretYaw();
+        this.turretPitchO = this.turretPitch();
         super.tick();
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
@@ -1293,11 +1305,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private float lav150WorldTurretYaw(float partialTick) {
-        return Mth.lerp(partialTick, this.yRotO, this.getYRot()) - Mth.lerp(partialTick, this.turretYaw(), this.turretYaw());
+        return Mth.lerp(partialTick, this.yRotO, this.getYRot()) - this.turretYaw(partialTick);
     }
 
     private float lav150TurretPitch(float partialTick) {
-        return Mth.lerp(partialTick, this.turretPitch(), this.turretPitch());
+        return this.turretPitch(partialTick);
     }
 
     private Vec3 rotateLocalOffsetByYawAndPitch(double localX, double localY, double localZ, float yaw, float pitch) {

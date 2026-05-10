@@ -13,15 +13,16 @@ public final class Lav150GeoModel extends NamedVehicleGeoModel {
     @Override
     public void setCustomAnimations(VehicleEntity animatable, long instanceId, AnimationState<VehicleEntity> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
+        float partialTick = animationState.getPartialTick();
 
         GeoBone turret = this.getAnimationProcessor().getBone("turret");
         if (turret != null) {
-            turret.setRotY(animatable.turretYaw() * Mth.DEG_TO_RAD);
+            turret.setRotY(animatable.turretYaw(partialTick) * Mth.DEG_TO_RAD);
         }
 
         GeoBone barrel = this.getAnimationProcessor().getBone("barrel");
         if (barrel != null) {
-            barrel.setRotX(Mth.clamp(-animatable.turretPitch(), -15.0F, 32.5F) * Mth.DEG_TO_RAD);
+            barrel.setRotX(Mth.clamp(-animatable.turretPitch(partialTick), -15.0F, 32.5F) * Mth.DEG_TO_RAD);
         }
     }
 }
