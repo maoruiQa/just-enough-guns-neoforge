@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.KeyBindings;
-import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
@@ -30,8 +29,6 @@ public class MinecraftVehicleHotbarMixin {
         }
         if (this.options.keyInventory.isDown()) {
             callback.cancel();
-            this.options.keyInventory.consumeClick();
-            NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
             return;
         }
         int weaponSlot = -1;

@@ -1400,8 +1400,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/lav150/cannon_fire",
-        "stream": true
+        "name": "jeg:vehicle/lav150/cannon_fire"
       }
     ]
   },

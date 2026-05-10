@@ -1,6 +1,7 @@
 package ttv.migami.jeg.vehicle.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -10,6 +11,7 @@ import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
@@ -44,7 +46,15 @@ public final class VehicleInputHandler {
             NetworkHandler.sendVehicleDismount(vehicle.getId());
         }
         if (minecraft.options.keyInventory.consumeClick()) {
-            NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+            if (minecraft.screen instanceof VehicleScreen) {
+                player.closeContainer();
+                minecraft.setScreen(null);
+            } else if (minecraft.screen == null) {
+                NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+            }
+        }
+        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick() && minecraft.screen == null) {
+            minecraft.setScreen(new InventoryScreen(player));
         }
         VehicleInput input = new VehicleInput(
                 minecraft.options.keyUp.isDown(),

@@ -76,6 +76,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_PLAYER_INVENTORY = new KeyMapping(
+            "key.jeg.vehicle_player_inventory",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_H,
+            CATEGORY
+    );
+
     private KeyBindings() {}
 
     @SubscribeEvent
@@ -89,5 +96,6 @@ public final class KeyBindings {
         event.register(VEHICLE_BRAKE_DESCEND);
         event.register(VEHICLE_CHANGE_SEAT);
         event.register(VEHICLE_DISMOUNT);
+        event.register(VEHICLE_PLAYER_INVENTORY);
     }
 }

@@ -1,11 +1,14 @@
 package ttv.migami.jeg.vehicle.client.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
@@ -46,6 +49,20 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            this.onClose();
+            return true;
+        }
+        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(keyCode, scanCode)) {
+            this.minecraft.setScreen(new InventoryScreen(this.minecraft.player));
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     private ResourceLocation vehicleInventoryTexture() {

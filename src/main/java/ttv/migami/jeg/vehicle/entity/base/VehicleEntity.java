@@ -1097,7 +1097,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.setPos(before.x + unclipped.x, this.getY(), before.z + unclipped.z);
             moved = this.position().subtract(before);
         }
-        this.setDeltaMovement(moved.multiply(0.98D, 0.98D, 0.98D));
+        double nextY = velocity.y;
+        if (this.onGround() || this.verticalCollisionBelow) {
+            nextY = moved.y > 0.0D ? Math.min(moved.y * 0.2D, 0.08D) : Math.min(0.0D, nextY);
+        } else if (this.verticalCollision && nextY > 0.0D) {
+            nextY = 0.0D;
+        }
+        this.setDeltaMovement(moved.x * 0.98D, nextY * 0.98D, moved.z * 0.98D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D) {
             this.hurtMarked = true;
             this.hasImpulse = true;
