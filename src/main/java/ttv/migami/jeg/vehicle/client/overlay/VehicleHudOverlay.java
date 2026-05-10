@@ -45,6 +45,11 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation WEAPON_ICON_CANNON_20MM = Reference.id("textures/overlay/vehicle/weapon/icons/cannon_20mm.png");
     private static final ResourceLocation WEAPON_ICON_COAX_762 = Reference.id("textures/overlay/vehicle/weapon/icons/gun_7_62mm.png");
     private static final ResourceLocation WEAPON_SELECTED = Reference.id("textures/overlay/vehicle/weapon/frame/selected.png");
+    private static final ResourceLocation WEAPON_NUMBER = Reference.id("textures/overlay/vehicle/weapon/frame/number.png");
+    private static final int WEAPON_ICON_WIDTH = 75;
+    private static final int WEAPON_ICON_HEIGHT = 16;
+    private static final int WEAPON_ICON_TEXTURE_WIDTH = 300;
+    private static final int WEAPON_ICON_TEXTURE_HEIGHT = 64;
     private static final ResourceLocation[] WEAPON_FRAMES = {
             Reference.id("textures/overlay/vehicle/weapon/frame/frame_1.png"),
             Reference.id("textures/overlay/vehicle/weapon/frame/frame_2.png"),
@@ -61,12 +66,19 @@ public final class VehicleHudOverlay {
 
     @SubscribeEvent
     public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
-        if (event.getName() == null || !"crosshair".equals(event.getName().getPath())) {
+        if (event.getName() == null) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return;
+        }
+        if ("hotbar".equals(event.getName().getPath())) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!"crosshair".equals(event.getName().getPath())) {
             return;
         }
         render(event.getGuiGraphics(), minecraft, vehicle);
@@ -143,7 +155,7 @@ public final class VehicleHudOverlay {
             default -> null;
         };
         if (icon != null) {
-            guiGraphics.blit(icon, x, y, 0.0F, 0.0F, 75, 16, 300, 64);
+            blitWeaponIcon(guiGraphics, icon, x, y);
         }
     }
 
@@ -163,15 +175,17 @@ public final class VehicleHudOverlay {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, index == selected ? 1.0F : 0.35F);
             guiGraphics.blit(WEAPON_FRAMES[Math.min(index, WEAPON_FRAMES.length - 1)], x, y, 0.0F, 0.0F, 75, 16, 75, 16);
             if (icon != null) {
-                guiGraphics.blit(icon, x, y, 0.0F, 0.0F, 75, 16, 300, 64);
+                blitWeaponIcon(guiGraphics, icon, x, y);
             } else {
                 Component name = Component.translatable("item." + weapons.get(index).weaponId().getNamespace() + "." + weapons.get(index).weaponId().getPath());
                 guiGraphics.drawString(minecraft.font, name, x + 4, y + 4, 0xFFFFFFFF, false);
             }
-            Component ammo = index == selected
-                    ? Component.literal(String.valueOf(vehicle.selectedVehicleWeaponAmmo()))
-                    : Component.literal(String.valueOf(index + 1));
-            guiGraphics.drawString(minecraft.font, ammo, width - 20 - minecraft.font.width(ammo), y + 5, 0xFFFFFFFF, false);
+            if (index == selected) {
+                renderWeaponNumber(guiGraphics, vehicle.selectedVehicleWeaponAmmo(), width - 20, y + 4);
+            } else {
+                Component slotNumber = Component.literal(String.valueOf(index + 1));
+                guiGraphics.drawString(minecraft.font, slotNumber, width - 20 - minecraft.font.width(slotNumber), y + 5, 0xFFFFFFFF, false);
+            }
             if (index == selected) {
                 guiGraphics.blit(WEAPON_SELECTED, width - 95, y + 4, 0.0F, 0.0F, 8, 8, 8, 8);
             }
@@ -186,6 +200,29 @@ public final class VehicleHudOverlay {
             case "vehicle_coax_machine_gun" -> WEAPON_ICON_COAX_762;
             default -> null;
         };
+    }
+
+    private static void blitWeaponIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y) {
+        guiGraphics.blit(icon, x, y, WEAPON_ICON_WIDTH, WEAPON_ICON_HEIGHT, 0.0F, 0.0F, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT);
+    }
+
+    private static void renderWeaponNumber(GuiGraphics guiGraphics, int number, int rightX, int y) {
+        int clamped = Math.max(0, number);
+        if (clamped == 0) {
+            blitWeaponDigit(guiGraphics, 0, rightX - 5, y);
+            return;
+        }
+        int offset = 0;
+        while (clamped > 0) {
+            int digit = clamped % 10;
+            blitWeaponDigit(guiGraphics, digit, rightX - 5 - offset * 5, y);
+            clamped /= 10;
+            offset++;
+        }
+    }
+
+    private static void blitWeaponDigit(GuiGraphics guiGraphics, int digit, int x, int y) {
+        guiGraphics.blit(WEAPON_NUMBER, x, y, 5, 8, digit * 20.0F, 0.0F, 20, 30, 300, 30);
     }
 
     private static void renderReticle(GuiGraphics guiGraphics, VehicleEntity vehicle) {
