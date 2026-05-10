@@ -1093,9 +1093,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.move(MoverType.SELF, this.getDeltaMovement());
         Vec3 moved = this.position().subtract(before);
         if (moved.horizontalDistanceSqr() < 1.0E-7D && new Vec3(velocity.x, 0.0D, velocity.z).lengthSqr() > 1.0E-7D) {
-            Vec3 unclipped = new Vec3(velocity.x, 0.0D, velocity.z);
-            this.setPos(before.x + unclipped.x, this.getY(), before.z + unclipped.z);
-            moved = this.position().subtract(before);
+            velocity = new Vec3(0.0D, velocity.y, 0.0D);
+            this.enginePower *= 0.35D;
+            this.wheelSteering *= 0.5D;
         }
         double nextY = velocity.y;
         if (this.onGround() || this.verticalCollisionBelow) {
