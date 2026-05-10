@@ -44,6 +44,18 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
     private static final ResourceLocation WEAPON_ICON_CANNON_20MM = Reference.id("textures/overlay/vehicle/weapon/icons/cannon_20mm.png");
     private static final ResourceLocation WEAPON_ICON_COAX_762 = Reference.id("textures/overlay/vehicle/weapon/icons/gun_7_62mm.png");
+    private static final ResourceLocation WEAPON_SELECTED = Reference.id("textures/overlay/vehicle/weapon/frame/selected.png");
+    private static final ResourceLocation[] WEAPON_FRAMES = {
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_1.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_2.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_3.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_4.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_5.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_6.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_7.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_8.png"),
+            Reference.id("textures/overlay/vehicle/weapon/frame/frame_9.png")
+    };
 
     private VehicleHudOverlay() {}
 
@@ -65,6 +77,7 @@ public final class VehicleHudOverlay {
         renderReticle(guiGraphics, vehicle);
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
+        renderWeaponSelector(guiGraphics, minecraft, vehicle);
         int width = guiGraphics.guiWidth();
         int y = guiGraphics.guiHeight() - 58;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
@@ -134,6 +147,47 @@ public final class VehicleHudOverlay {
         }
     }
 
+    private static void renderWeaponSelector(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (!"lav150".equals(vehicle.vehicleDataId().getPath())) {
+            return;
+        }
+        var weapons = vehicle.vehicleData().defaults().weapons();
+        int selected = vehicle.selectedVehicleWeaponIndex();
+        int width = guiGraphics.guiWidth();
+        int height = guiGraphics.guiHeight();
+        int frameIndex = 0;
+        for (int index = weapons.size() - 1; index >= 0 && index < 9; index--) {
+            int x = width - 85;
+            int y = height - frameIndex * 18 - 20;
+            ResourceLocation icon = weaponIcon(weapons.get(index).weaponId());
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, index == selected ? 1.0F : 0.35F);
+            guiGraphics.blit(WEAPON_FRAMES[Math.min(index, WEAPON_FRAMES.length - 1)], x, y, 0.0F, 0.0F, 75, 16, 75, 16);
+            if (icon != null) {
+                guiGraphics.blit(icon, x, y, 0.0F, 0.0F, 75, 16, 300, 64);
+            } else {
+                Component name = Component.translatable("item." + weapons.get(index).weaponId().getNamespace() + "." + weapons.get(index).weaponId().getPath());
+                guiGraphics.drawString(minecraft.font, name, x + 4, y + 4, 0xFFFFFFFF, false);
+            }
+            Component ammo = index == selected
+                    ? Component.literal(String.valueOf(vehicle.selectedVehicleWeaponAmmo()))
+                    : Component.literal(String.valueOf(index + 1));
+            guiGraphics.drawString(minecraft.font, ammo, width - 20 - minecraft.font.width(ammo), y + 5, 0xFFFFFFFF, false);
+            if (index == selected) {
+                guiGraphics.blit(WEAPON_SELECTED, width - 95, y + 4, 0.0F, 0.0F, 8, 8, 8, 8);
+            }
+            frameIndex++;
+        }
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    private static ResourceLocation weaponIcon(ResourceLocation weaponId) {
+        return switch (weaponId.getPath()) {
+            case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
+            case "vehicle_coax_machine_gun" -> WEAPON_ICON_COAX_762;
+            default -> null;
+        };
+    }
+
     private static void renderReticle(GuiGraphics guiGraphics, VehicleEntity vehicle) {
         int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
         int x = (guiGraphics.guiWidth() - size) / 2;
@@ -190,10 +244,9 @@ public final class VehicleHudOverlay {
             return;
         }
 
-        boolean focusedSight = Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON
-                || (VehicleClientState.isRidingVehicle()
+        boolean focusedSight = VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
-                && VehicleClientState.zoomDown());
+                && VehicleClientState.zoomDown();
         if (focusedSight && "lav150".equals(vehiclePath)) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
@@ -216,7 +269,7 @@ public final class VehicleHudOverlay {
             guiGraphics.fill(guiGraphics.guiWidth() / 2 + 112, guiGraphics.guiHeight() - 71, guiGraphics.guiWidth() / 2 + 113, guiGraphics.guiHeight() - 55, 0xFFFF4033);
         }
 
-        int speed = (int) Math.round(vehicle.getDeltaMovement().horizontalDistance() * 72.0D);
+        int speed = (int) Math.round(Math.sqrt(vehicle.distanceToSqr(vehicle.xOld, vehicle.getY(), vehicle.zOld)) * 72.0D);
         Component speedText = Component.literal(speed + " km/h");
         guiGraphics.drawString(minecraft.font, speedText, x + 64, guiGraphics.guiHeight() / 2 - 48, 0xFF66FF00);
     }

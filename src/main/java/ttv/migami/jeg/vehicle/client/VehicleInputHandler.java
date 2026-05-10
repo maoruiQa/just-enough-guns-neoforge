@@ -11,6 +11,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -45,8 +46,7 @@ public final class VehicleInputHandler {
         if (minecraft.options.keyInventory.consumeClick()) {
             NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
         }
-        minecraft.getConnection().send(new VehicleInputPayload(
-                vehicle.getId(),
+        VehicleInput input = new VehicleInput(
                 minecraft.options.keyUp.isDown(),
                 minecraft.options.keyDown.isDown(),
                 minecraft.options.keyLeft.isDown(),
@@ -61,6 +61,24 @@ public final class VehicleInputHandler {
                 weaponSlot,
                 seek,
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
+        );
+        vehicle.processClientInput(player, input);
+        minecraft.getConnection().send(new VehicleInputPayload(
+                vehicle.getId(),
+                input.forward(),
+                input.backward(),
+                input.left(),
+                input.right(),
+                input.brake(),
+                input.ascend(),
+                input.descend(),
+                input.fire(),
+                input.freeLook(),
+                input.switchWeapon(),
+                input.previousWeapon(),
+                input.weaponSlot(),
+                input.seekTarget(),
+                input.deployDecoy()
         ));
     }
 
