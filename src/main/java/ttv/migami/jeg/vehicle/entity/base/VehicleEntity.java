@@ -437,6 +437,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!this.isSeatOccupied(nextSeat, player)) {
                 this.seatAssignments.put(player.getUUID(), nextSeat);
                 this.input = VehicleInput.EMPTY;
+                this.syncSeatAssignments();
                 return;
             }
         }
@@ -508,6 +509,27 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public void clearClientControlState() {
         this.clearControlState(true);
+    }
+
+    public void applySeatAssignments(Map<UUID, Integer> assignments) {
+        this.seatAssignments.clear();
+        int seatCount = this.vehicleData().defaults().seats().size();
+        for (Map.Entry<UUID, Integer> assignment : assignments.entrySet()) {
+            int seatIndex = assignment.getValue();
+            if (seatIndex >= 0 && seatIndex < seatCount) {
+                this.seatAssignments.put(assignment.getKey(), seatIndex);
+            }
+        }
+    }
+
+    public Map<UUID, Integer> seatAssignmentsSnapshot() {
+        return new HashMap<>(this.seatAssignments);
+    }
+
+    private void syncSeatAssignments() {
+        if (!this.level().isClientSide) {
+            NetworkHandler.broadcastVehicleSeatAssignments(this);
+        }
     }
 
     public void syncAuthoritativeState(double x, double y, double z, double motionX, double motionY, double motionZ, float yaw, float pitch, boolean forceApply) {
@@ -1902,9 +1924,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         for (int seat = 0; seat < seatCount; seat++) {
             if (!this.isSeatOccupied(seat, passenger)) {
                 this.seatAssignments.put(passenger.getUUID(), seat);
+                this.syncSeatAssignments();
                 return;
             }
         }
+        this.syncSeatAssignments();
     }
 
     @Override
@@ -1918,6 +1942,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         super.removePassenger(passenger);
+        this.syncSeatAssignments();
         if (controllingPassenger && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
             Vec3 passengerMotion = passenger.getDeltaMovement();
             passenger.setDeltaMovement(0.0D, passengerMotion.y, 0.0D);
