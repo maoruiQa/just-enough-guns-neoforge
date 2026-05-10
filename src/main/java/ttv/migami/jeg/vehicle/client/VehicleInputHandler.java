@@ -53,8 +53,13 @@ public final class VehicleInputHandler {
                 NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
             }
         }
-        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick() && minecraft.screen == null) {
-            minecraft.setScreen(new InventoryScreen(player));
+        if (KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
+            if (minecraft.screen instanceof InventoryScreen) {
+                player.closeContainer();
+                minecraft.setScreen(null);
+            } else if (minecraft.screen == null) {
+                minecraft.setScreen(new InventoryScreen(player));
+            }
         }
         VehicleInput input = new VehicleInput(
                 minecraft.options.keyUp.isDown(),

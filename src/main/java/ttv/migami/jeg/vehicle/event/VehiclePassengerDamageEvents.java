@@ -30,13 +30,10 @@ public final class VehiclePassengerDamageEvents {
     private static boolean shouldBypassVehicle(DamageSource source) {
         return source.is(DamageTypeTags.IS_DROWNING)
                 || source.is(DamageTypeTags.IS_FALL)
-                || source.is(DamageTypeTags.IS_FIRE)
                 || source.is(DamageTypeTags.IS_FREEZING)
                 || source.is(DamageTypes.IN_WALL)
                 || source.is(DamageTypes.CRAMMING)
                 || source.is(DamageTypes.STARVE)
-                || source.is(DamageTypes.CACTUS)
-                || source.is(DamageTypes.SWEET_BERRY_BUSH)
                 || source.is(DamageTypes.FELL_OUT_OF_WORLD)
                 || source.is(DamageTypes.OUTSIDE_BORDER);
     }
