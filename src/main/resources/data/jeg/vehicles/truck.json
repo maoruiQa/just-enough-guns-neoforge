@@ -5,24 +5,30 @@
   "auto_repair_per_tick": 0.012,
   "auto_repair_cooldown_ticks": 120,
   "max_energy": 100,
+  "up_step": 1.5,
   "allow_free_cam": true,
-  "container_type": "small",
+  "container_type": "huge",
   "seats": [
-    {"index": 0, "x": -0.3, "y": 0.85, "z": 0.15, "driver": true, "enclosed": false},
-    {"index": 1, "x": 0.35, "y": 0.85, "z": 0.15, "driver": false, "enclosed": false}
+    {"index": 0, "x": 0.6625, "y": 1.025, "z": 3.6375, "driver": true, "enclosed": true, "min_pitch": -60.0, "max_pitch": 60.0},
+    {"index": 1, "x": -0.6625, "y": 1.025, "z": 3.6375, "driver": false, "enclosed": true, "min_pitch": -60.0, "max_pitch": 60.0}
   ],
-  "engine": {"type": "wheel", "acceleration": 0.034, "max_forward_speed": 0.32, "max_reverse_speed": 0.12, "friction": 0.82},
-  "third_person_camera": {"x": 0.0, "y": 2.6, "z": -6.0},
-  "dismount": {"x": 1.25, "y": 0.1, "z": 0.0},
-  "collision_level": "medium",
+  "engine": {"type": "wheel", "acceleration": 0.012, "max_forward_speed": 0.98, "max_reverse_speed": 0.7, "friction": 0.82, "steering_speed": 0.05, "energy_cost_rate": 64},
+  "third_person_camera": {"x": 0.0, "y": 1.0, "z": -5.0},
+  "dismount": {"x": 1.25, "y": 0.1, "z": 3.6375},
+  "collision_level": "heavy",
   "obb": [
-    {"part": "body", "x": 0.0, "y": 0.8, "z": 0.0, "half_width": 0.9, "half_height": 0.6, "half_depth": 1.45},
-    {"part": "wheel_left", "x": -0.78, "y": 0.35, "z": 0.0, "half_width": 0.2, "half_height": 0.28, "half_depth": 1.25},
-    {"part": "wheel_right", "x": 0.78, "y": 0.35, "z": 0.0, "half_width": 0.2, "half_height": 0.28, "half_depth": 1.25},
-    {"part": "main_engine", "x": 0.0, "y": 0.55, "z": -1.1, "half_width": 0.5, "half_height": 0.3, "half_depth": 0.3}
+    {"part": "wheel_left", "x": 1.0156, "y": 0.547, "z": 3.203, "half_width": 0.2656, "half_height": 0.547, "half_depth": 0.547},
+    {"part": "wheel_right", "x": -1.0156, "y": 0.547, "z": 3.203, "half_width": 0.2656, "half_height": 0.547, "half_depth": 0.547},
+    {"part": "wheel_left", "x": 1.0156, "y": 0.547, "z": -1.66, "half_width": 0.2656, "half_height": 0.547, "half_depth": 1.1563},
+    {"part": "wheel_right", "x": -1.0156, "y": 0.547, "z": -1.66, "half_width": 0.2656, "half_height": 0.547, "half_depth": 1.1563},
+    {"part": "body", "x": 0.0, "y": 1.1875, "z": 0.8438, "half_width": 1.25, "half_height": 0.6875, "half_depth": 4.2188},
+    {"part": "body", "x": 0.0, "y": 2.5625, "z": 3.5, "half_width": 1.25, "half_height": 0.6875, "half_depth": 1.4375},
+    {"part": "body", "x": 0.0, "y": 2.5, "z": -3.53125, "half_width": 1.25, "half_height": 0.625, "half_depth": 0.15625},
+    {"part": "main_engine", "x": 1.1563, "y": 2.375, "z": -0.6563, "half_width": 0.15625, "half_height": 0.5, "half_depth": 2.7188},
+    {"part": "main_engine", "x": -1.1563, "y": 2.375, "z": -0.6563, "half_width": 0.15625, "half_height": 0.5, "half_depth": 2.7188}
   ],
   "weapons": [
-    {"weapon": "jeg:combat_pistol", "ammo": "jeg:pistol_ammo", "energy_cost": 0, "guided": false}
+    {"weapon": "jeg:combat_pistol", "ammo": "jeg:pistol_ammo", "energy_cost": 0, "guided": false, "seat": 0}
   ],
   "destroy": {"explodes": false, "explosion_power": 0.0},
   "armor": {

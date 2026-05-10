@@ -504,13 +504,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
-        if (this.vehicleDataId().equals(LAV150_ID) && weapon.hasMuzzle()) {
-            return this.lav150BarrelPosition(
-                    weapon.muzzleX() - LAV150_BARREL_POS_X,
-                    weapon.muzzleY() - LAV150_TURRET_POS_Y - LAV150_BARREL_POS_Y,
-                    weapon.muzzleZ() - LAV150_BARREL_POS_Z,
-                    1.0F
-            );
+        Vec3 articulatedMuzzle = this.articulatedWeaponMuzzlePosition(weapon);
+        if (articulatedMuzzle != null) {
+            return articulatedMuzzle;
         }
         if (weapon.hasMuzzle()) {
             Vec3 aim = direction.normalize();
@@ -526,6 +522,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                     .add(aim.scale(weapon.muzzleZ()));
         }
         return this.position().add(0.0D, fallbackHeight, 0.0D).add(direction.scale(fallbackForwardOffset));
+    }
+
+    @Nullable
+    private Vec3 articulatedWeaponMuzzlePosition(VehicleWeaponInfo weapon) {
+        if (!this.usesArticulatedTurretMuzzle(weapon)) {
+            return null;
+        }
+        return this.lav150BarrelPosition(
+                weapon.muzzleX() - LAV150_BARREL_POS_X,
+                weapon.muzzleY() - LAV150_TURRET_POS_Y - LAV150_BARREL_POS_Y,
+                weapon.muzzleZ() - LAV150_BARREL_POS_Z,
+                1.0F
+        );
     }
 
     private void tickMissileLock() {
@@ -569,18 +578,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 weaponAimDirection(LivingEntity shooter) {
-        if (this.vehicleDataId().equals(LAV150_ID) && this.canUseSelectedWeapon(shooter, this.selectedWeapon())) {
-            return this.lav150BarrelDirection(1.0F).normalize();
+        Vec3 articulatedAim = this.articulatedWeaponAimDirection(shooter);
+        if (articulatedAim != null) {
+            return articulatedAim;
         }
         return Vec3.directionFromRotation(this.weaponPitch(shooter), shooter.getYRot()).normalize();
     }
 
-    private float weaponPitch(LivingEntity shooter) {
-        if (this.vehicleDataId().equals(LAV150_ID)) {
-            SeatInfo seat = this.seatForPassenger(shooter, this.getPassengers().indexOf(shooter));
-            return Mth.clamp(shooter.getXRot(), seat.minPitch(), seat.maxPitch());
+    @Nullable
+    private Vec3 articulatedWeaponAimDirection(LivingEntity shooter) {
+        if (!this.usesArticulatedTurretAim(shooter)) {
+            return null;
         }
-        return shooter.getXRot();
+        return this.lav150BarrelDirection(1.0F).normalize();
+    }
+
+    private float weaponPitch(LivingEntity shooter) {
+        SeatInfo seat = this.seatForPassenger(shooter, this.getPassengers().indexOf(shooter));
+        return Mth.clamp(shooter.getXRot(), seat.minPitch(), seat.maxPitch());
     }
 
     @Nullable
@@ -874,11 +889,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public Vec3 cameraRotationFor(Entity passenger, float partialTick) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
-        if (fallbackIndex >= 0 && this.vehicleDataId().equals(LAV150_ID) && this.seatForPassenger(passenger, fallbackIndex).index() == 0) {
-            Vec3 barrel = this.lav150BarrelDirection(partialTick).normalize();
-            return new Vec3(this.yRotFromVector(barrel), this.xRotFromVector(barrel), 0.0D);
+        if (fallbackIndex >= 0) {
+            SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+            Vec3 articulatedRotation = this.articulatedCameraRotation(seat, partialTick);
+            if (articulatedRotation != null) {
+                return articulatedRotation;
+            }
         }
         return new Vec3(passenger.getViewYRot(partialTick), passenger.getViewXRot(partialTick), 0.0D);
+    }
+
+    @Nullable
+    private Vec3 articulatedCameraRotation(SeatInfo seat, float partialTick) {
+        if (!this.usesArticulatedSeatTransform(seat)) {
+            return null;
+        }
+        Vec3 barrel = this.lav150BarrelDirection(partialTick).normalize();
+        return new Vec3(this.yRotFromVector(barrel), this.xRotFromVector(barrel), 0.0D);
     }
 
     private void tickAutoRepair() {
@@ -1127,10 +1154,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public double rotateOffsetHeight() {
-        if (this.vehicleDataId().equals(LAV150_ID)) {
-            return LAV150_ROTATE_OFFSET_HEIGHT;
-        }
-        return 0.0D;
+        return this.articulatedRenderPivotHeight();
+    }
+
+    private double articulatedRenderPivotHeight() {
+        return this.vehicleDataId().equals(LAV150_ID) ? LAV150_ROTATE_OFFSET_HEIGHT : 0.0D;
     }
 
     private int steeringAxis() {
@@ -1268,10 +1296,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 seatOffset(SeatInfo seat, double eyeHeight, float partialTick) {
-        if (this.vehicleDataId().equals(LAV150_ID) && seat.index() == 0) {
+        if (this.usesArticulatedSeatTransform(seat)) {
             return this.lav150TurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
         }
         return this.rotateLocalOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
+    }
+
+    private boolean usesArticulatedSeatTransform(SeatInfo seat) {
+        return this.vehicleDataId().equals(LAV150_ID) && seat.index() == 0;
+    }
+
+    private boolean usesArticulatedTurretAim(LivingEntity shooter) {
+        return this.vehicleDataId().equals(LAV150_ID) && this.canUseSelectedWeapon(shooter, this.selectedWeapon());
+    }
+
+    private boolean usesArticulatedTurretMuzzle(VehicleWeaponInfo weapon) {
+        return this.vehicleDataId().equals(LAV150_ID) && weapon.hasMuzzle();
     }
 
     private Vec3 rotateLocalOffset(double localX, double localY, double localZ) {

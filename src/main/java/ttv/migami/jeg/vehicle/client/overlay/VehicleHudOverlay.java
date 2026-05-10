@@ -23,6 +23,7 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import org.joml.Matrix4f;
 
@@ -293,11 +294,11 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderLandVehicleStatus(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        String vehiclePath = vehicle.vehicleDataId().getPath();
-        if (!"lav150".equals(vehiclePath) && !"bmp2".equals(vehiclePath)) {
+        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
             return;
         }
 
+        String vehiclePath = vehicle.vehicleDataId().getPath();
         boolean focusedSight = isFocusedVehicleSight(vehicle);
         if (focusedSight && "lav150".equals(vehiclePath)) {
             int screenWidth = guiGraphics.guiWidth();
