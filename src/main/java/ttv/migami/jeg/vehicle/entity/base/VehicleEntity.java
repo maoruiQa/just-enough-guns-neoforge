@@ -85,10 +85,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double VEHICLE_IDLE_FALL_SPEED_THRESHOLD = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_Y_DELTA = 1.0E-3D;
-    private static final float TRUCK_COLLISION_LENGTH_SCALE = 1.3F;
+    private static final float TRUCK_COLLISION_LENGTH_SCALE = 3.2F;
     private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
     private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
-    private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.35D;
+    private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.85D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
