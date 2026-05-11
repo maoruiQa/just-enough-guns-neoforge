@@ -318,7 +318,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public int selectedVehicleWeaponIndex() {
         var weapons = this.vehicleData().defaults().weapons();
-        if (weapons.isEmpty()) {
+        if (!this.hasVehicleWeapons() || weapons.isEmpty()) {
             return -1;
         }
         return Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
@@ -383,7 +383,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public boolean hasVehicleWeapons() {
-        return !this.vehicleData().defaults().weapons().isEmpty();
+        return !this.isTruckVehicle() && !this.vehicleData().defaults().weapons().isEmpty();
+    }
+
+    public boolean isTruckVehicle() {
+        return "truck".equals(this.vehicleDataId().getPath());
     }
 
     public boolean hasFocusedDriverSightHud() {
@@ -406,14 +410,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (player.getVehicle() != this) {
             return;
         }
-        if (input.switchWeapon() && this.selectWeaponFor(player, 1)) {
-            this.weaponControllerId = player.getId();
-        }
-        if (input.previousWeapon() && this.selectWeaponFor(player, -1)) {
-            this.weaponControllerId = player.getId();
-        }
-        if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size() && this.selectWeaponSlot(player, input.weaponSlot())) {
-            this.weaponControllerId = player.getId();
+        if (this.hasVehicleWeapons()) {
+            if (input.switchWeapon() && this.selectWeaponFor(player, 1)) {
+                this.weaponControllerId = player.getId();
+            }
+            if (input.previousWeapon() && this.selectWeaponFor(player, -1)) {
+                this.weaponControllerId = player.getId();
+            }
+            if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size() && this.selectWeaponSlot(player, input.weaponSlot())) {
+                this.weaponControllerId = player.getId();
+            }
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
         if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
@@ -426,13 +432,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
         }
-        if (input.seekTarget()) {
+        if (this.hasVehicleWeapons() && input.seekTarget()) {
             this.seekControllerId = player.getId();
             this.seekInput = true;
         } else if (this.seekControllerId == player.getId()) {
             this.seekInput = false;
         }
-        if (input.fire()) {
+        if (this.hasVehicleWeapons() && input.fire()) {
             this.weaponControllerId = player.getId();
             this.weaponFireInput = true;
         } else if (this.weaponControllerId == player.getId()) {
@@ -1257,7 +1263,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     private VehicleWeaponInfo selectedWeapon() {
         var weapons = this.vehicleData().defaults().weapons();
-        if (weapons.isEmpty()) {
+        if (!this.hasVehicleWeapons() || weapons.isEmpty()) {
             return null;
         }
         int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
@@ -1520,9 +1526,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.wheelSteering *= Math.max(0.78D - 0.25D * horizontalSpeed, 0.1D);
 
         if (Math.abs(this.wheelSteering) > 1.0E-4D) {
+            float previousYaw = this.getYRot();
             double yawDelta = Math.max(12.0D * horizontalSpeed, 0.0D) * this.wheelSteering * (this.enginePower > 0.0D ? 1.0D : -1.0D);
-            this.setYRot(this.getYRot() + (float) yawDelta);
-            this.yRotO = this.getYRot();
+            this.yRotO = previousYaw;
+            this.setYRot(previousYaw + (float) yawDelta);
         }
 
         double targetSpeed = (this.enginePower > 0.0D ? engine.maxForwardSpeed() : engine.maxReverseSpeed()) * mobility;
@@ -1561,8 +1568,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.wheelSteering *= 0.5D;
         }
         double nextY = velocity.y;
+        boolean unmannedLandVehicle = this.vehicleData().defaults().vehicleType() == VehicleType.LAND && this.getControllingPassenger() == null;
         if (this.onGround() || this.verticalCollisionBelow) {
             nextY = moved.y > 0.0D ? Math.min(moved.y * 0.2D, 0.08D) : Math.min(0.0D, nextY);
+            if (unmannedLandVehicle) {
+                nextY = Math.min(0.0D, nextY);
+            }
         } else if (this.verticalCollision && nextY > 0.0D) {
             nextY = 0.0D;
         }

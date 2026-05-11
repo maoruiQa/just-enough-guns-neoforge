@@ -200,7 +200,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> TRUCK = REGISTER.register(
             "truck",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("truck")), MobCategory.MISC)
-                    .sized(2.6F, 3.0F)
+                    .sized(3.8F, 3.0F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("truck")
@@ -209,7 +209,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> LAV150 = REGISTER.register(
             "lav150",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("lav150")), MobCategory.MISC)
-                    .sized(2.8F, 3.1F)
+                    .sized(3.2F, 3.1F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("lav150")
@@ -245,7 +245,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> BMP2 = REGISTER.register(
             "bmp2",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("bmp2")), MobCategory.MISC)
-                    .sized(4.0F, 3.0F)
+                    .sized(4.3F, 3.0F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("bmp2")

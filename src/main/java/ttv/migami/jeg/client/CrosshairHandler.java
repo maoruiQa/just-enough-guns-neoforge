@@ -13,6 +13,7 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class CrosshairHandler {
     private static final ResourceLocation DEFAULT = Reference.id("textures/crosshair/better_default.png");
@@ -93,6 +94,9 @@ public final class CrosshairHandler {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         renderHitMarker(guiGraphics, width, height, partialTick);
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.isTruckVehicle()) {
+            return;
+        }
         if (!ClientUiConfig.showCrosshair()) {
             return;
         }
