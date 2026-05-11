@@ -77,7 +77,13 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
         if (this.entityTag != null) {
             vehicle.loadVehicleContainerState(this.entityTag);
         }
-        vehicle.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, player.getYRot(), 0.0F);
+        double spawnX = spawnPos.getX() + 0.5D;
+        double spawnY = spawnPos.getY() + vehicle.getBbHeight() * 0.5D;
+        double spawnZ = spawnPos.getZ() + 0.5D;
+        vehicle.moveTo(spawnX, spawnY, spawnZ, player.getYRot(), 0.0F);
+        vehicle.setYRot(player.getYRot());
+        vehicle.yRotO = vehicle.getYRot();
+        vehicle.refreshDimensions();
         if (!level.noCollision(vehicle, vehicle.getBoundingBox())) {
             player.displayClientMessage(Component.translatable("message.jeg.vehicle_container.blocked"), true);
             return false;

@@ -37,6 +37,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,6 +82,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float CLIENT_RESYNC_YAW_DELTA = 12.0F;
     private static final float CLIENT_RESYNC_PITCH_DELTA = 12.0F;
     private static final int DRIVER_STATE_SYNC_INTERVAL = 5;
+    private static final double VEHICLE_IDLE_FALL_SPEED_THRESHOLD = 1.0E-4D;
+    private static final double VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR = 1.0E-4D;
+    private static final double VEHICLE_IDLE_SYNC_Y_DELTA = 1.0E-3D;
+    private static final float TRUCK_COLLISION_LENGTH_SCALE = 1.3F;
+    private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
+    private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
+    private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.35D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
@@ -191,6 +199,47 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         ));
     }
 
+    @Override
+    protected AABB makeBoundingBox() {
+        double scale = this.collisionLengthScale();
+        double offsetZ = this.collisionCenterOffsetZ();
+        if (Math.abs(scale - 1.0D) < 1.0E-6D && Math.abs(offsetZ) < 1.0E-6D) {
+            return super.makeBoundingBox();
+        }
+        var dimensions = super.getDimensions(this.getPose());
+        double halfWidth = dimensions.width() * 0.5D;
+        double halfLength = halfWidth * scale;
+        double yaw = Math.toRadians(this.getYRot());
+        double absSin = Math.abs(Math.sin(yaw));
+        double absCos = Math.abs(Math.cos(yaw));
+        double extentX = halfWidth * absCos + halfLength * absSin;
+        double extentZ = halfWidth * absSin + halfLength * absCos;
+        Vec3 offset = this.rotateLocalOffset(0.0D, 0.0D, offsetZ, 1.0F);
+        double centerX = this.getX() + offset.x;
+        double centerZ = this.getZ() + offset.z;
+        return new AABB(centerX - extentX, this.getY(), centerZ - extentZ, centerX + extentX, this.getY() + dimensions.height(), centerZ + extentZ);
+    }
+
+    @Override
+    public void refreshDimensions() {
+        super.refreshDimensions();
+        this.updateVehicleBoundingBox();
+    }
+
+    private void updateVehicleBoundingBox() {
+        this.setBoundingBox(this.makeBoundingBox());
+    }
+
+    private float collisionLengthScale() {
+        if (this.isTruckVehicle()) {
+            return TRUCK_COLLISION_LENGTH_SCALE;
+        }
+        if (this.isSpeedboatVehicle()) {
+            return SPEEDBOAT_COLLISION_LENGTH_SCALE;
+        }
+        return OTHER_VEHICLE_COLLISION_LENGTH_SCALE;
+    }
+
     private String idleAnimationName() {
         String path = this.vehicleDataId().getPath();
         return VEHICLE_IDLE_ANIMATIONS.getOrDefault(path, "idle");
@@ -237,6 +286,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_VEHICLE_ID, data.id().toString());
         this.entityData.set(DATA_HEALTH, data.defaults().maxHealth());
         this.entityData.set(DATA_ENERGY, data.defaults().maxEnergy());
+        this.refreshDimensions();
     }
 
     public float vehicleHealth() {
@@ -388,6 +438,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public boolean isTruckVehicle() {
         return "truck".equals(this.vehicleDataId().getPath());
+    }
+
+    public boolean isSpeedboatVehicle() {
+        return "speedboat".equals(this.vehicleDataId().getPath());
+    }
+
+    public double collisionCenterOffsetZ() {
+        return this.isTruckVehicle() ? TRUCK_COLLISION_FORWARD_SHIFT : 0.0D;
     }
 
     public boolean hasFocusedDriverSightHud() {
@@ -547,9 +605,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
             return;
         }
-        if (this.getControllingPassenger() instanceof ServerPlayer) {
+        if (this.getControllingPassenger() instanceof ServerPlayer || this.shouldSyncUnmannedLandState()) {
             NetworkHandler.broadcastVehicleState(this);
         }
+    }
+
+    private boolean shouldSyncUnmannedLandState() {
+        if (this.getControllingPassenger() != null) {
+            return false;
+        }
+        Vec3 motion = this.getDeltaMovement();
+        return !this.onGround()
+                || Math.abs(motion.y) > VEHICLE_IDLE_FALL_SPEED_THRESHOLD
+                || motion.horizontalDistanceSqr() > VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR
+                || Math.abs(this.getY() - this.yo) > VEHICLE_IDLE_SYNC_Y_DELTA;
     }
 
     private boolean shouldRunClientPrediction() {
@@ -618,6 +687,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setDeltaMovement(motionX, motionY, motionZ);
         this.setYRot(yaw);
         this.setXRot(pitch);
+        this.updateVehicleBoundingBox();
         this.yRotO = yaw;
         this.xRotO = pitch;
         this.xo = x;
@@ -1530,6 +1600,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             double yawDelta = Math.max(12.0D * horizontalSpeed, 0.0D) * this.wheelSteering * (this.enginePower > 0.0D ? 1.0D : -1.0D);
             this.yRotO = previousYaw;
             this.setYRot(previousYaw + (float) yawDelta);
+            this.updateVehicleBoundingBox();
         }
 
         double targetSpeed = (this.enginePower > 0.0D ? engine.maxForwardSpeed() : engine.maxReverseSpeed()) * mobility;
@@ -1567,8 +1638,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.enginePower *= 0.35D;
             this.wheelSteering *= 0.5D;
         }
-        double nextY = velocity.y;
         boolean unmannedLandVehicle = this.vehicleData().defaults().vehicleType() == VehicleType.LAND && this.getControllingPassenger() == null;
+        double nextY = velocity.y;
+        if (unmannedLandVehicle && !this.onGround() && !this.verticalCollisionBelow) {
+            nextY = Math.min(nextY, moved.y - GRAVITY);
+        }
         if (this.onGround() || this.verticalCollisionBelow) {
             nextY = moved.y > 0.0D ? Math.min(moved.y * 0.2D, 0.08D) : Math.min(0.0D, nextY);
             if (unmannedLandVehicle) {
@@ -1578,7 +1652,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             nextY = 0.0D;
         }
         this.setDeltaMovement(moved.x * 0.98D, nextY * 0.98D, moved.z * 0.98D);
-        if (moved.horizontalDistanceSqr() > 1.0E-7D) {
+        if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.hurtMarked = true;
             this.hasImpulse = true;
         }
@@ -1940,6 +2014,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public void loadVehicleContainerState(CompoundTag tag) {
         this.readAdditionalSaveData(tag);
+        this.refreshDimensions();
     }
 
     @Override
