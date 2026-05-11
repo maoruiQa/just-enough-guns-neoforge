@@ -33,7 +33,7 @@
   "weapons": [
     {"weapon": "jeg:vehicle_30mm_cannon", "ammo": "jeg:autocannon_shell", "energy_cost": 8, "guided": false, "seat": 0, "muzzle": {"x": -0.0875, "y": 2.943125, "z": 3.677825}},
     {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.1625, "y": 2.843125, "z": 0.977825}},
-    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 2, "guided": true, "seat": 1}
+    {"weapon": "jeg:vehicle_bmp2_missile", "ammo": "jeg:missile", "energy_cost": 2, "guided": true, "seat": 0}
   ],
   "turret": {"seat": 0, "render_pivot_y": 0.0, "origin_x": 0.0, "origin_y": 2.25, "origin_z": -0.703125, "barrel_x": 0.3625, "barrel_y": 0.293125, "barrel_z": 1.18095, "guided_uses_turret": false},
   "destroy": {"explodes": true, "explosion_power": 4.5},

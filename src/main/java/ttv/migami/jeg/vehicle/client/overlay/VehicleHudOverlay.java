@@ -194,6 +194,7 @@ public final class VehicleHudOverlay {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
             case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
             case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_bmp2_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m113.png");
             default -> null;
         };
         if (icon != null) {
@@ -245,6 +246,7 @@ public final class VehicleHudOverlay {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
             case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
             case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_bmp2_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m113.png");
             default -> null;
         };
     }

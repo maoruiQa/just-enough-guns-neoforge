@@ -112,6 +112,7 @@ public final class ModItems {
             "spectre_round",
             "blaze_round",
             "rocket",
+            "missile",
             "grenade",
             "stun_grenade",
             "smoke_grenade",
