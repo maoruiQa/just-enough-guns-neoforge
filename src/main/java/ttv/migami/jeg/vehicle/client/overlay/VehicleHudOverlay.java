@@ -25,6 +25,7 @@ import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 import org.joml.Matrix4f;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -102,7 +103,9 @@ public final class VehicleHudOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         boolean focusedSight = isFocusedVehicleSight(vehicle);
         renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
-        renderReticle(guiGraphics, vehicle);
+        if (vehicle.hasVehicleWeapons()) {
+            renderReticle(guiGraphics, vehicle);
+        }
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
         if (focusedSight) {
@@ -128,24 +131,40 @@ public final class VehicleHudOverlay {
             guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY + 8, 0xFF8FC7FF);
             lineY += 19;
         }
-        Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
-        Component ammo = Component.translatable("hud.jeg.vehicle.weapon", weaponName, vehicle.selectedVehicleWeaponAmmo());
-        renderSelectedWeaponIcon(guiGraphics, vehicle, width / 2 - 128, lineY - 4);
-        guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
-        lineY += 11;
-        Component decoy = vehicle.hasBuiltInDecoy()
-                ? Component.translatable("hud.jeg.vehicle.decoy_smoke", vehicle.vehicleDecoyCooldown() == 0 ? Component.translatable("hud.jeg.vehicle.ready") : Component.literal(Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20) + "s"))
-                : Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
-        guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
-        lineY += 11;
-        if (vehicle.isSelectedVehicleWeaponGuided()) {
-            boolean seeking = VehicleClientState.isRidingVehicle()
-                    && VehicleClientState.vehicleId() == vehicle.getId()
-                    && VehicleClientState.seekDown();
-            Component lock = seeking
-                    ? Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking")
-                    : Component.translatable("hud.jeg.vehicle.seek_prompt", KeyBindings.VEHICLE_SEEK.getTranslatedKeyMessage());
-            guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, seeking ? vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88 : 0xFFB8E0FF);
+        if (!focusedSight && vehicle.hasVehicleWeapons()) {
+            Component weaponName = Component.translatable("item." + vehicle.selectedVehicleWeaponId().getNamespace() + "." + vehicle.selectedVehicleWeaponId().getPath());
+            Component ammo = vehicleUsesLoadedAmmo(vehicle)
+                    ? vehicleAmmoComponent(vehicle, weaponName)
+                    : Component.translatable("hud.jeg.vehicle.weapon", weaponName, String.valueOf(vehicle.selectedVehicleWeaponAmmo()));
+            renderSelectedWeaponIcon(guiGraphics, vehicle, width / 2 - 128, lineY - 4);
+            guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
+            lineY += 11;
+            if (vehicle.selectedVehicleWeaponReloading()) {
+                int reloadSeconds = Math.max(1, Math.ceilDiv(vehicle.selectedVehicleWeaponReloadTicks(), 20));
+                Component reload = Component.literal(Component.translatable("subtitle.jeg.reload").getString() + " " + reloadSeconds + "s");
+                guiGraphics.drawString(minecraft.font, reload, (width - minecraft.font.width(reload)) / 2, lineY, 0xFFFFAA55);
+                lineY += 11;
+            } else if (canManualReloadPrompt(vehicle)) {
+                Component prompt = Component.literal("Press " + KeyBindings.RELOAD.getTranslatedKeyMessage().getString() + " to reload");
+                guiGraphics.drawString(minecraft.font, prompt, (width - minecraft.font.width(prompt)) / 2, lineY, 0xFFB8E0FF);
+                lineY += 11;
+            }
+            if (vehicle.isSelectedVehicleWeaponGuided()) {
+                boolean seeking = VehicleClientState.isRidingVehicle()
+                        && VehicleClientState.vehicleId() == vehicle.getId()
+                        && VehicleClientState.seekDown();
+                Component lock = seeking
+                        ? Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking")
+                        : Component.translatable("hud.jeg.vehicle.seek_prompt", KeyBindings.VEHICLE_SEEK.getTranslatedKeyMessage());
+                guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, seeking ? vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88 : 0xFFB8E0FF);
+                lineY += 11;
+            }
+        }
+        if (showDecoyStatus(vehicle)) {
+            Component decoy = vehicle.hasBuiltInDecoy()
+                    ? Component.translatable("hud.jeg.vehicle.decoy_smoke", vehicle.vehicleDecoyCooldown() == 0 ? Component.translatable("hud.jeg.vehicle.ready") : Component.literal(Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20) + "s"))
+                    : Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
+            guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
             lineY += 11;
         }
         if (vehicle.isEngineDamaged() || vehicle.isLeftWheelDamaged() || vehicle.isRightWheelDamaged() || vehicle.isTurretDamaged()) {
@@ -164,9 +183,6 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderSelectedWeaponIcon(GuiGraphics guiGraphics, VehicleEntity vehicle, int x, int y) {
-        if (!hasApcWeaponHud(vehicle)) {
-            return;
-        }
         ResourceLocation icon = switch (vehicle.selectedVehicleWeaponId().getPath()) {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
             case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
@@ -179,7 +195,7 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderWeaponSelector(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        if (!hasApcWeaponHud(vehicle)) {
+        if (!hasWeaponSelectorHud(vehicle)) {
             return;
         }
         var weapons = vehicle.vehicleData().defaults().weapons();
@@ -201,6 +217,10 @@ public final class VehicleHudOverlay {
             }
             if (index == selected) {
                 renderWeaponNumber(guiGraphics, vehicle.selectedVehicleWeaponAmmo(), width - 20, y + 4);
+                if (vehicle.selectedVehicleWeaponReloading()) {
+                    Component reload = Component.literal("R");
+                    guiGraphics.drawString(minecraft.font, reload, x + 4, y + 5, 0xFFFFAA55, false);
+                }
             } else {
                 Component slotNumber = Component.literal(String.valueOf(index + 1));
                 guiGraphics.drawString(minecraft.font, slotNumber, width - 20 - minecraft.font.width(slotNumber), y + 5, 0xFFFFFFFF, false);
@@ -220,6 +240,35 @@ public final class VehicleHudOverlay {
             case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
             default -> null;
         };
+    }
+
+    private static boolean isRifleAmmoWeapon(ResourceLocation weaponId) {
+        return switch (weaponId.getPath()) {
+            case "vehicle_coax_machine_gun", "light_machine_gun" -> true;
+            default -> false;
+        };
+    }
+
+    private static Component vehicleAmmoComponent(VehicleEntity vehicle, Component weaponName) {
+        String ammoCounts = vehicle.selectedVehicleWeaponAmmo() + "/" + vehicle.selectedVehicleWeaponReserveAmmo();
+        return isRifleAmmoWeapon(vehicle.selectedVehicleWeaponId())
+                ? Component.translatable("hud.jeg.vehicle.rifle_ammo", ammoCounts)
+                : Component.translatable("hud.jeg.vehicle.weapon", weaponName, ammoCounts);
+    }
+
+    private static boolean vehicleUsesLoadedAmmo(VehicleEntity vehicle) {
+        var stats = VehicleWeaponStats.get(vehicle.selectedVehicleWeaponId());
+        return stats != null && stats.usesMagazine() && !stats.isInventoryFed();
+    }
+
+    private static boolean canManualReloadPrompt(VehicleEntity vehicle) {
+        return vehicleUsesLoadedAmmo(vehicle)
+                && vehicle.selectedVehicleWeaponAmmo() > 0
+                && vehicle.selectedVehicleWeaponAmmo() < vehicle.selectedVehicleWeaponReserveAmmo() + vehicle.selectedVehicleWeaponAmmo();
+    }
+
+    private static boolean showDecoyStatus(VehicleEntity vehicle) {
+        return vehicle.hasBuiltInDecoy() || vehicle.vehicleFlareAmmo() > 0 || vehicle.vehicleDecoyCooldown() > 0;
     }
 
     private static void blitWeaponIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y) {
@@ -332,6 +381,10 @@ public final class VehicleHudOverlay {
     private static boolean hasApcWeaponHud(VehicleEntity vehicle) {
         String vehiclePath = vehicle.vehicleDataId().getPath();
         return "lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath);
+    }
+
+    private static boolean hasWeaponSelectorHud(VehicleEntity vehicle) {
+        return vehicle.hasVehicleWeapons() && (hasApcWeaponHud(vehicle) || vehicle.vehicleData().defaults().weapons().size() > 1);
     }
 
     private static boolean hasApcFocusedSightFrame(String vehiclePath) {

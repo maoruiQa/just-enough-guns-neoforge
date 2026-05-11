@@ -56,6 +56,7 @@ public class MinecraftVehicleHotbarMixin {
                 this.options.keyJump.isDown(),
                 KeyBindings.VEHICLE_BRAKE_DESCEND.isDown(),
                 this.options.keyAttack.isDown(),
+                false,
                 KeyBindings.VEHICLE_FREE_LOOK.isDown(),
                 false,
                 false,

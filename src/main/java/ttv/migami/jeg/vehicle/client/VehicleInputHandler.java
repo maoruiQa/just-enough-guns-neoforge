@@ -34,6 +34,7 @@ public final class VehicleInputHandler {
 
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
+        boolean reload = KeyBindings.RELOAD.consumeClick();
         int weaponSlot = -1;
         for (int index = 0; index < minecraft.options.keyHotbarSlots.length; index++) {
             if (minecraft.options.keyHotbarSlots[index].consumeClick()) {
@@ -81,6 +82,7 @@ public final class VehicleInputHandler {
                 minecraft.options.keyJump.isDown(),
                 KeyBindings.VEHICLE_BRAKE_DESCEND.isDown(),
                 minecraft.options.keyAttack.isDown(),
+                reload,
                 freeLook,
                 KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick(),
                 KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick(),
@@ -99,6 +101,7 @@ public final class VehicleInputHandler {
                 input.ascend(),
                 input.descend(),
                 input.fire(),
+                input.reload(),
                 input.freeLook(),
                 input.switchWeapon(),
                 input.previousWeapon(),

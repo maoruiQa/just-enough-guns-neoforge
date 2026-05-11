@@ -16,6 +16,7 @@ public record VehicleInputPayload(
         boolean ascend,
         boolean descend,
         boolean fire,
+        boolean reload,
         boolean freeLook,
         boolean switchWeapon,
         boolean previousWeapon,
@@ -35,6 +36,7 @@ public record VehicleInputPayload(
                 buf.writeBoolean(payload.ascend());
                 buf.writeBoolean(payload.descend());
                 buf.writeBoolean(payload.fire());
+                buf.writeBoolean(payload.reload());
                 buf.writeBoolean(payload.freeLook());
                 buf.writeBoolean(payload.switchWeapon());
                 buf.writeBoolean(payload.previousWeapon());
@@ -55,6 +57,7 @@ public record VehicleInputPayload(
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
+                    buf.readBoolean(),
                     buf.readVarInt(),
                     buf.readBoolean(),
                     buf.readBoolean()
@@ -62,7 +65,7 @@ public record VehicleInputPayload(
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.reload, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy);
     }
 
     @Override

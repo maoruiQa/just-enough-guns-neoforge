@@ -89,6 +89,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_RESERVE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_SELECTED_WEAPON_RELOADING = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_RELOAD_TICKS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_FLARE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DECOY_COOLDOWN = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -113,6 +116,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
     private static final String TAG_SELECTED_WEAPON = "SelectedWeapon";
+    private static final String TAG_LOADED_WEAPON_AMMO = "LoadedWeaponAmmo";
+    private static final String TAG_LOADED_WEAPON_SLOT = "WeaponSlot";
+    private static final String TAG_LOADED_WEAPON_COUNT = "LoadedAmmo";
     private static final String TAG_DECOY_COOLDOWN = "DecoyCooldown";
     private static final String TAG_SEAT_ASSIGNMENTS = "SeatAssignments";
     private static final String TAG_SEAT_PASSENGER = "Passenger";
@@ -153,9 +159,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
+    private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
+    private int activeReloadWeaponSlot = -1;
+    private int activeReloadTicks;
     private int decoyCooldown;
     private int energyRechargeTick;
     private int ramDamageCooldown;
@@ -209,6 +218,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_RIFLE_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON, 0);
         builder.define(DATA_SELECTED_WEAPON_AMMO, 0);
+        builder.define(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
+        builder.define(DATA_SELECTED_WEAPON_RELOADING, false);
+        builder.define(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
         builder.define(DATA_FLARE_AMMO, 0);
         builder.define(DATA_DECOY_COOLDOWN, 0);
         builder.define(DATA_MISSILE_LOCKED, false);
@@ -281,7 +293,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public int selectedVehicleWeaponAmmo() {
-        return this.entityData.get(DATA_SELECTED_WEAPON_AMMO);
+        return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_AMMO) : 0;
+    }
+
+    public int selectedVehicleWeaponReserveAmmo() {
+        return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_RESERVE_AMMO) : 0;
+    }
+
+    public boolean selectedVehicleWeaponReloading() {
+        return this.hasVehicleWeapons() && this.entityData.get(DATA_SELECTED_WEAPON_RELOADING);
+    }
+
+    public int selectedVehicleWeaponReloadTicks() {
+        return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_RELOAD_TICKS) : 0;
     }
 
     public int vehicleFlareAmmo() {
@@ -295,20 +319,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_DECOY_COOLDOWN);
     }
 
+    @Nullable
     public ResourceLocation selectedVehicleWeaponId() {
-        return this.selectedWeapon().weaponId();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon == null ? null : weapon.weaponId();
     }
 
     public int selectedVehicleWeaponIndex() {
         var weapons = this.vehicleData().defaults().weapons();
         if (weapons.isEmpty()) {
-            return 0;
+            return -1;
         }
         return Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
     }
 
     public boolean isSelectedVehicleWeaponGuided() {
-        return this.selectedWeapon().guided();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon != null && weapon.guided();
     }
 
     public boolean hasMissileLock() {
@@ -364,6 +391,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.inventory;
     }
 
+    public boolean hasVehicleWeapons() {
+        return !this.vehicleData().defaults().weapons().isEmpty();
+    }
+
     public void processInput(ServerPlayer player, VehicleInput input) {
         if (player.getVehicle() != this) {
             return;
@@ -377,9 +408,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size() && this.selectWeaponSlot(player, input.weaponSlot())) {
             this.weaponControllerId = player.getId();
         }
-        if (!this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, this.selectedWeapon())) {
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
             this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
+            if (input.reload()) {
+                this.startWeaponReload();
+            }
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -405,7 +440,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.level().isClientSide || player.getVehicle() != this) {
             return;
         }
-        if (!this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, this.selectedWeapon())) {
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
             this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
@@ -457,13 +493,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickServerMovement();
             this.tickRammingDamage();
             this.tickMissileLock();
+            this.tickWeaponReload();
             this.tickServerWeapon();
             this.tickDecoyCooldown();
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
             this.tickDriverStateSync();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
-            this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.countAmmo(this.selectedWeapon().ammoId()));
+            this.syncSelectedWeaponAmmoState();
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         } else if (this.shouldRunClientPrediction()) {
@@ -500,6 +537,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.seekControllerId = -1;
         this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
+        this.cancelWeaponReload();
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
@@ -585,11 +623,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickServerWeapon() {
+        if (!this.hasVehicleWeapons()) {
+            return;
+        }
         if (this.fireCooldown > 0) {
             this.fireCooldown--;
         }
         LivingEntity shooter = this.weaponController();
-        if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null) {
+        if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading()) {
             return;
         }
         if (this.isTurretDamaged()) {
@@ -601,14 +642,29 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
-        if (stats == null || !this.hasEnergy(weapon.energyCost()) || !this.hasAmmo(weapon.ammoId())) {
+        if (stats == null || !this.hasEnergy(weapon.energyCost())) {
+            return;
+        }
+        if (this.usesSharedVehicleReloadSystem()) {
+            if (this.selectedWeaponLoadedAmmo() <= 0) {
+                this.startWeaponReload();
+                return;
+            }
+        } else if (!this.hasAmmo(weapon.ammoId())) {
             return;
         }
         Vec3 direction = this.weaponAimDirection(shooter);
         if (direction.lengthSqr() < 1.0E-4D) {
             return;
         }
-        if (!this.consumeEnergy(weapon.energyCost()) || !this.consumeAmmo(weapon.ammoId())) {
+        if (!this.consumeEnergy(weapon.energyCost())) {
+            return;
+        }
+        if (this.usesSharedVehicleReloadSystem()) {
+            int slot = this.selectedVehicleWeaponIndex();
+            this.setWeaponLoadedAmmo(slot, this.weaponLoadedAmmo(slot) - 1);
+            this.syncSelectedWeaponAmmoState();
+        } else if (!this.consumeAmmo(weapon.ammoId())) {
             return;
         }
         this.playWeaponFireSound(weapon, stats);
@@ -629,6 +685,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void playWeaponFireSound(VehicleWeaponInfo weapon, GunStats stats) {
         SoundEvent sound = VehicleSoundHelper.fireSound(this, weapon, stats);
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 7.5F, 1.0F);
+    }
+
+    private void playWeaponReloadSound(VehicleWeaponInfo weapon, @Nullable GunStats stats, boolean start) {
+        if (stats == null) {
+            return;
+        }
+        var sound = start ? stats.reloadStartSoundEvent() : stats.reloadEndSoundEvent().or(() -> stats.reloadLoadSoundEvent());
+        sound.ifPresent(value -> this.level().playSound(null, this.getX(), this.getY(), this.getZ(), value, SoundSource.PLAYERS, 2.0F, 1.0F));
     }
 
     private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
@@ -674,6 +738,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickMissileLock() {
+        if (!this.hasVehicleWeapons()) {
+            this.entityData.set(DATA_MISSILE_LOCKED, false);
+            this.entityData.set(DATA_MISSILE_LOCK_TARGET, -1);
+            return;
+        }
         Entity target = null;
         VehicleWeaponInfo weapon = this.selectedWeapon();
         LivingEntity shooter = this.seekInput ? this.seekController() : null;
@@ -751,7 +820,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     private LivingEntity seekController() {
         Entity controller = this.seekControllerId < 0 ? null : this.level().getEntity(this.seekControllerId);
-        if (controller instanceof LivingEntity living && living.getVehicle() == this && this.canUseSelectedWeapon(living, this.selectedWeapon())) {
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (weapon != null && controller instanceof LivingEntity living && living.getVehicle() == this && this.canUseSelectedWeapon(living, weapon)) {
             return living;
         }
         this.seekControllerId = -1;
@@ -915,7 +985,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!weapons.get(slot).usableBySeat(seatIndex)) {
             return false;
         }
+        if (slot == this.selectedVehicleWeaponIndex()) {
+            return false;
+        }
+        this.cancelWeaponReload();
         this.entityData.set(DATA_SELECTED_WEAPON, slot);
+        this.syncSelectedWeaponAmmoState();
         return true;
     }
 
@@ -942,26 +1017,202 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.countAmmo(ammoId) > 0;
     }
 
+    private boolean usesSharedVehicleReloadSystem() {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        if (weaponId == null) {
+            return false;
+        }
+        GunStats stats = VehicleWeaponStats.get(weaponId);
+        return stats != null && stats.usesMagazine() && !stats.isInventoryFed();
+    }
+
+    private int weaponLoadedAmmo(int slot) {
+        return Math.max(0, this.loadedAmmoByWeaponSlot.getOrDefault(slot, 0));
+    }
+
+    private void setWeaponLoadedAmmo(int slot, int ammo) {
+        if (ammo <= 0) {
+            this.loadedAmmoByWeaponSlot.remove(slot);
+        } else {
+            this.loadedAmmoByWeaponSlot.put(slot, ammo);
+        }
+    }
+
+    private int selectedWeaponLoadedAmmo() {
+        return this.weaponLoadedAmmo(this.selectedVehicleWeaponIndex());
+    }
+
+    private int selectedWeaponReserveAmmo() {
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon == null ? 0 : this.countAmmo(weapon.ammoId());
+    }
+
+    private int selectedWeaponMagazineSize() {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        GunStats stats = weaponId == null ? null : VehicleWeaponStats.get(weaponId);
+        return stats == null ? 0 : Math.max(0, stats.magazineSize());
+    }
+
+    private int selectedWeaponReloadDuration() {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        GunStats stats = weaponId == null ? null : VehicleWeaponStats.get(weaponId);
+        return stats == null ? 0 : Math.max(0, stats.totalReloadTime());
+    }
+
+    private boolean isWeaponReloading() {
+        return this.activeReloadWeaponSlot >= 0 && this.activeReloadTicks > 0;
+    }
+
+    private boolean canReloadSelectedWeapon() {
+        int slot = this.selectedVehicleWeaponIndex();
+        if (!this.usesSharedVehicleReloadSystem() || slot < 0 || slot >= this.vehicleData().defaults().weapons().size()) {
+            return false;
+        }
+        int magazineSize = this.selectedWeaponMagazineSize();
+        if (magazineSize <= 0 || this.isWeaponReloading()) {
+            return false;
+        }
+        return this.selectedWeaponLoadedAmmo() < magazineSize && this.selectedWeaponReserveAmmo() > 0;
+    }
+
+    private void startWeaponReload() {
+        if (!this.canReloadSelectedWeapon()) {
+            return;
+        }
+        int reloadDuration = this.selectedWeaponReloadDuration();
+        if (reloadDuration <= 0) {
+            this.finishWeaponReload(this.selectedVehicleWeaponIndex());
+            return;
+        }
+        this.activeReloadWeaponSlot = this.selectedVehicleWeaponIndex();
+        this.activeReloadTicks = reloadDuration;
+        this.syncSelectedWeaponAmmoState();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        this.playWeaponReloadSound(weapon, weaponId == null ? null : VehicleWeaponStats.get(weaponId), true);
+    }
+
+    private void cancelWeaponReload() {
+        if (!this.isWeaponReloading()) {
+            return;
+        }
+        this.activeReloadWeaponSlot = -1;
+        this.activeReloadTicks = 0;
+        this.syncSelectedWeaponAmmoState();
+    }
+
+    private void tickWeaponReload() {
+        if (this.isWeaponReloading()) {
+            if (this.activeReloadTicks > 0) {
+                this.activeReloadTicks--;
+            }
+            if (this.activeReloadTicks <= 0) {
+                int slot = this.activeReloadWeaponSlot;
+                this.activeReloadWeaponSlot = -1;
+                this.activeReloadTicks = 0;
+                this.finishWeaponReload(slot);
+                return;
+            }
+            this.syncSelectedWeaponAmmoState();
+            return;
+        }
+        if (this.shouldAutoReloadSelectedWeapon()) {
+            this.startWeaponReload();
+        }
+    }
+
+    private boolean shouldAutoReloadSelectedWeapon() {
+        if (!this.usesSharedVehicleReloadSystem()) {
+            return false;
+        }
+        LivingEntity shooter = this.weaponController();
+        if (shooter == null) {
+            shooter = this.getControllingPassenger() instanceof LivingEntity living ? living : null;
+        }
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (shooter == null || weapon == null || !this.canUseSelectedWeapon(shooter, weapon)) {
+            return false;
+        }
+        return this.selectedWeaponLoadedAmmo() <= 0 && this.canReloadSelectedWeapon();
+    }
+
+    private void finishWeaponReload(int slot) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (slot < 0 || slot >= weapons.size()) {
+            this.syncSelectedWeaponAmmoState();
+            return;
+        }
+        VehicleWeaponInfo weapon = weapons.get(slot);
+        GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
+        int magazineSize = stats == null ? 0 : Math.max(0, stats.magazineSize());
+        int loaded = this.weaponLoadedAmmo(slot);
+        int reserve = this.countAmmo(weapon.ammoId());
+        int transfer = Math.min(Math.max(0, magazineSize - loaded), reserve);
+        if (transfer > 0 && this.consumeAmmo(weapon.ammoId(), transfer)) {
+            this.setWeaponLoadedAmmo(slot, loaded + transfer);
+        }
+        this.playWeaponReloadSound(weapon, stats, false);
+        this.syncSelectedWeaponAmmoState();
+    }
+
+    private void syncSelectedWeaponAmmoState() {
+        if (!this.hasVehicleWeapons()) {
+            this.entityData.set(DATA_SELECTED_WEAPON_AMMO, 0);
+            this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
+            this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, false);
+            this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
+            return;
+        }
+        int selectedSlot = this.selectedVehicleWeaponIndex();
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (!this.usesSharedVehicleReloadSystem()) {
+            this.entityData.set(DATA_SELECTED_WEAPON_AMMO, weapon == null ? 0 : this.countAmmo(weapon.ammoId()));
+            this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
+            this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, false);
+            this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
+            return;
+        }
+        this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.weaponLoadedAmmo(selectedSlot));
+        this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, this.selectedWeaponReserveAmmo());
+        this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, this.isWeaponReloading() && this.activeReloadWeaponSlot == selectedSlot);
+        this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, this.isWeaponReloading() && this.activeReloadWeaponSlot == selectedSlot ? this.activeReloadTicks : 0);
+    }
+
     private boolean hasEnergy(int amount) {
         return amount <= 0 || this.vehicleEnergy() >= amount;
     }
 
     private boolean consumeAmmo(ResourceLocation ammoId) {
+        return this.consumeAmmo(ammoId, 1);
+    }
+
+    private boolean consumeAmmo(ResourceLocation ammoId, int amount) {
+        if (amount <= 0) {
+            return true;
+        }
+        if (this.countAmmo(ammoId) < amount) {
+            return false;
+        }
         Item ammo = this.resolveAmmoItem(ammoId);
         if (ammo == null) {
             return false;
         }
+        int remaining = amount;
         for (int slot = 0; slot < this.inventory.getContainerSize(); slot++) {
             ItemStack stack = this.inventory.getItem(slot);
             if (!stack.is(ammo)) {
                 continue;
             }
-            stack.shrink(1);
+            int removed = Math.min(remaining, stack.getCount());
+            stack.shrink(removed);
             if (stack.isEmpty()) {
                 this.inventory.setItem(slot, ItemStack.EMPTY);
             }
-            this.inventory.setChanged();
-            return true;
+            remaining -= removed;
+            if (remaining == 0) {
+                this.inventory.setChanged();
+                return true;
+            }
         }
         return false;
     }
@@ -975,10 +1226,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return BuiltInRegistries.ITEM.getOptional(ammoId).orElse(null);
     }
 
+    @Nullable
     private VehicleWeaponInfo selectedWeapon() {
         var weapons = this.vehicleData().defaults().weapons();
         if (weapons.isEmpty()) {
-            return DefaultVehicleData.TEST_WHEEL.weapons().getFirst();
+            return null;
         }
         int index = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
         return weapons.get(index);
@@ -995,7 +1247,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         for (int offset = 1; offset <= weapons.size(); offset++) {
             int next = Mth.positiveModulo(current + offset * step, weapons.size());
             if (weapons.get(next).usableBySeat(seatIndex)) {
+                if (next == current) {
+                    return false;
+                }
+                this.cancelWeaponReload();
                 this.entityData.set(DATA_SELECTED_WEAPON, next);
+                this.syncSelectedWeaponAmmoState();
                 return true;
             }
         }
@@ -1453,13 +1710,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean usesArticulatedTurretAim(LivingEntity shooter) {
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (weapon == null) {
+            return false;
+        }
         if (this.vehicleDataId().equals(LAV150_ID)) {
-            return this.canUseSelectedWeapon(shooter, this.selectedWeapon());
+            return this.canUseSelectedWeapon(shooter, weapon);
         }
         return this.vehicleDataId().equals(BMP2_ID)
-                && !this.selectedWeapon().guided()
+                && !weapon.guided()
                 && this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter)) == 0
-                && this.canUseSelectedWeapon(shooter, this.selectedWeapon());
+                && this.canUseSelectedWeapon(shooter, weapon);
     }
 
     private boolean usesArticulatedTurretMuzzle(VehicleWeaponInfo weapon) {
@@ -1573,6 +1834,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
         output.putInt(TAG_SELECTED_WEAPON, this.entityData.get(DATA_SELECTED_WEAPON));
+        ListTag loadedAmmo = new ListTag();
+        for (Map.Entry<Integer, Integer> entry : this.loadedAmmoByWeaponSlot.entrySet()) {
+            CompoundTag weaponTag = new CompoundTag();
+            weaponTag.putInt(TAG_LOADED_WEAPON_SLOT, entry.getKey());
+            weaponTag.putInt(TAG_LOADED_WEAPON_COUNT, entry.getValue());
+            loadedAmmo.add(weaponTag);
+        }
+        output.put(TAG_LOADED_WEAPON_AMMO, loadedAmmo);
         output.putInt(TAG_DECOY_COOLDOWN, this.decoyCooldown);
         output.putFloat(TAG_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
         output.putFloat(TAG_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
@@ -1602,6 +1871,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
         this.entityData.set(DATA_SELECTED_WEAPON, this.readSelectedWeapon(input));
+        this.readLoadedWeaponAmmo(input);
+        this.activeReloadWeaponSlot = -1;
+        this.activeReloadTicks = 0;
         this.decoyCooldown = input.getInt(TAG_DECOY_COOLDOWN);
         this.leftWheelHealth = input.contains(TAG_LEFT_WHEEL_HEALTH) ? input.getFloat(TAG_LEFT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.rightWheelHealth = input.contains(TAG_RIGHT_WHEEL_HEALTH) ? input.getFloat(TAG_RIGHT_WHEEL_HEALTH) : PART_MAX_HEALTH;
@@ -1612,6 +1884,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (input.contains(TAG_ITEMS)) {
             ContainerHelper.loadAllItems(input.getCompound(TAG_ITEMS), this.inventory.getItems(), this.level().registryAccess());
         }
+        this.syncSelectedWeaponAmmoState();
     }
 
     private int readSelectedWeapon(CompoundTag input) {
@@ -1620,6 +1893,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return 0;
         }
         return Mth.clamp(input.getInt(TAG_SELECTED_WEAPON), 0, weaponCount - 1);
+    }
+
+    private void readLoadedWeaponAmmo(CompoundTag input) {
+        this.loadedAmmoByWeaponSlot.clear();
+        if (!input.contains(TAG_LOADED_WEAPON_AMMO, Tag.TAG_LIST)) {
+            return;
+        }
+        int weaponCount = this.vehicleData().defaults().weapons().size();
+        ListTag loadedAmmo = input.getList(TAG_LOADED_WEAPON_AMMO, Tag.TAG_COMPOUND);
+        for (int index = 0; index < loadedAmmo.size(); index++) {
+            CompoundTag weaponTag = loadedAmmo.getCompound(index);
+            int slot = weaponTag.getInt(TAG_LOADED_WEAPON_SLOT);
+            int ammo = weaponTag.getInt(TAG_LOADED_WEAPON_COUNT);
+            if (slot >= 0 && slot < weaponCount && ammo > 0) {
+                this.loadedAmmoByWeaponSlot.put(slot, ammo);
+            }
+        }
     }
 
     private void readSeatAssignments(CompoundTag input) {
@@ -1936,6 +2226,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         boolean controllingPassenger = passenger == this.getControllingPassenger();
         this.seatAssignments.remove(passenger.getUUID());
         if (controllingPassenger) {
+            this.cancelWeaponReload();
             this.clearControlState(true);
             if (!this.level().isClientSide && passenger instanceof ServerPlayer player) {
                 NetworkHandler.sendForcedVehicleState(player, this);
