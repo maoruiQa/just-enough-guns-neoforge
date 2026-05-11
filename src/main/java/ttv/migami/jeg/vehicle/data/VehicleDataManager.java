@@ -27,6 +27,7 @@ import ttv.migami.jeg.vehicle.data.subdata.EngineType;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
+import ttv.migami.jeg.vehicle.data.subdata.TurretInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
@@ -106,6 +107,7 @@ public final class VehicleDataManager {
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
         DamageModifierInfo damageModifier = parseDamageModifier(getObject(object, "damage_modifier"), fallback.damageModifier());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
+        TurretInfo turret = parseTurret(getObject(object, "turret"), fallback.turret());
         boolean hasDecoy = getBoolean(object, "has_decoy", fallback.hasDecoy());
         SeekInfo seek = parseSeek(getObject(object, "seek"), fallback.seek());
         DestroyInfo destroy = parseDestroy(getObject(object, "destroy"), fallback.destroy());
@@ -130,6 +132,7 @@ public final class VehicleDataManager {
                 armor,
                 damageModifier,
                 weapons,
+                turret,
                 hasDecoy,
                 seek,
                 destroy
@@ -278,6 +281,23 @@ public final class VehicleDataManager {
             ));
         }
         return List.copyOf(weapons);
+    }
+
+    private static TurretInfo parseTurret(JsonObject object, TurretInfo fallback) {
+        if (object == null) {
+            return fallback;
+        }
+        return new TurretInfo(
+                getInt(object, "seat", fallback.seatIndex()),
+                getDouble(object, "render_pivot_y", fallback.renderPivotY()),
+                getDouble(object, "origin_x", fallback.originX()),
+                getDouble(object, "origin_y", fallback.originY()),
+                getDouble(object, "origin_z", fallback.originZ()),
+                getDouble(object, "barrel_x", fallback.barrelX()),
+                getDouble(object, "barrel_y", fallback.barrelY()),
+                getDouble(object, "barrel_z", fallback.barrelZ()),
+                getBoolean(object, "guided_uses_turret", fallback.guidedUsesTurret())
+        );
     }
 
     private static DestroyInfo parseDestroy(JsonObject object, DestroyInfo fallback) {

@@ -13,6 +13,7 @@ import ttv.migami.jeg.vehicle.data.subdata.EngineType;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
+import ttv.migami.jeg.vehicle.data.subdata.TurretInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
@@ -37,6 +38,7 @@ public record DefaultVehicleData(
         VehicleArmorProfile armor,
         DamageModifierInfo damageModifier,
         List<VehicleWeaponInfo> weapons,
+        TurretInfo turret,
         boolean hasDecoy,
         SeekInfo seek,
         DestroyInfo destroy
@@ -64,6 +66,7 @@ public record DefaultVehicleData(
                     new VehicleWeaponInfo(Reference.id("assault_rifle"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             DestroyInfo.NONE
@@ -93,6 +96,7 @@ public record DefaultVehicleData(
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             DestroyInfo.NONE
@@ -121,6 +125,7 @@ public record DefaultVehicleData(
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             new DestroyInfo(true, 2.0F)
@@ -148,6 +153,7 @@ public record DefaultVehicleData(
             List.of(
                     new VehicleWeaponInfo(Reference.id("combat_pistol"), Reference.id("pistol_ammo"), 0, false)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             new DestroyInfo(false, 0.0F)
@@ -176,6 +182,7 @@ public record DefaultVehicleData(
                     new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             new DestroyInfo(true, 2.2F)
@@ -204,6 +211,7 @@ public record DefaultVehicleData(
                     new VehicleWeaponInfo(Reference.id("light_machine_gun"), Reference.id("rifle_ammo"), 1, false),
                     new VehicleWeaponInfo(Reference.id("rocket_launcher"), Reference.id("rocket"), 2, true)
             ),
+            TurretInfo.NONE,
             false,
             SeekInfo.NONE,
             new DestroyInfo(true, 2.4F)

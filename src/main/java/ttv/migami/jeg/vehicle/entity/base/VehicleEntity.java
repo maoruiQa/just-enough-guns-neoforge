@@ -143,18 +143,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
-    private static final double BMP2_TURRET_POS_Y = 2.25D;
-    private static final double BMP2_TURRET_POS_Z = -0.703125D;
-    private static final double BMP2_BARREL_POS_X = 0.3625D;
-    private static final double BMP2_BARREL_POS_Y = 0.293125D;
-    private static final double BMP2_BARREL_POS_Z = 1.18095D;
-    private static final double LAV150_ROTATE_OFFSET_HEIGHT = 2.2D;
-    private static final double LAV150_TURRET_POS_Y = 2.4003D;
-    private static final double LAV150_BARREL_POS_X = 0.0234375D;
-    private static final double LAV150_BARREL_POS_Y = 0.33795D;
-    private static final double LAV150_BARREL_POS_Z = 0.825D;
-    private static final ResourceLocation BMP2_ID = Reference.id("bmp2");
-    private static final ResourceLocation LAV150_ID = Reference.id("lav150");
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
@@ -393,6 +381,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public boolean hasVehicleWeapons() {
         return !this.vehicleData().defaults().weapons().isEmpty();
+    }
+
+    public boolean hasFocusedDriverSightHud() {
+        if (!this.hasVehicleWeapons() || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+            return false;
+        }
+        var seats = this.vehicleData().defaults().seats();
+        if (seats.isEmpty()) {
+            return false;
+        }
+        SeatInfo seat = seats.getFirst();
+        return seat.driver() && this.usesArticulatedSeatTransform(seat);
+    }
+
+    public boolean guidedWeaponsUseArticulatedTurret() {
+        return this.vehicleData().defaults().turret().guidedUsesTurret();
     }
 
     public void processInput(ServerPlayer player, VehicleInput input) {
@@ -721,18 +725,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.usesArticulatedTurretMuzzle(weapon)) {
             return null;
         }
-        if (this.vehicleDataId().equals(BMP2_ID)) {
-            return this.bmp2BarrelPosition(
-                    weapon.muzzleX() - BMP2_BARREL_POS_X,
-                    weapon.muzzleY() - BMP2_TURRET_POS_Y - BMP2_BARREL_POS_Y,
-                    weapon.muzzleZ() - BMP2_TURRET_POS_Z - BMP2_BARREL_POS_Z,
-                    1.0F
-            );
-        }
-        return this.lav150BarrelPosition(
-                weapon.muzzleX() - LAV150_BARREL_POS_X,
-                weapon.muzzleY() - LAV150_TURRET_POS_Y - LAV150_BARREL_POS_Y,
-                weapon.muzzleZ() - LAV150_BARREL_POS_Z,
+        var turret = this.vehicleData().defaults().turret();
+        return this.articulatedBarrelPosition(
+                weapon.muzzleX() - turret.barrelX(),
+                weapon.muzzleY() - turret.originY() - turret.barrelY(),
+                weapon.muzzleZ() - turret.originZ() - turret.barrelZ(),
                 1.0F
         );
     }
@@ -795,10 +792,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.usesArticulatedTurretAim(shooter)) {
             return null;
         }
-        if (this.vehicleDataId().equals(BMP2_ID)) {
-            return this.bmp2BarrelDirection(1.0F).normalize();
-        }
-        return this.lav150BarrelDirection(1.0F).normalize();
+        return this.articulatedBarrelDirection(1.0F).normalize();
     }
 
     private float weaponPitch(LivingEntity shooter) {
@@ -1300,11 +1294,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.usesArticulatedSeatTransform(seat)) {
             return null;
         }
-        if (this.vehicleDataId().equals(BMP2_ID)) {
-            Vec3 barrel = this.bmp2BarrelDirection(partialTick).normalize();
-            return new Vec3(this.yRotFromVector(barrel), this.xRotFromVector(barrel), 0.0D);
-        }
-        Vec3 barrel = this.lav150BarrelDirection(partialTick).normalize();
+        Vec3 barrel = this.articulatedBarrelDirection(partialTick).normalize();
         return new Vec3(this.yRotFromVector(barrel), this.xRotFromVector(barrel), 0.0D);
     }
 
@@ -1554,11 +1544,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public double rotateOffsetHeight() {
-        return this.articulatedRenderPivotHeight();
-    }
-
-    private double articulatedRenderPivotHeight() {
-        return this.vehicleDataId().equals(LAV150_ID) ? LAV150_ROTATE_OFFSET_HEIGHT : 0.0D;
+        return this.vehicleData().defaults().turret().renderPivotY();
     }
 
     private int steeringAxis() {
@@ -1697,37 +1683,30 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private Vec3 seatOffset(SeatInfo seat, double eyeHeight, float partialTick) {
         if (this.usesArticulatedSeatTransform(seat)) {
-            if (this.vehicleDataId().equals(BMP2_ID)) {
-                return this.bmp2TurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
-            }
-            return this.lav150TurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
+            return this.articulatedTurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
         }
         return this.rotateLocalOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
     }
 
     private boolean usesArticulatedSeatTransform(SeatInfo seat) {
-        return (this.vehicleDataId().equals(LAV150_ID) || this.vehicleDataId().equals(BMP2_ID)) && seat.index() == 0;
+        return this.vehicleData().defaults().turret().enabled() && seat.index() == this.vehicleData().defaults().turret().seatIndex();
     }
 
     private boolean usesArticulatedTurretAim(LivingEntity shooter) {
         VehicleWeaponInfo weapon = this.selectedWeapon();
-        if (weapon == null) {
+        if (weapon == null || !this.vehicleData().defaults().turret().enabled()) {
             return false;
         }
-        if (this.vehicleDataId().equals(LAV150_ID)) {
-            return this.canUseSelectedWeapon(shooter, weapon);
-        }
-        return this.vehicleDataId().equals(BMP2_ID)
-                && !weapon.guided()
-                && this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter)) == 0
-                && this.canUseSelectedWeapon(shooter, weapon);
+        int turretSeat = this.vehicleData().defaults().turret().seatIndex();
+        return this.canUseSelectedWeapon(shooter, weapon)
+                && this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter)) == turretSeat
+                && (!weapon.guided() || this.guidedWeaponsUseArticulatedTurret());
     }
 
     private boolean usesArticulatedTurretMuzzle(VehicleWeaponInfo weapon) {
-        if (this.vehicleDataId().equals(LAV150_ID)) {
-            return weapon.hasMuzzle();
-        }
-        return this.vehicleDataId().equals(BMP2_ID) && !weapon.guided() && weapon.hasMuzzle();
+        return this.vehicleData().defaults().turret().enabled()
+                && weapon.hasMuzzle()
+                && (!weapon.guided() || this.guidedWeaponsUseArticulatedTurret());
     }
 
     private Vec3 rotateLocalOffset(double localX, double localY, double localZ) {
@@ -1743,53 +1722,30 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new Vec3(x, localY, z);
     }
 
-    private Vec3 lav150TurretOffset(double localX, double localY, double localZ, float partialTick) {
-        Vec3 turretOrigin = this.rotateLocalOffset(0.0D, LAV150_TURRET_POS_Y, 0.0D, partialTick);
-        Vec3 turretLocal = this.rotateLocalOffsetByYaw(localX, localY, localZ, this.lav150WorldTurretYaw(partialTick));
+    private Vec3 articulatedTurretOffset(double localX, double localY, double localZ, float partialTick) {
+        var turret = this.vehicleData().defaults().turret();
+        Vec3 turretOrigin = this.rotateLocalOffset(turret.originX(), turret.originY(), turret.originZ(), partialTick);
+        Vec3 turretLocal = this.rotateLocalOffsetByYaw(localX, localY, localZ, this.articulatedWorldTurretYaw(partialTick));
         return turretOrigin.add(turretLocal);
     }
 
-    private Vec3 bmp2TurretOffset(double localX, double localY, double localZ, float partialTick) {
-        Vec3 turretOrigin = this.rotateLocalOffset(0.0D, BMP2_TURRET_POS_Y, BMP2_TURRET_POS_Z, partialTick);
-        Vec3 turretLocal = this.rotateLocalOffsetByYaw(localX, localY, localZ, this.bmp2WorldTurretYaw(partialTick));
-        return turretOrigin.add(turretLocal);
-    }
-
-    private Vec3 lav150BarrelPosition(double localX, double localY, double localZ, float partialTick) {
-        Vec3 barrelOrigin = this.lav150TurretOffset(LAV150_BARREL_POS_X, LAV150_BARREL_POS_Y, LAV150_BARREL_POS_Z, partialTick);
+    private Vec3 articulatedBarrelPosition(double localX, double localY, double localZ, float partialTick) {
+        var turret = this.vehicleData().defaults().turret();
+        Vec3 barrelOrigin = this.articulatedTurretOffset(turret.barrelX(), turret.barrelY(), turret.barrelZ(), partialTick);
         return this.interpolatedVehiclePosition(partialTick)
                 .add(barrelOrigin)
-                .add(this.rotateLocalOffsetByYawAndPitch(localX, localY, localZ, this.lav150WorldTurretYaw(partialTick), this.lav150TurretPitch(partialTick)));
+                .add(this.rotateLocalOffsetByYawAndPitch(localX, localY, localZ, this.articulatedWorldTurretYaw(partialTick), this.articulatedTurretPitch(partialTick)));
     }
 
-    private Vec3 bmp2BarrelPosition(double localX, double localY, double localZ, float partialTick) {
-        Vec3 barrelOrigin = this.bmp2TurretOffset(BMP2_BARREL_POS_X, BMP2_BARREL_POS_Y, BMP2_BARREL_POS_Z, partialTick);
-        return this.interpolatedVehiclePosition(partialTick)
-                .add(barrelOrigin)
-                .add(this.rotateLocalOffsetByYawAndPitch(localX, localY, localZ, this.bmp2WorldTurretYaw(partialTick), this.bmp2TurretPitch(partialTick)));
+    private Vec3 articulatedBarrelDirection(float partialTick) {
+        return this.rotateLocalOffsetByYawAndPitch(0.0D, 0.0D, 1.0D, this.articulatedWorldTurretYaw(partialTick), this.articulatedTurretPitch(partialTick));
     }
 
-    private Vec3 lav150BarrelDirection(float partialTick) {
-        return this.rotateLocalOffsetByYawAndPitch(0.0D, 0.0D, 1.0D, this.lav150WorldTurretYaw(partialTick), this.lav150TurretPitch(partialTick));
-    }
-
-    private Vec3 bmp2BarrelDirection(float partialTick) {
-        return this.rotateLocalOffsetByYawAndPitch(0.0D, 0.0D, 1.0D, this.bmp2WorldTurretYaw(partialTick), this.bmp2TurretPitch(partialTick));
-    }
-
-    private float lav150WorldTurretYaw(float partialTick) {
+    private float articulatedWorldTurretYaw(float partialTick) {
         return Mth.lerp(partialTick, this.yRotO, this.getYRot()) - this.turretYaw(partialTick);
     }
 
-    private float bmp2WorldTurretYaw(float partialTick) {
-        return Mth.lerp(partialTick, this.yRotO, this.getYRot()) - this.turretYaw(partialTick);
-    }
-
-    private float lav150TurretPitch(float partialTick) {
-        return this.turretPitch(partialTick);
-    }
-
-    private float bmp2TurretPitch(float partialTick) {
+    private float articulatedTurretPitch(float partialTick) {
         return this.turretPitch(partialTick);
     }
 

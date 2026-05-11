@@ -3,6 +3,8 @@ package ttv.migami.jeg.vehicle.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -13,6 +15,7 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntity> {
@@ -38,6 +41,9 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
 
     @Override
     public boolean shouldRender(VehicleEntity vehicle, Frustum camera, double camX, double camY, double camZ) {
+        if (shouldHideVehicleWhileZooming(vehicle)) {
+            return false;
+        }
         if (!vehicle.shouldRender(camX, camY, camZ)) {
             return false;
         }
@@ -49,6 +55,17 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
             bounds = new AABB(vehicle.getX() - 8.0D, vehicle.getY() - 6.0D, vehicle.getZ() - 8.0D, vehicle.getX() + 8.0D, vehicle.getY() + 6.0D, vehicle.getZ() + 8.0D);
         }
         return camera.isVisible(bounds);
+    }
+
+    private static boolean shouldHideVehicleWhileZooming(VehicleEntity vehicle) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        return player != null
+                && player.getVehicle() == vehicle
+                && vehicle.passengerForSeat(0) == player
+                && vehicle.hasFocusedDriverSightHud()
+                && VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.zoomDown();
     }
 
     private void vehicleAxis(VehicleEntity vehicle, PoseStack poseStack, float entityYaw, float partialTick) {

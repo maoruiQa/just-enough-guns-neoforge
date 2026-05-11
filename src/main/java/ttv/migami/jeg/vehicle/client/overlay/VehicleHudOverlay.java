@@ -323,7 +323,7 @@ public final class VehicleHudOverlay {
         if ("laser_tower".equals(vehiclePath) || "waveforce_tower".equals(vehiclePath)) {
             return CROSSHAIR_LASER_CANNON;
         }
-        if ("lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath)) {
+        if (vehicle.hasFocusedDriverSightHud()) {
             return CROSSHAIR_US_APC;
         }
         return CROSSHAIR_GUN;
@@ -351,7 +351,7 @@ public final class VehicleHudOverlay {
 
         String vehiclePath = vehicle.vehicleDataId().getPath();
         boolean focusedSight = isFocusedVehicleSight(vehicle);
-        if (focusedSight && hasApcFocusedSightFrame(vehiclePath)) {
+        if (focusedSight && hasApcFocusedSightFrame(vehicle)) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
             int addW = (screenWidth / screenHeight) * 48;
@@ -379,16 +379,15 @@ public final class VehicleHudOverlay {
     }
 
     private static boolean hasApcWeaponHud(VehicleEntity vehicle) {
-        String vehiclePath = vehicle.vehicleDataId().getPath();
-        return "lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath);
+        return vehicle.hasFocusedDriverSightHud();
     }
 
     private static boolean hasWeaponSelectorHud(VehicleEntity vehicle) {
         return vehicle.hasVehicleWeapons() && (hasApcWeaponHud(vehicle) || vehicle.vehicleData().defaults().weapons().size() > 1);
     }
 
-    private static boolean hasApcFocusedSightFrame(String vehiclePath) {
-        return "lav150".equals(vehiclePath) || "bmp2".equals(vehiclePath);
+    private static boolean hasApcFocusedSightFrame(VehicleEntity vehicle) {
+        return vehicle.hasFocusedDriverSightHud();
     }
 
     private static boolean isFocusedVehicleSight(VehicleEntity vehicle) {
@@ -396,7 +395,7 @@ public final class VehicleHudOverlay {
         return player != null
                 && player.getVehicle() == vehicle
                 && vehicle.passengerForSeat(0) == player
-                && hasApcFocusedSightFrame(vehicle.vehicleDataId().getPath())
+                && hasApcFocusedSightFrame(vehicle)
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
