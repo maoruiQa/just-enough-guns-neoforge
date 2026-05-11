@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
+import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
@@ -55,11 +56,15 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
-            this.onClose();
+            this.minecraft.player.closeContainer();
+            this.minecraft.setScreen(null);
+            VehicleInputHandler.suppressVehicleInventoryClickOnce();
             return true;
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(keyCode, scanCode)) {
+            this.minecraft.player.closeContainer();
             this.minecraft.setScreen(new InventoryScreen(this.minecraft.player));
+            VehicleInputHandler.suppressPlayerInventoryClickOnce();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +21,7 @@ import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleInputHandler {
     private static boolean suppressPlayerInventoryClick;
+    private static boolean suppressVehicleInventoryClick;
 
     private VehicleInputHandler() {}
 
@@ -52,7 +54,12 @@ public final class VehicleInputHandler {
             NetworkHandler.sendVehicleDismount(vehicle.getId());
             return;
         }
-        if (minecraft.options.keyInventory.consumeClick()) {
+        boolean vehicleInventoryClick = minecraft.options.keyInventory.consumeClick();
+        if (suppressVehicleInventoryClick) {
+            suppressVehicleInventoryClick = false;
+            vehicleInventoryClick = false;
+        }
+        if (vehicleInventoryClick) {
             if (minecraft.screen instanceof VehicleScreen) {
                 player.closeContainer();
                 minecraft.setScreen(null);
@@ -123,6 +130,9 @@ public final class VehicleInputHandler {
             return;
         }
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
+        if (minecraft.options.getCameraType().isFirstPerson()) {
+            clampSeatView(player, vehicle, seat);
+        }
         float base = (float) event.getMouseSensitivity();
         float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
         if (VehicleClientState.isRidingVehicle()
@@ -133,11 +143,36 @@ public final class VehicleInputHandler {
         event.setMouseSensitivity(Math.max(0.0F, base * sensitivity));
     }
 
+    private static void clampSeatView(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
+        float relativeYaw = Mth.wrapDegrees(player.getYRot() - vehicle.getYRot());
+        float clampedYaw = Mth.clamp(relativeYaw, seat.minYaw(), seat.maxYaw());
+        if (clampedYaw != relativeYaw) {
+            float worldYaw = vehicle.getYRot() + clampedYaw;
+            player.setYRot(worldYaw);
+            player.yRotO = worldYaw;
+            player.yHeadRot = worldYaw;
+            player.yHeadRotO = worldYaw;
+            player.yBodyRot = worldYaw;
+            player.yBodyRotO = worldYaw;
+        }
+        float clampedPitch = Mth.clamp(player.getXRot(), seat.minPitch(), seat.maxPitch());
+        if (clampedPitch != player.getXRot()) {
+            player.setXRot(clampedPitch);
+            player.xRotO = clampedPitch;
+        }
+    }
+
     @SubscribeEvent
     public static void onScreenKeyPressed(ScreenEvent.KeyPressed.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (player == null || !(player.getVehicle() instanceof VehicleEntity) || !(event.getScreen() instanceof InventoryScreen)) {
+        if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle) || !(event.getScreen() instanceof InventoryScreen)) {
+            return;
+        }
+        if (minecraft.options.keyInventory.matches(event.getKeyCode(), event.getScanCode())) {
+            NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+            suppressVehicleInventoryClick = true;
+            event.setCanceled(true);
             return;
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event.getKeyCode(), event.getScanCode())) {
@@ -146,5 +181,13 @@ public final class VehicleInputHandler {
             suppressPlayerInventoryClick = true;
             event.setCanceled(true);
         }
+    }
+
+    public static void suppressPlayerInventoryClickOnce() {
+        suppressPlayerInventoryClick = true;
+    }
+
+    public static void suppressVehicleInventoryClickOnce() {
+        suppressVehicleInventoryClick = true;
     }
 }

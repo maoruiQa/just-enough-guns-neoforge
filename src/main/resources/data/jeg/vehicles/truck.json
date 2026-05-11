@@ -9,8 +9,8 @@
   "allow_free_cam": true,
   "container_type": "huge",
   "seats": [
-    {"index": 0, "x": 0.6625, "y": 1.025, "z": 3.6375, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0},
-    {"index": 1, "x": -0.6625, "y": 1.025, "z": 3.6375, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0}
+    {"index": 0, "x": 0.6625, "y": 1.025, "z": 3.6375, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0, "min_yaw": -95.0, "max_yaw": 95.0},
+    {"index": 1, "x": -0.6625, "y": 1.025, "z": 3.6375, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0, "min_yaw": -95.0, "max_yaw": 95.0}
   ],
   "engine": {"type": "wheel", "acceleration": 0.012, "max_forward_speed": 0.98, "max_reverse_speed": 0.7, "friction": 0.82, "steering_speed": 0.05, "energy_cost_rate": 64},
   "third_person_camera": {"x": 0.0, "y": 1.0, "z": -5.0},
