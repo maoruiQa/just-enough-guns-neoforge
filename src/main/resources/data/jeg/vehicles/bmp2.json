@@ -23,11 +23,12 @@
   "dismount": {"x": 1.55, "y": 0.1, "z": 0.0},
   "collision_level": "heavy",
   "obb": [
-    {"part": "body", "x": 0.0, "y": 0.82, "z": 0.05, "half_width": 1.0, "half_height": 0.62, "half_depth": 1.45},
-    {"part": "turret", "x": 0.0, "y": 1.32, "z": -0.28, "half_width": 0.52, "half_height": 0.28, "half_depth": 0.52},
-    {"part": "wheel_left", "x": -0.82, "y": 0.38, "z": 0.0, "half_width": 0.2, "half_height": 0.32, "half_depth": 1.3},
-    {"part": "wheel_right", "x": 0.82, "y": 0.38, "z": 0.0, "half_width": 0.2, "half_height": 0.32, "half_depth": 1.3},
-    {"part": "main_engine", "x": 0.0, "y": 0.6, "z": -1.12, "half_width": 0.55, "half_height": 0.34, "half_depth": 0.35}
+    {"part": "body", "x": 0.0, "y": 1.5, "z": -0.28125, "half_width": 2.1875, "half_height": 0.875, "half_depth": 3.90625},
+    {"part": "body", "x": 0.0, "y": 1.5625, "z": 4.28125, "half_width": 2.1875, "half_height": 0.5, "half_depth": 0.65625},
+    {"part": "turret", "x": 0.0, "y": 0.46875, "z": 0.0, "half_width": 1.5, "half_height": 0.34375, "half_depth": 1.5},
+    {"part": "wheel_left", "x": 1.9375, "y": 0.84375, "z": 0.15625, "half_width": 0.375, "half_height": 0.78125, "half_depth": 3.46875},
+    {"part": "wheel_right", "x": -1.9375, "y": 0.84375, "z": 0.15625, "half_width": 0.375, "half_height": 0.78125, "half_depth": 3.46875},
+    {"part": "main_engine", "x": -1.09375, "y": 2.0625, "z": 1.75, "half_width": 1.15625, "half_height": 0.375, "half_depth": 1.125}
   ],
   "weapons": [
     {"weapon": "jeg:vehicle_30mm_cannon", "ammo": "jeg:autocannon_shell", "energy_cost": 8, "guided": false, "seat": 0, "muzzle": {"x": -0.0875, "y": 2.943125, "z": 3.677825}},

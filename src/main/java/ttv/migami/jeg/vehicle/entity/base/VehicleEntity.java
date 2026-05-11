@@ -81,7 +81,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float CLIENT_RESYNC_YAW_DELTA = 12.0F;
     private static final float CLIENT_RESYNC_PITCH_DELTA = 12.0F;
     private static final int DRIVER_STATE_SYNC_INTERVAL = 5;
-    private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 30;
+    private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
+    private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
@@ -165,6 +166,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private float turretYawO;
     private float turretPitchO;
     private int dismountLerpSuppressionTicks;
+    private UUID recentDismountSyncPlayerId;
+    private int recentDismountSyncTicks;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -502,6 +505,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickDecoyCooldown();
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
+            this.tickRecentDismountStateSync();
             this.tickDriverStateSync();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
             this.syncSelectedWeaponAmmoState();
@@ -512,17 +516,39 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
+    private void tickRecentDismountStateSync() {
+        if (this.level().isClientSide || this.recentDismountSyncTicks <= 0 || this.recentDismountSyncPlayerId == null) {
+            return;
+        }
+        this.recentDismountSyncTicks--;
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            this.recentDismountSyncPlayerId = null;
+            return;
+        }
+        ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(this.recentDismountSyncPlayerId);
+        if (player == null || player.level() != this.level()) {
+            this.recentDismountSyncPlayerId = null;
+            this.recentDismountSyncTicks = 0;
+            return;
+        }
+        NetworkHandler.broadcastForcedVehicleState(this);
+        if (this.recentDismountSyncTicks <= 0) {
+            this.recentDismountSyncPlayerId = null;
+        }
+    }
+
     private void tickDriverStateSync() {
         if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
             return;
         }
-        if (this.getControllingPassenger() instanceof ServerPlayer player) {
-            NetworkHandler.sendVehicleState(player, this);
+        if (this.getControllingPassenger() instanceof ServerPlayer) {
+            NetworkHandler.broadcastVehicleState(this);
         }
     }
 
     private boolean shouldRunClientPrediction() {
-        return this.isControlledByLocalInstance()
+        return this.dismountLerpSuppressionTicks <= 0
+                && this.isControlledByLocalInstance()
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == this.getId();
     }
@@ -530,6 +556,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void clearStaleDriverInput() {
         if (this.getControllingPassenger() == null) {
             this.clearControlState(false);
+            if (!this.level().isClientSide && this.getPassengers().isEmpty()) {
+                this.recentDismountSyncPlayerId = null;
+                this.recentDismountSyncTicks = 0;
+            }
         }
     }
 
@@ -590,12 +620,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.hasImpulse = true;
         if (forceApply && this.level().isClientSide) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
+            if (VehicleClientState.vehicleId() == this.getId() && !this.isControlledByLocalInstance()) {
+                VehicleClientState.clear();
+                this.clearControlState(false);
+            }
         }
     }
 
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
-        if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
+        if (this.level().isClientSide && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
             return;
         }
         super.lerpTo(x, y, z, yRot, xRot, steps);
@@ -603,7 +637,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public void lerpMotion(double x, double y, double z) {
-        if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
+        if (this.level().isClientSide && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
             return;
         }
         super.lerpMotion(x, y, z);
@@ -2180,16 +2214,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     protected void removePassenger(@NotNull Entity passenger) {
         boolean controllingPassenger = passenger == this.getControllingPassenger();
+        ServerPlayer syncPlayer = !this.level().isClientSide && passenger instanceof ServerPlayer player ? player : null;
         this.seatAssignments.remove(passenger.getUUID());
         if (controllingPassenger) {
             this.cancelWeaponReload();
             this.clearControlState(true);
-            if (!this.level().isClientSide && passenger instanceof ServerPlayer player) {
-                NetworkHandler.sendForcedVehicleState(player, this);
-            }
         }
         super.removePassenger(passenger);
         this.syncSeatAssignments();
+        if (controllingPassenger && syncPlayer != null) {
+            this.recentDismountSyncPlayerId = syncPlayer.getUUID();
+            this.recentDismountSyncTicks = DISMOUNT_FOLLOWUP_SYNC_TICKS;
+            NetworkHandler.broadcastForcedVehicleState(this);
+        }
         if (controllingPassenger && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
             Vec3 passengerMotion = passenger.getDeltaMovement();
             passenger.setDeltaMovement(0.0D, passengerMotion.y, 0.0D);

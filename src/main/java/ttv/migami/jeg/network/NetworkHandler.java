@@ -160,12 +160,31 @@ public final class NetworkHandler {
         ));
     }
 
+    private static void syncVehicleStateToTrackingPlayers(VehicleEntity vehicle, boolean forceApply) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            if (player.level() == level && player.distanceToSqr(vehicle) <= 4096.0D) {
+                syncVehicleState(player, vehicle, forceApply);
+            }
+        }
+    }
+
     public static void sendVehicleState(ServerPlayer player, VehicleEntity vehicle) {
         syncVehicleState(player, vehicle, false);
     }
 
+    public static void broadcastVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, false);
+    }
+
     public static void sendForcedVehicleState(ServerPlayer player, VehicleEntity vehicle) {
         syncVehicleState(player, vehicle, true);
+    }
+
+    public static void broadcastForcedVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, true);
     }
 
     public static void broadcastVehicleSeatAssignments(VehicleEntity vehicle) {
