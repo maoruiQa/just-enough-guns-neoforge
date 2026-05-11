@@ -1,16 +1,16 @@
 {
   "entity_type": "jeg:truck",
   "vehicle_type": "land",
-  "max_health": 60.0,
+  "max_health": 250.0,
   "auto_repair_per_tick": 0.012,
   "auto_repair_cooldown_ticks": 120,
-  "max_energy": 100,
+  "max_energy": 5000000,
   "up_step": 1.5,
   "allow_free_cam": true,
   "container_type": "huge",
   "seats": [
-    {"index": 0, "x": 0.6625, "y": 1.025, "z": 3.6375, "driver": true, "enclosed": true, "min_pitch": -60.0, "max_pitch": 60.0},
-    {"index": 1, "x": -0.6625, "y": 1.025, "z": 3.6375, "driver": false, "enclosed": true, "min_pitch": -60.0, "max_pitch": 60.0}
+    {"index": 0, "x": 0.6625, "y": 1.025, "z": 3.6375, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0},
+    {"index": 1, "x": -0.6625, "y": 1.025, "z": 3.6375, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -60.0, "max_pitch": 60.0}
   ],
   "engine": {"type": "wheel", "acceleration": 0.012, "max_forward_speed": 0.98, "max_reverse_speed": 0.7, "friction": 0.82, "steering_speed": 0.05, "energy_cost_rate": 64},
   "third_person_camera": {"x": 0.0, "y": 1.0, "z": -5.0},
@@ -27,9 +27,7 @@
     {"part": "main_engine", "x": 1.1563, "y": 2.375, "z": -0.6563, "half_width": 0.15625, "half_height": 0.5, "half_depth": 2.7188},
     {"part": "main_engine", "x": -1.1563, "y": 2.375, "z": -0.6563, "half_width": 0.15625, "half_height": 0.5, "half_depth": 2.7188}
   ],
-  "weapons": [
-    {"weapon": "jeg:combat_pistol", "ammo": "jeg:pistol_ammo", "energy_cost": 0, "guided": false, "seat": 0}
-  ],
+  "weapons": [],
   "destroy": {"explodes": false, "explosion_power": 0.0},
   "armor": {
     "fallback": {"rating": 2.0, "undermatch_multiplier": 0.28, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.18, "part_damage_multiplier": 1.0},
