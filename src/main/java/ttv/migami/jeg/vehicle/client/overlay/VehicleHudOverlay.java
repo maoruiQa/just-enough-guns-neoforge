@@ -108,11 +108,14 @@ public final class VehicleHudOverlay {
         }
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
-        if (focusedSight) {
+        renderSpeedIndicator(guiGraphics, minecraft, vehicle);
+        renderReloadStatusOverlay(guiGraphics, minecraft, vehicle);
+        boolean showCompactVehicleInfo = !focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT;
+        if (!showCompactVehicleInfo) {
             return;
         }
         int width = guiGraphics.guiWidth();
-        int y = guiGraphics.guiHeight() - 58;
+        int y = guiGraphics.guiHeight() - 80;
         float healthRatio = vehicle.maxVehicleHealth() <= 0.0F ? 0.0F : Mth.clamp(vehicle.vehicleHealth() / vehicle.maxVehicleHealth(), 0.0F, 1.0F);
         int barWidth = 60;
         int x = width / 2 - barWidth / 2;
@@ -131,7 +134,8 @@ public final class VehicleHudOverlay {
             guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY + 8, 0xFF8FC7FF);
             lineY += 19;
         }
-        if (!focusedSight && vehicle.hasVehicleWeapons()) {
+        boolean showWeaponInfo = vehicle.hasVehicleWeapons() && (!focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT);
+        if (showWeaponInfo) {
             ResourceLocation selectedWeaponId = vehicle.selectedVehicleWeaponId();
             if (selectedWeaponId != null) {
                 Component weaponName = Component.translatable("item." + selectedWeaponId.getNamespace() + "." + selectedWeaponId.getPath());
@@ -141,16 +145,6 @@ public final class VehicleHudOverlay {
                 renderSelectedWeaponIcon(guiGraphics, vehicle, width / 2 - 128, lineY - 4);
                 guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
                 lineY += 11;
-                if (vehicle.selectedVehicleWeaponReloading()) {
-                    int reloadSeconds = Math.max(1, Math.ceilDiv(vehicle.selectedVehicleWeaponReloadTicks(), 20));
-                    Component reload = Component.literal(Component.translatable("subtitle.jeg.reload").getString() + " " + reloadSeconds + "s");
-                    guiGraphics.drawString(minecraft.font, reload, (width - minecraft.font.width(reload)) / 2, lineY, 0xFFFFAA55);
-                    lineY += 11;
-                } else if (canManualReloadPrompt(vehicle)) {
-                    Component prompt = Component.literal("Press " + KeyBindings.RELOAD.getTranslatedKeyMessage().getString() + " to reload");
-                    guiGraphics.drawString(minecraft.font, prompt, (width - minecraft.font.width(prompt)) / 2, lineY, 0xFFB8E0FF);
-                    lineY += 11;
-                }
                 if (vehicle.isSelectedVehicleWeaponGuided()) {
                     boolean seeking = VehicleClientState.isRidingVehicle()
                             && VehicleClientState.vehicleId() == vehicle.getId()
@@ -279,13 +273,41 @@ public final class VehicleHudOverlay {
     }
 
     private static boolean canManualReloadPrompt(VehicleEntity vehicle) {
-        return vehicleUsesLoadedAmmo(vehicle)
-                && vehicle.selectedVehicleWeaponAmmo() > 0
-                && vehicle.selectedVehicleWeaponAmmo() < vehicle.selectedVehicleWeaponReserveAmmo() + vehicle.selectedVehicleWeaponAmmo();
+        return vehicle.canReloadSelectedVehicleWeapon() && vehicle.selectedVehicleWeaponAmmo() < vehicle.selectedVehicleWeaponMagazineSize();
     }
 
     private static boolean showDecoyStatus(VehicleEntity vehicle) {
         return vehicle.hasBuiltInDecoy() || vehicle.vehicleFlareAmmo() > 0 || vehicle.vehicleDecoyCooldown() > 0;
+    }
+
+    private static int vehicleSpeedKmh(VehicleEntity vehicle) {
+        return (int) Math.round(Math.sqrt(vehicle.distanceToSqr(vehicle.xOld, vehicle.getY(), vehicle.zOld)) * 72.0D);
+    }
+
+    private static void renderReloadStatusOverlay(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (!vehicle.hasVehicleWeapons()) {
+            return;
+        }
+        int x = guiGraphics.guiWidth() / 2;
+        int y = guiGraphics.guiHeight() - 36;
+        if (vehicle.selectedVehicleWeaponReloading()) {
+            int reloadSeconds = Math.max(1, Math.ceilDiv(vehicle.selectedVehicleWeaponReloadTicks(), 20));
+            Component reload = Component.literal(Component.translatable("subtitle.jeg.reload").getString() + " " + reloadSeconds + "s");
+            guiGraphics.drawString(minecraft.font, reload, x - minecraft.font.width(reload) / 2, y, 0xFFFFAA55);
+            return;
+        }
+        if (!canManualReloadPrompt(vehicle)) {
+            return;
+        }
+        Component prompt = Component.literal("Press " + KeyBindings.RELOAD.getTranslatedKeyMessage().getString() + " to reload");
+        guiGraphics.drawString(minecraft.font, prompt, x - minecraft.font.width(prompt) / 2, y, 0xFFB8E0FF);
+    }
+
+    private static void renderSpeedIndicator(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        Component speed = Component.literal(vehicleSpeedKmh(vehicle) + " km/h");
+        int x = guiGraphics.guiWidth() - minecraft.font.width(speed) - 16;
+        int y = 16;
+        guiGraphics.drawString(minecraft.font, speed, x, y, 0xFF66FF00);
     }
 
     private static void blitWeaponIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y) {
@@ -321,8 +343,7 @@ public final class VehicleHudOverlay {
 
     private static ResourceLocation reticleTexture(VehicleEntity vehicle) {
         String vehiclePath = vehicle.vehicleDataId().getPath();
-        ResourceLocation selectedWeaponId = vehicle.selectedVehicleWeaponId();
-        String weaponPath = selectedWeaponId == null ? "" : selectedWeaponId.getPath();
+        String weaponPath = vehicle.selectedVehicleWeaponId() == null ? "" : vehicle.selectedVehicleWeaponId().getPath();
         boolean zooming = VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
@@ -363,12 +384,11 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderLandVehicleStatus(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+        boolean focusedSight = isFocusedVehicleSight(vehicle);
+        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.LAND && !focusedSight) {
             return;
         }
 
-        String vehiclePath = vehicle.vehicleDataId().getPath();
-        boolean focusedSight = isFocusedVehicleSight(vehicle);
         if (focusedSight && hasApcFocusedSightFrame(vehicle)) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
@@ -378,6 +398,10 @@ public final class VehicleHudOverlay {
             int compassOffset = Mth.floor(128.0F + 64.0F / 45.0F * minecraft.player.getYRot());
             guiGraphics.blit(COMPASS, screenWidth / 2 - 128, 10, compassOffset, 0.0F, 256, 16, 1024, 32);
             guiGraphics.blit(ROLL_INDICATOR, screenWidth / 2 - 8, 30, 0.0F, 0.0F, 16, 16, 16, 16);
+        }
+
+        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+            return;
         }
 
         int x = guiGraphics.guiWidth() / 2 + 96;
@@ -390,10 +414,6 @@ public final class VehicleHudOverlay {
         if (vehicle.isTurretDamaged()) {
             guiGraphics.fill(guiGraphics.guiWidth() / 2 + 112, guiGraphics.guiHeight() - 71, guiGraphics.guiWidth() / 2 + 113, guiGraphics.guiHeight() - 55, 0xFFFF4033);
         }
-
-        int speed = (int) Math.round(Math.sqrt(vehicle.distanceToSqr(vehicle.xOld, vehicle.getY(), vehicle.zOld)) * 72.0D);
-        Component speedText = Component.literal(speed + " km/h");
-        guiGraphics.drawString(minecraft.font, speedText, x + 64, guiGraphics.guiHeight() / 2 - 48, 0xFF66FF00);
     }
 
     private static boolean hasApcWeaponHud(VehicleEntity vehicle) {
@@ -401,7 +421,7 @@ public final class VehicleHudOverlay {
     }
 
     private static boolean hasWeaponSelectorHud(VehicleEntity vehicle) {
-        return vehicle.hasVehicleWeapons() && (hasApcWeaponHud(vehicle) || vehicle.vehicleData().defaults().weapons().size() > 1);
+        return vehicle.hasVehicleWeapons() && (hasApcWeaponHud(vehicle) || vehicle.vehicleData().defaults().weapons().size() > 1 || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT);
     }
 
     private static boolean hasApcFocusedSightFrame(VehicleEntity vehicle) {

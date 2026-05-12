@@ -180,7 +180,10 @@ public final class VehicleDataManager {
         return new CameraPos(
                 getDouble(object, "x", fallback.x()),
                 getDouble(object, "y", fallback.y()),
-                getDouble(object, "z", fallback.z())
+                getDouble(object, "z", fallback.z()),
+                getDouble(object, "zoom_x", fallback.zoomX()),
+                getDouble(object, "zoom_y", fallback.zoomY()),
+                getDouble(object, "zoom_z", fallback.zoomZ())
         );
     }
 
@@ -223,7 +226,8 @@ public final class VehicleDataManager {
                     (float) getDouble(seat, "max_yaw", fallbackSeat.maxYaw()),
                     (float) getDouble(seat, "sensitivity_x", fallbackSeat.sensitivityX()),
                     (float) getDouble(seat, "sensitivity_y", fallbackSeat.sensitivityY()),
-                    (float) getDouble(seat, "sensitivity_z", fallbackSeat.sensitivityZ())
+                    (float) getDouble(seat, "sensitivity_z", fallbackSeat.sensitivityZ()),
+                    parseCamera(getObject(seat, "zoom_camera"), fallbackSeat.zoomCamera())
             ));
         }
         seats.sort(Comparator.comparingInt(SeatInfo::index));

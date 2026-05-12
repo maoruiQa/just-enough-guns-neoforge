@@ -344,7 +344,7 @@ public final class GunClientEvents {
         }
 
         // R key reload (server-authoritative). Keep swap-hands reload as fallback/compat.
-        if (KeyBindings.RELOAD.consumeClick()) {
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             } else if (heldOff.getItem() instanceof GunItem) {

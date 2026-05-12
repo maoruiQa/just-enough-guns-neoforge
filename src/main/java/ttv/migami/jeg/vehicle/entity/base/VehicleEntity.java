@@ -89,6 +89,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
     private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
     private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.85D;
+    private static final double SPEEDBOAT_COLLISION_FORWARD_SHIFT = 0.375D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
@@ -445,11 +446,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public double collisionCenterOffsetZ() {
-        return this.isTruckVehicle() ? TRUCK_COLLISION_FORWARD_SHIFT : 0.0D;
+        if (this.isTruckVehicle()) {
+            return TRUCK_COLLISION_FORWARD_SHIFT;
+        }
+        if (this.isSpeedboatVehicle()) {
+            return SPEEDBOAT_COLLISION_FORWARD_SHIFT;
+        }
+        return 0.0D;
     }
 
     public boolean hasFocusedDriverSightHud() {
-        if (!this.hasVehicleWeapons() || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+        if (!this.hasVehicleWeapons()) {
             return false;
         }
         var seats = this.vehicleData().defaults().seats();
@@ -480,12 +487,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
-        if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
+        boolean canUseSelectedWeapon = selectedWeapon != null && this.canUseSelectedWeapon(player, selectedWeapon);
+        if (selectedWeapon != null && !this.isFreeLookInput(input) && canUseSelectedWeapon) {
             this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
-            if (input.reload()) {
-                this.startWeaponReload();
-            }
+        }
+        if (input.reload() && canUseSelectedWeapon) {
+            this.startWeaponReload();
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -576,7 +584,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         } else if (this.shouldRunClientPrediction()) {
-            this.tickClientPredictedLandMovement();
+            if (this.vehicleData().defaults().vehicleType() == VehicleType.BOAT) {
+                this.tickClientPredictedBoatMovement();
+            } else {
+                this.tickClientPredictedLandMovement();
+            }
         }
     }
 
@@ -602,15 +614,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickDriverStateSync() {
-        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || this.vehicleData().defaults().vehicleType() != VehicleType.LAND) {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || (type != VehicleType.LAND && type != VehicleType.BOAT)) {
             return;
         }
-        if (this.getControllingPassenger() instanceof ServerPlayer || this.shouldSyncUnmannedLandState()) {
+        if (this.getControllingPassenger() instanceof ServerPlayer || this.shouldSyncUnmannedPredictedState()) {
             NetworkHandler.broadcastVehicleState(this);
         }
     }
 
-    private boolean shouldSyncUnmannedLandState() {
+    private boolean shouldSyncUnmannedPredictedState() {
         if (this.getControllingPassenger() != null) {
             return false;
         }
@@ -705,16 +718,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
-        if (this.level().isClientSide && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
-            return;
+        if (this.level().isClientSide) {
+            VehicleType type = this.vehicleData().defaults().vehicleType();
+            if (type == VehicleType.LAND || type == VehicleType.BOAT) {
+                return;
+            }
         }
         super.lerpTo(x, y, z, yRot, xRot, steps);
     }
 
     @Override
     public void lerpMotion(double x, double y, double z) {
-        if (this.level().isClientSide && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
-            return;
+        if (this.level().isClientSide) {
+            VehicleType type = this.vehicleData().defaults().vehicleType();
+            if (type == VehicleType.LAND || type == VehicleType.BOAT) {
+                return;
+            }
         }
         super.lerpMotion(x, y, z);
     }
@@ -1225,6 +1244,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
+    public boolean canReloadSelectedVehicleWeapon() {
+        return this.canReloadSelectedWeapon();
+    }
+
+    public int selectedVehicleWeaponMagazineSize() {
+        return this.selectedWeaponMagazineSize();
+    }
+
     private boolean shouldAutoReloadSelectedWeapon() {
         if (!this.usesSharedVehicleReloadSystem()) {
             return false;
@@ -1383,8 +1410,28 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return passenger.getEyePosition(partialTick);
         }
         SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+        Vec3 articulatedZoomPosition = this.articulatedZoomCameraPosition(seat, partialTick);
+        if (articulatedZoomPosition != null) {
+            return articulatedZoomPosition;
+        }
         Vec3 offset = this.seatOffset(seat, passenger.getEyeHeight(), partialTick);
         return this.interpolatedVehiclePosition(partialTick).add(offset);
+    }
+
+    @Nullable
+    private Vec3 articulatedZoomCameraPosition(SeatInfo seat, float partialTick) {
+        if (!this.usesArticulatedSeatTransform(seat)
+                || !this.level().isClientSide
+                || !VehicleClientState.isRidingVehicle()
+                || VehicleClientState.vehicleId() != this.getId()
+                || !VehicleClientState.zoomDown()) {
+            return null;
+        }
+        var zoomCamera = seat.zoomCamera();
+        if (zoomCamera.x() == 0.0D && zoomCamera.y() == 0.0D && zoomCamera.z() == 0.0D) {
+            return null;
+        }
+        return this.articulatedBarrelPosition(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
     }
 
     public Vec3 cameraRotationFor(Entity passenger, float partialTick) {
@@ -1483,7 +1530,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (this.vehicleData().defaults().vehicleType() == VehicleType.BOAT) {
-            this.tickServerBoatMovement(engine);
+            this.tickBoatMovement(engine, true);
             this.tickEngineSound();
             return;
         }
@@ -1547,6 +1594,89 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         this.tickBasicLandMovement(engine, velocity, forwardAxis, strafeAxis, forwardAxis != 0 || strafeAxis != 0, false);
+    }
+
+    private void tickClientPredictedBoatMovement() {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.BOAT) {
+            return;
+        }
+        EngineInfo engine = this.vehicleData().defaults().engine();
+        this.tickBoatMovement(engine, false);
+    }
+
+    private void tickBoatMovement(EngineInfo engine, boolean consumeEnergy) {
+        Vec3 velocity = this.getDeltaMovement();
+        int forwardAxis = this.input.forwardAxis();
+        int steeringAxis = this.steeringAxis();
+        boolean inWater = this.isInWater();
+        double mobility = this.mobilityMultiplier();
+
+        if (forwardAxis > 0) {
+            this.enginePower = Math.min(this.enginePower + engine.acceleration(), 1.0D);
+        } else if (forwardAxis < 0) {
+            this.enginePower = Math.max(this.enginePower - engine.acceleration(), -1.0D);
+        } else {
+            this.enginePower *= inWater ? 0.985D : 0.94D;
+        }
+        if (this.input.brake()) {
+            this.enginePower *= 0.72D;
+        }
+        if (steeringAxis != 0) {
+            this.enginePower *= 0.992D;
+        }
+
+        if (consumeEnergy && engine.energyCostRate() > 0) {
+            int cost = (int) Math.ceil(engine.energyCostRate() * Math.abs(this.enginePower));
+            if (cost > 0 && !this.consumeEnergy(cost)) {
+                this.enginePower *= 0.9D;
+            }
+        }
+
+        double steeringSpeed = engine.steeringSpeed() > 0.0D ? engine.steeringSpeed() : 0.12D;
+        if (steeringAxis != 0) {
+            this.wheelSteering += steeringAxis * steeringSpeed;
+        }
+        this.wheelSteering *= inWater ? 0.84D : 0.72D;
+
+        Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
+        double horizontalSpeed = horizontal.length();
+        if (Math.abs(this.wheelSteering) > 1.0E-4D) {
+            double yawDelta = Math.max(8.0D, horizontalSpeed * 16.0D) * this.wheelSteering * (this.enginePower >= 0.0D ? 1.0D : -0.7D);
+            float previousYaw = this.getYRot();
+            this.yRotO = previousYaw;
+            this.setYRot(previousYaw + (float) yawDelta);
+            this.updateVehicleBoundingBox();
+        }
+
+        float yaw = this.getYRot();
+        double yawRadians = Math.toRadians(yaw);
+        Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+        double targetSpeed = (this.enginePower >= 0.0D ? engine.maxForwardSpeed() : engine.maxReverseSpeed()) * mobility;
+        double thrustScale = inWater ? 0.11D : 0.05D;
+        velocity = velocity.add(forward.scale(thrustScale * targetSpeed * this.enginePower));
+
+        horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
+        double maxSpeed = (this.enginePower < 0.0D ? engine.maxReverseSpeed() : engine.maxForwardSpeed()) * mobility * (inWater ? 1.0D : 0.45D);
+        if (horizontal.length() > maxSpeed) {
+            horizontal = horizontal.normalize().scale(maxSpeed);
+            velocity = new Vec3(horizontal.x, velocity.y, horizontal.z);
+        }
+        if (inWater) {
+            velocity = new Vec3(velocity.x * engine.friction(), Math.min(0.04D, velocity.y + 0.018D), velocity.z * engine.friction());
+        } else {
+            velocity = velocity.add(0.0D, -GRAVITY, 0.0D).multiply(0.94D, 0.98D, 0.94D);
+        }
+
+        Vec3 before = this.position();
+        this.setDeltaMovement(velocity);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        Vec3 moved = this.position().subtract(before);
+        double nextY = inWater ? Math.min(0.04D, moved.y + 0.008D) : moved.y * 0.98D;
+        this.setDeltaMovement(moved.x * 0.985D, nextY, moved.z * 0.985D);
+        if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
+            this.hurtMarked = true;
+            this.hasImpulse = true;
+        }
     }
 
     private boolean hasEngineEnergy(EngineInfo engine, boolean active) {
@@ -1731,38 +1861,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickServerBoatMovement(EngineInfo engine) {
-        Vec3 velocity = this.getDeltaMovement();
-        int forwardAxis = this.input.forwardAxis();
-        int strafeAxis = this.input.strafeAxis();
-        boolean inWater = this.isInWater();
-        boolean hasThrottle = this.consumeEngineEnergy(engine, forwardAxis != 0 || strafeAxis != 0);
-        double mobility = this.mobilityMultiplier();
-
-        if (hasThrottle && (forwardAxis != 0 || strafeAxis != 0)) {
-            float yaw = this.getYRot();
-            double yawRadians = Math.toRadians(yaw);
-            Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
-            Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
-            Vec3 desired = forward.scale(forwardAxis).add(right.scale(strafeAxis * 0.45D));
-            if (desired.lengthSqr() > 1.0E-4D) {
-                velocity = velocity.add(desired.normalize().scale(engine.acceleration() * mobility * (inWater ? 1.0D : 0.25D)));
-            }
-        }
-
-        double maxSpeed = engine.maxForwardSpeed() * mobility * (inWater ? 1.0D : 0.35D);
-        Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
-        if (horizontal.length() > maxSpeed) {
-            horizontal = horizontal.normalize().scale(maxSpeed);
-            velocity = new Vec3(horizontal.x, velocity.y, horizontal.z);
-        }
-        if (inWater) {
-            velocity = new Vec3(velocity.x * engine.friction(), Math.min(0.05D, velocity.y + 0.02D), velocity.z * engine.friction());
-        } else {
-            velocity = velocity.add(0.0D, -GRAVITY, 0.0D).multiply(0.92D, 0.98D, 0.92D);
-        }
-
-        this.setDeltaMovement(velocity);
-        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.tickBoatMovement(engine, true);
     }
 
     private double mobilityMultiplier() {
@@ -1779,6 +1878,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void applyPassengerYaw() {
         Entity passenger = this.getControllingPassenger();
         if (passenger == null || this.isFreeLookInputDown() || this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
+            return;
+        }
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex >= 0 && this.usesArticulatedSeatTransform(this.seatForPassenger(passenger, fallbackIndex))) {
             return;
         }
         this.setYRot(passenger.getYRot());
