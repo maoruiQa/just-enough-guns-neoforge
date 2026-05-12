@@ -748,7 +748,11 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         int mobZ = Mth.floor(this.shooter.getZ());
         int targetY = Mth.floor(target.getY());
         this.updateZbbFrontBlock(target);
-        if (this.getRouteObstacleType(level, target, false, this.getHorizontalDirectionTo(target.position().subtract(this.shooter.position()))) == RouteObstacleType.UNBREAKABLE) {
+        Direction direction = this.getHorizontalDirectionTo(target.position().subtract(this.shooter.position()));
+        if (direction == null) {
+            return false;
+        }
+        if (this.getRouteObstacleType(level, target, false, direction) == RouteObstacleType.UNBREAKABLE) {
             return false;
         }
         this.zbbBridgeBelowMobPos.set(mobX, mobY - 1, mobZ);
