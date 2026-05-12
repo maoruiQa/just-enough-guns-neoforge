@@ -109,7 +109,6 @@ public final class VehicleHudOverlay {
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
         renderSpeedIndicator(guiGraphics, minecraft, vehicle);
-        renderReloadStatusOverlay(guiGraphics, minecraft, vehicle);
         boolean showCompactVehicleInfo = !focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT;
         if (!showCompactVehicleInfo) {
             return;
@@ -145,6 +144,12 @@ public final class VehicleHudOverlay {
                 renderSelectedWeaponIcon(guiGraphics, vehicle, width / 2 - 128, lineY - 4);
                 guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
                 lineY += 11;
+                if (vehicle.selectedVehicleWeaponReloading()) {
+                    int reloadSeconds = Math.max(1, Math.ceilDiv(vehicle.selectedVehicleWeaponReloadTicks(), 20));
+                    Component reload = Component.literal(Component.translatable("subtitle.jeg.reload").getString() + " " + reloadSeconds + "s");
+                    guiGraphics.drawString(minecraft.font, reload, (width - minecraft.font.width(reload)) / 2, lineY, 0xFFFFAA55);
+                    lineY += 11;
+                }
                 if (vehicle.isSelectedVehicleWeaponGuided()) {
                     boolean seeking = VehicleClientState.isRidingVehicle()
                             && VehicleClientState.vehicleId() == vehicle.getId()
@@ -282,25 +287,6 @@ public final class VehicleHudOverlay {
 
     private static int vehicleSpeedKmh(VehicleEntity vehicle) {
         return (int) Math.round(Math.sqrt(vehicle.distanceToSqr(vehicle.xOld, vehicle.getY(), vehicle.zOld)) * 72.0D);
-    }
-
-    private static void renderReloadStatusOverlay(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        if (!vehicle.hasVehicleWeapons()) {
-            return;
-        }
-        int x = guiGraphics.guiWidth() / 2;
-        int y = guiGraphics.guiHeight() - 36;
-        if (vehicle.selectedVehicleWeaponReloading()) {
-            int reloadSeconds = Math.max(1, Math.ceilDiv(vehicle.selectedVehicleWeaponReloadTicks(), 20));
-            Component reload = Component.literal(Component.translatable("subtitle.jeg.reload").getString() + " " + reloadSeconds + "s");
-            guiGraphics.drawString(minecraft.font, reload, x - minecraft.font.width(reload) / 2, y, 0xFFFFAA55);
-            return;
-        }
-        if (!canManualReloadPrompt(vehicle)) {
-            return;
-        }
-        Component prompt = Component.literal("Press " + KeyBindings.RELOAD.getTranslatedKeyMessage().getString() + " to reload");
-        guiGraphics.drawString(minecraft.font, prompt, x - minecraft.font.width(prompt) / 2, y, 0xFFB8E0FF);
     }
 
     private static void renderSpeedIndicator(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
