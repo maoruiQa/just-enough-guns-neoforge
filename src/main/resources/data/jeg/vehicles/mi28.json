@@ -24,7 +24,8 @@
   ],
   "weapons": [
     {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0},
-    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true, "seat": 1}
+    {"weapon": "jeg:vehicle_20mm_cannon", "ammo": "jeg:small_shell", "energy_cost": 2, "guided": false, "seat": 0},
+    {"weapon": "jeg:vehicle_bmp2_missile", "ammo": "jeg:missile", "energy_cost": 2, "guided": true, "seat": 0}
   ],
   "destroy": {"explodes": true, "explosion_power": 3.0},
   "seek": {"range": 96.0, "angle": 12.0, "warns_target": true},

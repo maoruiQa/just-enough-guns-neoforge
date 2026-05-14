@@ -783,7 +783,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void tickDriverStateSync() {
         VehicleType type = this.vehicleData().defaults().vehicleType();
-        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || (type != VehicleType.LAND && type != VehicleType.BOAT)) {
+        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || (type != VehicleType.LAND && type != VehicleType.BOAT && type != VehicleType.HELICOPTER)) {
             return;
         }
         if (this.getControllingPassenger() instanceof ServerPlayer || this.shouldSyncUnmannedPredictedState()) {
@@ -901,7 +901,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
         if (this.level().isClientSide) {
             VehicleType type = this.vehicleData().defaults().vehicleType();
-            if (type == VehicleType.LAND || type == VehicleType.BOAT) {
+            if (type == VehicleType.LAND || type == VehicleType.BOAT || type == VehicleType.HELICOPTER) {
                 return;
             }
         }
@@ -912,7 +912,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     public void lerpMotion(double x, double y, double z) {
         if (this.level().isClientSide) {
             VehicleType type = this.vehicleData().defaults().vehicleType();
-            if (type == VehicleType.LAND || type == VehicleType.BOAT) {
+            if (type == VehicleType.LAND || type == VehicleType.BOAT || type == VehicleType.HELICOPTER) {
                 return;
             }
         }
@@ -2281,32 +2281,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.setXRot(this.getXRot() * 0.98F);
                 velocity = velocity.multiply(0.96D, 0.98D, 0.96D);
             } else {
-                if (!back) {
-                    if (this.input.right()) {
-                        this.holdTick++;
-                        this.wheelSteering -= 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
-                    } else if (this.input.left()) {
-                        this.holdTick++;
-                        this.wheelSteering += 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
-                    } else {
-                        this.holdTick = 0;
-                    }
+                if (this.input.right()) {
+                    this.holdTick++;
+                    this.wheelSteering -= 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
+                } else if (this.input.left()) {
+                    this.holdTick++;
+                    this.wheelSteering += 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
+                } else {
+                    this.holdTick = 0;
+                }
 
-                    if (!this.isFreeLookInputDown()) {
-                        float mousePitch = this.input.mouseY();
-                        float mouseYaw = this.input.mouseX();
-                        this.xRotO = this.getXRot();
-                        this.setXRot(Mth.clamp(this.getXRot() + (this.onGround() ? 0.0F : 1.5F) * (float) pitchSpeed * mousePitch * currentRotorSpeed, -35.0F, 25.0F));
-                        this.setRoll((float) (this.roll() - rollSpeed * (this.wheelSteering + (this.onGround() ? 0.0D : 0.25D) * mouseYaw * currentRotorSpeed)));
-                    }
-                } else if (!this.onGround()) {
+                if (!this.isFreeLookInputDown()) {
+                    float mousePitch = this.input.mouseY();
+                    float mouseYaw = this.input.mouseX();
                     this.xRotO = this.getXRot();
-                    this.setXRot(Mth.approachDegrees(this.getXRot(), 0.0F, 1.6F));
-                    this.setRoll(Mth.approachDegrees(this.roll(), 0.0F, 1.8F));
-                    velocity = velocity.multiply(0.94D, 1.0D, 0.94D).add(0.0D, -0.018D, 0.0D);
-                    if (this.level().isClientSide && pilot instanceof Player player) {
-                        player.displayClientMessage(Component.translatable("message.jeg.vehicle.press_s_to_land"), true);
-                    }
+                    this.setXRot(Mth.clamp(this.getXRot() + (this.onGround() ? 0.0F : 1.5F) * (float) pitchSpeed * mousePitch * currentRotorSpeed, -50.0F, 40.0F));
+                    this.setRoll((float) (this.roll() - rollSpeed * (this.wheelSteering + (this.onGround() ? 0.0D : 0.25D) * mouseYaw * currentRotorSpeed)));
                 }
 
                 float mouseYaw = this.input.mouseX();
@@ -2339,7 +2329,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                         this.enginePower = Math.max(this.enginePower - 0.001D * powerReduce * Math.min(this.holdPowerTick, 5), this.onGround() ? 0.0D : 0.025D / liftSpeed);
                     } else if (back) {
                         this.holdPowerTick++;
-                        this.enginePower = Math.max(this.enginePower - 0.001D * powerReduce * Math.min(this.holdPowerTick, 5), this.onGround() ? 0.0D : 0.058D / liftSpeed);
+                        this.enginePower = Math.max(this.enginePower - 0.001D * powerReduce * Math.min(this.holdPowerTick, 5), this.onGround() ? 0.0D : 0.04D / liftSpeed);
                     }
                 }
                 if (altitudeLimited && this.engineStartOver) {
