@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "all": "jeg:block/vehicle_assembling_table"
+    "bottom": "minecraft:block/oak_planks",
+    "side": "minecraft:block/smithing_table_side",
+    "top": "minecraft:block/smithing_table_top"
   }
 }
