@@ -1,6 +1,7 @@
 package ttv.migami.jeg.vehicle.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,7 +28,8 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId()) {
             return;
         }
-        double configuredDistance = Math.abs(vehicle.vehicleData().defaults().thirdPersonCamera().z());
+        CameraPos camera = thirdPersonCameraFor(player, vehicle);
+        double configuredDistance = Math.abs(camera.z());
         if (configuredDistance > 0.0D) {
             event.setDistance((float) configuredDistance);
         }
@@ -42,7 +44,14 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId()) {
             return;
         }
-        CameraPos camera = vehicle.vehicleData().defaults().thirdPersonCamera();
+        float partialTick = (float) event.getPartialTick();
+        if (Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON) {
+            return;
+        }
+        if (vehicle.usesVehiclePoseTransform()) {
+            return;
+        }
+        CameraPos camera = thirdPersonCameraFor(player, vehicle);
         if (camera.x() != 0.0D || camera.y() != 0.0D) {
             event.getCamera().move(0.0F, (float) camera.y(), (float) -camera.x());
         }
@@ -72,5 +81,16 @@ public final class VehicleCameraHandler {
                 || vehicle.shouldBanPassengerHand(player))) {
             event.setCanceled(true);
         }
+    }
+
+    private static CameraPos thirdPersonCameraFor(LocalPlayer player, VehicleEntity vehicle) {
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex >= 0 && seatIndex < vehicle.vehicleData().defaults().seats().size()) {
+            CameraPos seatCamera = vehicle.vehicleData().defaults().seats().get(seatIndex).zoomCamera();
+            if (seatCamera.useAircraftCamera()) {
+                return new CameraPos(seatCamera.aircraftX(), seatCamera.aircraftY(), seatCamera.aircraftZ());
+            }
+        }
+        return vehicle.vehicleData().defaults().thirdPersonCamera();
     }
 }

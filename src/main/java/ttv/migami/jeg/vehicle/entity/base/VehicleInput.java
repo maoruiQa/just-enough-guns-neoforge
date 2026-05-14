@@ -15,9 +15,11 @@ public record VehicleInput(
         boolean previousWeapon,
         int weaponSlot,
         boolean seekTarget,
-        boolean deployDecoy
+        boolean deployDecoy,
+        float mouseX,
+        float mouseY
 ) {
-    public static final VehicleInput EMPTY = new VehicleInput(false, false, false, false, false, false, false, false, false, false, false, false, -1, false, false);
+    public static final VehicleInput EMPTY = new VehicleInput(false, false, false, false, false, false, false, false, false, false, false, false, -1, false, false, 0.0F, 0.0F);
 
     public int forwardAxis() {
         return (this.forward ? 1 : 0) - (this.backward ? 1 : 0);

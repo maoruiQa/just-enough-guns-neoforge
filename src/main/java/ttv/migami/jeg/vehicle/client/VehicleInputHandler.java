@@ -34,8 +34,13 @@ public final class VehicleInputHandler {
             return;
         }
 
+        VehicleClientState.setMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
+        boolean aircraftControls = isAircraftDriver(player, vehicle);
+        if (aircraftControls) {
+            VehicleClientState.updateAircraftMouse(0.1F, 0.5F, 0.35F, false, freeLook);
+        }
         boolean reload = KeyBindings.RELOAD.consumeClick();
         int weaponSlot = -1;
         for (int index = 0; index < minecraft.options.keyHotbarSlots.length; index++) {
@@ -95,7 +100,9 @@ public final class VehicleInputHandler {
                 KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick(),
                 weaponSlot,
                 seek,
-                KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick()
+                KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick(),
+                aircraftControls && !freeLook ? VehicleClientState.mouseLerpX() : 0.0F,
+                aircraftControls && !freeLook ? VehicleClientState.mouseLerpY() : 0.0F
         );
         vehicle.processClientInput(player, input);
         minecraft.getConnection().send(new VehicleInputPayload(
@@ -114,7 +121,9 @@ public final class VehicleInputHandler {
                 input.previousWeapon(),
                 input.weaponSlot(),
                 input.seekTarget(),
-                input.deployDecoy()
+                input.deployDecoy(),
+                input.mouseX(),
+                input.mouseY()
         ));
     }
 
@@ -133,6 +142,13 @@ public final class VehicleInputHandler {
         if (minecraft.options.getCameraType().isFirstPerson()) {
             clampSeatView(player, vehicle, seat);
         }
+        float deltaX = VehicleClientState.mouseDeltaX();
+        float deltaY = VehicleClientState.mouseDeltaY();
+        if (deltaX == 0.0F && deltaY == 0.0F) {
+            deltaX = Mth.wrapDegrees(player.getYRot() - player.yRotO);
+            deltaY = player.getXRot() - player.xRotO;
+        }
+        VehicleClientState.setMouseDelta(deltaX, deltaY);
         float base = (float) event.getMouseSensitivity();
         float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
         if (VehicleClientState.isRidingVehicle()
@@ -144,22 +160,42 @@ public final class VehicleInputHandler {
     }
 
     private static void clampSeatView(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
+        float targetYaw = aircraftBoundYaw(player, vehicle, seat);
+        float targetPitch = aircraftBoundPitch(player, vehicle, seat);
+        player.setYRot(targetYaw);
+        player.yRotO = targetYaw;
+        player.yHeadRot = targetYaw;
+        player.yHeadRotO = targetYaw;
+        player.yBodyRot = targetYaw;
+        player.yBodyRotO = targetYaw;
+        player.setXRot(targetPitch);
+        player.xRotO = targetPitch;
+    }
+
+    private static float aircraftBoundYaw(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
+        if (isAircraftDriver(player, vehicle) && seat.sensitivityY() == 0.0F && seat.sensitivityZ() == 0.0F && !VehicleClientState.freeLookDown()) {
+            return vehicle.getYRot();
+        }
         float relativeYaw = Mth.wrapDegrees(player.getYRot() - vehicle.getYRot());
         float clampedYaw = Mth.clamp(relativeYaw, seat.minYaw(), seat.maxYaw());
-        if (clampedYaw != relativeYaw) {
-            float worldYaw = vehicle.getYRot() + clampedYaw;
-            player.setYRot(worldYaw);
-            player.yRotO = worldYaw;
-            player.yHeadRot = worldYaw;
-            player.yHeadRotO = worldYaw;
-            player.yBodyRot = worldYaw;
-            player.yBodyRotO = worldYaw;
+        return vehicle.getYRot() + clampedYaw;
+    }
+
+    private static float aircraftBoundPitch(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
+        if (isAircraftDriver(player, vehicle) && seat.sensitivityY() == 0.0F && seat.sensitivityZ() == 0.0F && !VehicleClientState.freeLookDown()) {
+            return Mth.clamp(vehicle.getXRot(), seat.minPitch(), seat.maxPitch());
         }
-        float clampedPitch = Mth.clamp(player.getXRot(), seat.minPitch(), seat.maxPitch());
-        if (clampedPitch != player.getXRot()) {
-            player.setXRot(clampedPitch);
-            player.xRotO = clampedPitch;
+        return Mth.clamp(player.getXRot(), seat.minPitch(), seat.maxPitch());
+    }
+
+    private static boolean isAircraftDriver(LocalPlayer player, VehicleEntity vehicle) {
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
+            return false;
         }
+        var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
+        var type = vehicle.vehicleData().defaults().vehicleType();
+        return seat.driver() && (type == ttv.migami.jeg.vehicle.data.subdata.VehicleType.HELICOPTER || type == ttv.migami.jeg.vehicle.data.subdata.VehicleType.AIRCRAFT);
     }
 
     @SubscribeEvent

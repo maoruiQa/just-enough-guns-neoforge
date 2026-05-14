@@ -227,7 +227,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> AH6 = REGISTER.register(
             "ah6",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("ah6")), MobCategory.MISC)
-                    .sized(2.2F, 1.25F)
+                    .sized(3.0F, 2.8F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("ah6")
@@ -254,7 +254,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> MI28 = REGISTER.register(
             "mi28",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("mi28")), MobCategory.MISC)
-                    .sized(2.4F, 1.35F)
+                    .sized(4.2F, 4.2F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("mi28")

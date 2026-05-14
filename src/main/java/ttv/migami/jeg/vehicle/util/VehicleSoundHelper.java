@@ -65,4 +65,13 @@ public final class VehicleSoundHelper {
         DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(ENGINE_SOUNDS.get(vehicle.vehicleDataId().getPath()));
         return sound == null ? null : sound.get();
     }
+
+    public static SoundEvent engineStartSound(VehicleEntity vehicle) {
+        ResourceLocation configured = vehicle.vehicleData().defaults().engine().engineStartSound();
+        DeferredHolder<SoundEvent, SoundEvent> sound = configured == null ? null : ModSounds.ALL.get(configured);
+        if (sound != null) {
+            return sound.get();
+        }
+        return engineSound(vehicle);
+    }
 }

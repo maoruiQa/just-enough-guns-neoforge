@@ -388,6 +388,7 @@
   "message.jeg.vehicle.repaired": "Vehicle repaired",
   "message.jeg.vehicle.occupied": "Cannot recover an occupied vehicle",
   "message.jeg.vehicle.lock_warning": "Missile lock warning",
+  "message.jeg.vehicle.press_s_to_land": "Hold S to land",
   "tooltip.jeg.vehicle_container.empty": "No vehicle loaded",
   "tooltip.jeg.vehicle_container.vehicle": "Contains: %s",
   "tooltip.jeg.vehicle_container.health": "Hull: %s",

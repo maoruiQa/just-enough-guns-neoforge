@@ -3,6 +3,8 @@ package ttv.migami.jeg.vehicle.entity.base;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -35,10 +37,14 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4d;
+import org.joml.Vector4d;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -61,6 +67,7 @@ import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
@@ -88,8 +95,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float TRUCK_COLLISION_LENGTH_SCALE = 3.2F;
     private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
     private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
+    private static final float AH6_COLLISION_LENGTH_SCALE = 4.2F;
+    private static final float MI28_COLLISION_LENGTH_SCALE = 4.2F;
     private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.85D;
     private static final double SPEEDBOAT_COLLISION_FORWARD_SHIFT = 0.375D;
+    private static final double AH6_COLLISION_CENTER_SHIFT = -1.0D;
+    private static final double MI28_COLLISION_CENTER_SHIFT = -3.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
@@ -109,9 +120,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_SUB_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_TURRET_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> DATA_TURRET_YAW = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_TURRET_PITCH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_PROPELLER_ROT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_PROPELLER_SPEED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_ROLL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final int DECOY_COOLDOWN_TICKS = 60;
@@ -136,6 +151,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_LEFT_WHEEL_HEALTH = "LeftWheelHealth";
     private static final String TAG_RIGHT_WHEEL_HEALTH = "RightWheelHealth";
     private static final String TAG_ENGINE_HEALTH = "EngineHealth";
+    private static final String TAG_SUB_ENGINE_HEALTH = "SubEngineHealth";
     private static final String TAG_TURRET_HEALTH = "TurretHealth";
     private static final String GECKO_CONTROLLER = "Vehicle";
     private static final Map<String, String> VEHICLE_IDLE_ANIMATIONS = Map.of(
@@ -150,6 +166,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
+    private static final double HELICOPTER_BLOCK_COLLISION_MIN_SPEED = 0.3D;
+    private static final int HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS = 4;
+    private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
+    private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
@@ -174,12 +194,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private double enginePower;
     private float turretYawO;
     private float turretPitchO;
+    private float propellerRotO;
+    private float rollO;
+    private int holdTick;
+    private int holdPowerTick;
+    private boolean engineStart;
+    private boolean engineStartOver;
+    private float destroyRot;
     private int dismountLerpSuppressionTicks;
     private UUID recentDismountSyncPlayerId;
     private int recentDismountSyncTicks;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
+    private float subEngineHealth = PART_MAX_HEALTH;
     private float turretHealth = PART_MAX_HEALTH;
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
@@ -238,6 +266,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_LENGTH_SCALE;
         }
+        if (this.isAh6Vehicle()) {
+            return AH6_COLLISION_LENGTH_SCALE;
+        }
+        if (this.isMi28Vehicle()) {
+            return MI28_COLLISION_LENGTH_SCALE;
+        }
         return OTHER_VEHICLE_COLLISION_LENGTH_SCALE;
     }
 
@@ -269,9 +303,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
+        builder.define(DATA_SUB_ENGINE_DAMAGED, false);
         builder.define(DATA_TURRET_DAMAGED, false);
         builder.define(DATA_TURRET_YAW, 0.0F);
         builder.define(DATA_TURRET_PITCH, 0.0F);
+        builder.define(DATA_PROPELLER_ROT, 0.0F);
+        builder.define(DATA_PROPELLER_SPEED, 0.0F);
+        builder.define(DATA_ROLL, 0.0F);
     }
 
     public VehicleData vehicleData() {
@@ -396,6 +434,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_ENGINE_DAMAGED);
     }
 
+    public boolean isSubEngineDamaged() {
+        return this.entityData.get(DATA_SUB_ENGINE_DAMAGED);
+    }
+
     public boolean isTurretDamaged() {
         return this.entityData.get(DATA_TURRET_DAMAGED);
     }
@@ -414,6 +456,30 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public float turretPitch(float partialTick) {
         return Mth.lerp(partialTick, this.turretPitchO, this.turretPitch());
+    }
+
+    public float propellerRot() {
+        return this.entityData.get(DATA_PROPELLER_ROT);
+    }
+
+    public float propellerRot(float partialTick) {
+        return Mth.lerp(partialTick, this.propellerRotO, this.propellerRot());
+    }
+
+    public float propellerSpeed() {
+        return this.entityData.get(DATA_PROPELLER_SPEED);
+    }
+
+    public float roll() {
+        return this.entityData.get(DATA_ROLL);
+    }
+
+    public float roll(float partialTick) {
+        return Mth.lerp(partialTick, this.rollO, this.roll());
+    }
+
+    private void setRoll(float roll) {
+        this.entityData.set(DATA_ROLL, Mth.wrapDegrees(roll));
     }
 
     public boolean hasBuiltInDecoy() {
@@ -445,12 +511,26 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return "speedboat".equals(this.vehicleDataId().getPath());
     }
 
+    public boolean isAh6Vehicle() {
+        return "ah6".equals(this.vehicleDataId().getPath());
+    }
+
+    public boolean isMi28Vehicle() {
+        return "mi28".equals(this.vehicleDataId().getPath());
+    }
+
     public double collisionCenterOffsetZ() {
         if (this.isTruckVehicle()) {
             return TRUCK_COLLISION_FORWARD_SHIFT;
         }
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_FORWARD_SHIFT;
+        }
+        if (this.isAh6Vehicle()) {
+            return AH6_COLLISION_CENTER_SHIFT;
+        }
+        if (this.isMi28Vehicle()) {
+            return MI28_COLLISION_CENTER_SHIFT;
         }
         return 0.0D;
     }
@@ -465,6 +545,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         SeatInfo seat = seats.getFirst();
         return seat.driver() && this.usesArticulatedSeatTransform(seat);
+    }
+
+    public boolean hasFocusedSightHud(Entity passenger) {
+        if (!(passenger instanceof LivingEntity living) || passenger.getVehicle() != this || !this.hasVehicleWeapons()) {
+            return false;
+        }
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return false;
+        }
+        int seatIndex = this.seatIndexForPassenger(passenger, fallbackIndex);
+        SeatInfo seat = this.seatForPassenger(seatIndex);
+        if (!this.hasWeaponUsableBySeat(seatIndex)) {
+            return false;
+        }
+        return this.usesArticulatedSeatTransform(seat)
+                || this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER;
     }
 
     public boolean guidedWeaponsUseArticulatedTurret() {
@@ -537,6 +634,35 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return Mth.wrapDegrees(this.getYRot() - player.getYRot());
     }
 
+    private boolean shouldAlignDriverView(int seatIndex) {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        if ((type != VehicleType.HELICOPTER && type != VehicleType.AIRCRAFT)
+                || seatIndex < 0
+                || seatIndex >= this.vehicleData().defaults().seats().size()) {
+            return false;
+        }
+        return this.vehicleData().defaults().seats().get(seatIndex).driver();
+    }
+
+    private void alignPassengerViewToVehicle(Entity passenger, int seatIndex) {
+        if (!(passenger instanceof LivingEntity living) || !this.shouldAlignDriverView(seatIndex)) {
+            return;
+        }
+        float yaw = this.getYRot();
+        float pitch = this.getXRot();
+        living.setYRot(yaw);
+        living.yRotO = yaw;
+        living.setYHeadRot(yaw);
+        living.yHeadRotO = yaw;
+        living.yBodyRot = yaw;
+        living.yBodyRotO = yaw;
+        living.setXRot(pitch);
+        living.xRotO = pitch;
+        if (this.level().isClientSide && living == Minecraft.getInstance().player) {
+            VehicleClientState.syncMousePosition(Minecraft.getInstance().mouseHandler.xpos(), Minecraft.getInstance().mouseHandler.ypos());
+        }
+    }
+
     public void changeSeat(ServerPlayer player) {
         if (player.getVehicle() != this) {
             return;
@@ -552,6 +678,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!this.isSeatOccupied(nextSeat, player)) {
                 this.seatAssignments.put(player.getUUID(), nextSeat);
                 this.input = VehicleInput.EMPTY;
+                this.alignPassengerViewToVehicle(player, nextSeat);
                 this.syncSeatAssignments();
                 return;
             }
@@ -562,6 +689,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     public void tick() {
         this.turretYawO = this.turretYaw();
         this.turretPitchO = this.turretPitch();
+        this.propellerRotO = this.propellerRot();
+        this.rollO = this.roll();
         super.tick();
         if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
             this.dismountLerpSuppressionTicks--;
@@ -584,11 +713,50 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         } else if (this.shouldRunClientPrediction()) {
-            if (this.vehicleData().defaults().vehicleType() == VehicleType.BOAT) {
+            VehicleType type = this.vehicleData().defaults().vehicleType();
+            if (type == VehicleType.BOAT) {
                 this.tickClientPredictedBoatMovement();
+            } else if (type == VehicleType.HELICOPTER) {
+                this.tickClientPredictedHelicopterMovement();
             } else {
                 this.tickClientPredictedLandMovement();
             }
+        }
+    }
+
+    @Override
+    public void move(MoverType type, Vec3 pos) {
+        super.move(type, pos);
+        this.applyHelicopterBlockCollisionDamage(pos);
+    }
+
+    private void applyHelicopterBlockCollisionDamage(Vec3 attemptedMovement) {
+        if (this.level().isClientSide
+                || this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+                || this.ramDamageCooldown > 0
+                || !(this.horizontalCollision || this.verticalCollision)) {
+            return;
+        }
+        double speed = attemptedMovement.length();
+        if (speed < HELICOPTER_BLOCK_COLLISION_MIN_SPEED) {
+            return;
+        }
+        float damage = 0.0F;
+        if (this.verticalCollision) {
+            double impact = speed - 0.5D;
+            damage += (float) (60.0D * impact * impact);
+        }
+        if (this.horizontalCollision) {
+            double impact = speed - 0.4D;
+            damage += (float) (126.0D * impact * impact);
+        }
+        if (damage <= 1.0F) {
+            return;
+        }
+        if (this.hurt(this.damageSources().cramming(), damage)) {
+            this.ramDamageCooldown = HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS;
+            this.setDeltaMovement(this.getDeltaMovement().scale(0.35D));
+            this.hasImpulse = true;
         }
     }
 
@@ -659,6 +827,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.seekControllerId = -1;
         this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
+        this.holdTick = 0;
+        this.holdPowerTick = 0;
+        this.engineStart = false;
+        this.engineStartOver = false;
+        this.destroyRot = 0.0F;
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
+            this.entityData.set(DATA_PROPELLER_SPEED, 0.0F);
+        }
         this.cancelWeaponReload();
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
@@ -679,6 +855,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (seatIndex >= 0 && seatIndex < seatCount) {
                 this.seatAssignments.put(assignment.getKey(), seatIndex);
             }
+        }
+        if (this.level().isClientSide && Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() == this) {
+            int fallbackIndex = this.getPassengers().indexOf(Minecraft.getInstance().player);
+            int seatIndex = this.seatIndexForPassenger(Minecraft.getInstance().player, fallbackIndex);
+            this.alignPassengerViewToVehicle(Minecraft.getInstance().player, seatIndex);
         }
     }
 
@@ -913,6 +1094,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (articulatedAim != null) {
             return articulatedAim;
         }
+        Vec3 zoomAim = this.weaponZoomAimDirection(shooter);
+        if (zoomAim != null) {
+            return zoomAim;
+        }
         return Vec3.directionFromRotation(this.weaponPitch(shooter), shooter.getYRot()).normalize();
     }
 
@@ -922,6 +1107,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return null;
         }
         return this.articulatedBarrelDirection(1.0F).normalize();
+    }
+
+    @Nullable
+    private Vec3 weaponZoomAimDirection(LivingEntity shooter) {
+        if (!this.level().isClientSide
+                || !VehicleClientState.isRidingVehicle()
+                || VehicleClientState.vehicleId() != this.getId()
+                || !VehicleClientState.zoomDown()) {
+            return null;
+        }
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (weapon == null || !this.canUseSelectedWeapon(shooter, weapon)) {
+            return null;
+        }
+        Vec3 muzzle = this.weaponMuzzlePosition(weapon, Vec3.directionFromRotation(this.weaponPitch(shooter), shooter.getYRot()), 1.25D, 0.95D);
+        Vec3 camera = this.cameraPositionFor(shooter, 1.0F);
+        Vec3 direction = muzzle.subtract(camera);
+        return direction.lengthSqr() < 1.0E-4D ? null : direction.normalize();
     }
 
     private float weaponPitch(LivingEntity shooter) {
@@ -1005,7 +1208,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (collisionLevel == CollisionLevel.NONE) {
             return;
         }
-        double speed = this.getDeltaMovement().horizontalDistance();
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        Vec3 movement = this.getDeltaMovement();
+        double speed = type == VehicleType.HELICOPTER ? movement.length() : movement.horizontalDistance();
         if (speed < RAM_DAMAGE_MIN_SPEED) {
             return;
         }
@@ -1394,6 +1599,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapon.usableBySeat(this.seatIndexForPassenger(passenger, this.getPassengers().indexOf(passenger)));
     }
 
+    private boolean hasWeaponUsableBySeat(int seatIndex) {
+        for (VehicleWeaponInfo weapon : this.vehicleData().defaults().weapons()) {
+            if (weapon.usableBySeat(seatIndex)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean shouldHidePassenger(Entity passenger) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
         return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).hidePassenger();
@@ -1413,6 +1627,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 articulatedZoomPosition = this.articulatedZoomCameraPosition(seat, partialTick);
         if (articulatedZoomPosition != null) {
             return articulatedZoomPosition;
+        }
+        if (this.usesFirstPersonSeatCamera(passenger)) {
+            var zoomCamera = seat.zoomCamera();
+            if (zoomCamera.useFixedCameraPos() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
+                return this.fixedSeatCameraPosition(zoomCamera, partialTick);
+            }
+            if (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D) {
+                Vec3 firstPersonOffset = this.firstPersonSeatCameraOffset(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
+                return this.interpolatedVehiclePosition(partialTick).add(firstPersonOffset);
+            }
         }
         Vec3 offset = this.seatOffset(seat, passenger.getEyeHeight(), partialTick);
         return this.interpolatedVehiclePosition(partialTick).add(offset);
@@ -1438,12 +1662,123 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
         if (fallbackIndex >= 0) {
             SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+            Vec3 helicopterZoomRotation = this.helicopterZoomCameraRotation(passenger, partialTick);
+            if (helicopterZoomRotation != null) {
+                return helicopterZoomRotation;
+            }
             Vec3 articulatedRotation = this.articulatedCameraRotation(seat, partialTick);
             if (articulatedRotation != null) {
                 return articulatedRotation;
             }
+            Vec3 fixedSeatRotation = this.fixedSeatCameraRotation(passenger, seat, partialTick);
+            if (fixedSeatRotation != null) {
+                return fixedSeatRotation;
+            }
+            Vec3 zoomRotation = this.weaponCameraRotation(passenger, partialTick);
+            if (zoomRotation != null) {
+                return zoomRotation;
+            }
         }
         return new Vec3(passenger.getViewYRot(partialTick), passenger.getViewXRot(partialTick), 0.0D);
+    }
+
+    @Nullable
+    private Vec3 helicopterZoomCameraRotation(Entity passenger, float partialTick) {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+                || !this.usesFirstPersonSeatCamera(passenger)
+                || !VehicleClientState.zoomDown()) {
+            return null;
+        }
+        return new Vec3(
+                Mth.lerp(partialTick, this.yRotO, this.getYRot()),
+                Mth.lerp(partialTick, this.xRotO, this.getXRot()),
+                0.0D
+        );
+    }
+
+    public boolean usesAircraftCamera(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return false;
+        }
+        SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+        return seat.zoomCamera().useAircraftCamera();
+    }
+
+    public boolean usesFixedCameraPosition(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return false;
+        }
+        SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+        return seat.zoomCamera().useFixedCameraPos();
+    }
+
+    public Vec3 aircraftCameraPositionFor(Entity passenger, float partialTick) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return passenger.getEyePosition(partialTick);
+        }
+        var camera = this.seatForPassenger(passenger, fallbackIndex).zoomCamera();
+        Vec3 offset = this.rotateLocalOffsetWithPose(camera.aircraftX(), camera.aircraftY(), camera.aircraftZ(), partialTick);
+        return this.interpolatedVehiclePosition(partialTick).add(offset);
+    }
+
+    public Vec3 detachedPoseCameraPositionFor(Entity passenger, float partialTick) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return passenger.getEyePosition(partialTick);
+        }
+        CameraPos camera = this.vehicleData().defaults().thirdPersonCamera();
+        SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
+        if (seat.zoomCamera().useAircraftCamera()) {
+            camera = seat.zoomCamera();
+            Vec3 offset = this.rotateLocalOffsetWithPoseNoRoll(camera.aircraftX(), camera.aircraftY(), camera.aircraftZ(), partialTick);
+            return this.interpolatedVehiclePosition(partialTick).add(offset);
+        }
+        Vec3 offset = this.rotateLocalOffsetWithPose(camera.x(), camera.y(), camera.z(), partialTick);
+        return this.interpolatedVehiclePosition(partialTick).add(offset);
+    }
+
+    public Vec3 aircraftCameraRotationFor(float partialTick) {
+        return new Vec3(
+                Mth.lerp(partialTick, this.yRotO, this.getYRot()),
+                Mth.lerp(partialTick, this.xRotO, this.getXRot()),
+                0.0D
+        );
+    }
+
+    @Nullable
+    private Vec3 fixedSeatCameraRotation(Entity passenger, SeatInfo seat, float partialTick) {
+        if (!this.usesFirstPersonSeatCamera(passenger)
+                || VehicleClientState.freeLookDown()
+                || VehicleClientState.zoomDown()) {
+            return null;
+        }
+        if (seat.sensitivityY() != 0.0F || seat.sensitivityZ() != 0.0F) {
+            return null;
+        }
+        return new Vec3(
+                Mth.lerp(partialTick, this.yRotO, this.getYRot()),
+                Mth.lerp(partialTick, this.xRotO, this.getXRot()),
+                0.0D
+        );
+    }
+
+    @Nullable
+    private Vec3 weaponCameraRotation(Entity passenger, float partialTick) {
+        if (!(passenger instanceof LivingEntity shooter)
+                || !this.level().isClientSide
+                || !VehicleClientState.isRidingVehicle()
+                || VehicleClientState.vehicleId() != this.getId()
+                || !VehicleClientState.zoomDown()) {
+            return null;
+        }
+        Vec3 direction = this.weaponZoomAimDirection(shooter);
+        if (direction == null) {
+            return null;
+        }
+        return new Vec3(this.yRotFromVector(direction), this.xRotFromVector(direction), 0.0D);
     }
 
     @Nullable
@@ -1453,6 +1788,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         Vec3 barrel = this.articulatedBarrelDirection(partialTick).normalize();
         return new Vec3(this.yRotFromVector(barrel), this.xRotFromVector(barrel), 0.0D);
+    }
+
+    private boolean usesFirstPersonSeatCamera(Entity passenger) {
+        return this.level().isClientSide
+                && Minecraft.getInstance().options.getCameraType().isFirstPerson()
+                && this.hasPassenger(passenger);
     }
 
     private void tickAutoRepair() {
@@ -1602,6 +1943,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         EngineInfo engine = this.vehicleData().defaults().engine();
         this.tickBoatMovement(engine, false);
+    }
+
+    private void tickClientPredictedHelicopterMovement() {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER) {
+            return;
+        }
+        EngineInfo engine = this.vehicleData().defaults().engine();
+        this.tickHelicopterMovement(engine, false);
     }
 
     private void tickBoatMovement(EngineInfo engine, boolean consumeEnergy) {
@@ -1792,6 +2141,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.horizontalDirection(this.getYRot());
     }
 
+    private Vec3 helicopterLiftVector(double strength) {
+        return this.rotateLocalDirectionWithPose(0.0D, strength, 0.0D, 1.0F);
+    }
+
+    private double helicopterAltitudeFromGround() {
+        Vec3 start = this.position();
+        Vec3 end = start.add(0.0D, -(HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE + 8.0D), 0.0D);
+        HitResult hit = this.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (hit.getType() == HitResult.Type.MISS) {
+            return HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE + 1.0D;
+        }
+        return Math.max(0.0D, start.y - hit.getLocation().y);
+    }
+
     public double rotateOffsetHeight() {
         return this.vehicleData().defaults().turret().renderPivotY();
     }
@@ -1826,10 +2189,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!active) {
             return;
         }
-        this.level().playSound(null, this, sound, SoundSource.AMBIENT, 1.0F, 1.0F);
+        this.level().playSound(null, this, sound, SoundSource.AMBIENT, Math.max(0.1F, this.vehicleData().defaults().engine().engineSoundVolume()), 1.0F);
     }
 
     private void tickServerAirMovement(EngineInfo engine) {
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
+            this.tickServerHelicopterMovement(engine);
+            return;
+        }
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
@@ -1860,6 +2227,192 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.move(MoverType.SELF, this.getDeltaMovement());
     }
 
+    private void tickServerHelicopterMovement(EngineInfo engine) {
+        this.tickHelicopterMovement(engine, true);
+    }
+
+    private void tickHelicopterMovement(EngineInfo engine, boolean consumeEnergy) {
+        Vec3 velocity = this.getDeltaMovement();
+        int forwardAxis = this.input.forwardAxis();
+        int verticalAxis = this.input.verticalAxis();
+        int steeringAxis = this.steeringAxis();
+        boolean up = verticalAxis > 0 || forwardAxis > 0;
+        boolean down = verticalAxis < 0;
+        boolean back = forwardAxis < 0 || this.input.brake();
+        double mobility = this.mobilityMultiplier();
+        LivingEntity pilot = this.getControllingPassenger() instanceof LivingEntity living ? living : null;
+        float currentRotorSpeed = this.propellerSpeed();
+        double powerAdd = engine.increment();
+        double powerReduce = engine.decrement();
+        double pitchSpeed = engine.pitchSpeed();
+        double yawSpeed = engine.yawSpeed();
+        double rollSpeed = engine.rollSpeed();
+        double liftSpeed = engine.liftSpeed();
+        boolean hasEnergy = !consumeEnergy || engine.energyCostRate() <= 0 || this.vehicleEnergy() > 0 || this.maxVehicleEnergy() <= 0;
+        double altitude = this.helicopterAltitudeFromGround();
+        double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
+        boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
+        if (altitudeLimited) {
+            up = false;
+        }
+
+        if (this.onGround()) {
+            velocity = velocity.multiply(0.8D, 1.0D, 0.8D);
+        } else {
+            this.setRoll(this.roll() * (back ? 0.9F : 0.99F));
+            float drag = (float) Mth.clamp(0.95F - 0.015F * velocity.length(), 0.5F, 0.99F);
+            velocity = velocity.add(this.horizontalDirection(this.getYRot()).scale((this.getXRot() < 0.0F ? -0.035D : this.getXRot() > 0.0F ? 0.035D : 0.0D) * velocity.length()));
+            velocity = velocity.multiply(drag, 0.95D, drag);
+        }
+
+        if (this.isInWater()) {
+            velocity = velocity.multiply(0.6D, 0.6D, 0.6D);
+        }
+
+        if (this.vehicleHealth() > 0.1F * this.maxVehicleHealth()) {
+            if (pilot == null) {
+                this.holdTick = 0;
+                this.holdPowerTick = 0;
+                if (this.engineStartOver) {
+                    this.enginePower *= 0.99D;
+                }
+                this.setRoll(this.roll() * 0.98F);
+                this.xRotO = this.getXRot();
+                this.setXRot(this.getXRot() * 0.98F);
+                velocity = velocity.multiply(0.96D, 0.98D, 0.96D);
+            } else {
+                if (!back) {
+                    if (this.input.right()) {
+                        this.holdTick++;
+                        this.wheelSteering -= 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
+                    } else if (this.input.left()) {
+                        this.holdTick++;
+                        this.wheelSteering += 2.0D * Math.min(this.holdTick, 7) * this.enginePower;
+                    } else {
+                        this.holdTick = 0;
+                    }
+
+                    if (!this.isFreeLookInputDown()) {
+                        float mousePitch = this.input.mouseY();
+                        float mouseYaw = this.input.mouseX();
+                        this.xRotO = this.getXRot();
+                        this.setXRot(Mth.clamp(this.getXRot() + (this.onGround() ? 0.0F : 1.5F) * (float) pitchSpeed * mousePitch * currentRotorSpeed, -35.0F, 25.0F));
+                        this.setRoll((float) (this.roll() - rollSpeed * (this.wheelSteering + (this.onGround() ? 0.0D : 0.25D) * mouseYaw * currentRotorSpeed)));
+                    }
+                } else if (!this.onGround()) {
+                    this.xRotO = this.getXRot();
+                    this.setXRot(Mth.approachDegrees(this.getXRot(), 0.0F, 1.6F));
+                    this.setRoll(Mth.approachDegrees(this.roll(), 0.0F, 1.8F));
+                    velocity = velocity.multiply(0.94D, 1.0D, 0.94D).add(0.0D, -0.018D, 0.0D);
+                    if (this.level().isClientSide && pilot instanceof Player player) {
+                        player.displayClientMessage(Component.translatable("message.jeg.vehicle.press_s_to_land"), true);
+                    }
+                }
+
+                float mouseYaw = this.input.mouseX();
+                this.yRotO = this.getYRot();
+                this.setYRot(this.getYRot() + (float) (yawSpeed * Mth.clamp((this.onGround() ? 0.1D : 2.0D) * mouseYaw * currentRotorSpeed + (this.isSubEngineDamaged() ? 25.0D : 0.0D) * currentRotorSpeed, -10.0D, 10.0D)));
+                this.updateVehicleBoundingBox();
+            }
+
+            if (!hasEnergy) {
+                this.enginePower *= 0.995D;
+                this.engineStart = false;
+                this.engineStartOver = false;
+            } else {
+                if (!this.engineStart && up) {
+                    this.engineStart = true;
+                    if (!this.level().isClientSide) {
+                        SoundEvent sound = VehicleSoundHelper.engineStartSound(this);
+                        if (sound != null) {
+                            this.level().playSound(null, this, sound, this.getSoundSource(), Math.max(0.1F, engine.engineSoundVolume()), 1.0F);
+                        }
+                    }
+                }
+                if (up && this.engineStartOver) {
+                    this.holdPowerTick++;
+                    this.enginePower = Math.min(this.enginePower + 0.00045D * powerAdd * Math.min(this.holdPowerTick, 8), 0.105D);
+                }
+                if (this.engineStartOver) {
+                    if (down) {
+                        this.holdPowerTick++;
+                        this.enginePower = Math.max(this.enginePower - 0.001D * powerReduce * Math.min(this.holdPowerTick, 5), this.onGround() ? 0.0D : 0.025D / liftSpeed);
+                    } else if (back) {
+                        this.holdPowerTick++;
+                        this.enginePower = Math.max(this.enginePower - 0.001D * powerReduce * Math.min(this.holdPowerTick, 5), this.onGround() ? 0.0D : 0.058D / liftSpeed);
+                    }
+                }
+                if (altitudeLimited && this.engineStartOver) {
+                    this.enginePower = Math.max(this.enginePower - 0.0015D * powerReduce, 0.0D);
+                }
+                if (this.engineStart && !this.engineStartOver) {
+                    this.enginePower = Math.min(this.enginePower + 0.0012D * powerAdd, 0.045D);
+                }
+                if (!(up || down || back) && this.engineStartOver) {
+                    if (velocity.y < 0.0D) {
+                        this.enginePower = Math.min(this.enginePower + 0.00015D, 0.105D);
+                    } else {
+                        this.enginePower = Math.max(this.enginePower - (this.onGround() ? 0.00005D : 0.00045D), 0.0D);
+                    }
+                    this.holdPowerTick = 0;
+                }
+            }
+        } else if (!this.onGround() && this.engineStartOver) {
+            this.enginePower = Math.max(this.enginePower - 0.0003D, 0.01D);
+            this.destroyRot += 0.08F;
+            float diffX = 45.0F - this.getXRot();
+            float diffZ = -20.0F - this.roll();
+            this.xRotO = this.getXRot();
+            this.setXRot(this.getXRot() + diffX * 0.05F * currentRotorSpeed);
+            this.yRotO = this.getYRot();
+            this.setYRot(this.getYRot() + this.destroyRot);
+            this.setRoll(this.roll() + diffZ * 0.1F * currentRotorSpeed);
+            velocity = velocity.add(0.0D, -this.destroyRot * 0.004D, 0.0D);
+        }
+
+        if (this.isEngineDamaged()) {
+            this.enginePower *= 0.98D;
+        }
+        this.wheelSteering *= 0.9D;
+
+        float nextRotorSpeed = (float) Mth.lerp(0.18F, currentRotorSpeed, (float) this.enginePower);
+        this.entityData.set(DATA_PROPELLER_SPEED, nextRotorSpeed * 0.9995F);
+        this.entityData.set(DATA_PROPELLER_ROT, this.propellerRot() + 30.0F * nextRotorSpeed);
+
+        if (consumeEnergy && this.engineStart) {
+            int cost = (int) (engine.energyCostRate() * 8.3333D * Math.abs(this.enginePower));
+            if (!this.consumeEnergy(cost)) {
+                this.engineStart = false;
+                this.engineStartOver = false;
+                this.enginePower *= 0.995D;
+            }
+        }
+
+        Vec3 lift = this.helicopterLiftVector(nextRotorSpeed * liftSpeed * mobility * altitudeLimitFactor);
+        velocity = velocity.add(0.0D, -0.06D, 0.0D).add(lift);
+        if (altitudeLimited && velocity.y > 0.0D) {
+            velocity = new Vec3(velocity.x, velocity.y * 0.25D, velocity.z);
+        }
+
+        if (this.enginePower > 0.04D) {
+            this.engineStartOver = true;
+        }
+        if (this.enginePower < 0.0004D) {
+            this.engineStart = false;
+            this.engineStartOver = false;
+        }
+
+        double maxHorizontalSpeed = engine.maxForwardSpeed() * mobility;
+        Vec3 horizontalVelocity = new Vec3(velocity.x, 0.0D, velocity.z);
+        if (horizontalVelocity.length() > maxHorizontalSpeed) {
+            horizontalVelocity = horizontalVelocity.normalize().scale(maxHorizontalSpeed);
+            velocity = new Vec3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
+        }
+
+        this.setDeltaMovement(new Vec3(velocity.x, Mth.clamp(velocity.y, -0.35D, 0.45D), velocity.z));
+        this.move(MoverType.SELF, this.getDeltaMovement());
+    }
+
     private void tickServerBoatMovement(EngineInfo engine) {
         this.tickBoatMovement(engine, true);
     }
@@ -1877,7 +2430,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void applyPassengerYaw() {
         Entity passenger = this.getControllingPassenger();
-        if (passenger == null || this.isFreeLookInputDown() || this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        if (passenger == null || this.isFreeLookInputDown() || type == VehicleType.LAND || type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT) {
             return;
         }
         int fallbackIndex = this.getPassengers().indexOf(passenger);
@@ -1907,7 +2461,33 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.usesArticulatedSeatTransform(seat)) {
             return this.articulatedTurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
         }
+        if (this.usesVehiclePoseTransform()) {
+            return this.rotateLocalOffsetWithPose(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
+        }
         return this.rotateLocalOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
+    }
+
+    public boolean usesVehiclePoseTransform() {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        return type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT;
+    }
+
+    public Vec3 vehiclePoseOffset(double localX, double localY, double localZ, float partialTick) {
+        return this.rotateLocalOffsetWithPose(localX, localY, localZ, partialTick);
+    }
+
+    private Vec3 firstPersonSeatCameraOffset(double localX, double localY, double localZ, float partialTick) {
+        if (this.usesVehiclePoseTransform()) {
+            return this.rotateLocalOffsetWithPose(localX, localY, localZ, partialTick);
+        }
+        return this.rotateLocalOffset(localX, localY, localZ, partialTick);
+    }
+
+    private Vec3 fixedSeatCameraPosition(CameraPos camera, float partialTick) {
+        Vec3 offset = this.usesVehiclePoseTransform()
+                ? this.rotateLocalOffsetWithPose(camera.x(), camera.y(), camera.z(), partialTick)
+                : this.rotateLocalOffset(camera.x(), camera.y(), camera.z(), partialTick);
+        return this.interpolatedVehiclePosition(partialTick).add(offset);
     }
 
     private boolean usesArticulatedSeatTransform(SeatInfo seat) {
@@ -1942,6 +2522,55 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         double x = localX * cos - localZ * sin;
         double z = localX * sin + localZ * cos;
         return new Vec3(x, localY, z);
+    }
+
+    private Vec3 rotateLocalOffsetWithPose(double localX, double localY, double localZ, float partialTick) {
+        Vec3 origin = this.interpolatedVehiclePosition(partialTick);
+        Vector4d worldPosition = this.vehiclePoseTransform(partialTick).transform(new Vector4d(localX, localY, localZ, 1.0D));
+        return new Vec3(worldPosition.x - origin.x, worldPosition.y - origin.y, worldPosition.z - origin.z);
+    }
+
+    private Vec3 rotateLocalOffsetWithPoseNoRoll(double localX, double localY, double localZ, float partialTick) {
+        Vec3 origin = this.interpolatedVehiclePosition(partialTick);
+        Vector4d worldPosition = this.vehiclePoseTransformNoRoll(partialTick).transform(new Vector4d(localX, localY, localZ, 1.0D));
+        return new Vec3(worldPosition.x - origin.x, worldPosition.y - origin.y, worldPosition.z - origin.z);
+    }
+
+    private Vec3 rotateLocalDirectionWithPose(double localX, double localY, double localZ, float partialTick) {
+        Vector4d localOrigin = this.vehiclePoseRotation(partialTick).transform(new Vector4d(0.0D, 0.0D, 0.0D, 1.0D));
+        Vector4d worldDirection = this.vehiclePoseRotation(partialTick).transform(new Vector4d(localX, localY, localZ, 1.0D));
+        return new Vec3(worldDirection.x - localOrigin.x, worldDirection.y - localOrigin.y, worldDirection.z - localOrigin.z);
+    }
+
+    private Matrix4d vehiclePoseTransform(float partialTick) {
+        Vec3 origin = this.interpolatedVehiclePosition(partialTick);
+        double pivotY = this.rotateOffsetHeight();
+        Matrix4d transform = new Matrix4d();
+        transform.translate(origin.x, origin.y + pivotY, origin.z);
+        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(partialTick, this.yRotO, this.getYRot())));
+        transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(partialTick, this.xRotO, this.getXRot())));
+        transform.rotate(Axis.ZP.rotationDegrees(this.roll(partialTick)));
+        transform.translate(0.0D, -pivotY, 0.0D);
+        return transform;
+    }
+
+    private Matrix4d vehiclePoseTransformNoRoll(float partialTick) {
+        Vec3 origin = this.interpolatedVehiclePosition(partialTick);
+        double pivotY = this.rotateOffsetHeight();
+        Matrix4d transform = new Matrix4d();
+        transform.translate(origin.x, origin.y + pivotY, origin.z);
+        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(partialTick, this.yRotO, this.getYRot())));
+        transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(partialTick, this.xRotO, this.getXRot())));
+        transform.translate(0.0D, -pivotY, 0.0D);
+        return transform;
+    }
+
+    private Matrix4d vehiclePoseRotation(float partialTick) {
+        Matrix4d transform = new Matrix4d();
+        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(partialTick, this.yRotO, this.getYRot())));
+        transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(partialTick, this.xRotO, this.getXRot())));
+        transform.rotate(Axis.ZP.rotationDegrees(this.roll(partialTick)));
+        return transform;
     }
 
     private Vec3 articulatedTurretOffset(double localX, double localY, double localZ, float partialTick) {
@@ -2024,6 +2653,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         output.putFloat(TAG_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
         output.putFloat(TAG_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
         output.putFloat(TAG_ENGINE_HEALTH, this.engineHealth);
+        output.putFloat(TAG_SUB_ENGINE_HEALTH, this.subEngineHealth);
         output.putFloat(TAG_TURRET_HEALTH, this.turretHealth);
         ListTag seats = new ListTag();
         for (Map.Entry<UUID, Integer> assignment : this.seatAssignments.entrySet()) {
@@ -2056,6 +2686,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.leftWheelHealth = input.contains(TAG_LEFT_WHEEL_HEALTH) ? input.getFloat(TAG_LEFT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.rightWheelHealth = input.contains(TAG_RIGHT_WHEEL_HEALTH) ? input.getFloat(TAG_RIGHT_WHEEL_HEALTH) : PART_MAX_HEALTH;
         this.engineHealth = input.contains(TAG_ENGINE_HEALTH) ? input.getFloat(TAG_ENGINE_HEALTH) : PART_MAX_HEALTH;
+        this.subEngineHealth = input.contains(TAG_SUB_ENGINE_HEALTH) ? input.getFloat(TAG_SUB_ENGINE_HEALTH) : PART_MAX_HEALTH;
         this.turretHealth = input.contains(TAG_TURRET_HEALTH) ? input.getFloat(TAG_TURRET_HEALTH) : PART_MAX_HEALTH;
         this.readSeatAssignments(input);
         this.syncPartDamageFlags();
@@ -2279,7 +2910,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         switch (hitPart) {
             case WHEEL_LEFT -> this.leftWheelHealth = Math.max(0.0F, this.leftWheelHealth - partDamage);
             case WHEEL_RIGHT -> this.rightWheelHealth = Math.max(0.0F, this.rightWheelHealth - partDamage);
-            case MAIN_ENGINE, SUB_ENGINE -> this.engineHealth = Math.max(0.0F, this.engineHealth - partDamage);
+            case MAIN_ENGINE -> this.engineHealth = Math.max(0.0F, this.engineHealth - partDamage);
+            case SUB_ENGINE -> this.subEngineHealth = Math.max(0.0F, this.subEngineHealth - partDamage);
             case TURRET -> this.turretHealth = Math.max(0.0F, this.turretHealth - partDamage);
             default -> {
             }
@@ -2291,6 +2923,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, this.leftWheelHealth <= 0.0F);
         this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, this.rightWheelHealth <= 0.0F);
         this.entityData.set(DATA_ENGINE_DAMAGED, this.engineHealth <= 0.0F);
+        this.entityData.set(DATA_SUB_ENGINE_DAMAGED, this.subEngineHealth <= 0.0F);
         this.entityData.set(DATA_TURRET_DAMAGED, this.turretHealth <= 0.0F);
     }
 
@@ -2310,6 +2943,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.engineHealth < PART_MAX_HEALTH) {
             this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + REPAIR_KIT_PART_REPAIR);
+            repaired = true;
+        }
+        if (this.subEngineHealth < PART_MAX_HEALTH) {
+            this.subEngineHealth = Math.min(PART_MAX_HEALTH, this.subEngineHealth + REPAIR_KIT_PART_REPAIR);
             repaired = true;
         }
         if (this.turretHealth < PART_MAX_HEALTH) {
@@ -2393,6 +3030,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         for (int seat = 0; seat < seatCount; seat++) {
             if (!this.isSeatOccupied(seat, passenger)) {
                 this.seatAssignments.put(passenger.getUUID(), seat);
+                this.alignPassengerViewToVehicle(passenger, seat);
                 this.syncSeatAssignments();
                 return;
             }
@@ -2428,7 +3066,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
-        DismountInfo dismount = this.vehicleData().defaults().dismount();
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        SeatInfo seat = fallbackIndex >= 0 ? this.seatForPassenger(passenger, fallbackIndex) : null;
+        DismountInfo dismount = seat != null && seat.dismount() != DismountInfo.DEFAULT ? seat.dismount() : this.vehicleData().defaults().dismount();
         Vec3 offset = this.rotateLocalOffset(dismount.x(), dismount.y(), dismount.z());
         Vec3 candidate = this.position().add(offset);
         Vec3 configured = this.findValidDismountPosition(passenger, candidate);

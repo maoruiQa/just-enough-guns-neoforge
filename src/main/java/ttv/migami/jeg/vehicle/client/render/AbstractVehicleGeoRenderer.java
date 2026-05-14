@@ -32,7 +32,18 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
     }
 
     @Override
+    public void render(VehicleEntity vehicle, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        if (shouldHideVehicleWhileZooming(vehicle)) {
+            return;
+        }
+        super.render(vehicle, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+    }
+
+    @Override
     public void defaultRender(PoseStack poseStack, VehicleEntity animatable, MultiBufferSource bufferSource, @Nullable RenderType renderType, @Nullable VertexConsumer buffer, float yaw, float partialTick, int packedLight) {
+        if (shouldHideVehicleWhileZooming(animatable)) {
+            return;
+        }
         poseStack.pushPose();
         this.vehicleAxis(animatable, poseStack, yaw, partialTick);
         super.defaultRender(poseStack, animatable, bufferSource, renderType, buffer, yaw, partialTick, packedLight);
@@ -61,8 +72,7 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
         LocalPlayer player = Minecraft.getInstance().player;
         return player != null
                 && player.getVehicle() == vehicle
-                && vehicle.passengerForSeat(0) == player
-                && vehicle.hasFocusedDriverSightHud()
+                && vehicle.hasFocusedSightHud(player)
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
@@ -72,5 +82,6 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
         float rootY = (float) vehicle.rotateOffsetHeight();
         poseStack.rotateAround(Axis.YP.rotationDegrees(-entityYaw), 0.0F, rootY, 0.0F);
         poseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot())), 0.0F, rootY, 0.0F);
+        poseStack.rotateAround(Axis.ZP.rotationDegrees(vehicle.roll(partialTick)), 0.0F, rootY, 0.0F);
     }
 }

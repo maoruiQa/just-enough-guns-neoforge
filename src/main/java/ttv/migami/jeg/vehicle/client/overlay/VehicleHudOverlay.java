@@ -375,7 +375,7 @@ public final class VehicleHudOverlay {
             return;
         }
 
-        if (focusedSight && hasApcFocusedSightFrame(vehicle)) {
+        if (focusedSight) {
             int screenWidth = guiGraphics.guiWidth();
             int screenHeight = guiGraphics.guiHeight();
             int addW = (screenWidth / screenHeight) * 48;
@@ -418,8 +418,7 @@ public final class VehicleHudOverlay {
         LocalPlayer player = Minecraft.getInstance().player;
         return player != null
                 && player.getVehicle() == vehicle
-                && vehicle.passengerForSeat(0) == player
-                && hasApcFocusedSightFrame(vehicle)
+                && vehicle.hasFocusedSightHud(player)
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();

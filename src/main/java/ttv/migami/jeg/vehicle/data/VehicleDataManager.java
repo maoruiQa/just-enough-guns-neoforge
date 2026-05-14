@@ -169,7 +169,15 @@ public final class VehicleDataManager {
                 getDouble(object, "max_reverse_speed", fallback.maxReverseSpeed()),
                 getDouble(object, "friction", fallback.friction()),
                 getDouble(object, "steering_speed", fallback.steeringSpeed()),
-                getInt(object, "energy_cost_rate", fallback.energyCostRate())
+                getInt(object, "energy_cost_rate", fallback.energyCostRate()),
+                getDouble(object, "increment", fallback.increment()),
+                getDouble(object, "decrement", fallback.decrement()),
+                getDouble(object, "pitch_speed", fallback.pitchSpeed()),
+                getDouble(object, "yaw_speed", fallback.yawSpeed()),
+                getDouble(object, "roll_speed", fallback.rollSpeed()),
+                getDouble(object, "lift_speed", fallback.liftSpeed()),
+                getResourceLocation(object, "engine_start_sound", fallback.engineStartSound()),
+                getFloat(object, "engine_sound_volume", fallback.engineSoundVolume())
         );
     }
 
@@ -183,7 +191,12 @@ public final class VehicleDataManager {
                 getDouble(object, "z", fallback.z()),
                 getDouble(object, "zoom_x", fallback.zoomX()),
                 getDouble(object, "zoom_y", fallback.zoomY()),
-                getDouble(object, "zoom_z", fallback.zoomZ())
+                getDouble(object, "zoom_z", fallback.zoomZ()),
+                getBoolean(object, "use_fixed_camera_pos", fallback.useFixedCameraPos()),
+                getBoolean(object, "use_aircraft_camera", fallback.useAircraftCamera()),
+                getDouble(object, "aircraft_x", fallback.aircraftX()),
+                getDouble(object, "aircraft_y", fallback.aircraftY()),
+                getDouble(object, "aircraft_z", fallback.aircraftZ())
         );
     }
 
@@ -227,7 +240,8 @@ public final class VehicleDataManager {
                     (float) getDouble(seat, "sensitivity_x", fallbackSeat.sensitivityX()),
                     (float) getDouble(seat, "sensitivity_y", fallbackSeat.sensitivityY()),
                     (float) getDouble(seat, "sensitivity_z", fallbackSeat.sensitivityZ()),
-                    parseCamera(getObject(seat, "zoom_camera"), fallbackSeat.zoomCamera())
+                    parseCamera(getObject(seat, "zoom_camera"), fallbackSeat.zoomCamera()),
+                    parseDismount(getObject(seat, "dismount"), fallbackSeat.dismount())
             ));
         }
         seats.sort(Comparator.comparingInt(SeatInfo::index));
@@ -389,6 +403,11 @@ public final class VehicleDataManager {
     private static double getDouble(JsonObject object, String name, double fallback) {
         JsonElement element = object.get(name);
         return element != null ? element.getAsDouble() : fallback;
+    }
+
+    private static ResourceLocation getResourceLocation(JsonObject object, String name, ResourceLocation fallback) {
+        JsonElement element = object.get(name);
+        return element != null ? ResourceLocation.parse(element.getAsString()) : fallback;
     }
 
     private static <T extends Enum<T>> T getEnum(JsonObject object, String name, Class<T> type, T fallback) {

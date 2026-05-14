@@ -62,7 +62,9 @@ public class MinecraftVehicleHotbarMixin {
                 false,
                 weaponSlot,
                 KeyBindings.VEHICLE_SEEK.isDown(),
-                false
+                false,
+                0.0F,
+                0.0F
         ));
     }
 }
