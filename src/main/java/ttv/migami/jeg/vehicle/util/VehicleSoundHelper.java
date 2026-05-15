@@ -46,7 +46,9 @@ public final class VehicleSoundHelper {
 
     public static SoundEvent fireSound(VehicleEntity vehicle, VehicleWeaponInfo weapon, GunStats fallbackStats) {
         String weaponPath = weapon.weaponId().getPath();
-        if ("vehicle_coax_machine_gun".equals(weaponPath)) {
+        if ("vehicle_20mm_cannon".equals(weaponPath)
+                || !weaponPath.startsWith("vehicle_")
+                || "vehicle_coax_machine_gun".equals(weaponPath)) {
             return fallbackStats.fireSoundEvent().orElse(SoundEvents.CROSSBOW_SHOOT);
         }
         String vehiclePath = vehicle.vehicleDataId().getPath();

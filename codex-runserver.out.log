@@ -2,504 +2,500 @@ Reusing configuration cache.
 > Task :generateModMetadata UP-TO-DATE
 > Task :createMinecraftArtifacts UP-TO-DATE
 > Task :processResources UP-TO-DATE
-> Task :downloadAssets UP-TO-DATE
 > Task :writeServerLegacyClasspath UP-TO-DATE
+> Task :downloadAssets UP-TO-DATE
 > Task :compileJava UP-TO-DATE
 > Task :classes UP-TO-DATE
 > Task :prepareServerRun UP-TO-DATE
 
 > Task :runServer
 WARN StatusConsoleListener Advanced terminal features are not available in this environment
-[16:23:31] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserverdev, --gameDir, ., --fml.fmlVersion, 4.0.42, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.214, --fml.neoFormVersion, 20240808.144430, --nogui]
-[16:23:31] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: JVM identified as Oracle Corporation Java HotSpot(TM) 64-Bit Server VM 21.0.6+8-LTS-188
-[16:23:31] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.6 by Oracle Corporation; OS Windows 11 arch amd64 version 10.0
-[16:23:31] [main/DEBUG] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Found launch services [minecraft,forgeclient,forgedatauserdev,testharness,forgeserverdev,forgeserveruserdev,forgejunitdev,forgeclientdev,forgeclientuserdev,forgeserver,forgejunituserdev,forgedatadev]
-[16:23:31] [main/DEBUG] [cp.mo.mo.LaunchPluginHandler/MODLAUNCHER]: Found launch plugins: [mixin,slf4jfixer,runtime_enum_extender,accesstransformer,runtimedistcleaner]
-[16:23:31] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Discovering transformation services
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path GAMEDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path MODSDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\mods
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path CONFIGDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path FMLCONFIG is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\fml.toml
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Got mod coordinates jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main;jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main from env
-[16:23:31] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Found supplied mod coordinates [{jeg=[D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main, D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main]}]
-[16:23:31] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Found additional transformation services from discovery services: 
-[16:23:32] [main/INFO] [ne.ne.fm.lo.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgeserverdev
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Found transformer services : [mixin,fml]
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services loading
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loading service mixin
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loaded service mixin
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loading service fml
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML 4.0.42 loading
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found ModLauncher version : 11.0.5+main.901c6ea8
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found AccessTransformer version : 10.0.1+139da711
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found EventBus version : null
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: Found Runtime Dist Cleaner
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loaded service fml
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Configuring option handling for services
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Received command line version data  : VersionInfo[neoForgeVersion=21.1.214, fmlVersion=4.0.42, mcVersion=1.21.1, neoFormVersion=20240808.144430]
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services initializing
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformation service mixin
-[16:23:32] [main/DEBUG] [mixin/]: MixinService [ModLauncher] was successfully booted in cpw.mods.cl.ModuleClassLoader@3712b94
-[16:23:32] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/C:/Users/user/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar%2394!/ Service=ModLauncher Env=SERVER
-[16:23:32] [main/DEBUG] [mixin/]: Initialising Mixin Platform Manager
-[16:23:32] [main/DEBUG] [mixin/]: Adding mixin platform agents for container ModLauncher Root Container(ModLauncher:4f56a0a2)
-[16:23:32] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for ModLauncher Root Container(ModLauncher:4f56a0a2)
-[16:23:32] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container ModLauncher Root Container(ModLauncher:4f56a0a2)
-[16:23:32] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for ModLauncher Root Container(ModLauncher:4f56a0a2)
-[16:23:32] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container ModLauncher Root Container(ModLauncher:4f56a0a2)
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformation service mixin
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformation service fml
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Setting up basic FML game directories
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path GAMEDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path MODSDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\mods
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path CONFIGDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path FMLCONFIG is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\fml.toml
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Loading configuration
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Preparing launch handler
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: Using forgeserverdev as launch service
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformation service fml
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services begin scanning
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Beginning scan trigger - transformation service mixin
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: End scan trigger - transformation service mixin
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Beginning scan trigger - transformation service fml
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Initiating mod scan
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Got mod coordinates jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main;jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main from env
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Found supplied mod coordinates [{jeg=[D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main, D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main]}]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ta.CommonDevLaunchHandler/]: Launching with NeoForge from D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 4 implementations of IModFileCandidateLocator:
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - [built-in] net.neoforged.fml.loading.moddiscovery.locators.NeoForgeDevProvider from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.ModsFolderLocator from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.MavenDirectoryLocator from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	   -1000 - [built-in] net.neoforged.fml.loading.moddiscovery.locators.UserdevLocator from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 2 implementations of IModFileReader:
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.readers.JarModsDotTomlModFileReader from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	   -1000 - net.neoforged.fml.loading.moddiscovery.readers.NestedLibraryModReader from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 1 implementations of IDependencyLocator:
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.JarInJarDependencyLocator from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {minecraft} mods - versions {1.21.1}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModListHandler/CORE]: Found mod coordinates from lists: []
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file main with {jeg} mods - versions {1.4.0}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file geckolib-neoforge-1.21.1-4.8.3.jar with {geckolib} mods - versions {4.8.3}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.fancymodloader\earlydisplay\4.0.42\46555dbfff14e9e052f1f693aed14d542a74e111\earlydisplay-4.0.42.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.fancymodloader\loader\4.0.42\76e15f98bf676fb44b36c5e776f52a55581ec43a\loader-4.0.42.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.accesstransformers\at-modlauncher\10.0.1\5aba50202aceead086bc09fbc2751c9f05cb4890\at-modlauncher-10.0.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\accesstransformers\10.0.1\fd83b5725f76eae9115e9355fa1c456a6a441400\accesstransformers-10.0.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\bus\8.0.5\5b2d33285ab5d1554e9798ad98c40d6ea3868bd5\bus-8.0.5.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\coremods\7.0.3\9147e6f638b4272b3bd5fc8f92ad37802512c6c\coremods-7.0.3.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\cpw.mods\modlauncher\11.0.5\b8f0d49294f733fdb6173931b263553e943dc950\modlauncher-11.0.5.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\mergetool\2.0.0\52fe1949be64e3303aabaaa21e315f551db9c9f4\mergetool-2.0.0-api.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.electronwill.night-config\toml\3.8.3\90b2fd6efcb4a7d5b9810cf78f9d824994d717f2\toml-3.8.3.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.electronwill.night-config\core\3.8.3\b442a95f09e349927f5a945ecb594455870fcf4f\core-3.8.3.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\JarJarSelector\0.4.1\fb3cc7a58af22ad2880adb98af6d518128c47dae\JarJarSelector-0.4.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\JarJarMetadata\0.4.1\f8da03683dc81694556dc3e177c5e3bb77ae6fcb\JarJarMetadata-0.4.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.maven\maven-artifact\3.8.5\4433f50c07debefaed0553bd0068f4f48d449313\maven-artifact-3.8.5.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.jodah\typetools\0.6.3\a01aaa6ddaea9ec07ec4f209487b7a46a526283a\typetools-0.6.3.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.minecrell\terminalconsoleappender\1.3.0\b562e9bb61235c9520e26282cdee71f8f802d1fc\terminalconsoleappender-1.3.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.fabricmc\sponge-mixin\0.15.2+mixin.0.8.7\2af2f021d8e02a0220dc27a7a72b4666d66d44ca\sponge-mixin-0.15.2+mixin.0.8.7.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.openjdk.nashorn\nashorn-core\15.4\f67f5ffaa5f5130cf6fb9b133da00c7df3b532a5\nashorn-core-15.4.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-lang3\3.14.0\1ed471194b02f2c6cb734a0cd6f6f107c673afae\commons-lang3-3.14.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.sf.jopt-simple\jopt-simple\5.0.4\4fdac2fbe92dfad86aa6e9301736f6b4342a3f5c\jopt-simple-5.0.4.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\commons-io\commons-io\2.15.1\f11560da189ab563a5c8e351941415430e9304ea\commons-io-2.15.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\logging\1.2.7\24cb95ffb0e3433fd6e844c04e68009e504ca1c0\logging-1.2.7.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-slf4j2-impl\2.22.1\d7e6693c2606cb7e7335047d7bb96dec52db5665\log4j-slf4j2-impl-2.22.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-core\2.22.1\7183a25510a02ad00cc6a95d3b3d2a7d3c5a8dc4\log4j-core-2.22.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-api\2.22.1\bea6fede6328fabafd7e68363161a7ea6605abd1\log4j-api-2.22.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\guava\32.1.2-jre\5e64ec7e056456bef3a4bc4c6fdaef71e8ab6318\guava-32.1.2-jre.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.10.1\b3add478d4382b78ea20b1671390a858002feb6c\gson-2.10.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.slf4j\slf4j-api\2.0.9\7cf2726fdcfbc8610f9a71fb3ed639871f315340\slf4j-api-2.0.9.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.antlr\antlr4-runtime\4.13.1\17125bae1d965624e265ef49552f6465a2bfa307\antlr4-runtime-4.13.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.minecraftforge\srgutils\0.4.15\ca408b131759478f164e010fae0d73997e125fb5\srgutils-0.4.15.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.codehaus.plexus\plexus-utils\3.3.0\cf43b5391de623b36fe066a21127baef82c64022\plexus-utils-3.3.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.jline\jline-reader\3.20.0\8f15415b022a25b473e8e16c28ae913186ffb9c4\jline-reader-3.20.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.machinezoo.noexception\noexception\1.7.1\b65330c98e38a1f915fa54a6e5eca496505e3f0a\noexception-1.7.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.github.oshi\oshi-core\6.4.10\b1d8ab82d11d92fd639b56d639f8f46f739dd5fa\oshi-core-6.4.10.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\failureaccess\1.0.1\1dcf1de382a0bf95a3d8b0849546c88bac1292c9\failureaccess-1.0.1.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\authlib\6.0.54\de8bc95660e1b2fe8793fd427a7a10dcec5b3ea7\authlib-6.0.54.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\brigadier\1.3.10\d15b53a14cf20fdcaa98f731af5dda654452c010\brigadier-1.3.10.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\datafixerupper\8.0.16\67d4de6d7f95d89bcf5862995fb854ebaec02a34\datafixerupper-8.0.16.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-buffer\4.1.97.Final\f8f3d8644afa5e6e1a40a3a6aeb9d9aa970ecb4f\netty-buffer-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec\4.1.97.Final\384ba4d75670befbedb45c4d3b497a93639c206d\netty-codec-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-common\4.1.97.Final\7cceacaf11df8dc63f23d0fb58e9d4640fc88404\netty-common-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-handler\4.1.97.Final\abb86c6906bf512bf2b797a41cd7d2e8d3cd7c36\netty-handler-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-resolver\4.1.97.Final\cec8348108dc76c47cf87c669d514be52c922144\netty-resolver-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport-classes-epoll\4.1.97.Final\795da37ded759e862457a82d9d92c4d39ce8ecee\netty-transport-classes-epoll-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport-native-unix-common\4.1.97.Final\d469d84265ab70095b01b40886cabdd433b6e664\netty-transport-native-unix-common-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport\4.1.97.Final\f37380d23c9bb079bc702910833b2fd532c9abd0\netty-transport-4.1.97.Final.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\it.unimi.dsi\fastutil\8.5.12\c24946d46824bd528054bface3231d2ecb7e95e8\fastutil-8.5.12.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna-platform\5.14.0\28934d48aed814f11e4c584da55c49fa7032b31b\jna-platform-5.14.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna\5.14.0\67bf3eaea4f0718cb376a181a629e5f88fa1c9dd\jna-5.14.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.joml\joml\1.10.5\22566d58af70ad3d72308bab63b8339906deb649\joml-1.10.5.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.lz4\lz4-java\1.8.0\4b986a99445e49ea5fbf5d149c4b63f6ed6c6780\lz4-java-1.8.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.jline\jline-terminal\3.20.0\d0ddcc708ddf527a3454c941b7b9225cc83a15ff\jline-terminal-3.20.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\listenablefuture\9999.0-empty-to-avoid-conflict-with-guava\b421526c5f297295adef1c886e5246c39d4ac629\listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.code.findbugs\jsr305\3.0.2\25ea2e8b0c338a877313bd4672d3fe056ea78f0d\jsr305-3.0.2.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.checkerframework\checker-qual\3.33.0\de2b60b62da487644fc11f734e73c8b0b431238f\checker-qual-3.33.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.errorprone\error_prone_annotations\2.18.0\89b684257096f548fa39a7df9fdaa409d4d4df91\error_prone_annotations-2.18.0.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.j2objc\j2objc-annotations\2.8\c85270e307e7b822f1086b93689124b89768e273\j2objc-annotations-2.8.jar because it was already located earlier
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.UniqueModListBuilder/]: Found 2 mods for first modid neoforge, selecting most recent based on version data
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.UniqueModListBuilder/]: Selected file neoforge-21.1.214.jar for modid neoforge with version 21.1.214
-[16:23:32] [main/INFO] [ne.ne.fm.lo.mo.lo.JarInJarDependencyLocator/]: Found 2 dependencies adding them to mods collection
-[16:23:32] [main/INFO] [ne.ne.fm.lo.mo.ModDiscoverer/]: 
+[21:31:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserverdev, --gameDir, ., --fml.fmlVersion, 4.0.42, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.214, --fml.neoFormVersion, 20240808.144430, --nogui]
+[21:31:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: JVM identified as Oracle Corporation Java HotSpot(TM) 64-Bit Server VM 21.0.6+8-LTS-188
+[21:31:19] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.6 by Oracle Corporation; OS Windows 11 arch amd64 version 10.0
+[21:31:19] [main/DEBUG] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Found launch services [minecraft,forgeclient,forgedatauserdev,testharness,forgeserverdev,forgeserveruserdev,forgejunitdev,forgeclientdev,forgeclientuserdev,forgeserver,forgejunituserdev,forgedatadev]
+[21:31:19] [main/DEBUG] [cp.mo.mo.LaunchPluginHandler/MODLAUNCHER]: Found launch plugins: [mixin,slf4jfixer,runtime_enum_extender,accesstransformer,runtimedistcleaner]
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Discovering transformation services
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path GAMEDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path MODSDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\mods
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path CONFIGDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path FMLCONFIG is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\fml.toml
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Got mod coordinates jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main;jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main from env
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Found supplied mod coordinates [{jeg=[D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main, D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main]}]
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Found additional transformation services from discovery services: 
+[21:31:19] [main/INFO] [ne.ne.fm.lo.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgeserverdev
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Found transformer services : [mixin,fml]
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services loading
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loading service mixin
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loaded service mixin
+[21:31:19] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loading service fml
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML 4.0.42 loading
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found ModLauncher version : 11.0.5+main.901c6ea8
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found AccessTransformer version : 10.0.1+139da711
+[21:31:19] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: FML found EventBus version : null
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: Found Runtime Dist Cleaner
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Loaded service fml
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Configuring option handling for services
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Received command line version data  : VersionInfo[neoForgeVersion=21.1.214, fmlVersion=4.0.42, mcVersion=1.21.1, neoFormVersion=20240808.144430]
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services initializing
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformation service mixin
+[21:31:20] [main/DEBUG] [mixin/]: MixinService [ModLauncher] was successfully booted in cpw.mods.cl.ModuleClassLoader@3712b94
+[21:31:20] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/C:/Users/user/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar%2394!/ Service=ModLauncher Env=SERVER
+[21:31:20] [main/DEBUG] [mixin/]: Initialising Mixin Platform Manager
+[21:31:20] [main/DEBUG] [mixin/]: Adding mixin platform agents for container ModLauncher Root Container(ModLauncher:4f56a0a2)
+[21:31:20] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for ModLauncher Root Container(ModLauncher:4f56a0a2)
+[21:31:20] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container ModLauncher Root Container(ModLauncher:4f56a0a2)
+[21:31:20] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for ModLauncher Root Container(ModLauncher:4f56a0a2)
+[21:31:20] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container ModLauncher Root Container(ModLauncher:4f56a0a2)
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformation service mixin
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformation service fml
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Setting up basic FML game directories
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path GAMEDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path MODSDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\mods
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path CONFIGDIR is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLPaths/CORE]: Path FMLCONFIG is D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\fml.toml
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Loading configuration
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Preparing launch handler
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLLoader/CORE]: Using forgeserverdev as launch service
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformation service fml
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services begin scanning
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Beginning scan trigger - transformation service mixin
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: End scan trigger - transformation service mixin
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Beginning scan trigger - transformation service fml
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Initiating mod scan
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Got mod coordinates jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main;jeg%%D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main from env
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ta.CommonLaunchHandler/CORE]: Found supplied mod coordinates [{jeg=[D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main, D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\resources\main]}]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ta.CommonDevLaunchHandler/]: Launching with NeoForge from D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 4 implementations of IModFileCandidateLocator:
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - [built-in] net.neoforged.fml.loading.moddiscovery.locators.NeoForgeDevProvider from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.ModsFolderLocator from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.MavenDirectoryLocator from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	   -1000 - [built-in] net.neoforged.fml.loading.moddiscovery.locators.UserdevLocator from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 2 implementations of IModFileReader:
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.readers.JarModsDotTomlModFileReader from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	   -1000 - net.neoforged.fml.loading.moddiscovery.readers.NestedLibraryModReader from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 1 implementations of IDependencyLocator:
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	       0 - net.neoforged.fml.loading.moddiscovery.locators.JarInJarDependencyLocator from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {minecraft} mods - versions {1.21.1}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModListHandler/CORE]: Found mod coordinates from lists: []
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file main with {jeg} mods - versions {1.5.0}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file geckolib-neoforge-1.21.1-4.8.3.jar with {geckolib} mods - versions {4.8.3}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.fancymodloader\earlydisplay\4.0.42\46555dbfff14e9e052f1f693aed14d542a74e111\earlydisplay-4.0.42.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.fancymodloader\loader\4.0.42\76e15f98bf676fb44b36c5e776f52a55581ec43a\loader-4.0.42.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged.accesstransformers\at-modlauncher\10.0.1\5aba50202aceead086bc09fbc2751c9f05cb4890\at-modlauncher-10.0.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\accesstransformers\10.0.1\fd83b5725f76eae9115e9355fa1c456a6a441400\accesstransformers-10.0.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\bus\8.0.5\5b2d33285ab5d1554e9798ad98c40d6ea3868bd5\bus-8.0.5.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\coremods\7.0.3\9147e6f638b4272b3bd5fc8f92ad37802512c6c\coremods-7.0.3.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\cpw.mods\modlauncher\11.0.5\b8f0d49294f733fdb6173931b263553e943dc950\modlauncher-11.0.5.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\mergetool\2.0.0\52fe1949be64e3303aabaaa21e315f551db9c9f4\mergetool-2.0.0-api.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.electronwill.night-config\toml\3.8.3\90b2fd6efcb4a7d5b9810cf78f9d824994d717f2\toml-3.8.3.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.electronwill.night-config\core\3.8.3\b442a95f09e349927f5a945ecb594455870fcf4f\core-3.8.3.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\JarJarSelector\0.4.1\fb3cc7a58af22ad2880adb98af6d518128c47dae\JarJarSelector-0.4.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.neoforged\JarJarMetadata\0.4.1\f8da03683dc81694556dc3e177c5e3bb77ae6fcb\JarJarMetadata-0.4.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.maven\maven-artifact\3.8.5\4433f50c07debefaed0553bd0068f4f48d449313\maven-artifact-3.8.5.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.jodah\typetools\0.6.3\a01aaa6ddaea9ec07ec4f209487b7a46a526283a\typetools-0.6.3.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.minecrell\terminalconsoleappender\1.3.0\b562e9bb61235c9520e26282cdee71f8f802d1fc\terminalconsoleappender-1.3.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.fabricmc\sponge-mixin\0.15.2+mixin.0.8.7\2af2f021d8e02a0220dc27a7a72b4666d66d44ca\sponge-mixin-0.15.2+mixin.0.8.7.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.openjdk.nashorn\nashorn-core\15.4\f67f5ffaa5f5130cf6fb9b133da00c7df3b532a5\nashorn-core-15.4.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-lang3\3.14.0\1ed471194b02f2c6cb734a0cd6f6f107c673afae\commons-lang3-3.14.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.sf.jopt-simple\jopt-simple\5.0.4\4fdac2fbe92dfad86aa6e9301736f6b4342a3f5c\jopt-simple-5.0.4.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\commons-io\commons-io\2.15.1\f11560da189ab563a5c8e351941415430e9304ea\commons-io-2.15.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\logging\1.2.7\24cb95ffb0e3433fd6e844c04e68009e504ca1c0\logging-1.2.7.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-slf4j2-impl\2.22.1\d7e6693c2606cb7e7335047d7bb96dec52db5665\log4j-slf4j2-impl-2.22.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-core\2.22.1\7183a25510a02ad00cc6a95d3b3d2a7d3c5a8dc4\log4j-core-2.22.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.apache.logging.log4j\log4j-api\2.22.1\bea6fede6328fabafd7e68363161a7ea6605abd1\log4j-api-2.22.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\guava\32.1.2-jre\5e64ec7e056456bef3a4bc4c6fdaef71e8ab6318\guava-32.1.2-jre.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.10.1\b3add478d4382b78ea20b1671390a858002feb6c\gson-2.10.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.slf4j\slf4j-api\2.0.9\7cf2726fdcfbc8610f9a71fb3ed639871f315340\slf4j-api-2.0.9.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.antlr\antlr4-runtime\4.13.1\17125bae1d965624e265ef49552f6465a2bfa307\antlr4-runtime-4.13.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.minecraftforge\srgutils\0.4.15\ca408b131759478f164e010fae0d73997e125fb5\srgutils-0.4.15.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.codehaus.plexus\plexus-utils\3.3.0\cf43b5391de623b36fe066a21127baef82c64022\plexus-utils-3.3.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.jline\jline-reader\3.20.0\8f15415b022a25b473e8e16c28ae913186ffb9c4\jline-reader-3.20.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.machinezoo.noexception\noexception\1.7.1\b65330c98e38a1f915fa54a6e5eca496505e3f0a\noexception-1.7.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.github.oshi\oshi-core\6.4.10\b1d8ab82d11d92fd639b56d639f8f46f739dd5fa\oshi-core-6.4.10.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\failureaccess\1.0.1\1dcf1de382a0bf95a3d8b0849546c88bac1292c9\failureaccess-1.0.1.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\authlib\6.0.54\de8bc95660e1b2fe8793fd427a7a10dcec5b3ea7\authlib-6.0.54.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\brigadier\1.3.10\d15b53a14cf20fdcaa98f731af5dda654452c010\brigadier-1.3.10.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.mojang\datafixerupper\8.0.16\67d4de6d7f95d89bcf5862995fb854ebaec02a34\datafixerupper-8.0.16.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-buffer\4.1.97.Final\f8f3d8644afa5e6e1a40a3a6aeb9d9aa970ecb4f\netty-buffer-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-codec\4.1.97.Final\384ba4d75670befbedb45c4d3b497a93639c206d\netty-codec-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-common\4.1.97.Final\7cceacaf11df8dc63f23d0fb58e9d4640fc88404\netty-common-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-handler\4.1.97.Final\abb86c6906bf512bf2b797a41cd7d2e8d3cd7c36\netty-handler-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-resolver\4.1.97.Final\cec8348108dc76c47cf87c669d514be52c922144\netty-resolver-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport-classes-epoll\4.1.97.Final\795da37ded759e862457a82d9d92c4d39ce8ecee\netty-transport-classes-epoll-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport-native-unix-common\4.1.97.Final\d469d84265ab70095b01b40886cabdd433b6e664\netty-transport-native-unix-common-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\io.netty\netty-transport\4.1.97.Final\f37380d23c9bb079bc702910833b2fd532c9abd0\netty-transport-4.1.97.Final.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\it.unimi.dsi\fastutil\8.5.12\c24946d46824bd528054bface3231d2ecb7e95e8\fastutil-8.5.12.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna-platform\5.14.0\28934d48aed814f11e4c584da55c49fa7032b31b\jna-platform-5.14.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna\5.14.0\67bf3eaea4f0718cb376a181a629e5f88fa1c9dd\jna-5.14.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.joml\joml\1.10.5\22566d58af70ad3d72308bab63b8339906deb649\joml-1.10.5.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.lz4\lz4-java\1.8.0\4b986a99445e49ea5fbf5d149c4b63f6ed6c6780\lz4-java-1.8.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.jline\jline-terminal\3.20.0\d0ddcc708ddf527a3454c941b7b9225cc83a15ff\jline-terminal-3.20.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.guava\listenablefuture\9999.0-empty-to-avoid-conflict-with-guava\b421526c5f297295adef1c886e5246c39d4ac629\listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.code.findbugs\jsr305\3.0.2\25ea2e8b0c338a877313bd4672d3fe056ea78f0d\jsr305-3.0.2.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\org.checkerframework\checker-qual\3.33.0\de2b60b62da487644fc11f734e73c8b0b431238f\checker-qual-3.33.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.errorprone\error_prone_annotations\2.18.0\89b684257096f548fa39a7df9fdaa409d4d4df91\error_prone_annotations-2.18.0.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModDiscoverer/]: Skipping C:\Users\user\.gradle\caches\modules-2\files-2.1\com.google.j2objc\j2objc-annotations\2.8\c85270e307e7b822f1086b93689124b89768e273\j2objc-annotations-2.8.jar because it was already located earlier
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.UniqueModListBuilder/]: Found 2 mods for first modid neoforge, selecting most recent based on version data
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.UniqueModListBuilder/]: Selected file neoforge-21.1.214.jar for modid neoforge with version 21.1.214
+[21:31:20] [main/INFO] [ne.ne.fm.lo.mo.lo.JarInJarDependencyLocator/]: Found 2 dependencies adding them to mods collection
+[21:31:20] [main/INFO] [ne.ne.fm.lo.mo.ModDiscoverer/]: 
      Mod List:
 		Name Version (Mod Id)
 
 		GeckoLib 4 4.8.3 (geckolib)
-		Just Enough Guns 1.4.0 (jeg)
+		Just Enough Guns 1.5.0 (jeg)
 		Minecraft 1.21.1 (minecraft)
 		NeoForge 21.1.214 (neoforge)
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {minecraft} mods - versions {1.21.1}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar with languages [LanguageSpec[languageName=minecraft, acceptedVersions=1]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file geckolib-neoforge-1.21.1-4.8.3.jar with {geckolib} mods - versions {4.8.3}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar with languages [LanguageSpec[languageName=javafml, acceptedVersions=[4,)]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=geckolib.mixins.json, requiredMods=[]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar with languages [LanguageSpec[languageName=javafml, acceptedVersions=[3,]]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=neoforge.mixins.json, requiredMods=[]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file main with {jeg} mods - versions {1.4.0}
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main with languages [LanguageSpec[languageName=javafml, acceptedVersions=[4,)]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=jeg.mixins.json, requiredMods=[]]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file  with languages []
-[16:23:32] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: End scan trigger - transformation service fml
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 3 implementations of IModLanguageLoader:
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.javafmlmod.FMLJavaModLanguageProvider from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.lowcodemod.LowCodeModLanguageProvider from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.mclanguageprovider.MinecraftModLanguageProvider from loader-4.0.42.jar
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider javafml, version 4.0.42
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider lowcodefml, version 4.0.42
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider minecraft, version 4.0.42
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Configured system mods: [minecraft, neoforge]
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Found system mod: minecraft
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Found system mod: neoforge
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ModSorter/LOADING]: Found 6 mod requirements (5 mandatory, 1 optional)
-[16:23:32] [main/DEBUG] [ne.ne.fm.lo.ModSorter/LOADING]: Found 0 mod requirements missing (0 mandatory, 0 optional)
-[16:23:33] [main/DEBUG] [mixin/]: Adding mixin platform agents for container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent accepted container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services loading transformers
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformers for transformation service mixin
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformers for transformation service mixin
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformers for transformation service fml
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/LOADING]: Loading coremod transformers
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Not loading coremod script-engine since no mod requested it
-[16:23:33] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 1 implementations of ICoreMod:
-[16:23:33] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.neoforge.coremods.NeoForgeCoreMod from neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.biome.Biome, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.levelgen.structure.Structure, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.block.FlowerPotBlock, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
-[16:23:33] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net/minecraft/world/level/levelgen/PatrolSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/server/commands/RaidCommand, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/ai/village/VillageSiege, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/ZombieVillager, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Evoker$EvokerSummonSpellGoal, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/OceanMonumentPieces$OceanMonumentPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/server/commands/SummonCommand, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/WoodlandMansionPieces$WoodlandMansionPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/npc/CatSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/NaturalSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/raid/Raid, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Strider, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Zombie, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/EntityType, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/animal/horse/SkeletonTrapGoal, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Spider, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/OceanRuinPieces$OceanRuinPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/animal/frog/Tadpole, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/SwampHutPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/PhantomSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/npc/Villager, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@353efdbf to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/biome/Biome;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@682bd3c4 to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/Structure;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@f2e4acf to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/block/FlowerPotBlock;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/PatrolSpawner;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/server/commands/RaidCommand;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/ai/village/VillageSiege;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/ZombieVillager;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Evoker$EvokerSummonSpellGoal;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/OceanMonumentPieces$OceanMonumentPiece;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/server/commands/SummonCommand;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/WoodlandMansionPieces$WoodlandMansionPiece;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/npc/CatSpawner;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/NaturalSpawner;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/raid/Raid;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Strider;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Zombie;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/EntityType;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/animal/horse/SkeletonTrapGoal;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Spider;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/OceanRuinPieces$OceanRuinPiece;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/animal/frog/Tadpole;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/SwampHutPiece;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/PhantomSpawner;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/npc/Villager;} {} {V}
-[16:23:33] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformers for transformation service fml
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c]
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[FMLMixinPlatformAgent:null]
-[16:23:34] [main/DEBUG] [mixin/]: Compatibility level JAVA_17 specified by geckolib.mixins.json is higher than the maximum level supported by this version of mixin (JAVA_13).
-[16:23:34] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
-[16:23:34] [main/DEBUG] [mixin/]: Compatibility level JAVA_21 specified by jeg.mixins.json is higher than the maximum level supported by this version of mixin (JAVA_13).
-[16:23:34] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
-[16:23:34] [main/DEBUG] [mixin/]: Mixin config jeg.mixins.json does not specify "minVersion" or "requiredFeatures" property
-[16:23:34] [main/DEBUG] [mixin/]: Processing launch tasks for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
-[16:23:34] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(mixin_synthetic)
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixin_synthetic)]
-[16:23:34] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(minecraft)
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(minecraft)]
-[16:23:34] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(geckolib)]
-[16:23:34] [main/DEBUG] [mixin/]: Registering mixin config: geckolib.mixins.json source=SecureJarResource(geckolib)
-[16:23:34] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(jeg)
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(jeg)]
-[16:23:34] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixinextras.neoforge)]
-[16:23:34] [main/DEBUG] [mixin/]: Registering mixin config: mixinextras.init.mixins.json source=SecureJarResource(mixinextras.neoforge)
-[16:23:34] [main/DEBUG] [mixin/]: inject() running with 7 agents
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[FMLMixinPlatformAgent:null]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixin_synthetic)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(minecraft)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(geckolib)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(jeg)]
-[16:23:34] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixinextras.neoforge)]
-[16:23:34] [main/INFO] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeserverdev' with arguments [--gameDir, ., --nogui]
-[16:23:35] [main/DEBUG] [mixin/]: Preparing mixins for MixinEnvironment[DEFAULT]
-[16:23:35] [main/DEBUG] [mixin/]: Selecting config geckolib.mixins.json
-[16:23:35] [main/WARN] [mixin/]: Reference map 'geckolib.refmap.json' for geckolib.mixins.json could not be read. If this is a development environment you can ignore this message
-[16:23:35] [main/DEBUG] [mixin/]: Selecting config jeg.mixins.json
-[16:23:35] [main/DEBUG] [mixin/]: Selecting config neoforge.mixins.json
-[16:23:35] [main/DEBUG] [mixin/]: Selecting config mixinextras.init.mixins.json
-[16:23:35] [main/DEBUG] [MixinExtras|Service/]: com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0) is taking over from null
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @Inject with org.spongepowered.asm.mixin.injection.struct.CallbackInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArg with org.spongepowered.asm.mixin.injection.struct.ModifyArgInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArgs with org.spongepowered.asm.mixin.injection.struct.ModifyArgsInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @Redirect with org.spongepowered.asm.mixin.injection.struct.RedirectInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @ModifyVariable with org.spongepowered.asm.mixin.injection.struct.ModifyVariableInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Registering new injector for @ModifyConstant with org.spongepowered.asm.mixin.injection.struct.ModifyConstantInjectionInfo
-[16:23:35] [main/DEBUG] [mixin/]: Preparing geckolib.mixins.json (7)
-[16:23:35] [main/DEBUG] [mixin/]: Preparing jeg.mixins.json (3)
-[16:23:36] [main/DEBUG] [mixin/]: Preparing neoforge.mixins.json (2)
-[16:23:36] [main/DEBUG] [mixin/]: Preparing mixinextras.init.mixins.json (0)
-[16:23:36] [main/DEBUG] [mixin/]: Prepared 8 mixins in 1,003 sec (125,4ms avg) (0ms load, 0ms transform, 0ms plugin)
-[16:23:36] [main/DEBUG] [io.ne.ut.in.lo.InternalLoggerFactory/]: Using SLF4J as the default logging framework
-[16:23:36] [main/DEBUG] [io.ne.ut.ResourceLeakDetector/]: -Dio.netty.leakDetection.level: simple
-[16:23:36] [main/DEBUG] [io.ne.ut.ResourceLeakDetector/]: -Dio.netty.leakDetection.targetRecords: 4
-[16:23:37] [main/DEBUG] [os.ut.FileUtil/]: No oshi.properties file found from ClassLoader cpw.mods.modlauncher.TransformingClassLoader@543e593
-[16:23:38] [main/DEBUG] [os.ut.FileUtil/]: No oshi.architecture.properties file found from ClassLoader cpw.mods.modlauncher.TransformingClassLoader@543e593
-[16:23:39] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
-[16:23:39] [main/DEBUG] [mixin/]: Registering new injector for @SugarWrapper with com.llamalad7.mixinextras.sugar.impl.SugarWrapperInjectionInfo
-[16:23:39] [main/DEBUG] [mixin/]: Registering new injector for @FactoryRedirectWrapper with com.llamalad7.mixinextras.wrapper.factory.FactoryRedirectWrapperInjectionInfo
-[16:23:39] [main/DEBUG] [mixin/]: Registering new injector for @ExpressionInjectorWrapper with com.llamalad7.mixinextras.expression.impl.wrapper.ExpressionInjectorWrapperInjectionInfo
-[16:23:39] [main/DEBUG] [mixin/]: Mixing MappedRegistryAccessor from neoforge.mixins.json into net.minecraft.core.MappedRegistry
-[16:23:39] [main/DEBUG] [mixin/]: Mixing common.LivingEntityMixin from geckolib.mixins.json into net.minecraft.world.entity.LivingEntity
-[16:23:39] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.LivingEntityMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
-[16:23:41] [main/DEBUG] [mixin/]: Mixing GunnerSunBurnMixin from jeg.mixins.json into net.minecraft.world.entity.Mob
-[16:23:41] [main/DEBUG] [mixin/]: jeg.mixins.json:GunnerSunBurnMixin from mod jeg->@Inject::jeg$preventGunnerSunBurn(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V does use it's CallbackInfoReturnable
-[16:23:41] [main/DEBUG] [mixin/]: Mixing BlockEntityTypeAccessor from neoforge.mixins.json into net.minecraft.world.level.block.entity.BlockEntityType
-[16:23:41] [main/DEBUG] [mixin/]: Mixing common.AbstractContainerMenuMixin from geckolib.mixins.json into net.minecraft.world.inventory.AbstractContainerMenu
-[16:23:41] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.AbstractContainerMenuMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
-[16:23:41] [main/DEBUG] [mixin/]: Mixing common.ItemStackMixin from geckolib.mixins.json into net.minecraft.world.item.ItemStack
-[16:23:41] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.ItemStackMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: -Dio.netty.noUnsafe: false
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: Java version: 21
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.theUnsafe: available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.copyMemory: available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.storeFence: available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.Buffer.address: available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: direct buffer constructor: unavailable: Reflective setAccessible(true) disabled
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.Bits.unaligned: available, true
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable: class io.netty.util.internal.PlatformDependent0$7 (in module io.netty.common) cannot access class jdk.internal.misc.Unsafe (in module java.base) because module java.base does not export jdk.internal.misc to module io.netty.common
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.DirectByteBuffer.<init>(long, {int,long}): unavailable
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: sun.misc.Unsafe: available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: maxDirectMemory: 4213178368 bytes (maybe)
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.tmpdir: C:\Users\user\AppData\Local\Temp (java.io.tmpdir)
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.bitMode: 64 (sun.arch.data.model)
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: Platform: Windows
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.maxDirectMemory: -1 bytes
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.uninitializedArrayAllocationThreshold: -1
-[16:23:44] [main/DEBUG] [io.ne.ut.in.CleanerJava9/]: java.nio.ByteBuffer.cleaner(): available
-[16:23:44] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.noPreferDirect: false
-[16:23:45] [main/DEBUG] [mixin/]: Mixing TargetGoalMixin from jeg.mixins.json into net.minecraft.world.entity.ai.goal.target.TargetGoal
-[16:23:45] [main/DEBUG] [mixin/]: Mixing GunnerWaterConversionMixin from jeg.mixins.json into net.minecraft.world.entity.monster.Zombie
-[16:23:45] [main/DEBUG] [mixin/]: jeg.mixins.json:GunnerWaterConversionMixin from mod jeg->@Inject::jeg$preventGunnerWaterConversion(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V does use it's CallbackInfoReturnable
-[16:23:49] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
-[16:23:49] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
-[16:23:49] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
-[16:23:49] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
-[16:23:49] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
-[16:23:49] [main/DEBUG] [ne.ne.fm.ModWorkManager/LOADING]: Using 20 threads for parallel mod-loading
-[16:23:49] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [software.bernie.geckolib.GeckoLib]
-[16:23:49] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [ttv.migami.jeg.JustEnoughGuns]
-[16:23:49] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [net.neoforged.neoforge.common.NeoForgeMod]
-[16:23:49] [modloading-worker-0/DEBUG] [GeckoLib/]: Loaded software.bernie.geckolib.platform.GeckoLibNeoForge@1136182 for service interface software.bernie.geckolib.service.GeckoLibPlatform
-[16:23:49] [modloading-worker-0/DEBUG] [GeckoLib/]: Loaded software.bernie.geckolib.network.GeckoLibNetworkingNeoForge@44c3df13 for service interface software.bernie.geckolib.service.GeckoLibNetworking
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for geckolib
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.ne.in.ve.ne.NeoForgeVersion/CORE]: Found NeoForge version 21.1.214
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.ne.in.ve.ne.NeoForgeVersion/CORE]: Found FML version 4.0.42
-[16:23:49] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.214, for MC 1.21.1
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file jeg-client.toml for jeg tracking
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file jeg-server.toml for jeg tracking
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-client.toml for neoforge tracking
-[16:23:49] [modloading-worker-0/INFO] [jeg/]: Initializing Just Enough Guns for Minecraft 1.21.11
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-server.toml for neoforge tracking
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-common.toml for neoforge tracking
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for neoforge
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.filters.GenericPacketSplitter for @SubscribeEvent-annotated methods
-[16:23:49] [modloading-worker-0/DEBUG] [jeg/]: Game events registered successfully
-[16:23:49] [modloading-worker-0/INFO] [jeg/]: JEG initialization completed successfully
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for jeg
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class ttv.migami.jeg.event.RecipeUnlockHandler for @SubscribeEvent-annotated methods
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lttv/migami/jeg/event/RecipeUnlockHandler; to the game event bus
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class ttv.migami.jeg.item.BulletproofArmorEvents for @SubscribeEvent-annotated methods
-[16:23:49] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lttv/migami/jeg/item/BulletproofArmorEvents; to the game event bus
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.AbstractByteBuf/]: -Dio.netty.buffer.checkAccessible: true
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.AbstractByteBuf/]: -Dio.netty.buffer.checkBounds: true
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.ut.ResourceLeakDetectorFactory/]: Loaded default ResourceLeakDetector: io.netty.util.ResourceLeakDetector@1e4403d5
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.ut.in.InternalThreadLocalMap/]: -Dio.netty.threadLocalMap.stringBuilder.initialSize: 1024
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.ut.in.InternalThreadLocalMap/]: -Dio.netty.threadLocalMap.stringBuilder.maxSize: 4096
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.numHeapArenas: 40
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.numDirectArenas: 40
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.pageSize: 8192
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxOrder: 9
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.chunkSize: 4194304
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.smallCacheSize: 256
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.normalCacheSize: 64
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxCachedBufferCapacity: 32768
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.cacheTrimInterval: 8192
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.cacheTrimIntervalMillis: 0
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.useCacheForAllThreads: false
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxCachedByteBuffersPerChunk: 1023
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.allocator.type: pooled
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.threadLocalDirectBufferSize: 0
-[16:23:50] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.maxThreadLocalCharBufferSize: 16384
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/filters/GenericPacketSplitter; to the mod event bus of mod neoforge
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.NetworkInitialization for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/NetworkInitialization; to the mod event bus of mod neoforge
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.ConfigurationInitialization for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/ConfigurationInitialization; to the mod event bus of mod neoforge
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.common.MonsterRoomHooks for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/common/MonsterRoomHooks; to the game event bus
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.common.DeferredSpawnEggItem$CommonHandler for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/common/DeferredSpawnEggItem$CommonHandler; to the mod event bus of mod neoforge
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.attachment.AttachmentSync for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/attachment/AttachmentSync; to the game event bus
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.attachment.AttachmentInternals for @SubscribeEvent-annotated methods
-[16:23:50] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/attachment/AttachmentInternals; to the game event bus
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loading configs type COMMON
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.ne.co.NeoForgeConfig/FORGEMOD]: Loaded NeoForge config file neoforge-common.toml
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loaded TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-common.toml
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Watching TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-common.toml for changes
-[16:23:50] [modloading-worker-0/INFO] [jeg/]: JEG common setup started
-[16:23:50] [modloading-worker-0/INFO] [jeg/]: JEG common setup completed successfully
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.fm.DeferredWorkQueue/LOADING]: Dispatching synchronous work for work queue Common setup: 1 jobs
-[16:23:50] [modloading-sync-worker/DEBUG] [ne.ne.fm.DeferredWorkQueue/LOADING]: Synchronous work queue completed in 1.750 ms
-[16:23:50] [main/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
-[16:23:50] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/D:/ai-workspace/Just%20Enough%20Gun%202/main_repository/Just-Enough-Guns-NeoForge-1.21.1/build/moddev/artifacts/neoforge-21.1.214.jar%23125!/assets/.mcassetsroot' uses unexpected schema
-[16:23:50] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/D:/ai-workspace/Just%20Enough%20Gun%202/main_repository/Just-Enough-Guns-NeoForge-1.21.1/build/moddev/artifacts/neoforge-21.1.214.jar%23125!/data/.mcassetsroot' uses unexpected schema
-[16:23:52] [main/INFO] [minecraft/RecipeManager]: Loaded 1345 recipes
-[16:23:53] [main/INFO] [minecraft/AdvancementTree]: Loaded 1399 advancements
-[16:23:53] [main/DEBUG] [ne.ne.ne.co.CommonHooks/WP]: Gathered mod list to write to world save world
-[16:23:53] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.21.1
-[16:23:53] [Server thread/INFO] [minecraft/DedicatedServer]: Loading properties
-[16:23:53] [Server thread/INFO] [minecraft/DedicatedServer]: Default game type: SURVIVAL
-[16:23:53] [Server thread/INFO] [minecraft/MinecraftServer]: Generating keypair
-[16:23:53] [Server thread/INFO] [minecraft/DedicatedServer]: Starting Minecraft server on *:25565
-[16:23:53] [Server thread/DEBUG] [ne.ne.ne.ne.DualStackUtils/]: Detected IPv6 address: "0:0:0:0:0:0:0:0"
-[16:23:53] [Server thread/DEBUG] [io.ne.ch.MultithreadEventLoopGroup/]: -Dio.netty.eventLoopThreads: 40
-[16:23:53] [Server thread/DEBUG] [io.ne.ut.co.GlobalEventExecutor/]: -Dio.netty.globalEventExecutor.quietPeriodSeconds: 1
-[16:23:53] [Server thread/DEBUG] [io.ne.ch.ni.NioEventLoop/]: -Dio.netty.noKeySetOptimization: false
-[16:23:53] [Server thread/DEBUG] [io.ne.ch.ni.NioEventLoop/]: -Dio.netty.selectorAutoRebuildThreshold: 512
-[16:23:53] [Server thread/DEBUG] [io.ne.ut.in.PlatformDependent/]: org.jctools-core.MpscChunkedArrayQueue: available
-[16:23:54] [Server thread/INFO] [minecraft/ServerConnectionListener]: Using default channel type
-[16:23:54] [Server thread/DEBUG] [io.ne.ch.DefaultChannelId/]: -Dio.netty.processId: 3816 (auto-detected)
-[16:23:54] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: -Djava.net.preferIPv4Stack: false
-[16:23:54] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: -Djava.net.preferIPv6Addresses: true
-[16:23:54] [Server thread/DEBUG] [io.ne.ut.NetUtilInitializations/]: Loopback interface: loopback_0 (Software Loopback Interface 1, 0:0:0:0:0:0:0:1)
-[16:23:54] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: Failed to get SOMAXCONN from sysctl and file \proc\sys\net\core\somaxconn. Default: 200
-[16:23:54] [Server thread/DEBUG] [io.ne.ch.DefaultChannelId/]: -Dio.netty.machineId: 70:a8:d3:ff:fe:1f:b9:45 (auto-detected)
-[16:23:54] [Server thread/WARN] [minecraft/DedicatedServer]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
-[16:23:54] [Server thread/WARN] [minecraft/DedicatedServer]: The server will make no attempt to authenticate usernames. Beware.
-[16:23:54] [Server thread/WARN] [minecraft/DedicatedServer]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
-[16:23:54] [Server thread/WARN] [minecraft/DedicatedServer]: To change this, set "online-mode" to "true" in the server.properties file.
-[16:23:54] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loading configs type SERVER
-[16:23:54] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loaded TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\jeg-server.toml
-[16:23:54] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Watching TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\jeg-server.toml for changes
-[16:23:54] [Server thread/DEBUG] [ne.ne.ne.co.NeoForgeConfig/FORGEMOD]: Loaded NeoForge config file neoforge-server.toml
-[16:23:54] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loaded TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-server.toml
-[16:23:54] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Watching TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-server.toml for changes
-[16:23:54] [Server thread/INFO] [minecraft/DedicatedServer]: Preparing level "world"
-[16:23:55] [Server thread/INFO] [minecraft/MinecraftServer]: Preparing start region for dimension minecraft:overworld
-[16:23:55] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 0%
-[16:23:55] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 0%
-[16:23:56] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 0%
-[16:23:56] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 0%
-[16:23:57] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 0%
-[16:23:57] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:23:58] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:23:58] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:23:59] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:23:59] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:24:00] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
-[16:24:00] [Server thread/INFO] [minecraft/LoggerChunkProgressListener]: Time elapsed: 5598 ms
-[16:24:00] [Server thread/INFO] [minecraft/DedicatedServer]: Done (6.688s)! For help, type "help"
-[16:24:00] [Server thread/DEBUG] [ne.ne.ne.ne.DualStackUtils/]: Detected IPv6 address: "0:0:0:0:0:0:0:0"
-[16:24:00] [Server thread/DEBUG] [ne.ne.ne.se.LanguageHook/]: Loaded 4 language files for en_us
-[16:24:00] [Server thread/INFO] [ne.ne.ne.ga.GameTestHooks/]: Enabled Gametest Namespaces: [jeg]
-[16:24:00] [Server thread/INFO] [ne.ne.ne.se.pe.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
-[16:24:00] [Server thread/INFO] [jeg/]: Loaded 55 jeg recipes
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {minecraft} mods - versions {1.21.1}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar with languages [LanguageSpec[languageName=minecraft, acceptedVersions=1]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file geckolib-neoforge-1.21.1-4.8.3.jar with {geckolib} mods - versions {4.8.3}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file C:\Users\user\.gradle\caches\modules-2\files-2.1\software.bernie.geckolib\geckolib-neoforge-1.21.1\4.8.3\fb0ac6ad63dc5f401c15c66a037c08e9709d1c42\geckolib-neoforge-1.21.1-4.8.3.jar with languages [LanguageSpec[languageName=javafml, acceptedVersions=[4,)]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=geckolib.mixins.json, requiredMods=[]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file neoforge-21.1.214.jar with {neoforge} mods - versions {21.1.214}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\moddev\artifacts\neoforge-21.1.214.jar with languages [LanguageSpec[languageName=javafml, acceptedVersions=[3,]]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=neoforge.mixins.json, requiredMods=[]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileParser/LOADING]: Considering mod file candidate D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFileInfo/LOADING]: Found valid mod file main with {jeg} mods - versions {1.5.0}
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\build\classes\java\main with languages [LanguageSpec[languageName=javafml, acceptedVersions=[4,)]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Found mixin config MixinConfig[config=jeg.mixins.json, requiredMods=[]]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.mo.ModFile/LOADING]: Loading mod file  with languages []
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: End scan trigger - transformation service fml
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 3 implementations of IModLanguageLoader:
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.javafmlmod.FMLJavaModLanguageProvider from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.lowcodemod.LowCodeModLanguageProvider from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.fml.mclanguageprovider.MinecraftModLanguageProvider from loader-4.0.42.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider javafml, version 4.0.42
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider lowcodefml, version 4.0.42
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.LanguageProviderLoader/CORE]: Found language provider minecraft, version 4.0.42
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Configured system mods: [minecraft, neoforge]
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Found system mod: minecraft
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ModSorter/]: Found system mod: neoforge
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ModSorter/LOADING]: Found 6 mod requirements (5 mandatory, 1 optional)
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.ModSorter/LOADING]: Found 0 mod requirements missing (0 mandatory, 0 optional)
+[21:31:20] [main/DEBUG] [mixin/]: Adding mixin platform agents for container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent accepted container net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServicesHandler/MODLAUNCHER]: Transformation services loading transformers
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformers for transformation service mixin
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformers for transformation service mixin
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initializing transformers for transformation service fml
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/LOADING]: Loading coremod transformers
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Not loading coremod script-engine since no mod requested it
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: Found 1 implementations of ICoreMod:
+[21:31:20] [main/DEBUG] [ne.ne.fm.ut.ServiceLoaderUtil/CORE]: 	net.neoforged.neoforge.coremods.NeoForgeCoreMod from neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.biome.Biome, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.levelgen.structure.Structure, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net.minecraft.world.level.block.FlowerPotBlock, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
+[21:31:20] [main/DEBUG] [ne.ne.fm.lo.FMLServiceProvider/CORE]: Adding [Target[className=net/minecraft/world/level/levelgen/PatrolSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/server/commands/RaidCommand, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/ai/village/VillageSiege, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/ZombieVillager, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Evoker$EvokerSummonSpellGoal, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/OceanMonumentPieces$OceanMonumentPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/server/commands/SummonCommand, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/WoodlandMansionPieces$WoodlandMansionPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/npc/CatSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/NaturalSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/raid/Raid, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Strider, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Zombie, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/EntityType, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/animal/horse/SkeletonTrapGoal, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/monster/Spider, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/OceanRuinPieces$OceanRuinPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/animal/frog/Tadpole, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/structure/structures/SwampHutPiece, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/level/levelgen/PhantomSpawner, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326], Target[className=net/minecraft/world/entity/npc/Villager, elementName=, elementDescriptor=, targetType=cpw.mods.modlauncher.api.TargetType@7d64e326]] transformer from core-mod net.neoforged.neoforge.coremods.NeoForgeCoreMod@67001148 in neoforge-21.1.214.jar > net.neoforged.neoforge-coremods-21.1.214.jar
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@353efdbf to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/biome/Biome;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@682bd3c4 to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/Structure;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.ReplaceFieldWithGetterAccess@f2e4acf to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/block/FlowerPotBlock;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/PatrolSpawner;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/server/commands/RaidCommand;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/ai/village/VillageSiege;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/ZombieVillager;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Evoker$EvokerSummonSpellGoal;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/OceanMonumentPieces$OceanMonumentPiece;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/server/commands/SummonCommand;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/WoodlandMansionPieces$WoodlandMansionPiece;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/npc/CatSpawner;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/NaturalSpawner;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/raid/Raid;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Strider;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Zombie;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/EntityType;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/animal/horse/SkeletonTrapGoal;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/monster/Spider;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/OceanRuinPieces$OceanRuinPiece;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/animal/frog/Tadpole;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/structure/structures/SwampHutPiece;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/level/levelgen/PhantomSpawner;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformStore/MODLAUNCHER]: Adding transformer net.neoforged.neoforge.coremods.MethodRedirector@24097e9b to Target : cpw.mods.modlauncher.api.TargetType@7d64e326 {Lnet/minecraft/world/entity/npc/Villager;} {} {V}
+[21:31:20] [main/DEBUG] [cp.mo.mo.TransformationServiceDecorator/MODLAUNCHER]: Initialized transformers for transformation service fml
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c]
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[FMLMixinPlatformAgent:null]
+[21:31:22] [main/DEBUG] [mixin/]: Compatibility level JAVA_17 specified by geckolib.mixins.json is higher than the maximum level supported by this version of mixin (JAVA_13).
+[21:31:22] [main/INFO] [mixin/]: Compatibility level set to JAVA_17
+[21:31:22] [main/DEBUG] [mixin/]: Compatibility level JAVA_21 specified by jeg.mixins.json is higher than the maximum level supported by this version of mixin (JAVA_13).
+[21:31:22] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
+[21:31:22] [main/DEBUG] [mixin/]: Mixin config jeg.mixins.json does not specify "minVersion" or "requiredFeatures" property
+[21:31:22] [main/DEBUG] [mixin/]: Processing launch tasks for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
+[21:31:22] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(mixin_synthetic)
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixin_synthetic)]
+[21:31:22] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(minecraft)
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(minecraft)]
+[21:31:22] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(geckolib)]
+[21:31:22] [main/DEBUG] [mixin/]: Registering mixin config: geckolib.mixins.json source=SecureJarResource(geckolib)
+[21:31:22] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(jeg)
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(jeg)]
+[21:31:22] [main/DEBUG] [mixin/]: Adding mixin platform agents for container SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentMinecraftForge for SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentMinecraftForge rejected container SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new MixinPlatformAgentDefault for SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: MixinPlatformAgentDefault accepted container SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: Instancing new FMLMixinPlatformAgent for SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: FMLMixinPlatformAgent rejected container SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: Processing prepare() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixinextras.neoforge)]
+[21:31:22] [main/DEBUG] [mixin/]: Registering mixin config: mixinextras.init.mixins.json source=SecureJarResource(mixinextras.neoforge)
+[21:31:22] [main/DEBUG] [mixin/]: inject() running with 7 agents
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:ModLauncher Root Container(ModLauncher:4f56a0a2)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:net.neoforged.fml.loading.mixin.FMLMixinContainerHandle@426e505c]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[FMLMixinPlatformAgent:null]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixin_synthetic)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(minecraft)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(geckolib)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(jeg)]
+[21:31:22] [main/DEBUG] [mixin/]: Processing inject() for PlatformAgent[MixinPlatformAgentDefault:SecureJarResource(mixinextras.neoforge)]
+[21:31:22] [main/INFO] [cp.mo.mo.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeserverdev' with arguments [--gameDir, ., --nogui]
+[21:31:22] [main/DEBUG] [mixin/]: Preparing mixins for MixinEnvironment[DEFAULT]
+[21:31:22] [main/DEBUG] [mixin/]: Selecting config geckolib.mixins.json
+[21:31:22] [main/WARN] [mixin/]: Reference map 'geckolib.refmap.json' for geckolib.mixins.json could not be read. If this is a development environment you can ignore this message
+[21:31:22] [main/DEBUG] [mixin/]: Selecting config jeg.mixins.json
+[21:31:22] [main/DEBUG] [mixin/]: Selecting config neoforge.mixins.json
+[21:31:22] [main/DEBUG] [mixin/]: Selecting config mixinextras.init.mixins.json
+[21:31:22] [main/DEBUG] [MixinExtras|Service/]: com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0) is taking over from null
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @Inject with org.spongepowered.asm.mixin.injection.struct.CallbackInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArg with org.spongepowered.asm.mixin.injection.struct.ModifyArgInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @ModifyArgs with org.spongepowered.asm.mixin.injection.struct.ModifyArgsInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @Redirect with org.spongepowered.asm.mixin.injection.struct.RedirectInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @ModifyVariable with org.spongepowered.asm.mixin.injection.struct.ModifyVariableInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Registering new injector for @ModifyConstant with org.spongepowered.asm.mixin.injection.struct.ModifyConstantInjectionInfo
+[21:31:23] [main/DEBUG] [mixin/]: Preparing geckolib.mixins.json (7)
+[21:31:23] [main/DEBUG] [mixin/]: Preparing jeg.mixins.json (3)
+[21:31:23] [main/DEBUG] [mixin/]: Preparing neoforge.mixins.json (2)
+[21:31:23] [main/DEBUG] [mixin/]: Preparing mixinextras.init.mixins.json (0)
+[21:31:23] [main/DEBUG] [mixin/]: Prepared 8 mixins in 0,799 sec (99,9ms avg) (0ms load, 0ms transform, 0ms plugin)
+[21:31:23] [main/DEBUG] [io.ne.ut.in.lo.InternalLoggerFactory/]: Using SLF4J as the default logging framework
+[21:31:23] [main/DEBUG] [io.ne.ut.ResourceLeakDetector/]: -Dio.netty.leakDetection.level: simple
+[21:31:23] [main/DEBUG] [io.ne.ut.ResourceLeakDetector/]: -Dio.netty.leakDetection.targetRecords: 4
+[21:31:24] [main/DEBUG] [os.ut.FileUtil/]: No oshi.properties file found from ClassLoader cpw.mods.modlauncher.TransformingClassLoader@543e593
+[21:31:24] [main/DEBUG] [os.ut.FileUtil/]: No oshi.architecture.properties file found from ClassLoader cpw.mods.modlauncher.TransformingClassLoader@543e593
+[21:31:25] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
+[21:31:25] [main/DEBUG] [mixin/]: Registering new injector for @SugarWrapper with com.llamalad7.mixinextras.sugar.impl.SugarWrapperInjectionInfo
+[21:31:25] [main/DEBUG] [mixin/]: Registering new injector for @FactoryRedirectWrapper with com.llamalad7.mixinextras.wrapper.factory.FactoryRedirectWrapperInjectionInfo
+[21:31:25] [main/DEBUG] [mixin/]: Registering new injector for @ExpressionInjectorWrapper with com.llamalad7.mixinextras.expression.impl.wrapper.ExpressionInjectorWrapperInjectionInfo
+[21:31:25] [main/DEBUG] [mixin/]: Mixing MappedRegistryAccessor from neoforge.mixins.json into net.minecraft.core.MappedRegistry
+[21:31:25] [main/DEBUG] [mixin/]: Mixing common.LivingEntityMixin from geckolib.mixins.json into net.minecraft.world.entity.LivingEntity
+[21:31:25] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.LivingEntityMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
+[21:31:27] [main/DEBUG] [mixin/]: Mixing GunnerSunBurnMixin from jeg.mixins.json into net.minecraft.world.entity.Mob
+[21:31:27] [main/DEBUG] [mixin/]: jeg.mixins.json:GunnerSunBurnMixin from mod jeg->@Inject::jeg$preventGunnerSunBurn(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V does use it's CallbackInfoReturnable
+[21:31:27] [main/DEBUG] [mixin/]: Mixing BlockEntityTypeAccessor from neoforge.mixins.json into net.minecraft.world.level.block.entity.BlockEntityType
+[21:31:27] [main/DEBUG] [mixin/]: Mixing common.AbstractContainerMenuMixin from geckolib.mixins.json into net.minecraft.world.inventory.AbstractContainerMenu
+[21:31:27] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.AbstractContainerMenuMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
+[21:31:28] [main/DEBUG] [mixin/]: Mixing common.ItemStackMixin from geckolib.mixins.json into net.minecraft.world.item.ItemStack
+[21:31:28] [main/DEBUG] [mixin/]: geckolib.mixins.json:common.ItemStackMixin from mod geckolib: Class version 65 required is higher than the class version supported by the current version of Mixin (JAVA_17 supports class version 61)
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: -Dio.netty.noUnsafe: false
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: Java version: 21
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.theUnsafe: available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.copyMemory: available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: sun.misc.Unsafe.storeFence: available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.Buffer.address: available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: direct buffer constructor: unavailable: Reflective setAccessible(true) disabled
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.Bits.unaligned: available, true
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable: class io.netty.util.internal.PlatformDependent0$7 (in module io.netty.common) cannot access class jdk.internal.misc.Unsafe (in module java.base) because module java.base does not export jdk.internal.misc to module io.netty.common
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent0/]: java.nio.DirectByteBuffer.<init>(long, {int,long}): unavailable
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: sun.misc.Unsafe: available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: maxDirectMemory: 4213178368 bytes (maybe)
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.tmpdir: C:\Users\user\AppData\Local\Temp (java.io.tmpdir)
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.bitMode: 64 (sun.arch.data.model)
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: Platform: Windows
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.maxDirectMemory: -1 bytes
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.uninitializedArrayAllocationThreshold: -1
+[21:31:30] [main/DEBUG] [io.ne.ut.in.CleanerJava9/]: java.nio.ByteBuffer.cleaner(): available
+[21:31:30] [main/DEBUG] [io.ne.ut.in.PlatformDependent/]: -Dio.netty.noPreferDirect: false
+[21:31:31] [main/DEBUG] [mixin/]: Mixing TargetGoalMixin from jeg.mixins.json into net.minecraft.world.entity.ai.goal.target.TargetGoal
+[21:31:31] [main/DEBUG] [mixin/]: Mixing GunnerWaterConversionMixin from jeg.mixins.json into net.minecraft.world.entity.monster.Zombie
+[21:31:31] [main/DEBUG] [mixin/]: jeg.mixins.json:GunnerWaterConversionMixin from mod jeg->@Inject::jeg$preventGunnerWaterConversion(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V does use it's CallbackInfoReturnable
+[21:31:33] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[21:31:33] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
+[21:31:33] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[21:31:33] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[21:31:33] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[21:31:33] [main/DEBUG] [ne.ne.fm.ModWorkManager/LOADING]: Using 20 threads for parallel mod-loading
+[21:31:33] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [software.bernie.geckolib.GeckoLib]
+[21:31:33] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [ttv.migami.jeg.JustEnoughGuns]
+[21:31:33] [main/DEBUG] [ne.ne.fm.ja.FMLModContainer/LOADING]: Creating FMLModContainer instance for [net.neoforged.neoforge.common.NeoForgeMod]
+[21:31:33] [modloading-worker-0/DEBUG] [GeckoLib/]: Loaded software.bernie.geckolib.platform.GeckoLibNeoForge@1242fc2d for service interface software.bernie.geckolib.service.GeckoLibPlatform
+[21:31:33] [modloading-worker-0/DEBUG] [GeckoLib/]: Loaded software.bernie.geckolib.network.GeckoLibNetworkingNeoForge@6e9d209a for service interface software.bernie.geckolib.service.GeckoLibNetworking
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for geckolib
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.ne.in.ve.ne.NeoForgeVersion/CORE]: Found NeoForge version 21.1.214
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.ne.in.ve.ne.NeoForgeVersion/CORE]: Found FML version 4.0.42
+[21:31:33] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.214, for MC 1.21.1
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-client.toml for neoforge tracking
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file jeg-client.toml for jeg tracking
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-server.toml for neoforge tracking
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file jeg-server.toml for jeg tracking
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Config file neoforge-common.toml for neoforge tracking
+[21:31:33] [modloading-worker-0/INFO] [jeg/]: Initializing Just Enough Guns for Minecraft 1.21.11
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for neoforge
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.filters.GenericPacketSplitter for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [jeg/]: Game events registered successfully
+[21:31:33] [modloading-worker-0/INFO] [jeg/]: JEG initialization completed successfully
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Attempting to inject @EventBusSubscriber classes into the eventbus for jeg
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class ttv.migami.jeg.event.RecipeUnlockHandler for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lttv/migami/jeg/event/RecipeUnlockHandler; to the game event bus
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class ttv.migami.jeg.item.BulletproofArmorEvents for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lttv/migami/jeg/item/BulletproofArmorEvents; to the game event bus
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.AbstractByteBuf/]: -Dio.netty.buffer.checkAccessible: true
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.AbstractByteBuf/]: -Dio.netty.buffer.checkBounds: true
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.ut.ResourceLeakDetectorFactory/]: Loaded default ResourceLeakDetector: io.netty.util.ResourceLeakDetector@72cf454b
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.ut.in.InternalThreadLocalMap/]: -Dio.netty.threadLocalMap.stringBuilder.initialSize: 1024
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.ut.in.InternalThreadLocalMap/]: -Dio.netty.threadLocalMap.stringBuilder.maxSize: 4096
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.numHeapArenas: 40
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.numDirectArenas: 40
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.pageSize: 8192
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxOrder: 9
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.chunkSize: 4194304
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.smallCacheSize: 256
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.normalCacheSize: 64
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.cacheTrimInterval: 8192
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.cacheTrimIntervalMillis: 0
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.useCacheForAllThreads: false
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.PooledByteBufAllocator/]: -Dio.netty.allocator.maxCachedByteBuffersPerChunk: 1023
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.allocator.type: pooled
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.threadLocalDirectBufferSize: 0
+[21:31:33] [modloading-worker-0/DEBUG] [io.ne.bu.ByteBufUtil/]: -Dio.netty.maxThreadLocalCharBufferSize: 16384
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/filters/GenericPacketSplitter; to the mod event bus of mod neoforge
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.NetworkInitialization for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/NetworkInitialization; to the mod event bus of mod neoforge
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.network.ConfigurationInitialization for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/network/ConfigurationInitialization; to the mod event bus of mod neoforge
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.common.MonsterRoomHooks for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/common/MonsterRoomHooks; to the game event bus
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.common.DeferredSpawnEggItem$CommonHandler for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/common/DeferredSpawnEggItem$CommonHandler; to the mod event bus of mod neoforge
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.attachment.AttachmentSync for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/attachment/AttachmentSync; to the game event bus
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/LOADING]: Scanning class net.neoforged.neoforge.attachment.AttachmentInternals for @SubscribeEvent-annotated methods
+[21:31:33] [modloading-worker-0/DEBUG] [ne.ne.fm.ja.AutomaticEventSubscriber/]: Subscribing @EventBusSubscriber class Lnet/neoforged/neoforge/attachment/AttachmentInternals; to the game event bus
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [GeckoLib/]: Registered SyncedAnimatable for class ttv.migami.jeg.item.AnimatedGunItem
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loading configs type COMMON
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.ne.co.NeoForgeConfig/FORGEMOD]: Loaded NeoForge config file neoforge-common.toml
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Loaded TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-common.toml
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Watching TOML config file D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\config\neoforge-common.toml for changes
+[21:31:33] [modloading-worker-0/INFO] [jeg/]: JEG common setup started
+[21:31:33] [modloading-worker-0/INFO] [jeg/]: JEG common setup completed successfully
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.fm.DeferredWorkQueue/LOADING]: Dispatching synchronous work for work queue Common setup: 1 jobs
+[21:31:33] [modloading-sync-worker/DEBUG] [ne.ne.fm.DeferredWorkQueue/LOADING]: Synchronous work queue completed in 1.942 ms
+[21:31:34] [main/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[21:31:34] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/D:/ai-workspace/Just%20Enough%20Gun%202/main_repository/Just-Enough-Guns-NeoForge-1.21.1/build/moddev/artifacts/neoforge-21.1.214.jar%23125!/assets/.mcassetsroot' uses unexpected schema
+[21:31:34] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/D:/ai-workspace/Just%20Enough%20Gun%202/main_repository/Just-Enough-Guns-NeoForge-1.21.1/build/moddev/artifacts/neoforge-21.1.214.jar%23125!/data/.mcassetsroot' uses unexpected schema
+[21:31:36] [main/INFO] [minecraft/RecipeManager]: Loaded 1349 recipes
+[21:31:36] [main/INFO] [minecraft/AdvancementTree]: Loaded 1399 advancements
+[21:31:36] [main/DEBUG] [ne.ne.ne.co.CommonHooks/WP]: Gathered mod list to write to world save world
+[21:31:36] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.21.1
+[21:31:36] [Server thread/INFO] [minecraft/DedicatedServer]: Loading properties
+[21:31:36] [Server thread/INFO] [minecraft/DedicatedServer]: Default game type: SURVIVAL
+[21:31:36] [Server thread/INFO] [minecraft/MinecraftServer]: Generating keypair
+[21:31:36] [Server thread/INFO] [minecraft/DedicatedServer]: Starting Minecraft server on *:25565
+[21:31:36] [Server thread/DEBUG] [ne.ne.ne.ne.DualStackUtils/]: Detected IPv6 address: "0:0:0:0:0:0:0:0"
+[21:31:36] [Server thread/DEBUG] [io.ne.ch.MultithreadEventLoopGroup/]: -Dio.netty.eventLoopThreads: 40
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.co.GlobalEventExecutor/]: -Dio.netty.globalEventExecutor.quietPeriodSeconds: 1
+[21:31:36] [Server thread/DEBUG] [io.ne.ch.ni.NioEventLoop/]: -Dio.netty.noKeySetOptimization: false
+[21:31:36] [Server thread/DEBUG] [io.ne.ch.ni.NioEventLoop/]: -Dio.netty.selectorAutoRebuildThreshold: 512
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.in.PlatformDependent/]: org.jctools-core.MpscChunkedArrayQueue: available
+[21:31:36] [Server thread/INFO] [minecraft/ServerConnectionListener]: Using default channel type
+[21:31:36] [Server thread/DEBUG] [io.ne.ch.DefaultChannelId/]: -Dio.netty.processId: 37264 (auto-detected)
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: -Djava.net.preferIPv4Stack: false
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: -Djava.net.preferIPv6Addresses: true
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.NetUtilInitializations/]: Loopback interface: loopback_0 (Software Loopback Interface 1, 0:0:0:0:0:0:0:1)
+[21:31:36] [Server thread/DEBUG] [io.ne.ut.NetUtil/]: Failed to get SOMAXCONN from sysctl and file \proc\sys\net\core\somaxconn. Default: 200
+[21:31:36] [Server thread/DEBUG] [io.ne.ch.DefaultChannelId/]: -Dio.netty.machineId: 00:ff:68:ff:fe:48:1e:2c (auto-detected)
+[21:31:36] [Server thread/WARN] [minecraft/DedicatedServer]: **** FAILED TO BIND TO PORT!
+[21:31:36] [Server thread/WARN] [minecraft/DedicatedServer]: The exception was: java.net.BindException: Address already in use: bind
+[21:31:36] [Server thread/WARN] [minecraft/DedicatedServer]: Perhaps a server is already running on that port?
+[21:31:36] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception
+java.lang.IllegalStateException: Failed to initialize server
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:677) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:267) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?] {}
+[21:31:36] [Server thread/DEBUG] [os.ut.FileUtil/]: No oshi.architecture.properties file found from ClassLoader cpw.mods.modlauncher.TransformingClassLoader@543e593
+[21:31:36] [Server thread/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID 9b542f94-7e3c-4d6b-9194-679c05f87f95
+[21:31:36] [Server thread/ERROR] [minecraft/MinecraftServer]: This crash report has been saved to: D:\ai-workspace\Just Enough Gun 2\main_repository\Just-Enough-Guns-NeoForge-1.21.1\run\crash-reports\crash-2026-05-07_21.31.36-server.txt
+[21:31:36] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[21:31:36] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[21:31:36] [Server thread/ERROR] [minecraft/MinecraftServer]: Exception stopping the server
+java.lang.NullPointerException: Cannot invoke "net.minecraft.server.level.ServerLevel.getWorldBorder()" because "serverlevel2" is null
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.saveAllChunks(MinecraftServer.java:560) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.stopServer(MinecraftServer.java:625) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.dedicated.DedicatedServer.stopServer(DedicatedServer.java:570) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:748) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:267) ~[neoforge-21.1.214.jar%23125!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?] {}
+[21:31:36] [Server thread/DEBUG] [ne.ne.fm.co.ConfigTracker/CONFIG]: Unloading configs type SERVER
+
+BUILD SUCCESSFUL in 21s
+8 actionable tasks: 1 executed, 7 up-to-date
+Configuration cache entry reused.

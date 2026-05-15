@@ -23,7 +23,7 @@ public final class ModBlocks {
 
     public static final DeferredHolder<Block, VehicleAssemblingTableBlock> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
             "vehicle_assembling_table",
-            () -> new VehicleAssemblingTableBlock(BlockBehaviour.Properties.of().strength(3.5F).sound(SoundType.METAL))
+            () -> new VehicleAssemblingTableBlock(BlockBehaviour.Properties.of().strength(2.0F).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion())
     );
 
     public static final DeferredHolder<Block, VehicleChargingStationBlock> VEHICLE_CHARGING_STATION = REGISTER.register(

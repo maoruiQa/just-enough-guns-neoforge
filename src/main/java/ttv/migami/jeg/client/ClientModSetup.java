@@ -19,6 +19,7 @@ public final class ClientModSetup {
         for (var holder : ModItems.GUNS.values()) {
             event.registerItem(new GunItemClientExtensions(holder.get()), holder.get());
         }
+        event.registerItem(new VehicleAssemblingTableClientExtensions(), ModItems.VEHICLE_ASSEMBLING_TABLE.get());
     }
 
     @SubscribeEvent
@@ -27,6 +28,7 @@ public final class ClientModSetup {
             event.register(new ModelResourceLocation(Reference.id("item/first_person/" + id.getPath()), "standalone"));
             event.register(new ModelResourceLocation(Reference.id("item/gui/" + id.getPath()), "standalone"));
         });
+        event.register(new ModelResourceLocation(Reference.id("item/vehicle_assembling_table"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/holy_shotgun/main"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/holy_shotgun/pumpy"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/typhoonee/main"), "standalone"));

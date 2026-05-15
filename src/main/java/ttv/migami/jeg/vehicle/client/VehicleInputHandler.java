@@ -22,6 +22,8 @@ import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 public final class VehicleInputHandler {
     private static boolean suppressPlayerInventoryClick;
     private static boolean suppressVehicleInventoryClick;
+    private static boolean ignorePlayerInventoryUntilRelease;
+    private static boolean ignoreVehicleInventoryUntilRelease;
 
     private VehicleInputHandler() {}
 
@@ -31,14 +33,29 @@ public final class VehicleInputHandler {
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.getConnection() == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             VehicleClientState.clear();
+            ignorePlayerInventoryUntilRelease = false;
+            ignoreVehicleInventoryUntilRelease = false;
             return;
         }
 
-        VehicleClientState.setMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
+        if (ignoreVehicleInventoryUntilRelease && !minecraft.options.keyInventory.isDown()) {
+            ignoreVehicleInventoryUntilRelease = false;
+        }
+        if (ignorePlayerInventoryUntilRelease && !KeyBindings.VEHICLE_PLAYER_INVENTORY.isDown()) {
+            ignorePlayerInventoryUntilRelease = false;
+        }
+
+        double mouseX = minecraft.mouseHandler.xpos();
+        double mouseY = minecraft.mouseHandler.ypos();
+        if (minecraft.screen != null) {
+            VehicleClientState.syncMousePosition(mouseX, mouseY);
+        } else {
+            VehicleClientState.setMousePosition(mouseX, mouseY);
+        }
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
         boolean aircraftControls = isAircraftDriver(player, vehicle);
-        if (aircraftControls) {
+        if (aircraftControls && minecraft.screen == null) {
             VehicleClientState.updateAircraftMouse(0.1F, 0.5F, 0.35F, false, freeLook);
         }
         boolean reload = KeyBindings.RELOAD.consumeClick();
@@ -59,12 +76,13 @@ public final class VehicleInputHandler {
             NetworkHandler.sendVehicleDismount(vehicle.getId());
             return;
         }
-        boolean vehicleInventoryClick = minecraft.options.keyInventory.consumeClick();
+        boolean vehicleInventoryClick = !ignoreVehicleInventoryUntilRelease && minecraft.options.keyInventory.consumeClick();
         if (suppressVehicleInventoryClick) {
             suppressVehicleInventoryClick = false;
             vehicleInventoryClick = false;
         }
         if (vehicleInventoryClick) {
+            VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
             if (minecraft.screen instanceof VehicleScreen) {
                 player.closeContainer();
                 minecraft.setScreen(null);
@@ -72,12 +90,13 @@ public final class VehicleInputHandler {
                 NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
             }
         }
-        boolean playerInventoryClick = KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick();
+        boolean playerInventoryClick = !ignorePlayerInventoryUntilRelease && KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick();
         if (suppressPlayerInventoryClick) {
             suppressPlayerInventoryClick = false;
             playerInventoryClick = false;
         }
         if (playerInventoryClick) {
+            VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
             if (minecraft.screen instanceof InventoryScreen) {
                 player.closeContainer();
                 minecraft.setScreen(null);
@@ -206,17 +225,46 @@ public final class VehicleInputHandler {
             return;
         }
         if (minecraft.options.keyInventory.matches(event.getKeyCode(), event.getScanCode())) {
+            VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
             NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
-            suppressVehicleInventoryClick = true;
+            clearPendingVehicleInventoryClicks();
             event.setCanceled(true);
             return;
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event.getKeyCode(), event.getScanCode())) {
-            player.closeContainer();
+            VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
             minecraft.setScreen(null);
-            suppressPlayerInventoryClick = true;
+            clearPendingPlayerInventoryClicks();
             event.setCanceled(true);
         }
+    }
+
+    public static void syncMouseToCurrentCursor() {
+        Minecraft minecraft = Minecraft.getInstance();
+        VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
+    }
+
+    public static void clearPendingPlayerInventoryClicks() {
+        while (KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
+        }
+        suppressPlayerInventoryClick = true;
+        ignorePlayerInventoryUntilRelease = true;
+    }
+
+    public static void clearPendingVehicleInventoryClicks() {
+        Minecraft minecraft = Minecraft.getInstance();
+        while (minecraft.options.keyInventory.consumeClick()) {
+        }
+        suppressVehicleInventoryClick = true;
+        ignoreVehicleInventoryUntilRelease = true;
+    }
+
+    public static boolean shouldIgnorePlayerInventoryKey() {
+        return ignorePlayerInventoryUntilRelease;
+    }
+
+    public static boolean shouldIgnoreVehicleInventoryKey() {
+        return ignoreVehicleInventoryUntilRelease;
     }
 
     public static void suppressPlayerInventoryClickOnce() {

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.LightTexture;
@@ -42,6 +43,8 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
@@ -99,6 +102,7 @@ public final class GunClientEvents {
             java.util.Map.entry("phantom_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -2.205D))
     );
     private static StunRingingSound stunRingingSound;
+    private static final java.util.Map<Integer, SoundInstance> VEHICLE_FIRE_SOUNDS = new java.util.HashMap<>();
 
     private GunClientEvents() {}
 
@@ -289,12 +293,14 @@ public final class GunClientEvents {
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
+            VEHICLE_FIRE_SOUNDS.clear();
             CrosshairHandler.reset();
             return;
         }
 
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
+        tickVehicleFireAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -398,6 +404,7 @@ public final class GunClientEvents {
         offhandFullPromptTicks = 0;
         nextVisualShotTickMain = 0L;
         stunRingingSound = null;
+        VEHICLE_FIRE_SOUNDS.clear();
         resetRocketHold(false);
         CrosshairHandler.reset();
     }
@@ -715,6 +722,32 @@ public final class GunClientEvents {
         if (stunRingingSound == null || !minecraft.getSoundManager().isActive(stunRingingSound)) {
             stunRingingSound = new StunRingingSound();
             minecraft.getSoundManager().play(stunRingingSound);
+        }
+    }
+
+    private static void tickVehicleFireAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            VEHICLE_FIRE_SOUNDS.clear();
+            return;
+        }
+        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> !minecraft.getSoundManager().isActive(entry.getValue()));
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D) {
+                continue;
+            }
+            if (VEHICLE_FIRE_SOUNDS.containsKey(vehicle.getId())) {
+                continue;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null) {
+                continue;
+            }
+            VehicleFireSoundInstance instance = new VehicleFireSoundInstance(vehicle, sound);
+            VEHICLE_FIRE_SOUNDS.put(vehicle.getId(), instance);
+            minecraft.getSoundManager().play(instance);
         }
     }
 

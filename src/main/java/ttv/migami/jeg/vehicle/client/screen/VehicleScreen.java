@@ -56,15 +56,17 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            VehicleInputHandler.syncMouseToCurrentCursor();
             this.minecraft.player.closeContainer();
             this.minecraft.setScreen(null);
-            VehicleInputHandler.suppressVehicleInventoryClickOnce();
+            VehicleInputHandler.clearPendingVehicleInventoryClicks();
             return true;
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(keyCode, scanCode)) {
+            VehicleInputHandler.syncMouseToCurrentCursor();
             this.minecraft.player.closeContainer();
             this.minecraft.setScreen(new InventoryScreen(this.minecraft.player));
-            VehicleInputHandler.suppressPlayerInventoryClickOnce();
+            VehicleInputHandler.clearPendingPlayerInventoryClicks();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

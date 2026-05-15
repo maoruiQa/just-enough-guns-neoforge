@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.KeyBindings;
+import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
@@ -23,12 +25,33 @@ public class MinecraftVehicleHotbarMixin {
     public Options options;
 
     @Inject(method = "handleKeybinds()V", at = @At("HEAD"), cancellable = true)
-    private void jeg$handleVehicleHotbarKeys(CallbackInfo callback) {
+    private void jeg$handleMountedInventoryKeys(CallbackInfo callback) {
         if (this.player == null || !(this.player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
         }
-        if (this.options.keyInventory.isDown()) {
+        if (!VehicleInputHandler.shouldIgnoreVehicleInventoryKey() && this.options.keyInventory.consumeClick()) {
+            VehicleInputHandler.syncMouseToCurrentCursor();
+            NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+            VehicleInputHandler.clearPendingVehicleInventoryClicks();
             callback.cancel();
+            return;
+        }
+        if (!VehicleInputHandler.shouldIgnorePlayerInventoryKey() && KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
+            VehicleInputHandler.syncMouseToCurrentCursor();
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
+                minecraft.setScreen(null);
+            } else if (minecraft.screen == null) {
+                minecraft.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(this.player));
+            }
+            VehicleInputHandler.clearPendingPlayerInventoryClicks();
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "handleKeybinds()V", at = @At("HEAD"), cancellable = true)
+    private void jeg$handleVehicleHotbarKeys(CallbackInfo callback) {
+        if (this.player == null || !(this.player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
         }
         int weaponSlot = -1;

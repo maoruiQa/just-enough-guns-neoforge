@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -16,6 +17,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -37,12 +39,16 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Matrix4d;
 import org.joml.Vector4d;
 import org.jetbrains.annotations.NotNull;
@@ -59,8 +65,10 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
@@ -95,12 +103,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float TRUCK_COLLISION_LENGTH_SCALE = 3.2F;
     private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
     private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
-    private static final float AH6_COLLISION_LENGTH_SCALE = 4.2F;
-    private static final float MI28_COLLISION_LENGTH_SCALE = 4.2F;
     private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.85D;
     private static final double SPEEDBOAT_COLLISION_FORWARD_SHIFT = 0.375D;
-    private static final double AH6_COLLISION_CENTER_SHIFT = -1.0D;
-    private static final double MI28_COLLISION_CENTER_SHIFT = -3.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
@@ -127,6 +131,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Float> DATA_PROPELLER_ROT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_PROPELLER_SPEED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_ROLL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DATA_WEAPON_FIRING = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
     private static final int DECOY_COOLDOWN_TICKS = 60;
@@ -168,8 +173,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double HELICOPTER_BLOCK_COLLISION_MIN_SPEED = 0.3D;
     private static final int HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS = 4;
+    private static final double HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_THRESHOLD = 0.25D;
+    private static final double HELICOPTER_VERTICAL_COLLISION_DAMAGE_THRESHOLD = 0.3D;
+    private static final double HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_SCALE = 500.0D;
+    private static final double HELICOPTER_VERTICAL_COLLISION_DAMAGE_SCALE = 240.0D;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
+    private static final float HELICOPTER_ROTOR_GROUND_DAMAGE = 1.0F;
+    private static final float HELICOPTER_ROTOR_DAMAGE_MIN_SPEED = 0.02F;
+    private static final double HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS = 0.55D;
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
     private static final double GRAVITY = 0.08D;
@@ -192,6 +204,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean seekInput;
     private double wheelSteering;
     private double enginePower;
+    private double lastTickSpeed;
     private float turretYawO;
     private float turretPitchO;
     private float propellerRotO;
@@ -266,12 +279,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_LENGTH_SCALE;
         }
-        if (this.isAh6Vehicle()) {
-            return AH6_COLLISION_LENGTH_SCALE;
-        }
-        if (this.isMi28Vehicle()) {
-            return MI28_COLLISION_LENGTH_SCALE;
-        }
         return OTHER_VEHICLE_COLLISION_LENGTH_SCALE;
     }
 
@@ -310,6 +317,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_PROPELLER_ROT, 0.0F);
         builder.define(DATA_PROPELLER_SPEED, 0.0F);
         builder.define(DATA_ROLL, 0.0F);
+        builder.define(DATA_WEAPON_FIRING, false);
     }
 
     public VehicleData vehicleData() {
@@ -475,7 +483,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public float roll(float partialTick) {
-        return Mth.lerp(partialTick, this.rollO, this.roll());
+        return Mth.rotLerp(partialTick, this.rollO, this.roll());
+    }
+
+    public boolean isWeaponFiring() {
+        return this.entityData.get(DATA_WEAPON_FIRING);
+    }
+
+    @Nullable
+    public SoundEvent activeVehicleFireSound() {
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        if (weapon == null || weaponId == null) {
+            return null;
+        }
+        GunStats stats = VehicleWeaponStats.get(weaponId);
+        return stats == null ? null : VehicleSoundHelper.fireSound(this, weapon, stats);
     }
 
     private void setRoll(float roll) {
@@ -525,12 +548,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_FORWARD_SHIFT;
-        }
-        if (this.isAh6Vehicle()) {
-            return AH6_COLLISION_CENTER_SHIFT;
-        }
-        if (this.isMi28Vehicle()) {
-            return MI28_COLLISION_CENTER_SHIFT;
         }
         return 0.0D;
     }
@@ -691,6 +708,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.turretPitchO = this.turretPitch();
         this.propellerRotO = this.propellerRot();
         this.rollO = this.roll();
+        this.updateLastTickMovementSpeed();
         super.tick();
         if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
             this.dismountLerpSuppressionTicks--;
@@ -699,6 +717,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.level().isClientSide) {
             this.clearStaleDriverInput();
             this.tickServerMovement();
+            this.tickHelicopterRotorGroundDamage();
             this.tickRammingDamage();
             this.tickMissileLock();
             this.tickWeaponReload();
@@ -727,36 +746,80 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     public void move(MoverType type, Vec3 pos) {
         super.move(type, pos);
-        this.applyHelicopterBlockCollisionDamage(pos);
+        this.applyHelicopterBlockCollisionDamage();
     }
 
-    private void applyHelicopterBlockCollisionDamage(Vec3 attemptedMovement) {
+    private void updateLastTickMovementSpeed() {
+        Vec3 movement = this.getDeltaMovement();
+        this.lastTickSpeed = new Vec3(movement.x, movement.y + 0.06D, movement.z).length();
+    }
+
+    private void applyHelicopterBlockCollisionDamage() {
         if (this.level().isClientSide
                 || this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
                 || this.ramDamageCooldown > 0
                 || !(this.horizontalCollision || this.verticalCollision)) {
             return;
         }
-        double speed = attemptedMovement.length();
+        if (this.verticalCollisionBelow && !this.horizontalCollision) {
+            return;
+        }
+        double speed = this.lastTickSpeed;
         if (speed < HELICOPTER_BLOCK_COLLISION_MIN_SPEED) {
             return;
         }
+        boolean struck = false;
         float damage = 0.0F;
         if (this.verticalCollision) {
-            double impact = speed - 0.5D;
-            damage += (float) (60.0D * impact * impact);
+            double impact = Math.max(0.0D, speed - HELICOPTER_VERTICAL_COLLISION_DAMAGE_THRESHOLD);
+            damage += (float) (HELICOPTER_VERTICAL_COLLISION_DAMAGE_SCALE * impact * impact);
+            struck = true;
         }
         if (this.horizontalCollision) {
-            double impact = speed - 0.4D;
-            damage += (float) (126.0D * impact * impact);
+            double impact = Math.max(0.0D, speed - HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_THRESHOLD);
+            damage += (float) (HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_SCALE * impact * impact);
+            struck = true;
         }
-        if (damage <= 1.0F) {
-            return;
+        if (damage > 1.0F) {
+            this.hurt(this.vehicleStrikeDamageSource(), damage);
         }
-        if (this.hurt(this.damageSources().cramming(), damage)) {
-            this.ramDamageCooldown = HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS;
-            this.setDeltaMovement(this.getDeltaMovement().scale(0.35D));
-            this.hasImpulse = true;
+        this.ramDamageCooldown = HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS;
+        if (struck) {
+            this.playVehicleStrikeSound();
+        }
+        Direction bounceDirection = Direction.getNearest(this.getDeltaMovement().x(), this.getDeltaMovement().y(), this.getDeltaMovement().z()).getOpposite();
+        if (this.verticalCollision) {
+            this.bounceVertical(bounceDirection);
+        }
+        if (this.horizontalCollision) {
+            this.bounceHorizontal(bounceDirection);
+            this.enginePower *= 0.8D;
+        }
+        this.hasImpulse = true;
+    }
+
+    private DamageSource vehicleStrikeDamageSource() {
+        Entity attacker = this.getControllingPassenger();
+        return ModDamageTypes.causeVehicleStrikeDamage(this.level().registryAccess(), this, attacker == null ? this : attacker);
+    }
+
+    private void playVehicleStrikeSound() {
+        var holder = ModSounds.ALL.get(Reference.id("block.hit.metal"));
+        SoundEvent sound = holder == null ? SoundEvents.ANVIL_LAND : holder.get();
+        this.level().playSound(null, this, sound, this.getSoundSource(), 1.0F, 1.0F);
+    }
+
+    private void bounceHorizontal(Direction direction) {
+        if (direction.getAxis() == Direction.Axis.X) {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.8D, 0.99D, 0.99D));
+        } else if (direction.getAxis() == Direction.Axis.Z) {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.99D, 0.99D, 0.8D));
+        }
+    }
+
+    private void bounceVertical(Direction direction) {
+        if (direction.getAxis() == Direction.Axis.Y) {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.9D, -0.8D, 0.9D));
         }
     }
 
@@ -825,6 +888,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.seekInput = false;
         this.weaponControllerId = -1;
         this.seekControllerId = -1;
+        this.entityData.set(DATA_WEAPON_FIRING, false);
         this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
         this.holdTick = 0;
@@ -938,19 +1002,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void tickServerWeapon() {
         if (!this.hasVehicleWeapons()) {
+            this.entityData.set(DATA_WEAPON_FIRING, false);
             return;
         }
         if (this.fireCooldown > 0) {
             this.fireCooldown--;
         }
         LivingEntity shooter = this.weaponController();
-        if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading()) {
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        boolean loopFireSound = false;
+        this.entityData.set(DATA_WEAPON_FIRING, false);
+        if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading() || selectedWeapon == null) {
             return;
         }
         if (this.isTurretDamaged()) {
             return;
         }
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = selectedWeapon;
         int shooterSeat = this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter));
         if (!weapon.usableBySeat(shooterSeat)) {
             return;
@@ -981,7 +1049,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         } else if (!this.consumeAmmo(weapon.ammoId())) {
             return;
         }
-        this.playWeaponFireSound(weapon, stats);
+        if (!loopFireSound) {
+            this.playWeaponFireSound(weapon, stats);
+        } else if (this.fireCooldown == 0) {
+            this.playWeaponFireSound(weapon, stats);
+        }
         if (weapon.guided()) {
             this.launchMissile(shooter, direction, stats);
             return;
@@ -1007,6 +1079,27 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         var sound = start ? stats.reloadStartSoundEvent() : stats.reloadEndSoundEvent().or(() -> stats.reloadLoadSoundEvent());
         sound.ifPresent(value -> this.level().playSound(null, this.getX(), this.getY(), this.getZ(), value, SoundSource.PLAYERS, 2.0F, 1.0F));
+    }
+
+    private boolean shouldLoopVehicleFireSound(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo weapon) {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+                || shooter == null
+                || weapon == null
+                || !this.weaponFireInput
+                || this.isWeaponReloading()
+                || this.isTurretDamaged()
+                || !this.canUseSelectedWeapon(shooter, weapon)
+                || weapon.guided()) {
+            return false;
+        }
+        GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
+        if (stats == null || stats.fireDelay() > 4 || !this.hasEnergy(weapon.energyCost())) {
+            return false;
+        }
+        if (this.usesSharedVehicleReloadSystem()) {
+            return this.selectedWeaponLoadedAmmo() > 0;
+        }
+        return this.hasAmmo(weapon.ammoId());
     }
 
     private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
@@ -1140,6 +1233,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.weaponControllerId = -1;
         this.weaponFireInput = false;
+        this.entityData.set(DATA_WEAPON_FIRING, false);
         return null;
     }
 
@@ -1210,7 +1304,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         VehicleType type = this.vehicleData().defaults().vehicleType();
         Vec3 movement = this.getDeltaMovement();
-        double speed = type == VehicleType.HELICOPTER ? movement.length() : movement.horizontalDistance();
+        double speed = type == VehicleType.HELICOPTER
+                ? Math.max(movement.length(), Math.sqrt((this.getX() - this.xo) * (this.getX() - this.xo) + (this.getY() - this.yo) * (this.getY() - this.yo) + (this.getZ() - this.zo) * (this.getZ() - this.zo)))
+                : movement.horizontalDistance();
         if (speed < RAM_DAMAGE_MIN_SPEED) {
             return;
         }
@@ -1223,11 +1319,96 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!target.isAlive() || target.getVehicle() == this) {
                 continue;
             }
-            damaged |= target.hurt(this.damageSources().cramming(), damage);
+            damaged |= target.hurt(this.vehicleStrikeDamageSource(), damage);
         }
         if (damaged) {
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
         }
+    }
+
+    private void tickHelicopterRotorGroundDamage() {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+                || this.onGround()
+                || this.propellerSpeed() < HELICOPTER_ROTOR_DAMAGE_MIN_SPEED) {
+            return;
+        }
+        if (this.isUpperMainRotorTouchingGround()) {
+            this.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), HELICOPTER_ROTOR_GROUND_DAMAGE);
+        }
+    }
+
+    private boolean isUpperMainRotorTouchingGround() {
+        RotorContactInfo rotor = this.upperMainRotorContactInfo();
+        if (rotor.radius() <= 0.0D) {
+            return false;
+        }
+        if (this.rotorSampleIntersectsBlock(rotor.centerX(), rotor.centerY(), rotor.centerZ())) {
+            return true;
+        }
+        for (int ring = 1; ring <= 4; ring++) {
+            double radius = rotor.radius() * ring / 4.0D;
+            int samples = ring * 12;
+            for (int sample = 0; sample < samples; sample++) {
+                double angle = Math.PI * 2.0D * sample / samples;
+                double localX = rotor.centerX() + Math.cos(angle) * radius;
+                double localZ = rotor.centerZ() + Math.sin(angle) * radius;
+                if (this.rotorSampleIntersectsBlock(localX, rotor.centerY(), localZ)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean rotorSampleIntersectsBlock(double localX, double localY, double localZ) {
+        Vec3 world = this.position().add(this.rotateLocalOffsetWithPose(localX, localY, localZ, 1.0F));
+        AABB sampleBox = new AABB(
+                world.x - HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS,
+                world.y - HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS,
+                world.z - HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS,
+                world.x + HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS,
+                world.y + HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS,
+                world.z + HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS
+        );
+        return this.intersectsBlockCollision(sampleBox);
+    }
+
+    private boolean intersectsBlockCollision(AABB box) {
+        VoxelShape boxShape = Shapes.create(box);
+        int minX = Mth.floor(box.minX);
+        int minY = Mth.floor(box.minY);
+        int minZ = Mth.floor(box.minZ);
+        int maxX = Mth.floor(box.maxX - 1.0E-7D);
+        int maxY = Mth.floor(box.maxY - 1.0E-7D);
+        int maxZ = Mth.floor(box.maxZ - 1.0E-7D);
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    pos.set(x, y, z);
+                    BlockState state = this.level().getBlockState(pos);
+                    if (state.isAir()) {
+                        continue;
+                    }
+                    VoxelShape collision = state.getCollisionShape(this.level(), pos);
+                    if (collision.isEmpty()
+                            || !collision.bounds().move(pos.getX(), pos.getY(), pos.getZ()).intersects(box)
+                            || !Shapes.joinIsNotEmpty(collision.move(pos.getX(), pos.getY(), pos.getZ()), boxShape, BooleanOp.AND)) {
+                        continue;
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private RotorContactInfo upperMainRotorContactInfo() {
+        return switch (this.vehicleDataId().getPath()) {
+            case "ah6" -> new RotorContactInfo(0.0D, 56.64911D / 16.0D, 0.0D, 5.5D);
+            case "mi28" -> new RotorContactInfo(0.0D, 61.215D / 16.0D, -3.8046D / 16.0D, 8.85D);
+            default -> new RotorContactInfo(0.0D, 18.0D / 16.0D, -2.0D / 16.0D, 2.0D);
+        };
     }
 
     private float ramDamageAmount(CollisionLevel collisionLevel, double speed) {
@@ -1237,6 +1418,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             case HEAVY -> 8.0F;
             case NONE -> 0.0F;
         };
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
+            return baseDamage * (float) Mth.clamp((speed - 0.12D) / 0.18D, 0.6D, 3.0D);
+        }
         return baseDamage * (float) Mth.clamp(speed / 0.35D, 0.35D, 1.5D);
     }
 
@@ -2163,6 +2347,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return (this.input.right() ? 1 : 0) - (this.input.left() ? 1 : 0);
     }
 
+    private boolean hasPlayerPassenger() {
+        for (Entity passenger : this.getPassengers()) {
+            if (passenger instanceof Player) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Vec3 horizontalDirection(float yaw) {
         double yawRadians = Math.toRadians(yaw);
         return new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
@@ -2249,6 +2442,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         double rollSpeed = engine.rollSpeed();
         double liftSpeed = engine.liftSpeed();
         boolean hasEnergy = !consumeEnergy || engine.energyCostRate() <= 0 || this.vehicleEnergy() > 0 || this.maxVehicleEnergy() <= 0;
+        boolean hasPlayerPassenger = this.hasPlayerPassenger();
         double altitude = this.helicopterAltitudeFromGround();
         double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
@@ -2274,12 +2468,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.holdTick = 0;
                 this.holdPowerTick = 0;
                 if (this.engineStartOver) {
-                    this.enginePower *= 0.99D;
+                    this.enginePower *= hasPlayerPassenger ? 0.99D : 0.9D;
+                }
+                if (!hasPlayerPassenger) {
+                    this.engineStart = false;
+                    this.engineStartOver = false;
                 }
                 this.setRoll(this.roll() * 0.98F);
                 this.xRotO = this.getXRot();
                 this.setXRot(this.getXRot() * 0.98F);
-                velocity = velocity.multiply(0.96D, 0.98D, 0.96D);
+                velocity = velocity.multiply(0.96D, hasPlayerPassenger ? 0.98D : 0.94D, 0.96D);
             } else {
                 if (this.input.right()) {
                     this.holdTick++;
@@ -2399,8 +2597,18 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             velocity = new Vec3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
         }
 
-        this.setDeltaMovement(new Vec3(velocity.x, Mth.clamp(velocity.y, -0.35D, 0.45D), velocity.z));
-        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.moveHelicopter(new Vec3(velocity.x, Mth.clamp(velocity.y, -0.35D, 0.45D), velocity.z));
+    }
+
+    private void moveHelicopter(Vec3 velocity) {
+        Vec3 before = this.position();
+        this.setDeltaMovement(velocity);
+        this.move(MoverType.SELF, velocity);
+        Vec3 moved = this.position().subtract(before);
+        if (moved.lengthSqr() > 1.0E-7D || this.horizontalCollision || this.verticalCollision) {
+            this.hurtMarked = true;
+            this.hasImpulse = true;
+        }
     }
 
     private void tickServerBoatMovement(EngineInfo engine) {
@@ -2756,6 +2964,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
         float newHealth = this.vehicleHealth() - finalDamage;
+        this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+        this.hurtMarked = true;
+        if (newHealth <= 0.0F) {
+            this.destroyVehicle();
+        }
+        return true;
+    }
+
+    private boolean hurtVehicleIgnoringArmor(DamageSource source, float amount) {
+        if (this.level().isClientSide || this.isRemoved() || this.isInvulnerableTo(source) || amount <= 0.0F) {
+            return false;
+        }
+        this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
+        float newHealth = this.vehicleHealth() - amount;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
         this.hurtMarked = true;
         if (newHealth <= 0.0F) {
@@ -3142,6 +3364,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     public boolean isPickable() {
         return true;
+    }
+
+    private record RotorContactInfo(double centerX, double centerY, double centerZ, double radius) {
     }
 
     private record ArmorHit(float finalDamage, boolean penetrated) {

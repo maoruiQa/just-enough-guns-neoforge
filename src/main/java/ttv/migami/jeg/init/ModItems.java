@@ -38,6 +38,7 @@ import ttv.migami.jeg.item.StunGrenadeItem;
 import ttv.migami.jeg.item.WaterBombItem;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.item.VehicleAssemblingTableBlockItem;
 import ttv.migami.jeg.vehicle.item.VehicleContainerItem;
 // import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 // import ttv.migami.jeg.item.JoyousArmorPlateItem;
@@ -52,9 +53,9 @@ public final class ModItems {
             "vehicle_container",
             () -> new VehicleContainerItem(ModBlocks.VEHICLE_CONTAINER.get(), baseProperties(Reference.id("vehicle_container")).stacksTo(1))
     );
-    public static final DeferredHolder<Item, BlockItem> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
+    public static final DeferredHolder<Item, VehicleAssemblingTableBlockItem> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
             "vehicle_assembling_table",
-            () -> new BlockItem(ModBlocks.VEHICLE_ASSEMBLING_TABLE.get(), baseProperties(Reference.id("vehicle_assembling_table")).stacksTo(64))
+            () -> new VehicleAssemblingTableBlockItem(ModBlocks.VEHICLE_ASSEMBLING_TABLE.get(), baseProperties(Reference.id("vehicle_assembling_table")).stacksTo(64))
     );
     public static final DeferredHolder<Item, BlockItem> VEHICLE_CHARGING_STATION = REGISTER.register(
             "vehicle_charging_station",

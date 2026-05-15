@@ -648,5 +648,8 @@
   "item.jeg.armored_joy_harness_red_diamond": "§dDiamond Red Joy Harness",
   "item.jeg.armored_joy_harness_red_netherite": "§dNetherite Red Joy Harness",
   "item.jeg.armored_joy_harness_black_diamond": "§dDiamond Black Joy Harness",
-  "item.jeg.armored_joy_harness_black_netherite": "§dNetherite Black Joy Harness"
+  "item.jeg.armored_joy_harness_black_netherite": "§dNetherite Black Joy Harness",
+  "death.attack.vehicle_strike": "%1$s was crushed by a vehicle",
+  "death.attack.vehicle_strike.entity": "%1$s was crushed by %2$s's vehicle",
+  "death.attack.vehicle_strike.item": "%1$s was crushed by %2$s using %3$s"
 }

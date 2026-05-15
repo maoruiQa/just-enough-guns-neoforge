@@ -1,0 +1,5 @@
+{
+  "death.attack.vehicle_strike": "%1$s被载具撞死了",
+  "death.attack.vehicle_strike.entity": "%1$s被%2$s的载具撞死了",
+  "death.attack.vehicle_strike.item": "%1$s被%2$s用%3$s撞死了"
+}

@@ -25,6 +25,7 @@ import ttv.migami.jeg.entity.SmokeGrenadeEntity;
 import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
+import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.vehicle.client.render.A10Renderer;
 import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
@@ -40,6 +41,7 @@ import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
 import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEntityRenderer;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class FallbackClientRenderers {
@@ -47,6 +49,10 @@ public final class FallbackClientRenderers {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), context -> {
+            ttv.migami.jeg.JustEnoughGuns.LOGGER.info("[DEBUG-vat-block] register block entity renderer");
+            return new VehicleAssemblingTableBlockEntityRenderer();
+        });
         event.registerEntityRenderer(ModEntities.GHOUL.get(), FallbackGhoulRenderer::new);
         event.registerEntityRenderer(ModEntities.BULLET.get(), BulletRenderer::new);
         event.registerEntityRenderer(ModEntities.GRENADE.get(), context -> new ThrownItemRenderer<GrenadeEntity>(context, 1.0F, true));
