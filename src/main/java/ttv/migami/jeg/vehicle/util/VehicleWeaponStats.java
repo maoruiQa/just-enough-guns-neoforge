@@ -52,7 +52,7 @@ public final class VehicleWeaponStats {
                     60,
                     20,
                     10,
-                    78.0F,
+                    90.0F,
                     24.0F,
                     90,
                     true,

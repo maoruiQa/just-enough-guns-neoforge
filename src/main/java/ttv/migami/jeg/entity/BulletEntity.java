@@ -95,9 +95,12 @@ public class BulletEntity extends Projectile {
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
     private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
     private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
-    private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.0F;
-    private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 12.0F;
-    private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.0D;
+    private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.35F;
+    private static final float VEHICLE_30MM_EXPLOSION_POWER = 0.75F;
+    private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 14.0F;
+    private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 4.0F;
+    private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.5D;
+    private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
@@ -795,7 +798,10 @@ public class BulletEntity extends Projectile {
                 Entity owner = this.getOwner();
                 Vec3 pos = result.getLocation();
                 spawnVehicleCannonExplosionEffects((ServerLevel) this.level(), pos);
-                this.level().explode(this, pos.x, pos.y, pos.z, VEHICLE_20MM_EXPLOSION_POWER, ExplosionInteraction.NONE);
+                ExplosionInteraction interaction = Config.bulletBlockDestructionEnabled()
+                        ? ExplosionInteraction.TNT
+                        : ExplosionInteraction.NONE;
+                this.level().explode(this, pos.x, pos.y, pos.z, vehicleCannonExplosionPower(id), interaction);
 
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
@@ -813,7 +819,7 @@ public class BulletEntity extends Projectile {
                     }
                 }
 
-                applyVehicleCannonBlastDamage(pos, owner);
+                applyVehicleCannonBlastDamage(pos, owner, id);
             }
             return true;
         }
@@ -821,24 +827,37 @@ public class BulletEntity extends Projectile {
         return false;
     }
 
-    private void applyVehicleCannonBlastDamage(Vec3 pos, @Nullable Entity owner) {
+    private static float vehicleCannonExplosionPower(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_POWER : VEHICLE_20MM_EXPLOSION_POWER;
+    }
+
+    private static float vehicleCannonBlastDamage(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_DAMAGE : VEHICLE_20MM_EXPLOSION_DAMAGE;
+    }
+
+    private static double vehicleCannonBlastRadius(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_RADIUS : VEHICLE_20MM_EXPLOSION_RADIUS;
+    }
+
+    private void applyVehicleCannonBlastDamage(Vec3 pos, @Nullable Entity owner, ResourceLocation id) {
+        double radius = vehicleCannonBlastRadius(id);
         AABB area = new AABB(
-                pos.x - VEHICLE_20MM_EXPLOSION_RADIUS,
-                pos.y - VEHICLE_20MM_EXPLOSION_RADIUS,
-                pos.z - VEHICLE_20MM_EXPLOSION_RADIUS,
-                pos.x + VEHICLE_20MM_EXPLOSION_RADIUS,
-                pos.y + VEHICLE_20MM_EXPLOSION_RADIUS,
-                pos.z + VEHICLE_20MM_EXPLOSION_RADIUS
+                pos.x - radius,
+                pos.y - radius,
+                pos.z - radius,
+                pos.x + radius,
+                pos.y + radius,
+                pos.z + radius
         );
         DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
         for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
             double distance = target.position().distanceTo(pos);
-            if (distance > VEHICLE_20MM_EXPLOSION_RADIUS) {
+            if (distance > radius) {
                 continue;
             }
 
-            float scale = 1.0F - (float) (distance / VEHICLE_20MM_EXPLOSION_RADIUS);
-            float damage = VEHICLE_20MM_EXPLOSION_DAMAGE * scale;
+            float scale = 1.0F - (float) (distance / radius);
+            float damage = vehicleCannonBlastDamage(id) * scale;
             if (damage > 0.5F) {
                 target.hurt(source, damage);
             }

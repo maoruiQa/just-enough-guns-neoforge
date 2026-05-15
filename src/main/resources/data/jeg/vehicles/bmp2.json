@@ -39,12 +39,12 @@
   "destroy": {"explodes": true, "explosion_power": 4.5},
   "seek": {"range": 76.0, "angle": 10.0, "warns_target": true},
   "armor": {
-    "fallback": {"rating": 7.5, "undermatch_multiplier": 0.1, "overmatch_multiplier": 0.72, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 0.62},
+    "fallback": {"rating": 4.4, "undermatch_multiplier": 0.18, "overmatch_multiplier": 0.86, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 0.72},
     "parts": {
-      "turret": {"rating": 8.2, "undermatch_multiplier": 0.08, "overmatch_multiplier": 0.68, "passenger_leak_multiplier": 0.06, "part_damage_multiplier": 0.68},
-      "wheel_left": {"rating": 3.0, "undermatch_multiplier": 0.32, "overmatch_multiplier": 0.98, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.35},
-      "wheel_right": {"rating": 3.0, "undermatch_multiplier": 0.32, "overmatch_multiplier": 0.98, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.35},
-      "main_engine": {"rating": 4.4, "undermatch_multiplier": 0.26, "overmatch_multiplier": 0.92, "passenger_leak_multiplier": 0.05, "part_damage_multiplier": 1.1}
+      "turret": {"rating": 4.8, "undermatch_multiplier": 0.16, "overmatch_multiplier": 0.82, "passenger_leak_multiplier": 0.06, "part_damage_multiplier": 0.76},
+      "wheel_left": {"rating": 2.2, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.45},
+      "wheel_right": {"rating": 2.2, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.45},
+      "main_engine": {"rating": 3.0, "undermatch_multiplier": 0.34, "overmatch_multiplier": 0.96, "passenger_leak_multiplier": 0.05, "part_damage_multiplier": 1.2}
     }
   }
 }

@@ -16,6 +16,7 @@ public final class BallisticProtection {
     private static final ResourceLocation SPECTRE_ROUND = Reference.id("spectre_round");
     private static final ResourceLocation BLAZE_ROUND = Reference.id("blaze_round");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
+    private static final ResourceLocation AUTOCANNON_SHELL = Reference.id("autocannon_shell");
     private static final ResourceLocation ECHO_SHARD = ResourceLocation.fromNamespaceAndPath("minecraft", "echo_shard");
     private static final ResourceLocation SCULK_CATALYST = ResourceLocation.fromNamespaceAndPath("minecraft", "sculk_catalyst");
     private static final ResourceLocation SUBSONIC_RIFLE = Reference.id("subsonic_rifle");
@@ -53,6 +54,9 @@ public final class BallisticProtection {
         if (RIFLE_AMMO.equals(ammo)) {
             return 4.00F;
         }
+        if (AUTOCANNON_SHELL.equals(ammo)) {
+            return 6.50F;
+        }
         return 1.00F;
     }
 
@@ -66,7 +70,7 @@ public final class BallisticProtection {
             case "combat_rifle" -> 1.24F;
             case "burst_rifle" -> 0.90F;
             case "light_machine_gun" -> 1.10F;
-            case "vehicle_30mm_cannon" -> 2.40F;
+            case "vehicle_30mm_cannon" -> 3.00F;
             default -> 1.00F;
         };
     }
