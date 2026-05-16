@@ -781,17 +781,18 @@ public final class GunClientEvents {
         double sideMul = 0.10D;
         double heightMul = -0.10D;
         if (held.getItem() instanceof GunItem gun) {
-            switch (GunCategory.fromStats(gun.getStats())) {
-                case RIFLE -> forwardMul = 0.60D;
-                case SHOTGUN -> forwardMul = 0.64D;
-                case SNIPER -> forwardMul = 0.70D;
-                case LMG -> forwardMul = 0.66D;
-                case HEAVY -> {
-                    forwardMul = 0.76D;
-                    heightMul = -0.08D;
-                }
-                default -> {
-                }
+            GunCategory category = GunCategory.fromStats(gun.getStats());
+            if (category == GunCategory.RIFLE) {
+                forwardMul = 0.60D;
+            } else if (category == GunCategory.SHOTGUN) {
+                forwardMul = 0.64D;
+            } else if (category == GunCategory.SNIPER) {
+                forwardMul = 0.70D;
+            } else if (category == GunCategory.LMG) {
+                forwardMul = 0.66D;
+            } else if (category == GunCategory.HEAVY) {
+                forwardMul = 0.76D;
+                heightMul = -0.08D;
             }
         }
 
