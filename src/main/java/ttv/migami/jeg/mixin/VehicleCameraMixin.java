@@ -58,13 +58,6 @@ public abstract class VehicleCameraMixin {
             return;
         }
         if (detached) {
-            if (vehicle.matchesFirstPersonCameraWhileZooming(player)) {
-                Vec3 cameraPosition = vehicle.cameraPositionFor(player, partialTick);
-                Vec3 cameraRotation = vehicle.cameraRotationFor(player, partialTick);
-                this.jeg$setCameraRotation(cameraRotation);
-                this.setPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-                return;
-            }
             if (!vehicle.usesVehiclePoseTransform()) {
                 return;
             }
