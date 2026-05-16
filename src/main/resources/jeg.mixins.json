@@ -20,6 +20,7 @@
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
     "MinecraftVehicleHotbarMixin",
+    "MouseHandlerVehicleTurnMixin",
     "PlayerRendererMixin",
     "VehicleCameraMixin",
     "VehicleGameRendererMixin"

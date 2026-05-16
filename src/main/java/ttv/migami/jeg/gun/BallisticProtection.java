@@ -16,6 +16,7 @@ public final class BallisticProtection {
     private static final ResourceLocation SPECTRE_ROUND = Reference.id("spectre_round");
     private static final ResourceLocation BLAZE_ROUND = Reference.id("blaze_round");
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
+    private static final ResourceLocation AUTOCANNON_SHELL = Reference.id("autocannon_shell");
     private static final ResourceLocation ECHO_SHARD = ResourceLocation.fromNamespaceAndPath("minecraft", "echo_shard");
     private static final ResourceLocation SCULK_CATALYST = ResourceLocation.fromNamespaceAndPath("minecraft", "sculk_catalyst");
     private static final ResourceLocation SUBSONIC_RIFLE = Reference.id("subsonic_rifle");
@@ -53,6 +54,9 @@ public final class BallisticProtection {
         if (RIFLE_AMMO.equals(ammo)) {
             return 4.00F;
         }
+        if (AUTOCANNON_SHELL.equals(ammo)) {
+            return 6.50F;
+        }
         return 1.00F;
     }
 
@@ -66,12 +70,33 @@ public final class BallisticProtection {
             case "combat_rifle" -> 1.24F;
             case "burst_rifle" -> 0.90F;
             case "light_machine_gun" -> 1.10F;
+            case "vehicle_30mm_cannon" -> 3.00F;
             default -> 1.00F;
         };
     }
 
     public static float effectiveArmorPiercing(GunStats stats, boolean rocketDirectHit) {
+        float override = explicitArmorPiercing(stats);
+        if (override >= 0.0F) {
+            return override;
+        }
         return baseArmorPiercing(stats, rocketDirectHit) * gunArmorPiercingMultiplier(stats);
+    }
+
+    private static float explicitArmorPiercing(GunStats stats) {
+        if (stats == null) {
+            return -1.0F;
+        }
+        return switch (stats.id().getPath()) {
+            case "vehicle_20mm_cannon" -> 5.20F;
+            case "vehicle_30mm_cannon" -> 9.80F;
+            case "vehicle_70mm_rocket", "vehicle_80mm_rocket" -> 5.50F;
+            case "vehicle_9m336_missile" -> 8.40F;
+            case "vehicle_bmp2_missile" -> 10.80F;
+            case "vehicle_9m120_driver_missile", "vehicle_9m120_passenger_missile" -> 11.80F;
+            case "vehicle_kh39_missile" -> 13.20F;
+            default -> -1.0F;
+        };
     }
 
     public static BallisticResult applyToArmorHit(float rawDamage, GunStats stats, ItemStack armorStack, EquipmentSlot slot, boolean rocketDirectHit) {
