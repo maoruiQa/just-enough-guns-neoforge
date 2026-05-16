@@ -23,6 +23,7 @@ public final class VehicleDecoyEntity extends Entity {
     private static final int SMOKE_LIFE_TICKS = 400;
     private static final int SMOKE_IGNITE_TICKS = 4;
     private static final double SMOKE_BLOCK_RANGE = 12.0D;
+    private static final double SMOKE_THICKNESS_MULTIPLIER = 1.5D;
 
     public VehicleDecoyEntity(EntityType<? extends VehicleDecoyEntity> type, Level level) {
         super(type, level);
@@ -96,19 +97,19 @@ public final class VehicleDecoyEntity extends Entity {
         if (this.tickCount == SMOKE_IGNITE_TICKS) {
             this.setDeltaMovement(Vec3.ZERO);
             if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY(), this.getZ(), 120, 4.0D, 1.6D, 4.0D, 0.08D);
+                serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY(), this.getZ(), 240, 6.0D, 3.2D, 6.0D, 0.08D);
                 serverLevel.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 30, 0.25D, 0.25D, 0.25D, 0.12D);
             }
         }
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel && this.tickCount > SMOKE_IGNITE_TICKS && this.tickCount % 5 == 0) {
             double radius = this.smokeRadius();
-            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 36, radius, 1.4D, radius, 0.015D);
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 72, radius, 2.8D, radius, 0.015D);
         }
         if (this.level().isClientSide) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 10; i++) {
                 double radius = this.smokeRadius();
                 double x = this.getX() + (this.random.nextDouble() - 0.5D) * radius * 2.0D;
-                double y = this.getY() + this.random.nextDouble() * 2.8D;
+                double y = this.getY() + this.random.nextDouble() * 5.6D;
                 double z = this.getZ() + (this.random.nextDouble() - 0.5D) * radius * 2.0D;
                 this.level().addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, this.random.nextGaussian() * 0.01D, 0.015D, this.random.nextGaussian() * 0.01D);
             }
@@ -119,7 +120,7 @@ public final class VehicleDecoyEntity extends Entity {
     }
 
     private double smokeRadius() {
-        return Mth.clamp(1.6D + (this.tickCount - SMOKE_IGNITE_TICKS) / 15.0D, 1.6D, 7.0D);
+        return Mth.clamp(1.6D + (this.tickCount - SMOKE_IGNITE_TICKS) / 15.0D, 1.6D, 7.0D) * SMOKE_THICKNESS_MULTIPLIER;
     }
 
     private void shootFrom(Entity shooter, Vec3 direction, float velocity, float inaccuracy) {
