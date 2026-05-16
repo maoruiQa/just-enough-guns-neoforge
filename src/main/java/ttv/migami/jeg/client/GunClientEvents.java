@@ -62,6 +62,8 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GunClientEvents {
@@ -146,6 +148,7 @@ public final class GunClientEvents {
     private static final Map<Identifier, Optional<Vector3f>> FIRST_PERSON_MUZZLE_ANCHORS = new ConcurrentHashMap<>();
     private static FirstPersonGunPoseState firstPersonGunPose;
     private static StunRingingSound stunRingingSound;
+    private static final Map<Integer, net.minecraft.client.resources.sounds.SoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
 
     private GunClientEvents() {}
 
@@ -346,6 +349,7 @@ public final class GunClientEvents {
 
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
+        tickVehicleFireAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -395,7 +399,7 @@ public final class GunClientEvents {
         }
 
         // R key reload / coolant use (server-authoritative).
-        if (KeyBindings.RELOAD.consumeClick()) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
                 attackHeldLastTick = false;
@@ -1163,6 +1167,39 @@ public final class GunClientEvents {
         if (stunRingingSound == null || !minecraft.getSoundManager().isActive(stunRingingSound)) {
             stunRingingSound = new StunRingingSound();
             minecraft.getSoundManager().play(stunRingingSound);
+        }
+    }
+
+    private static void tickVehicleFireAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            VEHICLE_FIRE_SOUNDS.clear();
+            return;
+        }
+        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> {
+            var entity = minecraft.level.getEntity(entry.getKey());
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            return false;
+        });
+        for (var entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof VehicleEntity vehicle) || !vehicle.isWeaponFiring() || vehicle.distanceToSqr(player) > 16384.0D) {
+                continue;
+            }
+            if (VEHICLE_FIRE_SOUNDS.containsKey(vehicle.getId())) {
+                continue;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null) {
+                continue;
+            }
+            VehicleFireSoundInstance instance = new VehicleFireSoundInstance(vehicle, sound);
+            VEHICLE_FIRE_SOUNDS.put(vehicle.getId(), instance);
+            minecraft.getSoundManager().play(instance);
         }
     }
 

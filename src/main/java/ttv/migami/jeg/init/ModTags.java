@@ -64,10 +64,10 @@ public class ModTags
         return getBlockTag(Identifier.tryParse(Reference.MOD_ID + ":" + name));
     }
 
-    public static TagKey<Block> getBlockTag(Identifier resourceLocation) {
-        if (!blockTagCache.containsKey(resourceLocation)) {
-            blockTagCache.put(resourceLocation, BlockTags.create(resourceLocation));
+    public static TagKey<Block> getBlockTag(Identifier Identifier) {
+        if (!blockTagCache.containsKey(Identifier)) {
+            blockTagCache.put(Identifier, BlockTags.create(Identifier));
         }
-        return blockTagCache.get(resourceLocation);
+        return blockTagCache.get(Identifier);
     }
 }

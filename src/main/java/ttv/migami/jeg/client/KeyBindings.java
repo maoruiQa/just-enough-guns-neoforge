@@ -22,8 +22,80 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
+            "key.jeg.vehicle_free_look",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_SWITCH_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_switch_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_PREVIOUS_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_previous_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Z,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_DEPLOY_DECOY = new KeyMapping(
+            "key.jeg.vehicle_deploy_decoy",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_G,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_SEEK = new KeyMapping(
+            "key.jeg.vehicle_seek",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_BRAKE_DESCEND = new KeyMapping(
+            "key.jeg.vehicle_brake_descend",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_CONTROL,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
+            "key.jeg.vehicle_change_seat",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_B,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_DISMOUNT = new KeyMapping(
+            "key.jeg.vehicle_dismount",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_ALT,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_PLAYER_INVENTORY = new KeyMapping(
+            "key.jeg.vehicle_player_inventory",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_H,
+            CATEGORY
+    );
+
     @SubscribeEvent
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(RELOAD);
+        event.register(VEHICLE_FREE_LOOK);
+        event.register(VEHICLE_SWITCH_WEAPON);
+        event.register(VEHICLE_PREVIOUS_WEAPON);
+        event.register(VEHICLE_DEPLOY_DECOY);
+        event.register(VEHICLE_SEEK);
+        event.register(VEHICLE_BRAKE_DESCEND);
+        event.register(VEHICLE_CHANGE_SEAT);
+        event.register(VEHICLE_DISMOUNT);
+        event.register(VEHICLE_PLAYER_INVENTORY);
     }
 }

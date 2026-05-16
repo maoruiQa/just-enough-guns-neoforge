@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,10 +19,20 @@ import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
+import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
+import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
+import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
+import ttv.migami.jeg.vehicle.network.VehicleSeatAssignmentsPayload;
+import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -36,11 +47,73 @@ public final class NetworkHandler {
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
+                .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
+                .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
+                .playToServer(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC, NetworkHandler::handleVehicleDismount)
+                .playToServer(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC, NetworkHandler::handleVehicleOpenMenu)
+                .playToServer(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC, NetworkHandler::handleAssembleTestVehicle)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
                 .playToClient(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC, NetworkHandler::handleUiConfig)
-                .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker);
+                .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
+                .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
+                .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
+    }
+
+    private static void handleVehicleInput(VehicleInputPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (!(player.getVehicle() instanceof VehicleEntity vehicle) || vehicle.getId() != payload.vehicleId()) {
+                return;
+            }
+            vehicle.processInput(player, payload.toInput());
+        });
+    }
+
+    private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof VehicleAssemblingMenu menu) {
+                menu.assembleVehicle(player, payload.recipeId());
+            }
+        });
+    }
+
+    private static void handleVehicleChangeSeat(VehicleChangeSeatPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                vehicle.changeSeat(player);
+            }
+        });
+    }
+
+    private static void handleVehicleDismount(VehicleDismountPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                GunEvents.clearVehicleSeatReturn(player);
+                vehicle.forgetSeatAssignment(player);
+                player.stopRiding();
+            }
+        });
+    }
+
+    private static void handleVehicleOpenMenu(VehicleOpenMenuPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                player.openMenu(vehicle, buffer -> buffer.writeVarInt(vehicle.vehicleContainerSlots()));
+            }
+        });
     }
 
     private static void handleBulletTrail(BulletTrailPayload payload, IPayloadContext context) {
@@ -74,6 +147,86 @@ public final class NetworkHandler {
 
     private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
+    }
+
+    private static void syncVehicleState(ServerPlayer player, VehicleEntity vehicle, boolean forceApply) {
+        player.connection.send(new VehicleStatePayload(
+                vehicle.getId(),
+                vehicle.getX(),
+                vehicle.getY(),
+                vehicle.getZ(),
+                vehicle.getDeltaMovement().x,
+                vehicle.getDeltaMovement().y,
+                vehicle.getDeltaMovement().z,
+                vehicle.getYRot(),
+                vehicle.getXRot(),
+                forceApply
+        ));
+    }
+
+    private static void syncVehicleStateToTrackingPlayers(VehicleEntity vehicle, boolean forceApply) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            if (player.level() == level && player.distanceToSqr(vehicle) <= 4096.0D) {
+                syncVehicleState(player, vehicle, forceApply);
+            }
+        }
+    }
+
+    public static void sendVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, false);
+    }
+
+    public static void broadcastVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, false);
+    }
+
+    public static void sendForcedVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, true);
+    }
+
+    public static void broadcastForcedVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, true);
+    }
+
+    public static void broadcastVehicleSeatAssignments(VehicleEntity vehicle) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        VehicleSeatAssignmentsPayload payload = VehicleSeatAssignmentsPayload.fromMap(vehicle.getId(), vehicle.seatAssignmentsSnapshot());
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            if (player.level() == level) {
+                player.connection.send(payload);
+            }
+        }
+    }
+
+    private static void handleVehicleState(VehicleStatePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (Minecraft.getInstance().level == null) {
+                return;
+            }
+            var entity = Minecraft.getInstance().level.getEntity(payload.vehicleId());
+            if (!(entity instanceof VehicleEntity vehicle)) {
+                return;
+            }
+            vehicle.syncAuthoritativeState(payload.x(), payload.y(), payload.z(), payload.motionX(), payload.motionY(), payload.motionZ(), payload.yaw(), payload.pitch(), payload.forceApply());
+        });
+    }
+
+    private static void handleVehicleSeatAssignments(VehicleSeatAssignmentsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (Minecraft.getInstance().level == null) {
+                return;
+            }
+            var entity = Minecraft.getInstance().level.getEntity(payload.vehicleId());
+            if (!(entity instanceof VehicleEntity vehicle)) {
+                return;
+            }
+            vehicle.applySeatAssignments(payload.toMap());
+        });
     }
 
     private static void handleTriggerRelease(TriggerReleasePayload payload, IPayloadContext context) {
@@ -258,6 +411,38 @@ public final class NetworkHandler {
             return;
         }
         client.getConnection().send(UnloadMagazineRequestPayload.INSTANCE);
+    }
+
+    public static void sendAssembleVehicle(Identifier recipeId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new AssembleTestVehiclePayload(recipeId));
+    }
+
+    public static void sendVehicleChangeSeat(int vehicleId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new VehicleChangeSeatPayload(vehicleId));
+    }
+
+    public static void sendVehicleDismount(int vehicleId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new VehicleDismountPayload(vehicleId));
+    }
+
+    public static void sendVehicleOpenMenu(int vehicleId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getConnection() == null) {
+            return;
+        }
+        client.getConnection().send(new VehicleOpenMenuPayload(vehicleId));
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {

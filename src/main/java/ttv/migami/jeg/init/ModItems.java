@@ -12,6 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.Recipe;
@@ -25,6 +26,7 @@ import ttv.migami.jeg.event.RecipeUnlockHandler;
 import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.DescribedAmmoItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.MolotovCocktailItem;
@@ -34,9 +36,14 @@ import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.JoyousArmorPlateItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
 import ttv.migami.jeg.item.WaterBombItem;
+import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.item.VehicleAssemblingTableBlockItem;
+import ttv.migami.jeg.vehicle.item.VehicleContainerItem;
 
 public final class ModItems {
     private ModItems() {}
@@ -44,8 +51,36 @@ public final class ModItems {
     public static final DeferredRegister<Item> REGISTER = DeferredRegister.create(Registries.ITEM, Reference.MOD_ID);
 
     public static final Map<Identifier, DeferredHolder<Item, Item>> AMMO = new LinkedHashMap<>();
+    public static final DeferredHolder<Item, VehicleContainerItem> VEHICLE_CONTAINER = REGISTER.register(
+            "vehicle_container",
+            () -> new VehicleContainerItem(ModBlocks.VEHICLE_CONTAINER.get(), baseProperties(Reference.id("vehicle_container")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, VehicleAssemblingTableBlockItem> VEHICLE_ASSEMBLING_TABLE = REGISTER.register(
+            "vehicle_assembling_table",
+            () -> new VehicleAssemblingTableBlockItem(ModBlocks.VEHICLE_ASSEMBLING_TABLE.get(), baseProperties(Reference.id("vehicle_assembling_table")).stacksTo(64))
+    );
+    public static final DeferredHolder<Item, BlockItem> VEHICLE_CHARGING_STATION = REGISTER.register(
+            "vehicle_charging_station",
+            () -> new BlockItem(ModBlocks.VEHICLE_CHARGING_STATION.get(), baseProperties(Reference.id("vehicle_charging_station")).stacksTo(64))
+    );
+    public static final DeferredHolder<Item, Item> CROWBAR = REGISTER.register(
+            "crowbar",
+            () -> new Item(baseProperties(Reference.id("crowbar")).stacksTo(1).durability(128))
+    );
+    public static final DeferredHolder<Item, Item> REPAIR_KIT = REGISTER.register(
+            "repair_kit",
+            () -> new Item(baseProperties(Reference.id("repair_kit")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, RepairToolItem> REPAIR_TOOL = REGISTER.register(
+            "repair_tool",
+            () -> new RepairToolItem(baseProperties(Reference.id("repair_tool")))
+    );
     public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
+    public static final DeferredHolder<Item, Item> MISSILE_ENGINE = REGISTER.register(
+            "missile_engine",
+            () -> new Item(baseProperties(Reference.id("missile_engine")).stacksTo(64))
+    );
     public static final DeferredHolder<Item, MagazineItem> PISTOL_MAGAZINE = REGISTER.register(
             "pistol_magazine",
             () -> new MagazineItem(baseProperties(Reference.id("pistol_magazine")).stacksTo(1), MagazineItem.MagazineType.PISTOL)
@@ -81,11 +116,17 @@ public final class ModItems {
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
             "rifle_ammo",
+            "small_shell",
+            "autocannon_shell",
             "shotgun_shell",
             "handmade_shell",
             "spectre_round",
             "blaze_round",
             "rocket",
+            "small_rocket",
+            "medium_anti_air_missile",
+            "medium_anti_ground_missile",
+            "large_anti_ground_missile",
             "grenade",
             "stun_grenade",
             "smoke_grenade",
@@ -245,6 +286,8 @@ public final class ModItems {
                 case "smoke_grenade" -> AMMO.put(id, REGISTER.register(path, () -> new SmokeGrenadeItem(baseProperties(id).stacksTo(16))));
                 case "molotov_cocktail" -> AMMO.put(id, REGISTER.register(path, () -> new MolotovCocktailItem(baseProperties(id).stacksTo(16))));
                 case "water_bomb" -> AMMO.put(id, REGISTER.register(path, () -> new WaterBombItem(baseProperties(id).stacksTo(16))));
+                case "medium_anti_air_missile", "medium_anti_ground_missile", "large_anti_ground_missile" ->
+                        AMMO.put(id, REGISTER.register(path, () -> new DescribedAmmoItem(baseProperties(id), "tooltip.jeg." + path)));
                 default -> AMMO.put(id, REGISTER.register(path, () -> new Item(baseProperties(id))));
             }
         }
@@ -329,11 +372,17 @@ public final class ModItems {
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         for (Identifier id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
@@ -366,11 +415,17 @@ public final class ModItems {
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         return List.copyOf(keys);
     }
 
@@ -405,6 +460,7 @@ public final class ModItems {
             event.accept(RIFLE_MAGAZINE.get());
             event.accept(SHOTGUN_MAGAZINE.get());
             event.accept(MACHINE_GUN_MAGAZINE.get());
+            event.accept(MISSILE_ENGINE.get());
             BULLETPROOF_HELMETS.values().forEach(holder -> event.accept(holder.get()));
             BULLETPROOF_VESTS.values().forEach(holder -> event.accept(holder.get()));
             event.accept(PHANTOM_GUNNER_SPAWN_EGG.get());
@@ -421,6 +477,16 @@ public final class ModItems {
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(GUNSMITH_MANUAL.get());
+            event.accept(VEHICLE_ASSEMBLING_TABLE.get());
+            event.accept(VEHICLE_CHARGING_STATION.get());
+            event.accept(VEHICLE_CONTAINER.get());
+            VehicleDataManager.all().keySet().stream()
+                    .sorted()
+                    .map(VehicleContainerBlockEntity::createItemForVehicle)
+                    .forEach(event::accept);
+            event.accept(CROWBAR.get());
+            event.accept(REPAIR_KIT.get());
+            event.accept(REPAIR_TOOL.get());
             event.accept(COOLANT.get());
             event.accept(ENHANCED_COOLANT.get());
             ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));

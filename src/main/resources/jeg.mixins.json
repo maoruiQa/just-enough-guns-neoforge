@@ -9,7 +9,11 @@
     "GunnerWaterConversionMixin"
   ],
   "client": [
-    "ItemInHandRendererMixin"
+    "ItemInHandRendererMixin",
+    "KeyMappingVehicleMixin",
+    "MinecraftVehicleHotbarMixin",
+    "VehicleCameraMixin",
+    "VehicleGameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
