@@ -4,7 +4,10 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -149,6 +152,9 @@ public record VehicleMissileProfile(
                 if (target instanceof VehicleEntity vehicle) {
                     return isAirVehicle(vehicle);
                 }
+                if (isExplicitAntiAirTarget(target)) {
+                    return true;
+                }
                 return target instanceof LivingEntity && !isGroundedEntity(target);
             }
         };
@@ -158,6 +164,12 @@ public record VehicleMissileProfile(
 
     private static boolean isGroundedEntity(Entity target) {
         return target.onGround() || target.isInWater();
+    }
+
+    private static boolean isExplicitAntiAirTarget(Entity target) {
+        return target instanceof AbstractTerrorPhantom
+                || target instanceof EnderDragon
+                || target instanceof WitherBoss;
     }
 
     private static boolean isSurfaceVehicle(VehicleEntity vehicle) {
