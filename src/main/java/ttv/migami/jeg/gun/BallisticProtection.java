@@ -76,7 +76,27 @@ public final class BallisticProtection {
     }
 
     public static float effectiveArmorPiercing(GunStats stats, boolean rocketDirectHit) {
+        float override = explicitArmorPiercing(stats);
+        if (override >= 0.0F) {
+            return override;
+        }
         return baseArmorPiercing(stats, rocketDirectHit) * gunArmorPiercingMultiplier(stats);
+    }
+
+    private static float explicitArmorPiercing(GunStats stats) {
+        if (stats == null) {
+            return -1.0F;
+        }
+        return switch (stats.id().getPath()) {
+            case "vehicle_20mm_cannon" -> 5.20F;
+            case "vehicle_30mm_cannon" -> 9.80F;
+            case "vehicle_70mm_rocket", "vehicle_80mm_rocket" -> 5.50F;
+            case "vehicle_9m336_missile" -> 8.40F;
+            case "vehicle_bmp2_missile" -> 10.80F;
+            case "vehicle_9m120_driver_missile", "vehicle_9m120_passenger_missile" -> 11.80F;
+            case "vehicle_kh39_missile" -> 13.20F;
+            default -> -1.0F;
+        };
     }
 
     public static BallisticResult applyToArmorHit(float rawDamage, GunStats stats, ItemStack armorStack, EquipmentSlot slot, boolean rocketDirectHit) {
