@@ -19,6 +19,10 @@ public final class VehicleDecoyRenderer extends EntityRenderer<VehicleDecoyEntit
 
     @Override
     public void render(VehicleDecoyEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        if (entity.isSmokeDecoy()) {
+            super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            return;
+        }
         poseStack.pushPose();
         poseStack.scale(0.35F, 0.35F, 0.35F);
         poseStack.translate(-0.5D, -0.5D, -0.5D);

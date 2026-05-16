@@ -6,9 +6,10 @@
   "auto_repair_cooldown_ticks": 130,
   "max_energy": 5000000,
   "allow_free_cam": true,
+  "has_decoy": true,
   "container_type": "small",
   "seats": [
-    {"index": 0, "x": 0.45, "y": 0.85, "z": 1.0, "driver": true, "enclosed": false, "hide_passenger": true, "ban_hand": true, "min_pitch": -80.0, "max_pitch": 80.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 0.0, "sensitivity_y": 0.0, "sensitivity_z": 0.0, "zoom_camera": {"x": 0.45, "y": 2.45, "z": 1.0, "use_fixed_camera_pos": true, "use_aircraft_camera": true, "aircraft_x": -2.1, "aircraft_y": 2.45, "aircraft_z": -10.0}, "dismount": {"x": 2.0, "y": 1.2, "z": 1.0}},
+    {"index": 0, "x": 0.45, "y": 0.85, "z": 1.0, "driver": true, "enclosed": false, "ban_hand": true, "min_pitch": -80.0, "max_pitch": 80.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 0.0, "sensitivity_y": 0.0, "sensitivity_z": 0.0, "zoom_camera": {"x": 0.45, "y": 2.45, "z": 1.0, "use_fixed_camera_pos": true, "use_aircraft_camera": true, "aircraft_x": -2.1, "aircraft_y": 2.45, "aircraft_z": -10.0}, "dismount": {"x": 2.0, "y": 1.2, "z": 1.0}},
     {"index": 1, "x": -0.45, "y": 0.85, "z": 1.0, "driver": false, "enclosed": false, "min_pitch": -80.0, "max_pitch": 80.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 0.0, "sensitivity_y": 0.0, "sensitivity_z": 0.0, "dismount": {"x": -2.0, "y": 1.2, "z": 1.0}},
     {"index": 2, "x": -1.4, "y": 0.4, "z": 0.0, "driver": false, "enclosed": false, "min_pitch": -90.0, "max_pitch": 90.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 1.0, "sensitivity_y": 1.0, "sensitivity_z": 1.0, "dismount": {"x": -2.0, "y": 1.2, "z": 0.0}},
     {"index": 3, "x": 1.4, "y": 0.4, "z": 0.0, "driver": false, "enclosed": false, "min_pitch": -90.0, "max_pitch": 90.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 1.0, "sensitivity_y": 1.0, "sensitivity_z": 1.0, "dismount": {"x": 2.0, "y": 1.2, "z": 0.0}}
@@ -25,7 +26,7 @@
   ],
   "weapons": [
     {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0},
-    {"weapon": "jeg:vehicle_20mm_cannon", "ammo": "jeg:small_shell", "energy_cost": 2, "guided": false, "seat": 0}
+    {"weapon": "jeg:vehicle_70mm_rocket", "ammo": "jeg:small_rocket", "energy_cost": 2, "guided": false, "seat": 0, "muzzle": {"x": -1.7, "y": 0.62, "z": 0.8}}
   ],
   "destroy": {"explodes": true, "explosion_power": 2.3},
   "seek": {"range": 80.0, "angle": 12.0, "warns_target": true},

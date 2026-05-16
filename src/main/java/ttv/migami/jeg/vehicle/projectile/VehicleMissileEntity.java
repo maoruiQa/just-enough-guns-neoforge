@@ -4,6 +4,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -17,29 +18,30 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public final class VehicleMissileEntity extends Entity {
-    private static final int LIFE_TICKS = 120;
-    private static final double SEEK_RANGE = 18.0D;
-    private static final double MAX_SPEED = 0.95D;
-    private static final double TURN_RATE = 0.16D;
+    private static final double DECOY_SEEK_RANGE = 32.0D;
 
     private int ownerId = -1;
     private int targetId = -1;
+    private ResourceLocation weaponId = Reference.id("vehicle_bmp2_missile");
 
     public VehicleMissileEntity(EntityType<? extends VehicleMissileEntity> type, Level level) {
         super(type, level);
         this.noPhysics = true;
     }
 
-    public VehicleMissileEntity(Level level, Entity owner, @Nullable Entity target, Vec3 position, Vec3 velocity) {
+    public VehicleMissileEntity(Level level, Entity owner, @Nullable Entity target, Vec3 position, Vec3 velocity, ResourceLocation weaponId) {
         this(ModEntities.VEHICLE_MISSILE.get(), level);
         this.ownerId = owner.getId();
         this.targetId = target == null ? -1 : target.getId();
+        this.weaponId = weaponId;
         this.setPos(position);
         this.setDeltaMovement(velocity);
     }
@@ -51,7 +53,8 @@ public final class VehicleMissileEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
-        if (this.tickCount > LIFE_TICKS) {
+        VehicleMissileProfile profile = this.profile();
+        if (this.tickCount > profile.lifeTicks()) {
             this.explode();
             return;
         }
@@ -74,16 +77,26 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     private void steerServer() {
+        VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
-        VehicleDecoyEntity.findNearest(this.level(), this.position(), SEEK_RANGE).ifPresent(decoy -> this.targetId = decoy.getId());
-        target = this.currentTarget();
-        if (target != null && target.isAlive()) {
+        if (profile.usesLockOn()) {
+            VehicleDecoyEntity.findNearest(this.level(), this.position(), DECOY_SEEK_RANGE).ifPresent(decoy -> this.targetId = decoy.getId());
+            target = this.currentTarget();
+        }
+        Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+        Entity ownerVehicle = owner == null ? null : owner.getVehicle();
+        boolean validTarget = target instanceof VehicleDecoyEntity
+                || (target != null && profile.canContinueTracking(target, owner, ownerVehicle) && !VehicleDecoyEntity.isSmokeBlockingTarget(target));
+        if (profile.usesLockOn() && target != null && validTarget) {
             this.warnTrackedTarget(target);
-            Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(MAX_SPEED);
-            this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - TURN_RATE).add(desired.scale(TURN_RATE)));
+            Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(profile.maxSpeed());
+            this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
             if (this.distanceToSqr(target) < 1.4D) {
                 this.explode();
             }
+        } else if (profile.usesWireGuidance() && owner instanceof LivingEntity livingOwner) {
+            Vec3 desired = livingOwner.getViewVector(1.0F).normalize().scale(profile.maxSpeed());
+            this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
         }
     }
 
@@ -147,33 +160,42 @@ public final class VehicleMissileEntity extends Entity {
 
     private void explode() {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+            VehicleMissileProfile profile = this.profile();
             serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 8, 0.4D, 0.4D, 0.4D, 0.06D);
             Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 2.4F, ExplosionInteraction.MOB);
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), profile.explosionPower(), ExplosionInteraction.MOB);
             Entity ownerVehicle = owner == null ? null : owner.getVehicle();
-            for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(3.5D))) {
+            for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != ownerVehicle) {
-                    target.hurt(this.damageSources().explosion(this, owner), 18.0F);
+                    target.hurt(this.damageSources().explosion(this, owner), profile.vehicleDamage());
                 }
             }
-            for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0D))) {
+            for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != owner) {
-                    target.hurt(this.damageSources().explosion(this, owner), 12.0F);
+                    target.hurt(this.damageSources().explosion(this, owner), profile.livingDamage());
                 }
             }
         }
         this.discard();
     }
 
+    private VehicleMissileProfile profile() {
+        return VehicleMissileProfile.get(this.weaponId);
+    }
+
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         this.ownerId = tag.getInt("OwnerId");
         this.targetId = tag.getInt("TargetId");
+        if (tag.contains("WeaponId")) {
+            this.weaponId = ResourceLocation.parse(tag.getString("WeaponId"));
+        }
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("OwnerId", this.ownerId);
         tag.putInt("TargetId", this.targetId);
+        tag.putString("WeaponId", this.weaponId.toString());
     }
 }

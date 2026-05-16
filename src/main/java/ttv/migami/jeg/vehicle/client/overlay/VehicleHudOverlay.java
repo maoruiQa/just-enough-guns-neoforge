@@ -49,6 +49,7 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation CROSSHAIR_CANNON_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/common_cannon_zooming.png");
     private static final ResourceLocation CROSSHAIR_CN_HPJ_ZOOMING = Reference.id("textures/overlay/vehicle/crosshair/cn_hpj_zooming.png");
     private static final ResourceLocation CROSSHAIR_LASER_CANNON = Reference.id("textures/overlay/vehicle/crosshair/laser_cannon.png");
+    private static final ResourceLocation CROSSHAIR_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_missile.png");
     private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
     private static final ResourceLocation CROSSHAIR_THIRD_CAMERA = Reference.id("textures/overlay/vehicle/crosshair/third_camera.png");
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
@@ -103,7 +104,7 @@ public final class VehicleHudOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         boolean focusedSight = isFocusedVehicleSight(vehicle);
         renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
-        if (vehicle.hasVehicleWeapons()) {
+        if (vehicle.hasVehicleWeapons() && vehicle.canPassengerUseSelectedVehicleWeapon(minecraft.player)) {
             renderReticle(guiGraphics, vehicle);
         }
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
@@ -133,7 +134,9 @@ public final class VehicleHudOverlay {
             guiGraphics.drawString(minecraft.font, energy, (width - minecraft.font.width(energy)) / 2, lineY + 8, 0xFF8FC7FF);
             lineY += 19;
         }
-        boolean showWeaponInfo = vehicle.hasVehicleWeapons() && (!focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT);
+        boolean showWeaponInfo = vehicle.hasVehicleWeapons()
+                && vehicle.canPassengerUseSelectedVehicleWeapon(minecraft.player)
+                && (!focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT);
         if (showWeaponInfo) {
             ResourceLocation selectedWeaponId = vehicle.selectedVehicleWeaponId();
             if (selectedWeaponId != null) {
@@ -150,7 +153,7 @@ public final class VehicleHudOverlay {
                     guiGraphics.drawString(minecraft.font, reload, (width - minecraft.font.width(reload)) / 2, lineY, 0xFFFFAA55);
                     lineY += 11;
                 }
-                if (vehicle.isSelectedVehicleWeaponGuided()) {
+                if (vehicle.isSelectedVehicleWeaponLockOn()) {
                     boolean seeking = VehicleClientState.isRidingVehicle()
                             && VehicleClientState.vehicleId() == vehicle.getId()
                             && VehicleClientState.seekDown();
@@ -163,9 +166,9 @@ public final class VehicleHudOverlay {
             }
         }
         if (showDecoyStatus(vehicle)) {
-            Component decoy = vehicle.hasBuiltInDecoy()
-                    ? Component.translatable("hud.jeg.vehicle.decoy_smoke", vehicle.vehicleDecoyCooldown() == 0 ? Component.translatable("hud.jeg.vehicle.ready") : Component.literal(Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20) + "s"))
-                    : Component.translatable("hud.jeg.vehicle.decoy", vehicle.vehicleFlareAmmo(), Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20));
+            Component decoy = builtInDecoyUsesSmoke(vehicle)
+                    ? Component.translatable("hud.jeg.vehicle.decoy_smoke", KeyBindings.VEHICLE_DEPLOY_DECOY.getTranslatedKeyMessage(), decoyStatus(vehicle))
+                    : Component.translatable("hud.jeg.vehicle.decoy_flare", KeyBindings.VEHICLE_DEPLOY_DECOY.getTranslatedKeyMessage(), decoyStatus(vehicle));
             guiGraphics.drawString(minecraft.font, decoy, (width - minecraft.font.width(decoy)) / 2, lineY, 0xFFB8E0FF);
             lineY += 11;
         }
@@ -193,7 +196,11 @@ public final class VehicleHudOverlay {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
             case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
             case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_70mm_rocket", "vehicle_80mm_rocket" -> Reference.id("textures/overlay/vehicle/weapon/icons/small_rocket.png");
             case "vehicle_bmp2_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m113.png");
+            case "vehicle_9m120_driver_missile", "vehicle_9m120_passenger_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m120.png");
+            case "vehicle_kh39_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/kh_39.png");
+            case "vehicle_9m336_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/ru_9m336.png");
             default -> null;
         };
         if (icon != null) {
@@ -207,15 +214,26 @@ public final class VehicleHudOverlay {
         }
         var weapons = vehicle.vehicleData().defaults().weapons();
         int selected = vehicle.selectedVehicleWeaponIndex();
+        int[] usableWeaponIndexes = new int[Math.min(weapons.size(), 9)];
+        int usableWeaponCount = 0;
+        for (int index = 0; index < weapons.size() && usableWeaponCount < usableWeaponIndexes.length; index++) {
+            if (vehicle.canPassengerUseVehicleWeapon(minecraft.player, index)) {
+                usableWeaponIndexes[usableWeaponCount++] = index;
+            }
+        }
+        if (usableWeaponCount == 0) {
+            return;
+        }
         int width = guiGraphics.guiWidth();
         int height = guiGraphics.guiHeight();
         int frameIndex = 0;
-        for (int index = weapons.size() - 1; index >= 0 && index < 9; index--) {
+        for (int displayIndex = usableWeaponCount - 1; displayIndex >= 0; displayIndex--) {
+            int index = usableWeaponIndexes[displayIndex];
             int x = width - 85;
             int y = height - frameIndex * 18 - 20;
             ResourceLocation icon = weaponIcon(weapons.get(index).weaponId());
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, index == selected ? 1.0F : 0.35F);
-            guiGraphics.blit(WEAPON_FRAMES[Math.min(index, WEAPON_FRAMES.length - 1)], x, y, 0.0F, 0.0F, 75, 16, 75, 16);
+            guiGraphics.blit(WEAPON_FRAMES[Math.min(displayIndex, WEAPON_FRAMES.length - 1)], x, y, 0.0F, 0.0F, 75, 16, 75, 16);
             if (icon != null) {
                 blitWeaponIcon(guiGraphics, icon, x, y);
             } else {
@@ -229,7 +247,7 @@ public final class VehicleHudOverlay {
                     guiGraphics.drawString(minecraft.font, reload, x + 4, y + 5, 0xFFFFAA55, false);
                 }
             } else {
-                Component slotNumber = Component.literal(String.valueOf(index + 1));
+                Component slotNumber = Component.literal(String.valueOf(displayIndex + 1));
                 guiGraphics.drawString(minecraft.font, slotNumber, width - 20 - minecraft.font.width(slotNumber), y + 5, 0xFFFFFFFF, false);
             }
             if (index == selected) {
@@ -245,7 +263,11 @@ public final class VehicleHudOverlay {
             case "vehicle_20mm_cannon" -> WEAPON_ICON_CANNON_20MM;
             case "vehicle_30mm_cannon" -> Reference.id("textures/overlay/vehicle/weapon/icons/cannon_30mm.png");
             case "vehicle_coax_machine_gun", "light_machine_gun" -> WEAPON_ICON_COAX_762;
+            case "vehicle_70mm_rocket", "vehicle_80mm_rocket" -> Reference.id("textures/overlay/vehicle/weapon/icons/small_rocket.png");
             case "vehicle_bmp2_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m113.png");
+            case "vehicle_9m120_driver_missile", "vehicle_9m120_passenger_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/missile_9m120.png");
+            case "vehicle_kh39_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/kh_39.png");
+            case "vehicle_9m336_missile" -> Reference.id("textures/overlay/vehicle/weapon/icons/ru_9m336.png");
             default -> null;
         };
     }
@@ -283,6 +305,17 @@ public final class VehicleHudOverlay {
 
     private static boolean showDecoyStatus(VehicleEntity vehicle) {
         return vehicle.hasBuiltInDecoy() || vehicle.vehicleFlareAmmo() > 0 || vehicle.vehicleDecoyCooldown() > 0;
+    }
+
+    private static boolean builtInDecoyUsesSmoke(VehicleEntity vehicle) {
+        VehicleType type = vehicle.vehicleData().defaults().vehicleType();
+        return vehicle.hasBuiltInDecoy() && type != VehicleType.HELICOPTER && type != VehicleType.AIRCRAFT;
+    }
+
+    private static Component decoyStatus(VehicleEntity vehicle) {
+        return vehicle.vehicleDecoyCooldown() == 0
+                ? Component.translatable("hud.jeg.vehicle.ready")
+                : Component.literal(Math.ceilDiv(vehicle.vehicleDecoyCooldown(), 20) + "s");
     }
 
     private static int vehicleSpeedKmh(VehicleEntity vehicle) {
@@ -339,8 +372,11 @@ public final class VehicleHudOverlay {
         if (zooming && "hpj11".equals(vehiclePath)) {
             return CROSSHAIR_CN_HPJ_ZOOMING;
         }
-        if (vehicle.isSelectedVehicleWeaponGuided()) {
+        if (vehicle.isSelectedVehicleWeaponLockOn()) {
             return CROSSHAIR_SEEK_MISSILE;
+        }
+        if (vehicle.isSelectedVehicleWeaponGuided()) {
+            return CROSSHAIR_MISSILE;
         }
         if ("hypersonic_cannon".equals(weaponPath) || "grenade_launcher".equals(weaponPath)) {
             return zooming ? CROSSHAIR_CANNON_ZOOMING : CROSSHAIR_CANNON;

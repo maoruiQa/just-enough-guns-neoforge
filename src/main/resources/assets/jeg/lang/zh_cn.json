@@ -1,5 +1,19 @@
 {
+  "item.jeg.vehicle_bmp2_missile": "9M113“竞赛”反坦克导弹",
+  "item.jeg.missile": "9M113“竞赛”反坦克导弹",
+  "item.jeg.vehicle_70mm_rocket": "70mm火箭弹",
+  "item.jeg.vehicle_80mm_rocket": "80mm火箭弹",
+  "item.jeg.vehicle_9m120_driver_missile": "9M-120对地导弹",
+  "item.jeg.vehicle_9m120_passenger_missile": "9M-120对地导弹",
+  "item.jeg.vehicle_kh39_missile": "KH-39“产品-305”对地导弹",
+  "item.jeg.vehicle_9m336_missile": "9M336对空导弹",
+  "item.jeg.small_rocket": "小口径火箭弹",
+  "item.jeg.medium_anti_air_missile": "中型对空导弹",
+  "item.jeg.medium_anti_ground_missile": "中型对地导弹",
+  "item.jeg.large_anti_ground_missile": "大型对地导弹",
   "death.attack.vehicle_strike": "%1$s被载具撞死了",
   "death.attack.vehicle_strike.entity": "%1$s被%2$s的载具撞死了",
-  "death.attack.vehicle_strike.item": "%1$s被%2$s用%3$s撞死了"
+  "death.attack.vehicle_strike.item": "%1$s被%2$s用%3$s撞死了",
+  "hud.jeg.vehicle.decoy_flare": "按%s 诱饵弹: %s",
+  "hud.jeg.vehicle.decoy_smoke": "按%s 烟幕: %s"
 }

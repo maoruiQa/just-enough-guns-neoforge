@@ -503,6 +503,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapon != null && weapon.guided();
     }
 
+    public boolean isSelectedVehicleWeaponLockOn() {
+        VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn();
+    }
+
     public boolean canPassengerUseVehicleWeapon(Entity passenger, int weaponIndex) {
         var weapons = this.vehicleData().defaults().weapons();
         if (weaponIndex < 0 || weaponIndex >= weapons.size()) {
@@ -1234,7 +1239,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Entity target = null;
         VehicleWeaponInfo weapon = this.selectedWeapon();
         LivingEntity shooter = this.seekInput ? this.seekController() : null;
-        if (shooter != null && weapon.guided()) {
+        if (shooter != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
                 target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), VehicleMissileProfile.get(weapon.weaponId()));
@@ -1266,7 +1271,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
         VehicleMissileProfile profile = VehicleMissileProfile.get(weapon.weaponId());
         Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
-        Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
+        Entity target = this.seekInput && profile.usesLockOn() ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity, weapon.weaponId()));
         this.fireCooldown = Math.max(1, stats.fireDelay());
     }

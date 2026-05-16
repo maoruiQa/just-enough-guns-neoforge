@@ -61,7 +61,7 @@ public final class SmokeGrenadeEntity extends TimedThrowableItemProjectile {
         SoundEvent sound = resolveSound("entity.smoke_grenade.explosion", SoundEvents.FIRE_EXTINGUISH);
         serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.BLOCKS, 2.0F, 1.0F);
         serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 60, 0.8D, 1.2D, 0.8D, 0.02D);
-        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 20, 0.6D, 0.8D, 0.6D, 0.01D);
+        serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 20, 0.6D, 0.8D, 0.6D, 0.01D);
 
         for (double offset : CLOUD_OFFSETS) {
             AreaEffectCloud cloud = new AreaEffectCloud(serverLevel, this.getX(), this.getY() + offset, this.getZ());

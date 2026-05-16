@@ -51,6 +51,9 @@ public final class VehicleSoundHelper {
                 || "vehicle_coax_machine_gun".equals(weaponPath)) {
             return fallbackStats.fireSoundEvent().orElse(SoundEvents.CROSSBOW_SHOOT);
         }
+        if (weaponPath.contains("rocket") || weaponPath.contains("missile")) {
+            return fallbackStats.fireSoundEvent().orElse(SoundEvents.CROSSBOW_SHOOT);
+        }
         String vehiclePath = vehicle.vehicleDataId().getPath();
         ResourceLocation id = weapon.guided() ? GUIDED_FIRE_SOUNDS.get(vehiclePath) : FIRE_SOUNDS.get(vehiclePath);
         if (id == null) {
