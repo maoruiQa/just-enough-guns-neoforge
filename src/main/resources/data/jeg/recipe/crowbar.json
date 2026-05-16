@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "a": {
+      "item": "minecraft:iron_ingot"
+    },
+    "b": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "  a",
+    " b ",
+    "b  "
+  ],
+  "result": {
+    "id": "jeg:crowbar",
+    "count": 1
+  }
+}
