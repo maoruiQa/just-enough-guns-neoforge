@@ -138,7 +138,7 @@ Just Enough Guns New is a fork and modern Fabric/NeoForge port of the original J
 - The Walkürenritt vehicle update ports and adapts portions of Superb Warfare ([SBW] Superb Warfare), a GPLv3 Minecraft warfare mod centered on guns, cannons, and vehicles: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
 - Superb Warfare-derived code, data, and compatible resources are redistributed under GPL-3.0 as part of this GPL-3.0 project. Original Superb Warfare authors retain their upstream copyright.
 - Just Enough Guns New is an independent project and is not affiliated with, endorsed by, or an official addon for Superb Warfare.
-- Just Enough Guns New porting and maintenance credits in the mod metadata include Rui Mao, MigaMi, and Leander.
+- Just Enough Guns New porting and maintenance is handled by Rui Mao.
 - Licensed under GPL-3.0.
 
 Suggestions and bug reports are welcome. Clear reproduction steps, Minecraft version, loader, mod version, dependency versions, and crash logs help much more than vague reports.
