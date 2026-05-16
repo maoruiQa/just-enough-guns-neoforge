@@ -2589,7 +2589,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private boolean usesFirstPersonSeatCamera(Entity passenger) {
         return this.level().isClientSide
-                && Minecraft.getInstance().options.getCameraType().isFirstPerson()
+                && (Minecraft.getInstance().options.getCameraType().isFirstPerson()
+                || this.matchesFirstPersonCameraWhileZooming(passenger))
+                && this.hasPassenger(passenger);
+    }
+
+    public boolean matchesFirstPersonCameraWhileZooming(Entity passenger) {
+        return this.level().isClientSide
+                && this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                && VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == this.getId()
+                && VehicleClientState.zoomDown()
                 && this.hasPassenger(passenger);
     }
 
