@@ -1,5 +1,6 @@
 package ttv.migami.jeg.vehicle.item;
 
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -11,11 +12,13 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.client.GeoRenderProvider;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
 import ttv.migami.jeg.vehicle.block.property.BlockPart;
+import ttv.migami.jeg.vehicle.client.render.item.VehicleAssemblingTableBlockItemRenderer;
 
 public final class VehicleAssemblingTableBlockItem extends BlockItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -84,5 +87,20 @@ public final class VehicleAssemblingTableBlockItem extends BlockItem implements 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    @Override
+    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+        consumer.accept(new GeoRenderProvider() {
+            private VehicleAssemblingTableBlockItemRenderer renderer;
+
+            @Override
+            public VehicleAssemblingTableBlockItemRenderer getGeoItemRenderer() {
+                if (renderer == null) {
+                    renderer = new VehicleAssemblingTableBlockItemRenderer();
+                }
+                return renderer;
+            }
+        });
     }
 }
