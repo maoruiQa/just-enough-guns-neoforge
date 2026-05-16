@@ -114,7 +114,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack main = mc.player.getMainHandItem();
         ItemStack off = mc.player.getOffhandItem();
-        return ItemStack.isSameItemSameComponents(stack, main) || ItemStack.isSameItemSameComponents(stack, off);
+        return isSameHeldItem(stack, main) || isSameHeldItem(stack, off);
     }
 
     private static boolean isFirstPersonDisplay(ItemDisplayContext context) {
@@ -138,7 +138,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         HumanoidArm mainArm = mc.player.getMainArm();
         ItemStack stack = this.getCurrentItemStack();
         ItemStack main = mc.player.getMainHandItem();
-        if (stack != null && ItemStack.isSameItemSameComponents(stack, main)) {
+        if (stack != null && isSameHeldItem(stack, main)) {
             return mainArm;
         }
         return mainArm == HumanoidArm.LEFT ? HumanoidArm.RIGHT : HumanoidArm.LEFT;
@@ -447,8 +447,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         nextRenderDebugNanos = now + DEBUG_WINDOW_NANOS;
 
         Minecraft mc = Minecraft.getInstance();
-        boolean sameMain = mc.player != null && ItemStack.isSameItemSameComponents(stack, mc.player.getMainHandItem());
-        boolean sameOffhand = mc.player != null && ItemStack.isSameItemSameComponents(stack, mc.player.getOffhandItem());
+        boolean sameMain = mc.player != null && isSameHeldItem(stack, mc.player.getMainHandItem());
+        boolean sameOffhand = mc.player != null && isSameHeldItem(stack, mc.player.getOffhandItem());
         JustEnoughGuns.LOGGER.info(
                 "[JEG_RENDER_DEBUG] first-person gun renderer active item={} perspective={} hand={} sameMain={} sameOffhand={} sampledBones={}",
                 stack.getItem(),
@@ -571,5 +571,16 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static boolean isArmBone(String boneName) {
         return "left_arm".equals(boneName) || "right_arm".equals(boneName)
                 || "fake_left_arm".equals(boneName) || "fake_right_arm".equals(boneName);
+    }
+
+    private static boolean isSameHeldItem(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == heldStack) {
+            return true;
+        }
+        if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
+            return false;
+        }
+        return ItemStack.isSameItemSameComponents(renderStack, heldStack)
+                || ItemStack.isSameItem(renderStack, heldStack);
     }
 }

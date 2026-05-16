@@ -101,8 +101,9 @@ public class GunItem extends Item {
     private static final int RELOAD_STAGE_START = 1;
     private static final int RELOAD_STAGE_LOOP = 2;
     private static final int RELOAD_STAGE_STOP = 3;
-    private static final int RELOAD_START_SEGMENT_TICKS = 6;
-    private static final int RELOAD_STOP_SEGMENT_TICKS = 6;
+    private static final int ROCKET_RELOAD_START_TICKS = 46;
+    private static final int ROCKET_RELOAD_LOOP_TICKS = 29;
+    private static final int ROCKET_RELOAD_STOP_TICKS = 38;
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
     private static final Map<UUID, SpreadTrackerState> SPREAD_TRACKERS = new WeakHashMap<>();
@@ -1280,6 +1281,9 @@ public class GunItem extends Item {
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
             startReloadVisualState(stack, reloadTicks);
+            if ("rocket_launcher".equals(stats.id().getPath())) {
+                return;
+            }
             if (usesSegmentedReloadAnimation()) {
                 animated.triggerReloadStart(level, player, stack);
             } else {
@@ -1429,7 +1433,7 @@ public class GunItem extends Item {
     }
 
     private void startReloadVisualState(ItemStack stack, int reloadTicks) {
-        int totalTicks = Math.max(1, reloadTicks);
+        int totalTicks = Math.max(1, getReloadVisualTicks(reloadTicks));
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), usesSegmentedReloadAnimation() ? RELOAD_STAGE_START : RELOAD_STAGE_NONE);
@@ -1458,7 +1462,8 @@ public class GunItem extends Item {
             int oldStage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
             int newStage = computeSegmentedReloadStage(stack, remainingTicks);
             stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), newStage);
-            if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated) {
+            if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated
+                    && !"rocket_launcher".equals(stats.id().getPath())) {
                 triggerSegmentedReloadStage(animated, level, player, stack, newStage);
             }
         }
@@ -1490,16 +1495,24 @@ public class GunItem extends Item {
 
     private int getSegmentedReloadStartTicks(int totalTicks) {
         if ("rocket_launcher".equals(stats.id().getPath())) {
-            return 46;
+            return ROCKET_RELOAD_START_TICKS;
         }
         return Mth.clamp(totalTicks / 4, 4, 12);
     }
 
     private int getSegmentedReloadStopTicks(int totalTicks) {
         if ("rocket_launcher".equals(stats.id().getPath())) {
-            return 38;
+            return ROCKET_RELOAD_STOP_TICKS;
         }
         return Mth.clamp(totalTicks / 4, 4, 12);
+    }
+
+    private int getReloadVisualTicks(int reloadTicks) {
+        if ("rocket_launcher".equals(stats.id().getPath()) && usesSegmentedReloadAnimation()) {
+            int minVisualTicks = ROCKET_RELOAD_START_TICKS + ROCKET_RELOAD_LOOP_TICKS + ROCKET_RELOAD_STOP_TICKS;
+            return Math.max(reloadTicks, minVisualTicks);
+        }
+        return reloadTicks;
     }
 
     private static void clearReloadVisualState(ItemStack stack) {
