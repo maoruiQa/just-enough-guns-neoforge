@@ -122,7 +122,7 @@ public final class VehicleMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(@NotNull Player player) {
         if (this.vehicle != null) {
-            return this.vehicle.isAlive() && player.distanceToSqr(this.vehicle) <= 64.0D;
+            return this.vehicle.isAlive() && (player.getVehicle() == this.vehicle || player.distanceToSqr(this.vehicle) <= 64.0D);
         }
         return this.vehicleInventory.stillValid(player);
     }

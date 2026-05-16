@@ -1,7 +1,9 @@
 package ttv.migami.jeg.vehicle.entity.base;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -115,16 +117,21 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double SPEEDBOAT_WATER_CRUISE_SPEED = 40.0D / 72.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
+    private static final Set<String> RADAR_WARNING_VEHICLES = Set.of("lav150", "bmp2", "ah6", "mi28", "speedboat");
 
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<String> DATA_SELECTED_WEAPONS_BY_SEAT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> DATA_WEAPON_AMMO_BY_SLOT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> DATA_WEAPON_RESERVE_AMMO_BY_SLOT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_RESERVE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_SELECTED_WEAPON_RELOADING = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_SELECTED_WEAPON_RELOAD_TICKS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_RELOADING_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_FLARE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DECOY_COOLDOWN = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -156,6 +163,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_REPAIR_COOLDOWN = "RepairCooldown";
     private static final String TAG_SELECTED_WEAPON = "SelectedWeapon";
+    private static final String TAG_SELECTED_WEAPONS = "SelectedWeapons";
     private static final String TAG_LOADED_WEAPON_AMMO = "LoadedWeaponAmmo";
     private static final String TAG_LOADED_WEAPON_SLOT = "WeaponSlot";
     private static final String TAG_LOADED_WEAPON_COUNT = "LoadedAmmo";
@@ -199,7 +207,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
+    private final Set<UUID> preservedSeatAssignments = new HashSet<>();
     private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
+    private final Map<Integer, Integer> selectedWeaponSlotBySeat = new HashMap<>();
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
@@ -376,10 +386,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
         builder.define(DATA_RIFLE_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON, 0);
+        builder.define(DATA_SELECTED_WEAPONS_BY_SEAT, "");
+        builder.define(DATA_WEAPON_AMMO_BY_SLOT, "");
+        builder.define(DATA_WEAPON_RESERVE_AMMO_BY_SLOT, "");
         builder.define(DATA_SELECTED_WEAPON_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
         builder.define(DATA_SELECTED_WEAPON_RELOADING, false);
         builder.define(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
+        builder.define(DATA_RELOADING_WEAPON, -1);
         builder.define(DATA_FLARE_AMMO, 0);
         builder.define(DATA_DECOY_COOLDOWN, 0);
         builder.define(DATA_MISSILE_LOCKED, false);
@@ -461,16 +475,35 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_AMMO) : 0;
     }
 
+    public int selectedVehicleWeaponAmmo(Entity passenger) {
+        int slot = this.selectedVehicleWeaponIndex(passenger);
+        return slot < 0 ? 0 : this.weaponAmmoFromSyncedData(slot);
+    }
+
     public int selectedVehicleWeaponReserveAmmo() {
         return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_RESERVE_AMMO) : 0;
+    }
+
+    public int selectedVehicleWeaponReserveAmmo(Entity passenger) {
+        int slot = this.selectedVehicleWeaponIndex(passenger);
+        return slot < 0 ? 0 : this.weaponReserveAmmoFromSyncedData(slot);
     }
 
     public boolean selectedVehicleWeaponReloading() {
         return this.hasVehicleWeapons() && this.entityData.get(DATA_SELECTED_WEAPON_RELOADING);
     }
 
+    public boolean selectedVehicleWeaponReloading(Entity passenger) {
+        int slot = this.selectedVehicleWeaponIndex(passenger);
+        return slot >= 0 && this.entityData.get(DATA_RELOADING_WEAPON) == slot;
+    }
+
     public int selectedVehicleWeaponReloadTicks() {
         return this.hasVehicleWeapons() ? this.entityData.get(DATA_SELECTED_WEAPON_RELOAD_TICKS) : 0;
+    }
+
+    public int selectedVehicleWeaponReloadTicks(Entity passenger) {
+        return this.selectedVehicleWeaponReloading(passenger) ? this.entityData.get(DATA_SELECTED_WEAPON_RELOAD_TICKS) : 0;
     }
 
     public int vehicleFlareAmmo() {
@@ -490,6 +523,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapon == null ? null : weapon.weaponId();
     }
 
+    @Nullable
+    public ResourceLocation selectedVehicleWeaponId(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
+        return weapon == null ? null : weapon.weaponId();
+    }
+
     public int selectedVehicleWeaponIndex() {
         var weapons = this.vehicleData().defaults().weapons();
         if (!this.hasVehicleWeapons() || weapons.isEmpty()) {
@@ -498,13 +537,31 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
     }
 
+    public int selectedVehicleWeaponIndex(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex < 0) {
+            return this.selectedVehicleWeaponIndex();
+        }
+        return this.selectedVehicleWeaponIndexForSeat(this.seatIndexForPassenger(passenger, fallbackIndex));
+    }
+
     public boolean isSelectedVehicleWeaponGuided() {
         VehicleWeaponInfo weapon = this.selectedWeapon();
         return weapon != null && weapon.guided();
     }
 
+    public boolean isSelectedVehicleWeaponGuided(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
+        return weapon != null && weapon.guided();
+    }
+
     public boolean isSelectedVehicleWeaponLockOn() {
         VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn();
+    }
+
+    public boolean isSelectedVehicleWeaponLockOn(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
         return weapon != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn();
     }
 
@@ -518,7 +575,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public boolean canPassengerUseSelectedVehicleWeapon(Entity passenger) {
-        return this.canPassengerUseVehicleWeapon(passenger, this.selectedVehicleWeaponIndex());
+        return this.canPassengerUseVehicleWeapon(passenger, this.selectedVehicleWeaponIndex(passenger));
+    }
+
+    public int vehicleWeaponIndexForDisplaySlot(Entity passenger, int displaySlot) {
+        if (displaySlot < 0) {
+            return -1;
+        }
+        int usableSlot = 0;
+        var weapons = this.vehicleData().defaults().weapons();
+        for (int index = 0; index < weapons.size(); index++) {
+            if (this.canPassengerUseVehicleWeapon(passenger, index)) {
+                if (usableSlot == displaySlot) {
+                    return index;
+                }
+                usableSlot++;
+            }
+        }
+        return -1;
     }
 
     public boolean hasMissileLock() {
@@ -589,6 +663,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     public SoundEvent activeVehicleFireSound() {
         VehicleWeaponInfo weapon = this.selectedWeapon();
         ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        if (weapon == null || weaponId == null) {
+            return null;
+        }
+        GunStats stats = VehicleWeaponStats.get(weaponId);
+        return stats == null ? null : VehicleSoundHelper.fireSound(this, weapon, stats);
+    }
+
+    @Nullable
+    public SoundEvent activeVehicleFireSound(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
+        ResourceLocation weaponId = weapon == null ? null : weapon.weaponId();
         if (weapon == null || weaponId == null) {
             return null;
         }
@@ -692,14 +777,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.weaponControllerId = player.getId();
             }
         }
-        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        this.selectFallbackWeaponFor(player, input);
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         boolean canUseSelectedWeapon = selectedWeapon != null && this.canUseSelectedWeapon(player, selectedWeapon);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && canUseSelectedWeapon) {
             this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
         if (input.reload() && canUseSelectedWeapon) {
-            this.startWeaponReload();
+            this.startWeaponReload(player);
         }
         if (input.deployDecoy()) {
             this.tryDeployDecoy(player);
@@ -725,7 +811,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.level().isClientSide || player.getVehicle() != this) {
             return;
         }
-        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        if (this.hasVehicleWeapons()) {
+            if (input.switchWeapon()) {
+                this.selectWeaponFor(player, 1);
+            }
+            if (input.previousWeapon()) {
+                this.selectWeaponFor(player, -1);
+            }
+            if (input.weaponSlot() >= 0 && input.weaponSlot() < this.vehicleData().defaults().weapons().size()) {
+                this.selectWeaponSlot(player, input.weaponSlot());
+            }
+        }
+        this.selectFallbackWeaponFor(player, input);
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
             this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
             this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
@@ -967,10 +1065,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void clearStaleDriverInput() {
         if (this.getControllingPassenger() == null) {
-            this.clearControlState(false);
             if (!this.level().isClientSide && this.getPassengers().isEmpty()) {
+                this.clearControlState(false);
                 this.recentDismountSyncPlayerId = null;
                 this.recentDismountSyncTicks = 0;
+            } else {
+                this.clearDriverControlState(false);
             }
         }
     }
@@ -1000,6 +1100,25 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
+    private void clearDriverControlState(boolean stopHorizontalMotion) {
+        this.input = VehicleInput.EMPTY;
+        this.enginePower = 0.0D;
+        this.wheelSteering = 0.0D;
+        this.holdTick = 0;
+        this.holdPowerTick = 0;
+        this.engineStart = false;
+        this.engineStartOver = false;
+        this.destroyRot = 0.0F;
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
+            this.entityData.set(DATA_PROPELLER_SPEED, 0.0F);
+        }
+        if (stopHorizontalMotion) {
+            Vec3 motion = this.getDeltaMovement();
+            this.setDeltaMovement(0.0D, motion.y, 0.0D);
+            this.hasImpulse = true;
+        }
+    }
+
     public void clearClientControlState() {
         this.clearControlState(true);
     }
@@ -1022,6 +1141,26 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public Map<UUID, Integer> seatAssignmentsSnapshot() {
         return new HashMap<>(this.seatAssignments);
+    }
+
+    public void forgetSeatAssignment(Entity passenger) {
+        this.preservedSeatAssignments.remove(passenger.getUUID());
+        this.seatAssignments.remove(passenger.getUUID());
+        this.syncSeatAssignments();
+    }
+
+    public void preserveSeatAssignment(Entity passenger) {
+        if (this.seatAssignments.containsKey(passenger.getUUID())) {
+            this.preservedSeatAssignments.add(passenger.getUUID());
+        }
+    }
+
+    public void rememberSeatAssignment(Entity passenger, int seatIndex) {
+        int seatCount = this.vehicleData().defaults().seats().size();
+        if (seatIndex < 0 || seatIndex >= seatCount || this.isSeatOccupied(seatIndex, passenger)) {
+            return;
+        }
+        this.seatAssignments.put(passenger.getUUID(), seatIndex);
     }
 
     private void syncSeatAssignments() {
@@ -1102,7 +1241,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.fireCooldown--;
         }
         LivingEntity shooter = this.weaponController();
-        VehicleWeaponInfo selectedWeapon = this.selectedWeapon();
+        VehicleWeaponInfo selectedWeapon = shooter == null ? null : this.selectedWeapon(shooter);
         boolean loopFireSound = false;
         this.entityData.set(DATA_WEAPON_FIRING, false);
         if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading() || selectedWeapon == null) {
@@ -1120,9 +1259,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (stats == null || !this.hasEnergy(weapon.energyCost())) {
             return;
         }
-        if (this.usesSharedVehicleReloadSystem()) {
-            if (this.selectedWeaponLoadedAmmo() <= 0) {
-                this.startWeaponReload();
+        if (this.usesSharedVehicleReloadSystem(shooter)) {
+            if (this.selectedWeaponLoadedAmmo(shooter) <= 0) {
+                this.startWeaponReload(shooter);
                 return;
             }
         } else if (!this.hasAmmo(weapon.ammoId())) {
@@ -1135,8 +1274,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.consumeEnergy(weapon.energyCost())) {
             return;
         }
-        if (this.usesSharedVehicleReloadSystem()) {
-            int slot = this.selectedVehicleWeaponIndex();
+        if (this.usesSharedVehicleReloadSystem(shooter)) {
+            int slot = this.selectedVehicleWeaponIndex(shooter);
             this.setWeaponLoadedAmmo(slot, this.weaponLoadedAmmo(slot) - 1);
             this.syncSelectedWeaponAmmoState();
         } else if (!this.consumeAmmo(weapon.ammoId())) {
@@ -1189,8 +1328,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (stats == null || stats.fireDelay() > 4 || !this.hasEnergy(weapon.energyCost())) {
             return false;
         }
-        if (this.usesSharedVehicleReloadSystem()) {
-            return this.selectedWeaponLoadedAmmo() > 0;
+        if (this.usesSharedVehicleReloadSystem(shooter)) {
+            return this.selectedWeaponLoadedAmmo(shooter) > 0;
         }
         return this.hasAmmo(weapon.ammoId());
     }
@@ -1237,9 +1376,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         Entity target = null;
-        VehicleWeaponInfo weapon = this.selectedWeapon();
         LivingEntity shooter = this.seekInput ? this.seekController() : null;
-        if (shooter != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn()) {
+        VehicleWeaponInfo weapon = shooter == null ? null : this.selectedWeapon(shooter);
+        if (shooter != null && weapon != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
                 target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), VehicleMissileProfile.get(weapon.weaponId()));
@@ -1247,27 +1386,67 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.entityData.set(DATA_MISSILE_LOCKED, target != null);
         this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
-        if (this.shouldWarnSeekTarget() && target instanceof ServerPlayer lockedPlayer && this.tickCount % 20 == 0) {
-            this.warnLockedPlayer(lockedPlayer);
+        if (this.shouldWarnSeekTarget() && target != null && this.tickCount % 20 == 0) {
+            this.warnSeekTarget(target);
         }
     }
 
-    private void warnLockedPlayer(ServerPlayer lockedPlayer) {
-        lockedPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
-        lockedPlayer.level().playSound(
+    private void warnSeekTarget(Entity target) {
+        this.warnTarget(target, Component.translatable("message.jeg.vehicle.lock_warning"), VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
+    }
+
+    public static boolean hasRadarWarningSystem(Entity target) {
+        return target instanceof VehicleEntity vehicle && RADAR_WARNING_VEHICLES.contains(vehicle.vehicleDataId().getPath());
+    }
+
+    public static void warnIncomingMissileTarget(Entity target) {
+        warnTarget(target, Component.translatable("message.jeg.vehicle.missile_warning"), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+    }
+
+    private static void warnTarget(Entity target, Component message, SoundEvent sound, float volume, float pitch) {
+        if (target instanceof ServerPlayer player) {
+            warnPlayer(player, message, sound, volume, pitch);
+            return;
+        }
+        if (!hasRadarWarningSystem(target)) {
+            return;
+        }
+        for (Entity passenger : target.getPassengers()) {
+            if (passenger instanceof ServerPlayer player) {
+                player.displayClientMessage(message, true);
+            }
+        }
+        target.level().playSound(
                 null,
-                lockedPlayer.getX(),
-                lockedPlayer.getY(),
-                lockedPlayer.getZ(),
-                VehicleSoundHelper.lockWarning(),
+                target.getX(),
+                target.getY(),
+                target.getZ(),
+                sound,
                 SoundSource.PLAYERS,
-                0.8F,
-                1.7F
+                volume,
+                pitch
+        );
+    }
+
+    private static void warnPlayer(ServerPlayer player, Component message, SoundEvent sound, float volume, float pitch) {
+        player.displayClientMessage(message, true);
+        player.level().playSound(
+                null,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                sound,
+                SoundSource.PLAYERS,
+                volume,
+                pitch
         );
     }
 
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
+        if (weapon == null) {
+            return;
+        }
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
         VehicleMissileProfile profile = VehicleMissileProfile.get(weapon.weaponId());
         Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
@@ -1304,7 +1483,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 || !VehicleClientState.zoomDown()) {
             return null;
         }
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
         if (weapon == null || !this.canUseSelectedWeapon(shooter, weapon)) {
             return null;
         }
@@ -1334,7 +1513,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     private LivingEntity seekController() {
         Entity controller = this.seekControllerId < 0 ? null : this.level().getEntity(this.seekControllerId);
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = controller instanceof LivingEntity living ? this.selectedWeapon(living) : null;
         if (weapon != null && controller instanceof LivingEntity living && living.getVehicle() == this && this.canUseSelectedWeapon(living, weapon)) {
             return living;
         }
@@ -1634,13 +1813,53 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!weapons.get(slot).usableBySeat(seatIndex)) {
             return false;
         }
-        if (slot == this.selectedVehicleWeaponIndex()) {
+        if (slot == this.selectedVehicleWeaponIndexForSeat(seatIndex)) {
+            this.setSelectedWeaponSlotForSeat(seatIndex, slot);
+            if (slot != this.selectedVehicleWeaponIndex()) {
+                this.entityData.set(DATA_SELECTED_WEAPON, slot);
+                if (this.level().isClientSide) {
+                    this.syncPerSeatSelectedWeaponState();
+                } else {
+                    this.syncSelectedWeaponAmmoState();
+                }
+            }
             return false;
         }
-        this.cancelWeaponReload();
+        if (!this.level().isClientSide) {
+            this.cancelWeaponReload();
+        }
         this.entityData.set(DATA_SELECTED_WEAPON, slot);
-        this.syncSelectedWeaponAmmoState();
+        this.setSelectedWeaponSlotForSeat(seatIndex, slot);
+        if (this.level().isClientSide) {
+            this.syncPerSeatSelectedWeaponState();
+        } else {
+            this.syncSelectedWeaponAmmoState();
+        }
         return true;
+    }
+
+    private void selectFallbackWeaponFor(Player player, VehicleInput input) {
+        if (!this.hasVehicleWeapons() || !this.shouldFallbackSelectWeapon(player, input)) {
+            return;
+        }
+        int fallbackIndex = this.getPassengers().indexOf(player);
+        if (fallbackIndex < 0) {
+            return;
+        }
+        int selectedWeapon = this.selectedVehicleWeaponIndexForSeat(this.seatIndexForPassenger(player, fallbackIndex));
+        if (selectedWeapon >= 0 && selectedWeapon != this.selectedVehicleWeaponIndex()) {
+            this.selectWeaponSlot(player, selectedWeapon);
+        }
+    }
+
+    private boolean shouldFallbackSelectWeapon(Player player, VehicleInput input) {
+        int fallbackIndex = this.getPassengers().indexOf(player);
+        if (fallbackIndex < 0 || !this.hasWeaponUsableBySeat(this.seatIndexForPassenger(player, fallbackIndex))) {
+            return false;
+        }
+        return input.fire()
+                || input.reload()
+                || input.seekTarget();
     }
 
     private int countRifleAmmo() {
@@ -1675,6 +1894,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return stats != null && stats.usesMagazine() && !stats.isInventoryFed();
     }
 
+    private boolean usesSharedVehicleReloadSystem(Entity passenger) {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId(passenger);
+        if (weaponId == null) {
+            return false;
+        }
+        GunStats stats = VehicleWeaponStats.get(weaponId);
+        return stats != null && stats.usesMagazine() && !stats.isInventoryFed();
+    }
+
+    private boolean usesSharedVehicleReloadSystem(int slot) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (slot < 0 || slot >= weapons.size()) {
+            return false;
+        }
+        GunStats stats = VehicleWeaponStats.get(weapons.get(slot).weaponId());
+        return stats != null && stats.usesMagazine() && !stats.isInventoryFed();
+    }
+
     private int weaponLoadedAmmo(int slot) {
         return Math.max(0, this.loadedAmmoByWeaponSlot.getOrDefault(slot, 0));
     }
@@ -1691,8 +1928,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.weaponLoadedAmmo(this.selectedVehicleWeaponIndex());
     }
 
+    private int selectedWeaponLoadedAmmo(Entity passenger) {
+        return this.weaponLoadedAmmo(this.selectedVehicleWeaponIndex(passenger));
+    }
+
     private int selectedWeaponReserveAmmo() {
         VehicleWeaponInfo weapon = this.selectedWeapon();
+        return weapon == null ? 0 : this.countAmmo(weapon.ammoId());
+    }
+
+    private int selectedWeaponReserveAmmo(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
         return weapon == null ? 0 : this.countAmmo(weapon.ammoId());
     }
 
@@ -1702,8 +1948,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return stats == null ? 0 : Math.max(0, stats.magazineSize());
     }
 
+    private int selectedWeaponMagazineSize(Entity passenger) {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId(passenger);
+        GunStats stats = weaponId == null ? null : VehicleWeaponStats.get(weaponId);
+        return stats == null ? 0 : Math.max(0, stats.magazineSize());
+    }
+
     private int selectedWeaponReloadDuration() {
         ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        GunStats stats = weaponId == null ? null : VehicleWeaponStats.get(weaponId);
+        return stats == null ? 0 : Math.max(0, stats.totalReloadTime());
+    }
+
+    private int selectedWeaponReloadDuration(Entity passenger) {
+        ResourceLocation weaponId = this.selectedVehicleWeaponId(passenger);
         GunStats stats = weaponId == null ? null : VehicleWeaponStats.get(weaponId);
         return stats == null ? 0 : Math.max(0, stats.totalReloadTime());
     }
@@ -1724,6 +1982,18 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.selectedWeaponLoadedAmmo() < magazineSize && this.selectedWeaponReserveAmmo() > 0;
     }
 
+    private boolean canReloadSelectedWeapon(Entity passenger) {
+        int slot = this.selectedVehicleWeaponIndex(passenger);
+        if (!this.usesSharedVehicleReloadSystem(passenger) || slot < 0 || slot >= this.vehicleData().defaults().weapons().size()) {
+            return false;
+        }
+        int magazineSize = this.selectedWeaponMagazineSize(passenger);
+        if (magazineSize <= 0 || this.isWeaponReloading()) {
+            return false;
+        }
+        return this.selectedWeaponLoadedAmmo(passenger) < magazineSize && this.selectedWeaponReserveAmmo(passenger) > 0;
+    }
+
     private void startWeaponReload() {
         if (!this.canReloadSelectedWeapon()) {
             return;
@@ -1738,6 +2008,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.syncSelectedWeaponAmmoState();
         VehicleWeaponInfo weapon = this.selectedWeapon();
         ResourceLocation weaponId = this.selectedVehicleWeaponId();
+        this.playWeaponReloadSound(weapon, weaponId == null ? null : VehicleWeaponStats.get(weaponId), true);
+    }
+
+    private void startWeaponReload(Entity passenger) {
+        if (!this.canReloadSelectedWeapon(passenger)) {
+            return;
+        }
+        int slot = this.selectedVehicleWeaponIndex(passenger);
+        int reloadDuration = this.selectedWeaponReloadDuration(passenger);
+        if (reloadDuration <= 0) {
+            this.finishWeaponReload(slot);
+            return;
+        }
+        this.activeReloadWeaponSlot = slot;
+        this.activeReloadTicks = reloadDuration;
+        this.syncSelectedWeaponAmmoState();
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
+        ResourceLocation weaponId = this.selectedVehicleWeaponId(passenger);
         this.playWeaponReloadSound(weapon, weaponId == null ? null : VehicleWeaponStats.get(weaponId), true);
     }
 
@@ -1766,7 +2054,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (this.shouldAutoReloadSelectedWeapon()) {
-            this.startWeaponReload();
+            LivingEntity shooter = this.weaponController();
+            if (shooter == null) {
+                shooter = this.getControllingPassenger() instanceof LivingEntity living ? living : null;
+            }
+            if (shooter != null) {
+                this.startWeaponReload(shooter);
+            }
         }
     }
 
@@ -1774,23 +2068,31 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.canReloadSelectedWeapon();
     }
 
+    public boolean canReloadSelectedVehicleWeapon(Entity passenger) {
+        return this.canReloadSelectedWeapon(passenger);
+    }
+
     public int selectedVehicleWeaponMagazineSize() {
         return this.selectedWeaponMagazineSize();
     }
 
+    public int selectedVehicleWeaponMagazineSize(Entity passenger) {
+        return this.selectedWeaponMagazineSize(passenger);
+    }
+
     private boolean shouldAutoReloadSelectedWeapon() {
-        if (!this.usesSharedVehicleReloadSystem()) {
-            return false;
-        }
         LivingEntity shooter = this.weaponController();
         if (shooter == null) {
             shooter = this.getControllingPassenger() instanceof LivingEntity living ? living : null;
         }
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        if (shooter == null || !this.usesSharedVehicleReloadSystem(shooter)) {
+            return false;
+        }
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
         if (shooter == null || weapon == null || !this.canUseSelectedWeapon(shooter, weapon)) {
             return false;
         }
-        return this.selectedWeaponLoadedAmmo() <= 0 && this.canReloadSelectedWeapon();
+        return this.selectedWeaponLoadedAmmo(shooter) <= 0 && this.canReloadSelectedWeapon(shooter);
     }
 
     private void finishWeaponReload(int slot) {
@@ -1818,6 +2120,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
             this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, false);
             this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
+            this.entityData.set(DATA_RELOADING_WEAPON, -1);
+            this.entityData.set(DATA_SELECTED_WEAPONS_BY_SEAT, "");
+            this.entityData.set(DATA_WEAPON_AMMO_BY_SLOT, "");
+            this.entityData.set(DATA_WEAPON_RESERVE_AMMO_BY_SLOT, "");
             return;
         }
         int selectedSlot = this.selectedVehicleWeaponIndex();
@@ -1827,12 +2133,81 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, 0);
             this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, false);
             this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, 0);
+            this.entityData.set(DATA_RELOADING_WEAPON, -1);
+            this.syncPerSeatSelectedWeaponState();
+            this.syncWeaponAmmoMaps();
             return;
         }
         this.entityData.set(DATA_SELECTED_WEAPON_AMMO, this.weaponLoadedAmmo(selectedSlot));
         this.entityData.set(DATA_SELECTED_WEAPON_RESERVE_AMMO, this.selectedWeaponReserveAmmo());
         this.entityData.set(DATA_SELECTED_WEAPON_RELOADING, this.isWeaponReloading() && this.activeReloadWeaponSlot == selectedSlot);
         this.entityData.set(DATA_SELECTED_WEAPON_RELOAD_TICKS, this.isWeaponReloading() && this.activeReloadWeaponSlot == selectedSlot ? this.activeReloadTicks : 0);
+        this.entityData.set(DATA_RELOADING_WEAPON, this.isWeaponReloading() ? this.activeReloadWeaponSlot : -1);
+        this.syncPerSeatSelectedWeaponState();
+        this.syncWeaponAmmoMaps();
+    }
+
+    private void syncPerSeatSelectedWeaponState() {
+        int seatCount = this.vehicleData().defaults().seats().size();
+        StringBuilder builder = new StringBuilder();
+        for (int seatIndex = 0; seatIndex < seatCount; seatIndex++) {
+            if (seatIndex > 0) {
+                builder.append(',');
+            }
+            builder.append(this.selectedVehicleWeaponIndexForSeat(seatIndex));
+        }
+        this.entityData.set(DATA_SELECTED_WEAPONS_BY_SEAT, builder.toString());
+    }
+
+    private void syncWeaponAmmoMaps() {
+        var weapons = this.vehicleData().defaults().weapons();
+        StringBuilder loaded = new StringBuilder();
+        StringBuilder reserve = new StringBuilder();
+        for (int slot = 0; slot < weapons.size(); slot++) {
+            if (slot > 0) {
+                loaded.append(',');
+                reserve.append(',');
+            }
+            VehicleWeaponInfo weapon = weapons.get(slot);
+            loaded.append(this.usesSharedVehicleReloadSystem(slot) ? this.weaponLoadedAmmo(slot) : this.countAmmo(weapon.ammoId()));
+            reserve.append(this.usesSharedVehicleReloadSystem(slot) ? this.countAmmo(weapon.ammoId()) : 0);
+        }
+        this.entityData.set(DATA_WEAPON_AMMO_BY_SLOT, loaded.toString());
+        this.entityData.set(DATA_WEAPON_RESERVE_AMMO_BY_SLOT, reserve.toString());
+    }
+
+    private int weaponAmmoFromSyncedData(int slot) {
+        return this.valueFromSyncedIntList(this.entityData.get(DATA_WEAPON_AMMO_BY_SLOT), slot, 0);
+    }
+
+    private int weaponReserveAmmoFromSyncedData(int slot) {
+        return this.valueFromSyncedIntList(this.entityData.get(DATA_WEAPON_RESERVE_AMMO_BY_SLOT), slot, 0);
+    }
+
+    private int selectedWeaponFromSyncedSeatData(int seatIndex) {
+        return this.valueFromSyncedIntList(this.entityData.get(DATA_SELECTED_WEAPONS_BY_SEAT), seatIndex, -1);
+    }
+
+    private int valueFromSyncedIntList(String value, int index, int fallback) {
+        if (index < 0 || value == null || value.isEmpty()) {
+            return fallback;
+        }
+        int currentIndex = 0;
+        int start = 0;
+        for (int cursor = 0; cursor <= value.length(); cursor++) {
+            if (cursor == value.length() || value.charAt(cursor) == ',') {
+                if (currentIndex == index) {
+                    try {
+                        return Integer.parseInt(value.substring(start, cursor));
+                    } catch (NumberFormatException ignored) {
+                        return fallback;
+                    }
+                }
+                currentIndex++;
+                start = cursor + 1;
+            }
+        }
+        return fallback;
     }
 
     private boolean hasEnergy(int amount) {
@@ -1893,27 +2268,95 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapons.get(index);
     }
 
+    @Nullable
+    private VehicleWeaponInfo selectedWeapon(Entity passenger) {
+        var weapons = this.vehicleData().defaults().weapons();
+        int index = this.selectedVehicleWeaponIndex(passenger);
+        if (!this.hasVehicleWeapons() || index < 0 || index >= weapons.size()) {
+            return null;
+        }
+        return weapons.get(index);
+    }
+
     private boolean selectWeaponFor(Player player, int direction) {
         var weapons = this.vehicleData().defaults().weapons();
         if (weapons.isEmpty()) {
             return false;
         }
         int seatIndex = this.seatIndexForPassenger(player, this.getPassengers().indexOf(player));
-        int current = Mth.clamp(this.entityData.get(DATA_SELECTED_WEAPON), 0, weapons.size() - 1);
+        int current = this.selectedVehicleWeaponIndexForSeat(seatIndex);
+        if (current < 0) {
+            current = 0;
+        }
         int step = direction < 0 ? -1 : 1;
         for (int offset = 1; offset <= weapons.size(); offset++) {
             int next = Mth.positiveModulo(current + offset * step, weapons.size());
             if (weapons.get(next).usableBySeat(seatIndex)) {
                 if (next == current) {
+                    this.setSelectedWeaponSlotForSeat(seatIndex, next);
+                    if (next != this.selectedVehicleWeaponIndex()) {
+                        this.entityData.set(DATA_SELECTED_WEAPON, next);
+                        if (this.level().isClientSide) {
+                            this.syncPerSeatSelectedWeaponState();
+                        } else {
+                            this.syncSelectedWeaponAmmoState();
+                        }
+                    }
                     return false;
                 }
-                this.cancelWeaponReload();
+                if (!this.level().isClientSide) {
+                    this.cancelWeaponReload();
+                }
                 this.entityData.set(DATA_SELECTED_WEAPON, next);
-                this.syncSelectedWeaponAmmoState();
+                this.setSelectedWeaponSlotForSeat(seatIndex, next);
+                if (this.level().isClientSide) {
+                    this.syncPerSeatSelectedWeaponState();
+                } else {
+                    this.syncSelectedWeaponAmmoState();
+                }
                 return true;
             }
         }
         return false;
+    }
+
+    private void setSelectedWeaponSlotForSeat(int seatIndex, int slot) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (seatIndex < 0 || slot < 0 || slot >= weapons.size()) {
+            return;
+        }
+        if (weapons.get(slot).usableBySeat(seatIndex)) {
+            this.selectedWeaponSlotBySeat.put(seatIndex, slot);
+        }
+    }
+
+    private int selectedVehicleWeaponIndexForSeat(int seatIndex) {
+        if (seatIndex < 0) {
+            return -1;
+        }
+        Integer selectedSlot = this.selectedWeaponSlotBySeat.get(seatIndex);
+        var weapons = this.vehicleData().defaults().weapons();
+        if (selectedSlot != null
+                && selectedSlot >= 0
+                && selectedSlot < weapons.size()
+                && weapons.get(selectedSlot).usableBySeat(seatIndex)) {
+            return selectedSlot;
+        }
+        int syncedSlot = this.selectedWeaponFromSyncedSeatData(seatIndex);
+        if (syncedSlot >= 0 && syncedSlot < weapons.size() && weapons.get(syncedSlot).usableBySeat(seatIndex)) {
+            return syncedSlot;
+        }
+        return this.firstUsableWeaponSlotForSeat(seatIndex);
+    }
+
+    private int firstUsableWeaponSlotForSeat(int seatIndex) {
+        var weapons = this.vehicleData().defaults().weapons();
+        for (int index = 0; index < weapons.size(); index++) {
+            if (weapons.get(index).usableBySeat(seatIndex)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private boolean canUseSelectedWeapon(LivingEntity passenger, VehicleWeaponInfo weapon) {
@@ -1936,7 +2379,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public boolean shouldBanPassengerHand(Entity passenger) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
-        return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).banHand();
+        if (fallbackIndex < 0) {
+            return false;
+        }
+        int seatIndex = this.seatIndexForPassenger(passenger, fallbackIndex);
+        return this.seatForPassenger(seatIndex).banHand() || this.hasWeaponUsableBySeat(seatIndex);
     }
 
     public Vec3 cameraPositionFor(Entity passenger, float partialTick) {
@@ -1951,6 +2398,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.usesFirstPersonSeatCamera(passenger)) {
             var zoomCamera = seat.zoomCamera();
+            if (zoomCamera.useSimulatedThirdPerson()) {
+                return this.simulatedThirdPersonCameraPosition(passenger, zoomCamera, partialTick);
+            }
             if (zoomCamera.useFixedCameraPos() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 return this.fixedSeatCameraPosition(zoomCamera, partialTick);
             }
@@ -2007,7 +2457,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 helicopterZoomCameraRotation(Entity passenger, float partialTick) {
         if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
                 || !this.usesFirstPersonSeatCamera(passenger)
-                || !VehicleClientState.zoomDown()) {
+                || !VehicleClientState.zoomDown()
+                || !this.usesAircraftCamera(passenger)) {
             return null;
         }
         return new Vec3(
@@ -2073,7 +2524,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 fixedSeatCameraRotation(Entity passenger, SeatInfo seat, float partialTick) {
         if (!this.usesFirstPersonSeatCamera(passenger)
                 || VehicleClientState.freeLookDown()
-                || VehicleClientState.zoomDown()) {
+                || VehicleClientState.zoomDown()
+                || !seat.zoomCamera().useFixedCameraPos()) {
             return null;
         }
         if (seat.sensitivityY() != 0.0F || seat.sensitivityZ() != 0.0F) {
@@ -2909,6 +3361,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.rotateLocalOffset(localX, localY, localZ, partialTick);
     }
 
+    private Vec3 simulatedThirdPersonCameraPosition(Entity passenger, CameraPos camera, float partialTick) {
+        Vec3 view = passenger.getViewVector(partialTick);
+        double x = Mth.lerp(partialTick, passenger.xo, passenger.getX()) - camera.simulatedThirdPersonDistance() * view.x;
+        double y = Mth.lerp(partialTick, passenger.yo + passenger.getEyeHeight() + camera.simulatedThirdPersonHeight(), passenger.getEyeY() + camera.simulatedThirdPersonHeight())
+                - camera.simulatedThirdPersonDistance() * view.y;
+        double z = Mth.lerp(partialTick, passenger.zo, passenger.getZ()) - camera.simulatedThirdPersonDistance() * view.z;
+        return new Vec3(x, y, z);
+    }
+
     private Vec3 fixedSeatCameraPosition(CameraPos camera, float partialTick) {
         Vec3 offset = this.usesVehiclePoseTransform()
                 ? this.rotateLocalOffsetWithPose(camera.x(), camera.y(), camera.z(), partialTick)
@@ -2921,7 +3382,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean usesArticulatedTurretAim(LivingEntity shooter) {
-        VehicleWeaponInfo weapon = this.selectedWeapon();
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
         if (weapon == null || !this.vehicleData().defaults().turret().enabled()) {
             return false;
         }
@@ -3067,6 +3528,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         output.putInt(TAG_ENERGY, this.vehicleEnergy());
         output.putInt(TAG_REPAIR_COOLDOWN, this.repairCooldown);
         output.putInt(TAG_SELECTED_WEAPON, this.entityData.get(DATA_SELECTED_WEAPON));
+        ListTag selectedWeapons = new ListTag();
+        int seatCount = this.vehicleData().defaults().seats().size();
+        for (int seatIndex = 0; seatIndex < seatCount; seatIndex++) {
+            CompoundTag selectedWeaponTag = new CompoundTag();
+            selectedWeaponTag.putInt(TAG_SEAT_INDEX, seatIndex);
+            selectedWeaponTag.putInt(TAG_LOADED_WEAPON_SLOT, this.selectedVehicleWeaponIndexForSeat(seatIndex));
+            selectedWeapons.add(selectedWeaponTag);
+        }
+        output.put(TAG_SELECTED_WEAPONS, selectedWeapons);
         ListTag loadedAmmo = new ListTag();
         for (Map.Entry<Integer, Integer> entry : this.loadedAmmoByWeaponSlot.entrySet()) {
             CompoundTag weaponTag = new CompoundTag();
@@ -3096,6 +3566,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag input) {
+        this.selectedWeaponSlotBySeat.clear();
         if (input.contains(TAG_VEHICLE_ID)) {
             this.entityData.set(DATA_VEHICLE_ID, input.getString(TAG_VEHICLE_ID));
         }
@@ -3105,6 +3576,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_ENERGY, Mth.clamp(energy, 0, this.maxVehicleEnergy()));
         this.repairCooldown = input.getInt(TAG_REPAIR_COOLDOWN);
         this.entityData.set(DATA_SELECTED_WEAPON, this.readSelectedWeapon(input));
+        this.readSelectedWeaponsBySeat(input);
         this.readLoadedWeaponAmmo(input);
         this.activeReloadWeaponSlot = -1;
         this.activeReloadTicks = 0;
@@ -3128,6 +3600,34 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return 0;
         }
         return Mth.clamp(input.getInt(TAG_SELECTED_WEAPON), 0, weaponCount - 1);
+    }
+
+    private void readSelectedWeaponsBySeat(CompoundTag input) {
+        int seatCount = this.vehicleData().defaults().seats().size();
+        int weaponCount = this.vehicleData().defaults().weapons().size();
+        if (seatCount <= 0 || weaponCount <= 0) {
+            return;
+        }
+        if (input.contains(TAG_SELECTED_WEAPONS, Tag.TAG_LIST)) {
+            ListTag selectedWeapons = input.getList(TAG_SELECTED_WEAPONS, Tag.TAG_COMPOUND);
+            for (int index = 0; index < selectedWeapons.size(); index++) {
+                CompoundTag selectedWeapon = selectedWeapons.getCompound(index);
+                int seatIndex = selectedWeapon.getInt(TAG_SEAT_INDEX);
+                int slot = selectedWeapon.getInt(TAG_LOADED_WEAPON_SLOT);
+                this.setSelectedWeaponSlotForSeat(seatIndex, slot);
+            }
+        }
+        if (this.selectedWeaponSlotBySeat.isEmpty()) {
+            this.setSelectedWeaponSlotForSeat(0, this.readSelectedWeapon(input));
+        }
+        for (int seatIndex = 0; seatIndex < seatCount; seatIndex++) {
+            if (!this.selectedWeaponSlotBySeat.containsKey(seatIndex)) {
+                int firstSlot = this.firstUsableWeaponSlotForSeat(seatIndex);
+                if (firstSlot >= 0) {
+                    this.setSelectedWeaponSlotForSeat(seatIndex, firstSlot);
+                }
+            }
+        }
     }
 
     private void readLoadedWeaponAmmo(CompoundTag input) {
@@ -3467,6 +3967,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     protected void addPassenger(@NotNull Entity passenger) {
         super.addPassenger(passenger);
         int seatCount = this.vehicleData().defaults().seats().size();
+        int savedSeat = this.seatAssignments.getOrDefault(passenger.getUUID(), -1);
+        if (savedSeat >= 0 && savedSeat < seatCount && !this.isSeatOccupied(savedSeat, passenger)) {
+            this.alignPassengerViewToVehicle(passenger, savedSeat);
+            this.syncSeatAssignments();
+            return;
+        }
         for (int seat = 0; seat < seatCount; seat++) {
             if (!this.isSeatOccupied(seat, passenger)) {
                 this.seatAssignments.put(passenger.getUUID(), seat);
@@ -3482,7 +3988,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     protected void removePassenger(@NotNull Entity passenger) {
         boolean controllingPassenger = passenger == this.getControllingPassenger();
         ServerPlayer syncPlayer = !this.level().isClientSide && passenger instanceof ServerPlayer player ? player : null;
-        this.seatAssignments.remove(passenger.getUUID());
+        if (!this.preservedSeatAssignments.remove(passenger.getUUID())) {
+            this.seatAssignments.remove(passenger.getUUID());
+        }
         if (controllingPassenger) {
             this.cancelWeaponReload();
             this.clearControlState(true);

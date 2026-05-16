@@ -13,6 +13,7 @@ import ttv.migami.jeg.client.KeyBindings;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 @Mixin(Minecraft.class)
@@ -27,6 +28,14 @@ public class MinecraftVehicleHotbarMixin {
     @Inject(method = "handleKeybinds()V", at = @At("HEAD"), cancellable = true)
     private void jeg$handleMountedInventoryKeys(CallbackInfo callback) {
         if (this.player == null || !(this.player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return;
+        }
+        if (VehicleInputHandler.shouldIgnoreVehicleInventoryKey() && this.options.keyInventory.consumeClick()) {
+            callback.cancel();
+            return;
+        }
+        if (VehicleInputHandler.shouldIgnorePlayerInventoryKey() && KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
+            callback.cancel();
             return;
         }
         if (!VehicleInputHandler.shouldIgnoreVehicleInventoryKey() && this.options.keyInventory.consumeClick()) {
@@ -66,11 +75,14 @@ public class MinecraftVehicleHotbarMixin {
         }
         callback.cancel();
         this.options.keyHotbarSlots[weaponSlot].consumeClick();
+        int vehicleWeaponSlot = vehicle.vehicleWeaponIndexForDisplaySlot(this.player, weaponSlot);
+        if (vehicleWeaponSlot < 0) {
+            return;
+        }
         if (Minecraft.getInstance().getConnection() == null) {
             return;
         }
-        Minecraft.getInstance().getConnection().send(new VehicleInputPayload(
-                vehicle.getId(),
+        VehicleInput input = new VehicleInput(
                 this.options.keyUp.isDown(),
                 this.options.keyDown.isDown(),
                 this.options.keyLeft.isDown(),
@@ -83,11 +95,32 @@ public class MinecraftVehicleHotbarMixin {
                 KeyBindings.VEHICLE_FREE_LOOK.isDown(),
                 false,
                 false,
-                weaponSlot,
+                vehicleWeaponSlot,
                 KeyBindings.VEHICLE_SEEK.isDown(),
                 false,
                 0.0F,
                 0.0F
+        );
+        vehicle.processClientInput(this.player, input);
+        Minecraft.getInstance().getConnection().send(new VehicleInputPayload(
+                vehicle.getId(),
+                input.forward(),
+                input.backward(),
+                input.left(),
+                input.right(),
+                input.brake(),
+                input.ascend(),
+                input.descend(),
+                input.fire(),
+                input.reload(),
+                input.freeLook(),
+                input.switchWeapon(),
+                input.previousWeapon(),
+                input.weaponSlot(),
+                input.seekTarget(),
+                input.deployDecoy(),
+                input.mouseX(),
+                input.mouseY()
         ));
     }
 }

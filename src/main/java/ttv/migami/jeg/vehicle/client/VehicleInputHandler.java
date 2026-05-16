@@ -20,10 +20,13 @@ import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class VehicleInputHandler {
+    private static final int VEHICLE_INVENTORY_INPUT_BLOCK_TICKS = 4;
     private static boolean suppressPlayerInventoryClick;
     private static boolean suppressVehicleInventoryClick;
     private static boolean ignorePlayerInventoryUntilRelease;
     private static boolean ignoreVehicleInventoryUntilRelease;
+    private static boolean vehicleInventoryWasDown;
+    private static int vehicleInventoryInputBlockTicks;
 
     private VehicleInputHandler() {}
 
@@ -35,10 +38,18 @@ public final class VehicleInputHandler {
             VehicleClientState.clear();
             ignorePlayerInventoryUntilRelease = false;
             ignoreVehicleInventoryUntilRelease = false;
+            vehicleInventoryWasDown = false;
+            vehicleInventoryInputBlockTicks = 0;
             return;
         }
 
-        if (ignoreVehicleInventoryUntilRelease && !minecraft.options.keyInventory.isDown()) {
+        boolean vehicleInventoryDown = minecraft.options.keyInventory.isDown();
+        if (vehicleInventoryInputBlockTicks > 0) {
+            vehicleInventoryInputBlockTicks--;
+            while (minecraft.options.keyInventory.consumeClick()) {
+            }
+        }
+        if (ignoreVehicleInventoryUntilRelease && !vehicleInventoryDown) {
             ignoreVehicleInventoryUntilRelease = false;
         }
         if (ignorePlayerInventoryUntilRelease && !KeyBindings.VEHICLE_PLAYER_INVENTORY.isDown()) {
@@ -62,11 +73,12 @@ public final class VehicleInputHandler {
         int weaponSlot = -1;
         for (int index = 0; index < minecraft.options.keyHotbarSlots.length; index++) {
             if (minecraft.options.keyHotbarSlots[index].consumeClick()) {
-                weaponSlot = index;
+                weaponSlot = vehicle.vehicleWeaponIndexForDisplaySlot(player, index);
                 break;
             }
         }
-        VehicleClientState.update(vehicle, freeLook, minecraft.options.keyUse.isDown(), seek);
+        boolean vehicleZoom = minecraft.options.keyUse.isDown() && vehicle.canPassengerUseSelectedVehicleWeapon(player);
+        VehicleClientState.update(vehicle, freeLook, vehicleZoom, seek);
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             NetworkHandler.sendVehicleChangeSeat(vehicle.getId());
         }
@@ -76,7 +88,10 @@ public final class VehicleInputHandler {
             NetworkHandler.sendVehicleDismount(vehicle.getId());
             return;
         }
-        boolean vehicleInventoryClick = !ignoreVehicleInventoryUntilRelease && minecraft.options.keyInventory.consumeClick();
+        boolean vehicleInventoryClick = !ignoreVehicleInventoryUntilRelease
+                && vehicleInventoryInputBlockTicks <= 0
+                && (minecraft.options.keyInventory.consumeClick() || (vehicleInventoryDown && !vehicleInventoryWasDown));
+        vehicleInventoryWasDown = vehicleInventoryDown;
         if (suppressVehicleInventoryClick) {
             suppressVehicleInventoryClick = false;
             vehicleInventoryClick = false;
@@ -86,8 +101,10 @@ public final class VehicleInputHandler {
             if (minecraft.screen instanceof VehicleScreen) {
                 player.closeContainer();
                 minecraft.setScreen(null);
+                clearPendingVehicleInventoryClicks();
             } else if (minecraft.screen == null) {
                 NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
+                clearPendingVehicleInventoryClicks();
             }
         }
         boolean playerInventoryClick = !ignorePlayerInventoryUntilRelease && KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick();
@@ -257,6 +274,8 @@ public final class VehicleInputHandler {
         }
         suppressVehicleInventoryClick = true;
         ignoreVehicleInventoryUntilRelease = true;
+        vehicleInventoryWasDown = minecraft.options.keyInventory.isDown();
+        vehicleInventoryInputBlockTicks = VEHICLE_INVENTORY_INPUT_BLOCK_TICKS;
     }
 
     public static boolean shouldIgnorePlayerInventoryKey() {
@@ -264,7 +283,7 @@ public final class VehicleInputHandler {
     }
 
     public static boolean shouldIgnoreVehicleInventoryKey() {
-        return ignoreVehicleInventoryUntilRelease;
+        return ignoreVehicleInventoryUntilRelease || vehicleInventoryInputBlockTicks > 0;
     }
 
     public static void suppressPlayerInventoryClickOnce() {
