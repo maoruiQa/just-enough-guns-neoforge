@@ -1,0 +1,99 @@
+{
+  "entity_type": "jeg:test_artillery",
+  "vehicle_type": "artillery",
+  "max_health": 70.0,
+  "auto_repair_per_tick": 0.01,
+  "auto_repair_cooldown_ticks": 140,
+  "max_energy": 120,
+  "allow_free_cam": true,
+  "container_type": "small",
+  "seats": [
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 0.9,
+      "z": 0.0,
+      "driver": true,
+      "enclosed": true
+    }
+  ],
+  "engine": {
+    "type": "static",
+    "acceleration": 0.0,
+    "max_forward_speed": 0.0,
+    "max_reverse_speed": 0.0,
+    "friction": 1.0
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 2.6,
+    "z": -5.0
+  },
+  "dismount": {
+    "x": 1.2,
+    "y": 0.1,
+    "z": 0.0
+  },
+  "collision_level": "heavy",
+  "obb": [
+    {
+      "part": "body",
+      "x": 0.0,
+      "y": 0.85,
+      "z": 0.0,
+      "half_width": 0.75,
+      "half_height": 0.75,
+      "half_depth": 0.75
+    },
+    {
+      "part": "turret",
+      "x": 0.0,
+      "y": 1.35,
+      "z": 0.0,
+      "half_width": 0.55,
+      "half_height": 0.28,
+      "half_depth": 0.55
+    }
+  ],
+  "weapons": [
+    {
+      "weapon": "jeg:light_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false
+    },
+    {
+      "weapon": "jeg:rocket_launcher",
+      "ammo": "jeg:rocket",
+      "energy_cost": 2,
+      "guided": true
+    }
+  ],
+  "destroy": {
+    "explodes": true,
+    "explosion_power": 2.2
+  },
+  "seek": {
+    "range": 80.0,
+    "angle": 8.0,
+    "warns_target": true
+  },
+  "armor": {
+    "fallback": {
+      "rating": 4.5,
+      "undermatch_multiplier": 0.16,
+      "overmatch_multiplier": 0.85,
+      "passenger_leak_multiplier": 0.12,
+      "part_damage_multiplier": 0.8
+    },
+    "parts": {
+      "turret": {
+        "rating": 5.0,
+        "undermatch_multiplier": 0.14,
+        "overmatch_multiplier": 0.8,
+        "passenger_leak_multiplier": 0.1,
+        "part_damage_multiplier": 1.2
+      }
+    }
+  }
+}

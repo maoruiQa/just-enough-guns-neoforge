@@ -1,0 +1,8 @@
+{
+  "result_vehicle": "jeg:bmp2",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 48},
+    {"item": "minecraft:copper_ingot", "count": 18},
+    {"item": "minecraft:redstone", "count": 14}
+  ]
+}

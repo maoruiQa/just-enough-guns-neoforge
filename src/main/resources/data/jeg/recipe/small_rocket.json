@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " R ",
+    "CTC",
+    " G "
+  ],
+  "key": {
+    "R": "minecraft:redstone_torch",
+    "C": "minecraft:copper_ingot",
+    "T": "minecraft:tnt",
+    "G": "minecraft:gunpowder"
+  },
+  "result": {
+    "id": "jeg:small_rocket",
+    "count": 4
+  }
+}

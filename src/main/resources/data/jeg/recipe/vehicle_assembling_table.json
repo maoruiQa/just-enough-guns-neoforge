@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "III",
+    "BST",
+    "III"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "B": "minecraft:iron_block",
+    "S": "minecraft:smithing_table",
+    "T": "minecraft:glass_pane"
+  },
+  "result": {
+    "id": "jeg:vehicle_assembling_table",
+    "count": 1
+  }
+}

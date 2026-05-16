@@ -1,0 +1,21 @@
+{
+  "result_vehicle": "jeg:test_helicopter",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 24
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 16
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 10
+    },
+    {
+      "item": "minecraft:feather",
+      "count": 8
+    }
+  ]
+}

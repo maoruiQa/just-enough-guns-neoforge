@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " E ",
+    "CTC",
+    "MTM"
+  ],
+  "key": {
+    "E": "minecraft:ender_eye",
+    "C": "minecraft:copper_ingot",
+    "T": "minecraft:tnt",
+    "M": "jeg:missile_engine"
+  },
+  "result": {
+    "id": "jeg:large_anti_ground_missile",
+    "count": 1
+  }
+}

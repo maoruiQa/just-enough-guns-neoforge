@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CGC",
+    "GIG",
+    " F "
+  ],
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "G": "minecraft:gunpowder",
+    "I": "minecraft:iron_ingot",
+    "F": "minecraft:firework_rocket"
+  },
+  "result": {
+    "id": "jeg:missile_engine",
+    "count": 4
+  }
+}

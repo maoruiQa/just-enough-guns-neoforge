@@ -1,0 +1,13 @@
+{
+  "result_vehicle": "jeg:test_wheel_vehicle",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 16
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 4
+    }
+  ]
+}

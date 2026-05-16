@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CRC",
+    "RBR",
+    "CIC"
+  ],
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "R": "minecraft:redstone",
+    "B": "minecraft:blast_furnace",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "jeg:vehicle_charging_station",
+    "count": 1
+  }
+}

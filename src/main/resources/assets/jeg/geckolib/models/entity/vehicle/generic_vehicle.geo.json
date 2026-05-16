@@ -1,0 +1,74 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.jeg.generic_vehicle",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 3,
+        "visible_bounds_offset": [0, 0.75, 0]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [0, 0, 0]
+        },
+        {
+          "name": "body",
+          "parent": "root",
+          "pivot": [0, 8, 0],
+          "cubes": [
+            {
+              "origin": [-12, 2, -16],
+              "size": [24, 10, 32],
+              "uv": [0, 0]
+            }
+          ]
+        },
+        {
+          "name": "turret",
+          "parent": "body",
+          "pivot": [0, 14, -2],
+          "cubes": [
+            {
+              "origin": [-6, 12, -8],
+              "size": [12, 5, 12],
+              "uv": [0, 0]
+            },
+            {
+              "origin": [-2, 14, -22],
+              "size": [4, 3, 16],
+              "uv": [0, 0]
+            }
+          ]
+        },
+        {
+          "name": "left_wheel",
+          "parent": "root",
+          "pivot": [-10, 4, 0],
+          "cubes": [
+            {
+              "origin": [-14, 0, -14],
+              "size": [4, 6, 28],
+              "uv": [0, 0]
+            }
+          ]
+        },
+        {
+          "name": "right_wheel",
+          "parent": "root",
+          "pivot": [10, 4, 0],
+          "cubes": [
+            {
+              "origin": [10, 0, -14],
+              "size": [4, 6, 28],
+              "uv": [0, 0]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

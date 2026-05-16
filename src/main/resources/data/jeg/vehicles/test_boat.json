@@ -1,0 +1,71 @@
+{
+  "entity_type": "jeg:test_boat",
+  "vehicle_type": "boat",
+  "max_health": 55.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 120,
+  "max_energy": 100,
+  "allow_free_cam": true,
+  "container_type": "mini",
+  "seats": [
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 0.72,
+      "z": 0.0,
+      "driver": true,
+      "enclosed": false
+    }
+  ],
+  "engine": {
+    "type": "boat",
+    "acceleration": 0.035,
+    "max_forward_speed": 0.36,
+    "max_reverse_speed": 0.14,
+    "friction": 0.86
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 2.8,
+    "z": -6.0
+  },
+  "dismount": {
+    "x": 1.0,
+    "y": 0.1,
+    "z": 0.0
+  },
+  "collision_level": "light",
+  "obb": [
+    {
+      "part": "body",
+      "x": 0.0,
+      "y": 0.55,
+      "z": 0.0,
+      "half_width": 0.95,
+      "half_height": 0.45,
+      "half_depth": 1.35
+    }
+  ],
+  "weapons": [
+    {
+      "weapon": "jeg:combat_pistol",
+      "ammo": "jeg:pistol_ammo",
+      "energy_cost": 0,
+      "guided": false
+    }
+  ],
+  "destroy": {
+    "explodes": false,
+    "explosion_power": 0.0
+  },
+  "armor": {
+    "fallback": {
+      "rating": 1.5,
+      "undermatch_multiplier": 0.35,
+      "overmatch_multiplier": 1.05,
+      "passenger_leak_multiplier": 0.25,
+      "part_damage_multiplier": 1.0
+    },
+    "parts": {}
+  }
+}
