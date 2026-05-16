@@ -218,7 +218,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> SPEEDBOAT = REGISTER.register(
             "speedboat",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("speedboat")), MobCategory.MISC)
-                    .sized(2.0F, 0.8F)
+                    .sized(3.0F, 2.0F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("speedboat")
@@ -245,7 +245,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> BMP2 = REGISTER.register(
             "bmp2",
             () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id("bmp2")), MobCategory.MISC)
-                    .sized(4.0F, 3.0F)
+                    .sized(4.4F, 3.0F)
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("bmp2")

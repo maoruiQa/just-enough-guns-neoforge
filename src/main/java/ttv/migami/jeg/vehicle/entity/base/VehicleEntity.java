@@ -21,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -89,6 +90,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
+import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 
 public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
@@ -100,11 +102,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double VEHICLE_IDLE_FALL_SPEED_THRESHOLD = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_Y_DELTA = 1.0E-3D;
-    private static final float TRUCK_COLLISION_LENGTH_SCALE = 3.2F;
     private static final float OTHER_VEHICLE_COLLISION_LENGTH_SCALE = 1.2F;
-    private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.5F;
-    private static final double TRUCK_COLLISION_FORWARD_SHIFT = 0.85D;
-    private static final double SPEEDBOAT_COLLISION_FORWARD_SHIFT = 0.375D;
+    private static final float SPEEDBOAT_COLLISION_LENGTH_SCALE = 1.2F;
+    private static final double SPEEDBOAT_COLLISION_FORWARD_SHIFT = 0.15D;
+    private static final double BOAT_WATER_PROBE_BELOW = 0.2D;
+    private static final double BOAT_WATER_PROBE_ABOVE = 0.35D;
+    private static final int BOAT_WATERBORNE_MEMORY_TICKS = 8;
+    private static final double SPEEDBOAT_BOW_BLOCK_PROBE_DISTANCE = 0.35D;
+    private static final double SPEEDBOAT_BOW_BLOCK_PROBE_HALF_WIDTH = 0.95D;
+    private static final double SPEEDBOAT_BOW_BLOCK_PROBE_LOW_Y = 0.35D;
+    private static final double SPEEDBOAT_BOW_BLOCK_PROBE_HIGH_Y = 0.9D;
+    private static final double SPEEDBOAT_WATER_CRUISE_SPEED = 40.0D / 72.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
 
@@ -134,8 +142,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Boolean> DATA_WEAPON_FIRING = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation FLARE_AMMO = Reference.id("flare");
-    private static final int DECOY_COOLDOWN_TICKS = 60;
+    private static final int FLARE_DECOY_COOLDOWN_TICKS = 400;
     private static final int LAND_DECOY_COOLDOWN_TICKS = 500;
+    private static final int FLARE_BURST_LAST_DELAY_TICKS = 48;
+    private static final int FLARE_BURST_INTERVAL_TICKS = 6;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
@@ -202,9 +212,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean weaponFireInput;
     private int seekControllerId = -1;
     private boolean seekInput;
+    private int pendingFlareBurstTicks = -1;
     private double wheelSteering;
     private double enginePower;
     private double lastTickSpeed;
+    private int boatWaterborneTicks;
     private float turretYawO;
     private float turretPitchO;
     private float propellerRotO;
@@ -222,6 +234,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private float engineHealth = PART_MAX_HEALTH;
     private float subEngineHealth = PART_MAX_HEALTH;
     private float turretHealth = PART_MAX_HEALTH;
+
+    private record BlockCollisionBounds(double centerX, double centerZ, double halfWidth, double halfLength) {}
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -243,6 +257,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     protected AABB makeBoundingBox() {
+        BlockCollisionBounds bounds = this.blockCollisionBounds();
+        if (bounds != null) {
+            var dimensions = super.getDimensions(this.getPose());
+            double yaw = Math.toRadians(this.getYRot());
+            double absSin = Math.abs(Math.sin(yaw));
+            double absCos = Math.abs(Math.cos(yaw));
+            double extentX = bounds.halfWidth() * absCos + bounds.halfLength() * absSin;
+            double extentZ = bounds.halfWidth() * absSin + bounds.halfLength() * absCos;
+            Vec3 offset = this.rotateLocalOffset(bounds.centerX(), 0.0D, bounds.centerZ(), 1.0F);
+            double centerX = this.getX() + offset.x;
+            double centerZ = this.getZ() + offset.z;
+            return new AABB(centerX - extentX, this.getY(), centerZ - extentZ, centerX + extentX, this.getY() + dimensions.height(), centerZ + extentZ);
+        }
         double scale = this.collisionLengthScale();
         double offsetZ = this.collisionCenterOffsetZ();
         if (Math.abs(scale - 1.0D) < 1.0E-6D && Math.abs(offsetZ) < 1.0E-6D) {
@@ -272,14 +299,64 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setBoundingBox(this.makeBoundingBox());
     }
 
-    private float collisionLengthScale() {
-        if (this.isTruckVehicle()) {
-            return TRUCK_COLLISION_LENGTH_SCALE;
+    private boolean setVehicleYawIfUnblocked(float yaw) {
+        if (!this.usesObbBlockCollisionBounds()) {
+            this.setYRot(yaw);
+            this.updateVehicleBoundingBox();
+            return true;
         }
+        float previousYaw = this.getYRot();
+        AABB previousBox = this.getBoundingBox();
+        boolean wasBlocked = this.intersectsBlockCollision(previousBox);
+        this.setYRot(yaw);
+        this.updateVehicleBoundingBox();
+        if (!wasBlocked && this.intersectsBlockCollision(this.getBoundingBox())) {
+            this.setYRot(previousYaw);
+            this.setBoundingBox(previousBox);
+            return false;
+        }
+        return true;
+    }
+
+    private float collisionLengthScale() {
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_LENGTH_SCALE;
         }
         return OTHER_VEHICLE_COLLISION_LENGTH_SCALE;
+    }
+
+    @Nullable
+    private BlockCollisionBounds blockCollisionBounds() {
+        if (!this.usesObbBlockCollisionBounds()) {
+            return null;
+        }
+        var boxes = this.vehicleData().defaults().obb().boxes();
+        if (boxes.isEmpty()) {
+            return null;
+        }
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (OBBInfo.Box box : boxes) {
+            minX = Math.min(minX, box.x() - box.halfWidth());
+            maxX = Math.max(maxX, box.x() + box.halfWidth());
+            minZ = Math.min(minZ, box.z() - box.halfDepth());
+            maxZ = Math.max(maxZ, box.z() + box.halfDepth());
+        }
+        return new BlockCollisionBounds(
+                (minX + maxX) * 0.5D,
+                (minZ + maxZ) * 0.5D,
+                Math.max((maxX - minX) * 0.5D, this.getBbWidth() * 0.5D),
+                Math.max((maxZ - minZ) * 0.5D, this.getBbWidth() * 0.5D)
+        );
+    }
+
+    private boolean usesObbBlockCollisionBounds() {
+        return switch (this.vehicleDataId().getPath()) {
+            case "truck", "lav150", "bmp2" -> true;
+            default -> false;
+        };
     }
 
     private String idleAnimationName() {
@@ -426,6 +503,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return weapon != null && weapon.guided();
     }
 
+    public boolean canPassengerUseVehicleWeapon(Entity passenger, int weaponIndex) {
+        var weapons = this.vehicleData().defaults().weapons();
+        if (weaponIndex < 0 || weaponIndex >= weapons.size()) {
+            return false;
+        }
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        return fallbackIndex >= 0 && weapons.get(weaponIndex).usableBySeat(this.seatIndexForPassenger(passenger, fallbackIndex));
+    }
+
+    public boolean canPassengerUseSelectedVehicleWeapon(Entity passenger) {
+        return this.canPassengerUseVehicleWeapon(passenger, this.selectedVehicleWeaponIndex());
+    }
+
     public boolean hasMissileLock() {
         return this.entityData.get(DATA_MISSILE_LOCKED);
     }
@@ -543,9 +633,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public double collisionCenterOffsetZ() {
-        if (this.isTruckVehicle()) {
-            return TRUCK_COLLISION_FORWARD_SHIFT;
-        }
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_FORWARD_SHIFT;
         }
@@ -723,6 +810,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickWeaponReload();
             this.tickServerWeapon();
             this.tickDecoyCooldown();
+            this.tickPendingFlareDecoys();
             this.tickInventoryEnergyRecharge();
             this.tickAutoRepair();
             this.tickRecentDismountStateSync();
@@ -1149,7 +1237,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (shooter != null && weapon.guided()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
-                target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot());
+                target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), VehicleMissileProfile.get(weapon.weaponId()));
             }
         }
         this.entityData.set(DATA_MISSILE_LOCKED, target != null);
@@ -1176,9 +1264,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
         VehicleWeaponInfo weapon = this.selectedWeapon();
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
-        Vec3 velocity = direction.scale(0.72D).add(this.getDeltaMovement().scale(0.15D));
-        Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot()) : null;
-        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity));
+        VehicleMissileProfile profile = VehicleMissileProfile.get(weapon.weaponId());
+        Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
+        Entity target = this.seekInput ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
+        this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity, weapon.weaponId()));
         this.fireCooldown = Math.max(1, stats.fireDelay());
     }
 
@@ -1250,26 +1339,37 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     @Nullable
-    private Entity findLookTarget(LivingEntity shooter, Vec3 direction, double range, double minDot) {
+    private Entity findLookTarget(LivingEntity shooter, Vec3 direction, double range, double minDot, VehicleMissileProfile profile) {
         Vec3 eye = shooter.getEyePosition();
         Entity bestTarget = null;
         double bestScore = minDot;
-        for (LivingEntity candidate : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(range))) {
-            if (candidate == shooter || candidate.getVehicle() == this || !candidate.isAlive()) {
+        for (Entity candidate : this.level().getEntities(this, this.getBoundingBox().inflate(range), candidate -> candidate instanceof VehicleDecoyEntity || profile.canLock(candidate, shooter, this))) {
+            if (!candidate.isAlive()) {
                 continue;
             }
-            Vec3 toTarget = candidate.getEyePosition().subtract(eye);
+            Vec3 targetCenter = candidate instanceof LivingEntity living
+                    ? living.getEyePosition()
+                    : candidate.position().add(0.0D, candidate.getBbHeight() * 0.5D, 0.0D);
+            Vec3 toTarget = targetCenter.subtract(eye);
             double distance = toTarget.length();
             if (distance <= 0.0D || distance > range) {
                 continue;
             }
             double dot = toTarget.normalize().dot(direction);
-            if (dot > bestScore) {
+            if (dot > bestScore && this.canSeeMissileTarget(eye, targetCenter, candidate)) {
                 bestScore = dot;
                 bestTarget = candidate;
             }
         }
         return bestTarget;
+    }
+
+    private boolean canSeeMissileTarget(Vec3 eye, Vec3 targetCenter, Entity candidate) {
+        if (!(candidate instanceof VehicleDecoyEntity) && VehicleDecoyEntity.isSmokeBlockingTarget(candidate)) {
+            return false;
+        }
+        HitResult hit = this.level().clip(new ClipContext(eye, targetCenter, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        return hit.getType() == HitResult.Type.MISS;
     }
 
     private double seekRange() {
@@ -1290,6 +1390,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void tickDecoyCooldown() {
         if (this.decoyCooldown > 0) {
             this.decoyCooldown--;
+        }
+    }
+
+    private void tickPendingFlareDecoys() {
+        if (this.pendingFlareBurstTicks < 0) {
+            return;
+        }
+        this.pendingFlareBurstTicks--;
+        if (this.pendingFlareBurstTicks >= 0 && this.pendingFlareBurstTicks % FLARE_BURST_INTERVAL_TICKS == 0) {
+            this.shootFlareDecoyPair(false);
+        }
+        if (this.pendingFlareBurstTicks <= 0) {
+            this.pendingFlareBurstTicks = -1;
         }
     }
 
@@ -1431,26 +1544,45 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.hasBuiltInDecoy() && !this.consumeAmmo(FLARE_AMMO)) {
             return;
         }
-        Vec3 look = player.getViewVector(1.0F).normalize();
-        if (this.hasBuiltInDecoy() && this.vehicleData().defaults().vehicleType() == VehicleType.LAND) {
-            for (int index = 0; index < 8; index++) {
-                double yaw = Math.toRadians(-78.75D + 22.5D * index);
-                Vec3 direction = look.yRot((float) yaw).normalize();
-                Vec3 position = this.position().add(0.0D, this.getBbHeight(), 0.0D);
-                Vec3 velocity = direction.scale(0.28D).add(0.0D, 0.08D, 0.0D).add(this.getDeltaMovement().scale(0.25D));
-                this.level().addFreshEntity(new VehicleDecoyEntity(this.level(), position, velocity));
-            }
+        if (this.shouldDeploySmokeDecoy()) {
+            this.deploySmokeDecoys(player);
             this.decoyCooldown = LAND_DECOY_COOLDOWN_TICKS;
             return;
         }
-        Vec3 side = new Vec3(-look.z, 0.0D, look.x).normalize();
-        if (side.lengthSqr() < 1.0E-4D) {
-            side = new Vec3(1.0D, 0.0D, 0.0D);
+        this.shootFlareDecoyPair(true);
+        this.pendingFlareBurstTicks = FLARE_BURST_LAST_DELAY_TICKS;
+        this.decoyCooldown = FLARE_DECOY_COOLDOWN_TICKS;
+    }
+
+    private boolean shouldDeploySmokeDecoy() {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        return this.hasBuiltInDecoy() && type != VehicleType.HELICOPTER && type != VehicleType.AIRCRAFT;
+    }
+
+    private void deploySmokeDecoys(ServerPlayer player) {
+        Vec3 look = player.getViewVector(1.0F).normalize();
+        Vec3 position = this.position().add(0.0D, this.getBbHeight(), 0.0D);
+        for (int index = 0; index < 8; index++) {
+            double yaw = Math.toRadians(-78.75D + 22.5D * index);
+            Vec3 direction = look.yRot((float) yaw).normalize();
+            this.level().addFreshEntity(VehicleDecoyEntity.smoke(this.level(), this, position, direction, 4.0F, 8.0F));
         }
-        Vec3 position = this.position().add(0.0D, 0.8D, 0.0D).add(side.scale(0.65D));
-        Vec3 velocity = side.scale(0.16D).add(0.0D, 0.08D, 0.0D).add(this.getDeltaMovement().scale(0.25D));
-        this.level().addFreshEntity(new VehicleDecoyEntity(this.level(), position, velocity));
-        this.decoyCooldown = DECOY_COOLDOWN_TICKS;
+        this.level().playSound(null, this, SoundEvents.FIRE_EXTINGUISH, this.getSoundSource(), 1.0F, 1.0F);
+    }
+
+    private void shootFlareDecoyPair(boolean first) {
+        Vec3 position = this.position().add(this.getDeltaMovement()).add(0.0D, 0.5D, 0.0D);
+        this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(1.0D, -0.2D, 0.6D, 1.0F), first);
+        this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(-1.0D, -0.2D, 0.6D, 1.0F), first);
+    }
+
+    private void shootFlareDecoy(Vec3 position, Vec3 direction, boolean first) {
+        if (direction.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+        float velocity = (float) (this.getDeltaMovement().length() * 0.3D + 0.7D);
+        this.level().addFreshEntity(VehicleDecoyEntity.flare(this.level(), this, position, direction.normalize(), velocity, 8.0F));
+        this.level().playSound(null, this, first ? SoundEvents.FIREWORK_ROCKET_LAUNCH : SoundEvents.FIRECHARGE_USE, this.getSoundSource(), 2.0F, 1.0F);
     }
 
     private void tickInventoryEnergyRecharge() {
@@ -1817,7 +1949,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (zoomCamera.useFixedCameraPos() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 return this.fixedSeatCameraPosition(zoomCamera, partialTick);
             }
-            if (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D) {
+            if (VehicleClientState.zoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 Vec3 firstPersonOffset = this.firstPersonSeatCameraOffset(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
                 return this.interpolatedVehiclePosition(partialTick).add(firstPersonOffset);
             }
@@ -2141,7 +2273,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int steeringAxis = this.steeringAxis();
-        boolean inWater = this.isInWater();
+        boolean waterContact = this.hasBoatWaterContact();
+        boolean inWater = this.isBoatWaterborne(waterContact);
         double mobility = this.mobilityMultiplier();
 
         if (forwardAxis > 0) {
@@ -2195,21 +2328,108 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             velocity = new Vec3(horizontal.x, velocity.y, horizontal.z);
         }
         if (inWater) {
-            velocity = new Vec3(velocity.x * engine.friction(), Math.min(0.04D, velocity.y + 0.018D), velocity.z * engine.friction());
+            double vertical = waterContact ? Math.min(0.035D, velocity.y + 0.014D) : Math.max(-0.035D, velocity.y - 0.006D);
+            velocity = new Vec3(velocity.x * engine.friction(), vertical, velocity.z * engine.friction());
         } else {
             velocity = velocity.add(0.0D, -GRAVITY, 0.0D).multiply(0.94D, 0.98D, 0.94D);
         }
+        velocity = this.stabilizeSpeedboatWaterCruise(velocity, forward, forwardAxis, inWater, mobility, engine);
+        velocity = this.limitSpeedboatBlockCollision(velocity);
 
         Vec3 before = this.position();
         this.setDeltaMovement(velocity);
         this.move(MoverType.SELF, this.getDeltaMovement());
         Vec3 moved = this.position().subtract(before);
-        double nextY = inWater ? Math.min(0.04D, moved.y + 0.008D) : moved.y * 0.98D;
+        double nextY = inWater ? (waterContact ? Math.min(0.035D, moved.y + 0.004D) : Math.max(-0.035D, moved.y * 0.94D)) : moved.y * 0.98D;
         this.setDeltaMovement(moved.x * 0.985D, nextY, moved.z * 0.985D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.hurtMarked = true;
             this.hasImpulse = true;
         }
+    }
+
+    private boolean isBoatWaterborne(boolean waterContact) {
+        if (waterContact) {
+            this.boatWaterborneTicks = BOAT_WATERBORNE_MEMORY_TICKS;
+            return true;
+        }
+        if (this.boatWaterborneTicks > 0) {
+            this.boatWaterborneTicks--;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean hasBoatWaterContact() {
+        if (this.isInWater() || this.isUnderWater()) {
+            return true;
+        }
+        AABB box = this.getBoundingBox();
+        int minX = Mth.floor(box.minX + 1.0E-4D);
+        int maxX = Mth.floor(box.maxX - 1.0E-4D);
+        int minY = Mth.floor(box.minY - BOAT_WATER_PROBE_BELOW);
+        int maxY = Mth.floor(Math.min(box.minY + BOAT_WATER_PROBE_ABOVE, box.maxY));
+        int minZ = Mth.floor(box.minZ + 1.0E-4D);
+        int maxZ = Mth.floor(box.maxZ - 1.0E-4D);
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (this.level().getFluidState(cursor.set(x, y, z)).is(FluidTags.WATER)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private Vec3 stabilizeSpeedboatWaterCruise(Vec3 velocity, Vec3 forward, int forwardAxis, boolean inWater, double mobility, EngineInfo engine) {
+        if (!this.isSpeedboatVehicle() || !inWater || forwardAxis <= 0 || this.input.brake() || this.enginePower <= 0.0D) {
+            return velocity;
+        }
+        double maxForwardSpeed = engine.maxForwardSpeed() * mobility;
+        double targetSpeed = Math.min(SPEEDBOAT_WATER_CRUISE_SPEED, maxForwardSpeed) * Mth.clamp(this.enginePower, 0.0D, 1.0D);
+        if (targetSpeed <= 1.0E-5D) {
+            return velocity;
+        }
+        Vec3 horizontal = forward.normalize().scale(targetSpeed);
+        return new Vec3(horizontal.x, velocity.y, horizontal.z);
+    }
+
+    private Vec3 limitSpeedboatBlockCollision(Vec3 velocity) {
+        if (!this.isSpeedboatVehicle()) {
+            return velocity;
+        }
+        Vec3 horizontal = new Vec3(velocity.x, 0.0D, velocity.z);
+        if (horizontal.lengthSqr() < 1.0E-7D || !this.isSpeedboatBowBlocked(horizontal)) {
+            return velocity;
+        }
+        this.enginePower *= 0.35D;
+        this.wheelSteering *= 0.5D;
+        return new Vec3(0.0D, velocity.y, 0.0D);
+    }
+
+    private boolean isSpeedboatBowBlocked(Vec3 horizontal) {
+        Vec3 direction = horizontal.normalize();
+        Vec3 side = new Vec3(direction.z, 0.0D, -direction.x);
+        AABB box = this.getBoundingBox();
+        double distance = Math.max(this.getBbWidth() * 0.5D, this.getBbWidth() * this.collisionLengthScale() * 0.5D) + horizontal.length() + SPEEDBOAT_BOW_BLOCK_PROBE_DISTANCE;
+        Vec3 bowCenter = this.position().add(direction.scale(distance));
+        double[] sideOffsets = {-SPEEDBOAT_BOW_BLOCK_PROBE_HALF_WIDTH, 0.0D, SPEEDBOAT_BOW_BLOCK_PROBE_HALF_WIDTH};
+        double[] yOffsets = {SPEEDBOAT_BOW_BLOCK_PROBE_LOW_Y, SPEEDBOAT_BOW_BLOCK_PROBE_HIGH_Y};
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (double yOffset : yOffsets) {
+            for (double sideOffset : sideOffsets) {
+                Vec3 sample = bowCenter.add(side.scale(sideOffset));
+                cursor.set(sample.x, box.minY + yOffset, sample.z);
+                BlockState state = this.level().getBlockState(cursor);
+                if (!state.getCollisionShape(this.level(), cursor).isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean hasEngineEnergy(EngineInfo engine, boolean active) {
@@ -2261,9 +2481,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (Math.abs(this.wheelSteering) > 1.0E-4D) {
             float previousYaw = this.getYRot();
             double yawDelta = Math.max(12.0D * horizontalSpeed, 0.0D) * this.wheelSteering * (this.enginePower > 0.0D ? 1.0D : -1.0D);
-            this.yRotO = previousYaw;
-            this.setYRot(previousYaw + (float) yawDelta);
-            this.updateVehicleBoundingBox();
+            if (this.setVehicleYawIfUnblocked(previousYaw + (float) yawDelta)) {
+                this.yRotO = previousYaw;
+            } else {
+                this.enginePower *= 0.75D;
+                this.wheelSteering *= 0.35D;
+            }
         }
 
         double targetSpeed = (this.enginePower > 0.0D ? engine.maxForwardSpeed() : engine.maxReverseSpeed()) * mobility;
