@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -17,6 +18,13 @@ import ttv.migami.jeg.Reference;
 public final class VehicleAssemblyRecipeManager {
     private static final Gson GSON = new Gson();
     private static final ResourceLocation TEST_WHEEL_RECIPE = Reference.id("test_wheel_vehicle");
+    private static final Set<ResourceLocation> ENABLED_ASSEMBLY_VEHICLES = Set.of(
+            Reference.id("lav150"),
+            Reference.id("bmp2"),
+            Reference.id("speedboat"),
+            Reference.id("ah6"),
+            Reference.id("mi28")
+    );
     private static volatile Map<ResourceLocation, VehicleAssemblyRecipe> recipes = defaultsOnly();
 
     private VehicleAssemblyRecipeManager() {}
@@ -30,13 +38,19 @@ public final class VehicleAssemblyRecipeManager {
     }
 
     public static VehicleAssemblyRecipe get(ResourceLocation id) {
-        return recipes.get(id);
+        VehicleAssemblyRecipe recipe = recipes.get(id);
+        return recipe != null && isEnabledAssemblyVehicle(recipe) ? recipe : null;
     }
 
     public static List<VehicleAssemblyRecipe> recipes() {
         return recipes.values().stream()
+                .filter(VehicleAssemblyRecipeManager::isEnabledAssemblyVehicle)
                 .sorted(Comparator.comparing(recipe -> recipe.id().toString()))
                 .toList();
+    }
+
+    private static boolean isEnabledAssemblyVehicle(VehicleAssemblyRecipe recipe) {
+        return ENABLED_ASSEMBLY_VEHICLES.contains(recipe.resultVehicle());
     }
 
     private static Map<ResourceLocation, VehicleAssemblyRecipe> defaultsOnly() {
