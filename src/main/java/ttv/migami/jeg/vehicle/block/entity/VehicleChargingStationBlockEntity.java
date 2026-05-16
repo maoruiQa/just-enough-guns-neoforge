@@ -20,7 +20,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
 
 public final class VehicleChargingStationBlockEntity extends BlockEntity implements MenuProvider {
     private static final int CHARGE_INTERVAL = 20;
-    private static final int CHARGE_PER_INTERVAL = 8;
+    private static final int CHARGE_PER_INTERVAL = 960;
     private int chargeTick;
     private int lastVehicleEnergy;
     private int lastVehicleMaxEnergy;
