@@ -28,7 +28,6 @@ public final class VehicleAssemblingTableBlockEntityRenderer extends GeoBlockRen
     public boolean shouldRender(VehicleAssemblingTableBlockEntity blockEntity, @NotNull Vec3 cameraPos) {
         BlockPart part = blockEntity.getBlockState().getValue(VehicleAssemblingTableBlock.BLOCK_PART);
         if (part == BlockPart.FLB) {
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.info("[DEBUG-vat-block] shouldRender anchor at {}", blockEntity.getBlockPos());
             return true;
         }
         return false;

@@ -49,10 +49,7 @@ public final class FallbackClientRenderers {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), context -> {
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.info("[DEBUG-vat-block] register block entity renderer");
-            return new VehicleAssemblingTableBlockEntityRenderer();
-        });
+        event.registerBlockEntityRenderer(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), context -> new VehicleAssemblingTableBlockEntityRenderer());
         event.registerEntityRenderer(ModEntities.GHOUL.get(), FallbackGhoulRenderer::new);
         event.registerEntityRenderer(ModEntities.BULLET.get(), BulletRenderer::new);
         event.registerEntityRenderer(ModEntities.GRENADE.get(), context -> new ThrownItemRenderer<GrenadeEntity>(context, 1.0F, true));

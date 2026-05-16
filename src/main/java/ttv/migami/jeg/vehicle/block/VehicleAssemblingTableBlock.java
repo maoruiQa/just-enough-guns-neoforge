@@ -72,11 +72,9 @@ public final class VehicleAssemblingTableBlock extends BaseEntityBlock {
         }
 
         if (initialPos == null) {
-            ttv.migami.jeg.JustEnoughGuns.LOGGER.warn("[DEBUG-vat-block] no initialPos for placement at {} facing {}", pos, facing);
             return;
         }
 
-        ttv.migami.jeg.JustEnoughGuns.LOGGER.info("[DEBUG-vat-block] placing multipart table origin={} clicked={} facing={}", initialPos, pos, facing);
         for (BlockPart part : BlockPart.values()) {
             BlockPos blockPos = part.relative(initialPos, facing);
             level.setBlock(blockPos, state.setValue(BLOCK_PART, part), 3);
