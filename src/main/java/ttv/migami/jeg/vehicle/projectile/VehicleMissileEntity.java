@@ -2,12 +2,9 @@ package ttv.migami.jeg.vehicle.projectile;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +20,6 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
-import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
@@ -101,20 +97,11 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     private void warnTrackedTarget(Entity target) {
-        if (!(target instanceof ServerPlayer player) || this.tickCount % 20 != 0) {
+        int interval = Math.max(2, (int) (0.04D * this.distanceTo(target)));
+        if (this.tickCount % interval != 0) {
             return;
         }
-        player.displayClientMessage(Component.translatable("message.jeg.vehicle.lock_warning"), true);
-        player.level().playSound(
-                null,
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                VehicleSoundHelper.lockWarning(),
-                SoundSource.PLAYERS,
-                0.8F,
-                1.7F
-        );
+        VehicleEntity.warnIncomingMissileTarget(target);
     }
 
     private boolean hitAlongPath(Vec3 start, Vec3 end) {

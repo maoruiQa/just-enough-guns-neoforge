@@ -5,13 +5,16 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import java.util.stream.StreamSupport;
+import java.util.UUID;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.ChatFormatting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -38,10 +41,15 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
     private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
+    private static final String VEHICLE_RETURN_TAG = "jeg_vehicle_return";
+    private static final String VEHICLE_RETURN_DIMENSION_TAG = "Dimension";
+    private static final String VEHICLE_RETURN_UUID_TAG = "Vehicle";
+    private static final String VEHICLE_RETURN_SEAT_TAG = "Seat";
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -68,6 +76,14 @@ public final class GunEvents {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
             NetworkHandler.sendUiConfig(serverPlayer);
+            restoreVehicleSeat(serverPlayer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            saveVehicleSeat(serverPlayer);
         }
     }
 
@@ -123,6 +139,56 @@ public final class GunEvents {
             player.awardRecipesByKey(java.util.List.of(Reference.id("finger_gun")));
             player.getPersistentData().putBoolean(FINGER_GUN_RECIPE_GRANTED_TAG, true);
         }
+    }
+
+    private static void saveVehicleSeat(ServerPlayer player) {
+        if (!(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            player.getPersistentData().remove(VEHICLE_RETURN_TAG);
+            return;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0) {
+            player.getPersistentData().remove(VEHICLE_RETURN_TAG);
+            return;
+        }
+        CompoundTag tag = new CompoundTag();
+        tag.putString(VEHICLE_RETURN_DIMENSION_TAG, player.level().dimension().location().toString());
+        tag.putUUID(VEHICLE_RETURN_UUID_TAG, vehicle.getUUID());
+        tag.putInt(VEHICLE_RETURN_SEAT_TAG, seatIndex);
+        player.getPersistentData().put(VEHICLE_RETURN_TAG, tag);
+        vehicle.preserveSeatAssignment(player);
+    }
+
+    public static void clearVehicleSeatReturn(ServerPlayer player) {
+        player.getPersistentData().remove(VEHICLE_RETURN_TAG);
+    }
+
+    private static void restoreVehicleSeat(ServerPlayer player) {
+        CompoundTag tag = player.getPersistentData().getCompound(VEHICLE_RETURN_TAG);
+        player.getPersistentData().remove(VEHICLE_RETURN_TAG);
+        if (tag.isEmpty() || !tag.hasUUID(VEHICLE_RETURN_UUID_TAG)) {
+            return;
+        }
+        ResourceLocation dimensionId = ResourceLocation.tryParse(tag.getString(VEHICLE_RETURN_DIMENSION_TAG));
+        if (dimensionId == null || !player.level().dimension().location().equals(dimensionId)) {
+            return;
+        }
+        Entity entity = findEntityByUUID((ServerLevel) player.level(), tag.getUUID(VEHICLE_RETURN_UUID_TAG));
+        if (!(entity instanceof VehicleEntity vehicle) || vehicle.isRemoved() || player.isPassenger()) {
+            return;
+        }
+        int seatIndex = tag.getInt(VEHICLE_RETURN_SEAT_TAG);
+        vehicle.rememberSeatAssignment(player, seatIndex);
+        player.startRiding(vehicle, true);
+    }
+
+    private static Entity findEntityByUUID(ServerLevel level, UUID uuid) {
+        for (Entity entity : level.getAllEntities()) {
+            if (entity.getUUID().equals(uuid)) {
+                return entity;
+            }
+        }
+        return null;
     }
 
     private static void sendAvailableCommands(ServerPlayer player) {

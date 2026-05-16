@@ -12,7 +12,9 @@ import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class VehicleSoundHelper {
-    private static final ResourceLocation LOCK_WARNING = Reference.id("vehicle.lock_warning");
+    private static final ResourceLocation LOCKING_WARNING = Reference.id("vehicle.locking_warning");
+    private static final ResourceLocation LOCKED_WARNING = Reference.id("vehicle.locked_warning");
+    private static final ResourceLocation MISSILE_WARNING = Reference.id("vehicle.missile_warning");
     private static final Map<String, ResourceLocation> FIRE_SOUNDS = Map.ofEntries(
             Map.entry("a10", Reference.id("vehicle.a10.fire")),
             Map.entry("ah6", Reference.id("vehicle.ah6.cannon_fire")),
@@ -40,8 +42,22 @@ public final class VehicleSoundHelper {
     private VehicleSoundHelper() {}
 
     public static SoundEvent lockWarning() {
-        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(LOCK_WARNING);
+        return lockedWarning();
+    }
+
+    public static SoundEvent lockingWarning() {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(LOCKING_WARNING);
         return sound != null ? sound.get() : SoundEvents.NOTE_BLOCK_PLING.value();
+    }
+
+    public static SoundEvent lockedWarning() {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(LOCKED_WARNING);
+        return sound != null ? sound.get() : SoundEvents.NOTE_BLOCK_PLING.value();
+    }
+
+    public static SoundEvent missileWarning() {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(MISSILE_WARNING);
+        return sound != null ? sound.get() : lockedWarning();
     }
 
     public static SoundEvent fireSound(VehicleEntity vehicle, VehicleWeaponInfo weapon, GunStats fallbackStats) {

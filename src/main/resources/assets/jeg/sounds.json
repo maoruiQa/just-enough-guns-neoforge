@@ -1307,11 +1307,39 @@
     ]
   },
 
+  "vehicle.locking_warning": {
+    "subtitle": "subtitle.jeg.vehicle.locking_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/locking",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.locked_warning": {
+    "subtitle": "subtitle.jeg.vehicle.locked_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/locked",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.missile_warning": {
+    "subtitle": "subtitle.jeg.vehicle.missile_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/missile",
+        "stream": false
+      }
+    ]
+  },
   "vehicle.lock_warning": {
     "subtitle": "subtitle.jeg.vehicle.lock_warning",
     "sounds": [
       {
-        "name": "minecraft:note/pling"
+        "name": "jeg:warning/locked",
+        "stream": false
       }
     ]
   },

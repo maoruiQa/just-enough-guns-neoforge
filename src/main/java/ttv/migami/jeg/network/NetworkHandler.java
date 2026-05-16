@@ -18,6 +18,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
+import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
@@ -96,6 +97,8 @@ public final class NetworkHandler {
                 return;
             }
             if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+                GunEvents.clearVehicleSeatReturn(player);
+                vehicle.forgetSeatAssignment(player);
                 player.stopRiding();
             }
         });

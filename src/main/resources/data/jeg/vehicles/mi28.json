@@ -27,7 +27,7 @@
     {"weapon": "jeg:vehicle_80mm_rocket", "ammo": "jeg:small_rocket", "energy_cost": 2, "guided": false, "seat": 0, "muzzle": {"x": -1.787, "y": 1.548, "z": -0.151}},
     {"weapon": "jeg:vehicle_9m120_driver_missile", "ammo": "jeg:medium_anti_ground_missile", "energy_cost": 2, "guided": true, "seat": 0, "muzzle": {"x": -2.258, "y": 1.932, "z": 0.0}},
     {"weapon": "jeg:vehicle_9m336_missile", "ammo": "jeg:medium_anti_air_missile", "energy_cost": 2, "guided": true, "seat": 0, "muzzle": {"x": -2.806, "y": 1.932, "z": 0.0}},
-    {"weapon": "jeg:vehicle_30mm_cannon", "ammo": "jeg:autocannon_shell", "energy_cost": 8, "guided": false, "seat": 1, "muzzle": {"x": 0.0, "y": 0.102, "z": 3.013}},
+    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 1, "muzzle": {"x": 0.0, "y": 0.102, "z": 3.013}},
     {"weapon": "jeg:vehicle_9m120_passenger_missile", "ammo": "jeg:medium_anti_ground_missile", "energy_cost": 2, "guided": true, "seat": 1, "muzzle": {"x": 2.258, "y": 1.932, "z": 0.0}},
     {"weapon": "jeg:vehicle_kh39_missile", "ammo": "jeg:large_anti_ground_missile", "energy_cost": 2, "guided": true, "seat": 1, "muzzle": {"x": -2.641, "y": 1.1875, "z": 0.0}}
   ],

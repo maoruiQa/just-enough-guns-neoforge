@@ -11,10 +11,10 @@
   "container_type": "medium",
   "seats": [
     {"index": 0, "x": 0.36, "y": -0.65, "z": 0.56, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -15.0, "max_pitch": 32.5, "sensitivity_x": 0.55, "sensitivity_y": 0.73, "sensitivity_z": 1.0},
-    {"index": 1, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true},
-    {"index": 2, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true},
-    {"index": 3, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true},
-    {"index": 4, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true}
+    {"index": 1, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
+    {"index": 2, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
+    {"index": 3, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
+    {"index": 4, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}}
   ],
   "engine": {"type": "wheel", "acceleration": 0.03, "max_forward_speed": 1.0, "max_reverse_speed": 0.5, "friction": 0.8, "steering_speed": 0.07, "energy_cost_rate": 64},
   "third_person_camera": {"x": 0.0, "y": 1.0, "z": -3.0},

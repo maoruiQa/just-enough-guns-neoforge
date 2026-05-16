@@ -196,7 +196,10 @@ public final class VehicleDataManager {
                 getBoolean(object, "use_aircraft_camera", fallback.useAircraftCamera()),
                 getDouble(object, "aircraft_x", fallback.aircraftX()),
                 getDouble(object, "aircraft_y", fallback.aircraftY()),
-                getDouble(object, "aircraft_z", fallback.aircraftZ())
+                getDouble(object, "aircraft_z", fallback.aircraftZ()),
+                getBoolean(object, "use_simulated_third_person", fallback.useSimulatedThirdPerson()),
+                getDouble(object, "simulated_third_person_distance", fallback.simulatedThirdPersonDistance()),
+                getDouble(object, "simulated_third_person_height", fallback.simulatedThirdPersonHeight())
         );
     }
 

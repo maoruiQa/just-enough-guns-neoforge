@@ -15,5 +15,11 @@
   "death.attack.vehicle_strike.entity": "%1$s被%2$s的载具撞死了",
   "death.attack.vehicle_strike.item": "%1$s被%2$s用%3$s撞死了",
   "hud.jeg.vehicle.decoy_flare": "按%s 诱饵弹: %s",
-  "hud.jeg.vehicle.decoy_smoke": "按%s 烟幕: %s"
+  "hud.jeg.vehicle.decoy_smoke": "按%s 烟幕: %s",
+  "message.jeg.vehicle.lock_warning": "导弹锁定告警",
+  "message.jeg.vehicle.missile_warning": "导弹来袭",
+  "subtitle.jeg.vehicle.lock_warning": "导弹锁定告警",
+  "subtitle.jeg.vehicle.locking_warning": "导弹搜索告警",
+  "subtitle.jeg.vehicle.locked_warning": "导弹锁定告警",
+  "subtitle.jeg.vehicle.missile_warning": "导弹来袭告警"
 }
