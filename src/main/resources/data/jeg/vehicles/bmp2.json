@@ -18,7 +18,7 @@
     {"index": 5, "x": 0.6875, "y": 0.5, "z": -4.1, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": 0.6875, "y": 1.6015625, "z": -4.1, "use_fixed_camera_pos": true}},
     {"index": 6, "x": -1.50625, "y": 0.5, "z": -3.0625, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": -1.50625, "y": 1.9765625, "z": -3.0625, "use_fixed_camera_pos": true}}
   ],
-  "engine": {"type": "track", "acceleration": 0.0384, "max_forward_speed": 0.68, "max_reverse_speed": 0.12, "friction": 0.82, "steering_speed": 0.1, "energy_cost_rate": 96},
+  "engine": {"type": "track", "acceleration": 0.0384, "max_forward_speed": 0.68, "max_reverse_speed": 0.4526, "friction": 0.82, "steering_speed": 0.1, "energy_cost_rate": 96},
   "third_person_camera": {"x": 0.0, "y": 3.0, "z": -6.8},
   "dismount": {"x": 1.55, "y": 0.1, "z": 0.0},
   "collision_level": "heavy",
