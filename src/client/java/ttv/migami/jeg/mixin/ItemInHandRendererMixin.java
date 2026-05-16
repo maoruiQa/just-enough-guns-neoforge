@@ -23,6 +23,7 @@ import ttv.migami.jeg.client.GunHandTransform;
 import ttv.migami.jeg.client.GunItemClientExtensions;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.client.VehicleCameraHandler;
 
 @Mixin(ItemInHandRenderer.class)
 public final class ItemInHandRendererMixin {
@@ -88,6 +89,25 @@ public final class ItemInHandRendererMixin {
         this.jeg$capturedEquipProcess = equipProgress;
         this.jeg$capturedSwingProcess = swingProgress;
         this.jeg$customTransformApplied = false;
+    }
+
+    @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideVehicleHand(
+            AbstractClientPlayer player,
+            float partialTick,
+            float pitch,
+            InteractionHand hand,
+            float swingProgress,
+            ItemStack stack,
+            float equipProgress,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            CallbackInfo ci
+    ) {
+        if (!VehicleCameraHandler.shouldRenderHand()) {
+            ci.cancel();
+        }
     }
 
     @Inject(method = "renderArmWithItem", at = @At("RETURN"))

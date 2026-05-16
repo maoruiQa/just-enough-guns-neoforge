@@ -4,16 +4,19 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.ChatFormatting;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -24,16 +27,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.SpawnGroupData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.event.MainThreadLevelActionScheduler;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
@@ -42,10 +42,13 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
     private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
+    private static final Map<UUID, VehicleReturnState> VEHICLE_RETURN = new HashMap<>();
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -71,6 +74,8 @@ public final class GunEvents {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
+            NetworkHandler.sendUiConfig(serverPlayer);
+            restoreVehicleSeat(serverPlayer);
         }
     }
 
@@ -112,8 +117,10 @@ public final class GunEvents {
     }
 
     private static void grantStartingManual(ServerPlayer player) {
+        player.awardRecipesByKey(ModItems.unlockGunRecipeKeys().stream().map(ResourceKey::location).toList());
+
         if (!player.getTags().contains(MANUAL_GRANTED_TAG)) {
-            player.awardRecipesByKey(ModItems.unlockGunRecipeKeys().stream().map(ResourceKey::location).toList());
+            player.awardRecipesByKey(ModItems.manualRecipes().stream().map(ResourceKey::location).toList());
             player.addTag(MANUAL_GRANTED_TAG);
         }
 
@@ -122,6 +129,149 @@ public final class GunEvents {
             player.addTag(FINGER_GUN_RECIPE_GRANTED_TAG);
         }
     }
+
+    public static void saveVehicleSeat(ServerPlayer player) {
+        if (!(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            VEHICLE_RETURN.remove(player.getUUID());
+            return;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0) {
+            VEHICLE_RETURN.remove(player.getUUID());
+            return;
+        }
+        VEHICLE_RETURN.put(player.getUUID(), new VehicleReturnState(player.level().dimension().location().toString(), vehicle.getUUID(), seatIndex));
+        vehicle.preserveSeatAssignment(player);
+    }
+
+    public static void clearVehicleSeatReturn(ServerPlayer player) {
+        VEHICLE_RETURN.remove(player.getUUID());
+    }
+
+    private static void restoreVehicleSeat(ServerPlayer player) {
+        VehicleReturnState state = VEHICLE_RETURN.remove(player.getUUID());
+        if (state == null) {
+            return;
+        }
+        ResourceLocation dimensionId = ResourceLocation.tryParse(state.dimension());
+        if (dimensionId == null || !player.level().dimension().location().equals(dimensionId)) {
+            return;
+        }
+        Entity entity = findEntityByUUID((ServerLevel) player.level(), state.vehicleUuid());
+        if (!(entity instanceof VehicleEntity vehicle) || vehicle.isRemoved() || player.isPassenger()) {
+            return;
+        }
+        vehicle.rememberSeatAssignment(player, state.seatIndex());
+        player.startRiding(vehicle, true);
+    }
+
+    public static void handlePillagerFinalize(Pillager pillager, ServerLevel serverLevel) {
+        if (!pillager.isAlive() || pillager.level() != serverLevel || isHoldingGun(pillager)) {
+            return;
+        }
+        double conversionChance = Config.pillagerGunnerChance();
+        if (conversionChance <= 0.0D || pillager.getRandom().nextDouble() >= conversionChance) {
+            return;
+        }
+        pillager.addTag("jeg_pillager_gunner");
+        ResourceLocation selected = selectRandomGun(serverLevel, pillager.getRandom());
+        if (selected != null) {
+            equipPillagerWithGun(pillager, selected);
+        }
+    }
+
+    public static void handlePhantomFinalize(Phantom phantom, ServerLevel serverLevel, net.minecraft.world.DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnType, net.minecraft.world.entity.SpawnGroupData spawnData) {
+        if (!phantom.isAlive() || phantom.level() != serverLevel || spawnType != net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            return;
+        }
+        if (phantom instanceof TerrorPhantom || phantom instanceof PhantomGunner) {
+            return;
+        }
+        double terrorChance = Config.terrorPhantomChance();
+        if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
+            TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
+            terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
+            terror.setYRot(phantom.getYRot());
+            terror.setXRot(phantom.getXRot());
+            terror.setDeltaMovement(phantom.getDeltaMovement());
+            terror.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
+            if (serverLevel.addFreshEntity(terror)) {
+                phantom.discard();
+                return;
+            }
+        }
+        double gunnerChance = Config.phantomGunnerChance();
+        if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
+            return;
+        }
+        PhantomGunner gunner = new PhantomGunner(ModEntities.PHANTOM_GUNNER.get(), serverLevel);
+        gunner.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
+        gunner.setYRot(phantom.getYRot());
+        gunner.setXRot(phantom.getXRot());
+        gunner.yRotO = phantom.yRotO;
+        gunner.xRotO = phantom.xRotO;
+        gunner.setDeltaMovement(phantom.getDeltaMovement());
+        gunner.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
+        if (serverLevel.addFreshEntity(gunner)) {
+            phantom.discard();
+        }
+    }
+
+    public static void spawnGunnerDrops(net.minecraft.world.entity.LivingEntity entity) {
+        java.util.List<ItemEntity> drops = new java.util.ArrayList<>();
+        handleGunnerDrops(entity, drops);
+        for (ItemEntity drop : drops) {
+            entity.level().addFreshEntity(drop);
+        }
+    }
+
+    public static void handleGunnerDrops(net.minecraft.world.entity.LivingEntity entity, java.util.List<ItemEntity> drops) {
+        if (!isGunner(entity)) {
+            return;
+        }
+
+        ItemStack held = entity.getMainHandItem();
+        if (!(held.getItem() instanceof GunItem gunItem)) {
+            if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
+                drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+            }
+            return;
+        }
+
+        if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
+            drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+        } else if (entity instanceof net.minecraft.world.entity.monster.Zombie || entity instanceof net.minecraft.world.entity.monster.Husk) {
+            drops.removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
+        }
+
+        RandomSource random = entity.getRandom();
+        GunStats stats = gunItem.getStats();
+
+        if (random.nextFloat() < 0.06F) {
+            ItemStack dropGun = held.copy();
+            GunnerProgression.damageWeaponToLowDurability(dropGun, random);
+            addDrop(drops, entity, dropGun);
+            return;
+        }
+
+        if (random.nextFloat() < 0.60F) {
+            ItemStack ammo = buildAmmoDrop(stats, random);
+            if (!ammo.isEmpty()) {
+                addDrop(drops, entity, ammo);
+            }
+        }
+    }
+
+    private static Entity findEntityByUUID(ServerLevel level, UUID uuid) {
+        for (Entity entity : level.getAllEntities()) {
+            if (entity.getUUID().equals(uuid)) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    private record VehicleReturnState(String dimension, UUID vehicleUuid, int seatIndex) {}
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
@@ -150,31 +300,6 @@ public final class GunEvents {
         player.sendSystemMessage(divider);
     }
 
-    @SubscribeEvent
-    public static void onSwapHands(LivingSwapItemsEvent.Hands event) {
-        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide()) {
-            return;
-        }
-
-        boolean reloaded = tryReload(player.level(), player, player.getMainHandItem(), InteractionHand.MAIN_HAND);
-        reloaded |= tryReload(player.level(), player, player.getOffhandItem(), InteractionHand.OFF_HAND);
-
-        if (reloaded) {
-            event.setCanceled(true);
-        }
-    }
-
-    private static boolean tryReload(Level level, Player player, ItemStack stack, InteractionHand hand) {
-        if (!(stack.getItem() instanceof GunItem gun)) {
-            return false;
-        }
-
-        boolean reloaded = gun.tryReload(level, player, stack, true);
-        if (reloaded && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.swing(hand, true);
-        }
-        return reloaded;
-    }
 
     @SubscribeEvent
     public static void onPillagerFinalize(FinalizeSpawnEvent event) {
@@ -187,7 +312,17 @@ public final class GunEvents {
             return;
         }
 
-        MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> handlePillagerFinalize(pillager, serverLevel));
+        double conversionChance = Config.pillagerGunnerChance();
+        if (conversionChance <= 0.0D || pillager.getRandom().nextDouble() >= conversionChance) {
+            return;
+        }
+
+        // Since GunnerEntity was removed, we just tag the pillager instead
+        pillager.addTag("jeg_pillager_gunner");
+        ResourceLocation selected = selectRandomGun(serverLevel, pillager.getRandom());
+        if (selected != null) {
+            equipPillagerWithGun(pillager, selected);
+        }
     }
 
     static void equipPillagerWithGun(Pillager pillager, ResourceLocation gunId) {
@@ -214,66 +349,27 @@ public final class GunEvents {
             return;
         }
 
-        MainThreadLevelActionScheduler.scheduleNextTick(serverLevel, () -> handlePhantomFinalize(phantom, serverLevel, event.getDifficulty(), (net.minecraft.world.entity.MobSpawnType) event.getSpawnType(), event.getSpawnData()));
-    }
-
-    public static void handlePillagerFinalize(Pillager pillager, ServerLevel serverLevel) {
-        if (!pillager.isAlive() || pillager.level() != serverLevel || isHoldingGun(pillager)) {
-            return;
-        }
-
-        double conversionChance = Config.pillagerGunnerChance();
-        if (conversionChance <= 0.0D || pillager.getRandom().nextDouble() >= conversionChance) {
-            return;
-        }
-
-        pillager.addTag("jeg_pillager_gunner");
-        ResourceLocation selected = selectRandomGun(serverLevel, pillager.getRandom());
-        if (selected != null) {
-            equipPillagerWithGun(pillager, selected);
-        }
-    }
-
-    public static void handlePhantomFinalize(Phantom phantom, ServerLevel serverLevel, DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnType, SpawnGroupData spawnData) {
-        if (!phantom.isAlive() || phantom.level() != serverLevel) {
-            return;
-        }
-        if (spawnType != net.minecraft.world.entity.MobSpawnType.NATURAL) {
-            return;
-        }
-        if (phantom instanceof TerrorPhantom || phantom instanceof PhantomGunner) {
-            return;
-        }
-        if (!serverLevel.getEntitiesOfClass(TerrorPhantom.class, phantom.getBoundingBox().inflate(1.0D), existing -> existing.isAlive()).isEmpty()) {
-            phantom.discard();
-            return;
-        }
-        if (!serverLevel.getEntitiesOfClass(PhantomGunner.class, phantom.getBoundingBox().inflate(1.0D), existing -> existing.isAlive()).isEmpty()) {
-            phantom.discard();
-            return;
-        }
-        if (phantom.isRemoved()) {
-            return;
-        }
-
-        double terrorChance = Config.terrorPhantomChance();
-        if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
-            TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
-            if (terror != null) {
-                terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
-                terror.setYRot(phantom.getYRot());
-                terror.setXRot(phantom.getXRot());
-                terror.setDeltaMovement(phantom.getDeltaMovement());
-                terror.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
-                if (serverLevel.addFreshEntity(terror)) {
+        if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            double terrorChance = Config.terrorPhantomChance();
+            if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
+                TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
+                if (terror != null) {
+                    terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
+                    terror.setYRot(phantom.getYRot());
+                    terror.setXRot(phantom.getXRot());
+                    terror.setDeltaMovement(phantom.getDeltaMovement());
+                    terror.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
+                    serverLevel.addFreshEntity(terror);
                     phantom.discard();
                     return;
                 }
             }
-        }
 
-        double gunnerChance = Config.phantomGunnerChance();
-        if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
+            double gunnerChance = Config.phantomGunnerChance();
+            if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
+                return;
+            }
+        } else {
             return;
         }
 
@@ -288,26 +384,15 @@ public final class GunEvents {
         gunner.yRotO = phantom.yRotO;
         gunner.xRotO = phantom.xRotO;
         gunner.setDeltaMovement(phantom.getDeltaMovement());
-        gunner.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
-        if (serverLevel.addFreshEntity(gunner)) {
-            phantom.discard();
-        }
+        gunner.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
+        serverLevel.addFreshEntity(gunner);
+        phantom.discard();
     }
 
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {
-        handleGunnerDrops(event.getEntity(), event.getDrops());
-    }
+        net.minecraft.world.entity.LivingEntity entity = event.getEntity();
 
-    public static void spawnGunnerDrops(net.minecraft.world.entity.LivingEntity entity) {
-        List<ItemEntity> drops = new java.util.ArrayList<>();
-        handleGunnerDrops(entity, drops);
-        for (ItemEntity drop : drops) {
-            entity.level().addFreshEntity(drop);
-        }
-    }
-
-    public static void handleGunnerDrops(net.minecraft.world.entity.LivingEntity entity, List<ItemEntity> drops) {
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
@@ -317,16 +402,16 @@ public final class GunEvents {
         if (!(held.getItem() instanceof GunItem gunItem)) {
             // Remove vanilla ranged weapons from gunner drops
             if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
-                drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+                event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
             }
             return;
         }
 
         // Remove vanilla ranged weapons from all gunner types
         if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
-            drops.removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
+            event.getDrops().removeIf(drop -> drop.getItem().is(Items.BOW) || drop.getItem().is(Items.ARROW));
         } else if (entity instanceof net.minecraft.world.entity.monster.Zombie || entity instanceof net.minecraft.world.entity.monster.Husk) {
-            drops.removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
+            event.getDrops().removeIf(drop -> drop.getItem().is(Items.IRON_SHOVEL) || drop.getItem().is(Items.IRON_SWORD));
         }
 
         RandomSource random = entity.getRandom();
@@ -335,7 +420,7 @@ public final class GunEvents {
         if (random.nextFloat() < 0.06F) {
             ItemStack dropGun = held.copy();
             GunnerProgression.damageWeaponToLowDurability(dropGun, random);
-            addDrop(drops, entity, dropGun);
+            addDrop(event, entity, dropGun);
             return;
         }
 
@@ -343,7 +428,7 @@ public final class GunEvents {
         if (random.nextFloat() < 0.60F) {
             ItemStack ammo = buildAmmoDrop(stats, random);
             if (!ammo.isEmpty()) {
-                addDrop(drops, entity, ammo);
+                addDrop(event, entity, ammo);
             }
         }
     }
@@ -360,7 +445,16 @@ public final class GunEvents {
                entity instanceof TerrorPhantom;
     }
 
-    private static void addDrop(List<ItemEntity> drops, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
+    private static void addDrop(LivingDropsEvent event, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
+        item.setDefaultPickUpDelay();
+        event.getDrops().add(item);
+    }
+
+    private static void addDrop(java.util.List<ItemEntity> drops, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
@@ -386,7 +480,7 @@ public final class GunEvents {
     }
 
     private static ResourceLocation selectRandomGun(Level level, RandomSource random) {
-        List<Item> guns = new java.util.ArrayList<>();
+        java.util.List<Item> guns = new java.util.ArrayList<>();
         for (ResourceLocation gunId : DEFAULT_PILLAGER_GUNS) {
             var holder = ModItems.GUNS.get(gunId);
             if (holder != null) {

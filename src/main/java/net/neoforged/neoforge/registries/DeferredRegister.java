@@ -8,7 +8,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.neoforged.bus.api.IEventBus;
@@ -51,6 +54,15 @@ public class DeferredRegister<T> {
     private Registry<T> resolveRegistry() {
         if (registryKey == Registries.ITEM) {
             return (Registry<T>) BuiltInRegistries.ITEM;
+        }
+        if (registryKey == Registries.BLOCK) {
+            return (Registry<T>) BuiltInRegistries.BLOCK;
+        }
+        if (registryKey == Registries.BLOCK_ENTITY_TYPE) {
+            return (Registry<T>) BuiltInRegistries.BLOCK_ENTITY_TYPE;
+        }
+        if (registryKey == Registries.MENU) {
+            return (Registry<T>) BuiltInRegistries.MENU;
         }
         if (registryKey == Registries.ENTITY_TYPE) {
             return (Registry<T>) BuiltInRegistries.ENTITY_TYPE;

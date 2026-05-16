@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -39,9 +38,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import org.joml.Vector3f;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -77,6 +74,12 @@ public class BulletEntity extends Projectile {
     private static final ResourceLocation HYPERSONIC_ID = Reference.id("hypersonic_cannon");
     private static final ResourceLocation SUPERSONIC_SHOTGUN_ID = Reference.id("supersonic_shotgun");
     private static final ResourceLocation TYPHOONEE_ID = Reference.id("typhoonee");
+    private static final ResourceLocation COMPOUND_BOW_ID = Reference.id("compound_bow");
+    private static final ResourceLocation PRIMITIVE_BOW_ID = Reference.id("primitive_bow");
+    private static final ResourceLocation VEHICLE_20MM_CANNON_ID = Reference.id("vehicle_20mm_cannon");
+    private static final ResourceLocation VEHICLE_30MM_CANNON_ID = Reference.id("vehicle_30mm_cannon");
+    private static final ResourceLocation VEHICLE_70MM_ROCKET_ID = Reference.id("vehicle_70mm_rocket");
+    private static final ResourceLocation VEHICLE_80MM_ROCKET_ID = Reference.id("vehicle_80mm_rocket");
     private static final Predicate<BlockState> IGNORE_LEAVES = state -> state != null
             && (state.getBlock() instanceof LeavesBlock || isGrassLikeFoliage(state));
     private static boolean isGrassLikeFoliage(BlockState state) {
@@ -94,19 +97,13 @@ public class BulletEntity extends Projectile {
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
     private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
     private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
-    private static final int FLARE_DETONATE_TICKS = 40; // 2 seconds (20 ticks per second)
-    private static final byte FLARE_DETONATION_EVENT = (byte) 98;
+    private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.35F;
+    private static final float VEHICLE_30MM_EXPLOSION_POWER = 0.75F;
+    private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 14.0F;
+    private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 4.0F;
+    private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.5D;
+    private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
-    private static final double SKY_RANGE_THRESHOLD = 6.0D;
-    private static final double SKY_RANGE_MULTIPLIER = 8.0D;
-    private static final int[] FLARE_BLAST_COLORS = new int[] {
-        0xFF1A1A, // vivid red
-        0x2AFF4C, // neon green
-        0x3D7CFF, // electric blue
-        0xFFE066, // golden yellow
-        0xFF66E5, // magenta accent
-        0x66FFF5  // cyan accent
-    };
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -304,12 +301,12 @@ public class BulletEntity extends Projectile {
             this.setPos(nextPos.x, nextPos.y, nextPos.z);
 
             // Spawn fire particles for weapons configured for flame trails.
-            if (GunItem.hasFlameTrail(gunStats.id())) {
+            if (gunStats.flameTrail()) {
                 spawnFlameParticles();
             }
 
             // Spawn rocket trail particles on client side (3x density)
-            else if (gunId.equals(ROCKET_LAUNCHER_ID)) {
+            else if (gunId.equals(ROCKET_LAUNCHER_ID) || isVehicleRocket(gunId)) {
                 spawnRocketTrailParticles();
             }
             else if (gunId.equals(TYPHOONEE_ID)) {
@@ -402,7 +399,6 @@ public class BulletEntity extends Projectile {
             if (entity instanceof LivingEntity living) {
                 damage = applyBallisticArmor(living, result, damage, stats, false);
 
-                ServerLevel serverLevel = (ServerLevel) this.level();
                 boolean hurt = living.hurt(source, damage);
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
                     NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
@@ -681,7 +677,7 @@ public class BulletEntity extends Projectile {
         ResourceLocation id = ResourceLocation.parse(this.entityData.get(DATA_GUN));
         GunStats stats = GunDefinitions.ALL.get(id);
         if (stats == null) {
-            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), true, 0F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
+            return new GunStats(id, null, "jeg:mag_fed", 1, 20, 0, 10, this.entityData.get(DATA_DAMAGE), 4F, this.entityData.get(DATA_LIFE), true, false, 0F, 1, null, null, null, null, null, null, null, null, this.entityData.get(DATA_SIZE), this.entityData.get(DATA_TRAIL_COLOR), this.entityData.get(DATA_TRAIL_LENGTH));
         }
         return stats;
     }
@@ -757,13 +753,16 @@ public class BulletEntity extends Projectile {
             return true;
         }
 
-        if (id.equals(ROCKET_LAUNCHER_ID) || id.equals(HYPERSONIC_ID) || id.equals(TYPHOONEE_ID)) {
+        if (id.equals(ROCKET_LAUNCHER_ID) || id.equals(HYPERSONIC_ID) || id.equals(TYPHOONEE_ID) || isVehicleRocket(id)) {
             if (!this.level().isClientSide()) {
                 float power = 6.0F;
                 float directDamage = 14.0F;
                 if (id.equals(ROCKET_LAUNCHER_ID)) {
                     power = ROCKET_EXPLOSION_POWER;
                     directDamage = ROCKET_DIRECT_HIT_DAMAGE;
+                } else if (isVehicleRocket(id)) {
+                    power = vehicleRocketExplosionPower(id);
+                    directDamage = stats.damage();
                 }
                 if (id.equals(HYPERSONIC_ID)) {
                     power = 7.5F;
@@ -778,6 +777,8 @@ public class BulletEntity extends Projectile {
                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), power, ExplosionInteraction.TNT);
                 if (id.equals(ROCKET_LAUNCHER_ID)) {
                     applyRocketBlastDamage(owner);
+                } else if (isVehicleRocket(id)) {
+                    applyVehicleRocketBlastDamage(result.getLocation(), owner, id);
                 }
 
                 if (result instanceof EntityHitResult entityHit) {
@@ -799,7 +800,95 @@ public class BulletEntity extends Projectile {
             return true;
         }
 
+        if (id.equals(VEHICLE_20MM_CANNON_ID) || id.equals(VEHICLE_30MM_CANNON_ID)) {
+            if (!this.level().isClientSide()) {
+                Entity owner = this.getOwner();
+                Vec3 pos = result.getLocation();
+                spawnVehicleCannonExplosionEffects((ServerLevel) this.level(), pos);
+                ExplosionInteraction interaction = Config.bulletBlockDestructionEnabled()
+                        ? ExplosionInteraction.TNT
+                        : ExplosionInteraction.NONE;
+                this.level().explode(this, pos.x, pos.y, pos.z, vehicleCannonExplosionPower(id), interaction);
+
+                if (result instanceof EntityHitResult entityHit) {
+                    Entity hitEntity = entityHit.getEntity();
+                    if (hitEntity.isAlive()) {
+                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        if (hitEntity instanceof LivingEntity living) {
+                            float directDamage = applyBallisticArmor(living, entityHit, stats.damage(), stats, false);
+                            boolean hurt = living.hurt(source, directDamage);
+                            if (hurt && owner instanceof ServerPlayer shooter) {
+                                NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                            }
+                        } else {
+                            hitEntity.hurt(source, stats.damage());
+                        }
+                    }
+                }
+
+                applyVehicleCannonBlastDamage(pos, owner, id);
+            }
+            return true;
+        }
+
         return false;
+    }
+
+    private static float vehicleCannonExplosionPower(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_POWER : VEHICLE_20MM_EXPLOSION_POWER;
+    }
+
+    private static boolean isVehicleRocket(ResourceLocation id) {
+        return id.equals(VEHICLE_70MM_ROCKET_ID) || id.equals(VEHICLE_80MM_ROCKET_ID);
+    }
+
+    public static boolean shouldSendTrailToClients(GunStats stats) {
+        return !stats.flameTrail() && !isVehicleRocket(stats.id()) && GunItem.isBulletClassWeapon(stats.id());
+    }
+
+    private static float vehicleRocketExplosionPower(ResourceLocation id) {
+        return id.equals(VEHICLE_80MM_ROCKET_ID) ? 3.0F : 2.5F;
+    }
+
+    private static float vehicleRocketBlastDamage(ResourceLocation id) {
+        return id.equals(VEHICLE_80MM_ROCKET_ID) ? 42.0F : 40.0F;
+    }
+
+    private static double vehicleRocketBlastRadius(ResourceLocation id) {
+        return id.equals(VEHICLE_80MM_ROCKET_ID) ? 6.0D : 5.0D;
+    }
+
+    private static float vehicleCannonBlastDamage(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_DAMAGE : VEHICLE_20MM_EXPLOSION_DAMAGE;
+    }
+
+    private static double vehicleCannonBlastRadius(ResourceLocation id) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) ? VEHICLE_30MM_EXPLOSION_RADIUS : VEHICLE_20MM_EXPLOSION_RADIUS;
+    }
+
+    private void applyVehicleCannonBlastDamage(Vec3 pos, @Nullable Entity owner, ResourceLocation id) {
+        double radius = vehicleCannonBlastRadius(id);
+        AABB area = new AABB(
+                pos.x - radius,
+                pos.y - radius,
+                pos.z - radius,
+                pos.x + radius,
+                pos.y + radius,
+                pos.z + radius
+        );
+        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+        for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
+            double distance = target.position().distanceTo(pos);
+            if (distance > radius) {
+                continue;
+            }
+
+            float scale = 1.0F - (float) (distance / radius);
+            float damage = vehicleCannonBlastDamage(id) * scale;
+            if (damage > 0.5F) {
+                target.hurt(source, damage);
+            }
+        }
     }
 
     private void applyRocketBlastDamage(@Nullable Entity owner) {
@@ -833,6 +922,31 @@ public class BulletEntity extends Projectile {
         }
     }
 
+    private void applyVehicleRocketBlastDamage(Vec3 pos, @Nullable Entity owner, ResourceLocation id) {
+        double radius = vehicleRocketBlastRadius(id);
+        AABB area = new AABB(
+                pos.x - radius,
+                pos.y - radius,
+                pos.z - radius,
+                pos.x + radius,
+                pos.y + radius,
+                pos.z + radius
+        );
+        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+        for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
+            double distance = target.position().distanceTo(pos);
+            if (distance > radius) {
+                continue;
+            }
+
+            float scale = 1.0F - (float) (distance / radius);
+            float damage = vehicleRocketBlastDamage(id) * scale;
+            if (damage > 0.5F) {
+                target.hurt(source, damage);
+            }
+        }
+    }
+
     private static int projectileLifeFor(GunStats stats) {
         int override = BallisticProtection.projectileLifeOverride(stats);
         return override > 0 ? override : Config.bulletLifetimeTicks();
@@ -846,6 +960,11 @@ public class BulletEntity extends Projectile {
         sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), pos.x, pos.y, pos.z, smallCount, 1.1D, 1.1D, 1.1D, 0.12D);
         sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), pos.x, pos.y, pos.z, 12, 1.2D, 1.2D, 1.2D, 0.02D);
         sendLongDistanceParticles(serverLevel, ModParticleTypes.FIRE.get(), pos.x, pos.y, pos.z, 10, 0.9D, 0.9D, 0.9D, 0.04D);
+    }
+
+    private void spawnVehicleCannonExplosionEffects(ServerLevel serverLevel, Vec3 pos) {
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), pos.x, pos.y, pos.z, 8, 0.7D, 0.7D, 0.7D, 0.08D);
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), pos.x, pos.y, pos.z, 6, 0.8D, 0.8D, 0.8D, 0.02D);
     }
 
     private static <T extends ParticleOptions> void sendLongDistanceParticles(
@@ -1162,279 +1281,6 @@ public class BulletEntity extends Projectile {
         return stateAtPos.isAir() || ttv.migami.jeg.gun.BulletPenetrationHelper.isPenetrable(level, stateAtPos);
     }
 
-    private void detonateFlare(ServerLevel serverLevel) {
-        Vec3 pos = this.position();
-        Entity owner = this.getOwner();
-
-        // Broadcast entity event to tracking clients
-        serverLevel.broadcastEntityEvent(this, FLARE_DETONATION_EVENT);
-
-        // Send server-side particles and sound to nearby players
-        try {
-            // Explosion emitter for instant visual effect
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                pos.x, pos.y, pos.z,
-                1, 0.0D, 0.0D, 0.0D, 0.0D);
-
-            // Firework particles for visual impact
-            serverLevel.sendParticles(ParticleTypes.FIREWORK,
-                pos.x, pos.y, pos.z,
-                80, 6.0D, 6.0D, 6.0D, 0.15D);
-
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
-                pos.x, pos.y, pos.z,
-                12, 3.0D, 3.0D, 3.0D, 0.0D);
-
-            // Flame and smoke effects
-            serverLevel.sendParticles(ParticleTypes.FLAME,
-                pos.x, pos.y, pos.z,
-                40, 1.6D, 1.6D, 1.6D, 0.04D);
-
-            serverLevel.sendParticles(ParticleTypes.SMOKE,
-                pos.x, pos.y, pos.z,
-                30, 2.0D, 2.0D, 2.0D, 0.02D);
-
-            // Colored dust particles
-            for (int color : FLARE_BLAST_COLORS) {
-                serverLevel.sendParticles(new DustParticleOptions(rgbToVector3f(color), 1.2F),
-                    pos.x, pos.y, pos.z,
-                    4, 2.0D, 2.0D, 2.0D, 0.06D);
-            }
-
-            // Sound effects
-            serverLevel.playSound(null, pos.x, pos.y, pos.z,
-                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
-                net.minecraft.sounds.SoundSource.PLAYERS,
-                4.0F, 0.9F + this.random.nextFloat() * 0.2F);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        // Apply damage to nearby entities
-        applyFlareDamage(serverLevel, pos, owner);
-    }
-
-    private void applyFlareDamage(ServerLevel serverLevel, Vec3 pos, @Nullable Entity owner) {
-        final float explosionDamage = 12.0F;
-        final float explosionRadius = 4.0F;
-
-        for (Entity entity : serverLevel.getEntities(null, new net.minecraft.world.phys.AABB(
-            pos.x - explosionRadius, pos.y - explosionRadius, pos.z - explosionRadius,
-            pos.x + explosionRadius, pos.y + explosionRadius, pos.z + explosionRadius))) {
-            if (entity instanceof LivingEntity living && entity != owner) {
-                double distance = entity.position().distanceTo(pos);
-                if (distance <= explosionRadius) {
-                    float damage = explosionDamage * (1.0F - (float)(distance / explosionRadius));
-                    DamageSource source;
-                    if (owner instanceof LivingEntity livingOwner) {
-                        source = this.damageSources().mobProjectile(this, livingOwner);
-                    } else {
-                         source = this.damageSources().thrown(this, owner);
-                     }
-                     living.hurt(source, damage);
-                     living.igniteForSeconds(2);
-                 }
-             }
-        }
-    }
-
-    private void spawnFlareExplosionEffectsClient() {
-        Level level = this.level();
-        if (!level.isClientSide()) {
-            return;
-        }
-
-        Vec3 pos = this.position();
-
-        // Multi-stage burst with different colors for visual clarity
-        for (int i = 0; i < 1400; i++) {
-            double speed = 0.65 + this.random.nextDouble() * 3.6;
-            double angle = this.random.nextDouble() * Math.PI * 2;
-            double verticalAngle = (this.random.nextDouble() - 0.5) * Math.PI;
-
-            double offsetX = Math.cos(angle) * Math.cos(verticalAngle) * speed;
-            double offsetY = Math.sin(verticalAngle) * speed;
-            double offsetZ = Math.sin(angle) * Math.cos(verticalAngle) * speed;
-
-            double spawnScale = 2.2 + this.random.nextDouble() * 1.8;
-            double jitterScale = 3.0;
-            double spawnX = pos.x + offsetX * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
-            double spawnY = pos.y + offsetY * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
-            double spawnZ = pos.z + offsetZ * spawnScale + (this.random.nextDouble() - 0.5) * jitterScale;
-
-            level.addParticle(ParticleTypes.FIREWORK,
-               spawnX, spawnY, spawnZ,
-               offsetX, offsetY, offsetZ);
-
-            if (i % 2 == 0) {
-                level.addParticle(ParticleTypes.FLAME,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.8, offsetY * 0.8, offsetZ * 0.8);
-            }
-
-            if (i % 3 == 0) {
-                level.addParticle(ParticleTypes.LAVA,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.6, offsetY * 0.6, offsetZ * 0.6);
-            }
-
-            if (i % 4 == 0) {
-                level.addParticle(ParticleTypes.END_ROD,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.9, offsetY * 0.9, offsetZ * 0.9);
-            }
-
-            if (i % 5 == 0) {
-                level.addParticle(ParticleTypes.SOUL_FIRE_FLAME,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.7, offsetY * 0.7, offsetZ * 0.7);
-            }
-
-            if (i % 10 == 0) {
-                level.addParticle(ParticleTypes.EXPLOSION,
-                    spawnX + offsetX * 0.5, spawnY + offsetY * 0.5, spawnZ + offsetZ * 0.5,
-                    0, 0, 0);
-            }
-
-            // Add four distinct colored dust streaks for visibility
-            if (i % 5 == 0) {
-                spawnColoredDustBurst(level, spawnX, spawnY, spawnZ, offsetX, offsetY, offsetZ);
-            }
-
-            if (i % 12 == 0) {
-                level.addParticle(ParticleTypes.GLOW,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.45, offsetY * 0.45, offsetZ * 0.45);
-            }
-
-            if (i % 14 == 0) {
-                level.addParticle(ParticleTypes.ELECTRIC_SPARK,
-                    spawnX, spawnY, spawnZ,
-                    offsetX * 0.6, offsetY * 0.6, offsetZ * 0.6);
-            }
-        }
-
-        // Secondary halo shell so aerial bursts read from a distance
-        for (int halo = 0; halo < 420; halo++) {
-            double radius = 7.5 + this.random.nextDouble() * 6.5;
-            double theta = this.random.nextDouble() * Math.PI * 2;
-            double phi = (this.random.nextDouble() - 0.5) * Math.PI;
-            double haloX = pos.x + radius * Math.cos(theta) * Math.cos(phi);
-            double haloY = pos.y + radius * Math.sin(phi);
-            double haloZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
-
-            int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
-            level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
-                haloX, haloY, haloZ,
-                0, 0, 0);
-
-            if (halo % 3 == 0) {
-                level.addParticle(ParticleTypes.GLOW,
-                    haloX, haloY, haloZ,
-                    0, 0, 0);
-            }
-        }
-
-        // Cascading sparks to emphasize vertical visibility
-        for (int column = 0; column < 320; column++) {
-            double angle = this.random.nextDouble() * Math.PI * 2;
-            double radius = 0.6 + this.random.nextDouble() * 4.0;
-            double startX = pos.x + Math.cos(angle) * radius;
-            double startZ = pos.z + Math.sin(angle) * radius;
-            double startY = pos.y + this.random.nextDouble() * 3.5;
-            double velocityX = (this.random.nextDouble() - 0.5) * 0.32;
-            double velocityZ = (this.random.nextDouble() - 0.5) * 0.32;
-
-            level.addParticle(ParticleTypes.END_ROD,
-                startX, startY, startZ,
-                velocityX, -0.45 - this.random.nextDouble() * 0.38, velocityZ);
-
-            if (column % 3 == 0) {
-                int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
-                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.4F),
-                    startX, startY, startZ,
-                    velocityX * 0.85, -0.38 - this.random.nextDouble() * 0.34, velocityZ * 0.85);
-            }
-        }
-
-        // Outer ripple to enhance visibility for distant observers
-        for (int ring = 0; ring < 220; ring++) {
-            double radius = 9.0 + this.random.nextDouble() * 5.0;
-            double theta = this.random.nextDouble() * Math.PI * 2;
-            double ringX = pos.x + Math.cos(theta) * radius;
-            double ringZ = pos.z + Math.sin(theta) * radius;
-            double ringY = pos.y + (this.random.nextDouble() - 0.5) * 2.0;
-
-            level.addParticle(ParticleTypes.GLOW,
-                ringX, ringY, ringZ,
-                0, 0, 0);
-
-            if (ring % 2 == 0) {
-                int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
-                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.8F),
-                    ringX, ringY, ringZ,
-                    0, 0, 0);
-            }
-        }
-
-        // Distant shell for high-altitude flares
-        for (int distant = 0; distant < 260; distant++) {
-            double radius = 12.0 + this.random.nextDouble() * 6.0;
-            double theta = this.random.nextDouble() * Math.PI * 2;
-            double phi = (this.random.nextDouble() - 0.5) * Math.PI;
-            double outerX = pos.x + radius * Math.cos(theta) * Math.cos(phi);
-            double outerY = pos.y + radius * Math.sin(phi) * 0.7;
-            double outerZ = pos.z + radius * Math.sin(theta) * Math.cos(phi);
-
-            int color = FLARE_BLAST_COLORS[this.random.nextInt(FLARE_BLAST_COLORS.length)];
-            level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.2F),
-                outerX, outerY, outerZ,
-                0, 0, 0);
-
-            if (distant % 4 == 0) {
-                level.addParticle(ParticleTypes.EXPLOSION,
-                    outerX, outerY, outerZ,
-                    0, 0, 0);
-            }
-        }
-
-        level.playLocalSound(pos.x, pos.y, pos.z,
-            net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
-            net.minecraft.sounds.SoundSource.PLAYERS,
-            4.0F, (1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F), false);
-
-        level.playLocalSound(pos.x, pos.y, pos.z,
-            net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST,
-            net.minecraft.sounds.SoundSource.PLAYERS,
-            4.0F, 0.9F + this.random.nextFloat() * 0.2F, false);
-    }
-
-    @Override
-    public void handleEntityEvent(byte event) {
-        if (event == FLARE_DETONATION_EVENT) {
-            spawnFlareExplosionEffectsClient();
-            return;
-        }
-        super.handleEntityEvent(event);
-    }
-
-    private void spawnColoredDustBurst(Level level, double originX, double originY, double originZ, double dirX, double dirY, double dirZ) {
-        double spread = 2.2;
-        for (int color : FLARE_BLAST_COLORS) {
-            for (int i = 0; i < 5; i++) {
-                double velocityScale = 0.9 + this.random.nextDouble() * 2.2;
-                level.addParticle(new DustParticleOptions(rgbToVector3f(color), 2.6F),
-                    originX + (this.random.nextDouble() - 0.5) * spread,
-                    originY + (this.random.nextDouble() - 0.5) * spread,
-                    originZ + (this.random.nextDouble() - 0.5) * spread,
-                    dirX * velocityScale,
-                    dirY * velocityScale,
-                    dirZ * velocityScale);
-            }
-        }
-    }
-
     /**
      * Perform precise block raycast that better handles leaves and other penetrable blocks.
      * This allows bullets to pass through gaps between leaves that would otherwise be blocked.
@@ -1474,13 +1320,6 @@ public class BulletEntity extends Projectile {
             this
         );
         return this.level().clip(fallback);
-    }
-
-    private static Vector3f rgbToVector3f(int color) {
-        float r = ((color >> 16) & 0xFF) / 255.0F;
-        float g = ((color >> 8) & 0xFF) / 255.0F;
-        float b = (color & 0xFF) / 255.0F;
-        return new Vector3f(r, g, b);
     }
 
     @Nullable
@@ -1527,13 +1366,17 @@ public class BulletEntity extends Projectile {
             return;
         }
 
+        GunStats stats = getGunStats();
+        if (!shouldSendTrailToClients(stats)) {
+            return;
+        }
+
         Vec3 position = this.position();
         Vec3 motion = this.getDeltaMovement();
         int color = this.entityData.get(DATA_TRAIL_COLOR);
         float size = this.entityData.get(DATA_SIZE);
         int life = this.entityData.get(DATA_LIFE);
 
-        GunStats stats = getGunStats();
         double gravity = -getGravityAcceleration(stats);
 
         Entity owner = this.getOwner();
@@ -1558,7 +1401,7 @@ public class BulletEntity extends Projectile {
         // Send to all nearby players
         for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             if (player.level() == serverLevel && player.distanceToSqr(this) <= TRAIL_SYNC_RANGE * TRAIL_SYNC_RANGE) {
-                ServerPlayNetworking.send(player, payload);
+                NetworkHandler.sendBulletTrail(player, payload);
             }
         }
     }
@@ -1572,11 +1415,9 @@ public class BulletEntity extends Projectile {
             return 0.0D;
         }
 
-        double gravity;
-        if (shouldSendBulletTrail(stats)) {
-            gravity = stats.gravity() ? 0.040D : 0.0D;
-        } else {
-            gravity = gravityForCategory(GunCategory.fromStats(stats));
+        double gravity = gravityForCategory(GunCategory.fromStats(stats));
+        if (shouldSendBulletTrail(stats) && stats.gravity()) {
+            gravity = 0.040D;
         }
         return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.5D : gravity;
     }
@@ -1604,6 +1445,6 @@ public class BulletEntity extends Projectile {
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {
-        return !GunItem.hasFlameTrail(stats.id()) && GunItem.isBulletClassWeapon(stats.id());
+        return shouldSendTrailToClients(stats);
     }
 }

@@ -19,15 +19,20 @@ import ttv.migami.jeg.fabric.FabricEntityInit;
 import ttv.migami.jeg.fabric.FabricRecipeUnlock;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
+import ttv.migami.jeg.init.ModBlockEntities;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import net.neoforged.neoforge.common.NeoForge;
 
 public final class FabricEntrypoint implements ModInitializer {
@@ -36,6 +41,9 @@ public final class FabricEntrypoint implements ModInitializer {
         Config.load();
 
         // Core content registration (the Fabric project reuses small NeoForge-style shims).
+        ModBlocks.REGISTER.register(NeoForge.EVENT_BUS);
+        ModBlockEntities.REGISTER.register(NeoForge.EVENT_BUS);
+        ModMenuTypes.REGISTER.register(NeoForge.EVENT_BUS);
         ModEntities.REGISTER.register(NeoForge.EVENT_BUS);
         ModDataComponents.REGISTER.register(NeoForge.EVENT_BUS);
         ModSounds.REGISTER.register(NeoForge.EVENT_BUS);
@@ -48,6 +56,8 @@ public final class FabricEntrypoint implements ModInitializer {
 
         // Fabric-specific hooks.
         NetworkHandler.initCommon();
+        VehicleDataManager.registerReloadListener();
+        VehicleAssemblyRecipeManager.registerReloadListener();
         FabricCreativeTabs.init();
         FabricRecipeUnlock.init();
         FabricEntityInit.init();

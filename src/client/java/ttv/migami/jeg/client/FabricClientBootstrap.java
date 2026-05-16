@@ -9,11 +9,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -49,13 +53,34 @@ import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
+import ttv.migami.jeg.vehicle.client.render.A10Renderer;
+import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
+import ttv.migami.jeg.vehicle.client.render.Bmp2Renderer;
+import ttv.migami.jeg.vehicle.client.render.Hpj11Renderer;
+import ttv.migami.jeg.vehicle.client.render.LaserTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.Lav150Renderer;
+import ttv.migami.jeg.vehicle.client.render.Mi28Renderer;
+import ttv.migami.jeg.vehicle.client.render.SpeedboatRenderer;
+import ttv.migami.jeg.vehicle.client.render.Tom6Renderer;
+import ttv.migami.jeg.vehicle.client.render.TruckRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
+import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEntityRenderer;
+import ttv.migami.jeg.vehicle.client.screen.VehicleAssemblingScreen;
+import ttv.migami.jeg.vehicle.client.screen.VehicleChargingStationScreen;
+import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
 
 public final class FabricClientBootstrap {
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
@@ -135,6 +160,7 @@ public final class FabricClientBootstrap {
         registered = true;
 
         ModelLoadingPlugin.register(new FabricModelRegistration());
+        KeyBindings.init();
 
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack held = player.getItemInHand(hand);
@@ -183,6 +209,29 @@ public final class FabricClientBootstrap {
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.RAID_ENTITY.get(), RaidEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_WHEEL_VEHICLE.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LIGHT_COMBAT_VEHICLE.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_HELICOPTER.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_BOAT.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TRUCK.get(), TruckRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LAV150.get(), Lav150Renderer::new);
+        EntityRendererRegistry.register(ModEntities.SPEEDBOAT.get(), SpeedboatRenderer::new);
+        EntityRendererRegistry.register(ModEntities.AH6.get(), Ah6Renderer::new);
+        EntityRendererRegistry.register(ModEntities.A10.get(), A10Renderer::new);
+        EntityRendererRegistry.register(ModEntities.BMP2.get(), Bmp2Renderer::new);
+        EntityRendererRegistry.register(ModEntities.MI28.get(), Mi28Renderer::new);
+        EntityRendererRegistry.register(ModEntities.TOM6.get(), Tom6Renderer::new);
+        EntityRendererRegistry.register(ModEntities.LASER_TOWER.get(), LaserTowerRenderer::new);
+        EntityRendererRegistry.register(ModEntities.HPJ11.get(), Hpj11Renderer::new);
+        EntityRendererRegistry.register(ModEntities.WAVEFORCE_TOWER.get(), WaveforceTowerRenderer::new);
+        EntityRendererRegistry.register(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
+        EntityRendererRegistry.register(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
+        BlockEntityRendererRegistry.register(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), context -> new VehicleAssemblingTableBlockEntityRenderer());
+        MenuScreens.register(ModMenuTypes.VEHICLE_MENU.get(), VehicleScreen::new);
+        MenuScreens.register(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), VehicleAssemblingScreen::new);
+        MenuScreens.register(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), VehicleChargingStationScreen::new);
 
         ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
                 player != null && player.getMainHandItem().getItem() instanceof GunItem);
@@ -200,7 +249,11 @@ public final class FabricClientBootstrap {
         });
 
         ClientTickEvents.START_CLIENT_TICK.register(FabricClientBootstrap::handleOffhandSwapOverride);
+        ClientTickEvents.END_CLIENT_TICK.register(VehicleInputHandler::onClientTick);
         ClientTickEvents.END_CLIENT_TICK.register(FabricClientBootstrap::onClientTick);
+        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) ->
+                ScreenKeyboardEvents.allowKeyPress(screen).register((ignoredScreen, key, scancode, modifiers) ->
+                        VehicleInputHandler.onScreenKeyPressed(key, scancode)));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             BulletTrailRenderer.clear();
             MUZZLE_FLASHES.clear();

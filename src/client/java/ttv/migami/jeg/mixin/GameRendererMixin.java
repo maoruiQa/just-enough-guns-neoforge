@@ -14,6 +14,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.client.VehicleCameraHandler;
 
 @Mixin(GameRenderer.class)
 public final class GameRendererMixin {
@@ -46,5 +47,10 @@ public final class GameRendererMixin {
 
         double factor = 1.0D - ADS_FOV_FACTOR * ads;
         cir.setReturnValue(Math.max(0.1D, current * factor));
+    }
+
+    @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
+    private void jeg$getVehicleFov(Camera camera, float partialTick, boolean useFovSetting, CallbackInfoReturnable<Double> cir) {
+        cir.setReturnValue(VehicleCameraHandler.adjustFov(cir.getReturnValue()));
     }
 }

@@ -1,0 +1,147 @@
+package ttv.migami.jeg.vehicle.recipe;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
+import ttv.migami.jeg.JustEnoughGuns;
+import ttv.migami.jeg.Reference;
+
+public final class VehicleAssemblyRecipeManager {
+    private static final Gson GSON = new Gson();
+    private static final ResourceLocation TEST_WHEEL_RECIPE = Reference.id("test_wheel_vehicle");
+    private static final Set<ResourceLocation> ENABLED_ASSEMBLY_VEHICLES = Set.of(
+            Reference.id("lav150"),
+            Reference.id("bmp2"),
+            Reference.id("speedboat"),
+            Reference.id("ah6"),
+            Reference.id("mi28")
+    );
+    private static volatile Map<ResourceLocation, VehicleAssemblyRecipe> recipes = defaultsOnly();
+
+    private VehicleAssemblyRecipeManager() {}
+
+    public static void registerReloadListener() {
+        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new Loader());
+    }
+
+    public static VehicleAssemblyRecipe testWheelRecipe() {
+        return recipes.get(TEST_WHEEL_RECIPE);
+    }
+
+    public static VehicleAssemblyRecipe get(ResourceLocation id) {
+        VehicleAssemblyRecipe recipe = recipes.get(id);
+        return recipe != null && isEnabledAssemblyVehicle(recipe) ? recipe : null;
+    }
+
+    public static List<VehicleAssemblyRecipe> recipes() {
+        return recipes.values().stream()
+                .filter(VehicleAssemblyRecipeManager::isEnabledAssemblyVehicle)
+                .sorted(Comparator.comparing(recipe -> recipe.id().toString()))
+                .toList();
+    }
+
+    private static boolean isEnabledAssemblyVehicle(VehicleAssemblyRecipe recipe) {
+        return ENABLED_ASSEMBLY_VEHICLES.contains(recipe.resultVehicle());
+    }
+
+    private static Map<ResourceLocation, VehicleAssemblyRecipe> defaultsOnly() {
+        ResourceLocation lightCombatRecipe = Reference.id("light_combat_vehicle");
+        ResourceLocation testHelicopterRecipe = Reference.id("test_helicopter");
+        ResourceLocation testBoatRecipe = Reference.id("test_boat");
+        ResourceLocation testArtilleryRecipe = Reference.id("test_artillery");
+        ResourceLocation testAircraftRecipe = Reference.id("test_aircraft");
+        return Map.of(
+                TEST_WHEEL_RECIPE, new VehicleAssemblyRecipe(
+                        TEST_WHEEL_RECIPE,
+                        Reference.id("test_wheel_vehicle"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 16),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 4)
+                        )
+                ),
+                lightCombatRecipe, new VehicleAssemblyRecipe(
+                        lightCombatRecipe,
+                        Reference.id("light_combat_vehicle"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 32),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 12),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 8)
+                        )
+                ),
+                testHelicopterRecipe, new VehicleAssemblyRecipe(
+                        testHelicopterRecipe,
+                        Reference.id("test_helicopter"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 24),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 16),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 10),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("feather"), 8)
+                        )
+                ),
+                testBoatRecipe, new VehicleAssemblyRecipe(
+                        testBoatRecipe,
+                        Reference.id("test_boat"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 16),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("oak_planks"), 12),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 4)
+                        )
+                ),
+                testArtilleryRecipe, new VehicleAssemblyRecipe(
+                        testArtilleryRecipe,
+                        Reference.id("test_artillery"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 28),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 8),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 8)
+                        )
+                ),
+                testAircraftRecipe, new VehicleAssemblyRecipe(
+                        testAircraftRecipe,
+                        Reference.id("test_aircraft"),
+                        List.of(
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("iron_ingot"), 28),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("copper_ingot"), 18),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("redstone"), 12),
+                                new VehicleAssemblyRecipe.Ingredient(ResourceLocation.withDefaultNamespace("feather"), 12)
+                        )
+                )
+        );
+    }
+
+    private static final class Loader extends SimpleJsonResourceReloadListener implements IdentifiableResourceReloadListener {
+        private Loader() {
+            super(GSON, "vehicle_assembly");
+        }
+
+        @Override
+        public ResourceLocation getFabricId() {
+            return Reference.id("vehicle_assembly");
+        }
+
+        @Override
+        protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager manager, ProfilerFiller profiler) {
+            Map<ResourceLocation, VehicleAssemblyRecipe> loaded = new HashMap<>(defaultsOnly());
+            for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
+                try {
+                    loaded.put(entry.getKey(), VehicleAssemblyRecipeSerializer.fromJson(entry.getKey(), entry.getValue().getAsJsonObject()));
+                } catch (RuntimeException exception) {
+                    JustEnoughGuns.LOGGER.error("Failed to load vehicle assembly recipe {}: {}", entry.getKey(), exception.getMessage());
+                }
+            }
+            recipes = Map.copyOf(loaded);
+            JustEnoughGuns.LOGGER.info("Loaded {} JEG vehicle assembly recipes", recipes.size());
+        }
+    }
+}

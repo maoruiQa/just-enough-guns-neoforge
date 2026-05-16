@@ -1,0 +1,13 @@
+package ttv.migami.jeg.vehicle.entity;
+
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
+import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+
+public final class LightCombatVehicleEntity extends VehicleEntity {
+    public LightCombatVehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
+        super(type, level);
+        this.setVehicleData(DefaultVehicleData.LIGHT_COMBAT.id());
+    }
+}

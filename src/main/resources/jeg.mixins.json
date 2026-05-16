@@ -18,7 +18,11 @@
     "GuiMixin",
     "HumanoidModelMixin",
     "ItemInHandRendererMixin",
-    "PlayerRendererMixin"
+    "KeyMappingVehicleMixin",
+    "MinecraftVehicleHotbarMixin",
+    "PlayerRendererMixin",
+    "VehicleCameraMixin",
+    "VehicleGameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

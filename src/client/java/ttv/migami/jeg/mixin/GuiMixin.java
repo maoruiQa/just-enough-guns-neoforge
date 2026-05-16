@@ -13,6 +13,8 @@ import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.ScopeOverlayRenderer;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(Gui.class)
 public final class GuiMixin {
@@ -24,10 +26,23 @@ public final class GuiMixin {
         }
         FabricClientBootstrap.renderThrowableEffectOverlay(guiGraphics);
         FabricClientBootstrap.renderOverheatBar(guiGraphics);
+        VehicleHudOverlay.renderHud(guiGraphics);
         ClientHudRenderer.render(guiGraphics);
-        if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
+        if (player.getVehicle() instanceof VehicleEntity
+                || player.getMainHandItem().getItem() instanceof GunItem
+                || player.getOffhandItem().getItem() instanceof GunItem) {
             ScopeOverlayRenderer.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
             CrosshairHandler.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderItemHotbar", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideVehicleHotbar(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        var player = Minecraft.getInstance().player;
+        if (player != null
+                && player.getVehicle() instanceof VehicleEntity vehicle
+                && VehicleHudOverlay.shouldReplaceHotbar(player, vehicle)) {
             ci.cancel();
         }
     }

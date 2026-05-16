@@ -19,6 +19,7 @@ public record GunStats(
         float projectileSpeed,
         int projectileLife,
         boolean gravity,
+        boolean flameTrail,
         float spread,
         int projectileAmount,
         @Nullable ResourceLocation fireSound,

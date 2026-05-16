@@ -20,6 +20,15 @@ import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
+import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
+import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
+import ttv.migami.jeg.vehicle.network.VehicleSeatAssignmentsPayload;
+import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -40,11 +49,18 @@ public final class NetworkHandler {
         PayloadTypeRegistry.playC2S().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -64,6 +80,53 @@ public final class NetworkHandler {
         ServerPlayNetworking.registerGlobalReceiver(AimingStatePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleAimingState(payload, context.player()));
         });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleInputPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleInput(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleChangeSeatPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleChangeSeat(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleDismountPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleDismount(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleOpenMenuPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleOpenMenu(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(AssembleTestVehiclePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleAssembleTestVehicle(payload, context.player()));
+        });
+    }
+
+    private static void handleVehicleInput(VehicleInputPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            vehicle.processInput(player, payload.toInput());
+        }
+    }
+
+    private static void handleVehicleChangeSeat(VehicleChangeSeatPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            vehicle.changeSeat(player);
+        }
+    }
+
+    private static void handleVehicleDismount(VehicleDismountPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            ttv.migami.jeg.event.GunEvents.clearVehicleSeatReturn(player);
+            vehicle.forgetSeatAssignment(player);
+            player.stopRiding();
+        }
+    }
+
+    private static void handleVehicleOpenMenu(VehicleOpenMenuPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            player.openMenu(vehicle);
+        }
+    }
+
+    private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, ServerPlayer player) {
+        if (player.containerMenu instanceof VehicleAssemblingMenu menu) {
+            menu.assembleVehicle(player, payload.recipeId());
+        }
     }
 
     private static void handleShootRequest(ShootRequestPayload payload, ServerPlayer player) {
@@ -194,6 +257,10 @@ public final class NetworkHandler {
         }
     }
 
+    public static void sendBulletTrail(ServerPlayer player, BulletTrailPayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
+
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
     }
@@ -205,6 +272,62 @@ public final class NetworkHandler {
     public static void broadcastUiConfig(MinecraftServer server) {
         UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
         for (ServerPlayer player : PlayerLookup.all(server)) {
+            ServerPlayNetworking.send(player, payload);
+        }
+    }
+
+    public static void sendVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        ServerPlayNetworking.send(player, new VehicleStatePayload(
+                vehicle.getId(),
+                vehicle.getX(),
+                vehicle.getY(),
+                vehicle.getZ(),
+                vehicle.getDeltaMovement().x,
+                vehicle.getDeltaMovement().y,
+                vehicle.getDeltaMovement().z,
+                vehicle.getYRot(),
+                vehicle.getXRot(),
+                false
+        ));
+    }
+
+    public static void broadcastVehicleState(VehicleEntity vehicle) {
+        broadcastVehicleState(vehicle, false);
+    }
+
+    public static void broadcastForcedVehicleState(VehicleEntity vehicle) {
+        broadcastVehicleState(vehicle, true);
+    }
+
+    private static void broadcastVehicleState(VehicleEntity vehicle, boolean forceApply) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        VehicleStatePayload payload = new VehicleStatePayload(
+                vehicle.getId(),
+                vehicle.getX(),
+                vehicle.getY(),
+                vehicle.getZ(),
+                vehicle.getDeltaMovement().x,
+                vehicle.getDeltaMovement().y,
+                vehicle.getDeltaMovement().z,
+                vehicle.getYRot(),
+                vehicle.getXRot(),
+                forceApply
+        );
+        for (ServerPlayer player : PlayerLookup.world(level)) {
+            if (player.distanceToSqr(vehicle) <= 4096.0D) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
+    }
+
+    public static void broadcastVehicleSeatAssignments(VehicleEntity vehicle) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        VehicleSeatAssignmentsPayload payload = VehicleSeatAssignmentsPayload.fromMap(vehicle.getId(), vehicle.seatAssignmentsSnapshot());
+        for (ServerPlayer player : PlayerLookup.world(level)) {
             ServerPlayNetworking.send(player, payload);
         }
     }
