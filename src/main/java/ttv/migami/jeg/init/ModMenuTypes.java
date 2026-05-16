@@ -1,6 +1,8 @@
 package ttv.migami.jeg.init;
 
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.flag.FeatureFlags;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -17,7 +19,10 @@ public final class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleMenu>> VEHICLE_MENU = REGISTER.register(
             "vehicle_menu",
-            () -> new MenuType<>(VehicleMenu::new, FeatureFlags.VANILLA_SET)
+            () -> new ExtendedScreenHandlerType<>(
+                    (containerId, inventory, vehicleSlotCount) -> new VehicleMenu(containerId, inventory, vehicleSlotCount),
+                    ByteBufCodecs.VAR_INT
+            )
     );
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleAssemblingMenu>> VEHICLE_ASSEMBLING_MENU = REGISTER.register(

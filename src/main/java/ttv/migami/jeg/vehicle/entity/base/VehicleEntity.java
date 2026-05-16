@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import com.mojang.math.Axis;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -96,7 +97,7 @@ import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 
-public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
+public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactory<Integer>, MenuProvider, GeoEntity {
     private static final double CLIENT_RESYNC_DISTANCE_SQR = 4.0D;
     private static final double CLIENT_RESYNC_HORIZONTAL_MOTION_DELTA_SQR = 0.16D;
     private static final float CLIENT_RESYNC_YAW_DELTA = 12.0F;
@@ -3993,6 +3994,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new VehicleMenu(containerId, playerInventory, this.inventory, this.vehicleContainerSlots(), this);
+    }
+
+    @Override
+    public Integer getScreenOpeningData(ServerPlayer player) {
+        return this.vehicleContainerSlots();
     }
 
     public int vehicleContainerSlots() {

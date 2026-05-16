@@ -1,5 +1,7 @@
 package ttv.migami.jeg.vehicle.item;
 
+import java.lang.reflect.Proxy;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -19,6 +21,7 @@ import ttv.migami.jeg.vehicle.block.property.BlockPart;
 
 public final class VehicleAssemblingTableBlockItem extends BlockItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private transient Object cachedGeoItemRenderer;
 
     public VehicleAssemblingTableBlockItem(Block block, Properties properties) {
         super(block, properties);
@@ -84,5 +87,37 @@ public final class VehicleAssemblingTableBlockItem extends BlockItem implements 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    @Override
+    public boolean isPerspectiveAware() {
+        return true;
+    }
+
+    @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void createGeoRenderer(Consumer consumer) {
+        try {
+            Class<?> providerClass = Class.forName("software.bernie.geckolib.animatable.client.GeoRenderProvider");
+            Object provider = Proxy.newProxyInstance(
+                    providerClass.getClassLoader(),
+                    new Class<?>[] {providerClass},
+                    (proxy, method, args) -> {
+                        if ("getGeoItemRenderer".equals(method.getName())) {
+                            if (cachedGeoItemRenderer == null) {
+                                Class<?> rendererClass = Class.forName("ttv.migami.jeg.vehicle.client.render.item.VehicleAssemblingTableBlockItemRenderer");
+                                cachedGeoItemRenderer = rendererClass.getDeclaredConstructor().newInstance();
+                            }
+                            return cachedGeoItemRenderer;
+                        }
+                        return null;
+                    }
+            );
+            consumer.accept(provider);
+        } catch (ClassNotFoundException ignored) {
+            // Dedicated server: no client renderer classes available.
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create VehicleAssemblingTableBlockItemRenderer provider", e);
+        }
     }
 }
