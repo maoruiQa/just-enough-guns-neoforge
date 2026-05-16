@@ -153,7 +153,7 @@ public final class FactionSpawnHelper {
         if (spawned.isEmpty()) {
             JustEnoughGuns.LOGGER.warn("[PatrolDebug] {}", lastPatrolDebug);
         } else {
-            JustEnoughGuns.LOGGER.debug("[PatrolDebug] {}", lastPatrolDebug);
+            // JustEnoughGuns.LOGGER.debug("[PatrolDebug] {}", lastPatrolDebug);
         }
 
         return spawned;
@@ -188,7 +188,7 @@ public final class FactionSpawnHelper {
                 continue;
             }
             if (!configureRaidBehavior(mob, target)) {
-                JustEnoughGuns.LOGGER.debug("[PatrolDebug] raid path setup failed for faction={}, mob={}", faction.getName(), mob.getType());
+                // JustEnoughGuns.LOGGER.debug("[PatrolDebug] raid path setup failed for faction={}, mob={}", faction.getName(), mob.getType());
             }
 
             return mob;

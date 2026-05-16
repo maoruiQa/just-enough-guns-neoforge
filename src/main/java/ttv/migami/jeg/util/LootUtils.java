@@ -66,7 +66,7 @@ public final class LootUtils {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity == null) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing block entity at {} when filling {}", pos, lootTable.location());
+            // JustEnoughGuns.LOGGER.debug("[LootUtils] Missing block entity at {} when filling {}", pos, lootTable.location());
             return;
         }
 
@@ -77,7 +77,7 @@ public final class LootUtils {
             var lootLookup = registryHolder.lookup().lookup(Registries.LOOT_TABLE);
             present = lootLookup.flatMap(provider -> provider.get(lootTable)).isPresent();
         }
-        JustEnoughGuns.LOGGER.debug("[LootUtils] Registry contains {} = {}", lootTable.location(), present);
+        // JustEnoughGuns.LOGGER.debug("[LootUtils] Registry contains {} = {}", lootTable.location(), present);
 
         long seed = random.nextLong();
 
@@ -91,12 +91,12 @@ public final class LootUtils {
             randomizable.setLootTable(lootTable);
             randomizable.setLootTableSeed(seed);
             randomizable.setChanged();
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Assigned loot table {} seed={} to {}", lootTable.location(), seed, pos);
+            // JustEnoughGuns.LOGGER.debug("[LootUtils] Assigned loot table {} seed={} to {}", lootTable.location(), seed, pos);
             return;
         }
 
         if (!(blockEntity instanceof Container container)) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Block entity at {} is not a container when filling {}", pos, lootTable.location());
+            // JustEnoughGuns.LOGGER.debug("[LootUtils] Block entity at {} is not a container when filling {}", pos, lootTable.location());
             return;
         }
 
@@ -108,14 +108,14 @@ public final class LootUtils {
         }
 
         if (serverLevel == null || serverLevel.getServer() == null) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Missing server when filling {} at {}", lootTable.location(), pos);
+            // JustEnoughGuns.LOGGER.debug("[LootUtils] Missing server when filling {} at {}", lootTable.location(), pos);
             return;
         }
 
         var registryHolder = serverLevel.getServer().reloadableRegistries();
         LootTable table = registryHolder.getLootTable(lootTable);
         if (table == LootTable.EMPTY) {
-            JustEnoughGuns.LOGGER.debug("[LootUtils] Loot table {} is empty when filling {}", lootTable.location(), pos);
+            // JustEnoughGuns.LOGGER.debug("[LootUtils] Loot table {} is empty when filling {}", lootTable.location(), pos);
             return;
         }
 
@@ -126,7 +126,7 @@ public final class LootUtils {
         table.fill(container, params, seed);
         removeExcludedGunLoot(container);
         boolean empty = isContainerEmpty(container);
-        JustEnoughGuns.LOGGER.debug("[LootUtils] Filled container {} with {} empty={} seed={}", pos, lootTable.location(), empty, seed);
+        // JustEnoughGuns.LOGGER.debug("[LootUtils] Filled container {} with {} empty={} seed={}", pos, lootTable.location(), empty, seed);
         blockEntity.setChanged();
     }
 

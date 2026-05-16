@@ -223,7 +223,7 @@ public class SkyShipArmadaStructure extends Structure {
             super(ModStructures.SKY_SHIP_ARMADA_PIECE.get(), 0, manager, TEMPLATE_LOCATION, TEMPLATE_LOCATION.toString(), makeSettings(rotation), pos);
             this.damagedElytra = damagedElytra;
             this.hasLootChest = hasLootChest;
-            JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Created ship piece at {} hasLoot={} damagedElytra={}", pos, hasLootChest, damagedElytra);
+            // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Created ship piece at {} hasLoot={} damagedElytra={}", pos, hasLootChest, damagedElytra);
         }
 
         public SkyShipPiece(StructureTemplateManager manager, CompoundTag nbt) {
@@ -280,12 +280,12 @@ public class SkyShipArmadaStructure extends Structure {
                 if (blockEntity instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity randomizable) {
                     ResourceKey<net.minecraft.world.level.storage.loot.LootTable> assigned = randomizable.getLootTable();
                     String lootId = assigned != null ? assigned.location().toString() : "none";
-                    ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} lootTable={} seed={}", chestPos, lootId, randomizable.getLootTableSeed());
+                    // ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} lootTable={} seed={}", chestPos, lootId, randomizable.getLootTableSeed());
                 } else if (blockEntity instanceof net.minecraft.world.Container container) {
                     boolean empty = LootUtils.isContainerEmpty(container);
-                    ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} filled empty={}", chestPos, empty);
+                    // ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} filled empty={}", chestPos, empty);
                 } else {
-                    ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} has no container block entity", chestPos);
+                    // ttv.migami.jeg.JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Chest {} has no container block entity", chestPos);
                 }
             } else if ("Elytra".equals(marker)) {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
@@ -293,7 +293,7 @@ public class SkyShipArmadaStructure extends Structure {
                     return;
                 }
                 this.elytraMarkers.add(pos.immutable());
-                JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Recorded Elytra marker {} (lootShip={} hasLoot={})", pos, this.damagedElytra, hasLootChest);
+                // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Recorded Elytra marker {} (lootShip={} hasLoot={})", pos, this.damagedElytra, hasLootChest);
             } else if ("Sentry".equals(marker)) {
                 placeGunnerSpawner(level, pos, random);
             }
@@ -360,7 +360,7 @@ public class SkyShipArmadaStructure extends Structure {
                 return;
             }
             if (!serverLevel.getEntitiesOfClass(ItemFrame.class, new AABB(marker)).isEmpty()) {
-                JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} already occupied by frame", marker);
+                // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} already occupied by frame", marker);
                 return;
             }
             ItemFrame frame = new ItemFrame(serverLevel, marker, facing);
@@ -369,7 +369,7 @@ public class SkyShipArmadaStructure extends Structure {
             stack.setDamageValue(maxDamage);
             frame.setItem(stack, false);
             serverLevel.addFreshEntity(frame);
-            JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Spawned broken Elytra frame at {}", marker);
+            // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Spawned broken Elytra frame at {}", marker);
         }
 
         private void scheduleGuardianSpawn(ServerLevel serverLevel, BlockPos anchorBase, long spawnSeed) {
@@ -470,15 +470,15 @@ public class SkyShipArmadaStructure extends Structure {
                 return;
             }
             Direction facing = this.getRotation().rotate(Direction.SOUTH);
-            JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Processing {} Elytra markers for ship {} (loot={})", this.elytraMarkers.size(), this.templatePosition, this.hasLootChest);
+            // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Processing {} Elytra markers for ship {} (loot={})", this.elytraMarkers.size(), this.templatePosition, this.hasLootChest);
             for (BlockPos marker : this.elytraMarkers) {
                 if (!this.boundingBox.isInside(marker)) {
-                    JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Skipping Elytra marker {} outside piece bounds", marker);
+                    // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Skipping Elytra marker {} outside piece bounds", marker);
                     continue;
                 }
                 float removalRoll = random.nextFloat();
                 boolean remove = removalRoll < 0.6F;
-                JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} roll={} remove={}", marker, removalRoll, remove);
+                // JustEnoughGuns.LOGGER.debug("[SkyShipArmada] Elytra marker {} roll={} remove={}", marker, removalRoll, remove);
                 if (remove) {
                     continue;
                 }

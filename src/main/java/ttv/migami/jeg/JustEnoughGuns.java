@@ -85,7 +85,7 @@ public final class JustEnoughGuns {
         NeoForge.EVENT_BUS.addListener(VehicleDataManager::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(VehicleAssemblyRecipeManager::onAddReloadListeners);
 
-        LOGGER.debug("Game events registered successfully");
+        // LOGGER.debug("Game events registered successfully");
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {

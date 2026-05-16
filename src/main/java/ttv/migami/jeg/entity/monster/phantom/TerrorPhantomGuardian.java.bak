@@ -579,7 +579,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
             if (this.engagedPlayers.add(player.getUUID())) {
                 this.setTarget(player);
                 this.setAggressive(true);
-                JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Aggro acquired on player {} at {}", player.getName().getString(), player.blockPosition());
+                // JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Aggro acquired on player {} at {}", player.getName().getString(), player.blockPosition());
                 return;
             }
         }
@@ -629,7 +629,7 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
             double distSq = player.distanceToSqr(anchorVec.x, anchorVec.y, anchorVec.z);
             if (distSq <= PASSIVE_RETALIATION_RADIUS * PASSIVE_RETALIATION_RADIUS) {
                 if (this.engagedPlayers.add(player.getUUID())) {
-                    JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Retaliating against {} at distance {}", player.getName().getString(), Math.sqrt(distSq));
+                    // JustEnoughGuns.LOGGER.debug("[TerrorGuardian] Retaliating against {} at distance {}", player.getName().getString(), Math.sqrt(distSq));
                 }
                 this.setTarget(player);
                 this.setAggressive(true);
