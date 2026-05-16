@@ -110,7 +110,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack main = mc.player.getMainHandItem();
         ItemStack off = mc.player.getOffhandItem();
-        return ItemStack.isSameItemSameComponents(stack, main) || ItemStack.isSameItemSameComponents(stack, off);
+        return isSameHeldItem(stack, main) || isSameHeldItem(stack, off);
     }
 
     private static boolean isFirstPersonDisplay(ItemDisplayContext context) {
@@ -134,7 +134,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         HumanoidArm mainArm = mc.player.getMainArm();
         ItemStack stack = this.getCurrentItemStack();
         ItemStack main = mc.player.getMainHandItem();
-        if (stack != null && ItemStack.isSameItemSameComponents(stack, main)) {
+        if (stack != null && isSameHeldItem(stack, main)) {
             return mainArm;
         }
         return mainArm == HumanoidArm.LEFT ? HumanoidArm.RIGHT : HumanoidArm.LEFT;
@@ -156,11 +156,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         long now = System.nanoTime();
         if (now >= nextRenderByItemDebugNanos) {
             nextRenderByItemDebugNanos = now + DEBUG_WINDOW_NANOS;
-            JustEnoughGuns.LOGGER.info(
-                    "[JEG_RENDER_DEBUG] renderByItem item={} perspective={}",
-                    stack.getItem(),
-                    displayContext
-            );
+            // JustEnoughGuns.LOGGER.info(
+            //         "[JEG_RENDER_DEBUG] renderByItem item={} perspective={}",
+            //         stack.getItem(),
+            //         displayContext
+            // );
         }
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
             if (shouldHideScopedFirstPersonGun(gun)) {
@@ -297,7 +297,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             renderModelLists.invoke(mc.getItemRenderer(), model, stack, packedLight, packedOverlay, poseStack, buffer);
             return true;
         } catch (ReflectiveOperationException exception) {
-            JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] special model render failed for {} model={}: {}", stack.getItem(), modelPath, exception.toString());
+            // JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] special model render failed for {} model={}: {}", stack.getItem(), modelPath, exception.toString());
             return false;
         }
     }
@@ -423,17 +423,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         nextRenderDebugNanos = now + DEBUG_WINDOW_NANOS;
 
         Minecraft mc = Minecraft.getInstance();
-        boolean sameMain = mc.player != null && ItemStack.isSameItemSameComponents(stack, mc.player.getMainHandItem());
-        boolean sameOffhand = mc.player != null && ItemStack.isSameItemSameComponents(stack, mc.player.getOffhandItem());
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RENDER_DEBUG] first-person gun renderer active item={} perspective={} hand={} sameMain={} sameOffhand={} sampledBones={}",
-                stack.getItem(),
-                this.renderPerspective,
-                resolveRenderedHand(),
-                sameMain,
-                sameOffhand,
-                DEBUG_BONES
-        );
+        boolean sameMain = mc.player != null && isSameHeldItem(stack, mc.player.getMainHandItem());
+        boolean sameOffhand = mc.player != null && isSameHeldItem(stack, mc.player.getOffhandItem());
+        // JustEnoughGuns.LOGGER.info(
+        //         "[JEG_RENDER_DEBUG] first-person gun renderer active item={} perspective={} hand={} sameMain={} sameOffhand={} sampledBones={}",
+        //         stack.getItem(),
+        //         this.renderPerspective,
+        //         resolveRenderedHand(),
+        //         sameMain,
+        //         sameOffhand,
+        //         DEBUG_BONES
+        // );
         DEBUG_BONES.clear();
     }
 
@@ -443,13 +443,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         nextArmDebugNanos = now + DEBUG_WINDOW_NANOS;
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RENDER_DEBUG] arm bone render item={} bone={} arm={} rendered={}",
-                stack.getItem(),
-                boneName,
-                arm,
-                rendered
-        );
+        // JustEnoughGuns.LOGGER.info(
+        //         "[JEG_RENDER_DEBUG] arm bone render item={} bone={} arm={} rendered={}",
+        //         stack.getItem(),
+        //         boneName,
+        //         arm,
+        //         rendered
+        // );
     }
 
     private static boolean renderStaticGuiModel(
@@ -480,7 +480,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             debugGuiModel(stack, modelId, true);
             return true;
         } catch (ReflectiveOperationException exception) {
-            JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] static GUI model render failed for {}: {}", stack.getItem(), exception.toString());
+            // JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] static GUI model render failed for {}: {}", stack.getItem(), exception.toString());
             return false;
         }
     }
@@ -509,16 +509,27 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         nextGuiDebugNanos = now + DEBUG_WINDOW_NANOS;
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RENDER_DEBUG] gui static model item={} model={} rendered={}",
-                stack.getItem(),
-                modelId,
-                rendered
-        );
+        // JustEnoughGuns.LOGGER.info(
+        //         "[JEG_RENDER_DEBUG] gui static model item={} model={} rendered={}",
+        //         stack.getItem(),
+        //         modelId,
+        //         rendered
+        // );
     }
 
     private static boolean isArmBone(String boneName) {
         return "left_arm".equals(boneName) || "right_arm".equals(boneName)
                 || "fake_left_arm".equals(boneName) || "fake_right_arm".equals(boneName);
+    }
+
+    private static boolean isSameHeldItem(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == heldStack) {
+            return true;
+        }
+        if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
+            return false;
+        }
+        return ItemStack.isSameItemSameComponents(renderStack, heldStack)
+                || ItemStack.isSameItem(renderStack, heldStack);
     }
 }

@@ -73,7 +73,7 @@ public final class HandRenderInvoker {
             return;
         }
         nextFailureDebugNanos = now + 2_000_000_000L;
-        JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] hand render failed: {}", reason);
+        // JustEnoughGuns.LOGGER.warn("[JEG_RENDER_DEBUG] hand render failed: {}", reason);
     }
 
     private static void renderPartOverBone(
