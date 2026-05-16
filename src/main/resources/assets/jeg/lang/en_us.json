@@ -150,6 +150,7 @@
   "item.jeg.drum_mag": "Drum Mag",
   "item.jeg.scrap": "Scrap",
   "item.jeg.repair_kit": "Repair Kit",
+  "item.jeg.repair_tool": "Repair Tool",
   "item.jeg.tech_trash": "Tech Trash",
   "item.jeg.circuit_board": "Circuit Board",
   "item.jeg.spring": "Spring",
@@ -225,6 +226,8 @@
   "info.jeg.tooltip_item.gunmetal_grit": "Gunmetal is obtained by smelting this!",
   "info.jeg.tooltip_item.gunnite_ingot": "Gunnite is obtained on the Gunmetal Workbench!",
   "info.jeg.tooltip_item.repair_kit": "Can repair guns if used on an Anvil!",
+  "info.jeg.repair_tool.vehicle": "Repairs vehicles with a short-range beam.",
+  "info.jeg.repair_tool.shift": "Sneak-use to damage vehicles instead.",
   "info.jeg.tooltip_item.ectoplasm": "Can be harvested with Boo Nests/Hives!",
   "info.jeg.tooltip_item.typhoonee": "Dropped by the Elder Guardian!",
   "info.jeg.tooltip_item.warden_blueprint": "This Blueprint can be obtained by defeating The Warden!",
@@ -253,6 +256,8 @@
   "item.jeg.gun.empty": "Weapon is empty",
   "item.jeg.gun.magazine_full": "Magazine is full",
   "subtitle.jeg.cooldown_with_water": "Cooling weapon with coolant",
+  "subtitle.jeg.repair_tool": "Repair tool fires",
+  "subtitle.jeg.repairing": "Repair tool repairs",
   "info.jeg.tooltip_item.tech_trash": "Obtained in the Scrap Bin, by Mining or by Recycling!",
   "info.jeg.tooltip_item.scrap": "Obtained in the Scrap Bin, by Mining or by Recycling!",
   "info.jeg.tooltip_item.brimstone_crystal": "Can be found in Badlands and Basalt Deltas!",
@@ -669,5 +674,8 @@
   "item.jeg.armored_joy_harness_black_netherite": "§dNetherite Black Joy Harness",
   "death.attack.vehicle_strike": "%1$s was crushed by a vehicle",
   "death.attack.vehicle_strike.entity": "%1$s was crushed by %2$s's vehicle",
-  "death.attack.vehicle_strike.item": "%1$s was crushed by %2$s using %3$s"
+  "death.attack.vehicle_strike.item": "%1$s was crushed by %2$s using %3$s",
+  "death.attack.repair_tool": "%1$s was repaired too aggressively",
+  "death.attack.repair_tool.entity": "%1$s was repaired by %2$s",
+  "death.attack.repair_tool.item": "%1$s was repaired by %2$s using %3$s"
 }

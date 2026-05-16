@@ -50,8 +50,7 @@ public abstract class VehicleCameraMixin {
 
     @Inject(
             method = "setup",
-            at = @At("HEAD"),
-            cancellable = true
+            at = @At("TAIL")
     )
     private void jeg$setupVehicleCamera(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo callback) {
         LocalPlayer player = Minecraft.getInstance().player;
@@ -75,14 +74,12 @@ public abstract class VehicleCameraMixin {
             }
             this.jeg$setCameraRotation(cameraRotation);
             this.setPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-            callback.cancel();
             return;
         }
         Vec3 cameraPosition = vehicle.cameraPositionFor(player, partialTick);
         Vec3 cameraRotation = vehicle.cameraRotationFor(player, partialTick);
         this.jeg$setCameraRotation(cameraRotation);
         this.setPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-        callback.cancel();
     }
 
     private void jeg$setCameraRotation(Vec3 cameraRotation) {

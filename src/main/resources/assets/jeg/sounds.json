@@ -233,6 +233,30 @@
       }
     ]
   },
+  "repair_tool_fire_1p": {
+    "subtitle": "subtitle.jeg.repair_tool",
+    "sounds": [
+      {
+        "name": "jeg:gun/repair_tool/repair_tool_fire_1p"
+      }
+    ]
+  },
+  "repair_tool_fire_3p": {
+    "subtitle": "subtitle.jeg.repair_tool",
+    "sounds": [
+      {
+        "name": "jeg:gun/repair_tool/repair_tool_fire_3p"
+      }
+    ]
+  },
+  "repairing": {
+    "subtitle": "subtitle.jeg.repairing",
+    "sounds": [
+      {
+        "name": "jeg:gun/repair_tool/repairing"
+      }
+    ]
+  },
 
   "item.combat_rifle.fire": {
     "subtitle": "subtitle.jeg.fire",

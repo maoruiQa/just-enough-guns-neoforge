@@ -1,0 +1,30 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": [
+          "firstperson_righthand",
+          "firstperson_lefthand",
+          "thirdperson_righthand",
+          "thirdperson_lefthand",
+          "ground",
+          "fixed",
+          "head"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/repair_tool_base",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "jeg:item/repair_tool_icon"
+    }
+  }
+}

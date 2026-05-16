@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "a": {
+      "item": "minecraft:iron_ingot"
+    },
+    "b": {
+      "item": "jeg:rifle_ammo"
+    },
+    "c": {
+      "item": "minecraft:flint_and_steel"
+    },
+    "d": {
+      "item": "minecraft:copper_ingot"
+    },
+    "e": {
+      "item": "minecraft:lava_bucket"
+    },
+    "f": {
+      "item": "minecraft:redstone"
+    },
+    "g": {
+      "item": "jeg:coolant"
+    }
+  },
+  "pattern": [
+    " aa",
+    "bcd",
+    "efg"
+  ],
+  "result": {
+    "id": "jeg:repair_tool",
+    "count": 1
+  }
+}

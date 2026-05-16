@@ -72,6 +72,7 @@ import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
@@ -433,6 +434,29 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public float maxVehicleHealth() {
         return this.vehicleData().defaults().maxHealth();
+    }
+
+    public boolean repairWithTool(float hullAmount, float partAmount) {
+        if (this.level().isClientSide || this.isRemoved() || hullAmount <= 0.0F) {
+            return false;
+        }
+        boolean repaired = false;
+        if (this.vehicleHealth() < this.maxVehicleHealth()) {
+            this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + hullAmount));
+            repaired = true;
+        }
+        if (partAmount > 0.0F) {
+            repaired |= this.repairParts(partAmount, true);
+        }
+        if (repaired) {
+            this.repairCooldown = 0;
+            this.hurtMarked = true;
+        }
+        return repaired;
+    }
+
+    public boolean hurtWithRepairTool(DamageSource source, float amount) {
+        return this.hurtVehicleIgnoringArmor(source, amount);
     }
 
     public int vehicleEnergy() {
@@ -2593,6 +2617,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean autoRepairParts(float repair) {
+        return this.repairParts(repair, false);
+    }
+
+    private boolean repairParts(float repair, boolean includeSubEngine) {
         boolean repaired = false;
         if (this.leftWheelHealth < PART_MAX_HEALTH) {
             this.leftWheelHealth = Math.min(PART_MAX_HEALTH, this.leftWheelHealth + repair);
@@ -2604,6 +2632,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.engineHealth < PART_MAX_HEALTH) {
             this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + repair);
+            repaired = true;
+        }
+        if (includeSubEngine && this.subEngineHealth < PART_MAX_HEALTH) {
+            this.subEngineHealth = Math.min(PART_MAX_HEALTH, this.subEngineHealth + repair);
             repaired = true;
         }
         if (this.turretHealth < PART_MAX_HEALTH) {
@@ -3904,6 +3936,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (stack.getItem() instanceof RepairToolItem repairTool) {
+            if (this.level().isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            if (player instanceof ServerPlayer serverPlayer && this.level() instanceof ServerLevel serverLevel) {
+                repairTool.useOnVehicle(serverLevel, serverPlayer, hand, stack, this);
+                return InteractionResult.CONSUME;
+            }
+        }
         if (stack.is(ModItems.REPAIR_KIT.get())) {
             if (this.level().isClientSide) {
                 return InteractionResult.SUCCESS;

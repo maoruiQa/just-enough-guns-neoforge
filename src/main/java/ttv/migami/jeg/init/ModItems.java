@@ -34,6 +34,7 @@ import ttv.migami.jeg.item.MolotovCocktailItem;
 import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
 import ttv.migami.jeg.item.WaterBombItem;
@@ -69,6 +70,10 @@ public final class ModItems {
     public static final DeferredHolder<Item, Item> REPAIR_KIT = REGISTER.register(
             "repair_kit",
             () -> new Item(baseProperties(Reference.id("repair_kit")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, RepairToolItem> REPAIR_TOOL = REGISTER.register(
+            "repair_tool",
+            RepairToolItem::new
     );
     public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
@@ -345,6 +350,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
             if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
@@ -384,6 +390,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         return List.copyOf(keys);
     }
 
@@ -447,6 +454,7 @@ public final class ModItems {
                     .forEach(event::accept);
             event.accept(CROWBAR.get());
             event.accept(REPAIR_KIT.get());
+            event.accept(REPAIR_TOOL.get());
             event.accept(COOLANT.get());
             event.accept(ENHANCED_COOLANT.get());
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
