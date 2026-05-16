@@ -21,6 +21,7 @@ public final class VehicleAssemblyRecipeManager {
     private static final Set<ResourceLocation> ENABLED_ASSEMBLY_VEHICLES = Set.of(
             Reference.id("lav150"),
             Reference.id("bmp2"),
+            Reference.id("truck"),
             Reference.id("speedboat"),
             Reference.id("ah6"),
             Reference.id("mi28")
