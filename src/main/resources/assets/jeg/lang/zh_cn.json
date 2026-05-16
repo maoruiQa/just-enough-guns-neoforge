@@ -1,6 +1,5 @@
 {
   "item.jeg.vehicle_bmp2_missile": "9M113“竞赛”反坦克导弹",
-  "item.jeg.missile": "9M113“竞赛”反坦克导弹",
   "item.jeg.vehicle_70mm_rocket": "70mm火箭弹",
   "item.jeg.vehicle_80mm_rocket": "80mm火箭弹",
   "item.jeg.vehicle_9m120_driver_missile": "9M-120对地导弹",
@@ -11,6 +10,9 @@
   "item.jeg.medium_anti_air_missile": "中型对空导弹",
   "item.jeg.medium_anti_ground_missile": "中型对地导弹",
   "item.jeg.large_anti_ground_missile": "大型对地导弹",
+  "tooltip.jeg.medium_anti_air_missile": "用于9M336对空导弹",
+  "tooltip.jeg.medium_anti_ground_missile": "用于9M113和9M-120对地导弹",
+  "tooltip.jeg.large_anti_ground_missile": "用于KH-39对地导弹",
   "death.attack.vehicle_strike": "%1$s被载具撞死了",
   "death.attack.vehicle_strike.entity": "%1$s被%2$s的载具撞死了",
   "death.attack.vehicle_strike.item": "%1$s被%2$s用%3$s撞死了",

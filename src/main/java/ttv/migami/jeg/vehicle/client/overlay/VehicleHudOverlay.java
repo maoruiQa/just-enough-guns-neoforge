@@ -146,10 +146,9 @@ public final class VehicleHudOverlay {
         if (showWeaponInfo) {
             ResourceLocation selectedWeaponId = vehicle.selectedVehicleWeaponId(minecraft.player);
             if (selectedWeaponId != null) {
-                Component weaponName = Component.translatable("item." + selectedWeaponId.getNamespace() + "." + selectedWeaponId.getPath());
                 Component ammo = vehicleUsesLoadedAmmo(vehicle, minecraft.player)
-                        ? vehicleAmmoComponent(vehicle, minecraft.player, weaponName)
-                        : Component.translatable("hud.jeg.vehicle.weapon", weaponName, String.valueOf(vehicle.selectedVehicleWeaponAmmo(minecraft.player)));
+                        ? vehicleAmmoComponent(vehicle, minecraft.player)
+                        : Component.translatable("hud.jeg.vehicle.weapon", Component.translatable("item." + selectedWeaponId.getNamespace() + "." + selectedWeaponId.getPath()), String.valueOf(vehicle.selectedVehicleWeaponAmmo(minecraft.player)));
                 renderSelectedWeaponIcon(guiGraphics, vehicle, minecraft.player, width / 2 - 128, lineY - 4);
                 guiGraphics.drawString(minecraft.font, ammo, (width - minecraft.font.width(ammo)) / 2, lineY, 0xFFFFDD88);
                 lineY += 11;
@@ -278,22 +277,16 @@ public final class VehicleHudOverlay {
         };
     }
 
-    private static boolean isRifleAmmoWeapon(ResourceLocation weaponId) {
-        return switch (weaponId.getPath()) {
-            case "vehicle_coax_machine_gun", "light_machine_gun" -> true;
-            default -> false;
-        };
-    }
-
-    private static Component vehicleAmmoComponent(VehicleEntity vehicle, Entity passenger, Component weaponName) {
-        ResourceLocation selectedWeaponId = vehicle.selectedVehicleWeaponId(passenger);
-        if (selectedWeaponId == null) {
-            return weaponName;
+    private static Component vehicleAmmoComponent(VehicleEntity vehicle, Entity passenger) {
+        int slot = vehicle.selectedVehicleWeaponIndex(passenger);
+        var weapons = vehicle.vehicleData().defaults().weapons();
+        if (slot < 0 || slot >= weapons.size()) {
+            return Component.empty();
         }
         String ammoCounts = vehicle.selectedVehicleWeaponAmmo(passenger) + "/" + vehicle.selectedVehicleWeaponReserveAmmo(passenger);
-        return isRifleAmmoWeapon(selectedWeaponId)
-                ? Component.translatable("hud.jeg.vehicle.rifle_ammo", ammoCounts)
-                : Component.translatable("hud.jeg.vehicle.weapon", weaponName, ammoCounts);
+        ResourceLocation ammoId = weapons.get(slot).ammoId();
+        return Component.translatable("item." + ammoId.getNamespace() + "." + ammoId.getPath())
+                .append(Component.literal(": " + ammoCounts));
     }
 
     private static boolean vehicleUsesLoadedAmmo(VehicleEntity vehicle, Entity passenger) {

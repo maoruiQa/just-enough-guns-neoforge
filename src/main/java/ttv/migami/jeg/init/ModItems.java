@@ -26,6 +26,7 @@ import ttv.migami.jeg.event.RecipeUnlockHandler;
 import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.DescribedAmmoItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -113,7 +114,6 @@ public final class ModItems {
             "spectre_round",
             "blaze_round",
             "rocket",
-            "missile",
             "small_rocket",
             "medium_anti_air_missile",
             "medium_anti_ground_missile",
@@ -273,6 +273,8 @@ public final class ModItems {
                 case "smoke_grenade" -> AMMO.put(id, REGISTER.register(path, () -> new SmokeGrenadeItem(baseProperties(id).stacksTo(16))));
                 case "molotov_cocktail" -> AMMO.put(id, REGISTER.register(path, () -> new MolotovCocktailItem(baseProperties(id).stacksTo(16))));
                 case "water_bomb" -> AMMO.put(id, REGISTER.register(path, () -> new WaterBombItem(baseProperties(id).stacksTo(16))));
+                case "medium_anti_air_missile", "medium_anti_ground_missile", "large_anti_ground_missile" ->
+                        AMMO.put(id, REGISTER.register(path, () -> new DescribedAmmoItem(baseProperties(id), "tooltip.jeg." + path)));
                 default -> AMMO.put(id, REGISTER.register(path, () -> new Item(baseProperties(id))));
             }
         }
