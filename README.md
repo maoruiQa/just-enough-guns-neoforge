@@ -27,7 +27,9 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 
 ## Latest Release Notes
 
-Version `1.6.x` is the Walkürenritt update, focused on bringing vehicle combat into the mod:
+Version `1.6.x` is **Walkürenritt**, the vehicle update. This release moves Just Enough Guns beyond infantry combat and turns the mod into a combined-arms sandbox, with assembled vehicles, mounted weapons, vehicle HUDs, missiles, defensive tools, repairs, and charging support built into normal survival progression.
+
+The update is centered on battlefield mobility and vehicle combat:
 
 - Added the configured vehicle system with data-driven vehicle definitions, vehicle inventories, assembling recipes, charging station support, repair tools, vehicle HUDs, vehicle controls, and dedicated renderers.
 - Added the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower vehicle lineup.
