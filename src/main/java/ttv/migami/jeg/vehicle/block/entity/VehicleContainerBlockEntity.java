@@ -27,6 +27,7 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
     private static final String TAG_ENTITY_TYPE = "EntityType";
     private static final String TAG_ENTITY = "Entity";
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
+    private static final String TAG_ENERGY = "Energy";
 
     private String entityType = "jeg:test_wheel_vehicle";
     private CompoundTag entityTag;
@@ -52,11 +53,20 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
         ItemStack stack = new ItemStack(ModItems.VEHICLE_CONTAINER.get());
         CompoundTag tag = new CompoundTag();
         CompoundTag entityTag = new CompoundTag();
-        tag.putString(TAG_ENTITY_TYPE, ttv.migami.jeg.vehicle.data.VehicleDataManager.get(vehicleId).defaults().entityType());
+        var data = ttv.migami.jeg.vehicle.data.VehicleDataManager.get(vehicleId);
+        tag.putString(TAG_ENTITY_TYPE, data.defaults().entityType());
         entityTag.putString(TAG_VEHICLE_ID, vehicleId.toString());
+        entityTag.putInt(TAG_ENERGY, initialDeploymentEnergy(data.defaults().maxEnergy()));
         tag.put(TAG_ENTITY, entityTag);
         BlockItem.setBlockEntityData(stack, ModBlockEntities.VEHICLE_CONTAINER.get(), tag);
         return stack;
+    }
+
+    private static int initialDeploymentEnergy(int maxEnergy) {
+        if (maxEnergy <= 0) {
+            return 0;
+        }
+        return (int) Math.ceil(maxEnergy * 0.1D);
     }
 
     public boolean deploy(Player player) {
