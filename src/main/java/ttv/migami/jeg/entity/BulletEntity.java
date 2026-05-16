@@ -1576,18 +1576,31 @@ public class BulletEntity extends Projectile {
         if (shouldSendBulletTrail(stats)) {
             gravity = stats.gravity() ? 0.040D : 0.0D;
         } else {
-            gravity = switch (GunCategory.fromStats(stats)) {
-                case SNIPER -> 0.020D;
-                case RIFLE -> 0.024D;
-                case PISTOL -> 0.030D;
-                case SMG -> 0.032D;
-                case LMG -> 0.028D;
-                case SHOTGUN -> 0.028D;
-                case HEAVY -> 0.035D;
-                case SPECIAL -> 0.050D;
-            };
+            gravity = gravityForCategory(GunCategory.fromStats(stats));
         }
         return stats.id().equals(FLAMETHROWER_ID) ? gravity * 1.5D : gravity;
+    }
+
+    private static double gravityForCategory(GunCategory category) {
+        if (category == GunCategory.SNIPER) {
+            return 0.020D;
+        }
+        if (category == GunCategory.RIFLE) {
+            return 0.024D;
+        }
+        if (category == GunCategory.PISTOL) {
+            return 0.030D;
+        }
+        if (category == GunCategory.SMG) {
+            return 0.032D;
+        }
+        if (category == GunCategory.LMG || category == GunCategory.SHOTGUN) {
+            return 0.028D;
+        }
+        if (category == GunCategory.HEAVY) {
+            return 0.035D;
+        }
+        return 0.050D;
     }
 
     private static boolean shouldSendBulletTrail(GunStats stats) {
