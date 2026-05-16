@@ -72,6 +72,10 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, Item> COOLANT = REGISTER.register("coolant", () -> new Item(baseProperties(Reference.id("coolant")).stacksTo(1)));
     public static final DeferredHolder<Item, EnhancedCoolantItem> ENHANCED_COOLANT = REGISTER.register("enhanced_coolant", () -> new EnhancedCoolantItem(baseProperties(Reference.id("enhanced_coolant")).stacksTo(1)));
+    public static final DeferredHolder<Item, Item> MISSILE_ENGINE = REGISTER.register(
+            "missile_engine",
+            () -> new Item(baseProperties(Reference.id("missile_engine")).stacksTo(64))
+    );
     public static final DeferredHolder<Item, MagazineItem> PISTOL_MAGAZINE = REGISTER.register(
             "pistol_magazine",
             () -> new MagazineItem(baseProperties(Reference.id("pistol_magazine")).stacksTo(1), MagazineItem.MagazineType.PISTOL)
@@ -331,6 +335,7 @@ public final class ModItems {
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
@@ -369,6 +374,7 @@ public final class ModItems {
         }
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
@@ -410,6 +416,7 @@ public final class ModItems {
                 }
             });
             AMMO.values().forEach(holder -> event.accept(holder.get()));
+            event.accept(MISSILE_ENGINE.get());
             event.accept(PISTOL_MAGAZINE.get());
             event.accept(SMG_MAGAZINE.get());
             event.accept(RIFLE_MAGAZINE.get());

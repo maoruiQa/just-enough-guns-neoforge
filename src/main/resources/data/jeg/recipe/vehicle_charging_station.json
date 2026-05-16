@@ -4,20 +4,20 @@
   "pattern": [
     "CRC",
     "RBR",
-    "III"
+    "CIC"
   ],
   "key": {
-    "B": {
-      "item": "minecraft:blast_furnace"
-    },
     "C": {
       "item": "minecraft:copper_ingot"
     },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    },
     "R": {
       "item": "minecraft:redstone"
+    },
+    "B": {
+      "item": "minecraft:blast_furnace"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
     }
   },
   "result": {
