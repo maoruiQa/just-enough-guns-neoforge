@@ -129,11 +129,6 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
     }
 
     @Override
-    public boolean shouldRenderAtSqrDistance(double distance) {
-        return distance <= 120.0D * 120.0D;
-    }
-
-    @Override
     protected boolean shouldSpawnGunnerSkeletonsOnDeath() {
         return false; // Guardian spawns phantom gunners, not skeletons
     }
@@ -457,9 +452,8 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
             return super.enforceFlightHeight(targetPos);
         }
 
-        // Enforce height relative to anchor point
-        int minY = this.anchorPos.getY() + MIN_FLIGHT_HEIGHT_ABOVE_DECK;
-        int maxY = this.anchorPos.getY() + MAX_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
+        double minY = this.getTarget() != null ? this.anchorPos.getY() - SKYSHIP_VERTICAL_RANGE * 0.5D : this.anchorPos.getY() + MIN_FLIGHT_HEIGHT_ABOVE_DECK;
+        double maxY = this.getTarget() != null ? this.anchorPos.getY() + SKYSHIP_VERTICAL_RANGE : this.anchorPos.getY() + MAX_FLIGHT_HEIGHT_ABOVE_DECK + IDLE_ALTITUDE_BONUS;
         double clampedY = Mth.clamp(targetPos.y, minY, maxY);
 
         // Strictly enforce horizontal tether - prevent ANY movement outside radius
