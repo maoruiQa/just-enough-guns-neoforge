@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.6.0-pre - 2026-05-16
+
+### Added
+- Synced the configured vehicle system to NeoForge 26.1, including data-driven vehicles, inventories, assembling recipes, charging station support, repair tools, missile and decoy entities, vehicle HUDs, controls, cameras, and dedicated renderers.
+- Added LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower vehicle content and assets.
+- Added SuperbWarfare-aligned vehicle weapons, missiles, sounds, icons, models, textures, recipes, assembly data, and alignment documentation.
+
+### Changed
+- Tuned land, boat, and aircraft vehicle handling, camera behavior, seat positions, passenger visibility, weapon stations, reverse speeds, collision boxes, armor profiles, and damage behavior.
+- Tuned LAV-150 and BMP-2 weapon, mobility, turret, missile, and armor behavior.
+- Increased vehicle charging station throughput and added repair-tool vehicle support.
+- Increased speedboat, LAV-150, and BMP-2 smoke-screen height, thickness, and density.
+
+### Fixed
+- Fixed vehicle sync, dismount, ghosting, menu validation, hotbar selection, reload HUD, missile lock, target-warning, and blocked-wall handling issues.
+- Fixed MI-28 co-pilot weapon state, MI-28 turret pitch limits, speedboat turret control, BMP-2 target road speed, vehicle ammo display names, and duplicate vehicle reload timer display.
+- Synced helicopter zoom camera/passenger fixes, deployed vehicle ten-percent starting energy, and first-person repair-tool player arm rendering.
+- Reduced vehicle debug logging noise.
+
+### Documentation
+- Added vehicle SuperbWarfare alignment mapping documentation.
+
 ## 1.5.1pre2 - 2026-05-09
 
 ### Changed
