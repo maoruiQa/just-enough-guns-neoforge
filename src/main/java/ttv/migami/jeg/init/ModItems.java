@@ -107,6 +107,7 @@ public final class ModItems {
     // public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_NETHERITE = new LinkedHashMap<>();
     private static final List<ResourceKey<Recipe<?>>> MANUAL_RECIPES;
     private static final ResourceLocation PHANTOM_SMG_ID = Reference.id("phantom_smg");
+    private static final Set<ResourceLocation> DISABLED_GUN_IDS = Set.of(Reference.id("typhoonee"));
 
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
@@ -342,10 +343,12 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
-            if (!id.equals(PHANTOM_SMG_ID)) {
+            if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                 keys.add(ResourceKey.create(Registries.RECIPE, id));
             }
         }
@@ -364,7 +367,31 @@ public final class ModItems {
     }
 
     public static List<ResourceKey<Recipe<?>>> unlockGunRecipeKeys() {
-        return MANUAL_RECIPES;
+        java.util.ArrayList<ResourceKey<Recipe<?>>> keys = new java.util.ArrayList<>();
+        for (ResourceLocation id : GunDefinitions.ALL.keySet()) {
+            if (isDisabledGunId(id)) {
+                continue;
+            }
+            keys.add(ResourceKey.create(Registries.RECIPE, id));
+        }
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
+        return List.copyOf(keys);
+    }
+
+    public static boolean isDisabledGunId(ResourceLocation id) {
+        return DISABLED_GUN_IDS.contains(id);
     }
 
     private static Item.Properties defaultGunProperties(ResourceLocation id, GunStats stats) {
@@ -387,19 +414,17 @@ public final class ModItems {
     public static void addToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().equals(CreativeModeTabs.COMBAT)) {
             GUNS.forEach((id, holder) -> {
-                if (!id.equals(PHANTOM_SMG_ID)) {
+                if (!id.equals(PHANTOM_SMG_ID) && !isDisabledGunId(id)) {
                     event.accept(holder.get());
                 }
             });
             AMMO.values().forEach(holder -> event.accept(holder.get()));
+            event.accept(MISSILE_ENGINE.get());
             event.accept(PISTOL_MAGAZINE.get());
             event.accept(SMG_MAGAZINE.get());
             event.accept(RIFLE_MAGAZINE.get());
             event.accept(SHOTGUN_MAGAZINE.get());
             event.accept(MACHINE_GUN_MAGAZINE.get());
-            event.accept(CROWBAR.get());
-            event.accept(REPAIR_KIT.get());
-            event.accept(REPAIR_TOOL.get());
             BULLETPROOF_HELMETS.values().forEach(holder -> event.accept(holder.get()));
             BULLETPROOF_VESTS.values().forEach(holder -> event.accept(holder.get()));
             event.accept(PHANTOM_GUNNER_SPAWN_EGG.get());
@@ -418,10 +443,12 @@ public final class ModItems {
             event.accept(GUNSMITH_MANUAL.get());
             event.accept(COOLANT.get());
             event.accept(ENHANCED_COOLANT.get());
-            event.accept(MISSILE_ENGINE.get());
             event.accept(VEHICLE_CONTAINER.get());
             event.accept(VEHICLE_ASSEMBLING_TABLE.get());
             event.accept(VEHICLE_CHARGING_STATION.get());
+            event.accept(CROWBAR.get());
+            event.accept(REPAIR_KIT.get());
+            event.accept(REPAIR_TOOL.get());
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));

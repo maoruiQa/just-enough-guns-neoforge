@@ -3,7 +3,8 @@ package ttv.migami.jeg.fabric;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.world.item.CreativeModeTabs;
 import ttv.migami.jeg.init.ModItems;
-import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 
 public final class FabricCreativeTabs {
     private FabricCreativeTabs() {}
@@ -11,11 +12,12 @@ public final class FabricCreativeTabs {
     public static void init() {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries -> {
             ModItems.GUNS.forEach((id, holder) -> {
-                if (!id.equals(Reference.id("phantom_smg"))) {
+                if (!id.equals(ttv.migami.jeg.Reference.id("phantom_smg")) && !ModItems.isDisabledGunId(id)) {
                     entries.accept(holder.get());
                 }
             });
             ModItems.AMMO.values().forEach(holder -> entries.accept(holder.get()));
+            entries.accept(ModItems.MISSILE_ENGINE.get());
             ModItems.BULLETPROOF_HELMETS.values().forEach(holder -> entries.accept(holder.get()));
             ModItems.BULLETPROOF_VESTS.values().forEach(holder -> entries.accept(holder.get()));
 
@@ -32,6 +34,18 @@ public final class FabricCreativeTabs {
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(ModItems.GUNSMITH_MANUAL.get());
+            entries.accept(ModItems.COOLANT.get());
+            entries.accept(ModItems.ENHANCED_COOLANT.get());
+            entries.accept(ModItems.VEHICLE_CONTAINER.get());
+            entries.accept(ModItems.VEHICLE_ASSEMBLING_TABLE.get());
+            entries.accept(ModItems.VEHICLE_CHARGING_STATION.get());
+            VehicleDataManager.all().keySet().stream()
+                    .sorted()
+                    .map(VehicleContainerBlockEntity::createItemForVehicle)
+                    .forEach(entries::accept);
+            entries.accept(ModItems.CROWBAR.get());
+            entries.accept(ModItems.REPAIR_KIT.get());
+            entries.accept(ModItems.REPAIR_TOOL.get());
         });
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> {
