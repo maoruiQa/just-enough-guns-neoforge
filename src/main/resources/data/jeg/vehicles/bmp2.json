@@ -1,0 +1,50 @@
+{
+  "entity_type": "jeg:bmp2",
+  "vehicle_type": "land",
+  "max_health": 320.0,
+  "auto_repair_per_tick": 0.014,
+  "auto_repair_cooldown_ticks": 180,
+  "max_energy": 5000000,
+  "up_step": 2.25,
+  "allow_free_cam": true,
+  "has_decoy": true,
+  "container_type": "medium",
+  "seats": [
+    {"index": 0, "x": 0.36, "y": -0.25, "z": 0.56, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -7.5, "max_pitch": 74.0, "sensitivity_x": 0.53, "sensitivity_y": 0.71, "sensitivity_z": 0.9},
+    {"index": 1, "x": 1.803125, "y": 0.5, "z": -0.8125, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": 1.803125, "y": 1.9765625, "z": -0.8125, "use_fixed_camera_pos": true}},
+    {"index": 2, "x": -1.803125, "y": 0.5, "z": -0.8125, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": -1.803125, "y": 1.9765625, "z": -0.8125, "use_fixed_camera_pos": true}},
+    {"index": 3, "x": 1.815625, "y": 0.5, "z": -2.1875, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": 1.815625, "y": 1.9765625, "z": -0.8125, "use_fixed_camera_pos": true}},
+    {"index": 4, "x": -1.815625, "y": 0.5, "z": -2.1875, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": -1.815625, "y": 1.9765625, "z": -0.8125, "use_fixed_camera_pos": true}},
+    {"index": 5, "x": 0.6875, "y": 0.5, "z": -4.1, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": 0.6875, "y": 1.6015625, "z": -4.1, "use_fixed_camera_pos": true}},
+    {"index": 6, "x": -1.50625, "y": 0.5, "z": -3.0625, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -40.0, "max_pitch": 40.0, "min_yaw": -50.0, "max_yaw": 50.0, "sensitivity_x": 0.58, "sensitivity_y": 0.77, "sensitivity_z": 0.9, "zoom_camera": {"x": -1.50625, "y": 1.9765625, "z": -3.0625, "use_fixed_camera_pos": true}}
+  ],
+  "engine": {"type": "track", "acceleration": 0.0384, "max_forward_speed": 0.68, "max_reverse_speed": 0.4526, "friction": 0.82, "steering_speed": 0.1, "energy_cost_rate": 96},
+  "third_person_camera": {"x": 0.0, "y": 3.0, "z": -6.8},
+  "dismount": {"x": 1.55, "y": 0.1, "z": 0.0},
+  "collision_level": "heavy",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 1.5, "z": -0.28125, "half_width": 2.1875, "half_height": 0.875, "half_depth": 3.90625},
+    {"part": "body", "x": 0.0, "y": 1.5625, "z": 4.28125, "half_width": 2.1875, "half_height": 0.5, "half_depth": 0.65625},
+    {"part": "turret", "x": 0.0, "y": 0.46875, "z": 0.0, "half_width": 1.5, "half_height": 0.34375, "half_depth": 1.5},
+    {"part": "wheel_left", "x": 1.9375, "y": 0.84375, "z": 0.15625, "half_width": 0.375, "half_height": 0.78125, "half_depth": 3.46875},
+    {"part": "wheel_right", "x": -1.9375, "y": 0.84375, "z": 0.15625, "half_width": 0.375, "half_height": 0.78125, "half_depth": 3.46875},
+    {"part": "main_engine", "x": -1.09375, "y": 2.0625, "z": 1.75, "half_width": 1.15625, "half_height": 0.375, "half_depth": 1.125}
+  ],
+  "weapons": [
+    {"weapon": "jeg:vehicle_30mm_cannon", "ammo": "jeg:autocannon_shell", "energy_cost": 8, "guided": false, "seat": 0, "muzzle": {"x": -0.0875, "y": 2.943125, "z": 3.677825}},
+    {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.1625, "y": 2.843125, "z": 0.977825}},
+    {"weapon": "jeg:vehicle_bmp2_missile", "ammo": "jeg:medium_anti_ground_missile", "energy_cost": 2, "guided": true, "seat": 0}
+  ],
+  "turret": {"seat": 0, "render_pivot_y": 0.0, "origin_x": 0.0, "origin_y": 2.25, "origin_z": -0.703125, "barrel_x": 0.3625, "barrel_y": 0.293125, "barrel_z": 1.18095, "guided_uses_turret": false},
+  "destroy": {"explodes": true, "explosion_power": 4.5},
+  "seek": {"range": 76.0, "angle": 10.0, "warns_target": true},
+  "armor": {
+    "fallback": {"rating": 9.5, "undermatch_multiplier": 0.18, "overmatch_multiplier": 0.86, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 0.72},
+    "parts": {
+      "turret": {"rating": 10.4, "undermatch_multiplier": 0.16, "overmatch_multiplier": 0.82, "passenger_leak_multiplier": 0.06, "part_damage_multiplier": 0.76},
+      "wheel_left": {"rating": 4.8, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.45},
+      "wheel_right": {"rating": 4.8, "undermatch_multiplier": 0.42, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.45},
+      "main_engine": {"rating": 6.5, "undermatch_multiplier": 0.34, "overmatch_multiplier": 0.96, "passenger_leak_multiplier": 0.05, "part_damage_multiplier": 1.2}
+    }
+  }
+}

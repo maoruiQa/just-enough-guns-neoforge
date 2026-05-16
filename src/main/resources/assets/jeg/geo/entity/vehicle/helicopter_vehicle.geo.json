@@ -1,0 +1,45 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.jeg.helicopter_vehicle",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 5,
+        "visible_bounds_height": 3,
+        "visible_bounds_offset": [0, 0.9, 0]
+      },
+      "bones": [
+        {"name": "root", "pivot": [0, 0, 0]},
+        {
+          "name": "body",
+          "parent": "root",
+          "pivot": [0, 9, 0],
+          "cubes": [
+            {"origin": [-11, 5, -16], "size": [22, 9, 26], "uv": [0, 0]},
+            {"origin": [-4, 7, 10], "size": [8, 5, 24], "uv": [0, 0]}
+          ]
+        },
+        {
+          "name": "main_rotor",
+          "parent": "root",
+          "pivot": [0, 18, -2],
+          "cubes": [
+            {"origin": [-32, 18, -3], "size": [64, 1, 2], "uv": [0, 0]},
+            {"origin": [-1, 18, -34], "size": [2, 1, 64], "uv": [0, 0]}
+          ]
+        },
+        {
+          "name": "tail_rotor",
+          "parent": "root",
+          "pivot": [0, 11, 34],
+          "cubes": [
+            {"origin": [-10, 11, 33], "size": [20, 1, 2], "uv": [0, 0]},
+            {"origin": [-1, 2, 33], "size": [2, 20, 2], "uv": [0, 0]}
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "result_vehicle": "jeg:waveforce_tower",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 48},
+    {"item": "minecraft:copper_ingot", "count": 22},
+    {"item": "minecraft:redstone", "count": 28},
+    {"item": "minecraft:sculk_catalyst", "count": 1}
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "result_vehicle": "jeg:speedboat",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 20},
+    {"item": "minecraft:oak_planks", "count": 18},
+    {"item": "minecraft:redstone", "count": 6}
+  ]
+}
