@@ -22,7 +22,7 @@ public final class Mi28GeoModel extends NamedVehicleGeoModel {
 
         GeoBone barrel = this.getAnimationProcessor().getBone("barrel");
         if (barrel != null) {
-            barrel.setRotX(Mth.clamp(-animatable.turretPitch(partialTick), -25.0F, 35.0F) * Mth.DEG_TO_RAD);
+            barrel.setRotX(Mth.clamp(-animatable.turretPitch(partialTick), -40.0F, 10.0F) * Mth.DEG_TO_RAD);
         }
 
         float rotorRotation = animatable.propellerRot(partialTick);
