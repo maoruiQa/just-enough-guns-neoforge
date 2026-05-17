@@ -31,10 +31,10 @@
   "destroy": {"explodes": true, "explosion_power": 2.3},
   "seek": {"range": 80.0, "angle": 12.0, "warns_target": true},
   "armor": {
-    "fallback": {"rating": 4.8, "undermatch_multiplier": 0.24, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.24, "part_damage_multiplier": 1.0},
+    "fallback": {"rating": 4.8, "undermatch_multiplier": 0.10, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.24, "part_damage_multiplier": 1.0},
     "parts": {
-      "main_engine": {"rating": 3.5, "undermatch_multiplier": 0.4, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 1.45},
-      "sub_engine": {"rating": 2.6, "undermatch_multiplier": 0.45, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 1.6}
+      "main_engine": {"rating": 3.5, "undermatch_multiplier": 0.22, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 1.45},
+      "sub_engine": {"rating": 2.6, "undermatch_multiplier": 0.26, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.08, "part_damage_multiplier": 1.6}
     }
   }
 }

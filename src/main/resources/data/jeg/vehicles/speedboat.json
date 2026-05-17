@@ -30,9 +30,9 @@
   "turret": {"seat": 0, "render_pivot_y": 1.0, "origin_x": 0.0, "origin_y": 2.5616625, "origin_z": -0.565625, "barrel_x": 0.0, "barrel_y": 0.5088375, "barrel_z": 0.04173125, "guided_uses_turret": false},
   "destroy": {"explodes": true, "explosion_power": 2.0},
   "armor": {
-    "fallback": {"rating": 5.0, "undermatch_multiplier": 0.3, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.22, "part_damage_multiplier": 1.0},
+    "fallback": {"rating": 5.0, "undermatch_multiplier": 0.14, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.22, "part_damage_multiplier": 1.0},
     "parts": {
-      "main_engine": {"rating": 3.0, "undermatch_multiplier": 0.45, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.4}
+      "main_engine": {"rating": 3.0, "undermatch_multiplier": 0.24, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.4}
     }
   }
 }
