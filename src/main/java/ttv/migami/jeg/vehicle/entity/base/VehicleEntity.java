@@ -1019,9 +1019,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void playVehicleStrikeSound() {
+        this.playVehicleMetalHitSound(this.getSoundSource(), 1.0F);
+    }
+
+    private void playVehicleDamageSound(boolean penetrated) {
+        this.playVehicleMetalHitSound(SoundSource.PLAYERS, penetrated ? 0.85F : 1.2F);
+    }
+
+    private void playVehicleMetalHitSound(SoundSource source, float pitch) {
         var holder = ModSounds.ALL.get(Reference.id("block.hit.metal"));
         SoundEvent sound = holder == null ? SoundEvents.ANVIL_LAND : holder.get();
-        this.level().playSound(null, this, sound, this.getSoundSource(), 1.0F, 1.0F);
+        this.level().playSound(null, this, sound, source, 1.0F, pitch);
     }
 
     private void bounceHorizontal(Direction direction) {
@@ -3720,6 +3728,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (finalDamage <= 1.0F) {
             return false;
         }
+        this.playVehicleDamageSound(armorHit.penetrated());
         this.applyPartDamage(hitPart, finalDamage);
         this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
