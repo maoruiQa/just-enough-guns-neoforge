@@ -5,14 +5,20 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -36,6 +42,10 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     private int page;
     @Nullable
     private VehicleType filterType;
+    @Nullable
+    private Identifier previewVehicleId;
+    @Nullable
+    private Entity previewEntity;
 
     public VehicleAssemblingScreen(VehicleAssemblingMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 256, 248);
@@ -48,6 +58,7 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         this.allRecipes = VehicleAssemblyRecipeManager.recipes();
         this.recipes = this.filteredRecipes();
         this.page = Math.min(this.page, this.maxPage());
+        this.resetPreview();
         this.addFilterButtons();
         this.addRecipeButtons();
         this.addPageButtons();
@@ -135,17 +146,20 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         guiGraphics.fill(x + 6, y + 18, x + this.imageWidth - 6, y + 172, 0xAA111418);
         guiGraphics.fill(x + 6, y + 162, x + this.imageWidth - 6, y + this.imageHeight - 6, 0xAA111418);
         guiGraphics.fill(x + PREVIEW_X - 6, y + PREVIEW_Y - 6, x + this.imageWidth - 10, y + PREVIEW_Y + PREVIEW_SIZE + 12, 0xCC20252B);
+        VehicleAssemblyRecipe previewRecipe = this.previewRecipe(mouseX, mouseY);
+        if (previewRecipe != null) {
+            this.renderVehiclePreview(guiGraphics, previewRecipe, partialTick);
+        }
+        super.extractContents(guiGraphics, mouseX, mouseY, partialTick);
         int start = this.page * RECIPES_PER_PAGE;
         int end = Math.min(this.recipes.size(), start + RECIPES_PER_PAGE);
         for (int index = start; index < end; index++) {
             int row = index - start;
             guiGraphics.text(this.font, costText(this.recipes.get(index)), x + 12, y + 15 + row * 24, 0xFFE6E6E6);
         }
-        VehicleAssemblyRecipe previewRecipe = this.previewRecipe(mouseX, mouseY);
         if (previewRecipe != null) {
             this.renderVehicleIcon(guiGraphics, previewRecipe.resultVehicle());
         }
-        super.extractContents(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void renderVehicleIcon(GuiGraphicsExtractor guiGraphics, Identifier vehicleId) {
@@ -153,7 +167,48 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         if (icon == null) {
             return;
         }
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, this.leftPos + PREVIEW_X, this.topPos + PREVIEW_Y - 18, 64, 16, 0, 0, 256, 64, 256, 64);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, this.leftPos + PREVIEW_X, this.topPos + PREVIEW_Y - 18, 0, 0, 64, 16, 256, 64, 256, 64);
+    }
+
+    private void renderVehiclePreview(GuiGraphicsExtractor guiGraphics, VehicleAssemblyRecipe recipe, float partialTick) {
+        Entity entity = this.previewEntity(recipe.resultVehicle());
+        if (entity == null || this.minecraft == null) {
+            return;
+        }
+
+        entity.setYRot((this.minecraft.player == null ? 0.0F : this.minecraft.player.tickCount + partialTick) * 1.5F);
+        entity.yRotO = entity.getYRot();
+        EntityRenderState state = this.minecraft.getEntityRenderDispatcher().extractEntity(entity, partialTick);
+        Quaternionf rotation = new Quaternionf().rotateZ((float) Math.PI);
+        Quaternionf cameraRotation = new Quaternionf().rotateX((float) Math.toRadians(14.0F));
+        Vector3f translation = new Vector3f(0.0F, state.boundingBoxHeight * 0.5F + 0.35F, 0.0F);
+        guiGraphics.entity(
+                state,
+                18.0F,
+                translation,
+                rotation,
+                cameraRotation,
+                this.leftPos + PREVIEW_X + 2,
+                this.topPos + PREVIEW_Y - 2,
+                this.leftPos + PREVIEW_X + PREVIEW_SIZE,
+                this.topPos + PREVIEW_Y + PREVIEW_SIZE + 8
+        );
+    }
+
+    @Nullable
+    private Entity previewEntity(Identifier vehicleId) {
+        if (this.previewEntity != null && vehicleId.equals(this.previewVehicleId)) {
+            return this.previewEntity;
+        }
+        if (this.minecraft == null || this.minecraft.level == null) {
+            return null;
+        }
+        Identifier entityTypeId = Identifier.parse(VehicleDataManager.get(vehicleId).defaults().entityType());
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(entityTypeId);
+        Entity entity = type.create(this.minecraft.level, EntitySpawnReason.LOAD);
+        this.previewVehicleId = vehicleId;
+        this.previewEntity = entity;
+        return entity;
     }
 
     private VehicleAssemblyRecipe previewRecipe(int mouseX, int mouseY) {
@@ -172,6 +227,11 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
             }
         }
         return this.recipes.get(Math.min(start, this.recipes.size() - 1));
+    }
+
+    private void resetPreview() {
+        this.previewVehicleId = null;
+        this.previewEntity = null;
     }
 
     private static Component vehicleName(Identifier vehicleId) {

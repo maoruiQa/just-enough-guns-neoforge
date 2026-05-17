@@ -173,7 +173,7 @@ public final class VehicleHudOverlay {
     private static void renderValueBar(GuiGraphicsExtractor guiGraphics, Identifier icon, int x, int y, float ratio) {
         int filled = Mth.clamp(Math.round(60.0F * ratio), 0, 60);
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, x, y, 0, 0, 10, 10, 10, 10);
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, VALUE_FRAME, x + 11, y + 2, 60, 6, 0, 0, 120, 12, 120, 12);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, VALUE_FRAME, x + 11, y + 2, 0, 0, 60, 6, 120, 12, 120, 12);
         if (filled > 0) {
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, VALUE_BAR, x + 11, y + 2, 0, 0, filled, 6, 60, 6);
         }
@@ -315,7 +315,7 @@ public final class VehicleHudOverlay {
     }
 
     private static void blitWeaponIcon(GuiGraphicsExtractor guiGraphics, Identifier icon, int x, int y) {
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, x, y, WEAPON_ICON_WIDTH, WEAPON_ICON_HEIGHT, 0, 0, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, x, y, 0, 0, WEAPON_ICON_WIDTH, WEAPON_ICON_HEIGHT, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT, WEAPON_ICON_TEXTURE_WIDTH, WEAPON_ICON_TEXTURE_HEIGHT);
     }
 
     private static void renderWeaponNumber(GuiGraphicsExtractor guiGraphics, int number, int rightX, int y) {
@@ -334,7 +334,7 @@ public final class VehicleHudOverlay {
     }
 
     private static void blitWeaponDigit(GuiGraphicsExtractor guiGraphics, int digit, int x, int y) {
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_NUMBER, x, y, 5, 8, digit * 20, 0, 20, 30, 300, 30);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_NUMBER, x, y, digit * 20, 0, 5, 8, 20, 30, 300, 30);
     }
 
     private static void renderReticle(GuiGraphicsExtractor guiGraphics, VehicleEntity vehicle) {

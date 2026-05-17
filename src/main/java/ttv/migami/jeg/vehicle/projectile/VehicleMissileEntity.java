@@ -25,6 +25,7 @@ import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
 public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
+    private static final int ARMING_TICKS = 3;
 
     private int ownerId = -1;
     private int targetId = -1;
@@ -62,7 +63,7 @@ public final class VehicleMissileEntity extends Entity {
                 return;
             }
             Vec3 nextPosition = this.position().add(this.getDeltaMovement());
-            if (this.hitAlongPath(this.position(), nextPosition)) {
+            if (this.tickCount > ARMING_TICKS && this.hitAlongPath(this.position(), nextPosition)) {
                 return;
             }
         }
@@ -75,6 +76,9 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     private void steerServer() {
+        if (this.tickCount <= ARMING_TICKS) {
+            return;
+        }
         VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
         if (profile.usesLockOn()) {
@@ -89,7 +93,7 @@ public final class VehicleMissileEntity extends Entity {
             this.warnTrackedTarget(target);
             Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(profile.maxSpeed());
             this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
-            if (this.distanceToSqr(target) < 1.4D) {
+            if (this.tickCount > ARMING_TICKS && this.distanceToSqr(target) < 1.4D) {
                 this.explode();
             }
         } else if (profile.usesWireGuidance() && owner instanceof LivingEntity livingOwner) {
