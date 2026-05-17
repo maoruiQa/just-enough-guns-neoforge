@@ -2,6 +2,7 @@ package ttv.migami.jeg.client.render.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -11,16 +12,20 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.client.render.gun.HandRenderInvoker;
 import ttv.migami.jeg.item.RepairToolItem;
 
 public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem> {
     private static final String RIGHT_HAND_BONE = "Righthand";
+    private static final double ARM_BACK_OFFSET = -2.0D / 16.0D;
 
     public RepairToolItemRenderer() {
         super(new RepairToolItemModel());
+        this.addRenderLayer(new RepairToolArmLayer(this));
     }
 
     @Override
@@ -45,9 +50,6 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
         if (RIGHT_HAND_BONE.equals(bone.getName())) {
             bone.setHidden(true);
             bone.setChildrenHidden(false);
-            if (isFirstPersonContext()) {
-                renderPlayerArmForBone(poseStack, bone, bufferSource, packedLight);
-            }
         }
 
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
@@ -128,5 +130,52 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
         }
         return ItemStack.isSameItemSameComponents(renderStack, heldStack)
                 || ItemStack.isSameItem(renderStack, heldStack);
+    }
+
+    private static final class RepairToolArmLayer extends GeoRenderLayer<RepairToolItem> {
+        private RepairToolArmLayer(GeoItemRenderer<RepairToolItem> renderer) {
+            super(renderer);
+        }
+
+        @Override
+        public void renderForBone(
+                PoseStack poseStack,
+                RepairToolItem animatable,
+                GeoBone bone,
+                RenderType renderType,
+                MultiBufferSource bufferSource,
+                VertexConsumer buffer,
+                float partialTick,
+                int packedLight,
+                int packedOverlay
+        ) {
+            if (!RIGHT_HAND_BONE.equals(bone.getName())) {
+                return;
+            }
+            if (!(getRenderer() instanceof RepairToolItemRenderer renderer) || !renderer.isFirstPersonContext()) {
+                return;
+            }
+
+            poseStack.pushPose();
+            poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
+            poseStack.translate(0.0D, 0.0D, ARM_BACK_OFFSET);
+            renderer.renderPlayerArmForBone(poseStack, bone, bufferSource, packedLight);
+            poseStack.popPose();
+        }
+
+        @Override
+        public void render(
+                PoseStack poseStack,
+                RepairToolItem animatable,
+                BakedGeoModel bakedModel,
+                RenderType renderType,
+                MultiBufferSource bufferSource,
+                VertexConsumer buffer,
+                float partialTick,
+                int packedLight,
+                int packedOverlay
+        ) {
+            // Per-bone only.
+        }
     }
 }
