@@ -9,6 +9,7 @@
           "firstperson_lefthand",
           "thirdperson_righthand",
           "thirdperson_lefthand",
+          "gui",
           "ground",
           "fixed",
           "head"
