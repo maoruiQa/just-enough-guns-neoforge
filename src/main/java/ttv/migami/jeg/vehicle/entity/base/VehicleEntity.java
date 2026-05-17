@@ -2500,7 +2500,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new Vec3(
                 Mth.lerp(partialTick, this.yRotO, this.getYRot()),
                 Mth.lerp(partialTick, this.xRotO, this.getXRot()),
-                0.0D
+                this.roll(partialTick)
         );
     }
 
@@ -2552,7 +2552,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new Vec3(
                 Mth.lerp(partialTick, this.yRotO, this.getYRot()),
                 Mth.lerp(partialTick, this.xRotO, this.getXRot()),
-                0.0D
+                this.roll(partialTick)
         );
     }
 
@@ -3818,10 +3818,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
         float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
+        this.playVehicleDamageSound(armorHit.penetrated());
         if (finalDamage <= 1.0F) {
             return false;
         }
-        this.playVehicleDamageSound(armorHit.penetrated());
         this.applyPartDamage(hitPart, finalDamage);
         this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
