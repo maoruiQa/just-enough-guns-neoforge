@@ -44,6 +44,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         renderState.vehicle = vehicle;
         renderState.hideWhileZooming = shouldHideVehicleWhileZooming(vehicle);
         renderState.rootY = (float) vehicle.rotateOffsetHeight();
+        renderState.yaw = Mth.rotLerp(partialTick, vehicle.yRotO, vehicle.getYRot());
         renderState.pitch = Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot());
         renderState.roll = vehicle.roll(partialTick);
     }
@@ -61,7 +62,6 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         if (passInfo.renderState().hideWhileZooming) {
             return;
         }
-        super.adjustRenderPose(passInfo);
         this.vehicleAxis(passInfo.renderState(), passInfo.poseStack());
     }
 
@@ -101,6 +101,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
 
     private void vehicleAxis(VehicleRenderState renderState, PoseStack poseStack) {
         float rootY = renderState.rootY;
+        poseStack.rotateAround(Axis.YP.rotationDegrees(180.0F - renderState.yaw), 0.0F, rootY, 0.0F);
         poseStack.rotateAround(Axis.XP.rotationDegrees(-renderState.pitch), 0.0F, rootY, 0.0F);
         poseStack.rotateAround(Axis.ZP.rotationDegrees(-renderState.roll), 0.0F, rootY, 0.0F);
     }
