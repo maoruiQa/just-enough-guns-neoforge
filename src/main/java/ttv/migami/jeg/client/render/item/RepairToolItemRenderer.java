@@ -133,6 +133,7 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
         private static final float LEFT_ARM_Y_OFFSET_PIXELS = -4.133F;
         private static final float RIGHT_ARM_Y_OFFSET_PIXELS = -2.133F;
         private static final float ARM_X_OFFSET_PIXELS = 0.75F;
+        private static final float ARM_Z_OFFSET_PIXELS = -2.0F;
 
         private RepairToolArmLayer(GeoItemRenderer<RepairToolItem> renderer) {
             super(renderer);
@@ -140,17 +141,18 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
 
         @Override
         public void preRender(RenderPassInfo<GeoRenderState> passInfo, SubmitNodeCollector collector) {
-            ItemDisplayContext ctx = resolveStableContext(passInfo.renderState());
-            if (!isFirstPerson(ctx)) {
-                return;
-            }
-
             passInfo.addBoneUpdater((info, snapshots) ->
                     snapshots.ifPresent(RIGHT_HAND_BONE, snapshot -> {
                         snapshot.skipRender(true);
                         snapshot.skipChildrenRender(false);
                     })
             );
+
+            ItemDisplayContext ctx = resolveStableContext(passInfo.renderState());
+            if (!isFirstPerson(ctx)) {
+                return;
+            }
+
             passInfo.model().getBone(RIGHT_HAND_BONE)
                     .ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(renderedArm(ctx))));
         }
@@ -219,10 +221,10 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
                 part.visible = true;
                 float xOffset = side == ArmSide.LEFT ? -ARM_X_OFFSET_PIXELS : ARM_X_OFFSET_PIXELS;
                 float yOffset = side == ArmSide.LEFT ? LEFT_ARM_Y_OFFSET_PIXELS : RIGHT_ARM_Y_OFFSET_PIXELS;
-                part.setPos(xOffset, yOffset, 0.0F);
+                part.setPos(xOffset, yOffset, ARM_Z_OFFSET_PIXELS);
                 part.xRot = 0.0F;
-                part.yRot = 0.0F;
-                part.zRot = 0.0F;
+                part.yRot = 3.1415927F;
+                part.zRot = 3.1415927F;
                 part.xScale = ARM_WIDTH_SCALE;
                 part.yScale = ARM_HEIGHT_SCALE;
                 part.zScale = ARM_DEPTH_SCALE;
