@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(GameRenderer.class)
@@ -43,7 +44,9 @@ public abstract class VehicleGameRendererMixin {
         } else {
             pitchFactor = (180.0F - yawDelta) / 90.0F;
         }
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-rollFactor * vehicle.roll(partialTick) - pitchFactor * Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot())));
+        if (!(vehicle.usesVehiclePoseTransform() && VehicleClientState.zoomDown())) {
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-rollFactor * vehicle.roll(partialTick) - pitchFactor * Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot())));
+        }
 
         if (fixedCamera) {
             return;
