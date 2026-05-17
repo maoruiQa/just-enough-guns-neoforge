@@ -44,7 +44,6 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         renderState.vehicle = vehicle;
         renderState.hideWhileZooming = shouldHideVehicleWhileZooming(vehicle);
         renderState.rootY = (float) vehicle.rotateOffsetHeight();
-        renderState.yaw = Mth.lerp(partialTick, vehicle.yRotO, vehicle.getYRot());
         renderState.pitch = Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot());
         renderState.roll = vehicle.roll(partialTick);
     }
@@ -64,6 +63,15 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         }
         super.adjustRenderPose(passInfo);
         this.vehicleAxis(passInfo.renderState(), passInfo.poseStack());
+    }
+
+    @Override
+    public void preRenderPass(RenderPassInfo<VehicleRenderState> passInfo, SubmitNodeCollector collector) {
+        VehicleEntity vehicle = passInfo.renderState().vehicle;
+        if (vehicle != null) {
+            passInfo.addBoneUpdater((info, snapshots) -> updateVehicleBones(vehicle, info.renderState().ageInTicks, snapshots));
+        }
+        super.preRenderPass(passInfo, collector);
     }
 
     @Override
@@ -93,8 +101,34 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
 
     private void vehicleAxis(VehicleRenderState renderState, PoseStack poseStack) {
         float rootY = renderState.rootY;
-        poseStack.rotateAround(Axis.YP.rotationDegrees(-renderState.yaw), 0.0F, rootY, 0.0F);
-        poseStack.rotateAround(Axis.XP.rotationDegrees(renderState.pitch), 0.0F, rootY, 0.0F);
-        poseStack.rotateAround(Axis.ZP.rotationDegrees(renderState.roll), 0.0F, rootY, 0.0F);
+        poseStack.rotateAround(Axis.XP.rotationDegrees(-renderState.pitch), 0.0F, rootY, 0.0F);
+        poseStack.rotateAround(Axis.ZP.rotationDegrees(-renderState.roll), 0.0F, rootY, 0.0F);
+    }
+
+    private static void updateVehicleBones(VehicleEntity vehicle, float ageInTicks, com.geckolib.renderer.base.BoneSnapshots snapshots) {
+        float partialTick = ageInTicks - vehicle.tickCount;
+        switch (vehicle.vehicleDataId().getPath()) {
+            case "ah6" -> updateHelicopterRotors(vehicle, partialTick, snapshots);
+            case "bmp2" -> updateTurret(vehicle, partialTick, snapshots, -7.5F, 74.0F);
+            case "lav150" -> updateTurret(vehicle, partialTick, snapshots, -15.0F, 32.5F);
+            case "mi28" -> {
+                updateTurret(vehicle, partialTick, snapshots, -40.0F, 10.0F);
+                updateHelicopterRotors(vehicle, partialTick, snapshots);
+            }
+            case "speedboat" -> updateTurret(vehicle, partialTick, snapshots, -25.0F, 50.0F);
+            default -> {
+            }
+        }
+    }
+
+    private static void updateTurret(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots, float minPitch, float maxPitch) {
+        snapshots.ifPresent("turret", snapshot -> snapshot.setRotY(vehicle.turretYaw(partialTick) * Mth.DEG_TO_RAD));
+        snapshots.ifPresent("barrel", snapshot -> snapshot.setRotX(Mth.clamp(-vehicle.turretPitch(partialTick), minPitch, maxPitch) * Mth.DEG_TO_RAD));
+    }
+
+    private static void updateHelicopterRotors(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots) {
+        float rotorRotation = vehicle.propellerRot(partialTick);
+        snapshots.ifPresent("propeller", snapshot -> snapshot.setRotY(rotorRotation));
+        snapshots.ifPresent("tailPropeller", snapshot -> snapshot.setRotX(-6.0F * rotorRotation));
     }
 }

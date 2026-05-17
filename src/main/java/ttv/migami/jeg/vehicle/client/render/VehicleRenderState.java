@@ -11,7 +11,6 @@ final class VehicleRenderState extends EntityRenderState implements GeoRenderSta
     VehicleEntity vehicle;
     boolean hideWhileZooming;
     float rootY;
-    float yaw;
     float pitch;
     float roll;
 
