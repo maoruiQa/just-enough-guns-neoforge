@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.minecraft.client.Minecraft;
@@ -175,6 +176,12 @@ public final class FabricClientBootstrap {
                 return net.minecraft.world.InteractionResultHolder.consume(held);
             }
             return net.minecraft.world.InteractionResultHolder.pass(held);
+        });
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (player.getMainHandItem().getItem() instanceof GunItem) {
+                return net.minecraft.world.InteractionResult.FAIL;
+            }
+            return net.minecraft.world.InteractionResult.PASS;
         });
 
         ClientHooks.setImpl(new ClientHooks.Impl() {
