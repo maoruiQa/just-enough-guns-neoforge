@@ -2,6 +2,7 @@ package ttv.migami.jeg;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -10,6 +11,8 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -21,6 +24,7 @@ import ttv.migami.jeg.fabric.FabricEntityInit;
 import ttv.migami.jeg.fabric.FabricRecipeUnlock;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
+import ttv.migami.jeg.item.HappyGhastArmorEvents;
 import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
@@ -34,6 +38,7 @@ import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.event.VehiclePassengerDamageEvents;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -80,6 +85,16 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             GunEvents.onPlayerLogout(new PlayerEvent.PlayerLoggedOutEvent(handler.player));
         });
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
+            VehiclePassengerDamageEvents.onPassengerDamage(event);
+            return !event.isCanceled();
+        });
+        ServerEntityEvents.EQUIPMENT_CHANGE.register((entity, slot, from, to) -> {
+            LivingEquipmentChangeEvent event = new LivingEquipmentChangeEvent(entity, slot, from, to);
+            GunnerMobSpawner.onLivingEquipmentChange(event);
+            HappyGhastArmorEvents.onEquipmentChanged(event);
+        });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             GunEvents.onPlayerJoinWorld(new EntityJoinLevelEvent(entity, level));
             GunnerMobSpawner.onEntityJoinWorld(new EntityJoinLevelEvent(entity, level));
@@ -89,7 +104,9 @@ public final class FabricEntrypoint implements ModInitializer {
                 return;
             }
             for (var entity : serverLevel.getAllEntities()) {
-                GunnerMobSpawner.onLivingUpdate(new EntityTickEvent.Post(entity));
+                EntityTickEvent.Post event = new EntityTickEvent.Post(entity);
+                GunnerMobSpawner.onLivingUpdate(event);
+                HappyGhastArmorEvents.onEntityTick(event);
             }
         });
     }
