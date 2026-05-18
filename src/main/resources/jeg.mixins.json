@@ -19,8 +19,15 @@
     "AvatarRendererMixin",
     "GuiAccessor",
     "ItemInHandRendererMixin",
+    "InventoryScreenVehicleMixin",
     "GuiMixin",
-    "MinecraftMixin"
+    "MinecraftMixin",
+    "KeyMappingVehicleMixin",
+    "LivingEntityRendererVehicleMixin",
+    "MinecraftVehicleHotbarMixin",
+    "MouseHandlerVehicleMixin",
+    "VehicleCameraMixin",
+    "VehicleGameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

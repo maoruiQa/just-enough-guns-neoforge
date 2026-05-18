@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " E ",
+    "IRI",
+    " M "
+  ],
+  "key": {
+    "E": "minecraft:ender_eye",
+    "I": "minecraft:iron_ingot",
+    "R": "jeg:rocket",
+    "M": "jeg:missile_engine"
+  },
+  "result": {
+    "id": "jeg:medium_anti_ground_missile",
+    "count": 1
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "entity_type": "jeg:speedboat",
+  "vehicle_type": "boat",
+  "max_health": 200.0,
+  "auto_repair_per_tick": 0.012,
+  "auto_repair_cooldown_ticks": 120,
+  "max_energy": 500000,
+  "up_step": 0.0,
+  "allow_free_cam": true,
+  "has_decoy": true,
+  "container_type": "mini",
+  "seats": [
+    {"index": 0, "x": 0.0, "y": 0.6, "z": -0.2, "driver": true, "enclosed": false, "ban_hand": true, "min_pitch": -25.0, "max_pitch": 50.0, "min_yaw": -105.0, "max_yaw": 105.0, "sensitivity_x": 0.75, "sensitivity_y": 0.8, "sensitivity_z": 1.0, "zoom_camera": {"x": 0.0, "y": 0.4, "z": -0.6}},
+    {"index": 1, "x": -0.8, "y": 0.35, "z": -1.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
+    {"index": 2, "x": 0.8, "y": 0.35, "z": -1.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
+    {"index": 3, "x": -0.8, "y": 0.35, "z": -2.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
+    {"index": 4, "x": 0.8, "y": 0.35, "z": -2.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0}
+  ],
+  "engine": {"type": "boat", "acceleration": 0.065, "max_forward_speed": 0.6, "max_reverse_speed": 0.24, "friction": 0.94, "energy_cost_rate": 48},
+  "third_person_camera": {"x": 0.0, "y": 1.5, "z": -6.0},
+  "dismount": {"x": 1.15, "y": 0.1, "z": 0.0},
+  "collision_level": "light",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.875, "z": 0.375, "half_width": 0.78125, "half_height": 0.375, "half_depth": 1.59375},
+    {"part": "main_engine", "x": 0.0, "y": 2.0625, "z": -0.71875, "half_width": 0.53125, "half_height": 0.25, "half_depth": 0.953125}
+  ],
+  "weapons": [
+    {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.0, "y": 3.2705, "z": 0.4761}}
+  ],
+  "turret": {"seat": 0, "render_pivot_y": 1.0, "origin_x": 0.0, "origin_y": 2.5616625, "origin_z": -0.565625, "barrel_x": 0.0, "barrel_y": 0.5088375, "barrel_z": 0.04173125, "guided_uses_turret": false},
+  "destroy": {"explodes": true, "explosion_power": 2.0},
+  "armor": {
+    "fallback": {"rating": 5.0, "undermatch_multiplier": 0.14, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.22, "part_damage_multiplier": 1.0},
+    "parts": {
+      "main_engine": {"rating": 3.0, "undermatch_multiplier": 0.24, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.4}
+    }
+  }
+}

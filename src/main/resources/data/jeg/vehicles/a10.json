@@ -1,0 +1,33 @@
+{
+  "entity_type": "jeg:a10",
+  "vehicle_type": "aircraft",
+  "max_health": 105.0,
+  "auto_repair_per_tick": 0.01,
+  "auto_repair_cooldown_ticks": 150,
+  "max_energy": 220,
+  "allow_free_cam": true,
+  "container_type": "small",
+  "seats": [
+    {"index": 0, "x": 0.0, "y": 0.9, "z": 0.0, "driver": true, "enclosed": true}
+  ],
+  "engine": {"type": "jet", "acceleration": 0.036, "max_forward_speed": 0.78, "max_reverse_speed": 0.1, "friction": 0.95},
+  "third_person_camera": {"x": 0.0, "y": 3.4, "z": -9.5},
+  "dismount": {"x": 1.6, "y": 0.1, "z": 0.0},
+  "collision_level": "heavy",
+  "obb": [
+    {"part": "body", "x": 0.0, "y": 0.8, "z": 0.0, "half_width": 1.35, "half_height": 0.45, "half_depth": 1.65},
+    {"part": "main_engine", "x": 0.0, "y": 0.95, "z": -1.1, "half_width": 0.7, "half_height": 0.3, "half_depth": 0.35}
+  ],
+  "weapons": [
+    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false},
+    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true}
+  ],
+  "destroy": {"explodes": true, "explosion_power": 3.0},
+  "seek": {"range": 104.0, "angle": 14.0, "warns_target": true},
+  "armor": {
+    "fallback": {"rating": 3.0, "undermatch_multiplier": 0.22, "overmatch_multiplier": 0.95, "passenger_leak_multiplier": 0.18, "part_damage_multiplier": 0.9},
+    "parts": {
+      "main_engine": {"rating": 2.0, "undermatch_multiplier": 0.36, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 1.45}
+    }
+  }
+}

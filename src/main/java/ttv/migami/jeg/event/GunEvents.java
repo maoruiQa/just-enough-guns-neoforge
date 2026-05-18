@@ -1,5 +1,8 @@
 package ttv.migami.jeg.event;
 
+import com.mojang.serialization.Codec;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -7,6 +10,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import java.util.Map;
 import java.util.List;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.stream.StreamSupport;
 import net.minecraft.network.chat.Component;
@@ -18,6 +22,7 @@ import net.minecraft.server.permissions.Permissions;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
@@ -49,10 +54,12 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
     private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
+    private static final AttachmentType<String> VEHICLE_RETURN = AttachmentRegistry.createPersistent(Reference.id("vehicle_return"), Codec.STRING);
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -81,6 +88,14 @@ public final class GunEvents {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
+            restoreVehicleSeat(serverPlayer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            saveVehicleSeat(serverPlayer);
         }
     }
 
@@ -135,6 +150,71 @@ public final class GunEvents {
             player.addTag(FINGER_GUN_RECIPE_GRANTED_TAG);
         }
     }
+
+    private static void saveVehicleSeat(ServerPlayer player) {
+        if (!(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            player.removeAttached(VEHICLE_RETURN);
+            return;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0) {
+            player.removeAttached(VEHICLE_RETURN);
+            return;
+        }
+        player.setAttached(VEHICLE_RETURN, encodeVehicleReturn(player.level().dimension().identifier(), vehicle.getUUID(), seatIndex));
+        vehicle.preserveSeatAssignment(player);
+    }
+
+    public static void clearVehicleSeatReturn(ServerPlayer player) {
+        player.removeAttached(VEHICLE_RETURN);
+    }
+
+    private static void restoreVehicleSeat(ServerPlayer player) {
+        VehicleReturn vehicleReturn = decodeVehicleReturn(player.removeAttached(VEHICLE_RETURN));
+        if (vehicleReturn == null || !player.level().dimension().identifier().equals(vehicleReturn.dimensionId())) {
+            return;
+        }
+        Entity entity = findEntityByUUID((ServerLevel) player.level(), vehicleReturn.vehicleUuid());
+        if (!(entity instanceof VehicleEntity vehicle) || vehicle.isRemoved() || player.isPassenger()) {
+            return;
+        }
+        vehicle.rememberSeatAssignment(player, vehicleReturn.seatIndex());
+        player.startRiding(vehicle, true, true);
+    }
+
+    private static String encodeVehicleReturn(Identifier dimensionId, UUID vehicleUuid, int seatIndex) {
+        return dimensionId + "|" + vehicleUuid + "|" + seatIndex;
+    }
+
+    private static VehicleReturn decodeVehicleReturn(String encoded) {
+        if (encoded == null || encoded.isBlank()) {
+            return null;
+        }
+        String[] parts = encoded.split("\\|", 3);
+        if (parts.length != 3) {
+            return null;
+        }
+        Identifier dimensionId = Identifier.tryParse(parts[0]);
+        if (dimensionId == null) {
+            return null;
+        }
+        try {
+            return new VehicleReturn(dimensionId, UUID.fromString(parts[1]), Integer.parseInt(parts[2]));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private static Entity findEntityByUUID(ServerLevel level, UUID uuid) {
+        for (Entity entity : level.getAllEntities()) {
+            if (entity.getUUID().equals(uuid)) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    private record VehicleReturn(Identifier dimensionId, UUID vehicleUuid, int seatIndex) {}
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()

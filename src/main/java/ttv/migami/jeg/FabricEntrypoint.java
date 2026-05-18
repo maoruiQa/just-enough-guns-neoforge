@@ -6,7 +6,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.packs.PackType;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -19,15 +21,20 @@ import ttv.migami.jeg.fabric.FabricEntityInit;
 import ttv.migami.jeg.fabric.FabricRecipeUnlock;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
+import ttv.migami.jeg.init.ModBlockEntities;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import net.neoforged.neoforge.common.NeoForge;
 
 public final class FabricEntrypoint implements ModInitializer {
@@ -43,6 +50,9 @@ public final class FabricEntrypoint implements ModInitializer {
         ModEffects.REGISTER.register(NeoForge.EVENT_BUS);
         ModStructures.STRUCTURES.register(NeoForge.EVENT_BUS);
         ModStructures.PIECES.register(NeoForge.EVENT_BUS);
+        ModBlocks.REGISTER.register(NeoForge.EVENT_BUS);
+        ModBlockEntities.REGISTER.register(NeoForge.EVENT_BUS);
+        ModMenuTypes.REGISTER.register(NeoForge.EVENT_BUS);
         // ModItems initializes spawn eggs which reference EntityTypes; register entities first.
         ModItems.REGISTER.register(NeoForge.EVENT_BUS);
 
@@ -51,6 +61,8 @@ public final class FabricEntrypoint implements ModInitializer {
         FabricCreativeTabs.init();
         FabricRecipeUnlock.init();
         FabricEntityInit.init();
+        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(VehicleDataManager.reloadListener());
+        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(VehicleAssemblyRecipeManager.reloadListener());
 
         // Runtime values.
         GunMobValues.init();
@@ -64,6 +76,9 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player));
             NetworkHandler.sendUiConfig(handler.player);
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            GunEvents.onPlayerLogout(new PlayerEvent.PlayerLoggedOutEvent(handler.player));
         });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             GunEvents.onPlayerJoinWorld(new EntityJoinLevelEvent(entity, level));

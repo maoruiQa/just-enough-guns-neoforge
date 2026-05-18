@@ -13,12 +13,17 @@ import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.ScopeOverlayRenderer;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay;
 
 @Mixin(Gui.class)
 public final class GuiMixin {
     @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
     private void jeg$hideCrosshairWhenHoldingGun(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (VehicleHudOverlay.isVehicleHudActive()) {
+            ci.cancel();
+            return;
+        }
         if (minecraft.player != null && (minecraft.player.getMainHandItem().getItem() instanceof GunItem || minecraft.player.getOffhandItem().getItem() instanceof GunItem)) {
             ScopeOverlayRenderer.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
             CrosshairHandler.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
@@ -26,9 +31,19 @@ public final class GuiMixin {
         }
     }
 
+    @Inject(method = "extractItemHotbar", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideVehicleHotbar(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (VehicleHudOverlay.shouldReplaceHotbar()) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void jeg$renderOverheatBar(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         if (Minecraft.getInstance().player != null) {
+            if (VehicleHudOverlay.isVehicleHudActive()) {
+                VehicleHudOverlay.renderVehicleHud(guiGraphics);
+            }
             FabricClientBootstrap.renderThrowableEffectOverlay(guiGraphics);
             FabricClientBootstrap.renderOverheatBar(guiGraphics);
             ClientHudRenderer.render(guiGraphics);

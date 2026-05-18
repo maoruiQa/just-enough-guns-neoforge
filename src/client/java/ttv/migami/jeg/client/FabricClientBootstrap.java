@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,11 +20,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -38,7 +42,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -58,12 +65,39 @@ import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.client.VehicleClientState;
+import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
+import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.client.render.A10Renderer;
+import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
+import ttv.migami.jeg.vehicle.client.render.Bmp2Renderer;
+import ttv.migami.jeg.vehicle.client.render.Hpj11Renderer;
+import ttv.migami.jeg.vehicle.client.render.LaserTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.Lav150Renderer;
+import ttv.migami.jeg.vehicle.client.render.Mi28Renderer;
+import ttv.migami.jeg.vehicle.client.render.SpeedboatRenderer;
+import ttv.migami.jeg.vehicle.client.render.Tom6Renderer;
+import ttv.migami.jeg.vehicle.client.render.TruckRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
+import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
+import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
+import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEntityRenderer;
+import ttv.migami.jeg.vehicle.client.screen.VehicleAssemblingScreen;
+import ttv.migami.jeg.vehicle.client.screen.VehicleChargingStationScreen;
+import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
+import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
+import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 
 public final class FabricClientBootstrap {
     private static final Gson GSON = new Gson();
@@ -111,6 +145,7 @@ public final class FabricClientBootstrap {
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
+    private static final Map<Integer, net.minecraft.client.resources.sounds.SoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
     private static final Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = Map.ofEntries(
             Map.entry("abstract_gun", DEFAULT_MUZZLE_FLASH),
@@ -225,6 +260,30 @@ public final class FabricClientBootstrap {
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), TerrorPhantomGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.RAID_ENTITY.get(), RaidEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_WHEEL_VEHICLE.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LIGHT_COMBAT_VEHICLE.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_HELICOPTER.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_BOAT.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_ARTILLERY.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_AIRCRAFT.get(), VehicleGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TRUCK.get(), TruckRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LAV150.get(), Lav150Renderer::new);
+        EntityRendererRegistry.register(ModEntities.SPEEDBOAT.get(), SpeedboatRenderer::new);
+        EntityRendererRegistry.register(ModEntities.AH6.get(), Ah6Renderer::new);
+        EntityRendererRegistry.register(ModEntities.A10.get(), A10Renderer::new);
+        EntityRendererRegistry.register(ModEntities.BMP2.get(), Bmp2Renderer::new);
+        EntityRendererRegistry.register(ModEntities.MI28.get(), Mi28Renderer::new);
+        EntityRendererRegistry.register(ModEntities.TOM6.get(), Tom6Renderer::new);
+        EntityRendererRegistry.register(ModEntities.LASER_TOWER.get(), LaserTowerRenderer::new);
+        EntityRendererRegistry.register(ModEntities.HPJ11.get(), Hpj11Renderer::new);
+        EntityRendererRegistry.register(ModEntities.WAVEFORCE_TOWER.get(), WaveforceTowerRenderer::new);
+        EntityRendererRegistry.register(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
+        EntityRendererRegistry.register(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
+
+        BlockEntityRendererRegistry.register(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), VehicleAssemblingTableBlockEntityRenderer::new);
+        registerMenuScreen(ModMenuTypes.VEHICLE_MENU.get(), (menu, inventory, title) -> new VehicleScreen((VehicleMenu) menu, inventory, title));
+        registerMenuScreen(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), (menu, inventory, title) -> new VehicleAssemblingScreen((VehicleAssemblingMenu) menu, inventory, title));
+        registerMenuScreen(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), (menu, inventory, title) -> new VehicleChargingStationScreen((VehicleChargingStationMenu) menu, inventory, title));
 
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(context -> {
             if (context.poseStack() == null || context.bufferSource() == null) {
@@ -248,12 +307,19 @@ public final class FabricClientBootstrap {
             tickTransientPrompts(client);
 
             handleCombatInput(client);
+            if (client.player != null) {
+                tickVehicleFireAudio(client.player);
+            } else {
+                VEHICLE_FIRE_SOUNDS.clear();
+            }
+            VehicleInputHandler.tick(client);
             suppressSwingAnimation(client);
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             BulletTrailRenderer.clear();
             MUZZLE_FLASHES.clear();
+            VEHICLE_FIRE_SOUNDS.clear();
             firstPersonGunPose = null;
             CrosshairHandler.reset();
             attackHeldLastTick = false;
@@ -265,6 +331,7 @@ public final class FabricClientBootstrap {
             stunRingingSound = null;
             AimingHandler.get().reset();
             GunRecoilHandler.stopImmediate();
+            VehicleClientState.clear();
         });
     }
 
@@ -283,6 +350,79 @@ public final class FabricClientBootstrap {
         }
 
         swapOffhandHeldLastTick = swapDown;
+    }
+
+    private static void tickVehicleFireAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            VEHICLE_FIRE_SOUNDS.clear();
+            return;
+        }
+        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> {
+            Entity entity = minecraft.level.getEntity(entry.getKey());
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            return false;
+        });
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D
+                    || VEHICLE_FIRE_SOUNDS.containsKey(vehicle.getId())) {
+                continue;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null) {
+                continue;
+            }
+            VehicleFireSoundInstance instance = new VehicleFireSoundInstance(vehicle, sound);
+            VEHICLE_FIRE_SOUNDS.put(vehicle.getId(), instance);
+            minecraft.getSoundManager().play(instance);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ScreenFactory {
+        Screen create(AbstractContainerMenu menu, Inventory inventory, Component title);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void registerMenuScreen(MenuType<?> menuType, ScreenFactory factory) {
+        try {
+            Class<?> constructorType = Class.forName("net.minecraft.client.gui.screens.MenuScreens$ScreenConstructor");
+            Object constructor = Proxy.newProxyInstance(
+                    constructorType.getClassLoader(),
+                    new Class<?>[]{constructorType},
+                    (proxy, method, args) -> {
+                        if ("create".equals(method.getName())) {
+                            return factory.create((AbstractContainerMenu) args[0], (Inventory) args[1], (Component) args[2]);
+                        }
+                        if ("fromPacket".equals(method.getName())) {
+                            if (menuType instanceof ExtendedMenuType<?, ?>) {
+                                return null;
+                            }
+                            Minecraft client = (Minecraft) args[2];
+                            if (client.player == null) {
+                                return null;
+                            }
+                            AbstractContainerMenu menu = menuType.create((Integer) args[3], client.player.getInventory());
+                            client.player.containerMenu = menu;
+                            client.setScreen(factory.create(menu, client.player.getInventory(), (Component) args[0]));
+                            return null;
+                        }
+                        return null;
+                    }
+            );
+            var screensField = net.minecraft.client.gui.screens.MenuScreens.class.getDeclaredField("SCREENS");
+            screensField.setAccessible(true);
+            ((Map<MenuType<?>, Object>) screensField.get(null)).put(menuType, constructor);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Unable to register Fabric vehicle menu screen", exception);
+        }
     }
 
     private static void handleCombatInput(Minecraft client) {

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "jeg:block/vehicle_deployer_bottom",
+    "side": "jeg:block/vehicle_deployer_side",
+    "top": "jeg:block/vehicle_deployer_top"
+  }
+}

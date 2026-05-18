@@ -16,10 +16,20 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
+import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
+import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
+import ttv.migami.jeg.vehicle.network.VehicleSeatAssignmentsPayload;
+import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
@@ -40,11 +50,18 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -64,6 +81,53 @@ public final class NetworkHandler {
         ServerPlayNetworking.registerGlobalReceiver(AimingStatePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleAimingState(payload, context.player()));
         });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleInputPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleInput(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleChangeSeatPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleChangeSeat(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleDismountPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleDismount(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(VehicleOpenMenuPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleVehicleOpenMenu(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(AssembleTestVehiclePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleAssembleTestVehicle(payload, context.player()));
+        });
+    }
+
+    private static void handleVehicleInput(VehicleInputPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            vehicle.processInput(player, payload.toInput());
+        }
+    }
+
+    private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, ServerPlayer player) {
+        if (player.containerMenu instanceof VehicleAssemblingMenu menu) {
+            menu.assembleVehicle(player, payload.recipeId());
+        }
+    }
+
+    private static void handleVehicleChangeSeat(VehicleChangeSeatPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            vehicle.changeSeat(player);
+        }
+    }
+
+    private static void handleVehicleDismount(VehicleDismountPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            vehicle.forgetSeatAssignment(player);
+            GunEvents.clearVehicleSeatReturn(player);
+            player.stopRiding();
+        }
+    }
+
+    private static void handleVehicleOpenMenu(VehicleOpenMenuPayload payload, ServerPlayer player) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
+            player.openMenu(vehicle);
+        }
     }
 
     private static void handleShootRequest(ShootRequestPayload payload, ServerPlayer player) {
@@ -208,4 +272,60 @@ public final class NetworkHandler {
             ServerPlayNetworking.send(player, payload);
         }
     }
+
+    private static void syncVehicleState(ServerPlayer player, VehicleEntity vehicle, boolean forceApply) {
+        ServerPlayNetworking.send(player, new VehicleStatePayload(
+                vehicle.getId(),
+                vehicle.getX(),
+                vehicle.getY(),
+                vehicle.getZ(),
+                vehicle.getDeltaMovement().x,
+                vehicle.getDeltaMovement().y,
+                vehicle.getDeltaMovement().z,
+                vehicle.getYRot(),
+                vehicle.getXRot(),
+                forceApply
+        ));
+    }
+
+    private static void syncVehicleStateToTrackingPlayers(VehicleEntity vehicle, boolean forceApply) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        for (ServerPlayer player : PlayerLookup.tracking(vehicle)) {
+            syncVehicleState(player, vehicle, forceApply);
+        }
+        for (ServerPlayer player : PlayerLookup.level(level)) {
+            if (player.distanceToSqr(vehicle) <= 4096.0D) {
+                syncVehicleState(player, vehicle, forceApply);
+            }
+        }
+    }
+
+    public static void sendVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, false);
+    }
+
+    public static void broadcastVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, false);
+    }
+
+    public static void sendForcedVehicleState(ServerPlayer player, VehicleEntity vehicle) {
+        syncVehicleState(player, vehicle, true);
+    }
+
+    public static void broadcastForcedVehicleState(VehicleEntity vehicle) {
+        syncVehicleStateToTrackingPlayers(vehicle, true);
+    }
+
+    public static void broadcastVehicleSeatAssignments(VehicleEntity vehicle) {
+        if (!(vehicle.level() instanceof ServerLevel level)) {
+            return;
+        }
+        VehicleSeatAssignmentsPayload payload = VehicleSeatAssignmentsPayload.fromMap(vehicle.getId(), vehicle.seatAssignmentsSnapshot());
+        for (ServerPlayer player : PlayerLookup.level(level)) {
+            ServerPlayNetworking.send(player, payload);
+        }
+    }
+
 }

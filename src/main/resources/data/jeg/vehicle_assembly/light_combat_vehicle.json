@@ -1,0 +1,17 @@
+{
+  "result_vehicle": "jeg:light_combat_vehicle",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 32
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 12
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 8
+    }
+  ]
+}

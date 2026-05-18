@@ -18,4 +18,10 @@ public class PlayerEvent {
             super(entity);
         }
     }
+
+    public static class PlayerLoggedOutEvent extends PlayerEvent {
+        public PlayerLoggedOutEvent(Player entity) {
+            super(entity);
+        }
+    }
 }

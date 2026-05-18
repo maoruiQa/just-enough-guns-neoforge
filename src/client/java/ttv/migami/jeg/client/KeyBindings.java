@@ -19,11 +19,83 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
+            "key.jeg.vehicle_free_look",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_SWITCH_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_switch_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_PREVIOUS_WEAPON = new KeyMapping(
+            "key.jeg.vehicle_previous_weapon",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Z,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_DEPLOY_DECOY = new KeyMapping(
+            "key.jeg.vehicle_deploy_decoy",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_G,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_SEEK = new KeyMapping(
+            "key.jeg.vehicle_seek",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_BRAKE_DESCEND = new KeyMapping(
+            "key.jeg.vehicle_brake_descend",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_CONTROL,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
+            "key.jeg.vehicle_change_seat",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_B,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_DISMOUNT = new KeyMapping(
+            "key.jeg.vehicle_dismount",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_ALT,
+            CATEGORY
+    );
+
+    public static final KeyMapping VEHICLE_PLAYER_INVENTORY = new KeyMapping(
+            "key.jeg.vehicle_player_inventory",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_H,
+            CATEGORY
+    );
+
     public static void init() {
         if (initialised) {
             return;
         }
         initialised = true;
         KeyMappingHelper.registerKeyMapping(RELOAD);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_FREE_LOOK);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_SWITCH_WEAPON);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_PREVIOUS_WEAPON);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_DEPLOY_DECOY);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_SEEK);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_BRAKE_DESCEND);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_CHANGE_SEAT);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_DISMOUNT);
+        KeyMappingHelper.registerKeyMapping(VEHICLE_PLAYER_INVENTORY);
     }
 }

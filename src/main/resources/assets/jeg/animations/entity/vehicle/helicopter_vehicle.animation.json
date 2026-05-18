@@ -1,0 +1,23 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "idle": {
+      "loop": true,
+      "animation_length": 0.25,
+      "bones": {
+        "main_rotor": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.25": [0, 360, 0]
+          }
+        },
+        "tail_rotor": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.25": [0, 0, 360]
+          }
+        }
+      }
+    }
+  }
+}

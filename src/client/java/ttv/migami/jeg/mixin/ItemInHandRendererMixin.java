@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.vehicle.client.VehicleCameraHandler;
 
 @Mixin(ItemInHandRenderer.class)
 public final class ItemInHandRendererMixin {
@@ -54,7 +55,7 @@ public final class ItemInHandRendererMixin {
     @Unique
     private ItemStack jeg$preTickOffHandItem = ItemStack.EMPTY;
 
-    @Inject(method = "renderArmWithItem", at = @At("HEAD"))
+    @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
     private void jeg$captureArmRenderContext(
             AbstractClientPlayer player,
             float partialTick,
@@ -68,6 +69,10 @@ public final class ItemInHandRendererMixin {
             int packedLight,
             CallbackInfo ci
     ) {
+        if (VehicleCameraHandler.shouldHideHand()) {
+            ci.cancel();
+            return;
+        }
         this.jeg$capturedEquipProcess = equipProgress;
         this.jeg$capturedSwingProcess = swingProgress;
     }
