@@ -124,7 +124,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
 
     private static void updateTurret(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots, float minPitch, float maxPitch) {
         snapshots.ifPresent("turret", snapshot -> snapshot.setRotY(vehicle.turretYaw(partialTick) * Mth.DEG_TO_RAD));
-        snapshots.ifPresent("barrel", snapshot -> snapshot.setRotX(Mth.clamp(vehicle.turretPitch(partialTick), minPitch, maxPitch) * Mth.DEG_TO_RAD));
+        snapshots.ifPresent("barrel", snapshot -> snapshot.setRotX(Mth.clamp(-vehicle.turretPitch(partialTick), minPitch, maxPitch) * Mth.DEG_TO_RAD));
     }
 
     private static void updateHelicopterRotors(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots) {
