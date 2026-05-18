@@ -23,6 +23,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.minecraft.client.Minecraft;
@@ -224,6 +225,12 @@ public final class FabricClientBootstrap {
             if (GunItem.tryStartWaterCooling(world, player, hand)) {
                 player.startUsingItem(hand);
                 return net.minecraft.world.InteractionResult.CONSUME;
+            }
+            return net.minecraft.world.InteractionResult.PASS;
+        });
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (player.getMainHandItem().getItem() instanceof GunItem) {
+                return net.minecraft.world.InteractionResult.FAIL;
             }
             return net.minecraft.world.InteractionResult.PASS;
         });
