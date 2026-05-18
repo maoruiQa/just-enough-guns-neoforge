@@ -95,6 +95,7 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
             this.setPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
             return;
         }
+        vehicle.refreshClientTurretAim(player);
         Vec3 cameraPosition = vehicle.cameraPositionFor(player, partialTick);
         Vec3 cameraRotation = vehicle.cameraRotationFor(player, partialTick);
         this.jeg$setCameraRotation(cameraRotation);
