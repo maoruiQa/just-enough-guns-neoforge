@@ -163,6 +163,38 @@ public final class VehicleInputHandler {
         return Math.max(0.0F, base * sensitivity);
     }
 
+    public static boolean handleVehicleMouseTurn(Minecraft minecraft, double accumulatedDX, double accumulatedDY, double frameTime) {
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.screen != null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return false;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
+            return false;
+        }
+
+        double sensitivitySetting = minecraft.options.sensitivity().get() * 0.6000000238418579D + 0.20000000298023224D;
+        double baseSensitivity = sensitivitySetting * sensitivitySetting * sensitivitySetting * 8.0D;
+        double vehicleSensitivity = adjustMouseSensitivity(baseSensitivity);
+        double turnX = accumulatedDX * vehicleSensitivity;
+        double turnY = accumulatedDY * vehicleSensitivity;
+        if (minecraft.options.invertMouseX().get()) {
+            turnX = -turnX;
+        }
+        if (minecraft.options.invertMouseY().get()) {
+            turnY = -turnY;
+        }
+        minecraft.getTutorial().onMouse(turnX, turnY);
+        player.turn(turnX, turnY);
+
+        var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
+        if (minecraft.options.getCameraType().isFirstPerson()) {
+            clampSeatView(player, vehicle, seat);
+        }
+        vehicle.refreshClientTurretAim(player);
+        return true;
+    }
+
     private static void clampSeatView(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
         float targetYaw = aircraftBoundYaw(player, vehicle, seat);
         float targetPitch = aircraftBoundPitch(player, vehicle, seat);
