@@ -9,8 +9,8 @@
   "has_decoy": true,
   "container_type": "small",
   "seats": [
-    {"index": 0, "x": 0.0, "y": 1.9625, "z": 2.25, "driver": true, "enclosed": true, "ban_hand": true, "min_pitch": -80.0, "max_pitch": 80.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 0.0, "sensitivity_y": 0.0, "sensitivity_z": 0.0, "zoom_camera": {"x": 0.0, "y": 3.5625, "z": 2.25, "use_fixed_camera_pos": true, "use_aircraft_camera": true, "aircraft_x": -3.8, "aircraft_y": 3.5, "aircraft_z": -15.0}, "dismount": {"x": -4.1, "y": 0.5, "z": 2.5}},
-    {"index": 1, "x": 0.0, "y": 1.3375, "z": 3.8125, "driver": false, "enclosed": true, "ban_hand": true, "min_pitch": -10.0, "max_pitch": 40.0, "min_yaw": -110.0, "max_yaw": 110.0, "sensitivity_x": 0.59, "sensitivity_y": 0.8, "sensitivity_z": 0.9, "zoom_camera": {"x": 0.0, "y": 1.0625, "z": 5.625, "use_fixed_camera_pos": true}, "dismount": {"x": -4.1, "y": 0.5, "z": 3.5625}}
+    {"index": 0, "x": 0.0, "y": 1.9625, "z": 2.25, "driver": true, "enclosed": true, "ban_hand": true, "min_pitch": -80.0, "max_pitch": 80.0, "min_yaw": -80.0, "max_yaw": 80.0, "sensitivity_x": 0.0, "sensitivity_y": 0.0, "sensitivity_z": 0.0, "zoom_camera": {"x": 0.0, "y": 3.5625, "z": 2.25, "use_fixed_camera_pos": true, "use_aircraft_camera": true, "aircraft_x": -3.8, "aircraft_y": 3.5, "aircraft_z": -15.0}, "dismount": {"x": -2.5, "y": 0.5, "z": 6.2}},
+    {"index": 1, "x": 0.0, "y": 1.3375, "z": 3.8125, "driver": false, "enclosed": true, "ban_hand": true, "min_pitch": -10.0, "max_pitch": 40.0, "min_yaw": -110.0, "max_yaw": 110.0, "sensitivity_x": 0.59, "sensitivity_y": 0.8, "sensitivity_z": 0.9, "zoom_camera": {"x": 0.0, "y": 1.0625, "z": 5.625, "use_fixed_camera_pos": true}, "dismount": {"x": -2.5, "y": 0.5, "z": 6.2}}
   ],
   "engine": {"type": "rotor", "acceleration": 0.038, "max_forward_speed": 0.55, "max_reverse_speed": 0.2, "friction": 0.92, "energy_cost_rate": 320, "increment": 0.68, "decrement": 1.0, "pitch_speed": 0.75, "yaw_speed": 0.85, "roll_speed": 0.6, "lift_speed": 0.68, "engine_start_sound": "jeg:vehicle.mi28.engine", "engine_sound_volume": 2.0},
   "third_person_camera": {"x": 0.0, "y": 3.6, "z": -8.0},

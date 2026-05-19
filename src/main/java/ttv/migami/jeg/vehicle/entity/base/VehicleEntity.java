@@ -379,7 +379,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private boolean usesCustomObbEntityCollision() {
         return switch (this.vehicleDataId().getPath()) {
-            case "lav150", "bmp2", "ah6", "mi28" -> true;
+            case "lav150", "bmp2", "speedboat", "ah6", "mi28" -> true;
             default -> false;
         };
     }
