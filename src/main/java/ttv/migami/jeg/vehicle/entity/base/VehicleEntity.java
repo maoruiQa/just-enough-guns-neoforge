@@ -246,7 +246,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private float subEngineHealth = PART_MAX_HEALTH;
     private float turretHealth = PART_MAX_HEALTH;
 
-    private record BlockCollisionBounds(double centerX, double centerZ, double halfWidth, double halfLength) {}
+    private record BlockCollisionBounds(double centerX, double minY, double maxY, double centerZ, double halfWidth, double halfLength) {}
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -270,7 +270,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     protected AABB makeBoundingBox() {
         BlockCollisionBounds bounds = this.blockCollisionBounds();
         if (bounds != null) {
-            var dimensions = super.getDimensions(this.getPose());
             double yaw = Math.toRadians(this.getYRot());
             double absSin = Math.abs(Math.sin(yaw));
             double absCos = Math.abs(Math.cos(yaw));
@@ -279,7 +278,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             Vec3 offset = this.rotateLocalOffset(bounds.centerX(), 0.0D, bounds.centerZ(), 1.0F);
             double centerX = this.getX() + offset.x;
             double centerZ = this.getZ() + offset.z;
-            return new AABB(centerX - extentX, this.getY(), centerZ - extentZ, centerX + extentX, this.getY() + dimensions.height(), centerZ + extentZ);
+            return new AABB(centerX - extentX, this.getY() + bounds.minY(), centerZ - extentZ, centerX + extentX, this.getY() + bounds.maxY(), centerZ + extentZ);
         }
         double scale = this.collisionLengthScale();
         double offsetZ = this.collisionCenterOffsetZ();
@@ -347,16 +346,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         double minX = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
         double minZ = Double.POSITIVE_INFINITY;
         double maxZ = Double.NEGATIVE_INFINITY;
         for (OBBInfo.Box box : boxes) {
             minX = Math.min(minX, box.x() - box.halfWidth());
             maxX = Math.max(maxX, box.x() + box.halfWidth());
+            minY = Math.min(minY, box.y() - box.halfHeight());
+            maxY = Math.max(maxY, box.y() + box.halfHeight());
             minZ = Math.min(minZ, box.z() - box.halfDepth());
             maxZ = Math.max(maxZ, box.z() + box.halfDepth());
         }
         return new BlockCollisionBounds(
                 (minX + maxX) * 0.5D,
+                minY,
+                maxY,
                 (minZ + maxZ) * 0.5D,
                 Math.max((maxX - minX) * 0.5D, this.getBbWidth() * 0.5D),
                 Math.max((maxZ - minZ) * 0.5D, this.getBbWidth() * 0.5D)
@@ -364,10 +369,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean usesObbBlockCollisionBounds() {
-        return switch (this.vehicleDataId().getPath()) {
-            case "truck", "lav150", "bmp2" -> true;
-            default -> false;
-        };
+        return !OBBInfo.DEFAULT.equals(this.vehicleData().defaults().obb());
     }
 
     private String idleAnimationName() {
