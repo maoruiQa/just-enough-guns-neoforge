@@ -4152,6 +4152,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return true;
     }
 
+    @Override
+    public boolean canBeCollidedWith() {
+        return !this.isRemoved();
+    }
+
     private record RotorContactInfo(double centerX, double centerY, double centerZ, double radius) {
     }
 
