@@ -118,6 +118,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double SPEEDBOAT_WATER_CRUISE_SPEED = 40.0D / 72.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
+    private static final double OBB_ENTITY_COLLISION_EPSILON = 1.0E-4D;
     private static final Set<String> RADAR_WARNING_VEHICLES = Set.of("lav150", "bmp2", "ah6", "mi28", "speedboat");
 
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -248,6 +249,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private record BlockCollisionBounds(double centerX, double minY, double maxY, double centerZ, double halfWidth, double halfLength) {}
 
+    private record LocalBounds(double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {}
+
+    private record ObbCollisionCorrection(Vec3 movement, double depth) {}
+
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
         this.blocksBuilding = true;
@@ -370,6 +375,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private boolean usesObbBlockCollisionBounds() {
         return !OBBInfo.DEFAULT.equals(this.vehicleData().defaults().obb());
+    }
+
+    private boolean usesCustomObbEntityCollision() {
+        return switch (this.vehicleDataId().getPath()) {
+            case "lav150", "bmp2", "ah6", "mi28" -> true;
+            default -> false;
+        };
     }
 
     private String idleAnimationName() {
@@ -958,6 +970,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.tickClientPredictedLandMovement();
             }
         }
+        this.tickObbEntityCollisionSupport();
     }
 
     @Override
@@ -1650,11 +1663,115 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!target.isAlive() || target.getVehicle() == this) {
                 continue;
             }
+            if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null) {
+                continue;
+            }
             damaged |= target.hurt(this.vehicleStrikeDamageSource(), damage);
         }
         if (damaged) {
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
         }
+    }
+
+    private void tickObbEntityCollisionSupport() {
+        if (!this.usesCustomObbEntityCollision() || this.noPhysics || this.isRemoved()) {
+            return;
+        }
+        Player localPlayer = this.level().isClientSide ? Minecraft.getInstance().player : null;
+        for (Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.35D), this::canSupportWithObbCollision)) {
+            if (this.level().isClientSide && entity != localPlayer) {
+                continue;
+            }
+            ObbCollisionCorrection correction = this.obbCollisionCorrection(entity.getBoundingBox());
+            if (correction == null) {
+                continue;
+            }
+            entity.setPos(entity.position().add(correction.movement()));
+            if (correction.movement().y > 0.0D) {
+                entity.setDeltaMovement(entity.getDeltaMovement().x * 0.2D, Math.max(entity.getDeltaMovement().y, 0.0D), entity.getDeltaMovement().z * 0.2D);
+                entity.setOnGround(true);
+                entity.fallDistance = 0.0F;
+            } else {
+                entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.2D, 0.2D, 0.2D));
+            }
+            entity.hasImpulse = true;
+        }
+    }
+
+    private boolean canSupportWithObbCollision(Entity entity) {
+        return entity.isAlive()
+                && entity.isPushable()
+                && !entity.noPhysics
+                && entity.getVehicle() == null
+                && !this.hasPassenger(entity)
+                && !(entity instanceof Player player && player.isSpectator());
+    }
+
+    @Nullable
+    private ObbCollisionCorrection obbCollisionCorrection(AABB entityBox) {
+        LocalBounds entityBounds = this.toLocalBounds(entityBox);
+        ObbCollisionCorrection best = null;
+        for (OBBInfo.Box box : this.vehicleData().defaults().obb().boxes()) {
+            double boxMinX = box.x() - box.halfWidth();
+            double boxMaxX = box.x() + box.halfWidth();
+            double boxMinY = box.y() - box.halfHeight();
+            double boxMaxY = box.y() + box.halfHeight();
+            double boxMinZ = box.z() - box.halfDepth();
+            double boxMaxZ = box.z() + box.halfDepth();
+            double overlapX = Math.min(entityBounds.maxX(), boxMaxX) - Math.max(entityBounds.minX(), boxMinX);
+            double overlapY = Math.min(entityBounds.maxY(), boxMaxY) - Math.max(entityBounds.minY(), boxMinY);
+            double overlapZ = Math.min(entityBounds.maxZ(), boxMaxZ) - Math.max(entityBounds.minZ(), boxMinZ);
+            if (overlapX <= 0.0D || overlapY <= 0.0D || overlapZ <= 0.0D) {
+                continue;
+            }
+            double entityCenterX = (entityBounds.minX() + entityBounds.maxX()) * 0.5D;
+            double entityCenterZ = (entityBounds.minZ() + entityBounds.maxZ()) * 0.5D;
+            Vec3 localCorrection;
+            double depth;
+            if (entityBounds.minY() >= boxMaxY - 0.35D && overlapY <= Math.min(overlapX, overlapZ) + 0.2D) {
+                depth = overlapY + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(0.0D, depth, 0.0D);
+            } else if (overlapX < overlapZ) {
+                double direction = entityCenterX >= box.x() ? 1.0D : -1.0D;
+                depth = overlapX + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(direction * depth, 0.0D, 0.0D);
+            } else {
+                double direction = entityCenterZ >= box.z() ? 1.0D : -1.0D;
+                depth = overlapZ + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(0.0D, 0.0D, direction * depth);
+            }
+            Vec3 worldCorrection = this.rotateLocalOffset(localCorrection.x, localCorrection.y, localCorrection.z);
+            if (best == null || depth < best.depth()) {
+                best = new ObbCollisionCorrection(worldCorrection, depth);
+            }
+        }
+        return best;
+    }
+
+    private LocalBounds toLocalBounds(AABB box) {
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        double[] xs = {box.minX, box.maxX};
+        double[] ys = {box.minY, box.maxY};
+        double[] zs = {box.minZ, box.maxZ};
+        for (double x : xs) {
+            for (double y : ys) {
+                for (double z : zs) {
+                    Vec3 local = this.toLocalVehicleSpace(new Vec3(x, y, z));
+                    minX = Math.min(minX, local.x);
+                    maxX = Math.max(maxX, local.x);
+                    minY = Math.min(minY, local.y);
+                    maxY = Math.max(maxY, local.y);
+                    minZ = Math.min(minZ, local.z);
+                    maxZ = Math.max(maxZ, local.z);
+                }
+            }
+        }
+        return new LocalBounds(minX, maxX, minY, maxY, minZ, maxZ);
     }
 
     private void tickHelicopterRotorGroundDamage() {
@@ -3453,6 +3570,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new Vec3(x, localY, z);
     }
 
+    private Vec3 toLocalVehicleSpace(Vec3 world) {
+        double dx = world.x - this.getX();
+        double dz = world.z - this.getZ();
+        double yaw = Math.toRadians(this.getYRot());
+        double cos = Math.cos(yaw);
+        double sin = Math.sin(yaw);
+        double x = dx * cos + dz * sin;
+        double z = -dx * sin + dz * cos;
+        return new Vec3(x, world.y - this.getY(), z);
+    }
+
     private Vec3 rotateLocalOffsetWithPose(double localX, double localY, double localZ, float partialTick) {
         Vec3 origin = this.interpolatedVehiclePosition(partialTick);
         Vector4d worldPosition = this.vehiclePoseTransform(partialTick).transform(new Vector4d(localX, localY, localZ, 1.0D));
@@ -4156,7 +4284,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public boolean canBeCollidedWith() {
-        return !this.isRemoved();
+        return !this.isRemoved() && !this.usesCustomObbEntityCollision();
     }
 
     private record RotorContactInfo(double centerX, double centerY, double centerZ, double radius) {
