@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -74,7 +73,6 @@ import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
-import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
@@ -904,8 +902,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         living.yBodyRotO = yaw;
         living.setXRot(pitch);
         living.xRotO = pitch;
-        if (this.level().isClientSide && living == Minecraft.getInstance().player) {
-            VehicleClientState.syncMousePosition(Minecraft.getInstance().mouseHandler.xpos(), Minecraft.getInstance().mouseHandler.ypos());
+        if (this.level().isClientSide && living == localClientPlayer()) {
+            syncClientMousePosition();
         }
     }
 
@@ -1107,8 +1105,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean shouldRunClientPrediction() {
         return this.dismountLerpSuppressionTicks <= 0
                 && this.isControlledByLocalInstance()
-                && VehicleClientState.isRidingVehicle()
-                && VehicleClientState.vehicleId() == this.getId();
+                && clientVehicleStateMatches(this.getId());
     }
 
     private void clearStaleDriverInput() {
@@ -1180,10 +1177,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.seatAssignments.put(assignment.getKey(), seatIndex);
             }
         }
-        if (this.level().isClientSide && Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() == this) {
-            int fallbackIndex = this.getPassengers().indexOf(Minecraft.getInstance().player);
-            int seatIndex = this.seatIndexForPassenger(Minecraft.getInstance().player, fallbackIndex);
-            this.alignPassengerViewToVehicle(Minecraft.getInstance().player, seatIndex);
+        Entity localPlayer = this.level().isClientSide ? localClientPlayer() : null;
+        if (localPlayer != null && localPlayer.getVehicle() == this) {
+            int fallbackIndex = this.getPassengers().indexOf(localPlayer);
+            int seatIndex = this.seatIndexForPassenger(localPlayer, fallbackIndex);
+            this.alignPassengerViewToVehicle(localPlayer, seatIndex);
         }
     }
 
@@ -1234,8 +1232,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.hasImpulse = true;
         if (forceApply && this.level().isClientSide) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
-            if (VehicleClientState.vehicleId() == this.getId() && !this.isControlledByLocalInstance()) {
-                VehicleClientState.clear();
+            if (clientVehicleId() == this.getId() && !this.isControlledByLocalInstance()) {
+                clearClientVehicleState();
                 this.clearControlState(false);
             }
         }
@@ -1526,9 +1524,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     private Vec3 weaponZoomAimDirection(LivingEntity shooter) {
         if (!this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()
-                || !VehicleClientState.zoomDown()) {
+                || !clientVehicleStateMatches(this.getId())
+                || !clientZoomDown()) {
             return null;
         }
         VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
@@ -1678,7 +1675,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.usesCustomObbEntityCollision() || this.noPhysics || this.isRemoved()) {
             return;
         }
-        Player localPlayer = this.level().isClientSide ? Minecraft.getInstance().player : null;
+        Entity localPlayer = this.level().isClientSide ? localClientPlayer() : null;
         for (Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.35D), this::canSupportWithObbCollision)) {
             if (this.level().isClientSide && entity != localPlayer) {
                 continue;
@@ -2556,7 +2553,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (zoomCamera.useFixedCameraPos() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 return this.fixedSeatCameraPosition(zoomCamera, partialTick);
             }
-            if (VehicleClientState.zoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
+            if (clientZoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 Vec3 firstPersonOffset = this.firstPersonSeatCameraOffset(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
                 return this.interpolatedVehiclePosition(partialTick).add(firstPersonOffset);
             }
@@ -2569,9 +2566,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 articulatedZoomCameraPosition(SeatInfo seat, float partialTick) {
         if (!this.usesArticulatedSeatTransform(seat)
                 || !this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()
-                || !VehicleClientState.zoomDown()) {
+                || !clientVehicleStateMatches(this.getId())
+                || !clientZoomDown()) {
             return null;
         }
         var zoomCamera = seat.zoomCamera();
@@ -2609,7 +2605,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 helicopterZoomCameraRotation(Entity passenger, float partialTick) {
         if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
                 || !this.usesFirstPersonSeatCamera(passenger)
-                || !VehicleClientState.zoomDown()
+                || !clientZoomDown()
                 || !this.usesAircraftCamera(passenger)) {
             return null;
         }
@@ -2675,8 +2671,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Nullable
     private Vec3 fixedSeatCameraRotation(Entity passenger, SeatInfo seat, float partialTick) {
         if (!this.usesFirstPersonSeatCamera(passenger)
-                || VehicleClientState.freeLookDown()
-                || VehicleClientState.zoomDown()
+                || clientFreeLookDown()
+                || clientZoomDown()
                 || !seat.zoomCamera().useFixedCameraPos()) {
             return null;
         }
@@ -2694,9 +2690,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 weaponCameraRotation(Entity passenger, float partialTick) {
         if (!(passenger instanceof LivingEntity shooter)
                 || !this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()
-                || !VehicleClientState.zoomDown()) {
+                || !clientVehicleStateMatches(this.getId())
+                || !clientZoomDown()) {
             return null;
         }
         Vec3 direction = this.weaponZoomAimDirection(shooter);
@@ -2717,10 +2712,110 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private boolean usesFirstPersonSeatCamera(Entity passenger) {
         return this.level().isClientSide
-                && Minecraft.getInstance().options.getCameraType().isFirstPerson()
+                && clientFirstPersonCamera()
                 && this.hasPassenger(passenger);
     }
 
+    @Nullable
+    private static Entity localClientPlayer() {
+        Object minecraft = minecraftInstance();
+        Object player = readField(minecraft, "player");
+        return player instanceof Entity entity ? entity : null;
+    }
+
+    private static void syncClientMousePosition() {
+        Object minecraft = minecraftInstance();
+        Object mouseHandler = readField(minecraft, "mouseHandler");
+        if (mouseHandler == null) {
+            return;
+        }
+        try {
+            double x = ((Number) mouseHandler.getClass().getMethod("xpos").invoke(mouseHandler)).doubleValue();
+            double y = ((Number) mouseHandler.getClass().getMethod("ypos").invoke(mouseHandler)).doubleValue();
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            state.getMethod("syncMousePosition", double.class, double.class).invoke(null, x, y);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+        }
+    }
+
+    private static boolean clientVehicleStateMatches(int entityId) {
+        return clientStateBoolean("isRidingVehicle") && clientVehicleId() == entityId;
+    }
+
+    private static int clientVehicleId() {
+        try {
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            return ((Number) state.getMethod("vehicleId").invoke(null)).intValue();
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return -1;
+        }
+    }
+
+    private static boolean clientZoomDown() {
+        return clientStateBoolean("zoomDown");
+    }
+
+    private static boolean clientFreeLookDown() {
+        return clientStateBoolean("freeLookDown");
+    }
+
+    private static void clearClientVehicleState() {
+        try {
+            Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState").getMethod("clear").invoke(null);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+        }
+    }
+
+    private static boolean clientFirstPersonCamera() {
+        Object minecraft = minecraftInstance();
+        Object options = readField(minecraft, "options");
+        if (options == null) {
+            return false;
+        }
+        try {
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            return Boolean.TRUE.equals(cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType));
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean clientStateBoolean(String methodName) {
+        try {
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            return Boolean.TRUE.equals(state.getMethod(methodName).invoke(null));
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    @Nullable
+    private static Object minecraftInstance() {
+        try {
+            return Class.forName("net.minecraft.client.Minecraft").getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private static Object readField(@Nullable Object target, String name) {
+        if (target == null) {
+            return null;
+        }
+        try {
+            var field = target.getClass().getField(name);
+            return field.get(target);
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            try {
+                var field = target.getClass().getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(target);
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                return null;
+            }
+        }
+    }
     private void tickAutoRepair() {
         if (this.tickLowHealthDecay()) {
             return;

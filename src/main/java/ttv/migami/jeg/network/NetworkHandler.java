@@ -1,9 +1,9 @@
 package ttv.migami.jeg.network;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -11,13 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.client.ClientUiConfig;
-import ttv.migami.jeg.client.GunClientEvents;
-import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
@@ -120,7 +118,11 @@ public final class NetworkHandler {
             if (!Config.legacyBulletTrailEnabled()) {
                 return;
             }
-            BulletTrailRenderer.upsertLegacyTrail(payload);
+            invokeClientStatic(
+                    "ttv.migami.jeg.client.render.BulletTrailRenderer",
+                    "upsertLegacyTrail",
+                    new Class<?>[] { BulletTrailPayload.class },
+                    payload);
         });
     }
 
@@ -133,19 +135,36 @@ public final class NetworkHandler {
     }
 
     private static void handleGunFireFx(GunFireFxPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> GunClientEvents.showMuzzleFlash(payload.shooterId(), payload.randomValue()));
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.GunClientEvents",
+                "showMuzzleFlash",
+                new Class<?>[] { int.class, float.class },
+                payload.shooterId(),
+                payload.randomValue()));
     }
 
     private static void handleOffhandFullPrompt(OffhandFullPromptPayload payload, IPayloadContext context) {
-        context.enqueueWork(GunClientEvents::showOffhandFullPrompt);
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.GunClientEvents",
+                "showOffhandFullPrompt",
+                new Class<?>[0]));
     }
 
     private static void handleHitMarker(HitMarkerPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> ttv.migami.jeg.client.CrosshairHandler.playHitMarker(payload.critical()));
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.CrosshairHandler",
+                "playHitMarker",
+                new Class<?>[] { boolean.class },
+                payload.critical()));
     }
 
     private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.ClientUiConfig",
+                "update",
+                new Class<?>[] { boolean.class, boolean.class },
+                payload.showCrosshair(),
+                payload.showHitFeedback()));
     }
 
     private static void syncVehicleState(ServerPlayer player, VehicleEntity vehicle, boolean forceApply) {
@@ -204,10 +223,10 @@ public final class NetworkHandler {
 
     private static void handleVehicleState(VehicleStatePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (Minecraft.getInstance().level == null) {
+            if (!(clientLevel() instanceof Level level)) {
                 return;
             }
-            var entity = Minecraft.getInstance().level.getEntity(payload.vehicleId());
+            var entity = level.getEntity(payload.vehicleId());
             if (!(entity instanceof VehicleEntity vehicle)) {
                 return;
             }
@@ -217,10 +236,10 @@ public final class NetworkHandler {
 
     private static void handleVehicleSeatAssignments(VehicleSeatAssignmentsPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (Minecraft.getInstance().level == null) {
+            if (!(clientLevel() instanceof Level level)) {
                 return;
             }
-            var entity = Minecraft.getInstance().level.getEntity(payload.vehicleId());
+            var entity = level.getEntity(payload.vehicleId());
             if (!(entity instanceof VehicleEntity vehicle)) {
                 return;
             }
@@ -364,84 +383,106 @@ public final class NetworkHandler {
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new TriggerReleasePayload(hand));
+        sendToServer(new TriggerReleasePayload(hand));
     }
 
     public static void sendReload(InteractionHand hand) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new ReloadRequestPayload(hand));
+        sendToServer(new ReloadRequestPayload(hand));
     }
 
     public static void sendShoot(InteractionHand hand) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        boolean aiming = ttv.migami.jeg.client.handler.AimingHandler.get().isAiming();
-        client.getConnection().send(new ShootRequestPayload(hand, aiming));
+        sendToServer(new ShootRequestPayload(hand, clientAiming()));
     }
 
     public static void sendHoldFire(InteractionHand hand, boolean holding) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new HoldFirePayload(hand, holding));
+        sendToServer(new HoldFirePayload(hand, holding));
     }
 
     public static void sendAiming(boolean aiming) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new AimingStatePayload(aiming));
+        sendToServer(new AimingStatePayload(aiming));
     }
 
     public static void sendUnloadMagazine() {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(UnloadMagazineRequestPayload.INSTANCE);
+        sendToServer(UnloadMagazineRequestPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(ResourceLocation recipeId) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new AssembleTestVehiclePayload(recipeId));
+        sendToServer(new AssembleTestVehiclePayload(recipeId));
     }
 
     public static void sendVehicleChangeSeat(int vehicleId) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new VehicleChangeSeatPayload(vehicleId));
+        sendToServer(new VehicleChangeSeatPayload(vehicleId));
     }
 
     public static void sendVehicleDismount(int vehicleId) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
-            return;
-        }
-        client.getConnection().send(new VehicleDismountPayload(vehicleId));
+        sendToServer(new VehicleDismountPayload(vehicleId));
     }
 
     public static void sendVehicleOpenMenu(int vehicleId) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.getConnection() == null) {
+        sendToServer(new VehicleOpenMenuPayload(vehicleId));
+    }
+
+    private static Object clientLevel() {
+        Object client = minecraftInstance();
+        if (client == null) {
+            return null;
+        }
+        try {
+            return client.getClass().getField("level").get(client);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean clientAiming() {
+        try {
+            Class<?> handlerClass = Class.forName("ttv.migami.jeg.client.handler.AimingHandler");
+            Object handler = handlerClass.getMethod("get").invoke(null);
+            Object aiming = handlerClass.getMethod("isAiming").invoke(handler);
+            return aiming instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static void sendToServer(Object payload) {
+        Object client = minecraftInstance();
+        if (client == null) {
             return;
         }
-        client.getConnection().send(new VehicleOpenMenuPayload(vehicleId));
+        try {
+            Object connection = client.getClass().getMethod("getConnection").invoke(client);
+            if (connection == null) {
+                return;
+            }
+            for (Method method : connection.getClass().getMethods()) {
+                if (!"send".equals(method.getName()) || method.getParameterCount() != 1) {
+                    continue;
+                }
+                if (method.getParameterTypes()[0].isAssignableFrom(payload.getClass())) {
+                    method.invoke(connection, payload);
+                    return;
+                }
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    private static Object minecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            return minecraftClass.getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static void invokeClientStatic(String className, String methodName, Class<?>[] parameterTypes, Object... args) {
+        try {
+            Class<?> handlerClass = Class.forName(className);
+            handlerClass.getMethod(methodName, parameterTypes).invoke(null, args);
+        } catch (ReflectiveOperationException ignored) {
+        }
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {
