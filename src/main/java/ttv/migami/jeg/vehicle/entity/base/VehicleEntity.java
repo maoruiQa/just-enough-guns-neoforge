@@ -209,6 +209,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
+    private final Map<UUID, Integer> recentDismountSeatAssignments = new HashMap<>();
     private final Set<UUID> preservedSeatAssignments = new HashSet<>();
     private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
     private final Map<Integer, Integer> selectedWeaponSlotBySeat = new HashMap<>();
@@ -4168,14 +4169,22 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     protected void removePassenger(@NotNull Entity passenger) {
         boolean controllingPassenger = passenger == this.getControllingPassenger();
         ServerPlayer syncPlayer = !this.level().isClientSide && passenger instanceof ServerPlayer player ? player : null;
-        if (!this.preservedSeatAssignments.remove(passenger.getUUID())) {
-            this.seatAssignments.remove(passenger.getUUID());
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex >= 0 || this.seatAssignments.containsKey(passenger.getUUID())) {
+            if (this.recentDismountSeatAssignments.size() > 16) {
+                this.recentDismountSeatAssignments.clear();
+            }
+            this.recentDismountSeatAssignments.put(passenger.getUUID(), this.seatIndexForPassenger(passenger, fallbackIndex));
         }
+        boolean preserveSeatAssignment = this.preservedSeatAssignments.remove(passenger.getUUID());
         if (controllingPassenger) {
             this.cancelWeaponReload();
             this.clearControlState(true);
         }
         super.removePassenger(passenger);
+        if (!preserveSeatAssignment) {
+            this.seatAssignments.remove(passenger.getUUID());
+        }
         this.syncSeatAssignments();
         if (controllingPassenger && syncPlayer != null) {
             this.recentDismountSyncPlayerId = syncPlayer.getUUID();
@@ -4195,10 +4204,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
-        SeatInfo seat = fallbackIndex >= 0 ? this.seatForPassenger(passenger, fallbackIndex) : null;
-        DismountInfo dismount = seat != null && seat.dismount() != DismountInfo.DEFAULT ? seat.dismount() : this.vehicleData().defaults().dismount();
+        SeatInfo seat = this.dismountSeatForPassenger(passenger, fallbackIndex);
+        boolean hasConfiguredDismount = seat != null && seat.dismount() != DismountInfo.DEFAULT;
+        DismountInfo dismount = hasConfiguredDismount ? seat.dismount() : this.vehicleData().defaults().dismount();
         Vec3 offset = this.rotateLocalOffset(dismount.x(), dismount.y(), dismount.z());
         Vec3 candidate = this.position().add(offset);
+        if (hasConfiguredDismount && this.usesDirectConfiguredDismount()) {
+            return candidate;
+        }
         Vec3 configured = this.findValidDismountPosition(passenger, candidate);
         if (configured != null) {
             return configured;
@@ -4209,6 +4222,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return side;
         }
         return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Nullable
+    private SeatInfo dismountSeatForPassenger(LivingEntity passenger, int fallbackIndex) {
+        if (fallbackIndex >= 0 || this.seatAssignments.containsKey(passenger.getUUID())) {
+            return this.seatForPassenger(passenger, fallbackIndex);
+        }
+        Integer recentSeat = this.recentDismountSeatAssignments.remove(passenger.getUUID());
+        return recentSeat != null ? this.seatForPassenger(recentSeat) : null;
+    }
+
+    private boolean usesDirectConfiguredDismount() {
+        return "mi28".equals(this.vehicleDataId().getPath());
     }
 
     @Nullable

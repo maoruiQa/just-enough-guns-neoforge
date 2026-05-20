@@ -21,8 +21,8 @@
   "dismount": {"x": 1.15, "y": 0.1, "z": 0.0},
   "collision_level": "light",
   "obb": [
-    {"part": "body", "x": 0.0, "y": 0.875, "z": 0.375, "half_width": 0.78125, "half_height": 0.375, "half_depth": 1.59375},
-    {"part": "main_engine", "x": 0.0, "y": 2.0625, "z": -0.71875, "half_width": 0.53125, "half_height": 0.25, "half_depth": 0.953125}
+    {"part": "body", "x": 0.0, "y": 0.875, "z": 0.375, "half_width": 1.5625, "half_height": 0.75, "half_depth": 3.1875},
+    {"part": "main_engine", "x": 0.0, "y": 2.0625, "z": -0.71875, "half_width": 1.0625, "half_height": 0.5, "half_depth": 1.90625}
   ],
   "weapons": [
     {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.0, "y": 3.2705, "z": 0.4761}}
