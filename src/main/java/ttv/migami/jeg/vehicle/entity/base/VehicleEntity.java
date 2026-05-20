@@ -119,6 +119,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double SPEEDBOAT_WATER_CRUISE_SPEED = 40.0D / 72.0D;
     private static final int DISMOUNT_LERP_SUPPRESSION_TICKS = 20;
     private static final int DISMOUNT_FOLLOWUP_SYNC_TICKS = 40;
+    private static final double OBB_ENTITY_COLLISION_EPSILON = 1.0E-4D;
     private static final Set<String> RADAR_WARNING_VEHICLES = Set.of("lav150", "bmp2", "ah6", "mi28", "speedboat");
 
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
@@ -209,6 +210,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
     private final AnimatableInstanceCache geckoCache = GeckoLibUtil.createInstanceCache(this);
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
+    private final Map<UUID, Integer> recentDismountSeatAssignments = new HashMap<>();
     private final Set<UUID> preservedSeatAssignments = new HashSet<>();
     private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
     private final Map<Integer, Integer> selectedWeaponSlotBySeat = new HashMap<>();
@@ -247,7 +249,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private float subEngineHealth = PART_MAX_HEALTH;
     private float turretHealth = PART_MAX_HEALTH;
 
-    private record BlockCollisionBounds(double centerX, double centerZ, double halfWidth, double halfLength) {}
+    private record BlockCollisionBounds(double centerX, double minY, double maxY, double centerZ, double halfWidth, double halfLength) {}
+
+    private record LocalBounds(double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {}
+
+    private record ObbCollisionCorrection(Vec3 movement, double depth) {}
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -271,7 +277,6 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     protected AABB makeBoundingBox() {
         BlockCollisionBounds bounds = this.blockCollisionBounds();
         if (bounds != null) {
-            var dimensions = super.getDimensions(this.getPose());
             double yaw = Math.toRadians(this.getYRot());
             double absSin = Math.abs(Math.sin(yaw));
             double absCos = Math.abs(Math.cos(yaw));
@@ -280,7 +285,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             Vec3 offset = this.rotateLocalOffset(bounds.centerX(), 0.0D, bounds.centerZ(), 1.0F);
             double centerX = this.getX() + offset.x;
             double centerZ = this.getZ() + offset.z;
-            return new AABB(centerX - extentX, this.getY(), centerZ - extentZ, centerX + extentX, this.getY() + dimensions.height(), centerZ + extentZ);
+            return new AABB(centerX - extentX, this.getY() + bounds.minY(), centerZ - extentZ, centerX + extentX, this.getY() + bounds.maxY(), centerZ + extentZ);
         }
         double scale = this.collisionLengthScale();
         double offsetZ = this.collisionCenterOffsetZ();
@@ -348,16 +353,22 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         double minX = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
         double minZ = Double.POSITIVE_INFINITY;
         double maxZ = Double.NEGATIVE_INFINITY;
         for (OBBInfo.Box box : boxes) {
             minX = Math.min(minX, box.x() - box.halfWidth());
             maxX = Math.max(maxX, box.x() + box.halfWidth());
+            minY = Math.min(minY, box.y() - box.halfHeight());
+            maxY = Math.max(maxY, box.y() + box.halfHeight());
             minZ = Math.min(minZ, box.z() - box.halfDepth());
             maxZ = Math.max(maxZ, box.z() + box.halfDepth());
         }
         return new BlockCollisionBounds(
                 (minX + maxX) * 0.5D,
+                minY,
+                maxY,
                 (minZ + maxZ) * 0.5D,
                 Math.max((maxX - minX) * 0.5D, this.getBbWidth() * 0.5D),
                 Math.max((maxZ - minZ) * 0.5D, this.getBbWidth() * 0.5D)
@@ -365,8 +376,12 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private boolean usesObbBlockCollisionBounds() {
+        return !OBBInfo.DEFAULT.equals(this.vehicleData().defaults().obb());
+    }
+
+    private boolean usesCustomObbEntityCollision() {
         return switch (this.vehicleDataId().getPath()) {
-            case "truck", "lav150", "bmp2" -> true;
+            case "lav150", "bmp2", "speedboat", "ah6", "mi28" -> true;
             default -> false;
         };
     }
@@ -957,6 +972,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 this.tickClientPredictedLandMovement();
             }
         }
+        this.tickObbEntityCollisionSupport();
     }
 
     @Override
@@ -1650,11 +1666,115 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             if (!target.isAlive() || target.getVehicle() == this) {
                 continue;
             }
+            if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null) {
+                continue;
+            }
             damaged |= target.hurt(this.vehicleStrikeDamageSource(), damage);
         }
         if (damaged) {
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
         }
+    }
+
+    private void tickObbEntityCollisionSupport() {
+        if (!this.usesCustomObbEntityCollision() || this.noPhysics || this.isRemoved()) {
+            return;
+        }
+        Entity localPlayer = this.level().isClientSide ? VehicleClientHooks.localPlayer() : null;
+        for (Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.35D), this::canSupportWithObbCollision)) {
+            if (this.level().isClientSide && entity != localPlayer) {
+                continue;
+            }
+            ObbCollisionCorrection correction = this.obbCollisionCorrection(entity.getBoundingBox());
+            if (correction == null) {
+                continue;
+            }
+            entity.setPos(entity.position().add(correction.movement()));
+            if (correction.movement().y > 0.0D) {
+                entity.setDeltaMovement(entity.getDeltaMovement().x * 0.2D, Math.max(entity.getDeltaMovement().y, 0.0D), entity.getDeltaMovement().z * 0.2D);
+                entity.setOnGround(true);
+                entity.fallDistance = 0.0F;
+            } else {
+                entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.2D, 0.2D, 0.2D));
+            }
+            entity.hasImpulse = true;
+        }
+    }
+
+    private boolean canSupportWithObbCollision(Entity entity) {
+        return entity.isAlive()
+                && entity.isPushable()
+                && !entity.noPhysics
+                && entity.getVehicle() == null
+                && !this.hasPassenger(entity)
+                && !(entity instanceof Player player && player.isSpectator());
+    }
+
+    @Nullable
+    private ObbCollisionCorrection obbCollisionCorrection(AABB entityBox) {
+        LocalBounds entityBounds = this.toLocalBounds(entityBox);
+        ObbCollisionCorrection best = null;
+        for (OBBInfo.Box box : this.vehicleData().defaults().obb().boxes()) {
+            double boxMinX = box.x() - box.halfWidth();
+            double boxMaxX = box.x() + box.halfWidth();
+            double boxMinY = box.y() - box.halfHeight();
+            double boxMaxY = box.y() + box.halfHeight();
+            double boxMinZ = box.z() - box.halfDepth();
+            double boxMaxZ = box.z() + box.halfDepth();
+            double overlapX = Math.min(entityBounds.maxX(), boxMaxX) - Math.max(entityBounds.minX(), boxMinX);
+            double overlapY = Math.min(entityBounds.maxY(), boxMaxY) - Math.max(entityBounds.minY(), boxMinY);
+            double overlapZ = Math.min(entityBounds.maxZ(), boxMaxZ) - Math.max(entityBounds.minZ(), boxMinZ);
+            if (overlapX <= 0.0D || overlapY <= 0.0D || overlapZ <= 0.0D) {
+                continue;
+            }
+            double entityCenterX = (entityBounds.minX() + entityBounds.maxX()) * 0.5D;
+            double entityCenterZ = (entityBounds.minZ() + entityBounds.maxZ()) * 0.5D;
+            Vec3 localCorrection;
+            double depth;
+            if (entityBounds.minY() >= boxMaxY - 0.35D && overlapY <= Math.min(overlapX, overlapZ) + 0.2D) {
+                depth = overlapY + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(0.0D, depth, 0.0D);
+            } else if (overlapX < overlapZ) {
+                double direction = entityCenterX >= box.x() ? 1.0D : -1.0D;
+                depth = overlapX + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(direction * depth, 0.0D, 0.0D);
+            } else {
+                double direction = entityCenterZ >= box.z() ? 1.0D : -1.0D;
+                depth = overlapZ + OBB_ENTITY_COLLISION_EPSILON;
+                localCorrection = new Vec3(0.0D, 0.0D, direction * depth);
+            }
+            Vec3 worldCorrection = this.rotateLocalOffset(localCorrection.x, localCorrection.y, localCorrection.z);
+            if (best == null || depth < best.depth()) {
+                best = new ObbCollisionCorrection(worldCorrection, depth);
+            }
+        }
+        return best;
+    }
+
+    private LocalBounds toLocalBounds(AABB box) {
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        double[] xs = {box.minX, box.maxX};
+        double[] ys = {box.minY, box.maxY};
+        double[] zs = {box.minZ, box.maxZ};
+        for (double x : xs) {
+            for (double y : ys) {
+                for (double z : zs) {
+                    Vec3 local = this.toLocalVehicleSpace(new Vec3(x, y, z));
+                    minX = Math.min(minX, local.x);
+                    maxX = Math.max(maxX, local.x);
+                    minY = Math.min(minY, local.y);
+                    maxY = Math.max(maxY, local.y);
+                    minZ = Math.min(minZ, local.z);
+                    maxZ = Math.max(maxZ, local.z);
+                }
+            }
+        }
+        return new LocalBounds(minX, maxX, minY, maxY, minZ, maxZ);
     }
 
     private void tickHelicopterRotorGroundDamage() {
@@ -3453,6 +3573,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         return new Vec3(x, localY, z);
     }
 
+    private Vec3 toLocalVehicleSpace(Vec3 world) {
+        double dx = world.x - this.getX();
+        double dz = world.z - this.getZ();
+        double yaw = Math.toRadians(this.getYRot());
+        double cos = Math.cos(yaw);
+        double sin = Math.sin(yaw);
+        double x = dx * cos + dz * sin;
+        double z = -dx * sin + dz * cos;
+        return new Vec3(x, world.y - this.getY(), z);
+    }
+
     private Vec3 rotateLocalOffsetWithPose(double localX, double localY, double localZ, float partialTick) {
         Vec3 origin = this.interpolatedVehiclePosition(partialTick);
         Vector4d worldPosition = this.vehiclePoseTransform(partialTick).transform(new Vector4d(localX, localY, localZ, 1.0D));
@@ -4045,14 +4176,22 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     protected void removePassenger(@NotNull Entity passenger) {
         boolean controllingPassenger = passenger == this.getControllingPassenger();
         ServerPlayer syncPlayer = !this.level().isClientSide && passenger instanceof ServerPlayer player ? player : null;
-        if (!this.preservedSeatAssignments.remove(passenger.getUUID())) {
-            this.seatAssignments.remove(passenger.getUUID());
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        if (fallbackIndex >= 0 || this.seatAssignments.containsKey(passenger.getUUID())) {
+            if (this.recentDismountSeatAssignments.size() > 16) {
+                this.recentDismountSeatAssignments.clear();
+            }
+            this.recentDismountSeatAssignments.put(passenger.getUUID(), this.seatIndexForPassenger(passenger, fallbackIndex));
         }
+        boolean preserveSeatAssignment = this.preservedSeatAssignments.remove(passenger.getUUID());
         if (controllingPassenger) {
             this.cancelWeaponReload();
             this.clearControlState(true);
         }
         super.removePassenger(passenger);
+        if (!preserveSeatAssignment) {
+            this.seatAssignments.remove(passenger.getUUID());
+        }
         this.syncSeatAssignments();
         if (controllingPassenger && syncPlayer != null) {
             this.recentDismountSyncPlayerId = syncPlayer.getUUID();
@@ -4072,10 +4211,14 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
-        SeatInfo seat = fallbackIndex >= 0 ? this.seatForPassenger(passenger, fallbackIndex) : null;
-        DismountInfo dismount = seat != null && seat.dismount() != DismountInfo.DEFAULT ? seat.dismount() : this.vehicleData().defaults().dismount();
+        SeatInfo seat = this.dismountSeatForPassenger(passenger, fallbackIndex);
+        boolean hasConfiguredDismount = seat != null && seat.dismount() != DismountInfo.DEFAULT;
+        DismountInfo dismount = hasConfiguredDismount ? seat.dismount() : this.vehicleData().defaults().dismount();
         Vec3 offset = this.rotateLocalOffset(dismount.x(), dismount.y(), dismount.z());
         Vec3 candidate = this.position().add(offset);
+        if (hasConfiguredDismount && this.usesDirectConfiguredDismount()) {
+            return candidate;
+        }
         Vec3 configured = this.findValidDismountPosition(passenger, candidate);
         if (configured != null) {
             return configured;
@@ -4086,6 +4229,19 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return side;
         }
         return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Nullable
+    private SeatInfo dismountSeatForPassenger(LivingEntity passenger, int fallbackIndex) {
+        if (fallbackIndex >= 0 || this.seatAssignments.containsKey(passenger.getUUID())) {
+            return this.seatForPassenger(passenger, fallbackIndex);
+        }
+        Integer recentSeat = this.recentDismountSeatAssignments.remove(passenger.getUUID());
+        return recentSeat != null ? this.seatForPassenger(recentSeat) : null;
+    }
+
+    private boolean usesDirectConfiguredDismount() {
+        return "mi28".equals(this.vehicleDataId().getPath());
     }
 
     @Nullable
@@ -4157,6 +4313,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     @Override
     public boolean isPickable() {
         return true;
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return !this.isRemoved() && !this.usesCustomObbEntityCollision();
     }
 
     private record RotorContactInfo(double centerX, double centerY, double centerZ, double radius) {
