@@ -1,10 +1,12 @@
 package ttv.migami.jeg.vehicle.projectile;
 
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -148,7 +150,7 @@ public final class VehicleMissileEntity extends Entity {
     private void explode() {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             VehicleMissileProfile profile = this.profile();
-            serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 8, 0.4D, 0.4D, 0.4D, 0.06D);
+            this.spawnMissileExplosionEffects(serverLevel);
             Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
             this.level().explode(this, this.getX(), this.getY(), this.getZ(), profile.explosionPower(), ExplosionInteraction.MOB);
             Entity ownerVehicle = owner == null ? null : owner.getVehicle();
@@ -164,6 +166,28 @@ public final class VehicleMissileEntity extends Entity {
             }
         }
         this.discard();
+    }
+
+    private void spawnMissileExplosionEffects(ServerLevel serverLevel) {
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY(), this.getZ(), 8, 0.7D, 0.7D, 0.7D, 0.08D);
+        sendLongDistanceParticles(serverLevel, ModParticleTypes.SMOKE.get(), this.getX(), this.getY(), this.getZ(), 6, 0.8D, 0.8D, 0.8D, 0.02D);
+    }
+
+    private static <T extends ParticleOptions> void sendLongDistanceParticles(
+            ServerLevel serverLevel,
+            T particle,
+            double x,
+            double y,
+            double z,
+            int count,
+            double xOffset,
+            double yOffset,
+            double zOffset,
+            double speed
+    ) {
+        for (ServerPlayer player : serverLevel.players()) {
+            serverLevel.sendParticles(player, particle, true, x, y, z, count, xOffset, yOffset, zOffset, speed);
+        }
     }
 
     private VehicleMissileProfile profile() {

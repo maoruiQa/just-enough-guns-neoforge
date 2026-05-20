@@ -613,7 +613,18 @@ public final class FabricClientBootstrap {
                 return;
             }
         }
+        if (usesNoMuzzleFlashGun(entity)) {
+            return;
+        }
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
+    }
+
+    private static boolean usesNoMuzzleFlashGun(Entity entity) {
+        if (!(entity instanceof LivingEntity living)) {
+            return false;
+        }
+        ItemStack held = living.getMainHandItem();
+        return held.getItem() instanceof GunItem gun && Reference.id("rocket_launcher").equals(gun.getStats().id());
     }
 
     private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
@@ -699,6 +710,9 @@ public final class FabricClientBootstrap {
 
             ItemStack held = living.getMainHandItem();
             if (!(held.getItem() instanceof GunItem)) {
+                continue;
+            }
+            if (usesNoMuzzleFlashGun(living)) {
                 continue;
             }
 

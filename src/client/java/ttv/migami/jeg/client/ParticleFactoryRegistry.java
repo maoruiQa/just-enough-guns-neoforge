@@ -3,7 +3,9 @@ package ttv.migami.jeg.client;
 import net.minecraft.client.particle.FlameParticle;
 import net.minecraft.client.particle.SmokeParticle;
 import ttv.migami.jeg.client.particle.BigExplosionParticle;
+import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
+import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
 import ttv.migami.jeg.client.particle.SmallExplosionParticle;
 import ttv.migami.jeg.init.ModParticleTypes;
 
@@ -23,5 +25,7 @@ public final class ParticleFactoryRegistry {
 
         registry.register(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         registry.register(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);
+        registry.register(ModParticleTypes.GUN_MUZZLE_FLASH.get(), GunMuzzleFlashParticle.Provider::new);
+        registry.register(ModParticleTypes.CANNON_MUZZLE_FLARE.get(), CannonMuzzleFlareParticle.Provider::new);
     }
 }
