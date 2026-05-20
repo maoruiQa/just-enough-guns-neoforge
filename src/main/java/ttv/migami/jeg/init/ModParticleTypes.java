@@ -1,13 +1,19 @@
 package ttv.migami.jeg.init;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.Registries;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.NotNull;
 
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
 
 public class ModParticleTypes {
     public static final DeferredRegister<ParticleType<?>> REGISTER =
@@ -34,4 +40,23 @@ public class ModParticleTypes {
             REGISTER.register("flame", FabricParticleTypes::simple);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLUE_FLAME =
             REGISTER.register("blue_flame", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
+            REGISTER.register("gun_muzzle_flash", FabricParticleTypes::simple);
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CannonMuzzleFlareOption>> CANNON_MUZZLE_FLARE =
+            REGISTER.register("cannon_muzzle_flare", () -> createOptions(CannonMuzzleFlareOption.CODEC, true, CannonMuzzleFlareOption.STREAM_CODEC));
+
+    public static <T extends ParticleOptions> ParticleType<T> createOptions(MapCodec<T> codec, boolean overrideLimiter, StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec) {
+        return new ParticleType<>(overrideLimiter) {
+            @Override
+            public @NotNull MapCodec<T> codec() {
+                return codec;
+            }
+
+            @Override
+            public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec() {
+                return streamCodec;
+            }
+        };
+    }
 }
