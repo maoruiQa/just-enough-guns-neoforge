@@ -2,7 +2,6 @@ package ttv.migami.jeg.item;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -209,13 +208,14 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return false;
         }
 
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null || minecraft.options.keyAttack.isDown()) {
+        Object minecraft = minecraftInstance();
+        Object player = clientPlayer(minecraft);
+        if (minecraft == null || player == null || keyAttackDown(minecraft)) {
             return false;
         }
 
-        return matchesHeldStack(renderStack, minecraft.player.getMainHandItem())
-                || matchesHeldStack(renderStack, minecraft.player.getOffhandItem());
+        return matchesHeldStack(renderStack, clientMainHand(player))
+                || matchesHeldStack(renderStack, clientOffHand(player));
     }
 
     private static boolean isReloadAnimation(RawAnimation animation) {
@@ -236,8 +236,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return true;
         }
 
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null || !minecraft.options.getCameraType().isFirstPerson()) {
+        Object minecraft = minecraftInstance();
+        Object player = clientPlayer(minecraft);
+        if (minecraft == null || player == null || !isFirstPersonCamera(minecraft)) {
             return false;
         }
 
@@ -246,8 +247,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return false;
         }
 
-        return matchesHeldStack(stack, minecraft.player.getMainHandItem())
-                || matchesHeldStack(stack, minecraft.player.getOffhandItem());
+        return matchesHeldStack(stack, clientMainHand(player))
+                || matchesHeldStack(stack, clientOffHand(player));
     }
 
     private static ItemStack resolveRenderStack(AnimationTest<AnimatedGunItem> test) {
@@ -256,17 +257,18 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return stack;
         }
 
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null) {
+        Object minecraft = minecraftInstance();
+        Object player = clientPlayer(minecraft);
+        if (minecraft == null || player == null) {
             return ItemStack.EMPTY;
         }
 
-        ItemStack mainHand = minecraft.player.getMainHandItem();
+        ItemStack mainHand = clientMainHand(player);
         if (matchesAnimatedGun(test.animatable(), mainHand)) {
             return mainHand;
         }
 
-        ItemStack offHand = minecraft.player.getOffhandItem();
+        ItemStack offHand = clientOffHand(player);
         if (matchesAnimatedGun(test.animatable(), offHand)) {
             return offHand;
         }
@@ -323,18 +325,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private static boolean isLocalAttackDown(Entity entity) {
-        Minecraft minecraft = Minecraft.getInstance();
-        return minecraft != null && minecraft.player == entity && minecraft.options.keyAttack.isDown();
+        Object minecraft = minecraftInstance();
+        return minecraft != null && clientPlayer(minecraft) == entity && keyAttackDown(minecraft);
     }
 
     public static void triggerClientShoot(Entity entity, boolean aiming) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (!(entity instanceof Player) || minecraft == null || minecraft.player != entity) {
+        Object minecraft = minecraftInstance();
+        Object player = clientPlayer(minecraft);
+        if (!(entity instanceof Player) || minecraft == null || player != entity) {
             return;
         }
 
-        ItemStack mainHand = minecraft.player.getMainHandItem();
-        ItemStack offHand = minecraft.player.getOffhandItem();
+        ItemStack mainHand = clientMainHand(player);
+        ItemStack offHand = clientOffHand(player);
         ItemStack stack = mainHand.getItem() instanceof AnimatedGunItem ? mainHand : offHand;
         if (!(stack.getItem() instanceof AnimatedGunItem)) {
             clearPendingClientShoot();
@@ -345,6 +348,72 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientShootStack = stack;
         clientShootAiming = aiming;
         clientShootTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
+    }
+
+    private static Object minecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            return minecraftClass.getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static Object clientPlayer(Object minecraft) {
+        if (minecraft == null) {
+            return null;
+        }
+        try {
+            return minecraft.getClass().getField("player").get(minecraft);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static ItemStack clientMainHand(Object player) {
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+        try {
+            Object stack = player.getClass().getMethod("getMainHandItem").invoke(player);
+            return stack instanceof ItemStack itemStack ? itemStack : ItemStack.EMPTY;
+        } catch (ReflectiveOperationException ignored) {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    private static ItemStack clientOffHand(Object player) {
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+        try {
+            Object stack = player.getClass().getMethod("getOffhandItem").invoke(player);
+            return stack instanceof ItemStack itemStack ? itemStack : ItemStack.EMPTY;
+        } catch (ReflectiveOperationException ignored) {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    private static boolean isFirstPersonCamera(Object minecraft) {
+        try {
+            Object options = minecraft.getClass().getField("options").get(minecraft);
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            Object firstPerson = cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType);
+            return firstPerson instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean keyAttackDown(Object minecraft) {
+        try {
+            Object options = minecraft.getClass().getField("options").get(minecraft);
+            Object keyAttack = options.getClass().getField("keyAttack").get(options);
+            Object down = keyAttack.getClass().getMethod("isDown").invoke(keyAttack);
+            return down instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
     }
 
     @Override
