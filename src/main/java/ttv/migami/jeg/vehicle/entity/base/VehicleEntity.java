@@ -76,6 +76,7 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.RepairToolItem;
+import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
@@ -1296,8 +1297,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         LivingEntity shooter = this.weaponController();
         VehicleWeaponInfo selectedWeapon = shooter == null ? null : this.selectedWeapon(shooter);
-        boolean loopFireSound = false;
-        this.entityData.set(DATA_WEAPON_FIRING, false);
+        boolean loopFireSound = this.shouldLoopVehicleFireSound(shooter, selectedWeapon);
+        this.entityData.set(DATA_WEAPON_FIRING, loopFireSound);
         if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading() || selectedWeapon == null) {
             return;
         }
@@ -1335,9 +1336,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         } else if (!this.consumeAmmo(weapon.ammoId())) {
             return;
         }
+        this.entityData.set(DATA_WEAPON_FIRING, true);
         if (!loopFireSound) {
-            this.playWeaponFireSound(weapon, stats);
-        } else if (this.fireCooldown == 0) {
             this.playWeaponFireSound(weapon, stats);
         }
         if (weapon.guided()) {
@@ -1345,6 +1345,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.15D, 0.9D);
+        this.spawnVehicleMuzzleFlare(weapon, muzzle, direction);
         BulletEntity bullet = new BulletEntity(this.level(), shooter, stats, direction.scale(stats.projectileSpeed()));
         bullet.initialisePosition(muzzle);
         this.level().addFreshEntity(bullet);
@@ -1352,6 +1353,58 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             bullet.sendTrailToClients(serverLevel);
         }
         this.fireCooldown = Math.max(1, stats.fireDelay());
+    }
+
+    private void spawnVehicleMuzzleFlare(VehicleWeaponInfo weapon, Vec3 muzzle, Vec3 direction) {
+        if (!(this.level() instanceof ServerLevel serverLevel) || direction.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+        String weaponPath = weapon.weaponId().getPath();
+        if (weapon.guided() || weaponPath.contains("rocket") || weaponPath.contains("missile")) {
+            this.spawnVehicleMuzzleFlareParticle(serverLevel, new CannonMuzzleFlareOption(1.0F, 0.86F, 0.55F, 6, 0.70F, 1, 0.10F), muzzle, direction, 3, 0.08D, 0.18D);
+            this.spawnVehicleMuzzleFlareParticle(serverLevel, new CannonMuzzleFlareOption(0.55F, 0.45F, 0.4F, 18, 0.82F, 2, 0.025F), muzzle, direction, 1, 0.0D, 0.10D);
+            return;
+        }
+        if (this.usesGunMuzzleFlash(weaponPath)) {
+            this.spawnVehicleGunMuzzleFlash(serverLevel, muzzle, direction);
+            return;
+        }
+        this.spawnVehicleMuzzleFlareParticle(serverLevel, new CannonMuzzleFlareOption(1.0F, 0.95F, 0.78F, 8, 0.70F, 1, 0.20F), muzzle, direction, 4, 0.10D, 0.30D);
+        this.spawnVehicleMuzzleFlareParticle(serverLevel, new CannonMuzzleFlareOption(0.45F, 0.42F, 0.4F, 38, 0.88F, 2, 0.04F), muzzle, direction, 1, 0.0D, 0.14D);
+    }
+
+    private boolean usesGunMuzzleFlash(String weaponPath) {
+        return weaponPath.contains("machine_gun")
+                || weaponPath.contains("minigun")
+                || weaponPath.equals("vehicle_coax_machine_gun")
+                || weaponPath.equals("light_machine_gun");
+    }
+
+    private void spawnVehicleGunMuzzleFlash(ServerLevel level, Vec3 muzzle, Vec3 direction) {
+        Vec3 forward = direction.normalize();
+        level.sendParticles(ModParticleTypes.GUN_MUZZLE_FLASH.get(), muzzle.x, muzzle.y, muzzle.z, 0, forward.x, forward.y, forward.z, 0.12D);
+    }
+
+    private void spawnVehicleMuzzleFlareParticle(ServerLevel level, CannonMuzzleFlareOption option, Vec3 center, Vec3 direction, int count, double radius, double speed) {
+        Vec3 forward = direction.normalize();
+        Vec3 side = this.randomPerpendicular(forward).normalize();
+        Vec3 up = forward.cross(side).normalize();
+        int particleCount = Math.max(1, count);
+        for (int i = 0; i < particleCount; i++) {
+            double angle = 2.0D * Math.PI * i / particleCount;
+            Vec3 offset = side.scale(Math.cos(angle) * radius).add(up.scale(Math.sin(angle) * radius));
+            Vec3 pos = center.add(offset);
+            Vec3 velocity = offset.lengthSqr() > 1.0E-6D ? offset.normalize().add(forward.scale(6.0D)) : forward.scale(6.0D);
+            level.sendParticles(option, pos.x, pos.y, pos.z, 0, velocity.x, velocity.y, velocity.z, speed);
+        }
+    }
+
+    private Vec3 randomPerpendicular(Vec3 direction) {
+        Vec3 candidate = new Vec3(direction.y, -direction.x, 0.0D);
+        if (candidate.lengthSqr() > 1.0E-4D) {
+            return candidate;
+        }
+        return new Vec3(0.0D, direction.z, -direction.y);
     }
 
     private void playWeaponFireSound(VehicleWeaponInfo weapon, GunStats stats) {
@@ -1506,6 +1559,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
         Entity target = this.seekInput && profile.usesLockOn() ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity, weapon.weaponId()));
+        this.spawnVehicleMuzzleFlare(weapon, muzzle, direction);
         this.fireCooldown = Math.max(1, stats.fireDelay());
     }
 
