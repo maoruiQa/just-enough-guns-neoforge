@@ -51,12 +51,8 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 // NOTE: AnimatedGunItem extends GunItem and adds GeckoLib animation triggers.
 import ttv.migami.jeg.item.AnimatedGunItem;
-import ttv.migami.jeg.client.BulletTrailCalculator;
-import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.util.HudMessageHelper;
 
@@ -718,16 +714,16 @@ public class GunItem extends Item {
             Identifier gunId = stats.id();
             if (Config.legacyBulletTrailEnabled()
                     && isBulletClassWeapon(gunId)
-                    && player instanceof LocalPlayer localPlayer
-                    && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+                    && isLocalClientPlayer(player)
+                    && isFirstPersonCamera()) {
                 Vec3 look = player.getViewVector(1.0F);
                 if (look.lengthSqr() > 1.0E-6D) {
                     Vec3 direction = look.normalize();
-                    Vec3 start = GunClientEvents.getCurrentFirstPersonMuzzlePosition(localPlayer, stack);
+                    Vec3 start = currentFirstPersonMuzzlePosition(player, stack);
                     if (start == null) {
                         start = player.getEyePosition().add(direction.scale(0.35F));
                     }
-                    BulletTrailCalculator.calculateInstantTrail(start, direction, stats, player);
+                    calculateInstantTrail(start, direction, stats, player);
                 }
             }
         } else {
@@ -777,6 +773,65 @@ public class GunItem extends Item {
 
         playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
         return true;
+    }
+
+    private static boolean isLocalClientPlayer(Player player) {
+        Object minecraft = minecraftInstance();
+        if (minecraft == null) {
+            return false;
+        }
+        try {
+            return minecraft.getClass().getField("player").get(minecraft) == player;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isFirstPersonCamera() {
+        Object minecraft = minecraftInstance();
+        if (minecraft == null) {
+            return false;
+        }
+        try {
+            Object options = minecraft.getClass().getField("options").get(minecraft);
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            Object firstPerson = cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType);
+            return firstPerson instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static Vec3 currentFirstPersonMuzzlePosition(Player player, ItemStack stack) {
+        try {
+            Class<?> localPlayerClass = Class.forName("net.minecraft.client.player.LocalPlayer");
+            Class<?> eventsClass = Class.forName("ttv.migami.jeg.client.GunClientEvents");
+            Object value = eventsClass
+                    .getMethod("getCurrentFirstPersonMuzzlePosition", localPlayerClass, ItemStack.class)
+                    .invoke(null, player, stack);
+            return value instanceof Vec3 pos ? pos : null;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static void calculateInstantTrail(Vec3 start, Vec3 direction, GunStats stats, Player player) {
+        try {
+            Class<?> calculatorClass = Class.forName("ttv.migami.jeg.client.BulletTrailCalculator");
+            calculatorClass
+                    .getMethod("calculateInstantTrail", Vec3.class, Vec3.class, GunStats.class, Player.class)
+                    .invoke(null, start, direction, stats, player);
+        } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    private static Object minecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            return minecraftClass.getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 
     private void applyRecoilBackstep(Player player) {
