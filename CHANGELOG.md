@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0-pre2 - 2026-05-20
+
+### Added
+- Added vehicle muzzle flare visuals and missile explosion effects.
+
+### Fixed
+- Fixed vehicle entity collision opt-in and aligned vehicle collision bounds with OBB data.
+- Fixed OBB vehicle entity collision, including speedboat collision behavior.
+- Moved and tuned the MI-28 dismount position to keep players clear of missile pods.
+- Fixed server-side class loading by keeping client-only vehicle effect code off dedicated servers.
+
 ## 1.5.1pre2 - 2026-05-09
 
 ### Changed
