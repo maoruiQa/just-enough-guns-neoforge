@@ -61,6 +61,7 @@
   "hud.jeg.vehicle.decoy_smoke": "按%s 烟幕: %s",
   "message.jeg.vehicle.lock_warning": "导弹锁定告警",
   "message.jeg.vehicle.missile_warning": "导弹来袭",
+  "message.jeg.vehicle.disabled": "服务器已禁用载具组装",
   "subtitle.jeg.repair_tool": "维修工具发射",
   "subtitle.jeg.repairing": "维修工具维修",
   "subtitle.jeg.vehicle.lock_warning": "导弹锁定告警",
