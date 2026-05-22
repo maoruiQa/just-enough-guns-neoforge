@@ -2,6 +2,7 @@ package ttv.migami.jeg.vehicle.item;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -14,6 +15,7 @@ import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
 import ttv.migami.jeg.vehicle.block.property.BlockPart;
 
@@ -36,6 +38,13 @@ public final class VehicleAssemblingTableBlockItem extends BlockItem implements 
 
     @Override
     protected boolean canPlace(@NotNull BlockPlaceContext context, @NotNull BlockState state) {
+        if (!Config.vehiclesEnabled()) {
+            var player = context.getPlayer();
+            if (!context.getLevel().isClientSide && player != null) {
+                player.displayClientMessage(Component.translatable("message.jeg.vehicle.disabled"), true);
+            }
+            return false;
+        }
         Direction facing = state.getValue(VehicleAssemblingTableBlock.FACING);
         BlockPos initialPos = findInitialPos(context, context.getClickedPos(), facing);
         if (initialPos == null) {

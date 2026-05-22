@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.block;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +30,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.vehicle.block.entity.VehicleAssemblingTableBlockEntity;
 import ttv.migami.jeg.vehicle.block.property.BlockPart;
 import ttv.migami.jeg.vehicle.item.VehicleAssemblingTableBlockItem;
@@ -121,6 +123,12 @@ public final class VehicleAssemblingTableBlock extends BaseEntityBlock {
 
     @Override
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!Config.vehiclesEnabled()) {
+            if (!level.isClientSide) {
+                player.displayClientMessage(Component.translatable("message.jeg.vehicle.disabled"), true);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof VehicleAssemblingTableBlockEntity table) {
             serverPlayer.openMenu(table, buffer -> buffer.writeBlockPos(pos));
         }
