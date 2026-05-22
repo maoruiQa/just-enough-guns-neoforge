@@ -41,12 +41,16 @@ public class Faction {
     }
 
     public Item getRandomGun(boolean isCloseRange, Level level, RandomSource random) {
+        return getRandomGun(isCloseRange, level, random, "generic");
+    }
+
+    public Item getRandomGun(boolean isCloseRange, Level level, RandomSource random, String gunnerType) {
         List<Item> pool = isCloseRange ? closeGuns : longGuns;
         if (pool.isEmpty()) {
             return null;
         }
         if (level != null && random != null) {
-            return GunnerProgression.selectGun(pool, level, random);
+            return GunnerProgression.selectGun(pool, level, random, gunnerType);
         }
         return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
@@ -56,12 +60,16 @@ public class Faction {
     }
 
     public Item getEliteGun(Level level, RandomSource random) {
+        return getEliteGun(level, random, "generic");
+    }
+
+    public Item getEliteGun(Level level, RandomSource random, String gunnerType) {
         List<Item> pool = eliteGuns;
         if (pool.isEmpty()) {
             return null;
         }
         if (level != null && random != null) {
-            return GunnerProgression.selectGun(pool, level, random);
+            return GunnerProgression.selectGun(pool, level, random, gunnerType);
         }
         return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }

@@ -9,6 +9,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunnerProgression {
@@ -17,25 +19,33 @@ public final class GunnerProgression {
     private GunnerProgression() {}
 
     public static Item selectGun(List<Item> pool, Level level, RandomSource random) {
+        return selectGun(pool, level, random, "generic");
+    }
+
+    public static Item selectGun(List<Item> pool, Level level, RandomSource random, String gunnerType) {
         if (pool.isEmpty()) {
             return null;
         }
 
-        int allowedTier = Math.min(3, (int) Math.floor(Config.gunnerProgressionScale(level) * 4.0F));
+        Item rocketLauncher = resolveRocketLauncher();
+        if (rocketLauncher != null && Config.shouldGunnerUseRocketLauncher(level, gunnerType, random)) {
+            return rocketLauncher;
+        }
+
+        int allowedTier = Config.gunnerWeaponMaxTier(level, gunnerType);
         List<Item> candidates = pool.stream()
-                .filter(item -> weaponTier(item) == allowedTier)
+                .filter(item -> item != rocketLauncher)
+                .filter(item -> weaponTier(item) <= allowedTier)
                 .toList();
         if (candidates.isEmpty()) {
-            int lowestTier = pool.stream()
-                    .mapToInt(GunnerProgression::weaponTier)
-                    .filter(tier -> tier < allowedTier)
-                    .max()
-                    .orElseGet(() -> pool.stream().mapToInt(GunnerProgression::weaponTier).min().orElse(0));
             candidates = pool.stream()
-                    .filter(item -> weaponTier(item) == lowestTier)
+                    .filter(item -> item != rocketLauncher)
                     .toList();
         }
-        return candidates.get(random.nextInt(candidates.size()));
+        if (candidates.isEmpty()) {
+            return pool.get(random.nextInt(pool.size()));
+        }
+        return selectWeightedByTier(candidates, random, Config.gunnerWeaponAggression(gunnerType));
     }
 
     public static void prepareDroppedWeapon(Mob mob, ItemStack stack) {
@@ -53,7 +63,41 @@ public final class GunnerProgression {
         }
     }
 
-    private static int weaponTier(Item item) {
+    private static Item selectWeightedByTier(List<Item> candidates, RandomSource random, double aggression) {
+        int highestTier = candidates.stream().mapToInt(GunnerProgression::weaponTier).max().orElse(0);
+        if (aggression >= 0.999D) {
+            List<Item> highest = candidates.stream()
+                    .filter(item -> weaponTier(item) == highestTier)
+                    .toList();
+            return highest.get(random.nextInt(highest.size()));
+        }
+
+        // Keep low and mid-tier guns alive in late game while still letting config bias upward.
+        double totalWeight = 0.0D;
+        double[] weights = new double[candidates.size()];
+        for (int i = 0; i < candidates.size(); i++) {
+            int distanceFromBest = highestTier - weaponTier(candidates.get(i));
+            double highTierBias = Math.pow(0.35D, distanceFromBest);
+            weights[i] = (1.0D - aggression) + aggression * highTierBias;
+            totalWeight += weights[i];
+        }
+
+        double roll = random.nextDouble() * totalWeight;
+        for (int i = 0; i < candidates.size(); i++) {
+            roll -= weights[i];
+            if (roll <= 0.0D) {
+                return candidates.get(i);
+            }
+        }
+        return candidates.get(candidates.size() - 1);
+    }
+
+    private static Item resolveRocketLauncher() {
+        var holder = ModItems.GUNS.get(Reference.id("rocket_launcher"));
+        return holder != null ? holder.get() : null;
+    }
+
+    public static int weaponTier(Item item) {
         if (!(item instanceof GunItem gun)) {
             return 0;
         }

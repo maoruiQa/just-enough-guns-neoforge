@@ -45,6 +45,18 @@ public final class ModCommands {
         }
         return builder.buildFuture();
     };
+    private static final SuggestionProvider<CommandSourceStack> GUNNER_TYPE_SUGGESTIONS = (context, builder) -> {
+        for (String type : Config.gunnerGrowthTypes()) {
+            builder.suggest(type);
+        }
+        return builder.buildFuture();
+    };
+    private static final SuggestionProvider<CommandSourceStack> GUNNER_GROWTH_SETTING_SUGGESTIONS = (context, builder) -> {
+        for (String setting : Config.gunnerGrowthSettings()) {
+            builder.suggest(setting);
+        }
+        return builder.buildFuture();
+    };
 
     private ModCommands() {}
 
@@ -123,6 +135,7 @@ public final class ModCommands {
                 .then(configUiCommand())
                 .then(configPatrolCommand())
                 .then(configMobCommand())
+                .then(configGunnerGrowthCommand())
                 .then(configCombatCommand())
                 .then(configVehicleCommand());
     }
@@ -145,6 +158,24 @@ public final class ModCommands {
                 .then(configSimpleMobChanceCommand("zombifiedPiglin", "mob.zombifiedPiglinGunner.chance"))
                 .then(configSimpleMobChanceCommand("piglin", "mob.piglinGunner.chance"))
                 .then(configSimpleMobChanceCommand("witherSkeleton", "mob.witherSkeletonGunner.chance"));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerGrowthCommand() {
+        return Commands.literal("gunner")
+                .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests(GUNNER_TYPE_SUGGESTIONS)
+                        .then(Commands.argument("setting", StringArgumentType.word())
+                                .suggests(GUNNER_GROWTH_SETTING_SUGGESTIONS)
+                                .executes(context -> executeGetGunnerGrowthConfig(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "type"),
+                                        StringArgumentType.getString(context, "setting")))
+                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(-1.0D, 5000.0D))
+                                        .executes(context -> executeSetGunnerGrowthConfig(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, "type"),
+                                                StringArgumentType.getString(context, "setting"),
+                                                DoubleArgumentType.getDouble(context, "value"))))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configPatrolCommand() {
@@ -345,6 +376,18 @@ public final class ModCommands {
         return 1;
     }
 
+    private static int executeGetGunnerGrowthConfig(CommandSourceStack source, String type, String setting) {
+        try {
+            String key = Config.gunnerGrowthCommandKey(type, setting);
+            double value = (Double) Config.getConfigValue(key);
+            source.sendSuccess(() -> Component.literal(key + " = " + value), false);
+            return 1;
+        } catch (IllegalArgumentException ex) {
+            source.sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
+    }
+
     private static int executeSetBooleanConfig(CommandSourceStack source, String key, boolean value, String displayName) {
         if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             source.sendFailure(Component.literal("You do not have permission to execute this command"));
@@ -385,6 +428,24 @@ public final class ModCommands {
         Config.saveServerConfig();
         source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
         return 1;
+    }
+
+    private static int executeSetGunnerGrowthConfig(CommandSourceStack source, String type, String setting, double value) {
+        if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+        try {
+            String key = Config.gunnerGrowthCommandKey(type, setting);
+            double oldValue = (Double) Config.getConfigValue(key);
+            Config.setConfigValue(key, value);
+            Config.saveServerConfig();
+            source.sendSuccess(() -> Component.literal("Set " + key + " from " + oldValue + " to " + value), true);
+            return 1;
+        } catch (IllegalArgumentException ex) {
+            source.sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
     }
 
     private static int executeSpawnPatrol(CommandSourceStack source, String factionName, int size, Vec3 pos, boolean forceGuns, int spread) {
