@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
@@ -46,6 +47,10 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
     }
 
     public boolean assembleVehicle(Player player, ResourceLocation recipeId) {
+        if (!Config.vehiclesEnabled()) {
+            player.displayClientMessage(Component.translatable("message.jeg.vehicle.disabled"), true);
+            return false;
+        }
         VehicleAssemblyRecipe recipe = VehicleAssemblyRecipeManager.get(recipeId);
         if (recipe == null || !this.hasCost(recipe)) {
             player.displayClientMessage(Component.translatable("message.jeg.vehicle_assembling.missing_materials"), true);
