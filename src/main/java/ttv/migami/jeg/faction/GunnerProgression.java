@@ -23,10 +23,14 @@ public final class GunnerProgression {
 
         int allowedTier = Math.min(3, (int) Math.floor(Config.gunnerProgressionScale(level) * 4.0F));
         List<Item> candidates = pool.stream()
-                .filter(item -> weaponTier(item) <= allowedTier)
+                .filter(item -> weaponTier(item) == allowedTier)
                 .toList();
         if (candidates.isEmpty()) {
-            int lowestTier = pool.stream().mapToInt(GunnerProgression::weaponTier).min().orElse(3);
+            int lowestTier = pool.stream()
+                    .mapToInt(GunnerProgression::weaponTier)
+                    .filter(tier -> tier < allowedTier)
+                    .max()
+                    .orElseGet(() -> pool.stream().mapToInt(GunnerProgression::weaponTier).min().orElse(0));
             candidates = pool.stream()
                     .filter(item -> weaponTier(item) == lowestTier)
                     .toList();
