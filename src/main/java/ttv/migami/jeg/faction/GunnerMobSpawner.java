@@ -125,16 +125,17 @@ public class GunnerMobSpawner {
             }
 
             {
+                String gunnerType = GunnerType.keyFor(mob);
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
-                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom());
+                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType);
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
                 boolean elite = (mob.getRandom().nextFloat() < GunMobValues.eliteChance && GunMobValues.elitesEnabled);
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
                 if (elite) {
-                    gun = faction.getEliteGun(mob.level(), mob.getRandom());
+                    gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType);
                     applyEliteAttributes(mob);
                 }
 
@@ -241,28 +242,29 @@ public class GunnerMobSpawner {
     }
 
     private static double resolveNaturalGunnerChance(PathfinderMob mob) {
+        String gunnerType = GunnerType.keyFor(mob);
         if (mob instanceof Husk) {
-            return Config.huskGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.huskGunnerChance());
         }
         if (mob instanceof ZombifiedPiglin) {
-            return Config.zombifiedPiglinGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.zombifiedPiglinGunnerChance());
         }
         if (mob instanceof ZombieVillager || mob instanceof Drowned || mob instanceof Zombie) {
-            return Config.zombieGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.zombieGunnerChance());
         }
         if (mob instanceof Stray || mob instanceof Skeleton) {
-            return Config.skeletonGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.skeletonGunnerChance());
         }
         if (mob instanceof WitherSkeleton) {
-            return Config.witherSkeletonGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.witherSkeletonGunnerChance());
         }
         if (mob instanceof PiglinBrute || mob instanceof Piglin) {
-            return Config.piglinGunnerChance();
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.piglinGunnerChance());
         }
         if (mob instanceof Vindicator || mob instanceof Pillager) {
-            return Config.pillagerGunnerChance(mob.level());
+            return Config.gunnerSpawnChance(mob.level(), gunnerType, Config.pillagerGunnerChance());
         }
-        return legacyNaturalGunnerChance(mob.level());
+        return Config.gunnerSpawnChance(mob.level(), gunnerType, legacyNaturalGunnerChance(mob.level()));
     }
 
     private static double legacyNaturalGunnerChance(Level level) {

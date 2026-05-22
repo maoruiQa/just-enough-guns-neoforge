@@ -3,6 +3,7 @@ package ttv.migami.jeg;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.minecraft.util.RandomSource;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
@@ -73,6 +74,17 @@ public final class Config {
     private static final Path CLIENT_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-client.toml");
     private static final Path SERVER_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-server.toml");
     private static final Map<String, ModConfigSpec.Value<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
+    private static final Map<String, Map<String, ModConfigSpec.DoubleValue>> GUNNER_GROWTH_CONFIGS = new LinkedHashMap<>();
+    private static final String[] GUNNER_GROWTH_TYPES = {
+            "all", "skeleton", "stray", "zombie", "husk", "parched", "drowned", "zombieVillager",
+            "zombifiedPiglin", "piglin", "piglinBrute", "witherSkeleton", "pillager", "vindicator", "generic"
+    };
+    private static final String[] GUNNER_GROWTH_SETTINGS = {
+            "minSpawnChance", "maxSpawnChance", "spawnChancePerDay",
+            "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay",
+            "armorInitialTier", "armorMaxTier", "armorTierPerDay",
+            "rocketLauncherStartDay", "rocketLauncherChance", "weaponAggression"
+    };
 
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
@@ -173,6 +185,7 @@ public final class Config {
                 .comment("Number of in-game days from scaling start day to reach max spawn probabilities.")
                 .defineInRange("spawnScalingDaysToMax", 28, 1, 5000);
         serverBuilder.pop();
+        defineGunnerGrowthConfig(serverBuilder);
 
         serverBuilder.push("combat");
         RECOIL_BACKSTEP_ENABLED = serverBuilder
@@ -323,7 +336,50 @@ public final class Config {
         registerCommandConfig("combat.gunnerAccuracy.maxDay", GUNNER_ACCURACY_MAX_DAY);
         registerCommandConfig("combat.gunnerAccuracy.maxPercent", GUNNER_ACCURACY_MAX_PERCENT);
         registerCommandConfig("combat.gunnerProgression.maxDay", GUNNER_PROGRESSION_MAX_DAY);
+        registerGunnerGrowthCommandConfigs();
         registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
+    }
+
+    private static void defineGunnerGrowthConfig(ModConfigSpec.Builder serverBuilder) {
+        serverBuilder.push("gunnerGrowth");
+        for (String type : GUNNER_GROWTH_TYPES) {
+            serverBuilder.push(type);
+            Map<String, ModConfigSpec.DoubleValue> values = new LinkedHashMap<>();
+            for (String setting : GUNNER_GROWTH_SETTINGS) {
+                values.put(setting, serverBuilder
+                        .comment("Use -1 to inherit the balanced default or the all-gunners override.")
+                        .defineInRange(setting, defaultGunnerGrowthConfigValue(type, setting), -1.0D, 5000.0D));
+            }
+            GUNNER_GROWTH_CONFIGS.put(type, values);
+            serverBuilder.pop();
+        }
+        serverBuilder.pop();
+    }
+
+    private static double defaultGunnerGrowthConfigValue(String type, String setting) {
+        if (!"all".equals(type)) {
+            return -1.0D;
+        }
+        return switch (setting) {
+            case "weaponInitialTier" -> 0.0D;
+            case "weaponMaxTier" -> 3.0D;
+            case "weaponTierPerDay" -> 0.04D;
+            case "armorInitialTier" -> 0.0D;
+            case "armorMaxTier" -> 5.0D;
+            case "armorTierPerDay" -> 0.05D;
+            case "rocketLauncherStartDay" -> 80.0D;
+            case "rocketLauncherChance" -> 0.015D;
+            case "weaponAggression" -> 0.55D;
+            default -> -1.0D;
+        };
+    }
+
+    private static void registerGunnerGrowthCommandConfigs() {
+        for (Map.Entry<String, Map<String, ModConfigSpec.DoubleValue>> typeEntry : GUNNER_GROWTH_CONFIGS.entrySet()) {
+            for (Map.Entry<String, ModConfigSpec.DoubleValue> settingEntry : typeEntry.getValue().entrySet()) {
+                registerCommandConfig(gunnerGrowthCommandKey(typeEntry.getKey(), settingEntry.getKey()), settingEntry.getValue());
+            }
+        }
     }
 
     private Config() {}
@@ -485,6 +541,108 @@ public final class Config {
     public static float gunnerProgressionScale(Level level) {
         long day = Math.max(0L, level.getDayTime() / 24000L);
         return Mth.clamp((float) day / (float) gunnerProgressionMaxDay(), 0.0F, 1.0F);
+    }
+
+    public static String[] gunnerGrowthTypes() {
+        return GUNNER_GROWTH_TYPES.clone();
+    }
+
+    public static String[] gunnerGrowthSettings() {
+        return GUNNER_GROWTH_SETTINGS.clone();
+    }
+
+    public static String gunnerGrowthCommandKey(String type, String setting) {
+        if (!contains(GUNNER_GROWTH_TYPES, type) || !contains(GUNNER_GROWTH_SETTINGS, setting)) {
+            throw new IllegalArgumentException("Unknown gunner growth config: " + type + "." + setting);
+        }
+        return "gunner." + type + "." + setting;
+    }
+
+    public static double gunnerSpawnChance(Level level, String gunnerType, double legacyBaseChance) {
+        // Treat the old mob.*GunnerChance value as the default minimum, then grow toward the new cap.
+        double min = resolveGunnerGrowthValue(gunnerType, "minSpawnChance", clamp01(legacyBaseChance));
+        double max = resolveGunnerGrowthValue(gunnerType, "maxSpawnChance", defaultGunnerMaxSpawnChance(gunnerType, min));
+        if (max < min) {
+            max = min;
+        }
+        double defaultGrowth = Math.max(0.0D, (max - min) / 60.0D);
+        double growth = resolveGunnerGrowthValue(gunnerType, "spawnChancePerDay", defaultGrowth);
+        long day = Math.max(0L, currentGunnerDay(level) - Math.max(0, SPAWN_SCALING_START_DAY.get()));
+        return clamp01(Math.min(max, min + day * Math.max(0.0D, growth)));
+    }
+
+    public static int gunnerWeaponMaxTier(Level level, String gunnerType) {
+        return scaledTier(level, gunnerType, "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay", 0, 3);
+    }
+
+    public static int gunnerArmorMaxTier(Level level, String gunnerType) {
+        return scaledTier(level, gunnerType, "armorInitialTier", "armorMaxTier", "armorTierPerDay", 0, 6);
+    }
+
+    public static double gunnerWeaponAggression(String gunnerType) {
+        return Mth.clamp(resolveGunnerGrowthValue(gunnerType, "weaponAggression", 0.55D), 0.0D, 1.0D);
+    }
+
+    public static boolean shouldGunnerUseRocketLauncher(Level level, String gunnerType, RandomSource random) {
+        // Rocket launchers are gated outside the normal weapon-tier roll so their rate stays independently tunable.
+        long startDay = Math.round(resolveGunnerGrowthValue(gunnerType, "rocketLauncherStartDay", 80.0D));
+        if (currentGunnerDay(level) < startDay) {
+            return false;
+        }
+        double chance = Mth.clamp(resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.015D), 0.0D, 1.0D);
+        return chance > 0.0D && random.nextDouble() < chance;
+    }
+
+    private static int scaledTier(Level level, String gunnerType, String initialKey, String maxKey, String growthKey, int min, int max) {
+        double initial = resolveGunnerGrowthValue(gunnerType, initialKey, min);
+        double cap = resolveGunnerGrowthValue(gunnerType, maxKey, max);
+        double growth = resolveGunnerGrowthValue(gunnerType, growthKey, 0.0D);
+        double scaled = initial + currentGunnerDay(level) * Math.max(0.0D, growth);
+        return Mth.clamp((int) Math.floor(Math.min(cap, scaled)), min, max);
+    }
+
+    private static double resolveGunnerGrowthValue(String gunnerType, String setting, double fallback) {
+        double typed = directGunnerGrowthValue(gunnerType, setting);
+        if (typed >= 0.0D) {
+            return typed;
+        }
+        double global = directGunnerGrowthValue("all", setting);
+        return global >= 0.0D ? global : fallback;
+    }
+
+    private static double directGunnerGrowthValue(String gunnerType, String setting) {
+        Map<String, ModConfigSpec.DoubleValue> values = GUNNER_GROWTH_CONFIGS.get(gunnerType);
+        if (values == null) {
+            values = GUNNER_GROWTH_CONFIGS.get("generic");
+        }
+        ModConfigSpec.DoubleValue value = values != null ? values.get(setting) : null;
+        return value != null ? value.get() : -1.0D;
+    }
+
+    private static double defaultGunnerMaxSpawnChance(String gunnerType, double min) {
+        double cap = switch (gunnerType) {
+            case "skeleton", "stray" -> 0.32D;
+            case "zombie", "husk", "parched", "drowned", "zombieVillager" -> 0.22D;
+            case "zombifiedPiglin" -> 0.26D;
+            case "piglin", "piglinBrute" -> 0.50D;
+            case "witherSkeleton" -> 0.45D;
+            case "pillager", "vindicator" -> 0.35D;
+            default -> 0.24D;
+        };
+        return Math.max(min, cap);
+    }
+
+    private static long currentGunnerDay(Level level) {
+        return Math.max(0L, level.getDayTime() / 24000L);
+    }
+
+    private static boolean contains(String[] values, String candidate) {
+        for (String value : values) {
+            if (value.equals(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static float scaleGunnerSpreadMultiplier(Level level, float earlyMultiplier) {
