@@ -67,6 +67,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MAX_TICKS;
     public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
+    public static final ModConfigSpec.BooleanValue VEHICLE_ENABLED;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
@@ -286,6 +287,12 @@ public final class Config {
                 .defineInRange("homeTriggerRadius", 48, 8, 256);
         serverBuilder.pop();
 
+        serverBuilder.push("vehicle");
+        VEHICLE_ENABLED = serverBuilder
+                .comment("If true, players can place vehicle assembling tables and assemble new vehicle containers.")
+                .define("enabled", true);
+        serverBuilder.pop();
+
         serverBuilder.push("combat");
         BULLET_LIFETIME_SECONDS = serverBuilder
                 .comment("Global bullet lifetime in seconds. Applies to all bullets.")
@@ -322,6 +329,7 @@ public final class Config {
         registerCommandConfig("combat.gunnerAccuracy.maxDay", GUNNER_ACCURACY_MAX_DAY);
         registerCommandConfig("combat.gunnerAccuracy.maxPercent", GUNNER_ACCURACY_MAX_PERCENT);
         registerCommandConfig("combat.gunnerProgression.maxDay", GUNNER_PROGRESSION_MAX_DAY);
+        registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
     }
 
     private Config() {}
@@ -560,6 +568,10 @@ public final class Config {
 
     public static boolean factionRaidEnabled() {
         return FACTION_RAID_ENABLED.get();
+    }
+
+    public static boolean vehiclesEnabled() {
+        return VEHICLE_ENABLED.get();
     }
 
     public static int factionRaidIntervalDays() {

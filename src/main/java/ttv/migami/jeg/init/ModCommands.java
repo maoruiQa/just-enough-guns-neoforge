@@ -118,7 +118,8 @@ public final class ModCommands {
                 .then(configUiCommand())
                 .then(configPatrolCommand())
                 .then(configMobCommand())
-                .then(configCombatCommand());
+                .then(configCombatCommand())
+                .then(configVehicleCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configUiCommand() {
@@ -156,6 +157,11 @@ public final class ModCommands {
                 .then(configGunnerTerrainCommand())
                 .then(configGunnerAccuracyCommand())
                 .then(configGunnerProgressionCommand());
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configVehicleCommand() {
+        return Commands.literal("vehicle")
+                .then(configBooleanConfigCommand("enabled", "vehicle.enabled"));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {
