@@ -39,6 +39,14 @@ public final class ModDataComponents {
                     .build()
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> ARMORED_HARNESS_REPAIR_COOLDOWN = REGISTER.register(
+            "armored_harness_repair_cooldown",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_TRIGGER_LOCK = REGISTER.register(
             "gun_trigger_lock",
             () -> DataComponentType.<Boolean>builder()

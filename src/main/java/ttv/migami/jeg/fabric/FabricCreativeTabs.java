@@ -45,7 +45,6 @@ public final class FabricCreativeTabs {
             ModItems.ARMORED_JOY_HARNESSES.values().forEach(holder -> entries.accept(holder.get()));
             ModItems.ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> entries.accept(holder.get()));
             ModItems.ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> entries.accept(holder.get()));
-            entries.accept(ModItems.JOYOUS_ARMOR_PLATE.get());
         });
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> {

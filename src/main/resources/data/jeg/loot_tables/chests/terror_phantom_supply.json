@@ -197,17 +197,6 @@
               }
             }
           ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "jeg:joyous_armor_plate",
-          "weight": 1,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 1
-            }
-          ]
         }
       ]
     },

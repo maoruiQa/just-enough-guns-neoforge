@@ -27,9 +27,31 @@ import java.util.function.Consumer;
 
 public final class ArmoredJoyHarnessItem extends Item {
     public enum HarnessTier {
-        BASE,
-        DIAMOND,
-        NETHERITE
+        BASE(2.50F, 0.30F, 0.95F),
+        DIAMOND(4.50F, 0.22F, 0.75F),
+        NETHERITE(6.50F, 0.16F, 0.65F);
+
+        private final float armorRating;
+        private final float undermatchMultiplier;
+        private final float overmatchMultiplier;
+
+        HarnessTier(float armorRating, float undermatchMultiplier, float overmatchMultiplier) {
+            this.armorRating = armorRating;
+            this.undermatchMultiplier = undermatchMultiplier;
+            this.overmatchMultiplier = overmatchMultiplier;
+        }
+
+        public float armorRating() {
+            return this.armorRating;
+        }
+
+        public float undermatchMultiplier() {
+            return this.undermatchMultiplier;
+        }
+
+        public float overmatchMultiplier() {
+            return this.overmatchMultiplier;
+        }
     }
 
     @Nullable
@@ -48,7 +70,8 @@ public final class ArmoredJoyHarnessItem extends Item {
         super(properties
                 .stacksTo(1)
                 .rarity(Rarity.RARE)
-                .component(ModDataComponents.ARMORED_HARNESS_PLATING.get(), initialPlating));
+                .component(ModDataComponents.ARMORED_HARNESS_PLATING.get(), initialPlating)
+                .component(ModDataComponents.ARMORED_HARNESS_REPAIR_COOLDOWN.get(), 0));
         this.color = color;
         this.initialPlating = initialPlating;
         this.maxPlating = maxPlating;
