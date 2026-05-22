@@ -85,7 +85,7 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
 
         mob.setItemSlot(EquipmentSlot.MAINHAND, gunStack);
         GunnerProgression.prepareDroppedWeapon(mob, gunStack);
-        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.special(pathfinderMob));
+        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.normal(pathfinderMob));
         GunnerMobSpawner.reassessWeaponGoal(pathfinderMob);
         GunnerMobSpawner.extendFollowRange(pathfinderMob);
     }

@@ -483,7 +483,7 @@ public final class Config {
     }
 
     public static float gunnerProgressionScale(Level level) {
-        long day = Math.max(0L, level.getGameTime() / 24000L);
+        long day = Math.max(0L, level.getDayTime() / 24000L);
         return Mth.clamp((float) day / (float) gunnerProgressionMaxDay(), 0.0F, 1.0F);
     }
 
