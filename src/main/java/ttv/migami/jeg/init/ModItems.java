@@ -43,7 +43,6 @@ import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.item.VehicleAssemblingTableBlockItem;
 import ttv.migami.jeg.vehicle.item.VehicleContainerItem;
 // import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
-// import ttv.migami.jeg.item.JoyousArmorPlateItem;
 
 public final class ModItems {
     private ModItems() {}
@@ -267,12 +266,6 @@ public final class ModItems {
             )
     );
 
-    // DISABLED: Joyous Armor Plate (Equipment API not available in 1.21.1)
-    // public static final DeferredHolder<Item, JoyousArmorPlateItem> JOYOUS_ARMOR_PLATE = REGISTER.register(
-    //         "joyous_armor_plate",
-    //         () -> new JoyousArmorPlateItem(baseProperties(Reference.id("joyous_armor_plate")))
-    // );
-
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
             ResourceLocation id = Reference.id(path);
@@ -460,7 +453,6 @@ public final class ModItems {
     // ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
     // ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));
-            // event.accept(JOYOUS_ARMOR_PLATE.get()); // Disabled - class doesn't exist
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.SPAWN_EGGS)) {
