@@ -34,7 +34,6 @@ import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
 import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
-import ttv.migami.jeg.item.JoyousArmorPlateItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
@@ -272,11 +271,6 @@ public final class ModItems {
             () -> new ModSpawnEggItem(ModEntities.GHOUL.get(), baseProperties(Reference.id("gunner_ghoul_spawn_egg")).stacksTo(64))
     );
 
-    public static final DeferredHolder<Item, JoyousArmorPlateItem> JOYOUS_ARMOR_PLATE = REGISTER.register(
-            "joyous_armor_plate",
-            () -> new JoyousArmorPlateItem(baseProperties(Reference.id("joyous_armor_plate")))
-    );
-
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
             Identifier id = Reference.id(path);
@@ -311,7 +305,7 @@ public final class ModItems {
                     "armored_joy_harness_" + colorName,
                     () -> new ArmoredJoyHarnessItem(color,
                             ArmoredJoyHarnessItem.buildProperties(baseProperties(baseId), color, ArmoredJoyHarnessItem.HarnessTier.BASE),
-                            30.0F,
+                            100.0F,
                             100.0F,
                             null,
                             ArmoredJoyHarnessItem.HarnessTier.BASE)
@@ -323,7 +317,7 @@ public final class ModItems {
                     diamondId.getPath(),
                     () -> new ArmoredJoyHarnessItem(color,
                             ArmoredJoyHarnessItem.buildProperties(baseProperties(diamondId), color, ArmoredJoyHarnessItem.HarnessTier.DIAMOND),
-                            40.0F, 160.0F,
+                            160.0F, 160.0F,
                             Component.translatable("tooltip.jeg.harness_material.diamond"),
                             ArmoredJoyHarnessItem.HarnessTier.DIAMOND)
             );
@@ -334,7 +328,7 @@ public final class ModItems {
                     netheriteId.getPath(),
                     () -> new ArmoredJoyHarnessItem(color,
                             ArmoredJoyHarnessItem.buildProperties(baseProperties(netheriteId), color, ArmoredJoyHarnessItem.HarnessTier.NETHERITE),
-                            50.0F, 250.0F,
+                            250.0F, 250.0F,
                             Component.translatable("tooltip.jeg.harness_material.netherite"),
                             ArmoredJoyHarnessItem.HarnessTier.NETHERITE)
             );
@@ -397,7 +391,6 @@ public final class ModItems {
             keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness_" + name + "_diamond")));
             keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness_" + name + "_netherite")));
         }
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("joyous_armor_plate")));
         return List.copyOf(keys);
     }
 
@@ -492,7 +485,6 @@ public final class ModItems {
             ARMORED_JOY_HARNESSES.values().forEach(holder -> event.accept(holder.get()));
             ARMORED_JOY_HARNESSES_DIAMOND.values().forEach(holder -> event.accept(holder.get()));
             ARMORED_JOY_HARNESSES_NETHERITE.values().forEach(holder -> event.accept(holder.get()));
-            event.accept(JOYOUS_ARMOR_PLATE.get());
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.SPAWN_EGGS)) {

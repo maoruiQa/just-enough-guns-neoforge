@@ -28,29 +28,22 @@ public final class HappyGhastArmorEvents {
             return;
         }
 
-        float plating = HappyGhastArmorHelper.getPlating(harness);
-        if (plating <= 0.0F) {
-            return;
-        }
-
         float damage = event.getAmount();
         if (damage <= 0.0F) {
             return;
         }
 
+        float plating = HappyGhastArmorHelper.getPlating(harness);
         JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Incoming damage={} platingBefore={} ghast={}", damage, plating, ghast.getUUID());
-        float absorbed = Math.min(plating, damage);
-        float remaining = damage - absorbed;
-        HappyGhastArmorHelper.removePlating(harness, absorbed);
-        HappyGhastArmorHelper.syncAbsorption(ghast);
+        HappyGhastArmorHelper.ArmorDamageResult result = HappyGhastArmorHelper.applyIncomingDamage(ghast, event.getSource(), damage);
         notifyPassengers(ghast);
 
-        if (remaining <= 0.0F) {
+        if (result.finalDamage() <= 0.0F) {
             JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Damage fully absorbed. Cancelling hit on {}", ghast.getUUID());
             event.setCanceled(true);
         } else {
-            JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Damage partially absorbed. Remaining={} on {}", remaining, ghast.getUUID());
-            event.setAmount(remaining);
+            JustEnoughGuns.LOGGER.debug("[HappyGhast-1.21.9] Damage partially absorbed. Remaining={} on {}", result.finalDamage(), ghast.getUUID());
+            event.setAmount(result.finalDamage());
         }
     }
 
@@ -80,7 +73,10 @@ public final class HappyGhastArmorEvents {
         }
 
         if (HappyGhastArmorHelper.hasHarnessEquipped(ghast)) {
-            HappyGhastArmorHelper.syncAbsorption(ghast);
+            boolean repaired = HappyGhastArmorHelper.tickAutoRepair(ghast);
+            if (!repaired) {
+                HappyGhastArmorHelper.syncAbsorption(ghast);
+            }
             if (ghast.tickCount % 40 == 0) {
                 notifyPassengers(ghast);
             }

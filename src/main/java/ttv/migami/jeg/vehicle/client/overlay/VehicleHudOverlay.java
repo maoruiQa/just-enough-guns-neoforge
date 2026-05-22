@@ -179,6 +179,10 @@ public final class VehicleHudOverlay {
         }
     }
 
+    public static void renderArmorValueBar(GuiGraphicsExtractor guiGraphics, int x, int y, float ratio) {
+        renderValueBar(guiGraphics, ARMOR_ICON, x, y, ratio);
+    }
+
     private static void renderSelectedWeaponIcon(GuiGraphicsExtractor guiGraphics, VehicleEntity vehicle, Entity passenger, int x, int y) {
         Identifier selectedWeaponId = vehicle.selectedVehicleWeaponId(passenger);
         if (selectedWeaponId == null) {

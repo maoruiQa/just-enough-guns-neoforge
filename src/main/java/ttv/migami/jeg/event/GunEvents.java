@@ -143,10 +143,8 @@ public final class GunEvents {
         if (!manualGranted) {
             player.awardRecipesByKey(ModItems.manualRecipes());
 
-            // Grant armored harness and armor plate recipes
             player.awardRecipesByKey(java.util.List.of(
                     ResourceKey.create(Registries.RECIPE, Reference.id("armored_joy_harness")),
-                    ResourceKey.create(Registries.RECIPE, Reference.id("joyous_armor_plate")),
                     ResourceKey.create(Registries.RECIPE, Reference.id("finger_gun"))
             ));
 

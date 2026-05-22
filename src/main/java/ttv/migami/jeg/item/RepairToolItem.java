@@ -16,6 +16,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
@@ -120,6 +121,9 @@ public class RepairToolItem extends Item implements GeoItem {
         boolean applied = false;
         if (target instanceof VehicleEntity vehicle) {
             applied = hitVehicle(level, player, vehicle);
+        } else if (target instanceof HappyGhast ghast && HappyGhastArmorHelper.repairWithTool(ghast)) {
+            HappyGhastArmorEvents.notifyPassengers(ghast);
+            applied = true;
         } else if (target instanceof LivingEntity living) {
             living.hurt(ModDamageTypes.causeRepairToolDamage(level.registryAccess(), player), LIVING_DAMAGE);
             applied = true;
