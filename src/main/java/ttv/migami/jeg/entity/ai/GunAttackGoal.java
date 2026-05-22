@@ -426,7 +426,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
                 if (canShoot && --this.attackTime <= 0 && this.seeTime >= -20 && this.seeTime >= 10) {
                     shoot(target, gunItem, stats);
-                    this.attackTime = Math.max(6, stats.fireDelay());
+                    this.attackTime = gunnerFireDelay(stats);
                 }
             }
 
@@ -3095,6 +3095,17 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
             playGunshotSound(stats);
         }
+    }
+
+    private static int gunnerFireDelay(GunStats stats) {
+        String path = stats.id().getPath();
+        if ("minigun".equals(path)) {
+            return Math.max(2, stats.fireDelay());
+        }
+        if ("light_machine_gun".equals(path)) {
+            return Math.max(3, stats.fireDelay());
+        }
+        return Math.max(6, stats.fireDelay());
     }
 
     private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, LivingEntity target, RandomSource random, GunStats stats) {

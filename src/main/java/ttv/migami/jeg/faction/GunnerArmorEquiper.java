@@ -55,30 +55,32 @@ public class GunnerArmorEquiper {
 
     private static float getHelmetEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        float scale = progressionScale(context);
-        if (context.isSpecialSituation) return 0.80f + 0.15f * scale;
-        return 0.15f + 0.50f * scale;
+        int maxTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
+        if (maxTier <= 0) return 0.0F;
+        if (context.isSpecialSituation) return Math.min(0.95F, 0.45F + 0.08F * maxTier);
+        return Math.min(0.65F, 0.06F + 0.07F * maxTier);
     }
 
     private static float getBodyArmorEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        float scale = progressionScale(context);
-        if (context.isSpecialSituation) return 0.60f + 0.30f * scale;
-        return 0.08f + 0.37f * scale;
+        int maxTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
+        if (maxTier <= 0) return 0.0F;
+        if (context.isSpecialSituation) return Math.min(0.90F, 0.30F + 0.08F * maxTier);
+        return Math.min(0.45F, 0.02F + 0.055F * maxTier);
     }
 
     private static BulletproofArmorItem.Tier randomTier(RandomSource random, GunnerArmorContext context, int minimumTier) {
-        float scale = progressionScale(context);
-        int maximumTier = context.isElite ? 6 : context.isSpecialSituation ? 5 : 2 + (int) Math.floor(scale * 4.0F);
+        int maximumTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
+        if (context.isElite) {
+            maximumTier = Math.max(maximumTier, 4);
+        } else if (context.isSpecialSituation) {
+            maximumTier = Math.max(maximumTier, 3);
+        }
         maximumTier = Math.max(minimumTier, Math.min(6, maximumTier));
         int count = maximumTier - minimumTier + 1;
-        float biased = (float) Math.pow(random.nextFloat(), 1.8D - 1.2D * scale);
+        float biased = (float) Math.pow(random.nextFloat(), 1.25D);
         int tierNumber = minimumTier + Math.min(count - 1, (int) (biased * count));
         return BulletproofArmorItem.Tier.values()[tierNumber - 1];
-    }
-
-    private static float progressionScale(GunnerArmorContext context) {
-        return Config.gunnerProgressionScale(context.mob.level());
     }
 
     /**
