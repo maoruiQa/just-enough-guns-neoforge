@@ -47,7 +47,6 @@ import ttv.migami.jeg.entity.ai.AIType;
 import ttv.migami.jeg.entity.ai.GunAttackGoal;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.init.ModEntities;
-import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
@@ -193,15 +192,12 @@ public class GunnerMobSpawner {
         mob.removeTag("GunAttackAssigned");
 
         // Check if this mob should become a gunner (only for newly spawned mobs)
-        if (mob.tickCount <= 5 && !mob.entityTags().contains("MobGunner") && !mob.entityTags().contains(GUNNER_SPAWN_CHECKED_TAG) && mob.getType().builtInRegistryHolder().is(ModTags.Entities.GUNNER)) {
+        if (mob.tickCount <= 5 && !mob.entityTags().contains("MobGunner") && !mob.entityTags().contains(GUNNER_SPAWN_CHECKED_TAG) && getFactionForMob(mob) != null) {
             mob.addTag(GUNNER_SPAWN_CHECKED_TAG);
             if (!mob.isBaby()) {
                 double gunnerChance = resolveNaturalGunnerChance(mob);
                 if (gunnerChance > 0.0D && mob.getRandom().nextDouble() < gunnerChance) {
-                    GunnerManager manager = GunnerManager.getInstance();
-                    String entityName = mob.getType().getDescriptionId().replace("entity.", "").replace(".", ":");
-                    Identifier entityTypeLocation = Identifier.tryParse(entityName);
-                    Faction faction = manager.getFactionForMob(entityTypeLocation);
+                    Faction faction = getFactionForMob(mob);
 
                     if (faction != null) {
                         normalizeGunnerMob(mob);
@@ -226,10 +222,12 @@ public class GunnerMobSpawner {
                 .anyMatch(goal -> goal.getGoal() instanceof GunAttackGoal<?>);
     }
 
+    private static Faction getFactionForMob(PathfinderMob mob) {
+        Identifier entityTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+        return entityTypeId != null ? GunnerManager.getInstance().getFactionForMob(entityTypeId) : null;
+    }
+
     private static double resolveNaturalGunnerChance(PathfinderMob mob) {
-        if (!hasReachedMinimumGunnerDay(mob.level())) {
-            return 0.0D;
-        }
         Identifier entityTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
         if (PARCHED_ID.equals(entityTypeId)) {
             return Config.parchedGunnerChance();
@@ -259,18 +257,13 @@ public class GunnerMobSpawner {
     }
 
     private static double legacyNaturalGunnerChance(Level level) {
-        int currentDay = (int) (level.getGameTime() / 24000L);
+        int currentDay = (int) (level.getOverworldClockTime() / 24000L);
         if (currentDay < GunMobValues.minDays) {
             return 0.0D;
         }
         int daysOverMin = currentDay - GunMobValues.minDays;
         int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
         return currentChance / 100.0D;
-    }
-
-    private static boolean hasReachedMinimumGunnerDay(Level level) {
-        long currentDay = Math.max(0L, level.getGameTime() / 24000L);
-        return currentDay >= Math.max(0, Config.SPAWN_SCALING_START_DAY.get());
     }
 
     public static boolean hasTargetGoal(PathfinderMob mob) {

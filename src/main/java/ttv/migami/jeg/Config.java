@@ -493,7 +493,7 @@ public final class Config {
     }
 
     public static float gunnerProgressionScale(Level level) {
-        long day = Math.max(0L, level.getGameTime() / 24000L);
+        long day = Math.max(0L, level.getOverworldClockTime() / 24000L);
         return Mth.clamp((float) day / (float) gunnerProgressionMaxDay(), 0.0F, 1.0F);
     }
 
@@ -502,7 +502,7 @@ public final class Config {
             return earlyMultiplier;
         }
 
-        long day = Math.max(0L, level.getGameTime() / 24000L);
+        long day = Math.max(0L, level.getOverworldClockTime() / 24000L);
         int startDay = gunnerAccuracyStartDay();
         if (day <= startDay) {
             return earlyMultiplier;
@@ -647,7 +647,7 @@ public final class Config {
             cap = base;
         }
 
-        long day = Math.max(0L, level.getGameTime() / 24000L);
+        long day = Math.max(0L, level.getOverworldClockTime() / 24000L);
         int startDay = Math.max(0, SPAWN_SCALING_START_DAY.get());
         int daysToMax = Math.max(1, SPAWN_SCALING_DAYS_TO_MAX.get());
 
