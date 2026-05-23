@@ -405,6 +405,7 @@
   "message.jeg.vehicle_assembling.completed": "Vehicle container assembled",
   "message.jeg.vehicle.disabled": "Vehicle assembly is disabled on this server",
   "message.jeg.vehicle_container.blocked": "The vehicle container needs clear space above it",
+  "message.jeg.vehicle.need_crowbar": "Use a crowbar to deploy this vehicle",
   "message.jeg.vehicle.repaired": "Vehicle repaired",
   "message.jeg.vehicle.occupied": "Cannot recover an occupied vehicle",
   "message.jeg.vehicle.lock_warning": "Missile lock warning",
