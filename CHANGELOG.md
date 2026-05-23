@@ -1,15 +1,27 @@
 # Changelog
 
-## 1.6.0-pre3 - 2026-05-20
+## 1.6.0-pre3 - 2026-05-23
 
 ### Added
 - Added vehicle muzzle flare visuals and missile explosion effects.
+- Added a server vehicle assembly toggle with action bar feedback when vehicle assembly is disabled.
+- Added an action bar prompt when using a vehicle container without a crowbar.
+- Synced Happy Ghast armored joy harness behavior, HUD support, and damage handling.
+
+### Changed
+- Reworked gunner growth and loadout progression with per-type progression data and configurable mob scaling commands.
+- Refined the mob config command hierarchy for gunner spawn, growth, armor, and weapon tuning.
 
 ### Fixed
 - Fixed vehicle entity collision opt-in and aligned vehicle collision bounds with OBB data.
 - Fixed OBB vehicle entity collision, including speedboat collision behavior.
 - Moved and tuned the MI-28 dismount position to keep players clear of missile pods.
 - Fixed server-side class loading by keeping client-only vehicle effect code off dedicated servers.
+- Fixed gunner spawn and progression scaling so natural spawns and spawn eggs receive the intended loadouts.
+- Fixed minigun third-person render alignment on the 26.1 item model path.
+
+### Removed
+- Removed obsolete joyous armor plate item remnants and loot references.
 
 ## 1.6.0-pre - 2026-05-16
 
