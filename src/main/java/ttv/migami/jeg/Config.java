@@ -617,7 +617,7 @@ public final class Config {
     }
 
     public static long currentGunnerDay(Level level) {
-        return Math.max(0L, level.getGameTime() / 24000L);
+        return Math.max(0L, level.getOverworldClockTime() / 24000L);
     }
 
     private static boolean contains(String[] values, String candidate) {

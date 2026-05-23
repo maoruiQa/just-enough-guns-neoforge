@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.6.0-pre2 - 2026-05-20
+## 1.6.0-pre3 - 2026-05-20
 
 ### Added
 - Added vehicle muzzle flare visuals and missile explosion effects.
