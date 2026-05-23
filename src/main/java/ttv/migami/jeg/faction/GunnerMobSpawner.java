@@ -259,7 +259,7 @@ public class GunnerMobSpawner {
     }
 
     private static double legacyNaturalGunnerChance(Level level) {
-        int currentDay = (int) (level.getOverworldClockTime() / 24000L);
+        int currentDay = (int) Config.currentGunnerDay(level);
         if (currentDay < GunMobValues.minDays) {
             return 0.0D;
         }

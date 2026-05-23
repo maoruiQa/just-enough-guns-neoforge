@@ -29,6 +29,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.init.ModTags;
@@ -236,7 +237,7 @@ public final class FactionSpawnHelper {
             mob.addTag("EliteGunner");
         }
 
-        long dayTime = level.getGameTime() % 24000L;
+        long dayTime = level.getOverworldClockTime() % 24000L;
         boolean isDay = dayTime >= 0L && dayTime < 12300L;
         if (mob.getType().builtInRegistryHolder().is(ModTags.Entities.UNDEAD) && mob.getItemBySlot(EquipmentSlot.HEAD).isEmpty() && isDay) {
             mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
@@ -269,7 +270,7 @@ public final class FactionSpawnHelper {
             return true;
         }
 
-        int currentDay = (int) (level.getGameTime() / 24000L);
+        int currentDay = (int) Config.currentGunnerDay(level);
         int daysOverMin = Math.max(0, currentDay - GunMobValues.minDays);
         int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
         return mob.getRandom().nextInt(100) < currentChance;

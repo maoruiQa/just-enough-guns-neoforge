@@ -39,7 +39,7 @@ public final class GunnerRaidSpawner {
         }
         this.nextTick += random.nextInt(12000);
 
-        long day = level.getGameTime() / 24000L;
+        long day = Config.currentGunnerDay(level);
         if (day < Config.factionRaidMinimumDays()) {
             return 0;
         }
