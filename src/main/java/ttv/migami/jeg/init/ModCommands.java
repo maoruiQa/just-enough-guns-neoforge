@@ -14,6 +14,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -57,6 +58,16 @@ public final class ModCommands {
     private static final SuggestionProvider<CommandSourceStack> GUNNER_GROWTH_SETTING_SUGGESTIONS = (context, builder) -> {
         for (String setting : Config.gunnerGrowthSettings()) {
             builder.suggest(setting);
+        }
+        return builder.buildFuture();
+    };
+    private static final SuggestionProvider<CommandSourceStack> BLOCK_ID_SUGGESTIONS = (context, builder) -> {
+        String remaining = builder.getRemainingLowerCase();
+        for (var block : BuiltInRegistries.BLOCK) {
+            String blockId = BuiltInRegistries.BLOCK.getKey(block).toString();
+            if (blockId.startsWith(remaining)) {
+                builder.suggest(blockId);
+            }
         }
         return builder.buildFuture();
     };
@@ -208,7 +219,9 @@ public final class ModCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> configCombatCommand() {
         return Commands.literal("combat")
                 .then(configBulletBlockDestructionCommand())
-                .then(configMagazineFeedCommand());
+                .then(configMagazineFeedCommand())
+                .then(configGunnerTerrainPlacementCommand())
+                .then(configGunnerTerrainBreakCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configVehicleCommand() {
@@ -246,6 +259,29 @@ public final class ModCommands {
                                 context.getSource(),
                                 key,
                                 BoolArgumentType.getBool(context, "value"),
+                                key)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configIntConfigCommand(String name, String key, int min, int max) {
+        return Commands.literal(name)
+                .executes(context -> executeGetIntConfig(context.getSource(), key, key))
+                .then(Commands.argument("value", IntegerArgumentType.integer(min, max))
+                        .executes(context -> executeSetIntConfig(
+                                context.getSource(),
+                                key,
+                                IntegerArgumentType.getInteger(context, "value"),
+                                key)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configBlockIdConfigCommand(String name, String key) {
+        return Commands.literal(name)
+                .executes(context -> executeGetStringConfig(context.getSource(), key, key))
+                .then(Commands.argument("value", StringArgumentType.greedyString())
+                        .suggests(BLOCK_ID_SUGGESTIONS)
+                        .executes(context -> executeSetBlockIdConfig(
+                                context.getSource(),
+                                key,
+                                StringArgumentType.getString(context, "value"),
                                 key)));
     }
 
@@ -315,6 +351,17 @@ public final class ModCommands {
                                 "combat.magazineFeed")));
     }
 
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerTerrainPlacementCommand() {
+        return Commands.literal("gunnerTerrainPlacement")
+                .then(configBooleanConfigCommand("enabled", "combat.gunnerTerrainPlacement.enabled"))
+                .then(configBlockIdConfigCommand("block", "combat.gunnerTerrainPlacement.block"));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerTerrainBreakCommand() {
+        return Commands.literal("gunnerTerrainBreak")
+                .then(configIntConfigCommand("maxTier", "combat.gunnerTerrainBreak.maxTier", 0, 3));
+    }
+
     private static int executeUnlockGunRecipes(CommandSourceStack source) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This command can only be used by a player"));
@@ -372,6 +419,12 @@ public final class ModCommands {
         return 1;
     }
 
+    private static int executeGetStringConfig(CommandSourceStack source, String key, String displayName) {
+        String value = (String) Config.getConfigValue(key);
+        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        return 1;
+    }
+
     private static int executeGetGunnerGrowthConfig(CommandSourceStack source, String type, String setting) {
         try {
             String key = Config.gunnerGrowthCommandKey(type, setting);
@@ -424,6 +477,24 @@ public final class ModCommands {
         Config.saveServerConfig();
         source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
         return 1;
+    }
+
+    private static int executeSetBlockIdConfig(CommandSourceStack source, String key, String value, String displayName) {
+        if (!source.hasPermission(2)) {
+            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            return 0;
+        }
+        try {
+            String normalizedValue = Config.normalizeGunnerTerrainSupportBlockId(value);
+            String oldValue = (String) Config.getConfigValue(key);
+            Config.setConfigValue(key, normalizedValue);
+            Config.saveServerConfig();
+            source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + normalizedValue), true);
+            return 1;
+        } catch (IllegalArgumentException ex) {
+            source.sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
     }
 
     private static int executeSetGunnerGrowthConfig(CommandSourceStack source, String type, String setting, double value) {

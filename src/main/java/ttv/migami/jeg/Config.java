@@ -2,9 +2,14 @@ package ttv.migami.jeg;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class Config {
@@ -38,8 +43,9 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
-    public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_INTERACTION_ENABLED;
-    public static final ModConfigSpec.IntValue GUNNER_TERRAIN_INTERACTION_MAX_TIER;
+    public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
+    public static final ModConfigSpec.ConfigValue<String> GUNNER_TERRAIN_SUPPORT_BLOCK;
+    public static final ModConfigSpec.IntValue GUNNER_TERRAIN_BREAK_MAX_TIER;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_START_DAY;
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_MAX_DAY;
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_PERCENT;
@@ -71,6 +77,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
     private static final Map<String, ModConfigSpec.ConfigValue<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
     private static final Map<String, Map<String, ModConfigSpec.DoubleValue>> GUNNER_GROWTH_CONFIGS = new LinkedHashMap<>();
+    private static final String DEFAULT_GUNNER_TERRAIN_SUPPORT_BLOCK = "minecraft:dirt";
     private static final String[] GUNNER_GROWTH_TYPES = {
             "all", "skeleton", "stray", "zombie", "husk", "parched", "drowned", "zombieVillager",
             "zombifiedPiglin", "piglin", "piglinBrute", "witherSkeleton", "pillager", "vindicator", "generic"
@@ -199,12 +206,15 @@ public final class Config {
         MAGAZINE_FEED_ENABLED = serverBuilder
                 .comment("If true, guns that support magazine swaps will reload from compatible magazines instead of using the legacy loose-ammo reload path.")
                 .define("magazineFeedEnabled", true);
-        GUNNER_TERRAIN_INTERACTION_ENABLED = serverBuilder
-                .comment("If true, ground gunners can break and place low-tier blocks to get around simple terrain obstacles.")
-                .define("gunnerTerrainInteractionEnabled", true);
-        GUNNER_TERRAIN_INTERACTION_MAX_TIER = serverBuilder
+        GUNNER_TERRAIN_PLACEMENT_ENABLED = serverBuilder
+                .comment("If true, ground gunners can place support blocks to get around simple terrain obstacles.")
+                .define("gunnerTerrainPlacementEnabled", true);
+        GUNNER_TERRAIN_SUPPORT_BLOCK = serverBuilder
+                .comment("Block id ground gunners place as temporary terrain support.")
+                .define("gunnerTerrainSupportBlock", DEFAULT_GUNNER_TERRAIN_SUPPORT_BLOCK);
+        GUNNER_TERRAIN_BREAK_MAX_TIER = serverBuilder
                 .comment("Maximum bulletproof tier ground gunners are allowed to break while traversing terrain. 0 = penetrable only, 2 = tier 2 and below.")
-                .defineInRange("gunnerTerrainInteractionMaxTier", 2, 0, 3);
+                .defineInRange("gunnerTerrainBreakMaxTier", 2, 0, 3);
         GUNNER_ACCURACY_START_DAY = serverBuilder
                 .comment("In-game day when gunner accuracy scaling starts.")
                 .defineInRange("gunnerAccuracyStartDay", 5, 0, 5000);
@@ -316,6 +326,9 @@ public final class Config {
         registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
+        registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
+        registerCommandConfig("combat.gunnerTerrainPlacement.block", GUNNER_TERRAIN_SUPPORT_BLOCK);
+        registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
         registerGunnerGrowthCommandConfigs();
         registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
     }
@@ -388,6 +401,7 @@ public final class Config {
         COMMAND_CONFIGS.put(key, value);
     }
 
+    @SuppressWarnings("unchecked")
     private static void setValue(ModConfigSpec.ConfigValue<?> value, Object rawValue) {
         if (value instanceof ModConfigSpec.BooleanValue booleanValue) {
             booleanValue.set((Boolean) rawValue);
@@ -399,6 +413,10 @@ public final class Config {
         }
         if (value instanceof ModConfigSpec.DoubleValue doubleValue) {
             doubleValue.set((Double) rawValue);
+            return;
+        }
+        if (rawValue instanceof String stringValue) {
+            ((ModConfigSpec.ConfigValue<String>) value).set(stringValue);
             return;
         }
         throw new IllegalArgumentException("Unsupported config value type for " + String.join(".", value.getPath()));
@@ -480,12 +498,59 @@ public final class Config {
         return MAGAZINE_FEED_ENABLED.get();
     }
 
-    public static boolean gunnerTerrainInteractionEnabled() {
-        return GUNNER_TERRAIN_INTERACTION_ENABLED.get();
+    public static boolean gunnerTerrainPlacementEnabled() {
+        return GUNNER_TERRAIN_PLACEMENT_ENABLED.get();
     }
 
-    public static int gunnerTerrainInteractionMaxTier() {
-        return Mth.clamp(GUNNER_TERRAIN_INTERACTION_MAX_TIER.get(), 0, 3);
+    public static String gunnerTerrainSupportBlock() {
+        return normalizeGunnerTerrainSupportBlockId(GUNNER_TERRAIN_SUPPORT_BLOCK.get(), false);
+    }
+
+    public static BlockState gunnerTerrainSupportBlockState() {
+        return resolveGunnerTerrainSupportBlock().defaultBlockState();
+    }
+
+    public static String normalizeGunnerTerrainSupportBlockId(String rawValue) {
+        return normalizeGunnerTerrainSupportBlockId(rawValue, true);
+    }
+
+    private static String normalizeGunnerTerrainSupportBlockId(String rawValue, boolean failOnInvalid) {
+        ResourceLocation id = parseBlockId(rawValue);
+        Block block = id == null ? null : findBlock(id);
+        if (block == null || block == Blocks.AIR) {
+            if (failOnInvalid) {
+                throw new IllegalArgumentException("Unknown or invalid block id: " + rawValue);
+            }
+            return DEFAULT_GUNNER_TERRAIN_SUPPORT_BLOCK;
+        }
+        return BuiltInRegistries.BLOCK.getKey(block).toString();
+    }
+
+    private static Block resolveGunnerTerrainSupportBlock() {
+        ResourceLocation id = parseBlockId(GUNNER_TERRAIN_SUPPORT_BLOCK.get());
+        Block block = id == null ? null : findBlock(id);
+        return block == null || block == Blocks.AIR ? Blocks.DIRT : block;
+    }
+
+    private static ResourceLocation parseBlockId(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        String value = rawValue.contains(":") ? rawValue : "minecraft:" + rawValue;
+        return ResourceLocation.tryParse(value);
+    }
+
+    private static Block findBlock(ResourceLocation id) {
+        for (Block block : BuiltInRegistries.BLOCK) {
+            if (id.equals(BuiltInRegistries.BLOCK.getKey(block))) {
+                return block;
+            }
+        }
+        return null;
+    }
+
+    public static int gunnerTerrainBreakMaxTier() {
+        return Mth.clamp(GUNNER_TERRAIN_BREAK_MAX_TIER.get(), 0, 3);
     }
 
     public static void setBulletBlockDestructionEnabled(boolean enabled) {
