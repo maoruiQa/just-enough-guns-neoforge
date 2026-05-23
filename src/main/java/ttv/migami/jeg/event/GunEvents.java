@@ -48,6 +48,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
     private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
+    private static final int MAX_SAVED_ITEM_COUNT = 99;
     private static final Map<UUID, VehicleReturnState> VEHICLE_RETURN = new HashMap<>();
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
@@ -446,21 +447,26 @@ public final class GunEvents {
     }
 
     private static void addDrop(LivingDropsEvent event, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
-        if (stack.isEmpty()) {
-            return;
-        }
-        ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
-        item.setDefaultPickUpDelay();
-        event.getDrops().add(item);
+        addSplitDrop(event.getDrops(), entity, stack);
     }
 
     private static void addDrop(java.util.List<ItemEntity> drops, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
+        addSplitDrop(drops, entity, stack);
+    }
+
+    private static void addSplitDrop(java.util.Collection<ItemEntity> drops, net.minecraft.world.entity.LivingEntity entity, ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
-        ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
-        item.setDefaultPickUpDelay();
-        drops.add(item);
+        int remaining = stack.getCount();
+        int maxDropCount = Math.max(1, Math.min(stack.getMaxStackSize(), MAX_SAVED_ITEM_COUNT));
+        while (remaining > 0) {
+            int dropCount = Math.min(remaining, maxDropCount);
+            ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack.copyWithCount(dropCount));
+            item.setDefaultPickUpDelay();
+            drops.add(item);
+            remaining -= dropCount;
+        }
     }
 
     private static ItemStack buildAmmoDrop(GunStats stats, RandomSource random) {
