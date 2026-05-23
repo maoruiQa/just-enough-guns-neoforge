@@ -108,8 +108,6 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         Blocks.LAVA,
         Blocks.COBWEB
     );
-    private static final BlockState GUNNER_SUPPORT_BLOCK = Blocks.DIRT.defaultBlockState();
-
     private static final Map<ServerLevel, Map<String, SharedRouteCacheEntry>> SHARED_ROUTE_CACHE = new HashMap<>();
 
     protected final T shooter;
@@ -687,8 +685,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     private boolean zbbTryImmediateWallSelfLift(ServerLevel level, BlockPos selfLiftPos, Direction direction) {
         BlockPos frontPos = selfLiftPos.relative(direction);
-        boolean hardFrontBlocked = this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainInteractionMaxTier())
-            || this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainInteractionMaxTier());
+        boolean hardFrontBlocked = this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainBreakMaxTier())
+            || this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainBreakMaxTier());
         if (!hardFrontBlocked || !this.canForceWallSelfLift(level, selfLiftPos)) {
             return false;
         }
@@ -714,8 +712,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         BlockPos selfLiftPos = this.shooter.blockPosition();
         BlockPos frontPos = selfLiftPos.relative(direction);
         return this.isBreakBuildPathFailure(level, target, this.shooter.distanceToSqr(target))
-            && (this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainInteractionMaxTier())
-                || this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainInteractionMaxTier()))
+            && (this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainBreakMaxTier())
+                || this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainBreakMaxTier()))
             && this.canForceWallSelfLift(level, selfLiftPos);
     }
 
@@ -806,7 +804,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             && !state.isAir()
             && !this.isProtectedRecentSupport(level, pos)
             && !this.zbbProtectedBuiltBlocks.containsKey(pos)
-            && BulletPenetrationHelper.canGunnerBreakBlock(level, state, Config.gunnerTerrainInteractionMaxTier());
+            && BulletPenetrationHelper.canGunnerBreakBlock(level, state, Config.gunnerTerrainBreakMaxTier());
     }
 
     private boolean zbbTryBreak(ServerLevel level, BlockPos pos) {
@@ -1210,7 +1208,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     private boolean shouldKeepPersistentBreakTarget(ServerLevel level) {
         return this.terrainBreakTarget != null
-            && this.isBreakableObstacle(level, this.terrainBreakTarget, Config.gunnerTerrainInteractionMaxTier())
+            && this.isBreakableObstacle(level, this.terrainBreakTarget, Config.gunnerTerrainBreakMaxTier())
             && this.attackMode == AttackMode.BREAK_BUILD;
     }
 
@@ -1272,8 +1270,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     private boolean shouldUseLiftOverWall(ServerLevel level, BlockPos stancePos, Direction direction) {
         BlockPos frontPos = stancePos.relative(direction);
-        if (!this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainInteractionMaxTier())
-            || !this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainInteractionMaxTier())) {
+        if (!this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainBreakMaxTier())
+            || !this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainBreakMaxTier())) {
             return false;
         }
         if (!this.canPlaceSelfLift(level, stancePos)) {
@@ -1281,7 +1279,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         }
 
         int wallHeight = 2;
-        while (this.isUnbreakableObstacle(level, frontPos.above(wallHeight), Config.gunnerTerrainInteractionMaxTier())) {
+        while (this.isUnbreakableObstacle(level, frontPos.above(wallHeight), Config.gunnerTerrainBreakMaxTier())) {
             wallHeight++;
         }
         for (int i = 0; i < wallHeight + MIN_TUNNEL_HEADROOM_ABOVE_WALL; i++) {
@@ -1294,8 +1292,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     private boolean shouldUseTunnelBypassUnderWall(ServerLevel level, BlockPos stancePos, Direction direction, LivingEntity target) {
         BlockPos frontPos = stancePos.relative(direction);
-        if (!this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainInteractionMaxTier())
-            || !this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainInteractionMaxTier())) {
+        if (!this.isUnbreakableObstacle(level, frontPos, Config.gunnerTerrainBreakMaxTier())
+            || !this.isUnbreakableObstacle(level, frontPos.above(), Config.gunnerTerrainBreakMaxTier())) {
             return false;
         }
 
@@ -1567,7 +1565,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
     private boolean isPlacedSupportBlock(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos).is(GUNNER_SUPPORT_BLOCK.getBlock());
+        return level.getBlockState(pos).is(Config.gunnerTerrainSupportBlockState().getBlock());
     }
 
     private void purgeExpiredProtectedSupports(ServerLevel level) {
@@ -1613,7 +1611,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             case STEP_UP -> plan.placePos() != null && this.canPlaceForwardStep(level, plan.placePos());
             case PLACE_BRIDGE, BREAKOUT_PLACE -> plan.placePos() != null && this.canPlaceSupportBlock(level, plan.placePos());
             case PLACE_SELF_LIFT -> plan.placePos() != null && this.canPlaceSelfLift(level, plan.placePos());
-            case BREAK_OBSTACLE, BREAKOUT_BREAK -> plan.breakPos() != null && this.isBreakableObstacle(level, plan.breakPos(), Config.gunnerTerrainInteractionMaxTier());
+            case BREAK_OBSTACLE, BREAKOUT_BREAK -> plan.breakPos() != null && this.isBreakableObstacle(level, plan.breakPos(), Config.gunnerTerrainBreakMaxTier());
             default -> false;
         };
     }
@@ -2632,7 +2630,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
     private BlockPos findBreakableObstacleFromStance(Level level, BlockPos stancePos, Direction direction, LivingEntity target, boolean canSeeTarget) {
-        int maxTier = Config.gunnerTerrainInteractionMaxTier();
+        int maxTier = Config.gunnerTerrainBreakMaxTier();
         BlockPos obstacle = this.findImmediateBreakableObstacle(level, stancePos, direction, maxTier);
         if (obstacle != null) {
             return obstacle;
@@ -2696,7 +2694,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
     private RouteObstacleType getRouteObstacleTypeFromStance(ServerLevel level, BlockPos stancePos, LivingEntity target, boolean canSeeTarget, Direction direction) {
-        int maxTier = Config.gunnerTerrainInteractionMaxTier();
+        int maxTier = Config.gunnerTerrainBreakMaxTier();
         for (BlockPos candidate : this.getImmediateObstacleCandidates(stancePos, direction)) {
             RouteObstacleType type = this.classifyImmediateObstacleFromStance(level, stancePos, candidate, maxTier);
             if (type != RouteObstacleType.NONE) {
@@ -2759,7 +2757,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             return false;
         }
 
-        int maxTier = Config.gunnerTerrainInteractionMaxTier();
+        int maxTier = Config.gunnerTerrainBreakMaxTier();
         if (!this.isBreakableObstacle(level, this.terrainBreakTarget, maxTier)) {
             this.resetTerrainBreakTarget();
             return false;
@@ -2945,12 +2943,17 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
     private boolean placeSupportBlock(ServerLevel level, BlockPos pos, PlacementIntent intent) {
-        int maxTier = Config.gunnerTerrainInteractionMaxTier();
-        if (BulletPenetrationHelper.getBlockTier(level, GUNNER_SUPPORT_BLOCK) > maxTier) {
+        if (!Config.gunnerTerrainPlacementEnabled()) {
             return false;
         }
 
-        level.setBlockAndUpdate(pos, GUNNER_SUPPORT_BLOCK);
+        BlockState supportBlock = Config.gunnerTerrainSupportBlockState();
+        int maxTier = Config.gunnerTerrainBreakMaxTier();
+        if (BulletPenetrationHelper.getBlockTier(level, supportBlock) > maxTier) {
+            return false;
+        }
+
+        level.setBlockAndUpdate(pos, supportBlock);
         this.recordPlacedSupport(level, pos);
         this.terrainPlaceCooldown = switch (intent) {
             case PROACTIVE -> PROACTIVE_TERRAIN_PLACE_COOLDOWN_TICKS;
