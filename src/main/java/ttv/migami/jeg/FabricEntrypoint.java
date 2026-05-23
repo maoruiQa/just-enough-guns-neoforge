@@ -23,6 +23,7 @@ import ttv.migami.jeg.fabric.FabricCreativeTabs;
 import ttv.migami.jeg.fabric.FabricEntityInit;
 import ttv.migami.jeg.fabric.FabricRecipeUnlock;
 import ttv.migami.jeg.faction.GunMobValues;
+import ttv.migami.jeg.faction.GunnerFriendlyFireEvents;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.item.HappyGhastArmorEvents;
 import ttv.migami.jeg.init.ModBlockEntities;
@@ -87,6 +88,7 @@ public final class FabricEntrypoint implements ModInitializer {
         });
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
+            GunnerFriendlyFireEvents.onIncomingDamage(event);
             VehiclePassengerDamageEvents.onPassengerDamage(event);
             return !event.isCanceled();
         });
