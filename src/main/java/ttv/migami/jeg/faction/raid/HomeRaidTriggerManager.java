@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ public final class HomeRaidTriggerManager {
                 clearOmenFactionTag(player);
                 continue;
             }
-            if (player.isSpectator()) {
+            if (!isEligibleHomeRaidPlayer(player)) {
                 continue;
             }
 
@@ -79,6 +80,13 @@ public final class HomeRaidTriggerManager {
             player.removeEffect(ModEffects.FACTION_OMEN);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));
         }
+    }
+
+    private static boolean isEligibleHomeRaidPlayer(ServerPlayer player) {
+        return player.isAlive()
+                && !player.isDeadOrDying()
+                && !player.isSpectator()
+                && player.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
     }
 
     @Nullable
