@@ -43,6 +43,7 @@
   "block.jeg.vehicle_container": "载具容器",
   "item.jeg.vehicle_container.named": "%s容器",
   "message.jeg.vehicle_container.blocked": "载具容器上方需要留出空间",
+  "message.jeg.vehicle.need_crowbar": "请使用撬棍部署载具",
   "tooltip.jeg.vehicle_container.empty": "未装载载具",
   "tooltip.jeg.vehicle_container.vehicle": "包含：%s",
   "tooltip.jeg.vehicle_container.health": "结构值：%s",
