@@ -527,6 +527,10 @@ public class BulletEntity extends Projectile {
         return owner.getTags().contains(TERROR_RAID_MOB_TAG) && target.getTags().contains(TERROR_RAID_MOB_TAG);
     }
 
+    private boolean shouldSkipOwnerFriendlyBlast(@Nullable Entity owner, LivingEntity target) {
+        return owner instanceof LivingEntity livingOwner && target != owner && isFriendlyFire(livingOwner, target);
+    }
+
     private float applyBallisticArmor(LivingEntity target, EntityHitResult hit, float rawDamage, GunStats stats, boolean rocketDirectHit) {
         EquipmentSlot slot = getBallisticHitSlot(target, hit);
         if (slot == null) {
@@ -786,6 +790,9 @@ public class BulletEntity extends Projectile {
                     if (hitEntity.isAlive()) {
                         DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
                         if (hitEntity instanceof LivingEntity living) {
+                            if (id.equals(ROCKET_LAUNCHER_ID) && shouldSkipOwnerFriendlyBlast(owner, living)) {
+                                return true;
+                            }
                             float damage = applyBallisticArmor(living, entityHit, directDamage, stats, id.equals(ROCKET_LAUNCHER_ID));
                             boolean hurt = living.hurt(source, damage);
                             if (hurt && owner instanceof ServerPlayer shooter) {
@@ -904,6 +911,10 @@ public class BulletEntity extends Projectile {
 
             double distance = target.distanceTo(this);
             if (distance > ROCKET_BLAST_RADIUS) {
+                continue;
+            }
+
+            if (shouldSkipOwnerFriendlyBlast(owner, target)) {
                 continue;
             }
 
