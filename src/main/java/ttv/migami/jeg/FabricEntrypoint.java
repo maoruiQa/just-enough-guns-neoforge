@@ -2,12 +2,14 @@ package ttv.migami.jeg;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -18,6 +20,7 @@ import ttv.migami.jeg.fabric.FabricCreativeTabs;
 import ttv.migami.jeg.fabric.FabricEntityInit;
 import ttv.migami.jeg.fabric.FabricRecipeUnlock;
 import ttv.migami.jeg.faction.GunMobValues;
+import ttv.migami.jeg.faction.GunnerFriendlyFireEvents;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModBlocks;
@@ -74,6 +77,11 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player));
             NetworkHandler.sendUiConfig(handler.player);
+        });
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
+            GunnerFriendlyFireEvents.onIncomingDamage(event);
+            return !event.isCanceled();
         });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             GunEvents.onPlayerJoinWorld(new EntityJoinLevelEvent(entity, level));
