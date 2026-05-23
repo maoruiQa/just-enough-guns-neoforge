@@ -104,6 +104,9 @@ public final class GunnerProgression {
 
         ResourceLocation gunId = gun.getStats().id();
         String path = gunId.getPath();
+        if ("bolt_action_rifle".equals(path)) {
+            return 2;
+        }
         if ("minigun".equals(path) || "light_machine_gun".equals(path)) {
             return 3;
         }
