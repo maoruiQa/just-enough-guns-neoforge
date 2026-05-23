@@ -6,7 +6,9 @@
       {
         "when": [
           "firstperson_righthand",
-          "firstperson_lefthand"
+          "firstperson_lefthand",
+          "thirdperson_righthand",
+          "thirdperson_lefthand"
         ],
         "model": {
           "type": "minecraft:special",

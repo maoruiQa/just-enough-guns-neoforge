@@ -46,7 +46,7 @@ public final class GunnerPatrolSpawner {
         }
         this.nextTick += random.nextInt(12000);
 
-        long day = level.getOverworldClockTime() / 24000L;
+        long day = Config.currentGunnerDay(level);
         if (day < Config.factionPatrolMinimumDays()) {
             return 0;
         }

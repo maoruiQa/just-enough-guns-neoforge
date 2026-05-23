@@ -135,7 +135,6 @@ public final class ModCommands {
                 .then(configUiCommand())
                 .then(configPatrolCommand())
                 .then(configMobCommand())
-                .then(configGunnerGrowthCommand())
                 .then(configCombatCommand())
                 .then(configVehicleCommand());
     }
@@ -148,20 +147,18 @@ public final class ModCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> configMobCommand() {
         return Commands.literal("mob")
-                .then(configScaledMobChanceCommand("terror", "mob.terrorPhantom.chance", "mob.terrorPhantom.maxChance"))
-                .then(configPhantomGunnerCommand())
-                .then(configScaledMobChanceCommand("pillager", "mob.pillagerGunner.chance", "mob.pillagerGunner.maxChance"))
-                .then(configSimpleMobChanceCommand("skeleton", "mob.skeletonGunner.chance"))
-                .then(configSimpleMobChanceCommand("zombie", "mob.zombieGunner.chance"))
-                .then(configSimpleMobChanceCommand("husk", "mob.huskGunner.chance"))
-                .then(configSimpleMobChanceCommand("parched", "mob.parchedGunner.chance"))
-                .then(configSimpleMobChanceCommand("zombifiedPiglin", "mob.zombifiedPiglinGunner.chance"))
-                .then(configSimpleMobChanceCommand("piglin", "mob.piglinGunner.chance"))
-                .then(configSimpleMobChanceCommand("witherSkeleton", "mob.witherSkeletonGunner.chance"));
+                .then(configMobSpawnCommand())
+                .then(configMobMechanismCommand());
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerGrowthCommand() {
-        return Commands.literal("gunner")
+    private static LiteralArgumentBuilder<CommandSourceStack> configMobMechanismCommand() {
+        return Commands.literal("mechanism")
+                .then(configScaledMobChanceCommand("terror", "mob.mechanism.terrorPhantom.chance", "mob.mechanism.terrorPhantom.maxChance"))
+                .then(configPhantomGunnerCommand());
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configMobSpawnCommand() {
+        return Commands.literal("spawn")
                 .then(Commands.argument("type", StringArgumentType.word())
                         .suggests(GUNNER_TYPE_SUGGESTIONS)
                         .then(Commands.argument("setting", StringArgumentType.word())
@@ -189,10 +186,7 @@ public final class ModCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> configCombatCommand() {
         return Commands.literal("combat")
                 .then(configBulletBlockDestructionCommand())
-                .then(configMagazineFeedCommand())
-                .then(configGunnerTerrainCommand())
-                .then(configGunnerAccuracyCommand())
-                .then(configGunnerProgressionCommand());
+                .then(configMagazineFeedCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configVehicleCommand() {
@@ -207,13 +201,8 @@ public final class ModCommands {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configPhantomGunnerCommand() {
-        return configScaledMobChanceCommand("phantom", "mob.phantomGunner.chance", "mob.phantomGunner.maxChance")
-                .then(configBooleanConfigCommand("deathExplosion", "mob.phantomGunner.deathExplosion"));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> configSimpleMobChanceCommand(String name, String chanceKey) {
-        return Commands.literal(name)
-                .then(configDoubleConfigCommand("chance", chanceKey));
+        return Commands.literal("phantom")
+                .then(configBooleanConfigCommand("deathExplosion", "mob.mechanism.phantomGunner.deathExplosion"));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configDoubleConfigCommand(String name, String key) {
@@ -291,31 +280,6 @@ public final class ModCommands {
                                 "combat.magazineFeed",
                                 BoolArgumentType.getBool(context, "value"),
                                 "combat.magazineFeed")));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerTerrainCommand() {
-        return Commands.literal("gunnerTerrain")
-                .then(configBooleanConfigCommand("enabled", "combat.gunnerTerrain.enabled"))
-                .then(configIntConfigCommand("maxTier", "combat.gunnerTerrain.maxTier", 0, 3));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerProgressionCommand() {
-        return Commands.literal("gunnerProgression")
-                .then(configIntConfigCommand("maxDay", "combat.gunnerProgression.maxDay", 1, 5000));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> configGunnerAccuracyCommand() {
-        return Commands.literal("gunnerAccuracy")
-                .then(configIntConfigCommand("startDay", "combat.gunnerAccuracy.startDay", 0, 5000))
-                .then(configIntConfigCommand("maxDay", "combat.gunnerAccuracy.maxDay", 1, 5000))
-                .then(Commands.literal("maxPercent")
-                        .executes(context -> executeGetDoubleConfig(context.getSource(), "combat.gunnerAccuracy.maxPercent", "combat.gunnerAccuracy.maxPercent"))
-                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 0.95D))
-                                .executes(context -> executeSetDoubleConfig(
-                                        context.getSource(),
-                                        "combat.gunnerAccuracy.maxPercent",
-                                        DoubleArgumentType.getDouble(context, "value"),
-                                        "combat.gunnerAccuracy.maxPercent"))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configBooleanConfigCommand(String name, String key) {

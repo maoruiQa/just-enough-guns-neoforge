@@ -29,6 +29,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.init.ModTags;
@@ -292,7 +293,7 @@ public final class FactionSpawnHelper {
             return true;
         }
 
-        int currentDay = (int) (level.getOverworldClockTime() / 24000L);
+        int currentDay = (int) Config.currentGunnerDay(level);
         int daysOverMin = Math.max(0, currentDay - GunMobValues.minDays);
         int currentChance = Math.min(GunMobValues.initialChance + (daysOverMin * GunMobValues.chanceIncrement), GunMobValues.maxChance);
         return mob.getRandom().nextInt(100) < currentChance;
@@ -833,7 +834,6 @@ public final class FactionSpawnHelper {
         HARD_REPOSITION
     }
 }
-
 
 
 
