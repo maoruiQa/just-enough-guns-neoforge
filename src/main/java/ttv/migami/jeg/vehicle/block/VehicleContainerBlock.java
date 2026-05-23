@@ -2,6 +2,7 @@ package ttv.migami.jeg.vehicle.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -18,6 +19,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.util.HudMessageHelper;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 
 public final class VehicleContainerBlock extends BaseEntityBlock {
@@ -30,7 +32,8 @@ public final class VehicleContainerBlock extends BaseEntityBlock {
     @Override
     protected @NotNull InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (!stack.is(ModItems.CROWBAR.get())) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            showCrowbarPrompt(level, player);
+            return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
         }
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
@@ -45,6 +48,18 @@ public final class VehicleContainerBlock extends BaseEntityBlock {
             stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         }
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    @Override
+    protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        showCrowbarPrompt(level, player);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
+    }
+
+    private static void showCrowbarPrompt(Level level, Player player) {
+        if (!level.isClientSide()) {
+            HudMessageHelper.showActionBar(player, Component.translatable("message.jeg.vehicle.need_crowbar"));
+        }
     }
 
     @Override
