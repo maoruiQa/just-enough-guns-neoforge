@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import ttv.migami.jeg.Config;
@@ -35,8 +36,13 @@ public final class HomeRaidTriggerManager {
                 clearOmenFactionTag(player);
                 continue;
             }
-            if (player.isSpectator()) {
-                JustEnoughGuns.LOGGER.debug("[FactionRaid] Home-trigger blocked: player={} is spectator", player.getGameProfile().getName());
+            if (!isEligibleHomeRaidPlayer(player)) {
+                JustEnoughGuns.LOGGER.debug(
+                        "[FactionRaid] Home-trigger blocked: player={} gameMode={} spectator={}",
+                        player.getGameProfile().getName(),
+                        player.gameMode.getGameModeForPlayer(),
+                        player.isSpectator()
+                );
                 continue;
             }
 
@@ -109,6 +115,13 @@ public final class HomeRaidTriggerManager {
         }
     }
 
+    private static boolean isEligibleHomeRaidPlayer(ServerPlayer player) {
+        return player.isAlive()
+                && !player.isDeadOrDying()
+                && !player.isSpectator()
+                && player.gameMode.getGameModeForPlayer() == GameType.SURVIVAL;
+    }
+
     @Nullable
     private static Faction resolveFactionFromOmen(ServerPlayer player) {
         GunnerManager manager = GunnerManager.getInstance();
@@ -136,4 +149,3 @@ public final class HomeRaidTriggerManager {
         }
     }
 }
-
