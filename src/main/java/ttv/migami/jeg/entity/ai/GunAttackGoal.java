@@ -699,7 +699,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
     }
 
     private boolean canForceWallSelfLift(ServerLevel level, BlockPos selfLiftPos) {
-        return this.canPlaceSupportBlock(level, selfLiftPos)
+        return this.zbbCanBuild(level, selfLiftPos)
             && level.getBlockState(selfLiftPos.below()).isFaceSturdy(level, selfLiftPos.below(), Direction.UP)
             && this.hasSelfLiftHeadroom(level, selfLiftPos);
     }
@@ -2948,11 +2948,6 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         }
 
         BlockState supportBlock = Config.gunnerTerrainSupportBlockState();
-        int maxTier = Config.gunnerTerrainBreakMaxTier();
-        if (BulletPenetrationHelper.getBlockTier(level, supportBlock) > maxTier) {
-            return false;
-        }
-
         level.setBlockAndUpdate(pos, supportBlock);
         this.recordPlacedSupport(level, pos);
         this.terrainPlaceCooldown = switch (intent) {
