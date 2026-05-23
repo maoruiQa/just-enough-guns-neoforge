@@ -315,27 +315,11 @@ public final class Config {
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
         registerCommandConfig("patrol.spawnChance", FACTION_PATROL_SPAWN_CHANCE);
-        registerCommandConfig("mob.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
-        registerCommandConfig("mob.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
-        registerCommandConfig("mob.phantomGunner.chance", PHANTOM_GUNNER_NATURAL_CHANCE);
-        registerCommandConfig("mob.phantomGunner.maxChance", PHANTOM_GUNNER_MAX_CHANCE);
-        registerCommandConfig("mob.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
-        registerCommandConfig("mob.pillagerGunner.chance", PILLAGER_GUNNER_CHANCE);
-        registerCommandConfig("mob.pillagerGunner.maxChance", PILLAGER_GUNNER_MAX_CHANCE);
-        registerCommandConfig("mob.skeletonGunner.chance", SKELETON_GUNNER_CHANCE);
-        registerCommandConfig("mob.zombieGunner.chance", ZOMBIE_GUNNER_CHANCE);
-        registerCommandConfig("mob.huskGunner.chance", HUSK_GUNNER_CHANCE);
-        registerCommandConfig("mob.zombifiedPiglinGunner.chance", ZOMBIFIED_PIGLIN_GUNNER_CHANCE);
-        registerCommandConfig("mob.piglinGunner.chance", PIGLIN_GUNNER_CHANCE);
-        registerCommandConfig("mob.witherSkeletonGunner.chance", WITHER_SKELETON_GUNNER_CHANCE);
+        registerCommandConfig("mob.mechanism.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
+        registerCommandConfig("mob.mechanism.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
+        registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
-        registerCommandConfig("combat.gunnerTerrain.enabled", GUNNER_TERRAIN_INTERACTION_ENABLED);
-        registerCommandConfig("combat.gunnerTerrain.maxTier", GUNNER_TERRAIN_INTERACTION_MAX_TIER);
-        registerCommandConfig("combat.gunnerAccuracy.startDay", GUNNER_ACCURACY_START_DAY);
-        registerCommandConfig("combat.gunnerAccuracy.maxDay", GUNNER_ACCURACY_MAX_DAY);
-        registerCommandConfig("combat.gunnerAccuracy.maxPercent", GUNNER_ACCURACY_MAX_PERCENT);
-        registerCommandConfig("combat.gunnerProgression.maxDay", GUNNER_PROGRESSION_MAX_DAY);
         registerGunnerGrowthCommandConfigs();
         registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
     }
@@ -555,7 +539,7 @@ public final class Config {
         if (!contains(GUNNER_GROWTH_TYPES, type) || !contains(GUNNER_GROWTH_SETTINGS, setting)) {
             throw new IllegalArgumentException("Unknown gunner growth config: " + type + "." + setting);
         }
-        return "gunner." + type + "." + setting;
+        return "mob.spawn." + type + "." + setting;
     }
 
     public static double gunnerSpawnChance(Level level, String gunnerType, double legacyBaseChance) {
