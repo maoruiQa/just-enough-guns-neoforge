@@ -142,6 +142,8 @@ public class GunItem extends Item {
     private static final float RIFLE_FIRE_SPREAD_CAP = 2.70F;
     private static final float SIDEARM_FIRE_SPREAD_CAP = 1.725F;
     private static final float DEFAULT_FIRE_SPREAD_CAP = 1.0F;
+    private static final float BOLT_ACTION_PLAYER_HIP_SPREAD = 8.0F;
+    private static final float BOLT_ACTION_GUNNER_SPREAD_MULTIPLIER = 1.20F;
     private static final int OVERHEAT_MAX = 200;
     private static final int OVERHEAT_TRACKED_MAX = 280;
     private static final int OVERHEAT_RECOVERY_BUFFER = 80;
@@ -1083,6 +1085,9 @@ public class GunItem extends Item {
             } else {
                 gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
             }
+            if (isBoltActionRifle(stats.id()) && !NetworkHandler.isAiming(player)) {
+                gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
+            }
             if (isShotgunWeapon(stats.id())) {
                 float shotgunFloor = stats.spread() * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
                 gunSpread = Math.max(gunSpread, shotgunFloor);
@@ -1093,6 +1098,9 @@ public class GunItem extends Item {
             float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
             float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
             gunSpread *= scaledSpreadMultiplier;
+            if (isBoltActionRifle(stats.id())) {
+                gunSpread *= BOLT_ACTION_GUNNER_SPREAD_MULTIPLIER;
+            }
         }
 
         if (gunSpread <= 0.0F) {
@@ -1177,6 +1185,9 @@ public class GunItem extends Item {
         } else {
             gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
         }
+        if (isBoltActionRifle(stats.id()) && !aiming) {
+            gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
+        }
         if (isShotgunWeapon(stats.id())) {
             float shotgunFloor = stats.spread() * (aiming ? 0.35F : 0.60F);
             gunSpread = Math.max(gunSpread, shotgunFloor);
@@ -1199,6 +1210,10 @@ public class GunItem extends Item {
 
     private static boolean isMinigunWeapon(Identifier gunId) {
         return "minigun".equals(gunId.getPath());
+    }
+
+    private static boolean isBoltActionRifle(Identifier gunId) {
+        return "bolt_action_rifle".equals(gunId.getPath());
     }
 
     private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming) {
