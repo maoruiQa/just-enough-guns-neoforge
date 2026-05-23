@@ -55,6 +55,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class GunEvents {
     private static final String MANUAL_GRANTED_TAG = "jeg_manual_granted";
     private static final String FINGER_GUN_RECIPE_GRANTED_TAG = "jeg_finger_gun_recipe_granted";
+    private static final int MAX_SAVED_ITEM_COUNT = 99;
     private static final String VEHICLE_RETURN_TAG = "jeg_vehicle_return";
     private static final String VEHICLE_RETURN_DIMENSION_TAG = "Dimension";
     private static final String VEHICLE_RETURN_UUID_TAG = "Vehicle";
@@ -418,9 +419,15 @@ public final class GunEvents {
         if (stack.isEmpty()) {
             return;
         }
-        ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack);
-        item.setDefaultPickUpDelay();
-        event.getDrops().add(item);
+        int remaining = stack.getCount();
+        int maxDropCount = Math.max(1, Math.min(stack.getMaxStackSize(), MAX_SAVED_ITEM_COUNT));
+        while (remaining > 0) {
+            int dropCount = Math.min(remaining, maxDropCount);
+            ItemEntity item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), stack.copyWithCount(dropCount));
+            item.setDefaultPickUpDelay();
+            event.getDrops().add(item);
+            remaining -= dropCount;
+        }
     }
 
     private static ItemStack buildAmmoDrop(GunStats stats, RandomSource random) {
