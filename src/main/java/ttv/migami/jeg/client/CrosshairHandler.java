@@ -108,6 +108,9 @@ public final class CrosshairHandler {
         if (!(stack.getItem() instanceof GunItem gun) || minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
             return;
         }
+        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())) {
+            return;
+        }
         if (AimingHandler.get().getNormalisedAdsProgress(partialTick) > 0.5F) {
             return;
         }

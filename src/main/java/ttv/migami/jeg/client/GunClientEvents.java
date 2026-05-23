@@ -26,6 +26,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -151,6 +152,11 @@ public final class GunClientEvents {
             return 70.0F;
         }
         return Math.max(1.0F, minecraft.options.fov().get());
+    }
+
+    @SubscribeEvent
+    public static void onCalculatePlayerTurn(CalculatePlayerTurnEvent event) {
+        event.setMouseSensitivity(GunMouseSensitivityHandler.adjustFinalMouseSensitivity(event.getMouseSensitivity()));
     }
 
     @SubscribeEvent
