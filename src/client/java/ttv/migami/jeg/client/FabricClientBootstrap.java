@@ -488,7 +488,7 @@ public final class FabricClientBootstrap {
             GunRecoilHandler.stopImmediate();
         }
 
-        if (KeyBindings.RELOAD.consumeClick()) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
             } else if (heldOff.getItem() instanceof GunItem) {
