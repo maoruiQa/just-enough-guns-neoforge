@@ -110,7 +110,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         float partialTick = ageInTicks - vehicle.tickCount;
         switch (vehicle.vehicleDataId().getPath()) {
             case "ah6" -> updateHelicopterRotors(vehicle, partialTick, snapshots);
-            case "bmp2" -> updateTurret(vehicle, partialTick, snapshots, -15.0F, 32.5F);
+            case "bmp2" -> updateTurret(vehicle, partialTick, snapshots, -74.0F, 7.5F);
             case "lav150" -> updateTurret(vehicle, partialTick, snapshots, -15.0F, 32.5F);
             case "mi28" -> {
                 updateTurret(vehicle, partialTick, snapshots, -40.0F, 10.0F);

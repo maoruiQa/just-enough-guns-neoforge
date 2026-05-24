@@ -27,6 +27,8 @@ public final class MouseHandlerVehicleMixin {
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void jeg$turnVehiclePlayer(double frameTime, CallbackInfo callback) {
         if (VehicleInputHandler.handleVehicleMouseTurn(this.minecraft, this.accumulatedDX, this.accumulatedDY, frameTime)) {
+            this.accumulatedDX = 0.0D;
+            this.accumulatedDY = 0.0D;
             callback.cancel();
         }
     }
