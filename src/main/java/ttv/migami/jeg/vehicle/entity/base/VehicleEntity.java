@@ -3545,6 +3545,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
         Vec3 offset = this.seatOffset(seat, 0.0D, 1.0F);
         callback.accept(passenger, this.getX() + offset.x, this.getY() + offset.y, this.getZ() + offset.z);
+        if (passenger instanceof LivingEntity living) {
+            living.fallDistance = 0.0F;
+        }
     }
 
     private Vec3 rotateSeatOffset(SeatInfo seat) {
@@ -4241,6 +4244,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (controllingPassenger) {
             this.cancelWeaponReload();
             this.clearControlState(true);
+        }
+        if (passenger instanceof LivingEntity living) {
+            living.fallDistance = 0.0F;
         }
         super.removePassenger(passenger);
         if (!preserveSeatAssignment) {
