@@ -37,6 +37,7 @@ import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
+    private static final double VEHICLE_STATE_SYNC_DISTANCE_SQR = 65536.0D;
     private static final String AIMING_TAG = "jeg_aiming";
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
@@ -201,7 +202,7 @@ public final class NetworkHandler {
             return;
         }
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            if (player.level() == level && player.distanceToSqr(vehicle) <= 4096.0D) {
+            if (player.level() == level && player.distanceToSqr(vehicle) <= VEHICLE_STATE_SYNC_DISTANCE_SQR) {
                 syncVehicleState(player, vehicle, forceApply);
             }
         }
