@@ -2,6 +2,8 @@ package ttv.migami.jeg.vehicle.recipe;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,7 @@ public final class VehicleAssemblyRecipeManager {
             Reference.id("mi28")
     );
     private static volatile Map<ResourceLocation, VehicleAssemblyRecipe> recipes = defaultsOnly();
+    private static volatile Map<ResourceLocation, String> syncedJson = Map.of();
 
     private VehicleAssemblyRecipeManager() {}
 
@@ -48,6 +51,23 @@ public final class VehicleAssemblyRecipeManager {
                 .filter(VehicleAssemblyRecipeManager::isEnabledAssemblyVehicle)
                 .sorted(Comparator.comparing(recipe -> recipe.id().toString()))
                 .toList();
+    }
+
+    public static Map<ResourceLocation, String> syncedJson() {
+        return Map.copyOf(syncedJson);
+    }
+
+    public static void applySyncedJson(Map<ResourceLocation, String> objects) {
+        Map<ResourceLocation, VehicleAssemblyRecipe> loaded = new HashMap<>(defaultsOnly());
+        for (Map.Entry<ResourceLocation, String> entry : objects.entrySet()) {
+            try {
+                JsonObject object = JsonParser.parseString(entry.getValue()).getAsJsonObject();
+                loaded.put(entry.getKey(), VehicleAssemblyRecipeSerializer.fromJson(entry.getKey(), object));
+            } catch (RuntimeException exception) {
+                JustEnoughGuns.LOGGER.error("Failed to apply synced vehicle assembly recipe {}: {}", entry.getKey(), exception.getMessage());
+            }
+        }
+        recipes = Map.copyOf(loaded);
     }
 
     private static boolean isEnabledAssemblyVehicle(VehicleAssemblyRecipe recipe) {
@@ -127,14 +147,18 @@ public final class VehicleAssemblyRecipeManager {
         @Override
         protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager manager, ProfilerFiller profiler) {
             Map<ResourceLocation, VehicleAssemblyRecipe> loaded = new HashMap<>(defaultsOnly());
+            Map<ResourceLocation, String> raw = new HashMap<>();
             for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
                 try {
-                    loaded.put(entry.getKey(), VehicleAssemblyRecipeSerializer.fromJson(entry.getKey(), entry.getValue().getAsJsonObject()));
+                    JsonObject object = entry.getValue().getAsJsonObject();
+                    raw.put(entry.getKey(), GSON.toJson(object));
+                    loaded.put(entry.getKey(), VehicleAssemblyRecipeSerializer.fromJson(entry.getKey(), object));
                 } catch (RuntimeException exception) {
                     JustEnoughGuns.LOGGER.error("Failed to load vehicle assembly recipe {}: {}", entry.getKey(), exception.getMessage());
                 }
             }
             recipes = Map.copyOf(loaded);
+            syncedJson = Map.copyOf(raw);
             JustEnoughGuns.LOGGER.info("Loaded {} JEG vehicle assembly recipes", recipes.size());
         }
     }

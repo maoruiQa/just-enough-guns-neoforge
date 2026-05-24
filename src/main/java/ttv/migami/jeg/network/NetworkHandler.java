@@ -21,10 +21,14 @@ import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleAssemblyRecipeSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDataSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
@@ -53,6 +57,8 @@ public final class NetworkHandler {
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
                 .playToClient(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC, NetworkHandler::handleUiConfig)
+                .playToClient(VehicleDataSyncPayload.TYPE, VehicleDataSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleDataSync)
+                .playToClient(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleAssemblyRecipeSync)
                 .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
                 .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
@@ -165,6 +171,14 @@ public final class NetworkHandler {
                 new Class<?>[] { boolean.class, boolean.class },
                 payload.showCrosshair(),
                 payload.showHitFeedback()));
+    }
+
+    private static void handleVehicleDataSync(VehicleDataSyncPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> VehicleDataManager.applySyncedJson(payload.data()));
+    }
+
+    private static void handleVehicleAssemblyRecipeSync(VehicleAssemblyRecipeSyncPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> VehicleAssemblyRecipeManager.applySyncedJson(payload.recipes()));
     }
 
     private static void syncVehicleState(ServerPlayer player, VehicleEntity vehicle, boolean forceApply) {
@@ -500,6 +514,11 @@ public final class NetworkHandler {
 
     public static void sendUiConfig(ServerPlayer player) {
         player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+    }
+
+    public static void sendVehicleData(ServerPlayer player) {
+        player.connection.send(new VehicleDataSyncPayload(VehicleDataManager.syncedJson()));
+        player.connection.send(new VehicleAssemblyRecipeSyncPayload(VehicleAssemblyRecipeManager.syncedJson()));
     }
 
     public static void broadcastUiConfig(MinecraftServer server) {

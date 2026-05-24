@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -35,6 +36,7 @@ import ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo;
 public final class VehicleDataManager {
     private static final Gson GSON = new Gson();
     private static volatile Map<ResourceLocation, VehicleData> data = defaultsOnly();
+    private static volatile Map<ResourceLocation, String> syncedJson = Map.of();
 
     private VehicleDataManager() {}
 
@@ -52,6 +54,24 @@ public final class VehicleDataManager {
 
     public static Map<ResourceLocation, VehicleData> all() {
         return Map.copyOf(data);
+    }
+
+    public static Map<ResourceLocation, String> syncedJson() {
+        return Map.copyOf(syncedJson);
+    }
+
+    public static void applySyncedJson(Map<ResourceLocation, String> objects) {
+        Map<ResourceLocation, VehicleData> loaded = new HashMap<>(defaultsOnly());
+        for (Map.Entry<ResourceLocation, String> entry : objects.entrySet()) {
+            try {
+                JsonObject object = JsonParser.parseString(entry.getValue()).getAsJsonObject();
+                VehicleData vehicleData = parse(entry.getKey(), object);
+                loaded.put(vehicleData.id(), vehicleData);
+            } catch (RuntimeException exception) {
+                JustEnoughGuns.LOGGER.error("Failed to apply synced vehicle data {}: {}", entry.getKey(), exception.getMessage());
+            }
+        }
+        data = Map.copyOf(loaded);
     }
 
     private static Map<ResourceLocation, VehicleData> defaultsOnly() {
@@ -73,9 +93,11 @@ public final class VehicleDataManager {
         @Override
         protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager manager, ProfilerFiller profiler) {
             Map<ResourceLocation, VehicleData> loaded = new HashMap<>(defaultsOnly());
+            Map<ResourceLocation, String> raw = new HashMap<>();
             for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
                 try {
                     JsonObject object = entry.getValue().getAsJsonObject();
+                    raw.put(entry.getKey(), GSON.toJson(object));
                     VehicleData vehicleData = parse(entry.getKey(), object);
                     loaded.put(vehicleData.id(), vehicleData);
                 } catch (RuntimeException exception) {
@@ -83,6 +105,7 @@ public final class VehicleDataManager {
                 }
             }
             data = Map.copyOf(loaded);
+            syncedJson = Map.copyOf(raw);
             JustEnoughGuns.LOGGER.info("Loaded {} JEG vehicle data entries", data.size());
         }
     }

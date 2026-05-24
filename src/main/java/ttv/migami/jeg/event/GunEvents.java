@@ -77,6 +77,7 @@ public final class GunEvents {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
             NetworkHandler.sendUiConfig(serverPlayer);
+            NetworkHandler.sendVehicleData(serverPlayer);
             restoreVehicleSeat(serverPlayer);
         }
     }
