@@ -4096,9 +4096,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 seatOffset(SeatInfo seat, double eyeHeight, float partialTick) {
-        if (this.usesArticulatedSeatTransform(seat)) {
-            return this.articulatedTurretOffset(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
-        }
         if (this.usesVehiclePoseTransform()) {
             return this.rotateLocalOffsetWithPose(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
         }
