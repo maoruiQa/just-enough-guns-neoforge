@@ -11,6 +11,7 @@
   "client": [
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
+    "MouseHandlerVehicleMixin",
     "MinecraftVehicleHotbarMixin",
     "VehicleCameraMixin",
     "VehicleGameRendererMixin"

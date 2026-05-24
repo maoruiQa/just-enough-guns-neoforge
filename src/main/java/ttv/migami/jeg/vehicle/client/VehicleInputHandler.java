@@ -165,14 +165,18 @@ public final class VehicleInputHandler {
 
     @SubscribeEvent
     public static void onCalculatePlayerTurn(CalculatePlayerTurnEvent event) {
+        event.setMouseSensitivity(adjustMouseSensitivity(event.getMouseSensitivity()));
+    }
+
+    public static double adjustMouseSensitivity(double base) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
-            return;
+            return base;
         }
         int seatIndex = vehicle.getSeatIndex(player);
         if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
-            return;
+            return base;
         }
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
         if (minecraft.options.getCameraType().isFirstPerson()) {
@@ -185,14 +189,46 @@ public final class VehicleInputHandler {
             deltaY = player.getXRot() - player.xRotO;
         }
         VehicleClientState.setMouseDelta(deltaX, deltaY);
-        float base = (float) event.getMouseSensitivity();
+        float scaledBase = (float) base;
         float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
         if (VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown()) {
             sensitivity = seat.sensitivityX();
         }
-        event.setMouseSensitivity(Math.max(0.0F, base * sensitivity));
+        return Math.max(0.0F, scaledBase * sensitivity);
+    }
+
+    public static boolean handleVehicleMouseTurn(Minecraft minecraft, double accumulatedDX, double accumulatedDY, double frameTime) {
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.screen != null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            return false;
+        }
+        int seatIndex = vehicle.getSeatIndex(player);
+        if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
+            return false;
+        }
+
+        double sensitivitySetting = minecraft.options.sensitivity().get() * 0.6000000238418579D + 0.20000000298023224D;
+        double baseSensitivity = sensitivitySetting * sensitivitySetting * sensitivitySetting * 8.0D;
+        double vehicleSensitivity = adjustMouseSensitivity(baseSensitivity);
+        double turnX = accumulatedDX * vehicleSensitivity;
+        double turnY = accumulatedDY * vehicleSensitivity;
+        if (minecraft.options.invertMouseX().get()) {
+            turnX = -turnX;
+        }
+        if (minecraft.options.invertMouseY().get()) {
+            turnY = -turnY;
+        }
+        minecraft.getTutorial().onMouse(turnX, turnY);
+        player.turn(turnX, turnY);
+
+        var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
+        if (minecraft.options.getCameraType().isFirstPerson()) {
+            clampSeatView(player, vehicle, seat);
+        }
+        vehicle.refreshClientTurretAim(player);
+        return true;
     }
 
     private static void clampSeatView(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
