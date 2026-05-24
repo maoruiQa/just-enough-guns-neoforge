@@ -52,6 +52,7 @@ import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.faction.raid.FactionRaidHooks;
 import ttv.migami.jeg.faction.raid.RaidEntity;
 import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 
 import java.util.UUID;
 
@@ -82,6 +83,10 @@ public class GunnerMobSpawner {
         }
 
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
+            return;
+        }
+
+        if (mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
             return;
         }
 
@@ -169,6 +174,10 @@ public class GunnerMobSpawner {
             return;
         }
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
+            return;
+        }
+
+        if (mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
             return;
         }
 
