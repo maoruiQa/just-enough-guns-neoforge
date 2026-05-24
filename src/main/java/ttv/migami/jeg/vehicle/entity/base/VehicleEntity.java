@@ -2869,15 +2869,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private Vec3 articulatedZoomCameraPosition(SeatInfo seat, float partialTick) {
         if (!this.usesArticulatedSeatTransform(seat)
                 || !this.level().isClientSide
-                || !clientVehicleStateMatches(this.getId())
-                || !clientZoomDown()) {
+                || !clientVehicleStateMatches(this.getId())) {
             return null;
         }
         var zoomCamera = seat.zoomCamera();
-        boolean hasDedicatedZoomOffset = zoomCamera.zoomX() != 0.0D || zoomCamera.zoomY() != 0.0D || zoomCamera.zoomZ() != 0.0D;
-        if (!hasDedicatedZoomOffset && zoomCamera.useFixedCameraPos()) {
+        if (!clientZoomDown() && !zoomCamera.useFixedCameraPos()) {
             return null;
         }
+        boolean hasDedicatedZoomOffset = zoomCamera.zoomX() != 0.0D || zoomCamera.zoomY() != 0.0D || zoomCamera.zoomZ() != 0.0D;
         double x = hasDedicatedZoomOffset ? zoomCamera.zoomX() : zoomCamera.x();
         double y = hasDedicatedZoomOffset ? zoomCamera.zoomY() : zoomCamera.y();
         double z = hasDedicatedZoomOffset ? zoomCamera.zoomZ() : zoomCamera.z();
