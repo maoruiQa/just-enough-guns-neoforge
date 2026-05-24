@@ -4,10 +4,12 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ttv.migami.jeg.client.ClientHudRenderer;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
@@ -15,6 +17,7 @@ import ttv.migami.jeg.client.HappyGhastArmorHud;
 import ttv.migami.jeg.client.ScopeOverlayRenderer;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(Gui.class)
 public final class GuiMixin {
@@ -49,6 +52,42 @@ public final class GuiMixin {
             FabricClientBootstrap.renderOverheatBar(guiGraphics);
             ClientHudRenderer.render(guiGraphics);
             HappyGhastArmorHud.render(guiGraphics);
+        }
+    }
+
+    @Inject(method = "extractPlayerHealth", at = @At("HEAD"), cancellable = true)
+    private void jeg$hidePlayerHealthInVehicle(GuiGraphicsExtractor guiGraphics, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "extractFood", at = @At("HEAD"), cancellable = true)
+    private void jeg$hidePlayerFoodInVehicle(GuiGraphicsExtractor guiGraphics, Player player, int y, int rightX, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "nextContextualInfoState", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideExperienceInfoInVehicle(CallbackInfoReturnable<Object> ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.setReturnValue(jeg$emptyContextualInfo());
+        }
+    }
+
+    private static boolean jeg$isVehicleHudActive() {
+        var player = Minecraft.getInstance().player;
+        return player != null && player.getVehicle() instanceof VehicleEntity;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Object jeg$emptyContextualInfo() {
+        try {
+            Class<? extends Enum> enumClass = Class.forName("net.minecraft.client.gui.Gui$ContextualInfo").asSubclass(Enum.class);
+            return Enum.valueOf(enumClass, "EMPTY");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Missing Gui.ContextualInfo", e);
         }
     }
 }
