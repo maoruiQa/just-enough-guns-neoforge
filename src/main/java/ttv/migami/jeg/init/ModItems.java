@@ -26,6 +26,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.item.EnemyVehicleSpawnItem;
 import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.GunItem;
@@ -157,6 +158,26 @@ public final class ModItems {
     public static final DeferredHolder<Item, SpawnEggItem> TERROR_PHANTOM_GUARDIAN_SPAWN_EGG = REGISTER.register(
             "terror_phantom_guardian_spawn_egg",
             () -> new ModSpawnEggItem(ModEntities.TERROR_PHANTOM_GUARDIAN.get(), baseProperties(Reference.id("terror_phantom_guardian_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_LAV150_SPAWN_EGG = REGISTER.register(
+            "enemy_lav150_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.LAV150::get, Reference.id("lav150"), baseProperties(Reference.id("enemy_lav150_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_BMP2_SPAWN_EGG = REGISTER.register(
+            "enemy_bmp2_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.BMP2::get, Reference.id("bmp2"), baseProperties(Reference.id("enemy_bmp2_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_AH6_SPAWN_EGG = REGISTER.register(
+            "enemy_ah6_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.AH6::get, Reference.id("ah6"), baseProperties(Reference.id("enemy_ah6_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_MI28_SPAWN_EGG = REGISTER.register(
+            "enemy_mi28_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.MI28::get, Reference.id("mi28"), baseProperties(Reference.id("enemy_mi28_spawn_egg")).stacksTo(64))
     );
 
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_SKELETON_SPAWN_EGG = REGISTER.register(
@@ -429,6 +450,10 @@ public final class ModItems {
             event.accept(PHANTOM_GUNNER_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
+            event.accept(ENEMY_LAV150_SPAWN_EGG.get());
+            event.accept(ENEMY_BMP2_SPAWN_EGG.get());
+            event.accept(ENEMY_AH6_SPAWN_EGG.get());
+            event.accept(ENEMY_MI28_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());
@@ -457,6 +482,10 @@ public final class ModItems {
             event.accept(PHANTOM_GUNNER_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_SPAWN_EGG.get());
             event.accept(TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
+            event.accept(ENEMY_LAV150_SPAWN_EGG.get());
+            event.accept(ENEMY_BMP2_SPAWN_EGG.get());
+            event.accept(ENEMY_AH6_SPAWN_EGG.get());
+            event.accept(ENEMY_MI28_SPAWN_EGG.get());
             event.accept(GUNNER_SKELETON_SPAWN_EGG.get());
             event.accept(GUNNER_ZOMBIE_SPAWN_EGG.get());
             event.accept(GUNNER_HUSK_SPAWN_EGG.get());

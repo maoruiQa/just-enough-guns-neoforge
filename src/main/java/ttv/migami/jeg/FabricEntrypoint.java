@@ -38,6 +38,7 @@ import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.event.VehiclePassengerDamageEvents;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
@@ -110,6 +111,7 @@ public final class FabricEntrypoint implements ModInitializer {
                 EntityTickEvent.Post event = new EntityTickEvent.Post(entity);
                 GunnerMobSpawner.onLivingUpdate(event);
                 HappyGhastArmorEvents.onEntityTick(event);
+                EnemyVehicleController.tickEntity(entity);
             }
         });
     }
