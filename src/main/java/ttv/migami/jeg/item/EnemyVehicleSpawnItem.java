@@ -36,6 +36,7 @@ public class EnemyVehicleSpawnItem extends Item {
     private static final ResourceLocation AUTOCANNON_SHELL = Reference.id("autocannon_shell");
     private static final ResourceLocation SMALL_ROCKET = Reference.id("small_rocket");
     private static final ResourceLocation MEDIUM_ANTI_GROUND_MISSILE = Reference.id("medium_anti_ground_missile");
+    private static final ResourceLocation MEDIUM_ANTI_AIR_MISSILE = Reference.id("medium_anti_air_missile");
 
     private final Supplier<EntityType<? extends VehicleEntity>> vehicleType;
     private final ResourceLocation vehicleId;
@@ -157,6 +158,7 @@ public class EnemyVehicleSpawnItem extends Item {
             vehicle.addAmmoForAi(RIFLE_AMMO, 900);
             vehicle.addAmmoForAi(SMALL_ROCKET, 96);
             vehicle.addAmmoForAi(MEDIUM_ANTI_GROUND_MISSILE, 32);
+            vehicle.addAmmoForAi(MEDIUM_ANTI_AIR_MISSILE, 16);
         }
     }
 }

@@ -21,6 +21,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 
 public final class EnemyVehicleController {
     public static final String ENEMY_VEHICLE_TAG = "JEGEnemyVehicle";
@@ -257,19 +258,36 @@ public final class EnemyVehicleController {
         LivingEntity gunner = crews[1];
         double noseError = Math.abs(Mth.wrapDegrees(aim.worldYaw() - vehicle.getYRot()));
         boolean stable = Math.abs(vehicle.roll()) < 30.0F && Math.abs(vehicle.getXRot()) < 24.0F;
+        TargetVehicleClass targetVehicle = targetVehicleClass(target);
 
-        int pilotSlot = distance >= 95.0D && noseError < 5.0D ? 1 : 0;
+        int pilotSlot = switch (targetVehicle) {
+            case SURFACE -> 1;
+            case AIR -> 2;
+            case NONE -> 0;
+        };
         vehicle.selectAiWeaponForSeat(0, pilotSlot);
-        boolean pilotFire = visible && stable && noseError < (pilotSlot == 1 ? 5.0D : 7.0D) && distance >= 55.0D && distance <= 150.0D;
-        vehicle.setAiWeaponControlForSeat(0, pilot, pilotFire, pilotSlot == 1);
+        boolean pilotMissile = pilotSlot == 1 || pilotSlot == 2;
+        boolean pilotFire = visible && stable && noseError < (pilotMissile ? 5.0D : 7.0D) && distance >= 55.0D && distance <= 150.0D;
+        vehicle.setAiWeaponControlForSeat(0, pilot, pilotFire, pilotMissile);
 
         vehicle.setAiTurretAim(aim.turretYaw(), Mth.clamp(aim.pitch(), -10.0F, 40.0F));
         aimCrewAt(gunner, aim);
-        int gunnerSlot = distance >= 85.0D ? 4 : 3;
+        int gunnerSlot = targetVehicle == TargetVehicleClass.SURFACE && distance >= 85.0D ? 4 : 3;
         vehicle.selectAiWeaponForSeat(1, gunnerSlot);
         double turretError = Math.max(Math.abs(Mth.wrapDegrees(vehicle.turretYaw() - aim.turretYaw())), Math.abs(vehicle.turretPitch() - aim.pitch()));
         boolean gunnerFire = visible && (gunnerSlot == 3 ? turretError <= 8.0D && distance <= 110.0D : turretError <= 5.0D);
         vehicle.setAiWeaponControlForSeat(1, gunner, gunnerFire, gunnerSlot == 4);
+    }
+
+    private static TargetVehicleClass targetVehicleClass(Player target) {
+        if (!(target.getVehicle() instanceof VehicleEntity targetVehicle)) {
+            return TargetVehicleClass.NONE;
+        }
+        VehicleType type = targetVehicle.vehicleData().defaults().vehicleType();
+        if (type == VehicleType.LAND || type == VehicleType.BOAT || type == VehicleType.ARTILLERY) {
+            return TargetVehicleClass.SURFACE;
+        }
+        return TargetVehicleClass.AIR;
     }
 
     private static void airPatrol(VehicleEntity vehicle, Brain brain, Vec3 anchor, String kind) {
@@ -524,6 +542,12 @@ public final class EnemyVehicleController {
     }
 
     private record Aim(float worldYaw, float turretYaw, float pitch) {}
+
+    private enum TargetVehicleClass {
+        NONE,
+        SURFACE,
+        AIR
+    }
 
     private static final class Brain {
         private UUID targetId;
