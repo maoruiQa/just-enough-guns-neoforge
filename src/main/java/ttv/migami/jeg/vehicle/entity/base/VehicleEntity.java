@@ -101,7 +101,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double CLIENT_RESYNC_HORIZONTAL_MOTION_DELTA_SQR = 0.16D;
     private static final float CLIENT_RESYNC_YAW_DELTA = 12.0F;
     private static final float CLIENT_RESYNC_PITCH_DELTA = 12.0F;
-    private static final int DRIVER_STATE_SYNC_INTERVAL = 5;
+    private static final int MOVING_DRIVER_STATE_SYNC_INTERVAL = 2;
+    private static final int UNMANNED_AIRBORNE_STATE_SYNC_INTERVAL = 1;
     private static final double VEHICLE_IDLE_FALL_SPEED_THRESHOLD = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_Y_DELTA = 1.0E-3D;
@@ -1180,17 +1181,29 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickDriverStateSync() {
-        VehicleType type = this.vehicleData().defaults().vehicleType();
-        if (this.tickCount % DRIVER_STATE_SYNC_INTERVAL != 0 || (type != VehicleType.LAND && type != VehicleType.BOAT && type != VehicleType.HELICOPTER)) {
-            return;
-        }
-        if (this.getControllingPassenger() instanceof ServerPlayer || this.isEnemyAiVehicle() || this.shouldSyncUnmannedPredictedState()) {
+        int syncInterval = this.authoritativeVehicleStateSyncInterval(true);
+        if (syncInterval > 0 && this.tickCount % syncInterval == 0) {
             NetworkHandler.broadcastVehicleState(this);
         }
     }
 
     private boolean isEnemyAiVehicle() {
         return this.getTags().contains(EnemyVehicleController.ENEMY_VEHICLE_TAG);
+    }
+
+    private int authoritativeVehicleStateSyncInterval(boolean serverSide) {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        if (type != VehicleType.LAND && type != VehicleType.BOAT && type != VehicleType.HELICOPTER) {
+            return 0;
+        }
+        Entity controllingPassenger = this.getControllingPassenger();
+        if ((serverSide ? controllingPassenger instanceof ServerPlayer : controllingPassenger != null) || this.isEnemyAiVehicle()) {
+            return MOVING_DRIVER_STATE_SYNC_INTERVAL;
+        }
+        if (controllingPassenger == null && this.shouldSyncUnmannedPredictedState()) {
+            return UNMANNED_AIRBORNE_STATE_SYNC_INTERVAL;
+        }
+        return 0;
     }
 
     private boolean shouldSyncUnmannedPredictedState() {
@@ -1322,7 +1335,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (this.level().isClientSide && !forceApply && !this.shouldRunClientPrediction()) {
-            super.lerpTo(x, y, z, yaw, pitch, DRIVER_STATE_SYNC_INTERVAL);
+            int lerpSteps = this.authoritativeVehicleStateSyncInterval(false);
+            super.lerpTo(x, y, z, yaw, pitch, lerpSteps > 0 ? lerpSteps : MOVING_DRIVER_STATE_SYNC_INTERVAL);
             super.lerpMotion(motionX, motionY, motionZ);
             return;
         }
