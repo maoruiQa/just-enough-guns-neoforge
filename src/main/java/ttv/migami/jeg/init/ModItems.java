@@ -27,6 +27,7 @@ import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.DescribedAmmoItem;
+import ttv.migami.jeg.item.EnemyVehicleSpawnItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -266,6 +267,16 @@ public final class ModItems {
             )
     );
 
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_LAV150_SPAWN_EGG = REGISTER.register(
+            "enemy_lav150_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.LAV150::get, Reference.id("lav150"), baseProperties(Reference.id("enemy_lav150_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_BMP2_SPAWN_EGG = REGISTER.register(
+            "enemy_bmp2_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.BMP2::get, Reference.id("bmp2"), baseProperties(Reference.id("enemy_bmp2_spawn_egg")).stacksTo(64))
+    );
+
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
             ResourceLocation id = Reference.id(path);
@@ -434,6 +445,8 @@ public final class ModItems {
             event.accept(GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_SPAWN_EGG.get());
             event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
+            event.accept(ENEMY_LAV150_SPAWN_EGG.get());
+            event.accept(ENEMY_BMP2_SPAWN_EGG.get());
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
@@ -472,6 +485,8 @@ public final class ModItems {
             event.accept(GUNNER_PILLAGER_SPAWN_EGG.get());
             event.accept(GUNNER_VINDICATOR_SPAWN_EGG.get());
             event.accept(GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get());
+            event.accept(ENEMY_LAV150_SPAWN_EGG.get());
+            event.accept(ENEMY_BMP2_SPAWN_EGG.get());
         }
     }
 

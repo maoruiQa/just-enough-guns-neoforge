@@ -32,6 +32,7 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.init.ModCommands;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.energy.VehicleEnergyStorage;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
@@ -80,6 +81,7 @@ public final class JustEnoughGuns {
         // This prevents the ModelManager.reload() NullPointerException
         NeoForge.EVENT_BUS.register(GunEvents.class);
         NeoForge.EVENT_BUS.register(GunnerMobSpawner.class);
+        NeoForge.EVENT_BUS.register(EnemyVehicleController.class);
         NeoForge.EVENT_BUS.register(FactionEventTicker.class);
         NeoForge.EVENT_BUS.addListener(ModCommands::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(VehicleDataManager::onAddReloadListeners);
