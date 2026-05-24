@@ -328,7 +328,14 @@ public final class EnemyVehicleController {
         if (brain.airEvasionTicks > 0) {
             brain.airEvasionTicks--;
         }
-        if (isAirForwardUnsafe(vehicle) || altitudeAboveTerrain(vehicle) < 10.0D) {
+        double altitude = altitudeAboveTerrain(vehicle);
+        if (altitude < 9.0D) {
+            float levelPitch = Mth.clamp(-vehicle.getXRot() / 24.0F, -0.45F, 0.45F);
+            vehicle.setAiVehicleInput(airInput(false, false, false, false, false, true, false, 0.0F, levelPitch));
+            brain.airEvasionTicks = 0;
+            return;
+        }
+        if (isAirForwardUnsafe(vehicle)) {
             brain.airEvasionTicks = Math.max(brain.airEvasionTicks, 28);
         }
 
@@ -337,7 +344,6 @@ public final class EnemyVehicleController {
         float desiredYaw = horizontalDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toTarget.x, toTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
         float mouseX = Mth.clamp(yawDiff / 42.0F, -1.0F, 1.0F);
-        double altitude = altitudeAboveTerrain(vehicle);
         double altitudeError = desiredAltitude - altitude;
         boolean ascend = altitudeError > 3.0D || brain.airEvasionTicks > 0;
         boolean descend = altitudeError < -10.0D && brain.airEvasionTicks <= 0;
