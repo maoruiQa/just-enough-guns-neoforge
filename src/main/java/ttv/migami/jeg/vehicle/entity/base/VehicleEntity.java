@@ -196,11 +196,15 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.24D;
-    private static final int VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS = 4;
+    private static final int VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS = 10;
     private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.32D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.45D;
     private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 160.0D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
+    private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 5;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.38D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.45D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
     private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
@@ -226,6 +230,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private int decoyCooldown;
     private int energyRechargeTick;
     private int ramDamageCooldown;
+    private int unsupportedVehicleTicks;
     private int weaponControllerId = -1;
     private boolean weaponFireInput;
     private int seekControllerId = -1;
@@ -996,9 +1001,11 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     @Override
     public void move(MoverType type, Vec3 pos) {
         boolean wasVerticallySupported = this.onGround() || this.verticalCollisionBelow;
+        int unsupportedTicksBeforeMove = this.unsupportedVehicleTicks;
         Vec3 before = this.position();
         super.move(type, pos);
-        this.applyVehicleImpactDamage(pos, this.position().subtract(before), wasVerticallySupported);
+        this.applyVehicleImpactDamage(pos, this.position().subtract(before), wasVerticallySupported, unsupportedTicksBeforeMove);
+        this.updateVehicleSupportTicks();
     }
 
     private void updateLastTickMovementSpeed() {
@@ -1006,17 +1013,24 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         this.lastTickSpeed = new Vec3(movement.x, movement.y + 0.06D, movement.z).length();
     }
 
-    private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported) {
+    private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported, int unsupportedTicksBeforeMove) {
         if (this.level().isClientSide()
                 || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
                 || this.ramDamageCooldown > 0
                 || !(this.horizontalCollision || this.verticalCollision)) {
             return;
         }
+        boolean landVehicle = this.vehicleData().defaults().vehicleType() == VehicleType.LAND;
         double horizontalImpactSpeed = this.horizontalCollision
                 ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
                 : 0.0D;
+        if (landVehicle && horizontalImpactSpeed > 0.0D && !this.isLandVehicleBodyImpact(requestedMovement, actualMovement)) {
+            horizontalImpactSpeed = 0.0D;
+        }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
+        if (landVehicle && unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS) {
+            verticalImpactSpeed = 0.0D;
+        }
         float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed);
         if (damage <= 1.0F) {
             return;
@@ -1033,6 +1047,35 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
             this.enginePower *= 0.8D;
         }
         this.hurtMarked = true;
+    }
+
+    private void updateVehicleSupportTicks() {
+        if (this.onGround() || this.verticalCollisionBelow) {
+            this.unsupportedVehicleTicks = 0;
+        } else {
+            this.unsupportedVehicleTicks = Math.min(this.unsupportedVehicleTicks + 1, 100);
+        }
+    }
+
+    private boolean isLandVehicleBodyImpact(Vec3 requestedMovement, Vec3 actualMovement) {
+        Vec3 requestedHorizontal = new Vec3(requestedMovement.x(), 0.0D, requestedMovement.z());
+        double requestedSpeed = requestedHorizontal.length();
+        if (requestedSpeed < LAND_VEHICLE_BODY_IMPACT_MIN_SPEED) {
+            return false;
+        }
+        double actualSpeed = new Vec3(actualMovement.x(), 0.0D, actualMovement.z()).length();
+        if (actualSpeed / requestedSpeed > LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO) {
+            return false;
+        }
+        AABB box = this.getBoundingBox();
+        double height = box.getYsize();
+        double lowerOffset = Mth.clamp(height * 0.45D, 0.75D, 1.35D);
+        double upperInset = Mth.clamp(height * 0.10D, 0.05D, 0.25D);
+        double minY = Math.min(box.minY + lowerOffset, box.maxY - 0.15D);
+        double maxY = Math.max(minY + 0.15D, box.maxY - upperInset);
+        AABB bodyProbe = new AABB(box.minX, minY, box.minZ, box.maxX, Math.min(maxY, box.maxY), box.maxZ)
+                .move(requestedHorizontal.normalize().scale(LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE));
+        return this.intersectsBlockCollision(bodyProbe);
     }
 
     private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed) {
@@ -1774,7 +1817,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
                 continue;
             }
             float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
-            float selfDamage = target.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
+            float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
             boolean targetDamaged = targetDamage > 1.0F;
             if (targetDamaged) {
                 target.hurt(this.vehicleStrikeDamageSource(), targetDamage);
