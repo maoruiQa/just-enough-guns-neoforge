@@ -3049,13 +3049,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return null;
         }
         var zoomCamera = seat.zoomCamera();
-        if (!clientZoomDown() && !zoomCamera.useFixedCameraPos()) {
+        boolean hasDedicatedZoomOffset = zoomCamera.zoomX() != 0.0D || zoomCamera.zoomY() != 0.0D || zoomCamera.zoomZ() != 0.0D;
+        if (!clientZoomDown() || !hasDedicatedZoomOffset) {
             return null;
         }
-        boolean hasDedicatedZoomOffset = zoomCamera.zoomX() != 0.0D || zoomCamera.zoomY() != 0.0D || zoomCamera.zoomZ() != 0.0D;
-        double x = hasDedicatedZoomOffset ? zoomCamera.zoomX() : zoomCamera.x();
-        double y = hasDedicatedZoomOffset ? zoomCamera.zoomY() : zoomCamera.y();
-        double z = hasDedicatedZoomOffset ? zoomCamera.zoomZ() : zoomCamera.z();
+        double x = zoomCamera.zoomX();
+        double y = zoomCamera.zoomY();
+        double z = zoomCamera.zoomZ();
         if (x == 0.0D && y == 0.0D && z == 0.0D) {
             return null;
         }
@@ -3082,8 +3082,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (zoomRotation != null) {
                 return zoomRotation;
             }
+            return new Vec3(passenger.getViewYRot(partialTick), this.seatBoundViewPitch(passenger, seat, partialTick), 0.0D);
         }
         return new Vec3(passenger.getViewYRot(partialTick), passenger.getViewXRot(partialTick), 0.0D);
+    }
+
+    private float seatBoundViewPitch(Entity passenger, SeatInfo seat, float partialTick) {
+        return Mth.clamp(passenger.getViewXRot(partialTick), seat.minPitch(), seat.maxPitch());
     }
 
     @Nullable
