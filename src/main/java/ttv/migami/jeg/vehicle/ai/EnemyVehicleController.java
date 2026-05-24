@@ -297,7 +297,7 @@ public final class EnemyVehicleController {
             double radius = ("mi28".equals(kind) ? 55.0D : 38.0D) + vehicle.getRandom().nextDouble() * 24.0D;
             brain.patrolTarget = anchor.add(Math.cos(angle) * radius, desiredAltitude, Math.sin(angle) * radius);
         }
-        flyToward(vehicle, brain, brain.patrolTarget, desiredAltitude, true);
+        flyToward(vehicle, brain, brain.patrolTarget, null, desiredAltitude, true);
     }
 
     private static void airEngage(VehicleEntity vehicle, Brain brain, Player target, String kind, double distance) {
@@ -321,10 +321,21 @@ public final class EnemyVehicleController {
             Vec3 strafe = new Vec3(direction.z, 0.0D, -direction.x).scale(orbitRange * brain.orbitDirection);
             destination = target.position().subtract(direction.scale(orbitRange * 0.55D)).add(strafe);
         }
-        flyToward(vehicle, brain, destination, desiredAltitude, distance <= maxRange);
+        Vec3 attackFaceTarget = shouldFaceTargetForNoseWeapon(kind, target, distance) ? target.position() : null;
+        flyToward(vehicle, brain, destination, attackFaceTarget, desiredAltitude, distance <= maxRange);
     }
 
-    private static void flyToward(VehicleEntity vehicle, Brain brain, Vec3 destination, double desiredAltitude, boolean allowBrake) {
+    private static boolean shouldFaceTargetForNoseWeapon(String kind, Player target, double distance) {
+        if ("ah6".equals(kind)) {
+            return distance >= 42.0D && distance <= 82.0D;
+        }
+        if ("mi28".equals(kind)) {
+            return distance >= 55.0D && distance <= 150.0D;
+        }
+        return false;
+    }
+
+    private static void flyToward(VehicleEntity vehicle, Brain brain, Vec3 destination, Vec3 faceTarget, double desiredAltitude, boolean allowBrake) {
         if (brain.airEvasionTicks > 0) {
             brain.airEvasionTicks--;
         }
@@ -342,13 +353,17 @@ public final class EnemyVehicleController {
 
         Vec3 toTarget = destination.subtract(vehicle.position());
         double horizontalDistance = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-        float desiredYaw = horizontalDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toTarget.x, toTarget.z));
+        Vec3 yawTarget = faceTarget == null ? destination : faceTarget;
+        Vec3 toYawTarget = yawTarget.subtract(vehicle.position());
+        double yawDistance = Math.sqrt(toYawTarget.x * toYawTarget.x + toYawTarget.z * toYawTarget.z);
+        float desiredYaw = yawDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toYawTarget.x, toYawTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
         float mouseX = Mth.clamp(yawDiff / 42.0F, -1.0F, 1.0F);
         double altitudeError = desiredAltitude - altitude;
         boolean ascend = altitudeError > 3.0D || brain.airEvasionTicks > 0;
         boolean descend = altitudeError < -10.0D && brain.airEvasionTicks <= 0;
-        boolean forward = horizontalDistance > 14.0D && Math.abs(yawDiff) < 80.0F && brain.airEvasionTicks <= 0;
+        boolean holdingForNoseAim = faceTarget != null && Math.abs(yawDiff) > 9.0F;
+        boolean forward = horizontalDistance > 14.0D && Math.abs(yawDiff) < 80.0F && brain.airEvasionTicks <= 0 && !holdingForNoseAim;
         boolean brake = allowBrake && horizontalDistance < 22.0D && Math.abs(yawDiff) < 35.0F;
         float desiredPitch = forward ? 10.0F : 0.0F;
         if (brain.airEvasionTicks > 0) {
