@@ -24,6 +24,10 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.PHANTOM_GUNNER_SPAWN_EGG.get());
             entries.accept(ModItems.TERROR_PHANTOM_SPAWN_EGG.get());
             entries.accept(ModItems.TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_LAV150_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_BMP2_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_AH6_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_MI28_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_SKELETON_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIE_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_HUSK_SPAWN_EGG.get());
@@ -52,6 +56,10 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.PHANTOM_GUNNER_SPAWN_EGG.get());
             entries.accept(ModItems.TERROR_PHANTOM_SPAWN_EGG.get());
             entries.accept(ModItems.TERROR_PHANTOM_GUARDIAN_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_LAV150_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_BMP2_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_AH6_SPAWN_EGG.get());
+            entries.accept(ModItems.ENEMY_MI28_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_SKELETON_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_ZOMBIE_SPAWN_EGG.get());
             entries.accept(ModItems.GUNNER_HUSK_SPAWN_EGG.get());
