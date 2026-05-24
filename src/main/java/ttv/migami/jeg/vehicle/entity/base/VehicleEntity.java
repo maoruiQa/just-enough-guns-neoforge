@@ -995,9 +995,10 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
 
     @Override
     public void move(MoverType type, Vec3 pos) {
+        boolean wasVerticallySupported = this.onGround() || this.verticalCollisionBelow;
         Vec3 before = this.position();
         super.move(type, pos);
-        this.applyVehicleImpactDamage(pos, this.position().subtract(before));
+        this.applyVehicleImpactDamage(pos, this.position().subtract(before), wasVerticallySupported);
     }
 
     private void updateLastTickMovementSpeed() {
@@ -1005,7 +1006,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         this.lastTickSpeed = new Vec3(movement.x, movement.y + 0.06D, movement.z).length();
     }
 
-    private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement) {
+    private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported) {
         if (this.level().isClientSide()
                 || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
                 || this.ramDamageCooldown > 0
@@ -1015,7 +1016,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         double horizontalImpactSpeed = this.horizontalCollision
                 ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
                 : 0.0D;
-        double verticalImpactSpeed = this.verticalCollision ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
+        double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
         float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed);
         if (damage <= 1.0F) {
             return;
@@ -3378,7 +3379,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
             nextY = Math.min(nextY, moved.y - GRAVITY);
         }
         if (this.onGround() || this.verticalCollisionBelow) {
-            nextY = moved.y > 0.0D ? Math.min(moved.y * 0.2D, 0.08D) : Math.min(0.0D, nextY);
+            nextY = moved.y > 0.0D ? Math.min(moved.y * 0.2D, 0.08D) : 0.0D;
             if (unmannedLandVehicle) {
                 nextY = Math.min(0.0D, nextY);
             }
