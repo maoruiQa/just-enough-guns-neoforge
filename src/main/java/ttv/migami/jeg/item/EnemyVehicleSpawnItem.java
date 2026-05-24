@@ -34,6 +34,8 @@ public class EnemyVehicleSpawnItem extends Item {
     private static final ResourceLocation RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final ResourceLocation SMALL_SHELL = Reference.id("small_shell");
     private static final ResourceLocation AUTOCANNON_SHELL = Reference.id("autocannon_shell");
+    private static final ResourceLocation SMALL_ROCKET = Reference.id("small_rocket");
+    private static final ResourceLocation MEDIUM_ANTI_GROUND_MISSILE = Reference.id("medium_anti_ground_missile");
 
     private final Supplier<EntityType<? extends VehicleEntity>> vehicleType;
     private final ResourceLocation vehicleId;
@@ -104,21 +106,20 @@ public class EnemyVehicleSpawnItem extends Item {
             return null;
         }
 
-        Pillager crew = EntityType.PILLAGER.create(level);
-        if (crew == null) {
-            vehicle.discard();
-            return null;
+        int crewCount = "mi28".equals(this.vehicleId.getPath()) ? 2 : 1;
+        for (int seat = 0; seat < crewCount; seat++) {
+            Pillager crew = this.createCrew(level, vehicle);
+            if (crew == null) {
+                vehicle.destroyFromEnemyCrewLoss();
+                return null;
+            }
+            if (seat == 0) {
+                vehicle.getPersistentData().putUUID(EnemyVehicleController.CREW_ID_TAG, crew.getUUID());
+            }
+            level.addFreshEntity(crew);
+            vehicle.rememberSeatAssignment(crew, seat);
+            crew.startRiding(vehicle, true);
         }
-        crew.moveTo(vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.getYRot(), 0.0F);
-        crew.finalizeSpawn(level, level.getCurrentDifficultyAt(crew.blockPosition()), MobSpawnType.SPAWN_EGG, null);
-        crew.addTag(GunEvents.JEG_GUNNER_TAG);
-        crew.addTag(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG);
-        GunnerMobSpawner.normalizeGunnerMob(crew);
-        EnemyVehicleController.configureCrew(crew);
-        vehicle.getPersistentData().putUUID(EnemyVehicleController.CREW_ID_TAG, crew.getUUID());
-        level.addFreshEntity(crew);
-        vehicle.rememberSeatAssignment(crew, 0);
-        crew.startRiding(vehicle, true);
 
         level.gameEvent(player, GameEvent.ENTITY_PLACE, vehicle.position());
         stack.consume(1, player);
@@ -128,6 +129,20 @@ public class EnemyVehicleSpawnItem extends Item {
         return vehicle;
     }
 
+    private Pillager createCrew(ServerLevel level, VehicleEntity vehicle) {
+        Pillager crew = EntityType.PILLAGER.create(level);
+        if (crew == null) {
+            return null;
+        }
+        crew.moveTo(vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.getYRot(), 0.0F);
+        crew.finalizeSpawn(level, level.getCurrentDifficultyAt(crew.blockPosition()), MobSpawnType.SPAWN_EGG, null);
+        crew.addTag(GunEvents.JEG_GUNNER_TAG);
+        crew.addTag(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG);
+        GunnerMobSpawner.normalizeGunnerMob(crew);
+        EnemyVehicleController.configureCrew(crew);
+        return crew;
+    }
+
     private void loadDefaultAmmo(VehicleEntity vehicle) {
         if ("lav150".equals(this.vehicleId.getPath())) {
             vehicle.addAmmoForAi(SMALL_SHELL, 128);
@@ -135,6 +150,13 @@ public class EnemyVehicleSpawnItem extends Item {
         } else if ("bmp2".equals(this.vehicleId.getPath())) {
             vehicle.addAmmoForAi(AUTOCANNON_SHELL, 160);
             vehicle.addAmmoForAi(RIFLE_AMMO, 512);
+        } else if ("ah6".equals(this.vehicleId.getPath())) {
+            vehicle.addAmmoForAi(RIFLE_AMMO, 600);
+            vehicle.addAmmoForAi(SMALL_ROCKET, 48);
+        } else if ("mi28".equals(this.vehicleId.getPath())) {
+            vehicle.addAmmoForAi(RIFLE_AMMO, 900);
+            vehicle.addAmmoForAi(SMALL_ROCKET, 96);
+            vehicle.addAmmoForAi(MEDIUM_ANTI_GROUND_MISSILE, 32);
         }
     }
 }

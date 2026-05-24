@@ -277,6 +277,16 @@ public final class ModItems {
             () -> new EnemyVehicleSpawnItem(ModEntities.BMP2::get, Reference.id("bmp2"), baseProperties(Reference.id("enemy_bmp2_spawn_egg")).stacksTo(64))
     );
 
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_AH6_SPAWN_EGG = REGISTER.register(
+            "enemy_ah6_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.AH6::get, Reference.id("ah6"), baseProperties(Reference.id("enemy_ah6_spawn_egg")).stacksTo(64))
+    );
+
+    public static final DeferredHolder<Item, EnemyVehicleSpawnItem> ENEMY_MI28_SPAWN_EGG = REGISTER.register(
+            "enemy_mi28_spawn_egg",
+            () -> new EnemyVehicleSpawnItem(ModEntities.MI28::get, Reference.id("mi28"), baseProperties(Reference.id("enemy_mi28_spawn_egg")).stacksTo(64))
+    );
+
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
             ResourceLocation id = Reference.id(path);
@@ -447,6 +457,8 @@ public final class ModItems {
             event.accept(GUNNER_WITHER_SKELETON_SPAWN_EGG.get());
             event.accept(ENEMY_LAV150_SPAWN_EGG.get());
             event.accept(ENEMY_BMP2_SPAWN_EGG.get());
+            event.accept(ENEMY_AH6_SPAWN_EGG.get());
+            event.accept(ENEMY_MI28_SPAWN_EGG.get());
         }
 
         if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
@@ -487,6 +499,8 @@ public final class ModItems {
             event.accept(GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get());
             event.accept(ENEMY_LAV150_SPAWN_EGG.get());
             event.accept(ENEMY_BMP2_SPAWN_EGG.get());
+            event.accept(ENEMY_AH6_SPAWN_EGG.get());
+            event.accept(ENEMY_MI28_SPAWN_EGG.get());
         }
     }
 
