@@ -207,6 +207,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.55D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.20D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
+    private static final double VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION = 0.45D;
+    private static final double VEHICLE_ENTITY_COLLISION_DAMPING = 0.45D;
     private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
@@ -960,6 +962,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.tickServerMovement();
             this.tickHelicopterRotorGroundDamage();
             this.tickRammingDamage();
+            this.tickVehicleEntityCollisionResolution();
             this.tickMissileLock();
             this.tickWeaponReload();
             this.tickServerWeapon();
@@ -1835,6 +1838,109 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return relative.length();
         }
         return relative.horizontalDistance();
+    }
+
+    private void tickVehicleEntityCollisionResolution() {
+        if (this.noPhysics || this.isRemoved()) {
+            return;
+        }
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
+            if (target == this || target.isRemoved() || target.noPhysics || this.getId() >= target.getId()) {
+                continue;
+            }
+            Vec3 correction = this.vehicleEntityCollisionCorrection(target);
+            if (correction == null || correction.lengthSqr() <= 1.0E-8D) {
+                continue;
+            }
+            this.applyVehicleEntityCollisionCorrection(target, correction);
+        }
+    }
+
+    @Nullable
+    private Vec3 vehicleEntityCollisionCorrection(VehicleEntity target) {
+        Vec3 best = null;
+        double bestLength = Double.POSITIVE_INFINITY;
+        if (this.usesCustomObbEntityCollision()) {
+            ObbCollisionCorrection correction = this.obbCollisionCorrection(target.getBoundingBox());
+            if (correction != null) {
+                best = correction.movement();
+                bestLength = correction.depth();
+            }
+        }
+        if (target.usesCustomObbEntityCollision()) {
+            ObbCollisionCorrection correction = target.obbCollisionCorrection(this.getBoundingBox());
+            if (correction != null && correction.depth() < bestLength) {
+                best = correction.movement().scale(-1.0D);
+                bestLength = correction.depth();
+            }
+        }
+        if (best != null) {
+            return best;
+        }
+        return this.aabbVehicleCollisionCorrection(target);
+    }
+
+    @Nullable
+    private Vec3 aabbVehicleCollisionCorrection(VehicleEntity target) {
+        AABB self = this.getBoundingBox();
+        AABB other = target.getBoundingBox();
+        double overlapX = Math.min(self.maxX, other.maxX) - Math.max(self.minX, other.minX);
+        double overlapY = Math.min(self.maxY, other.maxY) - Math.max(self.minY, other.minY);
+        double overlapZ = Math.min(self.maxZ, other.maxZ) - Math.max(self.minZ, other.minZ);
+        if (overlapX <= 0.0D || overlapY <= 0.0D || overlapZ <= 0.0D) {
+            return null;
+        }
+        double centerX = (other.minX + other.maxX) * 0.5D - (self.minX + self.maxX) * 0.5D;
+        double centerZ = (other.minZ + other.maxZ) * 0.5D - (self.minZ + self.maxZ) * 0.5D;
+        if (overlapX < overlapZ) {
+            return new Vec3((centerX >= 0.0D ? 1.0D : -1.0D) * (overlapX + OBB_ENTITY_COLLISION_EPSILON), 0.0D, 0.0D);
+        }
+        return new Vec3(0.0D, 0.0D, (centerZ >= 0.0D ? 1.0D : -1.0D) * (overlapZ + OBB_ENTITY_COLLISION_EPSILON));
+    }
+
+    private void applyVehicleEntityCollisionCorrection(VehicleEntity target, Vec3 correction) {
+        double selfMass = this.vehicleCollisionMass();
+        double targetMass = target.vehicleCollisionMass();
+        double totalMass = Math.max(selfMass + targetMass, 1.0D);
+        Vec3 selfCorrection = correction.scale(-targetMass / totalMass);
+        Vec3 targetCorrection = correction.scale(selfMass / totalMass);
+        this.setPos(this.position().add(selfCorrection));
+        target.setPos(target.position().add(targetCorrection));
+        this.dampenVehicleEntityCollisionVelocity(target, correction);
+        this.hasImpulse = true;
+        target.hasImpulse = true;
+        this.hurtMarked = true;
+        target.hurtMarked = true;
+    }
+
+    private void dampenVehicleEntityCollisionVelocity(VehicleEntity target, Vec3 correction) {
+        Vec3 horizontal = new Vec3(correction.x(), 0.0D, correction.z());
+        if (horizontal.lengthSqr() <= 1.0E-8D) {
+            return;
+        }
+        Vec3 normal = horizontal.normalize();
+        double selfAlong = this.getDeltaMovement().dot(normal);
+        double targetAlong = target.getDeltaMovement().dot(normal);
+        double closingSpeed = selfAlong - targetAlong;
+        if (closingSpeed <= 0.0D) {
+            return;
+        }
+        double selfMass = this.vehicleCollisionMass();
+        double targetMass = target.vehicleCollisionMass();
+        double totalMass = Math.max(selfMass + targetMass, 1.0D);
+        Vec3 impulse = normal.scale(closingSpeed * VEHICLE_ENTITY_COLLISION_DAMPING);
+        this.setDeltaMovement(this.getDeltaMovement().subtract(impulse.scale(targetMass / totalMass)));
+        target.setDeltaMovement(target.getDeltaMovement().add(impulse.scale(selfMass / totalMass)));
+    }
+
+    private double vehicleCollisionMass() {
+        double levelWeight = switch (this.vehicleData().defaults().collisionLevel()) {
+            case LIGHT -> 0.8D;
+            case MEDIUM -> 1.0D;
+            case HEAVY -> 1.35D;
+            case NONE -> 0.6D;
+        };
+        return Math.max(1.0D, this.vehicleData().defaults().maxHealth() * levelWeight);
     }
 
     private void tickObbEntityCollisionSupport() {
