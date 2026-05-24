@@ -4032,6 +4032,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private Vec3 fixedSeatCameraPosition(CameraPos camera, float partialTick) {
+        if ("barrel".equalsIgnoreCase(camera.transform())) {
+            return this.articulatedBarrelPosition(camera.x(), camera.y(), camera.z(), partialTick);
+        }
         Vec3 offset = this.usesVehiclePoseTransform()
                 ? this.rotateLocalOffsetWithPose(camera.x(), camera.y(), camera.z(), partialTick)
                 : this.rotateLocalOffset(camera.x(), camera.y(), camera.z(), partialTick);
