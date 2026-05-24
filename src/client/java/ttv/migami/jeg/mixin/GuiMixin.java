@@ -4,6 +4,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -45,5 +46,38 @@ public final class GuiMixin {
                 && VehicleHudOverlay.shouldReplaceHotbar(player, vehicle)) {
             ci.cancel();
         }
+    }
+
+    @Inject(method = "renderPlayerHealth", at = @At("HEAD"), cancellable = true)
+    private void jeg$hidePlayerHealthInVehicle(GuiGraphics guiGraphics, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderFood", at = @At("HEAD"), cancellable = true)
+    private void jeg$hidePlayerFoodInVehicle(GuiGraphics guiGraphics, Player player, int y, int rightX, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderExperienceBar", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideExperienceBarInVehicle(GuiGraphics guiGraphics, int y, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderExperienceLevel", at = @At("HEAD"), cancellable = true)
+    private void jeg$hideExperienceLevelInVehicle(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
+    private static boolean jeg$isVehicleHudActive() {
+        var player = Minecraft.getInstance().player;
+        return player != null && player.getVehicle() instanceof VehicleEntity;
     }
 }
