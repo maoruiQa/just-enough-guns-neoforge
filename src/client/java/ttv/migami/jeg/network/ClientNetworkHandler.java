@@ -7,10 +7,14 @@ import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleAssemblyRecipeSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDataSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
@@ -50,6 +54,14 @@ public final class ClientNetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(UiConfigPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(VehicleDataSyncPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> VehicleDataManager.applySyncedJson(payload.data()));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(VehicleAssemblyRecipeSyncPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> VehicleAssemblyRecipeManager.applySyncedJson(payload.recipes()));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(VehicleStatePayload.TYPE, (payload, context) -> {

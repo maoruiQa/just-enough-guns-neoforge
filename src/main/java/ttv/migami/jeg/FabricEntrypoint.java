@@ -77,6 +77,7 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player));
             NetworkHandler.sendUiConfig(handler.player);
+            NetworkHandler.sendVehicleData(handler.player);
         });
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
