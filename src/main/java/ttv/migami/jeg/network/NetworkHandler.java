@@ -21,10 +21,14 @@ import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
+import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import ttv.migami.jeg.vehicle.network.AssembleTestVehiclePayload;
+import ttv.migami.jeg.vehicle.network.VehicleAssemblyRecipeSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleChangeSeatPayload;
+import ttv.migami.jeg.vehicle.network.VehicleDataSyncPayload;
 import ttv.migami.jeg.vehicle.network.VehicleDismountPayload;
 import ttv.migami.jeg.vehicle.network.VehicleInputPayload;
 import ttv.migami.jeg.vehicle.network.VehicleOpenMenuPayload;
@@ -60,6 +64,8 @@ public final class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VehicleDataSyncPayload.TYPE, VehicleDataSyncPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC);
 
@@ -264,6 +270,11 @@ public final class NetworkHandler {
 
     public static void sendUiConfig(ServerPlayer player) {
         ServerPlayNetworking.send(player, new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+    }
+
+    public static void sendVehicleData(ServerPlayer player) {
+        ServerPlayNetworking.send(player, new VehicleDataSyncPayload(VehicleDataManager.syncedJson()));
+        ServerPlayNetworking.send(player, new VehicleAssemblyRecipeSyncPayload(VehicleAssemblyRecipeManager.syncedJson()));
     }
 
     public static void broadcastUiConfig(MinecraftServer server) {
