@@ -199,9 +199,13 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.45D;
     private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 160.0D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
-    private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 5;
-    private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.38D;
-    private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.45D;
+    private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 14;
+    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
+    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.95D;
+    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 80.0D;
+    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 55.0D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.55D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.20D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
     private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
@@ -1008,14 +1012,14 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         double horizontalImpactSpeed = this.horizontalCollision
                 ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
                 : 0.0D;
-        if (landVehicle && horizontalImpactSpeed > 0.0D && !this.isLandVehicleBodyImpact(requestedMovement, actualMovement)) {
+        if (landVehicle && (unsupportedTicksBeforeMove > 0 || !this.isLandVehicleBodyImpact(requestedMovement, actualMovement))) {
             horizontalImpactSpeed = 0.0D;
         }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
         if (landVehicle && unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS) {
             verticalImpactSpeed = 0.0D;
         }
-        float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed);
+        float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, landVehicle);
         if (damage <= 1.0F) {
             return;
         }
@@ -1063,13 +1067,21 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed) {
-        double horizontalImpact = Math.max(0.0D, horizontalImpactSpeed - VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD);
-        double verticalImpact = Math.max(0.0D, verticalImpactSpeed - VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD);
+        return this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, false);
+    }
+
+    private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed, boolean landBlockImpact) {
+        double horizontalThreshold = landBlockImpact ? LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD : VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD;
+        double verticalThreshold = landBlockImpact ? LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD : VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD;
+        double horizontalScale = landBlockImpact ? LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE : VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE;
+        double verticalScale = landBlockImpact ? LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE : VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE;
+        double horizontalImpact = Math.max(0.0D, horizontalImpactSpeed - horizontalThreshold);
+        double verticalImpact = Math.max(0.0D, verticalImpactSpeed - verticalThreshold);
         if (horizontalImpact <= 0.0D && verticalImpact <= 0.0D) {
             return 0.0F;
         }
-        double damage = horizontalImpact * horizontalImpact * VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE
-                + verticalImpact * verticalImpact * VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE;
+        double damage = horizontalImpact * horizontalImpact * horizontalScale
+                + verticalImpact * verticalImpact * verticalScale;
         return (float) (damage * this.vehicleCollisionWeight());
     }
 
