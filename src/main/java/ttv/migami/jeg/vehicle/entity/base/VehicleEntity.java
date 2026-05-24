@@ -214,6 +214,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private final Set<UUID> preservedSeatAssignments = new HashSet<>();
     private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
     private final Map<Integer, Integer> selectedWeaponSlotBySeat = new HashMap<>();
+    private final Map<Integer, AiWeaponControl> aiWeaponControlBySeat = new HashMap<>();
+    private final Map<Integer, Integer> aiFireCooldownByWeaponSlot = new HashMap<>();
     private VehicleInput input = VehicleInput.EMPTY;
     private int repairCooldown;
     private int fireCooldown;
@@ -254,6 +256,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private record LocalBounds(double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {}
 
     private record ObbCollisionCorrection(Vec3 movement, double depth) {}
+
+    private record AiWeaponControl(int entityId, boolean fire, boolean seek) {}
 
     public VehicleEntity(EntityType<? extends VehicleEntity> type, Level level) {
         super(type, level);
@@ -527,7 +531,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.seekControllerId = -1;
             this.weaponFireInput = false;
             this.seekInput = false;
+            this.aiWeaponControlBySeat.clear();
             this.entityData.set(DATA_WEAPON_FIRING, false);
+        }
+    }
+
+    public void setAiWeaponControlForSeat(int seatIndex, LivingEntity controller, boolean fire, boolean seek) {
+        if (this.level().isClientSide) {
+            return;
+        }
+        if (controller != null && controller.getVehicle() == this && this.getSeatIndex(controller) == seatIndex) {
+            this.aiWeaponControlBySeat.put(seatIndex, new AiWeaponControl(controller.getId(), fire, seek));
+        } else {
+            this.aiWeaponControlBySeat.remove(seatIndex);
         }
     }
 
@@ -1407,54 +1423,77 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.fireCooldown > 0) {
             this.fireCooldown--;
         }
+        this.aiFireCooldownByWeaponSlot.replaceAll((slot, cooldown) -> Math.max(0, cooldown - 1));
+        this.aiFireCooldownByWeaponSlot.entrySet().removeIf(entry -> entry.getValue() <= 0);
+
+        boolean[] anyFiring = {false};
         LivingEntity shooter = this.weaponController();
         VehicleWeaponInfo selectedWeapon = shooter == null ? null : this.selectedWeapon(shooter);
-        boolean loopFireSound = this.shouldLoopVehicleFireSound(shooter, selectedWeapon);
-        this.entityData.set(DATA_WEAPON_FIRING, loopFireSound);
-        if (!this.weaponFireInput || this.fireCooldown > 0 || shooter == null || this.isWeaponReloading() || selectedWeapon == null) {
-            return;
+        anyFiring[0] |= this.shouldLoopVehicleFireSound(shooter, selectedWeapon, this.weaponFireInput);
+        if (this.tryFireVehicleWeapon(shooter, selectedWeapon, this.weaponFireInput, this.seekInput, -1)) {
+            anyFiring[0] = true;
         }
-        if (this.isTurretDamaged()) {
-            return;
+
+        this.aiWeaponControlBySeat.entrySet().removeIf(entry -> {
+            LivingEntity aiShooter = this.aiWeaponController(entry.getValue(), entry.getKey());
+            if (aiShooter == null) {
+                return true;
+            }
+            VehicleWeaponInfo aiWeapon = this.selectedWeapon(aiShooter);
+            anyFiring[0] |= this.shouldLoopVehicleFireSound(aiShooter, aiWeapon, entry.getValue().fire());
+            if (this.tryFireVehicleWeapon(aiShooter, aiWeapon, entry.getValue().fire(), entry.getValue().seek(), entry.getKey())) {
+                anyFiring[0] = true;
+            }
+            return false;
+        });
+        this.entityData.set(DATA_WEAPON_FIRING, anyFiring[0]);
+    }
+
+    private boolean tryFireVehicleWeapon(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo selectedWeapon, boolean fireInput, boolean seekInput, int aiSeatIndex) {
+        int selectedSlot = shooter == null ? -1 : this.selectedVehicleWeaponIndex(shooter);
+        if (!fireInput || shooter == null || selectedWeapon == null || this.isWeaponReloading()) {
+            return false;
+        }
+        if (this.weaponFireCooldown(selectedSlot, aiSeatIndex) > 0 || this.isTurretDamaged()) {
+            return false;
         }
         VehicleWeaponInfo weapon = selectedWeapon;
         int shooterSeat = this.seatIndexForPassenger(shooter, this.getPassengers().indexOf(shooter));
         if (!weapon.usableBySeat(shooterSeat)) {
-            return;
+            return false;
         }
         GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
         if (stats == null || !this.hasEnergy(weapon.energyCost())) {
-            return;
+            return false;
         }
         if (this.usesSharedVehicleReloadSystem(shooter)) {
             if (this.selectedWeaponLoadedAmmo(shooter) <= 0) {
                 this.startWeaponReload(shooter);
-                return;
+                return false;
             }
         } else if (!this.hasAmmo(weapon.ammoId())) {
-            return;
+            return false;
         }
         Vec3 direction = this.weaponAimDirection(shooter);
         if (direction.lengthSqr() < 1.0E-4D) {
-            return;
+            return false;
         }
         if (!this.consumeEnergy(weapon.energyCost())) {
-            return;
+            return false;
         }
         if (this.usesSharedVehicleReloadSystem(shooter)) {
-            int slot = this.selectedVehicleWeaponIndex(shooter);
-            this.setWeaponLoadedAmmo(slot, this.weaponLoadedAmmo(slot) - 1);
+            this.setWeaponLoadedAmmo(selectedSlot, this.weaponLoadedAmmo(selectedSlot) - 1);
             this.syncSelectedWeaponAmmoState();
         } else if (!this.consumeAmmo(weapon.ammoId())) {
-            return;
+            return false;
         }
-        this.entityData.set(DATA_WEAPON_FIRING, true);
-        if (!loopFireSound) {
+        if (!this.shouldLoopVehicleFireSound(shooter, weapon, fireInput)) {
             this.playWeaponFireSound(weapon, stats);
         }
         if (weapon.guided()) {
-            this.launchMissile(shooter, direction, stats);
-            return;
+            this.launchMissile(shooter, direction, stats, seekInput);
+            this.setWeaponFireCooldown(selectedSlot, aiSeatIndex, stats.fireDelay());
+            return true;
         }
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.15D, 0.9D);
         this.spawnVehicleMuzzleFlare(weapon, muzzle, direction);
@@ -1464,7 +1503,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.level() instanceof ServerLevel serverLevel) {
             bullet.sendTrailToClients(serverLevel);
         }
-        this.fireCooldown = Math.max(1, stats.fireDelay());
+        this.setWeaponFireCooldown(selectedSlot, aiSeatIndex, stats.fireDelay());
+        return true;
+    }
+
+    private int weaponFireCooldown(int selectedSlot, int aiSeatIndex) {
+        if (aiSeatIndex < 0) {
+            return this.fireCooldown;
+        }
+        return this.aiFireCooldownByWeaponSlot.getOrDefault(selectedSlot, 0);
+    }
+
+    private void setWeaponFireCooldown(int selectedSlot, int aiSeatIndex, int cooldown) {
+        int value = Math.max(1, cooldown);
+        if (aiSeatIndex < 0) {
+            this.fireCooldown = value;
+        } else {
+            this.aiFireCooldownByWeaponSlot.put(selectedSlot, value);
+        }
     }
 
     private void spawnVehicleMuzzleFlare(VehicleWeaponInfo weapon, Vec3 muzzle, Vec3 direction) {
@@ -1532,11 +1588,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         sound.ifPresent(value -> this.level().playSound(null, this.getX(), this.getY(), this.getZ(), value, SoundSource.PLAYERS, 2.0F, 1.0F));
     }
 
-    private boolean shouldLoopVehicleFireSound(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo weapon) {
+    private boolean shouldLoopVehicleFireSound(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo weapon, boolean fireInput) {
         if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
                 || shooter == null
                 || weapon == null
-                || !this.weaponFireInput
+                || !fireInput
                 || this.isWeaponReloading()
                 || this.isTurretDamaged()
                 || !this.canUseSelectedWeapon(shooter, weapon)
@@ -1661,7 +1717,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         );
     }
 
-    private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats) {
+    private void launchMissile(LivingEntity shooter, Vec3 direction, GunStats stats, boolean seekInput) {
         VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
         if (weapon == null) {
             return;
@@ -1669,10 +1725,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
         VehicleMissileProfile profile = VehicleMissileProfile.get(weapon.weaponId());
         Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
-        Entity target = this.seekInput && profile.usesLockOn() ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
+        Entity target = seekInput && profile.usesLockOn() ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity, weapon.weaponId()));
         this.spawnVehicleMuzzleFlare(weapon, muzzle, direction);
-        this.fireCooldown = Math.max(1, stats.fireDelay());
     }
 
     private Vec3 weaponAimDirection(LivingEntity shooter) {
@@ -1726,6 +1781,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.weaponControllerId = -1;
         this.weaponFireInput = false;
         this.entityData.set(DATA_WEAPON_FIRING, false);
+        return null;
+    }
+
+    @Nullable
+    private LivingEntity aiWeaponController(AiWeaponControl control, int seatIndex) {
+        Entity controller = this.level().getEntity(control.entityId());
+        if (controller instanceof LivingEntity living && living.getVehicle() == this && this.getSeatIndex(living) == seatIndex) {
+            return living;
+        }
         return null;
     }
 
