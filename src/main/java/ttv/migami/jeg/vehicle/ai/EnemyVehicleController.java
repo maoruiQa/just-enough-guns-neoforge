@@ -240,7 +240,7 @@ public final class EnemyVehicleController {
         }
 
         double distance = vehicle.distanceTo(target);
-        Aim aim = airAimAt(vehicle, target, kind);
+        Aim aim = airAimAt(vehicle, target.getEyePosition(), kind);
         boolean visible = canSee(vehicle, target);
         aimCrewAt(crews[0], aim);
         if ("mi28".equals(kind)) {
@@ -278,13 +278,26 @@ public final class EnemyVehicleController {
         boolean pilotFire = visible && stable && noseError < (pilotMissile ? 5.0D : 7.0D) && distance >= 55.0D && distance <= 150.0D;
         vehicle.setAiWeaponControlForSeat(0, pilot, pilotFire, pilotMissile);
 
-        vehicle.setAiTurretAim(aim.turretYaw(), Mth.clamp(aim.pitch(), -10.0F, 40.0F));
-        aimCrewAt(gunner, aim);
         int gunnerSlot = targetVehicle == TargetVehicleClass.SURFACE && distance >= 85.0D ? 4 : 3;
         vehicle.selectAiWeaponForSeat(1, gunnerSlot);
-        double turretError = Math.max(Math.abs(Mth.wrapDegrees(vehicle.turretYaw() - aim.turretYaw())), Math.abs(vehicle.turretPitch() - aim.pitch()));
+        Aim gunnerAim = gunnerSlot == 3
+                ? airAimAt(vehicle, mi28GunnerSweepTarget(vehicle, target), "mi28", vehicle.aiWeaponMuzzlePosition(gunnerSlot))
+                : airAimAt(vehicle, target.getEyePosition(), "mi28", vehicle.aiWeaponMuzzlePosition(gunnerSlot));
+        vehicle.setAiTurretAim(gunnerAim.turretYaw(), Mth.clamp(gunnerAim.pitch(), -10.0F, 40.0F));
+        aimCrewAt(gunner, gunnerAim);
+        double turretError = Math.max(Math.abs(Mth.wrapDegrees(vehicle.turretYaw() - gunnerAim.turretYaw())), Math.abs(vehicle.turretPitch() - gunnerAim.pitch()));
         boolean gunnerFire = visible && (gunnerSlot == 3 ? turretError <= 8.0D && distance <= 110.0D : turretError <= 5.0D);
         vehicle.setAiWeaponControlForSeat(1, gunner, gunnerFire, gunnerSlot == 4);
+    }
+
+    private static Vec3 mi28GunnerSweepTarget(VehicleEntity vehicle, Player target) {
+        Vec3 toTarget = target.position().subtract(vehicle.position());
+        Vec3 horizontal = new Vec3(toTarget.x, 0.0D, toTarget.z);
+        Vec3 side = horizontal.lengthSqr() < 1.0E-4D ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(horizontal.z, 0.0D, -horizontal.x).normalize();
+        double phase = vehicle.tickCount * 0.22D;
+        double lateral = Math.sin(phase) * 2.4D;
+        double vertical = Math.cos(phase * 0.5D) * 0.45D;
+        return target.getEyePosition().add(side.scale(lateral)).add(0.0D, vertical, 0.0D);
     }
 
     private static TargetVehicleClass targetVehicleClass(Player target) {
@@ -366,12 +379,12 @@ public final class EnemyVehicleController {
         double yawDistance = Math.sqrt(toYawTarget.x * toYawTarget.x + toYawTarget.z * toYawTarget.z);
         float desiredYaw = yawDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toYawTarget.x, toYawTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
-        float yawInputScale = faceTarget == null ? 42.0F : 20.0F;
+        float yawInputScale = faceTarget == null ? 42.0F : 10.0F;
         float mouseX = Mth.clamp(yawDiff / yawInputScale, -1.0F, 1.0F);
         double altitudeError = desiredAltitude - altitude;
         boolean ascend = altitudeError > 3.0D || brain.airEvasionTicks > 0;
         boolean descend = altitudeError < -10.0D && brain.airEvasionTicks <= 0;
-        boolean holdingForNoseAim = faceTarget != null && Math.abs(yawDiff) > 6.0F;
+        boolean holdingForNoseAim = faceTarget != null && Math.abs(yawDiff) > 4.0F;
         boolean forward = horizontalDistance > 14.0D && Math.abs(yawDiff) < 80.0F && brain.airEvasionTicks <= 0 && !holdingForNoseAim;
         boolean brake = allowBrake && horizontalDistance < 22.0D && Math.abs(yawDiff) < 35.0F;
         float desiredPitch = forward ? 10.0F : 0.0F;
@@ -504,9 +517,12 @@ public final class EnemyVehicleController {
         return new Aim(worldYaw, turretYaw, pitch);
     }
 
-    private static Aim airAimAt(VehicleEntity vehicle, LivingEntity target, String kind) {
-        Vec3 muzzle = vehicle.position().add(0.0D, "mi28".equals(kind) ? 1.8D : 1.2D, 0.0D);
-        Vec3 targetPos = target.getEyePosition();
+    private static Aim airAimAt(VehicleEntity vehicle, Vec3 targetPos, String kind) {
+        return airAimAt(vehicle, targetPos, kind, null);
+    }
+
+    private static Aim airAimAt(VehicleEntity vehicle, Vec3 targetPos, String kind, Vec3 origin) {
+        Vec3 muzzle = origin == null ? vehicle.position().add(0.0D, "mi28".equals(kind) ? 1.8D : 1.2D, 0.0D) : origin;
         Vec3 delta = targetPos.subtract(muzzle);
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float worldYaw = (float) -Math.toDegrees(Math.atan2(delta.x, delta.z));
