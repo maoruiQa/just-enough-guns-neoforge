@@ -10,7 +10,7 @@
   "has_decoy": true,
   "container_type": "medium",
   "seats": [
-    {"index": 0, "x": 0.36, "y": -0.65, "z": 0.56, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -15.0, "max_pitch": 32.5, "sensitivity_x": 0.55, "sensitivity_y": 0.73, "sensitivity_z": 1.0},
+    {"index": 0, "x": 0.36, "y": -0.65, "z": 0.56, "driver": true, "enclosed": true, "hide_passenger": true, "ban_hand": true, "min_pitch": -15.0, "max_pitch": 32.5, "sensitivity_x": 0.55, "sensitivity_y": 0.73, "sensitivity_z": 1.0, "zoom_camera": {"x": 0.1, "y": 0.65, "z": 1.1, "use_fixed_camera_pos": true}},
     {"index": 1, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
     {"index": 2, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
     {"index": 3, "x": 0.0, "y": 1.0, "z": 0.0, "driver": false, "enclosed": true, "hide_passenger": true, "ban_hand": true, "zoom_camera": {"use_simulated_third_person": true, "simulated_third_person_distance": 6.0, "simulated_third_person_height": 1.0}},
@@ -35,7 +35,7 @@
     {"weapon": "jeg:vehicle_20mm_cannon", "ammo": "jeg:small_shell", "energy_cost": 2, "guided": false, "seat": 0, "muzzle": {"x": 0.0434375, "y": 2.78995, "z": 4.025}},
     {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.3234375, "y": 2.78995, "z": 1.325}}
   ],
-  "turret": {"seat": 0, "render_pivot_y": 2.2, "origin_x": 0.0, "origin_y": 2.4003, "origin_z": 0.0, "barrel_x": 0.0234375, "barrel_y": 0.33795, "barrel_z": 0.825, "guided_uses_turret": true},
+  "turret": {"seat": 0, "render_pivot_y": 2.2, "origin_x": 0.0, "origin_y": 2.4003, "origin_z": 0.0, "barrel_x": 0.0234375, "barrel_y": 0.33765, "barrel_z": 0.825, "guided_uses_turret": true},
   "destroy": {"explodes": true, "explosion_power": 2.6},
   "seek": {"range": 72.0, "angle": 10.0, "warns_target": true},
   "armor": {
