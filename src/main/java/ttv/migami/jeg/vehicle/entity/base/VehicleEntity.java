@@ -193,12 +193,13 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
-    private static final double HELICOPTER_BLOCK_COLLISION_MIN_SPEED = 0.3D;
-    private static final int HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS = 4;
-    private static final double HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_THRESHOLD = 0.25D;
-    private static final double HELICOPTER_VERTICAL_COLLISION_DAMAGE_THRESHOLD = 0.3D;
-    private static final double HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_SCALE = 500.0D;
-    private static final double HELICOPTER_VERTICAL_COLLISION_DAMAGE_SCALE = 240.0D;
+    private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.24D;
+    private static final int VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS = 4;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.32D;
+    private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.45D;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 160.0D;
+    private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
+    private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
     private static final float HELICOPTER_ROTOR_GROUND_DAMAGE = 1.0F;
@@ -978,8 +979,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     @Override
     public void move(MoverType type, Vec3 pos) {
+        Vec3 before = this.position();
         super.move(type, pos);
-        this.applyHelicopterBlockCollisionDamage();
+        this.applyVehicleImpactDamage(pos, this.position().subtract(before));
     }
 
     private void updateLastTickMovementSpeed() {
@@ -987,40 +989,25 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.lastTickSpeed = new Vec3(movement.x, movement.y + 0.06D, movement.z).length();
     }
 
-    private void applyHelicopterBlockCollisionDamage() {
+    private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement) {
         if (this.level().isClientSide
-                || this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
                 || this.ramDamageCooldown > 0
                 || !(this.horizontalCollision || this.verticalCollision)) {
             return;
         }
-        if (this.verticalCollisionBelow && !this.horizontalCollision) {
+        double horizontalImpactSpeed = this.horizontalCollision
+                ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
+                : 0.0D;
+        double verticalImpactSpeed = this.verticalCollision ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
+        float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed);
+        if (damage <= 1.0F) {
             return;
         }
-        double speed = this.lastTickSpeed;
-        if (speed < HELICOPTER_BLOCK_COLLISION_MIN_SPEED) {
-            return;
-        }
-        boolean struck = false;
-        float damage = 0.0F;
-        if (this.verticalCollision) {
-            double impact = Math.max(0.0D, speed - HELICOPTER_VERTICAL_COLLISION_DAMAGE_THRESHOLD);
-            damage += (float) (HELICOPTER_VERTICAL_COLLISION_DAMAGE_SCALE * impact * impact);
-            struck = true;
-        }
-        if (this.horizontalCollision) {
-            double impact = Math.max(0.0D, speed - HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_THRESHOLD);
-            damage += (float) (HELICOPTER_HORIZONTAL_COLLISION_DAMAGE_SCALE * impact * impact);
-            struck = true;
-        }
-        if (damage > 1.0F) {
-            this.hurt(this.vehicleStrikeDamageSource(), damage);
-        }
-        this.ramDamageCooldown = HELICOPTER_BLOCK_COLLISION_COOLDOWN_TICKS;
-        if (struck) {
-            this.playVehicleStrikeSound();
-        }
-        Direction bounceDirection = Direction.getNearest(this.getDeltaMovement().x(), this.getDeltaMovement().y(), this.getDeltaMovement().z()).getOpposite();
+        this.hurt(this.vehicleStrikeDamageSource(), damage);
+        this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
+        this.playVehicleStrikeSound();
+        Direction bounceDirection = this.impactBounceDirection(requestedMovement);
         if (this.verticalCollision) {
             this.bounceVertical(bounceDirection);
         }
@@ -1029,6 +1016,39 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.8D;
         }
         this.hasImpulse = true;
+    }
+
+    private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed) {
+        double horizontalImpact = Math.max(0.0D, horizontalImpactSpeed - VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD);
+        double verticalImpact = Math.max(0.0D, verticalImpactSpeed - VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD);
+        if (horizontalImpact <= 0.0D && verticalImpact <= 0.0D) {
+            return 0.0F;
+        }
+        double damage = horizontalImpact * horizontalImpact * VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE
+                + verticalImpact * verticalImpact * VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE;
+        return (float) (damage * this.vehicleCollisionWeight());
+    }
+
+    private double vehicleCollisionWeight() {
+        return switch (this.vehicleData().defaults().collisionLevel()) {
+            case LIGHT -> 0.75D;
+            case MEDIUM -> 1.0D;
+            case HEAVY -> 1.25D;
+            case NONE -> 0.0D;
+        };
+    }
+
+    private Direction impactBounceDirection(Vec3 movement) {
+        double x = Math.abs(movement.x());
+        double y = Math.abs(movement.y());
+        double z = Math.abs(movement.z());
+        if (y >= x && y >= z) {
+            return movement.y() < 0.0D ? Direction.UP : Direction.DOWN;
+        }
+        if (x >= z) {
+            return movement.x() < 0.0D ? Direction.EAST : Direction.WEST;
+        }
+        return movement.z() < 0.0D ? Direction.SOUTH : Direction.NORTH;
     }
 
     private DamageSource vehicleStrikeDamageSource() {
@@ -1725,9 +1745,40 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             }
             damaged |= target.hurt(this.vehicleStrikeDamageSource(), damage);
         }
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(0.35D, 0.2D, 0.35D))) {
+            if (target == this || target.isRemoved()) {
+                continue;
+            }
+            if ((this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null)
+                    || (target.usesCustomObbEntityCollision() && target.obbCollisionCorrection(this.getBoundingBox()) == null)) {
+                continue;
+            }
+            double relativeSpeed = this.vehicleRelativeCollisionSpeed(target);
+            if (relativeSpeed < VEHICLE_COLLISION_MIN_RELATIVE_SPEED) {
+                continue;
+            }
+            float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
+            float selfDamage = target.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
+            boolean targetDamaged = targetDamage > 1.0F && target.hurt(this.vehicleStrikeDamageSource(), targetDamage);
+            boolean selfDamaged = selfDamage > 1.0F && this.hurt(target.vehicleStrikeDamageSource(), selfDamage);
+            if (targetDamaged || selfDamaged) {
+                target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+                damaged = true;
+            }
+        }
         if (damaged) {
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
         }
+    }
+
+    private double vehicleRelativeCollisionSpeed(VehicleEntity other) {
+        Vec3 relative = this.getDeltaMovement().subtract(other.getDeltaMovement());
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        VehicleType otherType = other.vehicleData().defaults().vehicleType();
+        if (type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT || otherType == VehicleType.HELICOPTER || otherType == VehicleType.AIRCRAFT) {
+            return relative.length();
+        }
+        return relative.horizontalDistance();
     }
 
     private void tickObbEntityCollisionSupport() {
@@ -3959,6 +4010,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     private ArmorHit applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
         if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            if (source.is(ModDamageTypes.VEHICLE_STRIKE)) {
+                VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
+                float armorMultiplier = Mth.clamp(1.05F - armor.rating() * 0.07F, 0.32F, 1.05F);
+                return new ArmorHit(amount * armorMultiplier, true);
+            }
             return new ArmorHit(amount, true);
         }
         VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);

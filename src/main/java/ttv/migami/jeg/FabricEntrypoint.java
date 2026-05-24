@@ -35,6 +35,7 @@ import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
+import ttv.migami.jeg.vehicle.event.VehiclePassengerDamageEvents;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -82,6 +83,7 @@ public final class FabricEntrypoint implements ModInitializer {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
             GunnerFriendlyFireEvents.onIncomingDamage(event);
+            VehiclePassengerDamageEvents.onPassengerDamage(event);
             return !event.isCanceled();
         });
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
