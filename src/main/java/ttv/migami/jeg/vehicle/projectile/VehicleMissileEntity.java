@@ -27,6 +27,7 @@ import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
 public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
+    private static final int BMP2_NO_DROP_TICKS = 5;
 
     private int ownerId = -1;
     private int targetId = -1;
@@ -60,6 +61,7 @@ public final class VehicleMissileEntity extends Entity {
         }
         if (!this.level().isClientSide()) {
             this.steerServer();
+            this.setDeltaMovement(this.flattenBmp2StartupDrop(this.getDeltaMovement()));
             if (this.isRemoved()) {
                 return;
             }
@@ -74,6 +76,17 @@ public final class VehicleMissileEntity extends Entity {
             this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), -motion.x * 0.08D, -motion.y * 0.08D, -motion.z * 0.08D);
             this.level().addParticle(ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), -motion.x * 0.04D, -motion.y * 0.04D, -motion.z * 0.04D);
         }
+    }
+
+    private Vec3 flattenBmp2StartupDrop(Vec3 motion) {
+        if (!Reference.id("vehicle_bmp2_missile").equals(this.weaponId) || this.tickCount > BMP2_NO_DROP_TICKS || motion.y >= 0.0D) {
+            return motion;
+        }
+        Vec3 horizontal = new Vec3(motion.x, 0.0D, motion.z);
+        if (horizontal.lengthSqr() < 1.0E-6D) {
+            return Vec3.ZERO;
+        }
+        return horizontal.normalize().scale(motion.length());
     }
 
     private void steerServer() {
