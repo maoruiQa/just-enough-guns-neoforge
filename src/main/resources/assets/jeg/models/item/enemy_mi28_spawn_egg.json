@@ -1,6 +1,7 @@
 {
-  "parent": "minecraft:item/template_spawn_egg",
-  "textures": {
-    "layer2": "jeg:item/spawn_egg_aviator_hat"
-  }
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "minecraft:item/pillager_spawn_egg",
+        "layer1": "jeg:item/spawn_egg_aviator_hat"
+    }
 }
