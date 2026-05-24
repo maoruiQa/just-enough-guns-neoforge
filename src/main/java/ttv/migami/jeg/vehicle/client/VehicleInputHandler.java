@@ -218,9 +218,7 @@ public final class VehicleInputHandler {
         player.turn(turnX, turnY);
 
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
-        if (minecraft.options.getCameraType().isFirstPerson()) {
-            clampSeatView(player, vehicle, seat);
-        }
+        clampSeatView(player, vehicle, seat);
         vehicle.refreshClientTurretAim(player);
         return true;
     }
