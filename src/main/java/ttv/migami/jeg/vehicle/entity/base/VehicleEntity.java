@@ -2848,13 +2848,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (articulatedZoomPosition != null) {
             return articulatedZoomPosition;
         }
+        var zoomCamera = seat.zoomCamera();
+        if (this.usesFixedPassengerCamera(passenger, zoomCamera)) {
+            return this.fixedSeatCameraPosition(zoomCamera, partialTick);
+        }
         if (this.usesFirstPersonSeatCamera(passenger)) {
-            var zoomCamera = seat.zoomCamera();
             if (zoomCamera.useSimulatedThirdPerson()) {
                 return this.simulatedThirdPersonCameraPosition(passenger, zoomCamera, partialTick);
-            }
-            if (zoomCamera.useFixedCameraPos() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
-                return this.fixedSeatCameraPosition(zoomCamera, partialTick);
             }
             if (clientZoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 Vec3 firstPersonOffset = this.firstPersonSeatCameraOffset(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
@@ -3024,6 +3024,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.level().isClientSide
                 && clientFirstPersonCamera()
                 && this.hasPassenger(passenger);
+    }
+
+    private boolean usesFixedPassengerCamera(Entity passenger, CameraPos camera) {
+        return this.level().isClientSide
+                && this.hasPassenger(passenger)
+                && camera.useFixedCameraPos()
+                && !camera.useSimulatedThirdPerson()
+                && (camera.x() != 0.0D || camera.y() != 0.0D || camera.z() != 0.0D);
     }
 
     @Nullable
