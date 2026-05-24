@@ -8,10 +8,13 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @EventBusSubscriber(modid = Reference.MOD_ID)
 public final class VehiclePassengerDamageEvents {
+    private static final ThreadLocal<Boolean> REDIRECTING_TO_VEHICLE = ThreadLocal.withInitial(() -> false);
+
     private VehiclePassengerDamageEvents() {}
 
     @SubscribeEvent
@@ -20,9 +23,21 @@ public final class VehiclePassengerDamageEvents {
         if (!(passenger.getVehicle() instanceof VehicleEntity vehicle) || !vehicle.shouldHidePassenger(passenger)) {
             return;
         }
+        if (REDIRECTING_TO_VEHICLE.get()) {
+            return;
+        }
+        if (passenger.getTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
+            event.setCanceled(true);
+            return;
+        }
         DamageSource source = event.getSource();
         if (!shouldBypassVehicle(source)) {
-            vehicle.hurt(source, event.getAmount());
+            REDIRECTING_TO_VEHICLE.set(true);
+            try {
+                vehicle.hurt(source, event.getAmount());
+            } finally {
+                REDIRECTING_TO_VEHICLE.set(false);
+            }
             event.setCanceled(true);
         }
     }
