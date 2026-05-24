@@ -222,7 +222,8 @@ public final class VehicleDataManager {
                 getDouble(object, "aircraft_z", fallback.aircraftZ()),
                 getBoolean(object, "use_simulated_third_person", fallback.useSimulatedThirdPerson()),
                 getDouble(object, "simulated_third_person_distance", fallback.simulatedThirdPersonDistance()),
-                getDouble(object, "simulated_third_person_height", fallback.simulatedThirdPersonHeight())
+                getDouble(object, "simulated_third_person_height", fallback.simulatedThirdPersonHeight()),
+                getString(object, "transform", fallback.transform())
         );
     }
 
