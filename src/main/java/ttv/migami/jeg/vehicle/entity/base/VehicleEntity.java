@@ -1010,6 +1010,21 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
+    public void refreshClientTurretAim(Entity passenger) {
+        if (!this.level().isClientSide
+                || !(passenger instanceof LivingEntity living)
+                || passenger.getVehicle() != this
+                || !this.hasVehicleWeapons()
+                || clientFreeLookDown()) {
+            return;
+        }
+        VehicleWeaponInfo selectedWeapon = this.selectedWeapon(living);
+        if (selectedWeapon != null && this.canUseSelectedWeapon(living, selectedWeapon)) {
+            this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(living));
+            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(living));
+        }
+    }
+
     private boolean isFreeLookInput(VehicleInput input) {
         return this.vehicleData().defaults().allowFreeCam() && input.freeLook();
     }

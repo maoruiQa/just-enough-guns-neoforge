@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "KeyMappingVehicleMixin",
+    "MouseHandlerVehicleMixin",
     "MinecraftVehicleHotbarMixin",
     "TargetGoalMixin",
     "VehicleCameraMixin",

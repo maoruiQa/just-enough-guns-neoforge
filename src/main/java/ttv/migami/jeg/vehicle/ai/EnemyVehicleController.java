@@ -518,11 +518,11 @@ public final class EnemyVehicleController {
     }
 
     private static float landTurretMinPitch(VehicleEntity vehicle) {
-        return "bmp2".equals(vehicleKind(vehicle)) ? -7.5F : -15.0F;
+        return "bmp2".equals(vehicleKind(vehicle)) ? -74.0F : -15.0F;
     }
 
     private static float landTurretMaxPitch(VehicleEntity vehicle) {
-        return "bmp2".equals(vehicleKind(vehicle)) ? 74.0F : 32.5F;
+        return "bmp2".equals(vehicleKind(vehicle)) ? 7.5F : 32.5F;
     }
 
     private static Aim airAimAt(VehicleEntity vehicle, Vec3 targetPos, String kind) {
