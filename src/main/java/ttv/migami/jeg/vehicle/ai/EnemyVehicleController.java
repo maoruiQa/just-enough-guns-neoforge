@@ -197,7 +197,7 @@ public final class EnemyVehicleController {
         }
         if (brain.targetId != null && brain.targetMemory-- > 0) {
             Entity remembered = level.getEntity(brain.targetId);
-            if (remembered instanceof Player player && player.isAlive() && !player.isCreative() && !player.isSpectator() && player.distanceTo(vehicle) <= range + 16.0D) {
+            if (remembered instanceof Player player && player.isAlive() && !player.isCreative() && !player.isSpectator() && player.distanceTo(vehicle) <= targetRetentionRange(kind)) {
                 vehicle.getPersistentData().putInt(TARGET_MEMORY_TAG, brain.targetMemory);
                 return player;
             }
@@ -215,6 +215,14 @@ public final class EnemyVehicleController {
             case "ah6" -> 90.0D;
             case "bmp2" -> 76.0D;
             default -> 72.0D;
+        };
+    }
+
+    private static double targetRetentionRange(String kind) {
+        return switch (kind) {
+            case "mi28" -> 220.0D;
+            case "ah6" -> 150.0D;
+            default -> detectionRange(kind) + 16.0D;
         };
     }
 
@@ -301,9 +309,9 @@ public final class EnemyVehicleController {
     }
 
     private static void airEngage(VehicleEntity vehicle, Brain brain, Player target, String kind, double distance) {
-        double minRange = "mi28".equals(kind) ? 70.0D : 35.0D;
-        double maxRange = "mi28".equals(kind) ? 140.0D : 70.0D;
-        double orbitRange = "mi28".equals(kind) ? 95.0D : 52.0D;
+        double minRange = "mi28".equals(kind) ? 60.0D : 34.0D;
+        double maxRange = "mi28".equals(kind) ? 120.0D : 66.0D;
+        double orbitRange = "mi28".equals(kind) ? 78.0D : 44.0D;
         double desiredAltitude = "mi28".equals(kind) ? 48.0D : 30.0D;
         Vec3 toTarget = target.position().subtract(vehicle.position());
         Vec3 horizontal = new Vec3(toTarget.x, 0.0D, toTarget.z);
@@ -358,11 +366,12 @@ public final class EnemyVehicleController {
         double yawDistance = Math.sqrt(toYawTarget.x * toYawTarget.x + toYawTarget.z * toYawTarget.z);
         float desiredYaw = yawDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toYawTarget.x, toYawTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
-        float mouseX = Mth.clamp(yawDiff / 42.0F, -1.0F, 1.0F);
+        float yawInputScale = faceTarget == null ? 42.0F : 20.0F;
+        float mouseX = Mth.clamp(yawDiff / yawInputScale, -1.0F, 1.0F);
         double altitudeError = desiredAltitude - altitude;
         boolean ascend = altitudeError > 3.0D || brain.airEvasionTicks > 0;
         boolean descend = altitudeError < -10.0D && brain.airEvasionTicks <= 0;
-        boolean holdingForNoseAim = faceTarget != null && Math.abs(yawDiff) > 9.0F;
+        boolean holdingForNoseAim = faceTarget != null && Math.abs(yawDiff) > 6.0F;
         boolean forward = horizontalDistance > 14.0D && Math.abs(yawDiff) < 80.0F && brain.airEvasionTicks <= 0 && !holdingForNoseAim;
         boolean brake = allowBrake && horizontalDistance < 22.0D && Math.abs(yawDiff) < 35.0F;
         float desiredPitch = forward ? 10.0F : 0.0F;
