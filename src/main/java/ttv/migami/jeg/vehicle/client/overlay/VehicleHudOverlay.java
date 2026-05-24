@@ -77,6 +77,10 @@ public final class VehicleHudOverlay {
         if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
         }
+        if (shouldHidePlayerHudLayer(event.getName().getPath())) {
+            event.setCanceled(true);
+            return;
+        }
         if ("hotbar".equals(event.getName().getPath()) && shouldReplaceHotbar(player, vehicle)) {
             event.setCanceled(true);
             return;
@@ -92,6 +96,14 @@ public final class VehicleHudOverlay {
         return player == vehicle.getControllingPassenger()
                 || vehicle.shouldBanPassengerHand(player)
                 || vehicle.canPassengerUseSelectedVehicleWeapon(player);
+    }
+
+    private static boolean shouldHidePlayerHudLayer(String path) {
+        return "player_health".equals(path)
+                || "food_level".equals(path)
+                || "experience_level".equals(path)
+                || "contextual_info_bar".equals(path)
+                || "contextual_info_bar_background".equals(path);
     }
 
     private static void render(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
