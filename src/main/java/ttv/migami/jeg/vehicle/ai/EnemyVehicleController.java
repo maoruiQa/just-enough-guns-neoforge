@@ -329,7 +329,8 @@ public final class EnemyVehicleController {
             brain.airEvasionTicks--;
         }
         double altitude = altitudeAboveTerrain(vehicle);
-        if (altitude < 9.0D) {
+        boolean climbingOut = altitude < Math.min(desiredAltitude - 4.0D, 18.0D);
+        if (climbingOut) {
             float levelPitch = Mth.clamp(-vehicle.getXRot() / 24.0F, -0.45F, 0.45F);
             vehicle.setAiVehicleInput(airInput(false, false, false, false, false, true, false, 0.0F, levelPitch));
             brain.airEvasionTicks = 0;
