@@ -1184,7 +1184,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.bounceHorizontal(bounceDirection);
             this.enginePower *= 0.8D;
         }
-        this.hurtMarked = true;
+        this.needsSync = true;
     }
 
     private void updateVehicleSupportTicks() {
@@ -1386,7 +1386,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
-            this.hurtMarked = true;
+            this.needsSync = true;
         }
     }
 
@@ -1405,7 +1405,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
-            this.hurtMarked = true;
+            this.needsSync = true;
         }
     }
 
@@ -1464,6 +1464,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.shouldApplyAuthoritativeState(x, y, z, motionX, motionY, motionZ, yaw, pitch, forceApply)) {
             return;
         }
+        if (this.level().isClientSide() && !forceApply && !this.shouldRunClientPrediction()) {
+            int lerpSteps = this.authoritativeVehicleStateSyncInterval(false);
+            super.lerpPositionAndRotationStep(lerpSteps > 0 ? lerpSteps : MOVING_DRIVER_STATE_SYNC_INTERVAL, x, y, z, yaw, pitch);
+            super.lerpMotion(new Vec3(motionX, motionY, motionZ));
+            return;
+        }
         this.setPos(x, y, z);
         this.setDeltaMovement(motionX, motionY, motionZ);
         this.setYRot(yaw);
@@ -1474,7 +1480,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.xo = x;
         this.yo = y;
         this.zo = z;
-        this.hurtMarked = true;
+        this.needsSync = true;
         if (forceApply && this.level().isClientSide()) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
             if (clientVehicleId() == this.getId() && !this.isLocalInstanceAuthoritative()) {
@@ -2119,6 +2125,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setPos(this.position().add(selfCorrection));
         target.setPos(target.position().add(targetCorrection));
         this.dampenVehicleEntityCollisionVelocity(target, correction);
+        this.needsSync = true;
+        target.needsSync = true;
         this.hurtMarked = true;
         target.hurtMarked = true;
     }
@@ -2174,7 +2182,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             } else {
                 entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.2D, 0.2D, 0.2D));
             }
-            entity.hurtMarked = true;
+            entity.needsSync = true;
         }
     }
 
@@ -3558,7 +3566,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setDeltaMovement(moved.x * 0.985D, nextY, moved.z * 0.985D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.hurtMarked = true;
-            this.hurtMarked = true;
+            this.needsSync = true;
         }
     }
 
@@ -3754,7 +3762,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.setDeltaMovement(moved.x * 0.98D, nextY * 0.98D, moved.z * 0.98D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.hurtMarked = true;
-            this.hurtMarked = true;
+            this.needsSync = true;
         }
     }
 
@@ -4044,7 +4052,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 moved = this.position().subtract(before);
         if (moved.lengthSqr() > 1.0E-7D || this.horizontalCollision || this.verticalCollision) {
             this.hurtMarked = true;
-            this.hurtMarked = true;
+            this.needsSync = true;
         }
     }
 
