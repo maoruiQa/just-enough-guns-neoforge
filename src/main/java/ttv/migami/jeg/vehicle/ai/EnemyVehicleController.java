@@ -513,8 +513,16 @@ public final class EnemyVehicleController {
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float worldYaw = (float) -Math.toDegrees(Math.atan2(delta.x, delta.z));
         float turretYaw = Mth.wrapDegrees(vehicle.getYRot() - worldYaw);
-        float pitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(delta.y, horizontal)), -15.0F, 32.5F);
+        float pitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(delta.y, horizontal)), landTurretMinPitch(vehicle), landTurretMaxPitch(vehicle));
         return new Aim(worldYaw, turretYaw, pitch);
+    }
+
+    private static float landTurretMinPitch(VehicleEntity vehicle) {
+        return "bmp2".equals(vehicleKind(vehicle)) ? -7.5F : -15.0F;
+    }
+
+    private static float landTurretMaxPitch(VehicleEntity vehicle) {
+        return "bmp2".equals(vehicleKind(vehicle)) ? 74.0F : 32.5F;
     }
 
     private static Aim airAimAt(VehicleEntity vehicle, Vec3 targetPos, String kind) {
