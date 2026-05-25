@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -22,6 +23,10 @@ public final class EnemyVehicleSpawner {
     private static final Identifier AH6 = Reference.id("ah6");
     private static final Identifier MI28 = Reference.id("mi28");
     private static final int RAID_VEHICLE_BATCH_WEIGHT = 4;
+    private static final int RAID_SPAWN_MIN_DISTANCE = 44;
+    private static final int RAID_SPAWN_MAX_DISTANCE = 82;
+    private static final int AH6_SPAWN_ALTITUDE = 28;
+    private static final int MI28_SPAWN_ALTITUDE = 42;
 
     private EnemyVehicleSpawner() {}
 
@@ -40,7 +45,8 @@ public final class EnemyVehicleSpawner {
         }
 
         Identifier vehicleId = pickVehicleId(level, mob.blockPosition(), mob.getRandom());
-        return spawnVehicle(level, mob.blockPosition(), mob.getYRot(), vehicleId, mob) != null;
+        BlockPos spawnPos = spawnPosForVehicle(level, mob.blockPosition(), vehicleId);
+        return spawnVehicle(level, spawnPos, mob.getYRot(), vehicleId, mob, Vec3.atCenterOf(mob.blockPosition())) != null;
     }
 
     @Nullable
@@ -49,15 +55,18 @@ public final class EnemyVehicleSpawner {
             return null;
         }
 
-        BlockPos center = burstCenter != null ? burstCenter : origin;
         for (int attempt = 0; attempt < 10; attempt++) {
-            BlockPos pos = randomGroundPos(level, center, level.getRandom(), 8 + attempt * 2);
-            if (!isOpenSky(level, pos)) {
+            BlockPos groundPos = randomRaidGroundPos(level, origin, burstCenter, target, level.getRandom(), attempt);
+            if (!isOpenSky(level, groundPos)) {
                 continue;
             }
-            Identifier vehicleId = pickVehicleId(level, pos, level.getRandom());
-            float yaw = target == null ? level.getRandom().nextFloat() * 360.0F : yawToward(pos, target.position());
-            VehicleEntity vehicle = spawnVehicle(level, pos, yaw, vehicleId);
+            Identifier vehicleId = pickVehicleId(level, groundPos, level.getRandom());
+            BlockPos spawnPos = spawnPosForVehicle(level, groundPos, vehicleId);
+            if (!isVehicleSpawnClear(level, spawnPos, vehicleId)) {
+                continue;
+            }
+            float yaw = target == null ? level.getRandom().nextFloat() * 360.0F : yawToward(spawnPos, target.position());
+            VehicleEntity vehicle = spawnVehicle(level, spawnPos, yaw, vehicleId, null, Vec3.atCenterOf(groundPos));
             if (vehicle != null) {
                 if (target != null) {
                     EnemyVehicleController.rememberTarget(vehicle, target, 20 * 30);
@@ -74,15 +83,15 @@ public final class EnemyVehicleSpawner {
 
     @Nullable
     private static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, float yaw, Identifier vehicleId) {
-        return spawnVehicle(level, pos, yaw, vehicleId, null);
+        return spawnVehicle(level, pos, yaw, vehicleId, null, Vec3.atCenterOf(pos));
     }
 
     @Nullable
-    private static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, float yaw, Identifier vehicleId, @Nullable PathfinderMob existingCrew) {
+    private static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, float yaw, Identifier vehicleId, @Nullable PathfinderMob existingCrew, Vec3 anchor) {
         VehicleEntity vehicle = EnemyVehicleSpawnItem.spawnVehicle(level, pos, vehicleType(vehicleId), vehicleId, null, null, false, existingCrew);
         if (vehicle != null) {
             vehicle.setYRot(yaw);
-            EnemyVehicleController.setAnchor(vehicle, vehicle.position());
+            EnemyVehicleController.setAnchor(vehicle, anchor);
         }
         return vehicle;
     }
@@ -120,6 +129,43 @@ public final class EnemyVehicleSpawner {
         int z = center.getZ() + random.nextInt(radius * 2 + 1) - radius;
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         return new BlockPos(x, y, z);
+    }
+
+    private static BlockPos randomRaidGroundPos(ServerLevel level, BlockPos origin, @Nullable BlockPos burstCenter, @Nullable Player target, RandomSource random, int attempt) {
+        if (target != null) {
+            double angle = random.nextDouble() * Math.PI * 2.0D;
+            int distance = RAID_SPAWN_MIN_DISTANCE + random.nextInt(RAID_SPAWN_MAX_DISTANCE - RAID_SPAWN_MIN_DISTANCE + 1);
+            int x = Mth.floor(target.getX() + Math.cos(angle) * distance);
+            int z = Mth.floor(target.getZ() + Math.sin(angle) * distance);
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+            return new BlockPos(x, y, z);
+        }
+        BlockPos center = burstCenter != null ? burstCenter : origin;
+        return randomGroundPos(level, center, random, 12 + attempt * 3);
+    }
+
+    private static BlockPos spawnPosForVehicle(ServerLevel level, BlockPos groundPos, Identifier vehicleId) {
+        if (!isAirVehicle(vehicleId)) {
+            return groundPos;
+        }
+        int altitude = "mi28".equals(vehicleId.getPath()) ? MI28_SPAWN_ALTITUDE : AH6_SPAWN_ALTITUDE;
+        int y = Mth.clamp(groundPos.getY() + altitude, level.getMinY() + 4, level.getMaxY() - 8);
+        return new BlockPos(groundPos.getX(), y, groundPos.getZ());
+    }
+
+    private static boolean isVehicleSpawnClear(ServerLevel level, BlockPos pos, Identifier vehicleId) {
+        if (!isAirVehicle(vehicleId)) {
+            return isOpenSky(level, pos);
+        }
+        return level.canSeeSky(pos)
+                && level.isEmptyBlock(pos)
+                && level.isEmptyBlock(pos.above())
+                && level.isEmptyBlock(pos.below());
+    }
+
+    private static boolean isAirVehicle(Identifier vehicleId) {
+        String path = vehicleId.getPath();
+        return "ah6".equals(path) || "mi28".equals(path);
     }
 
     private static boolean isOpenSky(ServerLevel level, BlockPos pos) {
