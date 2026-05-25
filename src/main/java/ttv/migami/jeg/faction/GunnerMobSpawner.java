@@ -82,15 +82,15 @@ public class GunnerMobSpawner {
 
     @SubscribeEvent
     public static void onLivingUpdate(EntityTickEvent.Post event) {
-        if (!GunMobValues.enabled) {
-            return;
-        }
-
         if (!(event.getEntity() instanceof PathfinderMob mob)) {
             return;
         }
 
         GunnerFriendlyFireEvents.clearIgnoredVehicleStrikeTarget(mob);
+
+        if (!GunMobValues.enabled) {
+            return;
+        }
 
         if (mob.tickCount >= 2) {
             return;
