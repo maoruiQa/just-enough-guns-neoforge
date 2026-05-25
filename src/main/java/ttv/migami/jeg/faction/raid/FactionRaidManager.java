@@ -747,10 +747,20 @@ public final class FactionRaidManager {
         for (UUID vehicleId : vehicleIds) {
             Entity entity = level.getEntity(vehicleId);
             if (entity instanceof VehicleEntity vehicle && vehicle.isAlive() && !vehicle.isRemoved()) {
-                vehicle.discard();
+                discardVehicleAndEnemyCrew(vehicle);
             }
         }
         raid.activeVehicleIds.clear();
+    }
+
+    private static void discardVehicleAndEnemyCrew(VehicleEntity vehicle) {
+        for (Entity passenger : List.copyOf(vehicle.getPassengers())) {
+            if (passenger.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
+                passenger.discard();
+            }
+        }
+        vehicle.ejectPassengers();
+        vehicle.discard();
     }
 
     private static void clearRemainingRaidMobs(ServerLevel level, RaidContext raid) {
@@ -1041,6 +1051,11 @@ public final class FactionRaidManager {
             this.activeVehicleIds.add(vehicle.getUUID());
             this.spawnedThisWaveCount += EnemyVehicleSpawner.raidVehicleBatchWeight();
             this.vehicleSpawnsThisWave++;
+            for (Entity passenger : vehicle.getPassengers()) {
+                if (passenger instanceof Mob mob && mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
+                    applyRaidTags(mob);
+                }
+            }
             if (preferredTarget != null) {
                 this.targetPlayerId = preferredTarget.getUUID();
                 this.participantPlayerIds.add(preferredTarget.getUUID());
