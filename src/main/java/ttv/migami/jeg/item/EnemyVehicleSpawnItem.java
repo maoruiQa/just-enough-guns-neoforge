@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import javax.annotation.Nullable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
@@ -62,7 +63,7 @@ public class EnemyVehicleSpawnItem extends Item {
         BlockPos spawnPos = state.getCollisionShape(level, clickedPos).isEmpty()
                 ? clickedPos
                 : clickedPos.relative(context.getClickedFace());
-        VehicleEntity vehicle = this.spawnVehicle(serverLevel, spawnPos, context.getPlayer(), context.getItemInHand(), !Objects.equals(clickedPos, spawnPos) && context.getClickedFace() == Direction.UP);
+        VehicleEntity vehicle = spawnVehicle(serverLevel, spawnPos, this.vehicleType.get(), this.vehicleId, context.getPlayer(), context.getItemInHand(), !Objects.equals(clickedPos, spawnPos) && context.getClickedFace() == Direction.UP);
         return vehicle == null ? InteractionResult.FAIL : InteractionResult.SUCCESS;
     }
 
@@ -83,7 +84,7 @@ public class EnemyVehicleSpawnItem extends Item {
             if (!(level instanceof ServerLevel serverLevel) || !level.mayInteract(player, blockPos) || !player.mayUseItemAt(blockPos, hitResult.getDirection(), stack)) {
                 return InteractionResultHolder.fail(stack);
             }
-            if (this.spawnVehicle(serverLevel, blockPos, player, stack, false) == null) {
+            if (spawnVehicle(serverLevel, blockPos, this.vehicleType.get(), this.vehicleId, player, stack, false) == null) {
                 return InteractionResultHolder.fail(stack);
             }
         }
@@ -91,25 +92,26 @@ public class EnemyVehicleSpawnItem extends Item {
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
-    private VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, Player player, ItemStack stack, boolean offsetY) {
-        VehicleEntity vehicle = this.vehicleType.get().create(level);
+    @Nullable
+    public static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, EntityType<? extends VehicleEntity> vehicleType, ResourceLocation vehicleId, @Nullable Player player, @Nullable ItemStack stack, boolean offsetY) {
+        VehicleEntity vehicle = vehicleType.create(level);
         if (vehicle == null) {
             return null;
         }
         double y = offsetY ? pos.getY() + 0.5D : pos.getY();
         vehicle.moveTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, player == null ? 0.0F : player.getYRot(), 0.0F);
         vehicle.addTag(EnemyVehicleController.ENEMY_VEHICLE_TAG);
-        vehicle.getPersistentData().putString(EnemyVehicleController.VEHICLE_KIND_TAG, this.vehicleId.toString());
+        vehicle.getPersistentData().putString(EnemyVehicleController.VEHICLE_KIND_TAG, vehicleId.toString());
         EnemyVehicleController.setAnchor(vehicle, vehicle.position());
-        loadDefaultAmmo(vehicle);
+        loadDefaultAmmo(vehicle, vehicleId);
         vehicle.reloadAiVehicleWeapons();
         if (!level.addFreshEntity(vehicle)) {
             return null;
         }
 
-        int crewCount = "mi28".equals(this.vehicleId.getPath()) ? 2 : 1;
+        int crewCount = "mi28".equals(vehicleId.getPath()) ? 2 : 1;
         for (int seat = 0; seat < crewCount; seat++) {
-            Pillager crew = this.createCrew(level, vehicle);
+            Pillager crew = createCrew(level, vehicle);
             if (crew == null) {
                 vehicle.destroyFromEnemyCrewLoss();
                 return null;
@@ -123,14 +125,16 @@ public class EnemyVehicleSpawnItem extends Item {
         }
 
         level.gameEvent(player, GameEvent.ENTITY_PLACE, vehicle.position());
-        stack.consume(1, player);
-        if (player != null) {
-            player.awardStat(Stats.ITEM_USED.get(this));
+        if (stack != null) {
+            stack.consume(1, player);
+        }
+        if (player != null && stack != null) {
+            player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
         }
         return vehicle;
     }
 
-    private Pillager createCrew(ServerLevel level, VehicleEntity vehicle) {
+    private static Pillager createCrew(ServerLevel level, VehicleEntity vehicle) {
         Pillager crew = EntityType.PILLAGER.create(level);
         if (crew == null) {
             return null;
@@ -144,17 +148,17 @@ public class EnemyVehicleSpawnItem extends Item {
         return crew;
     }
 
-    private void loadDefaultAmmo(VehicleEntity vehicle) {
-        if ("lav150".equals(this.vehicleId.getPath())) {
+    private static void loadDefaultAmmo(VehicleEntity vehicle, ResourceLocation vehicleId) {
+        if ("lav150".equals(vehicleId.getPath())) {
             vehicle.addAmmoForAi(SMALL_SHELL, 128);
             vehicle.addAmmoForAi(RIFLE_AMMO, 512);
-        } else if ("bmp2".equals(this.vehicleId.getPath())) {
+        } else if ("bmp2".equals(vehicleId.getPath())) {
             vehicle.addAmmoForAi(AUTOCANNON_SHELL, 160);
             vehicle.addAmmoForAi(RIFLE_AMMO, 512);
-        } else if ("ah6".equals(this.vehicleId.getPath())) {
+        } else if ("ah6".equals(vehicleId.getPath())) {
             vehicle.addAmmoForAi(RIFLE_AMMO, 600);
             vehicle.addAmmoForAi(SMALL_ROCKET, 48);
-        } else if ("mi28".equals(this.vehicleId.getPath())) {
+        } else if ("mi28".equals(vehicleId.getPath())) {
             vehicle.addAmmoForAi(RIFLE_AMMO, 900);
             vehicle.addAmmoForAi(SMALL_ROCKET, 96);
             vehicle.addAmmoForAi(MEDIUM_ANTI_GROUND_MISSILE, 32);
