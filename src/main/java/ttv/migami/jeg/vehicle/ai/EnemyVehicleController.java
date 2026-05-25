@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -32,7 +33,9 @@ public final class EnemyVehicleController {
     private static final String ANCHOR_Z_TAG = "Z";
     private static final String TARGET_ID_TAG = "JEGEnemyVehicleTarget";
     private static final String TARGET_MEMORY_TAG = "JEGEnemyVehicleTargetMemory";
+    private static final String CREW_ID_BY_SEAT_TAG = "JEGEnemyVehicleCrewIdSeat";
     private static final int TARGET_MEMORY_TICKS = 100;
+    private static final int MISSING_CREW_GRACE_TICKS = 80;
     private static final Map<UUID, Brain> BRAINS = new HashMap<>();
 
     private EnemyVehicleController() {}
@@ -82,9 +85,14 @@ public final class EnemyVehicleController {
 
     private static void tickVehicle(ServerLevel level, VehicleEntity vehicle, Brain brain) {
         String kind = vehicleKind(vehicle);
+        restoreBrainFromPersistentData(vehicle, brain);
+        Vec3 anchor = anchor(vehicle);
         LivingEntity[] crews = crews(vehicle, requiredCrew(kind));
+        if (missingRequiredCrew(crews)) {
+            crews = recoverCrews(level, vehicle, crews);
+        }
         if (crews[0] == null || missingRequiredCrew(crews)) {
-            if (vehicle.getPersistentData().hasUUID(CREW_ID_TAG)) {
+            if (hasAnySavedCrew(vehicle, crews.length) && ++brain.missingCrewTicks >= MISSING_CREW_GRACE_TICKS) {
                 vehicle.destroyFromEnemyCrewLoss();
                 BRAINS.remove(vehicle.getUUID());
                 return;
@@ -92,7 +100,8 @@ public final class EnemyVehicleController {
             stopVehicle(vehicle);
             return;
         }
-        vehicle.getPersistentData().putUUID(CREW_ID_TAG, crews[0].getUUID());
+        brain.missingCrewTicks = 0;
+        saveCrewIds(vehicle, crews);
         for (LivingEntity crew : crews) {
             configureCrew(crew);
         }
@@ -102,7 +111,6 @@ public final class EnemyVehicleController {
             return;
         }
 
-        Vec3 anchor = anchor(vehicle);
         Player target = updateTarget(level, vehicle, brain, kind);
         if (target == null) {
             patrol(vehicle, brain, anchor);
@@ -122,6 +130,95 @@ public final class EnemyVehicleController {
         aimCrewAt(crews[0], aim);
         vehicle.setAiWeaponControl(crews[0], fire, false);
         engage(vehicle, brain, target, kind, distance);
+    }
+
+    private static void restoreBrainFromPersistentData(VehicleEntity vehicle, Brain brain) {
+        if (brain.targetId == null && vehicle.getPersistentData().hasUUID(TARGET_ID_TAG)) {
+            brain.targetId = vehicle.getPersistentData().getUUID(TARGET_ID_TAG);
+            brain.targetMemory = vehicle.getPersistentData().getInt(TARGET_MEMORY_TAG);
+        }
+    }
+
+    private static LivingEntity[] recoverCrews(ServerLevel level, VehicleEntity vehicle, LivingEntity[] crews) {
+        for (Entity passenger : vehicle.getPassengers()) {
+            if (passenger instanceof LivingEntity living && living.isAlive() && living.getTags().contains(ENEMY_VEHICLE_CREW_TAG) && !containsCrew(crews, living)) {
+                int seat = firstMissingSeat(crews);
+                if (seat >= 0) {
+                    vehicle.rememberSeatAssignment(living, seat);
+                    crews[seat] = living;
+                }
+            }
+        }
+        for (int seat = 0; seat < crews.length; seat++) {
+            if (crews[seat] != null) {
+                continue;
+            }
+            UUID savedCrewId = savedCrewId(vehicle, seat);
+            if (savedCrewId == null) {
+                continue;
+            }
+            Entity saved = level.getEntity(savedCrewId);
+            if (saved instanceof LivingEntity living && living.isAlive() && living.getTags().contains(ENEMY_VEHICLE_CREW_TAG)) {
+                vehicle.rememberSeatAssignment(living, seat);
+                if (living.getVehicle() != vehicle) {
+                    living.startRiding(vehicle, true);
+                }
+                crews[seat] = living;
+            }
+        }
+        return crews;
+    }
+
+    private static boolean containsCrew(LivingEntity[] crews, LivingEntity candidate) {
+        for (LivingEntity crew : crews) {
+            if (crew == candidate) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int firstMissingSeat(LivingEntity[] crews) {
+        for (int seat = 0; seat < crews.length; seat++) {
+            if (crews[seat] == null) {
+                return seat;
+            }
+        }
+        return -1;
+    }
+
+    private static void saveCrewIds(VehicleEntity vehicle, LivingEntity[] crews) {
+        for (int seat = 0; seat < crews.length; seat++) {
+            vehicle.getPersistentData().putUUID(crewIdTag(seat), crews[seat].getUUID());
+        }
+        vehicle.getPersistentData().putUUID(CREW_ID_TAG, crews[0].getUUID());
+    }
+
+    private static boolean hasAnySavedCrew(VehicleEntity vehicle, int count) {
+        if (vehicle.getPersistentData().hasUUID(CREW_ID_TAG)) {
+            return true;
+        }
+        for (int seat = 0; seat < count; seat++) {
+            if (vehicle.getPersistentData().hasUUID(crewIdTag(seat))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static UUID savedCrewId(VehicleEntity vehicle, int seat) {
+        String tag = crewIdTag(seat);
+        if (vehicle.getPersistentData().hasUUID(tag)) {
+            return vehicle.getPersistentData().getUUID(tag);
+        }
+        if (seat == 0 && vehicle.getPersistentData().hasUUID(CREW_ID_TAG)) {
+            return vehicle.getPersistentData().getUUID(CREW_ID_TAG);
+        }
+        return null;
+    }
+
+    private static String crewIdTag(int seat) {
+        return CREW_ID_BY_SEAT_TAG + seat;
     }
 
     private static LivingEntity[] crews(VehicleEntity vehicle, int count) {
@@ -449,7 +546,7 @@ public final class EnemyVehicleController {
         updateStuckState(vehicle, brain);
         if (brain.reverseTicks > 0) {
             brain.reverseTicks--;
-            vehicle.setAiVehicleInput(input(false, true, true, false, false));
+            vehicle.setAiVehicleInput(input(false, true, brain.reverseLeft, !brain.reverseLeft, false));
             return;
         }
         Vec3 toTarget = target.subtract(vehicle.position());
@@ -463,8 +560,8 @@ public final class EnemyVehicleController {
         boolean left = yawDiff < -yawDeadZone;
         boolean right = yawDiff > yawDeadZone;
         if (!reverse && Math.abs(yawDiff) < 35.0F && isForwardUnsafe(vehicle)) {
-            brain.reverseTicks = 24;
-            vehicle.setAiVehicleInput(input(false, true, true, false, false));
+            startReverseManeuver(vehicle, brain, 28);
+            vehicle.setAiVehicleInput(input(false, true, brain.reverseLeft, !brain.reverseLeft, false));
             return;
         }
         vehicle.setAiVehicleInput(input(!reverse, reverse, left, right, false));
@@ -476,16 +573,27 @@ public final class EnemyVehicleController {
             if (current.distanceToSqr(brain.lastPosition) < 0.25D) {
                 brain.stuckTicks += 20;
                 if (brain.stuckTicks >= 40) {
-                    brain.reverseTicks = 30;
+                    startReverseManeuver(vehicle, brain, 36);
                     brain.stuckTicks = 0;
+                    if (++brain.escapeFailures >= 3) {
+                        brain.patrolTarget = null;
+                        brain.escapeFailures = 0;
+                    }
                 }
             } else {
                 brain.stuckTicks = 0;
+                brain.escapeFailures = 0;
             }
             brain.lastPosition = current;
         } else if (brain.lastPosition == null) {
             brain.lastPosition = current;
         }
+    }
+
+    private static void startReverseManeuver(VehicleEntity vehicle, Brain brain, int ticks) {
+        brain.reverseTicks = Math.max(brain.reverseTicks, ticks);
+        long seed = vehicle.getUUID().getLeastSignificantBits() + brain.reverseAttempts++;
+        brain.reverseLeft = (seed & 1L) == 0L;
     }
 
     private static boolean isForwardUnsafe(VehicleEntity vehicle) {
@@ -497,10 +605,33 @@ public final class EnemyVehicleController {
         if (hit.getType() != HitResult.Type.MISS) {
             return true;
         }
+        if (isVehicleAhead(vehicle, forward)) {
+            return true;
+        }
         Vec3 low = vehicle.position().add(0.0D, 0.1D, 0.0D);
         for (int step = 3; step <= 8; step++) {
             Vec3 sample = low.add(forward.scale(step));
             if (isWaterAt(vehicle, sample)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isVehicleAhead(VehicleEntity vehicle, Vec3 forward) {
+        AABB search = vehicle.getBoundingBox().inflate(6.0D, 2.0D, 6.0D);
+        for (VehicleEntity other : vehicle.level().getEntitiesOfClass(VehicleEntity.class, search)) {
+            if (other == vehicle || other.isRemoved()) {
+                continue;
+            }
+            Vec3 offset = other.position().subtract(vehicle.position());
+            double ahead = offset.x * forward.x + offset.z * forward.z;
+            if (ahead < 0.75D || ahead > 7.0D || Math.abs(offset.y) > 3.0D) {
+                continue;
+            }
+            double lateralX = offset.x - forward.x * ahead;
+            double lateralZ = offset.z - forward.z * ahead;
+            if (lateralX * lateralX + lateralZ * lateralZ <= 6.25D) {
                 return true;
             }
         }
@@ -626,6 +757,10 @@ public final class EnemyVehicleController {
         private Vec3 lastPosition;
         private int stuckTicks;
         private int reverseTicks;
+        private int reverseAttempts;
+        private int escapeFailures;
+        private int missingCrewTicks;
+        private boolean reverseLeft = true;
         private int orbitDirection = 1;
         private int airEvasionTicks;
     }

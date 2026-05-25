@@ -297,6 +297,13 @@ public final class GunEvents {
                     .append(Component.literal(" - Configure patrol, mob spawn rates, and combat")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
             player.sendSystemMessage(configLine);
+
+            Component enemyVehicleLine = Component.empty()
+                    .append(Component.literal("/justEnoughGuns config vehicle enemySpawning enabled false")
+                            .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
+                    .append(Component.literal(" - Disable enemy vehicle spawning")
+                            .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
+            player.sendSystemMessage(enemyVehicleLine);
         }
         player.sendSystemMessage(divider);
     }
