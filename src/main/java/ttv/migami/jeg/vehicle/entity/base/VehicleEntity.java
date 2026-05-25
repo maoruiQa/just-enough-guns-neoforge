@@ -155,6 +155,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Float> DATA_PROPELLER_SPEED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_ROLL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> DATA_WEAPON_FIRING = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_ACTIVE_FIRE_WEAPON = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final Identifier RIFLE_AMMO = Reference.id("rifle_ammo");
     private static final Identifier FLARE_AMMO = Reference.id("flare");
     private static final int FLARE_DECOY_COOLDOWN_TICKS = 400;
@@ -473,6 +474,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_PROPELLER_SPEED, 0.0F);
         builder.define(DATA_ROLL, 0.0F);
         builder.define(DATA_WEAPON_FIRING, false);
+        builder.define(DATA_ACTIVE_FIRE_WEAPON, -1);
     }
 
     public VehicleData vehicleData() {
@@ -882,12 +884,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Nullable
     public SoundEvent activeVehicleFireSound() {
-        VehicleWeaponInfo weapon = this.selectedWeapon();
-        Identifier weaponId = this.selectedVehicleWeaponId();
-        if (weapon == null || weaponId == null) {
+        VehicleWeaponInfo weapon = this.activeFireWeapon();
+        if (weapon == null) {
             return null;
         }
-        GunStats stats = VehicleWeaponStats.get(weaponId);
+        GunStats stats = VehicleWeaponStats.get(weapon.weaponId());
         return stats == null ? null : VehicleSoundHelper.fireSound(this, weapon, stats);
     }
 
@@ -900,6 +901,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         GunStats stats = VehicleWeaponStats.get(weaponId);
         return stats == null ? null : VehicleSoundHelper.fireSound(this, weapon, stats);
+    }
+
+    @Nullable
+    private VehicleWeaponInfo activeFireWeapon() {
+        var weapons = this.vehicleData().defaults().weapons();
+        int activeSlot = this.entityData.get(DATA_ACTIVE_FIRE_WEAPON);
+        if (activeSlot >= 0 && activeSlot < weapons.size()) {
+            return weapons.get(activeSlot);
+        }
+        return this.selectedWeapon();
     }
 
     private void setRoll(float roll) {
@@ -1232,7 +1243,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), damage);
         this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
-        this.playVehicleStrikeSound();
         Direction bounceDirection = this.impactBounceDirection(requestedMovement);
         if (this.verticalCollision) {
             this.bounceVertical(bounceDirection);
@@ -1484,6 +1494,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.weaponControllerId = -1;
         this.seekControllerId = -1;
         this.entityData.set(DATA_WEAPON_FIRING, false);
+        this.entityData.set(DATA_ACTIVE_FIRE_WEAPON, -1);
         this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
         this.holdTick = 0;
@@ -1644,6 +1655,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void tickServerWeapon() {
         if (!this.hasVehicleWeapons()) {
             this.entityData.set(DATA_WEAPON_FIRING, false);
+            this.entityData.set(DATA_ACTIVE_FIRE_WEAPON, -1);
             return;
         }
         if (this.fireCooldown > 0) {
@@ -1653,9 +1665,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.aiFireCooldownByWeaponSlot.entrySet().removeIf(entry -> entry.getValue() <= 0);
 
         boolean[] anyFiring = {false};
+        int[] activeFireWeaponSlot = {-1};
         LivingEntity shooter = this.weaponController();
         VehicleWeaponInfo selectedWeapon = shooter == null ? null : this.selectedWeapon(shooter);
-        anyFiring[0] |= this.shouldLoopVehicleFireSound(shooter, selectedWeapon, this.weaponFireInput);
+        if (this.shouldLoopVehicleFireSound(shooter, selectedWeapon, this.weaponFireInput)) {
+            anyFiring[0] = true;
+            activeFireWeaponSlot[0] = this.selectedVehicleWeaponIndex(shooter);
+        }
         if (this.tryFireVehicleWeapon(shooter, selectedWeapon, this.weaponFireInput, this.seekInput, -1)) {
             anyFiring[0] = true;
         }
@@ -1666,13 +1682,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 return true;
             }
             VehicleWeaponInfo aiWeapon = this.selectedWeapon(aiShooter);
-            anyFiring[0] |= this.shouldLoopVehicleFireSound(aiShooter, aiWeapon, entry.getValue().fire());
+            if (this.shouldLoopVehicleFireSound(aiShooter, aiWeapon, entry.getValue().fire())) {
+                anyFiring[0] = true;
+                activeFireWeaponSlot[0] = this.selectedVehicleWeaponIndex(aiShooter);
+            }
             if (this.tryFireVehicleWeapon(aiShooter, aiWeapon, entry.getValue().fire(), entry.getValue().seek(), entry.getKey())) {
                 anyFiring[0] = true;
             }
             return false;
         });
         this.entityData.set(DATA_WEAPON_FIRING, anyFiring[0]);
+        this.entityData.set(DATA_ACTIVE_FIRE_WEAPON, activeFireWeaponSlot[0]);
     }
 
     private boolean tryFireVehicleWeapon(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo selectedWeapon, boolean fireInput, boolean seekInput, int aiSeatIndex) {
@@ -2004,6 +2024,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.weaponControllerId = -1;
         this.weaponFireInput = false;
         this.entityData.set(DATA_WEAPON_FIRING, false);
+        this.entityData.set(DATA_ACTIVE_FIRE_WEAPON, -1);
         return null;
     }
 
@@ -2174,7 +2195,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (targetDamaged || selfDamaged) {
             target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
-            this.playVehicleStrikeSound();
             return true;
         }
         return false;
@@ -4619,15 +4639,18 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
         float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
-        this.playVehicleDamageSound(armorHit.penetrated());
         if (finalDamage <= 1.0F) {
             return false;
         }
         this.applyPartDamage(hitPart, finalDamage);
         this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
-        float newHealth = this.vehicleHealth() - finalDamage;
+        float oldHealth = this.vehicleHealth();
+        float newHealth = oldHealth - finalDamage;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+        if (newHealth < oldHealth) {
+            this.playVehicleDamageSound(armorHit.penetrated());
+        }
         this.hurtMarked = true;
         if (newHealth <= 0.0F) {
             this.destroyVehicle();
@@ -4640,8 +4663,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return false;
         }
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
-        float newHealth = this.vehicleHealth() - amount;
+        float oldHealth = this.vehicleHealth();
+        float newHealth = oldHealth - amount;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+        if (newHealth < oldHealth) {
+            this.playVehicleStrikeSound();
+        }
         this.hurtMarked = true;
         if (newHealth <= 0.0F) {
             this.destroyVehicle();
