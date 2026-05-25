@@ -200,13 +200,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 160.0D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
     private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 14;
-    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
+    private static final double LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED = 0.18D;
+    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.18D;
     private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
-    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 80.0D;
+    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 100.0D;
     private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 80.0D;
-    private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.55D;
-    private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.20D;
-    private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
+    private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
+    private static final double AI_HELICOPTER_SPAWN_ENGINE_POWER = 0.095D;
+    private static final double AI_HELICOPTER_SPAWN_UPWARD_SPEED = 0.16D;
+    private static final float AI_HELICOPTER_SPAWN_ROTOR_SPEED = 0.09F;
     private static final double VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION = 0.45D;
     private static final double VEHICLE_ENTITY_COLLISION_DAMPING = 0.45D;
     private static final double VEHICLE_EXPLOSION_KNOCKBACK_REFERENCE_MASS = 16.0D;
@@ -842,6 +846,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.entityData.get(DATA_PROPELLER_SPEED);
     }
 
+    public void primeAiHelicopterSpawnHover() {
+        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER) {
+            return;
+        }
+        this.engineStart = true;
+        this.engineStartOver = true;
+        this.enginePower = Math.max(this.enginePower, AI_HELICOPTER_SPAWN_ENGINE_POWER);
+        this.entityData.set(DATA_PROPELLER_SPEED, Math.max(this.propellerSpeed(), AI_HELICOPTER_SPAWN_ROTOR_SPEED));
+        Vec3 motion = this.getDeltaMovement();
+        this.setDeltaMovement(motion.x, Math.max(motion.y, AI_HELICOPTER_SPAWN_UPWARD_SPEED), motion.z);
+        this.hurtMarked = true;
+        this.hasImpulse = true;
+    }
+
     public float roll() {
         return this.entityData.get(DATA_ROLL);
     }
@@ -1178,7 +1196,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         boolean landedAfterFall = !wasVerticallySupported
                 && supportedAfterMove
                 && unsupportedTicksBeforeMove >= fallAirborneTicks
-                && requestedMovement.y < -0.05D;
+                && requestedMovement.y < -LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
         Vec3 requestedHorizontal = new Vec3(requestedMovement.x, 0.0D, requestedMovement.z);
         boolean landBodyImpact = landVehicle && this.isLandVehicleBodyImpact(requestedMovement, actualMovement);
         double horizontalImpactSpeed = this.horizontalCollision
@@ -1234,7 +1252,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 continue;
             }
             AABB targetBox = target.getBoundingBox();
-            if (previousBox.intersects(targetBox) || (!sweptBox.intersects(targetBox) && !this.vehicleEntityCollisionIntersects(target))) {
+            boolean alreadyBroadlyOverlapping = previousBox.intersects(targetBox);
+            if ((alreadyBroadlyOverlapping && !this.isMovingTowardVehicleImpact(target, requestedMovement))
+                    || (!sweptBox.intersects(targetBox) && !this.vehicleEntityCollisionIntersects(target))) {
                 continue;
             }
             double relativeSpeed = this.vehicleRelativeCollisionSpeed(target, velocityBeforeMove, target.getDeltaMovement());
@@ -1259,6 +1279,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 Math.max(previousBox.maxX, currentBox.maxX),
                 Math.max(previousBox.maxY, currentBox.maxY),
                 Math.max(previousBox.maxZ, currentBox.maxZ));
+    }
+
+    private boolean isMovingTowardVehicleImpact(VehicleEntity target, Vec3 requestedMovement) {
+        Vec3 toTarget = target.position().subtract(this.position());
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        VehicleType targetType = target.vehicleData().defaults().vehicleType();
+        if (type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT || targetType == VehicleType.HELICOPTER || targetType == VehicleType.AIRCRAFT) {
+            return requestedMovement.dot(toTarget) > 0.0D;
+        }
+        return new Vec3(requestedMovement.x, 0.0D, requestedMovement.z).dot(new Vec3(toTarget.x, 0.0D, toTarget.z)) > 0.0D;
     }
 
     private void updateVehicleSupportTicks() {
