@@ -19,7 +19,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 @EventBusSubscriber(modid = Reference.MOD_ID)
 public final class GunnerFriendlyFireEvents {
     private static final String ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher").toString();
-    private static final int VEHICLE_STRIKE_AGGRO_IGNORE_TICKS = 40;
+    private static final int VEHICLE_STRIKE_AGGRO_IGNORE_TICKS = 200;
     private static final Map<UUID, IgnoredVehicleStrike> IGNORED_VEHICLE_STRIKES = new HashMap<>();
 
     private GunnerFriendlyFireEvents() {}
@@ -92,11 +92,22 @@ public final class GunnerFriendlyFireEvents {
             return;
         }
         LivingEntity target = mob.getTarget();
-        if (target == null || !target.isAlive() || target.getUUID().equals(ignored.attackerId())) {
+        LivingEntity lastHurtByMob = mob.getLastHurtByMob();
+        boolean clearTarget = target == null || shouldClearIgnoredVehicleStrikeEntity(target, ignored);
+        boolean clearLastHurtByMob = target == null || shouldClearIgnoredVehicleStrikeEntity(lastHurtByMob, ignored);
+        if (clearTarget) {
             mob.setTarget(null);
-            mob.setLastHurtByMob(null);
-            IGNORED_VEHICLE_STRIKES.remove(mob.getUUID());
         }
+        if (clearLastHurtByMob) {
+            mob.setLastHurtByMob(null);
+        }
+        if (clearTarget || clearLastHurtByMob) {
+            mob.setAggressive(false);
+        }
+    }
+
+    private static boolean shouldClearIgnoredVehicleStrikeEntity(@Nullable LivingEntity entity, IgnoredVehicleStrike ignored) {
+        return entity != null && (!entity.isAlive() || entity.isRemoved() || entity.getUUID().equals(ignored.attackerId()));
     }
 
     private record IgnoredVehicleStrike(UUID attackerId, long expiresAt) {}
