@@ -66,6 +66,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.faction.GunnerFriendlyFireEvents;
 import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDamageTypes;
@@ -420,7 +421,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private boolean usesCustomObbEntityCollision() {
         return switch (this.vehicleDataId().getPath()) {
-            case "lav150", "bmp2", "speedboat", "ah6", "mi28" -> true;
+            case "lav150", "bmp2", "speedboat", "ah6", "mi28", "truck" -> true;
             default -> false;
         };
     }
@@ -1258,7 +1259,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         AABB previousBox = currentBox.move(before.subtract(this.position()));
         AABB sweptBox = this.sweptVehicleEntityCollisionBox(previousBox, currentBox);
         for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, sweptBox.inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
-            if (target == this || target.isRemoved() || target.noPhysics) {
+            if (target == this || target.isRemoved() || target.noPhysics
+                    || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
             }
             AABB targetBox = target.getBoundingBox();
@@ -2142,10 +2144,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null) {
                 continue;
             }
-            damaged |= target.hurt(this.vehicleStrikeDamageSource(), damage);
+            DamageSource source = this.vehicleStrikeDamageSource();
+            boolean hurt = target.hurt(source, damage);
+            if (hurt) {
+                GunnerFriendlyFireEvents.clearFriendlyVehicleStrikeTargetAfterDamage(target, source);
+            }
+            damaged |= hurt;
         }
         for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(0.35D, 0.2D, 0.35D))) {
-            if (target == this || target.isRemoved()) {
+            if (target == this || target.isRemoved()
+                    || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
             }
             if ((this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null)
@@ -2196,11 +2204,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickVehicleEntityCollisionResolution() {
-        if (this.noPhysics || this.isRemoved()) {
+        if (this.noPhysics
+                || this.isRemoved()
+                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
             return;
         }
         for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
-            if (target == this || target.isRemoved() || target.noPhysics || this.getId() >= target.getId()) {
+            if (target == this || target.isRemoved() || target.noPhysics || this.getId() >= target.getId()
+                    || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
             }
             Vec3 correction = this.vehicleEntityCollisionCorrection(target);
@@ -2323,7 +2334,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickObbEntityCollisionSupport() {
-        if (!this.usesCustomObbEntityCollision() || this.noPhysics || this.isRemoved()) {
+        if (!this.usesCustomObbEntityCollision()
+                || this.noPhysics
+                || this.isRemoved()) {
             return;
         }
         Entity localPlayer = this.level().isClientSide ? localClientPlayer() : null;
@@ -5120,7 +5133,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public boolean canBeCollidedWith() {
-        return !this.isRemoved() && !this.usesCustomObbEntityCollision();
+        return !this.isRemoved()
+                && this.vehicleData().defaults().collisionLevel() != CollisionLevel.NONE
+                && !this.usesCustomObbEntityCollision();
     }
 
     @Override
