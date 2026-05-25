@@ -86,19 +86,19 @@ public class GunnerMobSpawner {
 
     @SubscribeEvent
     public static void onLivingUpdate(EntityTickEvent.Post event) {
-        if (!GunMobValues.enabled) {
+        if (!(event.getEntity() instanceof PathfinderMob mob)) {
             return;
         }
 
-        if (!(event.getEntity() instanceof PathfinderMob mob)) {
+        GunnerFriendlyFireEvents.clearIgnoredVehicleStrikeTarget(mob);
+
+        if (!GunMobValues.enabled) {
             return;
         }
 
         if (mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
             return;
         }
-
-        GunnerFriendlyFireEvents.clearIgnoredVehicleStrikeTarget(mob);
 
         if (mob.tickCount >= 2) {
             return;
