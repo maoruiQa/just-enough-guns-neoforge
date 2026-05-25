@@ -338,7 +338,7 @@ public final class EnemyVehicleController {
             double radius = ("mi28".equals(kind) ? 55.0D : 38.0D) + vehicle.getRandom().nextDouble() * 24.0D;
             brain.patrolTarget = anchor.add(Math.cos(angle) * radius, desiredAltitude, Math.sin(angle) * radius);
         }
-        flyToward(vehicle, brain, brain.patrolTarget, null, desiredAltitude, true);
+        flyToward(vehicle, brain, brain.patrolTarget, null, desiredAltitude, true, kind);
     }
 
     private static void airEngage(VehicleEntity vehicle, Brain brain, Player target, String kind, double distance) {
@@ -363,7 +363,7 @@ public final class EnemyVehicleController {
             destination = target.position().subtract(direction.scale(orbitRange * 0.55D)).add(strafe);
         }
         Vec3 attackFaceTarget = shouldFaceTargetForNoseWeapon(kind, target, distance) ? target.position() : null;
-        flyToward(vehicle, brain, destination, attackFaceTarget, desiredAltitude, distance <= maxRange);
+        flyToward(vehicle, brain, destination, attackFaceTarget, desiredAltitude, distance <= maxRange, kind);
     }
 
     private static boolean shouldFaceTargetForNoseWeapon(String kind, Player target, double distance) {
@@ -376,7 +376,7 @@ public final class EnemyVehicleController {
         return false;
     }
 
-    private static void flyToward(VehicleEntity vehicle, Brain brain, Vec3 destination, Vec3 faceTarget, double desiredAltitude, boolean allowBrake) {
+    private static void flyToward(VehicleEntity vehicle, Brain brain, Vec3 destination, Vec3 faceTarget, double desiredAltitude, boolean allowBrake, String kind) {
         if (brain.airEvasionTicks > 0) {
             brain.airEvasionTicks--;
         }
@@ -399,6 +399,9 @@ public final class EnemyVehicleController {
         double yawDistance = Math.sqrt(toYawTarget.x * toYawTarget.x + toYawTarget.z * toYawTarget.z);
         float desiredYaw = yawDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toYawTarget.x, toYawTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
+        if (faceTarget != null) {
+            yawDiff = vehicle.turnAiVehicleYawToward(desiredYaw, aiAirNoseTurnStep(kind));
+        }
         float yawInputScale = faceTarget == null ? 42.0F : 3.33F;
         float mouseX = Mth.clamp(yawDiff / yawInputScale, -1.0F, 1.0F);
         double altitudeError = desiredAltitude - altitude;
@@ -413,6 +416,10 @@ public final class EnemyVehicleController {
         }
         float mouseY = Mth.clamp((desiredPitch - vehicle.getXRot()) / 24.0F, -0.7F, 0.7F);
         vehicle.setAiVehicleInput(airInput(forward, brain.airEvasionTicks > 0, false, false, brake, ascend, descend, mouseX, mouseY));
+    }
+
+    private static float aiAirNoseTurnStep(String kind) {
+        return "mi28".equals(kind) ? 2.4F : 3.2F;
     }
 
     private static void patrol(VehicleEntity vehicle, Brain brain, Vec3 anchor) {
