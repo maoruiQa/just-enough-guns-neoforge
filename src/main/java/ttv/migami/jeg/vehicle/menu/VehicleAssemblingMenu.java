@@ -3,6 +3,7 @@ package ttv.migami.jeg.vehicle.menu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -59,11 +60,29 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
         }
         this.removeCost(recipe);
         ItemStack result = VehicleContainerBlockEntity.createItemForVehicle(recipe.resultVehicle());
-        if (!player.getInventory().add(result)) {
-            player.drop(result, false);
-        }
+        this.giveOrDropResult(player, result);
         player.sendSystemMessage(Component.translatable("message.jeg.vehicle_assembling.completed"));
         return true;
+    }
+
+    private void giveOrDropResult(Player player, ItemStack result) {
+        ItemStack remaining = result.copy();
+        player.getInventory().add(remaining);
+        if (remaining.isEmpty()) {
+            return;
+        }
+        if (!this.dropAtTable(remaining)) {
+            player.drop(remaining, false);
+        }
+    }
+
+    private boolean dropAtTable(ItemStack stack) {
+        final boolean[] dropped = {false};
+        this.access.execute((level, pos) -> {
+            Containers.dropItemStack(level, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, stack);
+            dropped[0] = true;
+        });
+        return dropped[0];
     }
 
     private boolean hasCost(VehicleAssemblyRecipe recipe) {
