@@ -1170,7 +1170,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 || this.ramDamageCooldown > 0) {
             return;
         }
-        boolean landVehicle = this.vehicleData().defaults().vehicleType() == VehicleType.LAND;
+        VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
+        boolean landVehicle = vehicleType == VehicleType.LAND;
+        boolean helicopterVehicle = vehicleType == VehicleType.HELICOPTER;
         boolean supportedAfterMove = this.onGround() || this.verticalCollisionBelow;
         int fallAirborneTicks = landVehicle ? LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS : 8;
         boolean landedAfterFall = !wasVerticallySupported
@@ -1189,7 +1191,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             horizontalImpactSpeed = 0.0D;
         }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y - actualMovement.y) : 0.0D;
-        if (landedAfterFall) {
+        if (helicopterVehicle) {
+            verticalImpactSpeed = 0.0D;
+        } else if (landedAfterFall) {
             double fallDurationBonus = Math.max(0, unsupportedTicksBeforeMove - fallAirborneTicks) * 0.015D;
             verticalImpactSpeed = Math.max(verticalImpactSpeed, Math.abs(requestedMovement.y) + fallDurationBonus);
         }
