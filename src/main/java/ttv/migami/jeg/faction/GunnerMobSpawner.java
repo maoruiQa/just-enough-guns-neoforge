@@ -91,6 +91,8 @@ public class GunnerMobSpawner {
             return;
         }
 
+        GunnerFriendlyFireEvents.clearIgnoredVehicleStrikeTarget(mob);
+
         if (mob.tickCount >= 2) {
             return;
         }
