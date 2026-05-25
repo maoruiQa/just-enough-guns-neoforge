@@ -205,9 +205,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
     private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 14;
     private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
-    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.95D;
+    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
     private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 80.0D;
-    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 55.0D;
+    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 80.0D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.55D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.20D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
@@ -1168,7 +1168,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         double horizontalImpactSpeed = this.horizontalCollision
                 ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
                 : 0.0D;
-        if (landVehicle && (unsupportedTicksBeforeMove > 0 || !this.isLandVehicleBodyImpact(requestedMovement, actualMovement))) {
+        if (landVehicle && unsupportedTicksBeforeMove > 0) {
             horizontalImpactSpeed = 0.0D;
         }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
@@ -1179,7 +1179,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (damage <= 1.0F) {
             return;
         }
-        this.hurt(this.vehicleStrikeDamageSource(), damage);
+        this.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), damage);
         this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
         this.playVehicleStrikeSound();
         Direction bounceDirection = this.impactBounceDirection(requestedMovement);
@@ -2037,8 +2037,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             }
             float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
             float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
-            boolean targetDamaged = targetDamage > 1.0F && target.hurt(this.vehicleStrikeDamageSource(), targetDamage);
-            boolean selfDamaged = selfDamage > 1.0F && this.hurt(target.vehicleStrikeDamageSource(), selfDamage);
+            boolean targetDamaged = targetDamage > 1.0F && target.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), targetDamage);
+            boolean selfDamaged = selfDamage > 1.0F && this.hurtVehicleIgnoringArmor(target.vehicleStrikeDamageSource(), selfDamage);
             if (targetDamaged || selfDamaged) {
                 target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
                 damaged = true;
@@ -2118,21 +2118,10 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private void applyVehicleEntityCollisionCorrection(VehicleEntity target, Vec3 correction) {
-        double selfMass = this.vehicleCollisionMass();
-        double targetMass = target.vehicleCollisionMass();
-        double totalMass = Math.max(selfMass + targetMass, 1.0D);
-        Vec3 selfCorrection = correction.scale(-targetMass / totalMass);
-        Vec3 targetCorrection = correction.scale(selfMass / totalMass);
-        this.setPos(this.position().add(selfCorrection));
-        target.setPos(target.position().add(targetCorrection));
-        this.dampenVehicleEntityCollisionVelocity(target, correction);
-        this.hasImpulse = true;
-        target.hasImpulse = true;
-        this.hurtMarked = true;
-        target.hurtMarked = true;
+        this.stopVehicleEntitySqueezeVelocity(target, correction);
     }
 
-    private void dampenVehicleEntityCollisionVelocity(VehicleEntity target, Vec3 correction) {
+    private void stopVehicleEntitySqueezeVelocity(VehicleEntity target, Vec3 correction) {
         Vec3 horizontal = new Vec3(correction.x(), 0.0D, correction.z());
         if (horizontal.lengthSqr() <= 1.0E-8D) {
             return;
@@ -2144,12 +2133,14 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (closingSpeed <= 0.0D) {
             return;
         }
-        double selfMass = this.vehicleCollisionMass();
-        double targetMass = target.vehicleCollisionMass();
-        double totalMass = Math.max(selfMass + targetMass, 1.0D);
-        Vec3 impulse = normal.scale(closingSpeed * VEHICLE_ENTITY_COLLISION_DAMPING);
-        this.setDeltaMovement(this.getDeltaMovement().subtract(impulse.scale(targetMass / totalMass)));
-        target.setDeltaMovement(target.getDeltaMovement().add(impulse.scale(selfMass / totalMass)));
+        if (selfAlong > 0.0D) {
+            this.setDeltaMovement(this.getDeltaMovement().subtract(normal.scale(selfAlong)));
+            this.hurtMarked = true;
+        }
+        if (targetAlong < 0.0D) {
+            target.setDeltaMovement(target.getDeltaMovement().subtract(normal.scale(targetAlong)));
+            target.hurtMarked = true;
+        }
     }
 
     private double vehicleCollisionMass() {
@@ -3038,6 +3029,12 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     public boolean shouldHidePassenger(Entity passenger) {
         int fallbackIndex = this.getPassengers().indexOf(passenger);
         return fallbackIndex >= 0 && this.seatForPassenger(passenger, fallbackIndex).hidePassenger();
+    }
+
+    public boolean shouldProtectPassenger(Entity passenger) {
+        int fallbackIndex = this.getPassengers().indexOf(passenger);
+        return fallbackIndex >= 0 && (this.seatForPassenger(passenger, fallbackIndex).hidePassenger()
+                || this.seatForPassenger(passenger, fallbackIndex).enclosed());
     }
 
     public boolean shouldBanPassengerHand(Entity passenger) {
@@ -4890,6 +4887,23 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     @Override
     public boolean canBeCollidedWith() {
         return !this.isRemoved() && !this.usesCustomObbEntityCollision();
+    }
+
+    @Override
+    public boolean isPushable() {
+        return false;
+    }
+
+    @Override
+    public void push(Entity entity) {
+    }
+
+    @Override
+    public void push(Vec3 movement) {
+    }
+
+    @Override
+    public void push(double x, double y, double z) {
     }
 
     private record RotorContactInfo(double centerX, double centerY, double centerZ, double radius) {
