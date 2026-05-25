@@ -25,9 +25,14 @@ public final class EnemyVehicleSpawner {
 
     private EnemyVehicleSpawner() {}
 
+    public static boolean canSpawnNaturally(ServerLevel level) {
+        return Config.enemyVehicleSpawningEnabled()
+                && Config.currentGunnerDay(level) >= Config.enemyVehicleStartDay()
+                && Config.enemyVehicleConversionChance() > 0.0D;
+    }
+
     public static boolean tryReplaceNaturalGunner(ServerLevel level, PathfinderMob mob) {
-        if (!Config.enemyVehicleSpawningEnabled()
-                || Config.currentGunnerDay(level) < Config.enemyVehicleStartDay()
+        if (!canSpawnNaturally(level)
                 || mob.isPassenger()
                 || !isOpenSky(level, mob.blockPosition())
                 || mob.getRandom().nextDouble() >= Config.enemyVehicleConversionChance()) {
@@ -35,17 +40,12 @@ public final class EnemyVehicleSpawner {
         }
 
         ResourceLocation vehicleId = pickVehicleId(level, mob.blockPosition(), mob.getRandom());
-        VehicleEntity vehicle = spawnVehicle(level, mob.blockPosition(), mob.getYRot(), vehicleId);
-        if (vehicle == null) {
-            return false;
-        }
-        mob.discard();
-        return true;
+        return spawnVehicle(level, mob.blockPosition(), mob.getYRot(), vehicleId, mob) != null;
     }
 
     @Nullable
     public static VehicleEntity trySpawnRaidVehicle(ServerLevel level, BlockPos origin, @Nullable BlockPos burstCenter, @Nullable Player target) {
-        if (!Config.enemyVehicleSpawningEnabled() || Config.currentGunnerDay(level) < Config.enemyVehicleStartDay()) {
+        if (!canSpawnNaturally(level)) {
             return null;
         }
 
@@ -74,7 +74,12 @@ public final class EnemyVehicleSpawner {
 
     @Nullable
     private static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, float yaw, ResourceLocation vehicleId) {
-        VehicleEntity vehicle = EnemyVehicleSpawnItem.spawnVehicle(level, pos, vehicleType(vehicleId), vehicleId, null, null, false);
+        return spawnVehicle(level, pos, yaw, vehicleId, null);
+    }
+
+    @Nullable
+    private static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, float yaw, ResourceLocation vehicleId, @Nullable PathfinderMob existingCrew) {
+        VehicleEntity vehicle = EnemyVehicleSpawnItem.spawnVehicle(level, pos, vehicleType(vehicleId), vehicleId, null, null, false, existingCrew);
         if (vehicle != null) {
             vehicle.setYRot(yaw);
             EnemyVehicleController.setAnchor(vehicle, vehicle.position());

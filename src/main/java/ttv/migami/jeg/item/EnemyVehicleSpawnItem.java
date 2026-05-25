@@ -12,6 +12,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -94,6 +95,11 @@ public class EnemyVehicleSpawnItem extends Item {
 
     @Nullable
     public static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, EntityType<? extends VehicleEntity> vehicleType, ResourceLocation vehicleId, @Nullable Player player, @Nullable ItemStack stack, boolean offsetY) {
+        return spawnVehicle(level, pos, vehicleType, vehicleId, player, stack, offsetY, null);
+    }
+
+    @Nullable
+    public static VehicleEntity spawnVehicle(ServerLevel level, BlockPos pos, EntityType<? extends VehicleEntity> vehicleType, ResourceLocation vehicleId, @Nullable Player player, @Nullable ItemStack stack, boolean offsetY, @Nullable PathfinderMob existingCrew) {
         VehicleEntity vehicle = vehicleType.create(level);
         if (vehicle == null) {
             return null;
@@ -111,7 +117,7 @@ public class EnemyVehicleSpawnItem extends Item {
 
         int crewCount = "mi28".equals(vehicleId.getPath()) ? 2 : 1;
         for (int seat = 0; seat < crewCount; seat++) {
-            Pillager crew = createCrew(level, vehicle);
+            PathfinderMob crew = seat == 0 && existingCrew != null ? existingCrew : createCrew(level, vehicle);
             if (crew == null) {
                 vehicle.destroyFromEnemyCrewLoss();
                 return null;
@@ -119,7 +125,10 @@ public class EnemyVehicleSpawnItem extends Item {
             if (seat == 0) {
                 vehicle.getPersistentData().putUUID(EnemyVehicleController.CREW_ID_TAG, crew.getUUID());
             }
-            level.addFreshEntity(crew);
+            prepareCrew(crew, vehicle);
+            if (crew != existingCrew) {
+                level.addFreshEntity(crew);
+            }
             vehicle.rememberSeatAssignment(crew, seat);
             crew.startRiding(vehicle, true);
         }
@@ -139,13 +148,16 @@ public class EnemyVehicleSpawnItem extends Item {
         if (crew == null) {
             return null;
         }
-        crew.moveTo(vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.getYRot(), 0.0F);
         crew.finalizeSpawn(level, level.getCurrentDifficultyAt(crew.blockPosition()), MobSpawnType.SPAWN_EGG, null);
+        return crew;
+    }
+
+    private static void prepareCrew(PathfinderMob crew, VehicleEntity vehicle) {
+        crew.moveTo(vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.getYRot(), 0.0F);
         crew.addTag(GunEvents.JEG_GUNNER_TAG);
         crew.addTag(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG);
         GunnerMobSpawner.normalizeGunnerMob(crew);
         EnemyVehicleController.configureCrew(crew);
-        return crew;
     }
 
     private static void loadDefaultAmmo(VehicleEntity vehicle, ResourceLocation vehicleId) {
