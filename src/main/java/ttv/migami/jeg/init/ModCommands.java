@@ -204,7 +204,11 @@ public final class ModCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> configVehicleCommand() {
         return Commands.literal("vehicle")
-                .then(configBooleanConfigCommand("enabled", "vehicle.enabled"));
+                .then(configBooleanConfigCommand("enabled", "vehicle.enabled"))
+                .then(Commands.literal("enemySpawning")
+                        .then(configBooleanConfigCommand("enabled", "vehicle.enemySpawning.enabled"))
+                        .then(configIntConfigCommand("startDay", "vehicle.enemySpawning.startDay", 0, 5000))
+                        .then(configDoubleConfigCommand("conversionChance", "vehicle.enemySpawning.conversionChance")));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {

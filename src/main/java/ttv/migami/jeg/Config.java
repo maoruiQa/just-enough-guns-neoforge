@@ -73,6 +73,9 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_RAID_MINIMUM_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_HOME_TRIGGER_RADIUS;
     public static final ModConfigSpec.BooleanValue VEHICLE_ENABLED;
+    public static final ModConfigSpec.BooleanValue ENEMY_VEHICLE_SPAWNING_ENABLED;
+    public static final ModConfigSpec.IntValue ENEMY_VEHICLE_START_DAY;
+    public static final ModConfigSpec.DoubleValue ENEMY_VEHICLE_CONVERSION_CHANCE;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
@@ -310,6 +313,15 @@ public final class Config {
         VEHICLE_ENABLED = serverBuilder
                 .comment("If true, players can place vehicle assembling tables and assemble new vehicle containers.")
                 .define("enabled", true);
+        ENEMY_VEHICLE_SPAWNING_ENABLED = serverBuilder
+                .comment("If true, gunner vehicles can naturally replace open-sky gunners and join faction raids.")
+                .define("enemyVehicleSpawningEnabled", true);
+        ENEMY_VEHICLE_START_DAY = serverBuilder
+                .comment("In-game day when enemy gunner vehicles can start spawning.")
+                .defineInRange("enemyVehicleStartDay", 80, 0, 5000);
+        ENEMY_VEHICLE_CONVERSION_CHANCE = serverBuilder
+                .comment("Probability (0-1) that a newly created open-sky natural gunner converts into an enemy vehicle.")
+                .defineInRange("enemyVehicleConversionChance", 0.05D, 0.0D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("combat");
@@ -336,6 +348,9 @@ public final class Config {
         registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
         registerGunnerGrowthCommandConfigs();
         registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
+        registerCommandConfig("vehicle.enemySpawning.enabled", ENEMY_VEHICLE_SPAWNING_ENABLED);
+        registerCommandConfig("vehicle.enemySpawning.startDay", ENEMY_VEHICLE_START_DAY);
+        registerCommandConfig("vehicle.enemySpawning.conversionChance", ENEMY_VEHICLE_CONVERSION_CHANCE);
     }
 
     private static void defineGunnerGrowthConfig(ModConfigSpec.Builder serverBuilder) {
@@ -769,6 +784,18 @@ public final class Config {
 
     public static boolean vehiclesEnabled() {
         return VEHICLE_ENABLED.get();
+    }
+
+    public static boolean enemyVehicleSpawningEnabled() {
+        return VEHICLE_ENABLED.get() && ENEMY_VEHICLE_SPAWNING_ENABLED.get();
+    }
+
+    public static int enemyVehicleStartDay() {
+        return Math.max(0, ENEMY_VEHICLE_START_DAY.get());
+    }
+
+    public static double enemyVehicleConversionChance() {
+        return clamp01(ENEMY_VEHICLE_CONVERSION_CHANCE.get());
     }
 
     public static int factionRaidIntervalDays() {
