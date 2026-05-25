@@ -55,6 +55,7 @@ import ttv.migami.jeg.faction.raid.RaidEntity;
 import ttv.migami.jeg.entity.monster.phantom.TerrorRaidHooks;
 import ttv.migami.jeg.mixin.MobAccessor;
 import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleSpawner;
 
 import java.util.UUID;
 
@@ -225,6 +226,9 @@ public class GunnerMobSpawner {
                     if (faction != null) {
                         normalizeGunnerMob(mob);
                         mob.addTag("MobGunner");
+                        if (mob.level() instanceof ServerLevel naturalLevel && EnemyVehicleSpawner.tryReplaceNaturalGunner(naturalLevel, mob)) {
+                            return;
+                        }
                         ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
                     }
                 }

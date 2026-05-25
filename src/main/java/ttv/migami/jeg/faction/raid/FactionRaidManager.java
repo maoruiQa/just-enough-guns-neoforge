@@ -33,6 +33,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
@@ -41,6 +42,9 @@ import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.util.LootUtils;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleSpawner;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class FactionRaidManager {
     private static final String RAID_ID_TAG_PREFIX = "JEGFactionRaidId:";
@@ -185,7 +189,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeMobIds.size(),
+                raid.activeCount(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -308,7 +312,7 @@ public final class FactionRaidManager {
         }
 
         boolean waveSpawnedAll = raid.spawnedThisWaveCount >= WAVE_MOBS;
-        if (!raid.spawningWave && waveSpawnedAll && raid.activeMobIds.size() <= LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD) {
+        if (!raid.spawningWave && waveSpawnedAll && raid.activeCount() <= LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD) {
             raid.lowMobNoFireTicks += RAID_MANAGER_TICK_INTERVAL;
             if (raid.lowMobNoFireTicks >= LOW_MOB_NO_FIRE_TIMEOUT_TICKS) {
                 clearActiveWaveMobs(level, raid);
@@ -318,7 +322,7 @@ public final class FactionRaidManager {
             raid.lowMobNoFireTicks = 0;
         }
 
-        if (!raid.spawningWave && waveSpawnedAll && raid.activeMobIds.isEmpty()) {
+        if (!raid.spawningWave && waveSpawnedAll && raid.activeCount() == 0) {
             if (raid.currentWave >= raid.totalWaves) {
                 finishVictory(level, raid);
             } else {
@@ -335,6 +339,7 @@ public final class FactionRaidManager {
         raid.spawnCooldown = 1;
         raid.lowMobNoFireTicks = 0;
         raid.currentBurstCenter = null;
+        raid.vehicleSpawnedThisWave = false;
         playHorn(level, raid.origin, false);
     }
 
@@ -362,7 +367,20 @@ public final class FactionRaidManager {
         int burstRemaining = Math.min(raid.spawnedInCurrentBurst, WAVE_MOBS - raid.spawnedThisWaveCount);
         int attempts = 0;
         int spawned = 0;
-        while (spawned < burstRemaining && raid.activeMobIds.size() < MAX_ACTIVE_MOBS && attempts++ < burstRemaining * 4) {
+        if (!raid.vehicleSpawnedThisWave
+                && raid.currentWave >= 2
+                && Config.enemyVehicleSpawningEnabled()
+                && raid.spawnedThisWaveCount + EnemyVehicleSpawner.raidVehicleBatchWeight() <= WAVE_MOBS
+                && raid.activeCount() < MAX_ACTIVE_MOBS
+                && level.getRandom().nextDouble() < 0.55D) {
+            VehicleEntity vehicle = EnemyVehicleSpawner.trySpawnRaidVehicle(level, raid.origin, raid.currentBurstCenter, preferredTarget);
+            if (vehicle != null) {
+                raid.trackVehicleSpawn(vehicle, preferredTarget);
+                spawned += EnemyVehicleSpawner.raidVehicleBatchWeight();
+            }
+        }
+
+        while (spawned < burstRemaining && raid.activeCount() < MAX_ACTIVE_MOBS && attempts++ < burstRemaining * 4) {
             Mob mob = FactionSpawnHelper.spawnRaidMember(level, faction, raid.origin, preferredTarget, raid.currentBurstCenter);
             if (mob == null) {
                 continue;
@@ -378,6 +396,19 @@ public final class FactionRaidManager {
     }
 
     private static void maintainRaidMobPressure(ServerLevel level, RaidContext raid, Player preferredTarget) {
+        Set<UUID> retiredVehicles = new HashSet<>();
+        for (UUID vehicleId : new HashSet<>(raid.activeVehicleIds)) {
+            Entity entity = level.getEntity(vehicleId);
+            if (!(entity instanceof VehicleEntity vehicle) || !vehicle.isAlive() || vehicle.isRemoved()) {
+                retiredVehicles.add(vehicleId);
+                continue;
+            }
+            EnemyVehicleController.rememberTarget(vehicle, preferredTarget, 20 * 30);
+        }
+        if (!retiredVehicles.isEmpty()) {
+            raid.activeVehicleIds.removeAll(retiredVehicles);
+        }
+
         Set<UUID> retiredMobs = new HashSet<>();
         for (UUID mobId : new HashSet<>(raid.activeMobIds)) {
             Entity entity = level.getEntity(mobId);
@@ -693,6 +724,14 @@ public final class FactionRaidManager {
             raid.clearMobTracking(mobId);
         }
         raid.activeMobIds.clear();
+        Set<UUID> vehicleIds = new HashSet<>(raid.activeVehicleIds);
+        for (UUID vehicleId : vehicleIds) {
+            Entity entity = level.getEntity(vehicleId);
+            if (entity instanceof VehicleEntity vehicle && vehicle.isAlive() && !vehicle.isRemoved()) {
+                vehicle.discard();
+            }
+        }
+        raid.activeVehicleIds.clear();
     }
 
     private static void clearRemainingRaidMobs(ServerLevel level, RaidContext raid) {
@@ -724,7 +763,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeMobIds.size(),
+                raid.activeCount(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -767,7 +806,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeMobIds.size(),
+                raid.activeCount(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -889,6 +928,7 @@ public final class FactionRaidManager {
         private final boolean forceGuns;
         private final int totalWaves;
         private final Set<UUID> activeMobIds = new HashSet<>();
+        private final Set<UUID> activeVehicleIds = new HashSet<>();
         private final Set<UUID> participantPlayerIds = new HashSet<>();
         private final List<BlockPos> rewardBarrelPositions = new ArrayList<>();
         private final Map<UUID, Vec3> lastPositions = new HashMap<>();
@@ -916,6 +956,7 @@ public final class FactionRaidManager {
         private boolean defeat;
         private boolean rewardGranted;
         private boolean rewardMarkerActive;
+        private boolean vehicleSpawnedThisWave;
 
         private RaidContext(UUID raidId, BlockPos origin, String factionName, boolean forceGuns, int totalWaves) {
             this.raidId = raidId;
@@ -934,6 +975,17 @@ public final class FactionRaidManager {
             }
             clearMobTracking(mob.getUUID());
             applyRaidTags(mob);
+        }
+
+        private void trackVehicleSpawn(VehicleEntity vehicle, @Nullable Player preferredTarget) {
+            this.activeVehicleIds.add(vehicle.getUUID());
+            this.spawnedThisWaveCount += EnemyVehicleSpawner.raidVehicleBatchWeight();
+            this.vehicleSpawnedThisWave = true;
+            if (preferredTarget != null) {
+                this.targetPlayerId = preferredTarget.getUUID();
+                this.participantPlayerIds.add(preferredTarget.getUUID());
+                EnemyVehicleController.rememberTarget(vehicle, preferredTarget, 20 * 30);
+            }
         }
 
         private void trackReplacement(Mob mob) {
@@ -974,6 +1026,14 @@ public final class FactionRaidManager {
             for (UUID mobId : removed) {
                 clearMobTracking(mobId);
             }
+            this.activeVehicleIds.removeIf(uuid -> {
+                Entity entity = level.getEntity(uuid);
+                return !(entity instanceof VehicleEntity vehicle) || vehicle.isRemoved() || !vehicle.isAlive();
+            });
+        }
+
+        private int activeCount() {
+            return this.activeMobIds.size() + this.activeVehicleIds.size();
         }
 
         private int burstSize(RandomSource random) {
