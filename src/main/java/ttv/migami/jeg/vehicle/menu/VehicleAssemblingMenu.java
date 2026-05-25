@@ -3,7 +3,7 @@ package ttv.migami.jeg.vehicle.menu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.Containers;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -67,19 +67,47 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
 
     private void giveOrDropResult(Player player, ItemStack result) {
         ItemStack remaining = result.copy();
-        player.getInventory().add(remaining);
-        if (remaining.isEmpty()) {
-            return;
-        }
+        this.insertIntoPlayerInventory(remaining);
         if (!this.dropAtTable(remaining)) {
             player.drop(remaining, false);
+            remaining.setCount(0);
+        }
+        this.playerInventory.setChanged();
+        this.broadcastChanges();
+        player.inventoryMenu.broadcastChanges();
+    }
+
+    private void insertIntoPlayerInventory(ItemStack remaining) {
+        for (int slot = 0; slot < HOTBAR_END && !remaining.isEmpty(); slot++) {
+            ItemStack stack = this.playerInventory.getItem(slot);
+            if (!stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, remaining)) {
+                int transfer = Math.min(remaining.getCount(), stack.getMaxStackSize() - stack.getCount());
+                if (transfer > 0) {
+                    stack.grow(transfer);
+                    remaining.shrink(transfer);
+                    this.playerInventory.setChanged();
+                }
+            }
+        }
+        for (int slot = 0; slot < HOTBAR_END && !remaining.isEmpty(); slot++) {
+            if (this.playerInventory.getItem(slot).isEmpty()) {
+                this.playerInventory.setItem(slot, remaining.copy());
+                remaining.setCount(0);
+                this.playerInventory.setChanged();
+            }
         }
     }
 
     private boolean dropAtTable(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return true;
+        }
         final boolean[] dropped = {false};
         this.access.execute((level, pos) -> {
-            Containers.dropItemStack(level, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, stack);
+            ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, stack.copy());
+            itemEntity.setDefaultPickUpDelay();
+            level.addFreshEntity(itemEntity);
+            stack.setCount(0);
             dropped[0] = true;
         });
         return dropped[0];
