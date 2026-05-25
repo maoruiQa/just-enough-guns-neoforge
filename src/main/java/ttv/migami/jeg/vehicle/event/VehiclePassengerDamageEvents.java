@@ -28,7 +28,7 @@ public final class VehiclePassengerDamageEvents {
             event.setCanceled(true);
             return;
         }
-        if (!vehicle.shouldHidePassenger(passenger)) {
+        if (!vehicle.shouldProtectPassenger(passenger)) {
             return;
         }
         if (REDIRECTING_TO_VEHICLE.get()) {
