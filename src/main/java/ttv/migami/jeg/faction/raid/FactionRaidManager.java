@@ -73,6 +73,9 @@ public final class FactionRaidManager {
     private static final int RAID_BURST_SIZE_MIN = 3;
     private static final int RAID_BURST_SIZE_MAX = 5;
     private static final int RAID_BURST_DELAY_TICKS = 80;
+    private static final double RAID_WAVE_TWO_EXTRA_VEHICLE_CHANCE = 0.75D;
+    private static final double RAID_WAVE_THREE_EXTRA_VEHICLE_CHANCE = 0.85D;
+    private static final double RAID_WAVE_THREE_THIRD_VEHICLE_CHANCE = 0.55D;
     private static final int LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD = 3;
     private static final int LOW_MOB_NO_FIRE_TIMEOUT_TICKS = 400;
     private static final int REWARD_MARKER_TICK_INTERVAL = 6;
@@ -332,7 +335,8 @@ public final class FactionRaidManager {
         raid.spawnCooldown = 1;
         raid.lowMobNoFireTicks = 0;
         raid.currentBurstCenter = null;
-        raid.vehicleSpawnedThisWave = false;
+        raid.vehicleSpawnsThisWave = 0;
+        raid.desiredVehicleSpawnsThisWave = -1;
         playHorn(level, raid.origin, false);
     }
 
@@ -360,17 +364,16 @@ public final class FactionRaidManager {
         int burstRemaining = Math.min(raid.spawnedInCurrentBurst, WAVE_MOBS - raid.spawnedThisWaveCount);
         int attempts = 0;
         int spawned = 0;
-        if (!raid.vehicleSpawnedThisWave
-                && raid.currentWave >= 2
-                && Config.enemyVehicleSpawningEnabled()
+        int desiredVehicles = raid.desiredVehicleSpawnsThisWave(level);
+        while (raid.vehicleSpawnsThisWave < desiredVehicles
                 && raid.spawnedThisWaveCount + EnemyVehicleSpawner.raidVehicleBatchWeight() <= WAVE_MOBS
-                && raid.activeCount() < MAX_ACTIVE_MOBS
-                && level.getRandom().nextDouble() < 0.55D) {
+                && raid.activeCount() < MAX_ACTIVE_MOBS) {
             VehicleEntity vehicle = EnemyVehicleSpawner.trySpawnRaidVehicle(level, raid.origin, raid.currentBurstCenter, preferredTarget);
-            if (vehicle != null) {
-                raid.trackVehicleSpawn(vehicle, preferredTarget);
-                spawned += EnemyVehicleSpawner.raidVehicleBatchWeight();
+            if (vehicle == null) {
+                break;
             }
+            raid.trackVehicleSpawn(vehicle, preferredTarget);
+            spawned += EnemyVehicleSpawner.raidVehicleBatchWeight();
         }
 
         while (spawned < burstRemaining && raid.activeCount() < MAX_ACTIVE_MOBS && attempts++ < burstRemaining * 4) {
@@ -938,7 +941,8 @@ public final class FactionRaidManager {
         private boolean defeat;
         private boolean rewardGranted;
         private boolean rewardMarkerActive;
-        private boolean vehicleSpawnedThisWave;
+        private int vehicleSpawnsThisWave;
+        private int desiredVehicleSpawnsThisWave = -1;
 
         private RaidContext(UUID raidId, BlockPos origin, String factionName, boolean forceGuns, int totalWaves) {
             this.raidId = raidId;
@@ -962,12 +966,36 @@ public final class FactionRaidManager {
         private void trackVehicleSpawn(VehicleEntity vehicle, @Nullable Player preferredTarget) {
             this.activeVehicleIds.add(vehicle.getUUID());
             this.spawnedThisWaveCount += EnemyVehicleSpawner.raidVehicleBatchWeight();
-            this.vehicleSpawnedThisWave = true;
+            this.vehicleSpawnsThisWave++;
             if (preferredTarget != null) {
                 this.targetPlayerId = preferredTarget.getUUID();
                 this.participantPlayerIds.add(preferredTarget.getUUID());
                 EnemyVehicleController.rememberTarget(vehicle, preferredTarget, 20 * 30);
             }
+        }
+
+        private int desiredVehicleSpawnsThisWave(ServerLevel level) {
+            if (this.desiredVehicleSpawnsThisWave >= 0) {
+                return this.desiredVehicleSpawnsThisWave;
+            }
+            if (!EnemyVehicleSpawner.canSpawnNaturally(level)) {
+                this.desiredVehicleSpawnsThisWave = 0;
+                return 0;
+            }
+            int count = 1;
+            RandomSource random = level.getRandom();
+            if (this.currentWave == 2 && random.nextDouble() < RAID_WAVE_TWO_EXTRA_VEHICLE_CHANCE) {
+                count++;
+            } else if (this.currentWave >= 3) {
+                if (random.nextDouble() < RAID_WAVE_THREE_EXTRA_VEHICLE_CHANCE) {
+                    count++;
+                }
+                if (random.nextDouble() < RAID_WAVE_THREE_THIRD_VEHICLE_CHANCE) {
+                    count++;
+                }
+            }
+            this.desiredVehicleSpawnsThisWave = count;
+            return count;
         }
 
         private void trackReplacement(Mob mob) {
