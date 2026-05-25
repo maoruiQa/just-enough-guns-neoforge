@@ -366,6 +366,18 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         return true;
     }
 
+    public float turnAiVehicleYawToward(float desiredYaw, float maxStep) {
+        float yawDiff = Mth.wrapDegrees(desiredYaw - this.getYRot());
+        if (Math.abs(yawDiff) < 0.001F) {
+            return 0.0F;
+        }
+        float step = Mth.clamp(yawDiff, -Math.abs(maxStep), Math.abs(maxStep));
+        if (this.setVehicleYawIfUnblocked(this.getYRot() + step)) {
+            return Mth.wrapDegrees(desiredYaw - this.getYRot());
+        }
+        return yawDiff;
+    }
+
     private float collisionLengthScale() {
         if (this.isSpeedboatVehicle()) {
             return SPEEDBOAT_COLLISION_LENGTH_SCALE;
@@ -1147,8 +1159,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         boolean wasVerticallySupported = this.onGround() || this.verticalCollisionBelow;
         int unsupportedTicksBeforeMove = this.unsupportedVehicleTicks;
         Vec3 before = this.position();
+        Vec3 velocityBeforeMove = this.getDeltaMovement();
         super.move(type, pos);
-        this.applyVehicleImpactDamage(pos, this.position().subtract(before), wasVerticallySupported, unsupportedTicksBeforeMove);
+        Vec3 actualMovement = this.position().subtract(before);
+        actualMovement = this.stopAtVehicleEntityImpact(before, pos, actualMovement, velocityBeforeMove);
+        this.applyVehicleImpactDamage(pos, actualMovement, wasVerticallySupported, unsupportedTicksBeforeMove);
         this.updateVehicleSupportTicks();
     }
 
@@ -1160,19 +1175,33 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported, int unsupportedTicksBeforeMove) {
         if (this.level().isClientSide
                 || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
-                || this.ramDamageCooldown > 0
-                || !(this.horizontalCollision || this.verticalCollision)) {
+                || this.ramDamageCooldown > 0) {
             return;
         }
         boolean landVehicle = this.vehicleData().defaults().vehicleType() == VehicleType.LAND;
+        boolean supportedAfterMove = this.onGround() || this.verticalCollisionBelow;
+        int fallAirborneTicks = landVehicle ? LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS : 8;
+        boolean landedAfterFall = !wasVerticallySupported
+                && supportedAfterMove
+                && unsupportedTicksBeforeMove >= fallAirborneTicks
+                && requestedMovement.y() < -0.05D;
+        Vec3 requestedHorizontal = new Vec3(requestedMovement.x(), 0.0D, requestedMovement.z());
+        boolean landBodyImpact = landVehicle && this.isLandVehicleBodyImpact(requestedMovement, actualMovement);
         double horizontalImpactSpeed = this.horizontalCollision
-                ? new Vec3(requestedMovement.x() - actualMovement.x(), 0.0D, requestedMovement.z() - actualMovement.z()).horizontalDistance()
+                ? requestedHorizontal.subtract(actualMovement.x(), 0.0D, actualMovement.z()).horizontalDistance()
                 : 0.0D;
-        if (landVehicle && unsupportedTicksBeforeMove > 0) {
+        if (landBodyImpact) {
+            horizontalImpactSpeed = Math.max(horizontalImpactSpeed, requestedHorizontal.length());
+        }
+        if (landVehicle && unsupportedTicksBeforeMove > 0 && !landBodyImpact) {
             horizontalImpactSpeed = 0.0D;
         }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
-        if (landVehicle && unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS) {
+        if (landedAfterFall) {
+            double fallDurationBonus = Math.max(0, unsupportedTicksBeforeMove - fallAirborneTicks) * 0.015D;
+            verticalImpactSpeed = Math.max(verticalImpactSpeed, Math.abs(requestedMovement.y()) + fallDurationBonus);
+        }
+        if (landVehicle && unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS && !landedAfterFall) {
             verticalImpactSpeed = 0.0D;
         }
         float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, landVehicle);
@@ -1191,6 +1220,49 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.8D;
         }
         this.hasImpulse = true;
+    }
+
+    private Vec3 stopAtVehicleEntityImpact(Vec3 before, Vec3 requestedMovement, Vec3 actualMovement, Vec3 velocityBeforeMove) {
+        if (this.level().isClientSide
+                || this.noPhysics
+                || this.isRemoved()
+                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
+                || requestedMovement.lengthSqr() <= 1.0E-8D) {
+            return actualMovement;
+        }
+        AABB currentBox = this.getBoundingBox();
+        AABB previousBox = currentBox.move(before.subtract(this.position()));
+        AABB sweptBox = this.sweptVehicleEntityCollisionBox(previousBox, currentBox);
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, sweptBox.inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
+            if (target == this || target.isRemoved() || target.noPhysics) {
+                continue;
+            }
+            AABB targetBox = target.getBoundingBox();
+            if (previousBox.intersects(targetBox) || (!sweptBox.intersects(targetBox) && !this.vehicleEntityCollisionIntersects(target))) {
+                continue;
+            }
+            double relativeSpeed = this.vehicleRelativeCollisionSpeed(target, velocityBeforeMove, target.getDeltaMovement());
+            this.setPos(before.x(), before.y(), before.z());
+            this.setDeltaMovement(Vec3.ZERO);
+            target.setDeltaMovement(Vec3.ZERO);
+            this.hasImpulse = true;
+            target.hasImpulse = true;
+            this.hurtMarked = true;
+            target.hurtMarked = true;
+            this.damageVehicleEntityCollision(target, relativeSpeed);
+            return Vec3.ZERO;
+        }
+        return actualMovement;
+    }
+
+    private AABB sweptVehicleEntityCollisionBox(AABB previousBox, AABB currentBox) {
+        return new AABB(
+                Math.min(previousBox.minX, currentBox.minX),
+                Math.min(previousBox.minY, currentBox.minY),
+                Math.min(previousBox.minZ, currentBox.minZ),
+                Math.max(previousBox.maxX, currentBox.maxX),
+                Math.max(previousBox.maxY, currentBox.maxY),
+                Math.max(previousBox.maxZ, currentBox.maxZ));
     }
 
     private void updateVehicleSupportTicks() {
@@ -2035,12 +2107,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             if (relativeSpeed < VEHICLE_COLLISION_MIN_RELATIVE_SPEED) {
                 continue;
             }
-            float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
-            float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
-            boolean targetDamaged = targetDamage > 1.0F && target.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), targetDamage);
-            boolean selfDamaged = selfDamage > 1.0F && this.hurtVehicleIgnoringArmor(target.vehicleStrikeDamageSource(), selfDamage);
-            if (targetDamaged || selfDamaged) {
-                target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+            if (this.damageVehicleEntityCollision(target, relativeSpeed)) {
                 damaged = true;
             }
         }
@@ -2050,13 +2117,34 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private double vehicleRelativeCollisionSpeed(VehicleEntity other) {
-        Vec3 relative = this.getDeltaMovement().subtract(other.getDeltaMovement());
+        return this.vehicleRelativeCollisionSpeed(other, this.getDeltaMovement(), other.getDeltaMovement());
+    }
+
+    private double vehicleRelativeCollisionSpeed(VehicleEntity other, Vec3 selfMovement, Vec3 otherMovement) {
+        Vec3 relative = selfMovement.subtract(otherMovement);
         VehicleType type = this.vehicleData().defaults().vehicleType();
         VehicleType otherType = other.vehicleData().defaults().vehicleType();
         if (type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT || otherType == VehicleType.HELICOPTER || otherType == VehicleType.AIRCRAFT) {
             return relative.length();
         }
         return relative.horizontalDistance();
+    }
+
+    private boolean damageVehicleEntityCollision(VehicleEntity target, double relativeSpeed) {
+        if (relativeSpeed < VEHICLE_COLLISION_MIN_RELATIVE_SPEED) {
+            return false;
+        }
+        float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
+        float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
+        boolean targetDamaged = targetDamage > 1.0F && target.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), targetDamage);
+        boolean selfDamaged = selfDamage > 1.0F && this.hurtVehicleIgnoringArmor(target.vehicleStrikeDamageSource(), selfDamage);
+        if (targetDamaged || selfDamaged) {
+            target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+            this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+            this.playVehicleStrikeSound();
+            return true;
+        }
+        return false;
     }
 
     private void tickVehicleEntityCollisionResolution() {
@@ -2097,6 +2185,16 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return best;
         }
         return this.aabbVehicleCollisionCorrection(target);
+    }
+
+    private boolean vehicleEntityCollisionIntersects(VehicleEntity target) {
+        if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) != null) {
+            return true;
+        }
+        if (target.usesCustomObbEntityCollision() && target.obbCollisionCorrection(this.getBoundingBox()) != null) {
+            return true;
+        }
+        return this.getBoundingBox().intersects(target.getBoundingBox());
     }
 
     @Nullable
