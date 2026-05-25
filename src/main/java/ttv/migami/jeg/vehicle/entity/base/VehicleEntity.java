@@ -44,6 +44,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -214,6 +215,9 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.22D;
     private static final double VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION = 0.45D;
     private static final double VEHICLE_ENTITY_COLLISION_DAMPING = 0.45D;
+    private static final double VEHICLE_EXPLOSION_KNOCKBACK_REFERENCE_MASS = 16.0D;
+    private static final double VEHICLE_EXPLOSION_KNOCKBACK_MIN_SCALE = 0.04D;
+    private static final double VEHICLE_EXPLOSION_KNOCKBACK_MAX_SCALE = 0.22D;
     private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
@@ -260,6 +264,8 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private int holdPowerTick;
     private boolean engineStart;
     private boolean engineStartOver;
+    private Vec3 preExplosionKnockbackVelocity;
+    private int preExplosionKnockbackTick = -1;
     private float destroyRot;
     private int dismountLerpSuppressionTicks;
     private UUID recentDismountSyncPlayerId;
@@ -2160,6 +2166,29 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
             case NONE -> 0.6D;
         };
         return Math.max(1.0D, this.vehicleData().defaults().maxHealth() * levelWeight);
+    }
+
+    @Override
+    public boolean ignoreExplosion(Explosion explosion) {
+        this.preExplosionKnockbackVelocity = this.getDeltaMovement();
+        this.preExplosionKnockbackTick = this.tickCount;
+        return false;
+    }
+
+    @Override
+    public void onExplosionHit(Entity source) {
+        Vec3 before = this.preExplosionKnockbackTick == this.tickCount ? this.preExplosionKnockbackVelocity : null;
+        this.preExplosionKnockbackVelocity = null;
+        this.preExplosionKnockbackTick = -1;
+        if (before == null) {
+            return;
+        }
+        Vec3 impulse = this.getDeltaMovement().subtract(before);
+        double scale = Mth.clamp(VEHICLE_EXPLOSION_KNOCKBACK_REFERENCE_MASS / this.vehicleCollisionMass(),
+                VEHICLE_EXPLOSION_KNOCKBACK_MIN_SCALE,
+                VEHICLE_EXPLOSION_KNOCKBACK_MAX_SCALE);
+        this.setDeltaMovement(before.add(impulse.scale(scale)));
+        this.hurtMarked = true;
     }
 
     private void tickObbEntityCollisionSupport() {
@@ -4481,6 +4510,9 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         if (this.isRemoved() || this.isInvulnerableToBase(source)) {
             return false;
         }
+        if (this.isEnemyAiVehicle() && source.getEntity() instanceof LivingEntity attacker) {
+            EnemyVehicleController.rememberTarget(this, attacker, 20 * 30);
+        }
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
         float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
@@ -4575,7 +4607,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
                 continue;
             }
             SeatInfo seat = this.seatForPassenger(passenger, index);
-            if (seat.enclosed() && !penetrated) {
+            if (seat.enclosed()) {
                 continue;
             }
             living.hurt(source, finalDamage * leakMultiplier);

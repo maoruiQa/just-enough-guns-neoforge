@@ -69,6 +69,17 @@ public final class EnemyVehicleController {
         }
     }
 
+    public static void rememberTarget(VehicleEntity vehicle, LivingEntity target, int ticks) {
+        if (!(target instanceof Player player) || player.isCreative() || player.isSpectator()) {
+            return;
+        }
+        Brain brain = BRAINS.computeIfAbsent(vehicle.getUUID(), ignored -> new Brain());
+        brain.targetId = player.getUUID();
+        brain.targetMemory = Math.max(brain.targetMemory, ticks);
+        putUuid(vehicle.getPersistentData(), TARGET_ID_TAG, brain.targetId);
+        vehicle.getPersistentData().putInt(TARGET_MEMORY_TAG, brain.targetMemory);
+    }
+
     private static boolean hasUuid(CompoundTag tag, String key) {
         return tag.getString(key).isPresent();
     }
@@ -388,7 +399,7 @@ public final class EnemyVehicleController {
         double yawDistance = Math.sqrt(toYawTarget.x * toYawTarget.x + toYawTarget.z * toYawTarget.z);
         float desiredYaw = yawDistance < 1.0D ? vehicle.getYRot() : (float) -Math.toDegrees(Math.atan2(toYawTarget.x, toYawTarget.z));
         float yawDiff = Mth.wrapDegrees(desiredYaw - vehicle.getYRot());
-        float yawInputScale = faceTarget == null ? 42.0F : 10.0F;
+        float yawInputScale = faceTarget == null ? 42.0F : 3.33F;
         float mouseX = Mth.clamp(yawDiff / yawInputScale, -1.0F, 1.0F);
         double altitudeError = desiredAltitude - altitude;
         boolean ascend = altitudeError > 3.0D || brain.airEvasionTicks > 0;
