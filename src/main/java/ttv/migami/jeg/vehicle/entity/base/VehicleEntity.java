@@ -902,7 +902,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (activeSlot >= 0 && activeSlot < weapons.size()) {
             return weapons.get(activeSlot);
         }
-        return this.selectedWeapon();
+        return null;
     }
 
     private void setRoll(float roll) {
@@ -1726,7 +1726,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         } else if (!this.consumeAmmo(weapon.ammoId())) {
             return false;
         }
-        if (!this.shouldLoopVehicleFireSound(shooter, weapon, fireInput)) {
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER || !this.shouldLoopVehicleFireSound(shooter, weapon, fireInput)) {
             this.playWeaponFireSound(weapon, stats);
         }
         if (weapon.guided()) {
@@ -1828,7 +1828,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean shouldLoopVehicleFireSound(@Nullable LivingEntity shooter, @Nullable VehicleWeaponInfo weapon, boolean fireInput) {
-        if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
                 || shooter == null
                 || weapon == null
                 || !fireInput
