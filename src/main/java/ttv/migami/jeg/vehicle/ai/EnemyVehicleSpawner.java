@@ -92,6 +92,9 @@ public final class EnemyVehicleSpawner {
         if (vehicle != null) {
             vehicle.setYRot(yaw);
             EnemyVehicleController.setAnchor(vehicle, anchor);
+            if (isAirVehicle(vehicleId)) {
+                vehicle.primeAiHelicopterSpawnHover();
+            }
         }
         return vehicle;
     }
