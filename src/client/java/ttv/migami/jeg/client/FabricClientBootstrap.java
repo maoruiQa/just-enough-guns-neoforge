@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -21,6 +22,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -64,6 +66,7 @@ import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
+import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
 import ttv.migami.jeg.vehicle.client.render.A10Renderer;
 import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
 import ttv.migami.jeg.vehicle.client.render.Bmp2Renderer;
@@ -82,6 +85,7 @@ import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEnt
 import ttv.migami.jeg.vehicle.client.screen.VehicleAssemblingScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleChargingStationScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class FabricClientBootstrap {
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
@@ -104,6 +108,7 @@ public final class FabricClientBootstrap {
     private static boolean rocketShotSent;
     private static String lastContextualPromptText = "";
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
+    private static final Map<Integer, SoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
     private static final Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = Map.ofEntries(
             Map.entry("abstract_gun", DEFAULT_MUZZLE_FLASH),
@@ -320,6 +325,7 @@ public final class FabricClientBootstrap {
             resetRocketHold(false);
             stunRingingSound = null;
             MUZZLE_FLASHES.clear();
+            VEHICLE_FIRE_SOUNDS.clear();
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             GunRecoilHandler.stopImmediate();
@@ -328,6 +334,7 @@ public final class FabricClientBootstrap {
 
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
+        tickVehicleFireAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -597,6 +604,39 @@ public final class FabricClientBootstrap {
         if (stunRingingSound == null || !minecraft.getSoundManager().isActive(stunRingingSound)) {
             stunRingingSound = new StunRingingSound();
             minecraft.getSoundManager().play(stunRingingSound);
+        }
+    }
+
+    private static void tickVehicleFireAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            VEHICLE_FIRE_SOUNDS.clear();
+            return;
+        }
+        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> {
+            Entity entity = minecraft.level.getEntity(entry.getKey());
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            return false;
+        });
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D
+                    || VEHICLE_FIRE_SOUNDS.containsKey(vehicle.getId())) {
+                continue;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null) {
+                continue;
+            }
+            VehicleFireSoundInstance instance = new VehicleFireSoundInstance(vehicle, sound);
+            VEHICLE_FIRE_SOUNDS.put(vehicle.getId(), instance);
+            minecraft.getSoundManager().play(instance);
         }
     }
 
