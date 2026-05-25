@@ -1,7 +1,9 @@
 package ttv.migami.jeg.faction;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.world.damagesource.DamageSource;
@@ -31,7 +33,7 @@ public final class GunnerFriendlyFireEvents {
         }
         LivingEntity attacker = friendlyVehicleStrikeAttacker(event.getEntity(), event.getSource());
         if (attacker != null) {
-            rememberIgnoredVehicleStrike(event.getEntity(), attacker);
+            rememberIgnoredVehicleStrike(event.getEntity(), event.getSource(), attacker);
         }
     }
 
@@ -75,8 +77,28 @@ public final class GunnerFriendlyFireEvents {
         return null;
     }
 
-    private static void rememberIgnoredVehicleStrike(LivingEntity target, LivingEntity attacker) {
-        IGNORED_VEHICLE_STRIKES.put(target.getUUID(), new IgnoredVehicleStrike(attacker.getUUID(), target.level().getGameTime() + VEHICLE_STRIKE_AGGRO_IGNORE_TICKS));
+    public static void clearFriendlyVehicleStrikeTargetAfterDamage(LivingEntity target, DamageSource source) {
+        LivingEntity attacker = friendlyVehicleStrikeAttacker(target, source);
+        if (attacker == null) {
+            return;
+        }
+        rememberIgnoredVehicleStrike(target, source, attacker);
+        if (target instanceof Mob mob) {
+            clearIgnoredVehicleStrikeTarget(mob);
+        }
+    }
+
+    private static void rememberIgnoredVehicleStrike(LivingEntity target, DamageSource source, LivingEntity attacker) {
+        Set<UUID> attackerIds = new HashSet<>();
+        attackerIds.add(attacker.getUUID());
+        if (source.getDirectEntity() instanceof VehicleEntity vehicle) {
+            for (Entity passenger : vehicle.getPassengers()) {
+                if (passenger instanceof LivingEntity living && GunnerFactionRelations.isTaggedGunner(living)) {
+                    attackerIds.add(living.getUUID());
+                }
+            }
+        }
+        IGNORED_VEHICLE_STRIKES.put(target.getUUID(), new IgnoredVehicleStrike(Set.copyOf(attackerIds), target.level().getGameTime() + VEHICLE_STRIKE_AGGRO_IGNORE_TICKS));
     }
 
     public static void clearIgnoredVehicleStrikeTarget(Mob mob) {
@@ -107,8 +129,8 @@ public final class GunnerFriendlyFireEvents {
     }
 
     private static boolean shouldClearIgnoredVehicleStrikeEntity(@Nullable LivingEntity entity, IgnoredVehicleStrike ignored) {
-        return entity != null && (!entity.isAlive() || entity.isRemoved() || entity.getUUID().equals(ignored.attackerId()));
+        return entity != null && (!entity.isAlive() || entity.isRemoved() || ignored.attackerIds().contains(entity.getUUID()));
     }
 
-    private record IgnoredVehicleStrike(UUID attackerId, long expiresAt) {}
+    private record IgnoredVehicleStrike(Set<UUID> attackerIds, long expiresAt) {}
 }

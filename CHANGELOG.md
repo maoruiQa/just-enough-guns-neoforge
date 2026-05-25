@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1 - 2026-05-25
+
+### Theme
+- Enemy vehicle spawning and recovery.
+
+### Added
+- Added an admin login tip showing `/justEnoughGuns config vehicle enemySpawning enabled false` so server admins can disable enemy vehicle spawning.
+
+### Fixed
+- Fixed enemy BMP2 recovery after server restarts and improved unstuck behavior when enemy vehicles block each other.
+- Fixed truck model collision coverage while keeping large AABB collision and ram damage disabled.
+
 ## 1.6.0 - 2026-05-23
 
 ### Added

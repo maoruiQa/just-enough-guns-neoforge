@@ -69,7 +69,7 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
         ItemStack remaining = result.copy();
         this.insertIntoPlayerInventory(remaining);
         if (!this.dropAtTable(remaining)) {
-            player.drop(remaining, false);
+            player.drop(remaining.copy(), false);
             remaining.setCount(0);
         }
         this.playerInventory.setChanged();
