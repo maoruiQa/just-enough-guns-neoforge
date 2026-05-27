@@ -95,8 +95,7 @@ public class GunItem extends Item {
             "revolver",
             "rocket_launcher",
             "supersonic_shotgun",
-            "typhoonee",
-            "waterpipe_shotgun"
+            "typhoonee"
     );
 
     private static final int RELOAD_STAGE_NONE = 0;
