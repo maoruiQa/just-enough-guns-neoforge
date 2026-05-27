@@ -5,6 +5,9 @@
 ### Changed
 - Rebalanced damaged sky ship armada loot so pistol and rifle ammo are more common while iron and lapis are less dominant.
 
+### Fixed
+- Fixed vehicle cannon muzzle flares and gun muzzle flashes rendering too faint on the 26.1 particle pipeline.
+
 ## 1.6.1 - 2026-05-25
 
 ### Theme
