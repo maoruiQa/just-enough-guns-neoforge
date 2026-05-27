@@ -1837,6 +1837,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
                 || shooter == null
                 || weapon == null
+                || this.usesGunMuzzleFlash(weapon.weaponId().getPath())
                 || !fireInput
                 || this.isWeaponReloading()
                 || this.isTurretDamaged()

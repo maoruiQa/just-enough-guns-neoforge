@@ -149,7 +149,7 @@ public final class GunClientEvents {
     private static final Map<Identifier, Optional<Vector3f>> FIRST_PERSON_MUZZLE_ANCHORS = new ConcurrentHashMap<>();
     private static FirstPersonGunPoseState firstPersonGunPose;
     private static StunRingingSound stunRingingSound;
-    private static final Map<Integer, net.minecraft.client.resources.sounds.SoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
+    private static final Map<Integer, VehicleFireSoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
 
     private GunClientEvents() {}
 
@@ -1201,6 +1201,11 @@ public final class GunClientEvents {
             if (!(entity instanceof VehicleEntity vehicle)
                     || !vehicle.isWeaponFiring()
                     || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null || !entry.getValue().matches(sound)) {
                 minecraft.getSoundManager().stop(entry.getValue());
                 return true;
             }

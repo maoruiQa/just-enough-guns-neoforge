@@ -7,6 +7,7 @@
 
 ### Fixed
 - Fixed vehicle cannon muzzle flares and gun muzzle flashes rendering too faint on the 26.1 particle pipeline.
+- Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
 
 ## 1.6.1 - 2026-05-25
 
