@@ -89,16 +89,13 @@
     "subtitle": "subtitles.block.generic.break",
     "sounds": [
       {
-        "name": "jeg:block/hit/metal1",
-        "stream": true
+        "name": "jeg:block/hit/metal1"
       },
       {
-        "name": "jeg:block/hit/metal2",
-        "stream": true
+        "name": "jeg:block/hit/metal2"
       },
       {
-        "name": "jeg:block/hit/metal3",
-        "stream": true
+        "name": "jeg:block/hit/metal3"
       }
     ]
   },
@@ -257,7 +254,6 @@
       }
     ]
   },
-
   "item.combat_rifle.fire": {
     "subtitle": "subtitle.jeg.fire",
     "sounds": [
@@ -775,7 +771,6 @@
       }
     ]
   },
-
   "item.combat_rifle.reload_magazine_out": {
     "subtitle": "subtitle.jeg.reload",
     "sounds": [
@@ -968,7 +963,6 @@
       }
     ]
   },
-
   "item.gun_generic.enchanted_fire": {
     "subtitle": "subtitle.jeg.fire.enchanted",
     "sounds": [
@@ -1081,7 +1075,6 @@
       }
     ]
   },
-
   "item.pistol.silenced_fire": {
     "subtitle": "subtitle.jeg.fire.silenced",
     "sounds": [
@@ -1330,7 +1323,6 @@
       }
     ]
   },
-
   "vehicle.locking_warning": {
     "subtitle": "subtitle.jeg.vehicle.locking_warning",
     "sounds": [
@@ -1371,8 +1363,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/a10/fire",
-        "stream": true
+        "name": "jeg:vehicle/a10/fire"
       }
     ]
   },
@@ -1380,8 +1371,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/a10/engine",
-        "stream": true
+        "name": "jeg:vehicle/a10/engine"
       }
     ]
   },
@@ -1389,8 +1379,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/ah6/cannon_fire",
-        "stream": true
+        "name": "jeg:vehicle/ah6/cannon_fire"
       }
     ]
   },
@@ -1398,8 +1387,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/ah6/engine",
-        "stream": true
+        "name": "jeg:vehicle/ah6/engine"
       }
     ]
   },
@@ -1407,8 +1395,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/bmp2/cannon_fire",
-        "stream": true
+        "name": "jeg:vehicle/bmp2/cannon_fire"
       }
     ]
   },
@@ -1416,8 +1403,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/bmp2/engine",
-        "stream": true
+        "name": "jeg:vehicle/bmp2/engine"
       }
     ]
   },
@@ -1425,8 +1411,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/bmp2/missile_fire",
-        "stream": true
+        "name": "jeg:vehicle/bmp2/missile_fire"
       }
     ]
   },
@@ -1434,8 +1419,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/hpj11/fire",
-        "stream": true
+        "name": "jeg:vehicle/hpj11/fire"
       }
     ]
   },
@@ -1443,8 +1427,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/laser_tower/fire",
-        "stream": true
+        "name": "jeg:vehicle/laser_tower/fire"
       }
     ]
   },
@@ -1460,8 +1443,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/lav150/engine",
-        "stream": true
+        "name": "jeg:vehicle/lav150/engine"
       }
     ]
   },
@@ -1469,8 +1451,7 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/mi28/cannon_fire",
-        "stream": true
+        "name": "jeg:vehicle/mi28/cannon_fire"
       }
     ]
   },
@@ -1478,8 +1459,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/mi28/engine",
-        "stream": true
+        "name": "jeg:vehicle/mi28/engine"
       }
     ]
   },
@@ -1487,8 +1467,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/speedboat/engine",
-        "stream": true
+        "name": "jeg:vehicle/speedboat/engine"
       }
     ]
   },
@@ -1496,8 +1475,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/tom6/engine",
-        "stream": true
+        "name": "jeg:vehicle/tom6/engine"
       }
     ]
   },
@@ -1505,8 +1483,7 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/truck/engine",
-        "stream": true
+        "name": "jeg:vehicle/truck/engine"
       }
     ]
   },
@@ -1514,24 +1491,19 @@
     "subtitle": "subtitle.jeg.vehicle.fire",
     "sounds": [
       {
-        "name": "jeg:vehicle/waveforce_tower/fire_1",
-        "stream": true
+        "name": "jeg:vehicle/waveforce_tower/fire_1"
       },
       {
-        "name": "jeg:vehicle/waveforce_tower/fire_2",
-        "stream": true
+        "name": "jeg:vehicle/waveforce_tower/fire_2"
       },
       {
-        "name": "jeg:vehicle/waveforce_tower/fire_3",
-        "stream": true
+        "name": "jeg:vehicle/waveforce_tower/fire_3"
       },
       {
-        "name": "jeg:vehicle/waveforce_tower/fire_4",
-        "stream": true
+        "name": "jeg:vehicle/waveforce_tower/fire_4"
       }
     ]
   },
-
   "event.phantom.distant": {
     "sounds": [
       {
