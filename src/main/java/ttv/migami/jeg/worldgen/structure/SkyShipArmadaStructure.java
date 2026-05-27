@@ -83,7 +83,9 @@ public class SkyShipArmadaStructure extends Structure {
     private static final int REQUIRED_LOOT_SHIPS_MAX = 2;
     private static final int GUARDIAN_TETHER_RADIUS = 96;
     private static final ResourceLocation LOOT_TABLE = Reference.id("chests/sky_ship_armada");
+    private static final ResourceLocation DAMAGED_LOOT_TABLE = Reference.id("chests/sky_ship_armada_damaged");
     private static final ResourceKey<LootTable> LOOT_TABLE_KEY = ResourceKey.create(Registries.LOOT_TABLE, LOOT_TABLE);
+    private static final ResourceKey<LootTable> DAMAGED_LOOT_TABLE_KEY = ResourceKey.create(Registries.LOOT_TABLE, DAMAGED_LOOT_TABLE);
 
     public SkyShipArmadaStructure(StructureSettings settings) {
         super(settings);
@@ -255,7 +257,7 @@ public class SkyShipArmadaStructure extends Structure {
         protected void handleDataMarker(String marker, BlockPos pos, ServerLevelAccessor level, RandomSource random, BoundingBox box) {
             if ("Chest".equals(marker)) {
                 BlockPos chestPos = pos.below();
-                if (!hasLootChest || !box.isInside(chestPos)) {
+                if (!box.isInside(chestPos)) {
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                     return;
                 }
@@ -275,7 +277,7 @@ public class SkyShipArmadaStructure extends Structure {
                     }
                 }
 
-                LootUtils.fillContainer(level, chestPos, LOOT_TABLE_KEY, random);
+                LootUtils.fillContainer(level, chestPos, hasLootChest ? LOOT_TABLE_KEY : DAMAGED_LOOT_TABLE_KEY, random);
                 var blockEntity = level.getBlockEntity(chestPos);
                 if (blockEntity instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity randomizable) {
                     ResourceKey<net.minecraft.world.level.storage.loot.LootTable> assigned = randomizable.getLootTable();
