@@ -39,6 +39,7 @@ public final class LootUtils {
     private LootUtils() {}
 
     private static final net.minecraft.resources.Identifier SKY_SHIP_LOOT = Reference.id("chests/sky_ship_armada");
+    private static final net.minecraft.resources.Identifier DAMAGED_SKY_SHIP_LOOT = Reference.id("chests/sky_ship_armada_damaged");
     private static final net.minecraft.resources.Identifier SUPPLY_LOOT = Reference.id("chests/terror_phantom_supply");
     private static final net.minecraft.resources.Identifier REWARD_LOOT = Reference.id("chests/terror_phantom_reward");
     private static final net.minecraft.resources.Identifier FACTION_RAID_REWARD_LOOT = Reference.id("chests/faction_raid_reward");
@@ -146,6 +147,10 @@ public final class LootUtils {
             fillSkyShipFallback(container, random, enchantLookup);
             return true;
         }
+        if (id.equals(DAMAGED_SKY_SHIP_LOOT)) {
+            fillDamagedSkyShipFallback(container, random, enchantLookup);
+            return true;
+        }
         if (id.equals(SUPPLY_LOOT)) {
             fillSupplyFallback(container, random, enchantLookup);
             return true;
@@ -189,6 +194,57 @@ public final class LootUtils {
         if (container instanceof BlockEntity blockEntity) {
             blockEntity.setChanged();
         }
+    }
+
+    private static void fillDamagedSkyShipFallback(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        container.clearContent();
+
+        int rolls = 5 + random.nextInt(11);
+        for (int i = 0; i < rolls; i++) {
+            placeInRandomSlot(container, createDamagedSkyShipLootItem(random, lookup), random);
+        }
+
+        if (container instanceof BlockEntity blockEntity) {
+            blockEntity.setChanged();
+        }
+    }
+
+    private static ItemStack createDamagedSkyShipLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        int roll = random.nextInt(100);
+        if (roll < 1) {
+            return createRandomGun(random);
+        }
+        if (roll < 2) {
+            return createEnchantedArmor(random, lookup);
+        }
+        if (roll < 3) {
+            return createEnchantedBook(random, lookup);
+        }
+        if (roll < 6) {
+            return new ItemStack(Items.GOLDEN_APPLE, 1);
+        }
+        if (roll < 25) {
+            return new ItemStack(Items.IRON_INGOT, 1 + random.nextInt(3));
+        }
+        if (roll < 42) {
+            return new ItemStack(Items.LAPIS_LAZULI, 3 + random.nextInt(5));
+        }
+        if (roll < 56) {
+            return new ItemStack(Items.GOLD_INGOT, 1 + random.nextInt(2));
+        }
+        if (roll < 68) {
+            return new ItemStack(Items.EXPERIENCE_BOTTLE, 1 + random.nextInt(2));
+        }
+        if (roll < 80) {
+            return createRandomAmmo(random, 4, 10);
+        }
+        if (roll < 92) {
+            return new ItemStack(Items.ARROW, 4 + random.nextInt(7));
+        }
+        if (roll < 97) {
+            return new ItemStack(ModItems.REPAIR_KIT.get(), 1);
+        }
+        return new ItemStack(Items.EMERALD, 1);
     }
 
     private static void populateHighTierBundle(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
