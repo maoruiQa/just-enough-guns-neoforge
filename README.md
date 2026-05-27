@@ -120,6 +120,10 @@ else:
 
 The result is then scaled by the armor slot and armor tier durability multipliers and capped before being applied to the armor item.
 
+## Donation
+
+PayPal: https://www.paypal.com/paypalme/RuiMao65
+
 ## Commands And Config
 
 The mod exposes in-game configuration commands for common server tuning. Availability depends on loader/version branch, but recent builds include controls for areas such as:
