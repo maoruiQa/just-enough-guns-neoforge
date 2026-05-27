@@ -146,7 +146,7 @@ public final class FabricClientBootstrap {
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
-    private static final Map<Integer, net.minecraft.client.resources.sounds.SoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
+    private static final Map<Integer, VehicleFireSoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
     private static final Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = Map.ofEntries(
             Map.entry("abstract_gun", DEFAULT_MUZZLE_FLASH),
@@ -370,6 +370,11 @@ public final class FabricClientBootstrap {
             if (!(entity instanceof VehicleEntity vehicle)
                     || !vehicle.isWeaponFiring()
                     || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null || !entry.getValue().matches(sound)) {
                 minecraft.getSoundManager().stop(entry.getValue());
                 return true;
             }
