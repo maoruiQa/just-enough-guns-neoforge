@@ -45,7 +45,9 @@ public final class LootUtils {
     private static final net.minecraft.resources.Identifier FACTION_RAID_REWARD_LOOT = Reference.id("chests/faction_raid_reward");
     private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
     private static final Identifier ABSTRACT_GUN_ID = Reference.id("abstract_gun");
+    private static final Identifier TYPHOONEE_ID = Reference.id("typhoonee");
     private static final Set<Identifier> EXCLUDED_GUN_LOOT = Set.of(PHANTOM_SMG_ID, ABSTRACT_GUN_ID);
+    private static final Set<Identifier> SKY_SHIP_EXCLUDED_GUN_LOOT = Set.of(TYPHOONEE_ID);
     private static final Item[] DIAMOND_ARMOR = {
         Items.DIAMOND_HELMET,
         Items.DIAMOND_CHESTPLATE,
@@ -181,7 +183,7 @@ public final class LootUtils {
 
     private static void fillSkyShipFallback(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
         container.clearContent();
-        populateHighTierBundle(container, random, lookup);
+        populateSkyShipHighTierBundle(container, random, lookup);
 
         int extraRolls = 3 + random.nextInt(3);
         for (int i = 0; i < extraRolls; i++) {
@@ -212,7 +214,7 @@ public final class LootUtils {
     private static ItemStack createDamagedSkyShipLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
         int roll = random.nextInt(100);
         if (roll < 1) {
-            return createRandomGun(random);
+            return createSkyShipRandomGun(random);
         }
         if (roll < 2) {
             return createEnchantedArmor(random, lookup);
@@ -244,7 +246,15 @@ public final class LootUtils {
         return new ItemStack(Items.EMERALD, 1);
     }
 
+    private static void populateSkyShipHighTierBundle(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        populateHighTierBundle(container, random, lookup, random.nextFloat() < 0.75F, true);
+    }
+
     private static void populateHighTierBundle(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        populateHighTierBundle(container, random, lookup, true, false);
+    }
+
+    private static void populateHighTierBundle(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup, boolean includeGun, boolean skyShipGunPool) {
         ItemStack valuables = createSkyShipHighValue(random, lookup);
         if (!valuables.isEmpty()) {
             placeInRandomSlot(container, valuables, random);
@@ -255,7 +265,7 @@ public final class LootUtils {
             placeInRandomSlot(container, armor, random);
         }
 
-        ItemStack gun = createRandomGun(random);
+        ItemStack gun = includeGun ? (skyShipGunPool ? createSkyShipRandomGun(random) : createRandomGun(random)) : ItemStack.EMPTY;
         if (gun.isEmpty()) {
             gun = createRandomAmmo(random, 4, 9);
         }
@@ -293,8 +303,8 @@ public final class LootUtils {
         if (roll < 75) {
             return createEnchantedArmor(random, lookup);
         }
-        if (roll < 88) {
-            return createRandomGun(random);
+        if (roll < 85) {
+            return createSkyShipRandomGun(random);
         }
         if (roll < 96) {
             return createRandomAmmo(random, 4, 9);
@@ -492,12 +502,20 @@ public final class LootUtils {
     }
 
     private static ItemStack createRandomGun(RandomSource random) {
+        return createRandomGun(random, Set.of());
+    }
+
+    private static ItemStack createSkyShipRandomGun(RandomSource random) {
+        return createRandomGun(random, SKY_SHIP_EXCLUDED_GUN_LOOT);
+    }
+
+    private static ItemStack createRandomGun(RandomSource random, Set<Identifier> extraExcluded) {
         if (ModItems.GUNS.isEmpty()) {
             return ItemStack.EMPTY;
         }
         List<Item> guns = new ArrayList<>();
         ModItems.GUNS.forEach((id, holder) -> {
-            if (EXCLUDED_GUN_LOOT.contains(id)) {
+            if (EXCLUDED_GUN_LOOT.contains(id) || extraExcluded.contains(id)) {
                 return;
             }
             guns.add(holder.get());
@@ -522,8 +540,19 @@ public final class LootUtils {
         List<Item> ammoItems = new ArrayList<>();
         ModItems.AMMO.values().forEach(holder -> ammoItems.add(holder.get()));
         Item item = ammoItems.get(random.nextInt(ammoItems.size()));
-        int count = Mth.nextInt(random, min, max);
+        int count = createAmmoCount(random, item, min, max);
         return new ItemStack(item, count);
+    }
+
+    private static int createAmmoCount(RandomSource random, Item item, int min, int max) {
+        String ammoId = BuiltInRegistries.ITEM.getKey(item).getPath();
+        return switch (ammoId) {
+            case "medium_anti_air_missile", "medium_anti_ground_missile", "large_anti_ground_missile" -> Mth.nextInt(random, 1, 3);
+            case "small_rocket", "rocket" -> Mth.nextInt(random, 3, 10);
+            case "small_shell", "autocannon_shell", "shotgun_shell", "handmade_shell" -> Mth.nextInt(random, 3, 12);
+            case "pistol_ammo", "rifle_ammo" -> Mth.nextInt(random, 12, 40);
+            default -> Mth.nextInt(random, 8, 20);
+        };
     }
 
     private static ItemStack createHighTierEnchantedArmor(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
