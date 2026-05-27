@@ -200,18 +200,25 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
-    private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.24D;
+    private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.25D;
     private static final int VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS = 10;
-    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.32D;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.25D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.45D;
-    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 160.0D;
-    private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 140.0D;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_LIGHT_END = 0.45D;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_LIGHT_DAMAGE_SCALE = 8.0D;
+    private static final double VEHICLE_HORIZONTAL_IMPACT_HEAVY_DAMAGE_SCALE = 120.0D;
+    private static final double VEHICLE_IMPACT_DAMAGE_MIN_MULTIPLIER = 0.25D;
+    private static final double VEHICLE_IMPACT_MULTIPLIER_DROP_REFERENCE = 7.5D;
+    private static final double VEHICLE_IMPACT_MULTIPLIER_HORIZONTAL_REFERENCE = 0.38D;
+    private static final double VEHICLE_IMPACT_MULTIPLIER_VERTICAL_REFERENCE = 0.55D;
     private static final int LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS = 14;
     private static final double LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED = 0.18D;
-    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.18D;
-    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.55D;
-    private static final double LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE = 100.0D;
-    private static final double LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE = 80.0D;
+    private static final double VEHICLE_FALL_IMPACT_SAFE_DROP = 6.0D;
+    private static final double VEHICLE_FALL_IMPACT_LIGHT_DROP_END = 10.0D;
+    private static final double VEHICLE_FALL_IMPACT_LIGHT_DAMAGE_SCALE = 0.8D;
+    private static final double VEHICLE_FALL_IMPACT_HEAVY_LINEAR_SCALE = 1.25D;
+    private static final double VEHICLE_FALL_IMPACT_HEAVY_CURVE_SCALE = 0.5D;
+    private static final double VEHICLE_FALL_IMPACT_SPEED_DAMAGE_SCALE = 7.5D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
@@ -252,6 +259,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private int energyRechargeTick;
     private int ramDamageCooldown;
     private int unsupportedVehicleTicks;
+    private double airborneStartY = Double.NaN;
+    private double airborneMaxY = Double.NaN;
+    private int lastVehicleImpactSoundTick = Integer.MIN_VALUE;
     private int weaponControllerId = -1;
     private boolean weaponFireInput;
     private int seekControllerId = -1;
@@ -1194,6 +1204,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 actualMovement = this.position().subtract(before);
         actualMovement = this.stopAtVehicleEntityImpact(before, pos, actualMovement, velocityBeforeMove);
         this.applyVehicleImpactDamage(pos, actualMovement, wasVerticallySupported, unsupportedTicksBeforeMove);
+        if (!this.onGround() && !this.verticalCollisionBelow && unsupportedTicksBeforeMove == 0 && Double.isNaN(this.airborneStartY)) {
+            this.airborneStartY = before.y();
+            this.airborneMaxY = Math.max(before.y(), this.getY());
+        }
         this.updateVehicleSupportTicks();
     }
 
@@ -1204,8 +1218,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported, int unsupportedTicksBeforeMove) {
         if (this.level().isClientSide()
-                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
-                || this.ramDamageCooldown > 0) {
+                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
+            return;
+        }
+        if (this.ramDamageCooldown > 0) {
             return;
         }
         VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
@@ -1213,10 +1229,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         boolean helicopterVehicle = vehicleType == VehicleType.HELICOPTER;
         boolean supportedAfterMove = this.onGround() || this.verticalCollisionBelow;
         int fallAirborneTicks = landVehicle ? LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS : 8;
-        boolean landedAfterFall = !wasVerticallySupported
+        double trackedFallDistance = this.currentAirborneDropDistance();
+        boolean hadTrackedFall = unsupportedTicksBeforeMove >= fallAirborneTicks || trackedFallDistance > VEHICLE_FALL_IMPACT_SAFE_DROP;
+        boolean downwardImpact = requestedMovement.y < -LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED
+                || this.verticalCollision && requestedMovement.y < actualMovement.y - LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
+        boolean landedAfterFall = hadTrackedFall
                 && supportedAfterMove
-                && unsupportedTicksBeforeMove >= fallAirborneTicks
-                && requestedMovement.y < -LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
+                && downwardImpact;
+        double fallDistance = landedAfterFall ? trackedFallDistance : 0.0D;
         Vec3 requestedHorizontal = new Vec3(requestedMovement.x(), 0.0D, requestedMovement.z());
         boolean landBodyImpact = landVehicle && this.isLandVehicleBodyImpact(requestedMovement, actualMovement);
         double horizontalImpactSpeed = this.horizontalCollision
@@ -1235,14 +1255,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             double fallDurationBonus = Math.max(0, unsupportedTicksBeforeMove - fallAirborneTicks) * 0.015D;
             verticalImpactSpeed = Math.max(verticalImpactSpeed, Math.abs(requestedMovement.y) + fallDurationBonus);
         }
-        if (landVehicle && unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS && !landedAfterFall) {
+        if (landVehicle && (unsupportedTicksBeforeMove < LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS || fallDistance <= VEHICLE_FALL_IMPACT_SAFE_DROP) && !landedAfterFall) {
             verticalImpactSpeed = 0.0D;
         }
-        float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, landVehicle);
-        if (damage <= 1.0F) {
+        float damage = this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, fallDistance);
+        if (damage <= 0.0F) {
             return;
         }
-        this.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), damage);
+        DamageSource source = this.vehicleStrikeDamageSource();
+        if (!this.hurtVehicleStrikeWithArmor(source, damage)) {
+            return;
+        }
         this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
         Direction bounceDirection = this.impactBounceDirection(requestedMovement);
         if (this.verticalCollision) {
@@ -1314,9 +1337,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private void updateVehicleSupportTicks() {
         if (this.onGround() || this.verticalCollisionBelow) {
             this.unsupportedVehicleTicks = 0;
+            this.airborneStartY = Double.NaN;
+            this.airborneMaxY = Double.NaN;
         } else {
+            if (Double.isNaN(this.airborneStartY)) {
+                this.airborneStartY = this.getY();
+                this.airborneMaxY = this.getY();
+            } else {
+                this.airborneMaxY = Math.max(this.airborneMaxY, this.getY());
+            }
             this.unsupportedVehicleTicks = Math.min(this.unsupportedVehicleTicks + 1, 100);
         }
+    }
+
+    private double currentAirborneDropDistance() {
+        double startY = Double.isNaN(this.airborneStartY) ? this.yo : this.airborneStartY;
+        double maxY = Double.isNaN(this.airborneMaxY) ? startY : Math.max(this.airborneMaxY, startY);
+        return Math.max(0.0D, maxY - this.getY());
     }
 
     private boolean isLandVehicleBodyImpact(Vec3 requestedMovement, Vec3 actualMovement) {
@@ -1341,22 +1378,54 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed) {
-        return this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, false);
+        return this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, 0.0D);
     }
 
-    private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed, boolean landBlockImpact) {
-        double horizontalThreshold = landBlockImpact ? LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD : VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD;
-        double verticalThreshold = landBlockImpact ? LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD : VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD;
-        double horizontalScale = landBlockImpact ? LAND_VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE : VEHICLE_HORIZONTAL_IMPACT_DAMAGE_SCALE;
-        double verticalScale = landBlockImpact ? LAND_VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE : VEHICLE_VERTICAL_IMPACT_DAMAGE_SCALE;
-        double horizontalImpact = Math.max(0.0D, horizontalImpactSpeed - horizontalThreshold);
-        double verticalImpact = Math.max(0.0D, verticalImpactSpeed - verticalThreshold);
-        if (horizontalImpact <= 0.0D && verticalImpact <= 0.0D) {
+    private float vehicleImpactDamage(double horizontalImpactSpeed, double verticalImpactSpeed, double fallDistance) {
+        double horizontalDamage = this.horizontalImpactDamage(horizontalImpactSpeed);
+        double verticalDamage = this.fallImpactDamage(fallDistance, verticalImpactSpeed);
+        if (horizontalDamage <= 0.0D && verticalDamage <= 0.0D) {
             return 0.0F;
         }
-        double damage = horizontalImpact * horizontalImpact * horizontalScale
-                + verticalImpact * verticalImpact * verticalScale;
-        return (float) (damage * this.vehicleCollisionWeight());
+        double damage = horizontalDamage + verticalDamage;
+        return (float) (damage * this.vehicleCollisionWeight() * this.vehicleImpactDamageMultiplier(horizontalImpactSpeed, verticalImpactSpeed, fallDistance));
+    }
+
+    private double vehicleImpactDamageMultiplier(double horizontalImpactSpeed, double verticalImpactSpeed, double fallDistance) {
+        double severity = Math.max(0.0D, fallDistance) / VEHICLE_IMPACT_MULTIPLIER_DROP_REFERENCE
+                + Math.max(0.0D, horizontalImpactSpeed) / VEHICLE_IMPACT_MULTIPLIER_HORIZONTAL_REFERENCE
+                + Math.max(0.0D, verticalImpactSpeed) / VEHICLE_IMPACT_MULTIPLIER_VERTICAL_REFERENCE;
+        double curve = 1.0D - Math.exp(-severity);
+        return VEHICLE_IMPACT_DAMAGE_MIN_MULTIPLIER + (1.0D - VEHICLE_IMPACT_DAMAGE_MIN_MULTIPLIER) * curve;
+    }
+
+    private double horizontalImpactDamage(double horizontalImpactSpeed) {
+        if (horizontalImpactSpeed <= VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD) {
+            return 0.0D;
+        }
+        double lightImpact = Math.min(horizontalImpactSpeed, VEHICLE_HORIZONTAL_IMPACT_DAMAGE_LIGHT_END) - VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD;
+        double damage = lightImpact * VEHICLE_HORIZONTAL_IMPACT_LIGHT_DAMAGE_SCALE;
+        if (horizontalImpactSpeed > VEHICLE_HORIZONTAL_IMPACT_DAMAGE_LIGHT_END) {
+            double heavyImpact = horizontalImpactSpeed - VEHICLE_HORIZONTAL_IMPACT_DAMAGE_LIGHT_END;
+            damage += heavyImpact * heavyImpact * VEHICLE_HORIZONTAL_IMPACT_HEAVY_DAMAGE_SCALE;
+        }
+        return damage;
+    }
+
+    private double fallImpactDamage(double fallDistance, double verticalImpactSpeed) {
+        if (fallDistance <= VEHICLE_FALL_IMPACT_SAFE_DROP) {
+            return 0.0D;
+        }
+        double lightDrop = Math.min(fallDistance, VEHICLE_FALL_IMPACT_LIGHT_DROP_END) - VEHICLE_FALL_IMPACT_SAFE_DROP;
+        double damage = lightDrop * VEHICLE_FALL_IMPACT_LIGHT_DAMAGE_SCALE;
+        if (fallDistance > VEHICLE_FALL_IMPACT_LIGHT_DROP_END) {
+            double heavyDrop = fallDistance - VEHICLE_FALL_IMPACT_LIGHT_DROP_END;
+            damage += heavyDrop * VEHICLE_FALL_IMPACT_HEAVY_LINEAR_SCALE
+                    + Math.pow(heavyDrop, 1.25D) * VEHICLE_FALL_IMPACT_HEAVY_CURVE_SCALE;
+        }
+        double verticalImpact = Math.max(0.0D, verticalImpactSpeed - VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD);
+        damage += verticalImpact * verticalImpact * VEHICLE_FALL_IMPACT_SPEED_DAMAGE_SCALE;
+        return damage;
     }
 
     private double vehicleCollisionWeight() {
@@ -1395,6 +1464,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void playVehicleMetalHitSound(SoundSource source, float pitch) {
+        if (this.tickCount == this.lastVehicleImpactSoundTick) {
+            return;
+        }
+        this.lastVehicleImpactSoundTick = this.tickCount;
         var holder = ModSounds.ALL.get(Reference.id("block.hit.metal"));
         SoundEvent sound = holder == null ? SoundEvents.ANVIL_LAND : holder.get();
         this.level().playSound(null, this, sound, source, 1.0F, pitch);
@@ -2196,8 +2269,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
         float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
-        boolean targetDamaged = targetDamage > 1.0F && target.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), targetDamage);
-        boolean selfDamaged = selfDamage > 1.0F && this.hurtVehicleIgnoringArmor(target.vehicleStrikeDamageSource(), selfDamage);
+        boolean targetDamaged = targetDamage > 0.0F && target.hurtVehicleStrikeWithArmor(this.vehicleStrikeDamageSource(), targetDamage);
+        boolean selfDamaged = selfDamage > 0.0F && this.hurtVehicleStrikeWithArmor(target.vehicleStrikeDamageSource(), selfDamage);
         if (targetDamaged || selfDamaged) {
             target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
             this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
@@ -4650,7 +4723,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
         float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
-        if (finalDamage <= 1.0F) {
+        float minimumDamage = source.is(ModDamageTypes.VEHICLE_STRIKE) ? 0.0F : 1.0F;
+        if (finalDamage <= minimumDamage) {
             return false;
         }
         this.applyPartDamage(hitPart, finalDamage);
@@ -4685,6 +4759,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.destroyVehicle();
         }
         return true;
+    }
+
+    private boolean hurtVehicleStrikeWithArmor(DamageSource source, float amount) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        return this.hurtServer(serverLevel, source, amount);
     }
 
     private void destroyVehicle() {

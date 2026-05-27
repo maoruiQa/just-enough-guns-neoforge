@@ -4,8 +4,11 @@
 
 ### Changed
 - Rebalanced damaged sky ship armada loot so pistol and rifle ammo are more common while iron and lapis are less dominant.
+- Tuned vehicle fall impact damage to scale more noticeably with drop height.
 
 ### Fixed
+- Fixed high vehicle falls sometimes landing without impact damage.
+- Fixed vehicle impact sounds playing inconsistently and stopped vehicle sounds from consuming streaming sound handles.
 - Fixed vehicle cannon muzzle flares and gun muzzle flashes rendering too faint on the 26.1 particle pipeline.
 - Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
 
