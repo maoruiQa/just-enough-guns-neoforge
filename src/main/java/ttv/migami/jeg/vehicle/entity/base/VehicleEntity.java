@@ -1838,6 +1838,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
                 || shooter == null
                 || weapon == null
+                || this.usesGunMuzzleFlash(weapon.weaponId().getPath())
                 || !fireInput
                 || this.isWeaponReloading()
                 || this.isTurretDamaged()
