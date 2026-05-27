@@ -10,16 +10,22 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class VehicleFireSoundInstance extends AbstractTickableSoundInstance {
     private static final float MAX_VOLUME = 6.5F;
     private final VehicleEntity vehicle;
+    private final SoundEvent sound;
 
     public VehicleFireSoundInstance(VehicleEntity vehicle, SoundEvent sound) {
         super(sound, SoundSource.PLAYERS, SoundInstance.createUnseededRandom());
         this.vehicle = vehicle;
+        this.sound = sound;
         this.looping = true;
         this.delay = 0;
         this.volume = 0.0F;
         this.pitch = 1.0F;
         this.attenuation = Attenuation.LINEAR;
         this.updatePosition();
+    }
+
+    public boolean matches(SoundEvent sound) {
+        return this.sound == sound;
     }
 
     @Override

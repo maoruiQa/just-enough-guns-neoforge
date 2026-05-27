@@ -5,6 +5,9 @@
 ### Changed
 - Rebalanced damaged sky ship armada loot so pistol and rifle ammo are more common while iron and lapis are less dominant.
 
+### Fixed
+- Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
+
 ## 1.6.1 - 2026-05-25
 
 ### Theme

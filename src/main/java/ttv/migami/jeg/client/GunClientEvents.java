@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.LightTexture;
@@ -103,7 +102,7 @@ public final class GunClientEvents {
             java.util.Map.entry("phantom_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -2.205D))
     );
     private static StunRingingSound stunRingingSound;
-    private static final java.util.Map<Integer, SoundInstance> VEHICLE_FIRE_SOUNDS = new java.util.HashMap<>();
+    private static final java.util.Map<Integer, VehicleFireSoundInstance> VEHICLE_FIRE_SOUNDS = new java.util.HashMap<>();
 
     private GunClientEvents() {}
 
@@ -751,7 +750,21 @@ public final class GunClientEvents {
             VEHICLE_FIRE_SOUNDS.clear();
             return;
         }
-        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> !minecraft.getSoundManager().isActive(entry.getValue()));
+        VEHICLE_FIRE_SOUNDS.entrySet().removeIf(entry -> {
+            Entity entity = minecraft.level.getEntity(entry.getKey());
+            if (!(entity instanceof VehicleEntity vehicle)
+                    || !vehicle.isWeaponFiring()
+                    || vehicle.distanceToSqr(player) > 16384.0D) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            var sound = vehicle.activeVehicleFireSound();
+            if (sound == null || !entry.getValue().matches(sound)) {
+                minecraft.getSoundManager().stop(entry.getValue());
+                return true;
+            }
+            return false;
+        });
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (!(entity instanceof VehicleEntity vehicle)
                     || !vehicle.isWeaponFiring()
