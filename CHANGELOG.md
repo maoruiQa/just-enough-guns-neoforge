@@ -10,6 +10,7 @@
 - Fixed high vehicle falls sometimes landing without impact damage.
 - Fixed vehicle impact sounds playing inconsistently and stopped vehicle sounds from consuming streaming sound handles.
 - Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
+- Fixed Waterpipe Shotgun reload animation falling into missing segmented reload clips.
 
 ## 1.6.1 - 2026-05-25
 
