@@ -23,6 +23,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -46,6 +47,10 @@ public final class LootUtils {
     private static final Identifier PHANTOM_SMG_ID = Reference.id("phantom_smg");
     private static final Identifier ABSTRACT_GUN_ID = Reference.id("abstract_gun");
     private static final Identifier TYPHOONEE_ID = Reference.id("typhoonee");
+    private static final Identifier PISTOL_AMMO_ID = Reference.id("pistol_ammo");
+    private static final Identifier RIFLE_AMMO_ID = Reference.id("rifle_ammo");
+    private static final Identifier REVOLVER_ID = Reference.id("revolver");
+    private static final Identifier CUSTOM_SMG_ID = Reference.id("custom_smg");
     private static final Set<Identifier> EXCLUDED_GUN_LOOT = Set.of(PHANTOM_SMG_ID, ABSTRACT_GUN_ID);
     private static final Set<Identifier> SKY_SHIP_EXCLUDED_GUN_LOOT = Set.of(TYPHOONEE_ID);
     private static final Item[] DIAMOND_ARMOR = {
@@ -203,7 +208,12 @@ public final class LootUtils {
 
         int rolls = 5 + random.nextInt(11);
         for (int i = 0; i < rolls; i++) {
-            placeInRandomSlot(container, createDamagedSkyShipLootItem(random, lookup), random);
+            placeInRandomSlot(container, createDamagedSkyShipCommonLootItem(random), random);
+        }
+
+        ItemStack rareStack = createDamagedSkyShipRareLootItem(random, lookup);
+        if (!rareStack.isEmpty()) {
+            placeInRandomSlot(container, rareStack, random);
         }
 
         if (container instanceof BlockEntity blockEntity) {
@@ -211,39 +221,53 @@ public final class LootUtils {
         }
     }
 
-    private static ItemStack createDamagedSkyShipLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
-        int roll = random.nextInt(100);
-        if (roll < 1) {
-            return createSkyShipRandomGun(random);
-        }
-        if (roll < 2) {
-            return createEnchantedArmor(random, lookup);
-        }
-        if (roll < 3) {
-            return createEnchantedBook(random, lookup);
-        }
-        if (roll < 6) {
-            return new ItemStack(Items.GOLDEN_APPLE, 1);
-        }
-        if (roll < 25) {
+    private static ItemStack createDamagedSkyShipCommonLootItem(RandomSource random) {
+        int roll = random.nextInt(20);
+        if (roll < 4) {
             return new ItemStack(Items.IRON_INGOT, 1 + random.nextInt(3));
         }
-        if (roll < 42) {
-            return new ItemStack(Items.LAPIS_LAZULI, 3 + random.nextInt(5));
-        }
-        if (roll < 56) {
+        if (roll < 7) {
             return new ItemStack(Items.GOLD_INGOT, 1 + random.nextInt(2));
         }
-        if (roll < 68) {
+        if (roll < 10) {
+            return new ItemStack(Items.LAPIS_LAZULI, 3 + random.nextInt(5));
+        }
+        if (roll < 12) {
             return new ItemStack(Items.EXPERIENCE_BOTTLE, 1 + random.nextInt(2));
         }
-        if (roll < 80) {
-            return createRandomAmmo(random, 8, 22);
+        if (roll < 16) {
+            return createSpecificAmmo(PISTOL_AMMO_ID, random);
         }
-        if (roll < 92) {
-            return new ItemStack(Items.ARROW, 4 + random.nextInt(7));
+        if (roll < 19) {
+            return createSpecificAmmo(RIFLE_AMMO_ID, random);
         }
         return new ItemStack(Items.EMERALD, 1);
+    }
+
+    private static ItemStack createDamagedSkyShipRareLootItem(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        int roll = random.nextInt(100);
+        if (roll < 91) {
+            return ItemStack.EMPTY;
+        }
+        if (roll < 92) {
+            return createRegisteredItemStack(REVOLVER_ID);
+        }
+        if (roll < 93) {
+            return createDamagedSkyShipEnchantedItem(new ItemStack(Items.IRON_CHESTPLATE), random, lookup);
+        }
+        if (roll < 94) {
+            return createDamagedSkyShipEnchantedItem(new ItemStack(Items.BOOK), random, lookup);
+        }
+        if (roll < 97) {
+            return new ItemStack(Items.GOLDEN_APPLE, 1);
+        }
+        if (roll < 98) {
+            return createRegisteredItemStack(CUSTOM_SMG_ID);
+        }
+        if (roll < 99) {
+            return createDamagedSkyShipEnchantedItem(new ItemStack(Items.IRON_LEGGINGS), random, lookup);
+        }
+        return createDamagedSkyShipEnchantedItem(new ItemStack(Items.IRON_HELMET), random, lookup);
     }
 
     private static void populateSkyShipHighTierBundle(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
@@ -544,6 +568,22 @@ public final class LootUtils {
         return new ItemStack(item, count);
     }
 
+    private static ItemStack createSpecificAmmo(Identifier ammoId, RandomSource random) {
+        var holder = ModItems.AMMO.get(ammoId);
+        if (holder == null) {
+            return createRandomAmmo(random, 12, 40);
+        }
+        return new ItemStack(holder.get(), Mth.nextInt(random, 12, 40));
+    }
+
+    private static ItemStack createRegisteredItemStack(Identifier itemId) {
+        var holder = ModItems.GUNS.get(itemId);
+        if (holder == null) {
+            return ItemStack.EMPTY;
+        }
+        return new ItemStack(holder.get());
+    }
+
     private static int createAmmoCount(RandomSource random, Item item, int min, int max) {
         String ammoId = BuiltInRegistries.ITEM.getKey(item).getPath();
         return switch (ammoId) {
@@ -578,6 +618,10 @@ public final class LootUtils {
             stack.enchant(holder, level);
         }
         return stack;
+    }
+
+    private static ItemStack createDamagedSkyShipEnchantedItem(ItemStack stack, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
+        return EnchantmentHelper.enchantItem(random, stack, Mth.nextInt(random, 12, 20), lookup.listElements().map(holder -> (Holder<Enchantment>) holder));
     }
 
     private static ItemStack createEnchantedArmor(RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
