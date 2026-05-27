@@ -236,13 +236,10 @@ public final class LootUtils {
             return new ItemStack(Items.EXPERIENCE_BOTTLE, 1 + random.nextInt(2));
         }
         if (roll < 80) {
-            return createRandomAmmo(random, 4, 10);
+            return createRandomAmmo(random, 8, 22);
         }
         if (roll < 92) {
             return new ItemStack(Items.ARROW, 4 + random.nextInt(7));
-        }
-        if (roll < 97) {
-            return new ItemStack(ModItems.REPAIR_KIT.get(), 1);
         }
         return new ItemStack(Items.EMERALD, 1);
     }
