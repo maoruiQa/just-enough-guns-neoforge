@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.2 - 2026-05-27
+
+### Changed
+- Rebalanced damaged sky ship armada loot so pistol and rifle ammo are more common while iron and lapis are less dominant.
+
 ## 1.6.1 - 2026-05-25
 
 ### Theme
