@@ -11,6 +11,7 @@
 - Fixed vehicle impact sounds playing inconsistently and stopped vehicle sounds from consuming streaming sound handles.
 - Fixed vehicle cannon muzzle flares and gun muzzle flashes rendering too faint on the 26.1 particle pipeline.
 - Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
+- Fixed Waterpipe Shotgun reload animation falling into missing segmented reload clips.
 
 ## 1.6.1 - 2026-05-25
 
