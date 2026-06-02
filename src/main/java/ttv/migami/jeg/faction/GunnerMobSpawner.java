@@ -208,7 +208,6 @@ public class GunnerMobSpawner {
                         if (mob.level() instanceof ServerLevel naturalLevel && EnemyVehicleSpawner.tryReplaceNaturalGunner(naturalLevel, mob)) {
                             return;
                         }
-                        ttv.migami.jeg.JustEnoughGuns.LOGGER.info("Created gunner: {} at {}", mob.getType().getDescriptionId(), mob.blockPosition());
                     }
                 }
             }
