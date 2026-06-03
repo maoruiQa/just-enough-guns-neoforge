@@ -1,15 +1,24 @@
 package ttv.migami.jeg.client.screen;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import java.util.List;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.menu.AttachmentMenu;
 
@@ -18,6 +27,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int SLOT_ICON_U = 176;
     private static final int DISABLED_SLOT_ICON_V = 0;
     private static final int SLOT_ICON_SIZE = 16;
+    private static final int PREVIEW_LIGHT = LightTexture.FULL_BRIGHT;
 
     public AttachmentScreen(AttachmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -27,15 +37,31 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     }
 
     @Override
+    protected void containerTick() {
+        super.containerTick();
+        Player player = this.minecraft == null ? null : this.minecraft.player;
+        if (player != null && !(player.getMainHandItem().getItem() instanceof GunItem)) {
+            this.onClose();
+        }
+    }
+
+    @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
         guiGraphics.blit(TEXTURE, this.leftPos - 71, this.topPos - 18, 203, 0, 32, 202);
+        this.renderGunPreview(guiGraphics, partialTick);
         this.renderAttachmentSlotIcons(guiGraphics);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        ItemStack gunStack = this.previewGunStack();
+        if (gunStack.isEmpty()) {
+            guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        } else {
+            guiGraphics.drawCenteredString(this.font, gunStack.getHoverName(), this.imageWidth / 2, -42, gunStack.getRarity().color().getColor());
+            guiGraphics.drawCenteredString(this.font, Component.literal(Reference.MOD_ID), this.imageWidth / 2, -30, 0x686C71);
+        }
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
     }
 
@@ -45,6 +71,41 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         this.renderAttachmentSlotTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderGunPreview(GuiGraphics guiGraphics, float partialTick) {
+        ItemStack gunStack = this.previewGunStack();
+        if (gunStack.isEmpty()) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Player player = minecraft.player;
+        if (player == null || minecraft.level == null) {
+            return;
+        }
+
+        MultiBufferSource.BufferSource buffer = minecraft.renderBuffers().bufferSource();
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(this.leftPos + this.imageWidth / 2.0D, this.topPos + 24.0D, 150.0D);
+        poseStack.scale(75.0F, -75.0F, 75.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(5.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(player.tickCount + partialTick));
+        minecraft.getItemRenderer().renderStatic(
+                player,
+                gunStack,
+                ItemDisplayContext.FIXED,
+                false,
+                poseStack,
+                buffer,
+                minecraft.level,
+                PREVIEW_LIGHT,
+                OverlayTexture.NO_OVERLAY,
+                player.getId()
+        );
+        buffer.endBatch();
+        poseStack.popPose();
     }
 
     private void renderAttachmentSlotIcons(GuiGraphics guiGraphics) {
@@ -104,5 +165,14 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         }
         int index = this.menu.slots.indexOf(slot);
         return index >= 0 && index < AttachmentType.values().length ? index : -1;
+    }
+
+    private ItemStack previewGunStack() {
+        Player player = this.minecraft == null ? null : this.minecraft.player;
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack stack = player.getMainHandItem();
+        return stack.getItem() instanceof GunItem ? stack : ItemStack.EMPTY;
     }
 }
