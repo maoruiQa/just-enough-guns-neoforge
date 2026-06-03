@@ -46,6 +46,12 @@ public class ModParticleTypes {
             REGISTER.register("sonic_ring", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_SONIC_RING =
             REGISTER.register("big_sonic_ring", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CONFETTI =
+            REGISTER.register("confetti", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> HIT_MARKER =
+            REGISTER.register("hit_marker", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> POPCORN =
+            REGISTER.register("popcorn", () -> new SimpleParticleType(true));
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<LaserOption>> LASER =
             REGISTER.register("laser", () -> createOptions(LaserOption.CODEC, false, LaserOption.STREAM_CODEC));

@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -44,6 +47,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.GunnerFactionRelations;
@@ -53,7 +58,10 @@ import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
@@ -112,6 +120,8 @@ public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_EXPLOSIVE_AMMO = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_KILL_EFFECT = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
+    private static final String DYING_TAG = "JEGDying";
 
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
@@ -152,6 +162,10 @@ public class BulletEntity extends Projectile {
         this.setOldPosAndRot();
     }
 
+    public void setKillEffect(ResourceLocation itemId) {
+        this.entityData.set(DATA_KILL_EFFECT, itemId.toString());
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_GUN, Reference.id("assault_rifle").toString());
@@ -164,6 +178,7 @@ public class BulletEntity extends Projectile {
         builder.define(DATA_TICKS_LIVED, 0);
         builder.define(DATA_HIT_SOLID_BLOCK, false);
         builder.define(DATA_EXPLOSIVE_AMMO, false);
+        builder.define(DATA_KILL_EFFECT, "");
     }
 
     @Override
@@ -367,6 +382,7 @@ public class BulletEntity extends Projectile {
                     boolean hurt = living.hurt(source, damage);
                     if (hurt && livingOwner instanceof ServerPlayer shooter) {
                         NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                        applyKillEffect(living, result);
                     }
                 } else {
                     hitEntity.hurt(source, this.entityData.get(DATA_DAMAGE));
@@ -418,6 +434,7 @@ public class BulletEntity extends Projectile {
                 boolean hurt = living.hurt(source, damage);
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
                     NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                    applyKillEffect(living, result);
                 }
 
                 boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
@@ -461,6 +478,65 @@ public class BulletEntity extends Projectile {
 
     private static boolean isCriticalHit(EntityHitResult result, LivingEntity living) {
         return result.getLocation().y >= living.getEyeY() - 0.20D;
+    }
+
+    private void applyKillEffect(LivingEntity target, EntityHitResult result) {
+        if (!isCriticalHit(result, target) || !target.isDeadOrDying() || target.getTags().contains(DYING_TAG)) {
+            return;
+        }
+
+        ResourceLocation killEffectId = ResourceLocation.tryParse(this.entityData.get(DATA_KILL_EFFECT));
+        if (killEffectId == null || this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.CREEPER_BIRTHDAY_PARTY_BADGE.get()))) {
+            sendLongDistanceParticles(
+                    serverLevel,
+                    ModParticleTypes.CONFETTI.get(),
+                    target.getX(),
+                    target.getY() + target.getEyeHeight() / 1.5D,
+                    target.getZ(),
+                    64,
+                    target.getBbWidth() / 1.5D,
+                    target.getBbHeight() - target.getEyeHeight(),
+                    target.getBbWidth() / 1.5D,
+                    0.0D
+            );
+            sendLongDistanceParticles(
+                    serverLevel,
+                    ParticleTypes.EXPLOSION,
+                    target.getX(),
+                    target.getY() + target.getEyeHeight(),
+                    target.getZ(),
+                    1,
+                    target.getBbWidth() / 1.5D,
+                    target.getBbHeight() - target.getEyeHeight(),
+                    target.getBbWidth() / 1.5D,
+                    0.0D
+            );
+            play(serverLevel, target, "item.kill_effect.birthday_party", 5.0F, 1.0F);
+            target.addTag(DYING_TAG);
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.HEADPOPPER_BADGE.get()))) {
+            target.addEffect(new MobEffectInstance(ModEffects.POPPED, 60, 0, false, false));
+            target.addTag(DYING_TAG);
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.TRICKSHOT_BADGE.get()))) {
+            target.addEffect(new MobEffectInstance(ModEffects.TRICKSHOTTED, 60, 0, false, false));
+            target.addTag(DYING_TAG);
+        }
+    }
+
+    private static void play(ServerLevel level, LivingEntity entity, String soundPath, float volume, float pitch) {
+        DeferredHolder<SoundEvent, SoundEvent> holder = ModSounds.ALL.get(Reference.id(soundPath));
+        if (holder != null) {
+            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), holder.get(), SoundSource.PLAYERS, volume, pitch);
+        }
     }
 
     private float applyNormalDamageFalloff(float baseDamage, GunStats stats) {

@@ -75,6 +75,11 @@ Behavior wired so far:
 - Gun paint-job rendering is partially wired:
   - If the cosmetic `paint_job` slot contains a spray can, animated gun rendering checks `textures/animated/gun/paintjob/<paintJob>/<gun>.png`.
   - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
+- Kill-effect badges are partially wired for player-fired bullets:
+  - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
+  - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
+  - Headshot kills with `headpoppper_badge` apply the `popped` kill effect, which emits popcorn particles and beehive pop sounds while ticking.
+  - Headshot kills with `trickshot_badge` apply the `trickshotted` kill effect, which emits hit-marker particles and Forge-style hit/air-horn/goose sounds while ticking.
 
 Still to port:
 
@@ -82,7 +87,7 @@ Still to port:
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
 - Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
-- Cosmetic slots: dye behavior, kill effect behavior, attachment paint-job rendering, and any Forge paint-job model overrides.
+- Cosmetic slots: dye behavior, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect visuals.
 
 Sync checklist for the other maintained branches:
 

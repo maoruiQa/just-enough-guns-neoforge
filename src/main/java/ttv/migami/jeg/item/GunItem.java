@@ -1094,6 +1094,7 @@ public class GunItem extends Item {
             } else {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
                 BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
+                GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1149,6 +1150,7 @@ public class GunItem extends Item {
             } else {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
                 BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
+                GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
