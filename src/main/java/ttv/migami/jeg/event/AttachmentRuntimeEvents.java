@@ -58,7 +58,7 @@ public final class AttachmentRuntimeEvents {
         if (GunAttachments.modifiers(stack).laserPointer()) {
             tickLaserPointer(player);
         }
-        if (GunAttachments.isFlashlightPowered(stack)) {
+        if (Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player)) {
             tickFlashlight(player);
         }
     }

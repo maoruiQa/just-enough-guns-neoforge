@@ -118,6 +118,13 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build()
     );
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_FLASHLIGHT_BATTERY = REGISTER.register(
+            "gun_flashlight_battery",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
 
     private static DeferredHolder<DataComponentType<?>, DataComponentType<String>> attachmentComponent(String name) {
         return REGISTER.register(

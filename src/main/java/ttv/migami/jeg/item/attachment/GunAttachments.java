@@ -16,7 +16,15 @@ import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.AttachmentItem;
 
 public final class GunAttachments {
+    public static final int FLASHLIGHT_MAX_BATTERY = 600;
+
     private GunAttachments() {
+    }
+
+    public enum FlashlightToggleResult {
+        MISSING,
+        DEAD,
+        TOGGLED
     }
 
     public static boolean has(ItemStack gunStack, AttachmentType type) {
@@ -115,8 +123,12 @@ public final class GunAttachments {
         }
         gunStack.set(component(type), id.toString());
         removeDamage(gunStack, type);
-        if (type == AttachmentType.SPECIAL && !attachment.modifiers().flashlight()) {
-            gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
+        if (type == AttachmentType.SPECIAL) {
+            if (attachment.modifiers().flashlight()) {
+                ensureFlashlightBattery(gunStack);
+            } else {
+                removeFlashlightState(gunStack);
+            }
         }
         return true;
     }
@@ -153,7 +165,7 @@ public final class GunAttachments {
         gunStack.remove(component(type));
         removeDamage(gunStack, type);
         if (type == AttachmentType.SPECIAL) {
-            gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
+            removeFlashlightState(gunStack);
         }
     }
 
@@ -168,12 +180,38 @@ public final class GunAttachments {
         return hasFlashlight(gunStack) && Boolean.TRUE.equals(gunStack.get(ModDataComponents.GUN_FLASHLIGHT_POWERED.get()));
     }
 
-    public static boolean toggleFlashlight(ItemStack gunStack) {
+    public static FlashlightToggleResult toggleFlashlight(ItemStack gunStack, Player player) {
         if (!hasFlashlight(gunStack)) {
+            return FlashlightToggleResult.MISSING;
+        }
+        int battery = ensureFlashlightBattery(gunStack);
+        boolean powered = isFlashlightPowered(gunStack);
+        if (!powered && battery <= 0) {
+            gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), false);
+            return FlashlightToggleResult.DEAD;
+        }
+        if (!powered && player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
+            setFlashlightBattery(gunStack, battery - 1);
+        }
+        gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), !powered);
+        return FlashlightToggleResult.TOGGLED;
+    }
+
+    public static boolean tickFlashlightBattery(ItemStack gunStack, Player player) {
+        if (!isFlashlightPowered(gunStack)) {
             return false;
         }
-        boolean powered = !isFlashlightPowered(gunStack);
-        gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), powered);
+        int battery = ensureFlashlightBattery(gunStack);
+        if (player.getAbilities().instabuild || player.isSpectator()) {
+            return true;
+        }
+        if (battery <= 0) {
+            gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), false);
+            Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
+            player.displayClientMessage(message, true);
+            return false;
+        }
+        setFlashlightBattery(gunStack, battery - 1);
         return true;
     }
 
@@ -222,6 +260,28 @@ public final class GunAttachments {
         if (damageComponent != null) {
             gunStack.remove(damageComponent);
         }
+    }
+
+    private static int ensureFlashlightBattery(ItemStack gunStack) {
+        Integer stored = gunStack.get(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get());
+        if (stored == null) {
+            gunStack.set(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get(), FLASHLIGHT_MAX_BATTERY);
+            return FLASHLIGHT_MAX_BATTERY;
+        }
+        int clamped = Math.clamp(stored, 0, FLASHLIGHT_MAX_BATTERY);
+        if (clamped != stored) {
+            gunStack.set(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get(), clamped);
+        }
+        return clamped;
+    }
+
+    private static void setFlashlightBattery(ItemStack gunStack, int battery) {
+        gunStack.set(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get(), Math.clamp(battery, 0, FLASHLIGHT_MAX_BATTERY));
+    }
+
+    private static void removeFlashlightState(ItemStack gunStack) {
+        gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
+        gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get());
     }
 
     private static DataComponentType<String> component(AttachmentType type) {

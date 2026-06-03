@@ -4,6 +4,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -100,10 +102,26 @@ public final class NetworkHandler {
                 return;
             }
             ItemStack stack = player.getMainHandItem();
-            if (!(stack.getItem() instanceof GunItem) || !GunAttachments.toggleFlashlight(stack)) {
+            if (!(stack.getItem() instanceof GunItem)) {
                 return;
             }
-            var sound = ModSounds.ALL.get(Reference.id("item.flashlight"));
+            if (!Config.allowFlashlights()) {
+                Component message = Component.translatable("chat.jeg.disabled_flashlights").withStyle(ChatFormatting.GRAY);
+                player.displayClientMessage(message, true);
+                return;
+            }
+            GunAttachments.FlashlightToggleResult result = GunAttachments.toggleFlashlight(stack, player);
+            if (result == GunAttachments.FlashlightToggleResult.MISSING) {
+                return;
+            }
+            if (result == GunAttachments.FlashlightToggleResult.DEAD) {
+                Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
+                player.displayClientMessage(message, true);
+            }
+            ResourceLocation soundId = result == GunAttachments.FlashlightToggleResult.DEAD
+                    ? Reference.id("item.goose")
+                    : Reference.id("item.flashlight");
+            var sound = ModSounds.ALL.get(soundId);
             if (sound != null) {
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                         sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);

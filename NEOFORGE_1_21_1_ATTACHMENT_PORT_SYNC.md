@@ -16,6 +16,9 @@ Current NeoForge 1.21.1 foundation:
   - `gun_paint_job_attachment`
   - `gun_dye_attachment`
   - `gun_kill_effect_attachment`
+- Flashlight attachment runtime state is stored on the gun stack:
+  - `gun_flashlight_powered`
+  - `gun_flashlight_battery`
 - `GunAttachments` is the canonical read/write helper. Future UI, renderer, and gameplay code should use it instead of adding ad-hoc tags.
 - `GunAttachmentRules` is the current per-gun support matrix for slot validation.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
@@ -59,8 +62,11 @@ Behavior wired so far:
 - Dynamic-light infrastructure is registered for attachment flashlights:
   - `dynamic_light` is an invisible, waterloggable, self-expiring light block.
   - `gun_flashlight_powered` stores the attached flashlight's powered state because this port stores attachment IDs instead of full attachment `ItemStack`s.
+  - `gun_flashlight_battery` stores adapted flashlight battery life on the gun stack, using Forge's 600 tick max battery.
 - Special-slot flashlight and laser pointer runtime behavior is partially wired:
   - Pressing `key.jeg.melee` while holding a gun with a flashlight toggles the powered state and plays `item.flashlight`.
+  - Flashlight attachments now refuse to toggle when server config disables flashlights.
+  - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
   - Laser pointer attachments apply Glowing to aimed-at living entities while ADS is active when `attachments.glowingLaserPointers` is enabled.
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
@@ -99,7 +105,7 @@ Still to port:
 
 - Forge-accurate attachment screen config/medal buttons and remaining layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
+- Remaining runtime behavior for standalone flashlight item charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
 
