@@ -9,6 +9,7 @@ import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.particle.BigExplosionParticle;
 import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
+import ttv.migami.jeg.client.particle.ColoredFlareSmokeParticle;
 import ttv.migami.jeg.client.particle.ConfettiParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
@@ -35,6 +36,7 @@ public final class ParticleFactoryRegistry {
         event.registerSpriteSet(ModParticleTypes.FLARE_SMOKE.get(), FlareSmokeParticle.SmokeProvider::new);
         event.registerSpriteSet(ModParticleTypes.FLARE.get(), FlareSmokeParticle.RedProvider::new);
         event.registerSpriteSet(ModParticleTypes.BLUE_FLARE.get(), FlareSmokeParticle.BlueProvider::new);
+        event.registerSpriteSet(ModParticleTypes.COLORED_FLARE_SMOKE.get(), ColoredFlareSmokeParticle.Provider::new);
 
         event.registerSpriteSet(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);

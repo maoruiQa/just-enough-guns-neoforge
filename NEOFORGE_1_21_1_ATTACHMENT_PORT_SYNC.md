@@ -80,6 +80,10 @@ Behavior wired so far:
   - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
   - Headshot kills with `headpoppper_badge` apply the `popped` kill effect, which emits popcorn particles and beehive pop sounds while ticking.
   - Headshot kills with `trickshot_badge` apply the `trickshotted` kill effect, which emits hit-marker particles and Forge-style hit/air-horn/goose sounds while ticking.
+- Dye cosmetic behavior is partially wired for `flare_gun`:
+  - Bullets carry the firing gun's `dye` cosmetic slot color when the gun is `flare_gun`.
+  - Flare smoke uses `colored_flare_smoke` with the dye's firework RGB color when a dye is installed.
+  - Flare guns without a dye keep the existing default red flare smoke.
 
 Still to port:
 
@@ -87,7 +91,7 @@ Still to port:
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
 - Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
-- Cosmetic slots: dye behavior, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect visuals.
+- Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 

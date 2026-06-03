@@ -69,6 +69,7 @@ import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.BulletTrailPayload;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.particle.ColoredFlareOption;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -121,7 +122,9 @@ public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_EXPLOSIVE_AMMO = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_KILL_EFFECT = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> DATA_FLARE_COLOR = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final String DYING_TAG = "JEGDying";
+    private static final int NO_FLARE_COLOR = -1;
 
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
@@ -166,6 +169,10 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_KILL_EFFECT, itemId.toString());
     }
 
+    public void setFlareColor(int color) {
+        this.entityData.set(DATA_FLARE_COLOR, color & 0xFFFFFF);
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_GUN, Reference.id("assault_rifle").toString());
@@ -179,6 +186,7 @@ public class BulletEntity extends Projectile {
         builder.define(DATA_HIT_SOLID_BLOCK, false);
         builder.define(DATA_EXPLOSIVE_AMMO, false);
         builder.define(DATA_KILL_EFFECT, "");
+        builder.define(DATA_FLARE_COLOR, NO_FLARE_COLOR);
     }
 
     @Override
@@ -759,6 +767,8 @@ public class BulletEntity extends Projectile {
         output.putFloat("ProjectileSize", this.entityData.get(DATA_SIZE));
         output.putInt("Ticks", this.entityData.get(DATA_TICKS_LIVED));
         output.putBoolean("ExplosiveAmmo", this.entityData.get(DATA_EXPLOSIVE_AMMO));
+        output.putString("KillEffect", this.entityData.get(DATA_KILL_EFFECT));
+        output.putInt("FlareColor", this.entityData.get(DATA_FLARE_COLOR));
     }
 
     @Override
@@ -771,6 +781,8 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_SIZE, input.contains("ProjectileSize") ? input.getFloat("ProjectileSize") : this.entityData.get(DATA_SIZE));
         this.entityData.set(DATA_TICKS_LIVED, input.contains("Ticks") ? input.getInt("Ticks") : this.entityData.get(DATA_TICKS_LIVED));
         this.entityData.set(DATA_EXPLOSIVE_AMMO, input.contains("ExplosiveAmmo") && input.getBoolean("ExplosiveAmmo"));
+        this.entityData.set(DATA_KILL_EFFECT, input.contains("KillEffect") ? input.getString("KillEffect") : "");
+        this.entityData.set(DATA_FLARE_COLOR, input.contains("FlareColor") ? input.getInt("FlareColor") : NO_FLARE_COLOR);
         this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
@@ -1267,7 +1279,12 @@ public class BulletEntity extends Projectile {
         double py = this.getY() - motion.y;
         double pz = this.getZ() - motion.z;
 
-        level.addParticle(ModParticleTypes.FLARE_SMOKE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        int flareColor = this.entityData.get(DATA_FLARE_COLOR);
+        if (flareColor == NO_FLARE_COLOR) {
+            level.addParticle(ModParticleTypes.FLARE_SMOKE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        } else {
+            level.addParticle(new ColoredFlareOption(flareColor), px, py, pz, 0.0D, 0.1D, 0.0D);
+        }
         level.addParticle(ModParticleTypes.FIRE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
         level.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0D, 0.0D, 0.0D);
     }

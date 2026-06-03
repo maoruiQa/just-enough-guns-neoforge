@@ -30,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
@@ -63,6 +64,7 @@ import ttv.migami.jeg.util.HudMessageHelper;
 public class GunItem extends Item {
     private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
     private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
+    private static final ResourceLocation FLARE_GUN_ID = Reference.id("flare_gun");
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
@@ -1095,6 +1097,7 @@ public class GunItem extends Item {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
                 BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
                 GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
+                applyFlareDye(stack, stats, bullet);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1151,6 +1154,7 @@ public class GunItem extends Item {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
                 BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
                 GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
+                applyFlareDye(stack, stats, bullet);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1166,6 +1170,17 @@ public class GunItem extends Item {
                 // Disabling shoot trigger avoids intermittent invisibility caused by per-shot animated state.
             }
         }
+    }
+
+    private static void applyFlareDye(ItemStack stack, GunStats stats, BulletEntity bullet) {
+        if (!FLARE_GUN_ID.equals(stats.id())) {
+            return;
+        }
+        GunAttachments.cosmeticItem(stack, AttachmentType.DYE)
+                .filter(DyeItem.class::isInstance)
+                .map(DyeItem.class::cast)
+                .map(dye -> dye.getDyeColor().getFireworkColor())
+                .ifPresent(bullet::setFlareColor);
     }
 
     private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats, ItemStack stack) {
