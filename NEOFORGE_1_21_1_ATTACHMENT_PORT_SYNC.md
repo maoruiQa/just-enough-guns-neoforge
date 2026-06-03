@@ -22,6 +22,7 @@ Current NeoForge 1.21.1 foundation:
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
+- Forge attachment Geo assets were copied under `src/main/resources/assets/jeg/geo/item/attachment/`.
 - Active Forge cosmetic attachment items are registered: classic/toy/whiteout/golden spray cans plus creeper birthday, headpopper, and trickshot badges.
 - Cosmetic attachment items have explicit crafting recipes and are included in the gunsmith manual unlock list.
 
@@ -75,6 +76,11 @@ Behavior wired so far:
 - Gun paint-job rendering is partially wired:
   - If the cosmetic `paint_job` slot contains a spray can, animated gun rendering checks `textures/animated/gun/paintjob/<paintJob>/<gun>.png`.
   - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
+- Scope attachment model rendering is partially wired:
+  - Installed scope-slot attachments render as Geo models at the gun model's `attachment_bone`.
+  - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
+  - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
+  - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Kill-effect badges are partially wired for player-fired bullets:
   - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
   - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
@@ -88,7 +94,7 @@ Behavior wired so far:
 Still to port:
 
 - Forge-accurate attachment screen layout, gun preview, slot icon states, and slot hover polish.
-- Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
+- Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
@@ -108,4 +114,5 @@ Sync checklist for the other maintained branches:
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.
 12. Port attachment durability/breakage for the firing-damaged functional slots.
 13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
-14. Then expand remaining runtime modifier/render behavior.
+14. Port scope attachment model rendering with paint-job texture fallback.
+15. Then expand remaining runtime modifier/render behavior.

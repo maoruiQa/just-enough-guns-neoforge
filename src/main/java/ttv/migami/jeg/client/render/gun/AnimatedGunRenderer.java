@@ -27,7 +27,7 @@ import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
-import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
+import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
@@ -82,7 +82,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
-        this.addRenderLayer(new GunBuiltinScopeLayer(this));
+        this.addRenderLayer(new GunScopeAttachmentLayer(this));
     }
 
     public ItemDisplayContext currentPerspective() {
