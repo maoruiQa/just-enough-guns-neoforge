@@ -49,6 +49,7 @@ Behavior wired so far:
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
   - Laser pointer attachments apply Glowing to aimed-at living entities while ADS is active when `attachments.glowingLaserPointers` is enabled.
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
+  - Laser pointer attachments emit a small vanilla hit glint at the laser endpoint; the full Forge custom beam particle remains unported.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
   - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack.
   - Firing damages those installed attachments by 1 per shot.

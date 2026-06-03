@@ -3,6 +3,8 @@ package ttv.migami.jeg.event;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -88,6 +90,18 @@ public final class AttachmentRuntimeEvents {
                 mob.getNavigation().moveTo(laserEnd.x, laserEnd.y, laserEnd.z, 1.2D);
             }
         }
+
+        ((ServerLevel) player.level()).sendParticles(
+                ParticleTypes.END_ROD,
+                laserEnd.x,
+                laserEnd.y,
+                laserEnd.z,
+                1,
+                0.01D,
+                0.01D,
+                0.01D,
+                0.0D
+        );
     }
 
     private static void tickFlashlight(Player player) {
