@@ -12,6 +12,7 @@ import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
 import ttv.migami.jeg.client.particle.SmallExplosionParticle;
+import ttv.migami.jeg.client.particle.SonicRingParticle;
 import ttv.migami.jeg.init.ModParticleTypes;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -32,6 +33,8 @@ public final class ParticleFactoryRegistry {
         event.registerSpriteSet(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.GUN_MUZZLE_FLASH.get(), GunMuzzleFlashParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.SONIC_RING.get(), SonicRingParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.BIG_SONIC_RING.get(), SonicRingParticle.BigProvider::new);
         event.registerSpriteSet(ModParticleTypes.CANNON_MUZZLE_FLARE.get(), CannonMuzzleFlareParticle.Provider::new);
     }
 }

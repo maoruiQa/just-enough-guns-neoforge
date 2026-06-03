@@ -50,6 +50,7 @@ import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.AttachmentType;
@@ -851,6 +852,7 @@ public class GunItem extends Item {
         }
 
         Vec3 particlePos = shooter.getEyePosition().add(look.scale(1.8D));
+        emitTrumpetSoundwaveParticles(serverLevel, particlePos, look);
         serverLevel.sendParticles(
                 ParticleTypes.SONIC_BOOM,
                 particlePos.x,
@@ -861,6 +863,64 @@ public class GunItem extends Item {
                 look.y,
                 look.z,
                 0.0D
+        );
+    }
+
+    private static void emitTrumpetSoundwaveParticles(ServerLevel level, Vec3 particlePos, Vec3 look) {
+        level.sendParticles(
+                ModParticleTypes.BIG_SONIC_RING.get(),
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                0,
+                look.x * 0.9D,
+                look.y * 0.9D,
+                look.z * 0.9D,
+                0.0D
+        );
+        level.sendParticles(
+                ModParticleTypes.BIG_SONIC_RING.get(),
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                0,
+                look.x * 0.45D,
+                look.y * 0.45D,
+                look.z * 0.45D,
+                0.0D
+        );
+        level.sendParticles(
+                ModParticleTypes.BIG_SONIC_RING.get(),
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                0,
+                look.x * 1.2D,
+                look.y * 1.2D,
+                look.z * 1.2D,
+                0.0D
+        );
+        level.sendParticles(
+                ModParticleTypes.SONIC_RING.get(),
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                5,
+                0.0D,
+                0.0D,
+                0.0D,
+                0.2D
+        );
+        level.sendParticles(
+                ModParticleTypes.BIG_SONIC_RING.get(),
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                2,
+                0.0D,
+                0.0D,
+                0.0D,
+                0.1D
         );
     }
 

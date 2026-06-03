@@ -41,6 +41,10 @@ public class ModParticleTypes {
             REGISTER.register("blue_flame", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
             REGISTER.register("gun_muzzle_flash", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SONIC_RING =
+            REGISTER.register("sonic_ring", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_SONIC_RING =
+            REGISTER.register("big_sonic_ring", () -> new SimpleParticleType(true));
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<CannonMuzzleFlareOption>> CANNON_MUZZLE_FLARE =
             REGISTER.register("cannon_muzzle_flare", () -> createOptions(CannonMuzzleFlareOption.CODEC, true, CannonMuzzleFlareOption.STREAM_CODEC));
