@@ -42,6 +42,8 @@ import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -140,7 +142,10 @@ public final class GunClientEvents {
             return;
         }
 
-        float fovFactor = ADS_FOV_FACTOR;
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float fovFactor = modifiers.aimFovModifier() > 0.0F
+                ? Mth.clamp(modifiers.aimFovModifier(), 0.0F, 0.9F)
+                : ADS_FOV_FACTOR;
         float factor = 1.0F - fovFactor * ads;
         event.setNewFovModifier(Math.max(0.1F, event.getNewFovModifier() * factor));
     }
@@ -332,7 +337,7 @@ public final class GunClientEvents {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
-                    applyLocalVisualRecoil(gun);
+                    applyLocalVisualRecoil(gun, heldMain);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(heldMain, gun);
@@ -455,8 +460,8 @@ public final class GunClientEvents {
         return true;
     }
 
-    private static void applyLocalVisualRecoil(GunItem gun) {
-        GunRecoilHandler.onShot(gun.getStats());
+    private static void applyLocalVisualRecoil(GunItem gun, ItemStack stack) {
+        GunRecoilHandler.onShot(gun.getStats(), GunAttachments.modifiers(stack));
     }
 
     private static void tickHoldToFire(LocalPlayer player, ItemStack stack, GunItem gun, boolean attackDown, long nowTick) {
@@ -496,7 +501,7 @@ public final class GunClientEvents {
         NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
         rocketShotSent = true;
         if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
-            applyLocalVisualRecoil(gun);
+            applyLocalVisualRecoil(gun, stack);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
             forceExitScopedAdsAfterShot(stack, gun);

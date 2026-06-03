@@ -120,11 +120,15 @@ public class BulletEntity extends Projectile {
     }
 
     public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity) {
+        this(level, shooter, stats, velocity, stats.damage());
+    }
+
+    public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity, float damage) {
         this(ModEntities.BULLET.get(), level);
         this.setOwner(shooter);
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.entityData.set(DATA_GUN, stats.id().toString());
-        this.entityData.set(DATA_DAMAGE, stats.damage());
+        this.entityData.set(DATA_DAMAGE, damage);
         this.entityData.set(DATA_LIFE, projectileLifeFor(stats));
         this.entityData.set(DATA_FALLOFF_LIFE, Math.max(1, stats.projectileLife()));
         this.entityData.set(DATA_TRAIL_COLOR, stats.trailColor());

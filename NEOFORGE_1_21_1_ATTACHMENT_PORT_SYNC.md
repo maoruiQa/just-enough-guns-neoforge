@@ -25,12 +25,17 @@ Behavior wired so far:
 - `bolt_action_rifle` only uses the scoped ADS/FOV/overlay path when its scope slot has an attachment.
 - A barrel slot `silencer` switches gunfire to the gun's silenced fire sound when available.
 - Pressing `key.jeg.attachments` opens a usable attachment menu while a gun is held in the main hand.
+- Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
+- Damage multipliers are applied to spawned bullet damage.
+- Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
+- Recoil/kick multipliers are applied to local visual recoil and heavy-gun backstep.
+- Scope FOV modifiers affect ADS FOV, and ADS speed multipliers affect client aim-in/aim-out progress.
 
 Still to port:
 
 - Forge-accurate attachment screen layout, gun preview, slot icon states, and slot hover polish.
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
-- Full modifier application for damage, spread, recoil, ADS speed, magazine capacity, explosive muzzle, flashlight, laser pointer, trumpet, and durability/breakage.
+- Remaining runtime behavior for magazine capacity, explosive muzzle, flashlight, laser pointer, trumpet, and durability/breakage.
 - Cosmetic slots: paint job, dye, and kill effect.
 
 Sync checklist for the other maintained branches:
@@ -42,4 +47,5 @@ Sync checklist for the other maintained branches:
 5. Rewire bolt-action scoped ADS to read the stack's scope slot instead of a global flag.
 6. Rewire silencer sound behavior through the barrel slot.
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
-8. Then expand runtime modifier/render behavior.
+8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
+9. Then expand remaining runtime modifier/render behavior.

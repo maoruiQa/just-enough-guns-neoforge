@@ -49,7 +49,7 @@ import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
-import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
@@ -747,7 +747,7 @@ public class GunItem extends Item {
                 animated.triggerShoot(level, player, stack);
             }
 
-            applyRecoilBackstep(player);
+            applyRecoilBackstep(player, stack);
 
             if (!automatic) {
                 setTriggerLocked(stack, true);
@@ -761,13 +761,13 @@ public class GunItem extends Item {
     }
 
     private Optional<SoundEvent> fireSoundFor(ItemStack stack) {
-        if (GunAttachments.modifiers(stack, AttachmentType.BARREL).silenced()) {
+        if (GunAttachments.modifiers(stack).silenced()) {
             return stats.silencedFireSoundEvent().or(stats::fireSoundEvent).or(stats::enchantedFireSoundEvent);
         }
         return stats.fireSoundEvent().or(stats::enchantedFireSoundEvent);
     }
 
-    private void applyRecoilBackstep(Player player) {
+    private void applyRecoilBackstep(Player player, ItemStack stack) {
         if (!Config.recoilBackstepEnabled()) {
             return;
         }
@@ -775,7 +775,8 @@ public class GunItem extends Item {
             return;
         }
 
-        double force = stats.recoilKick() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        double force = stats.recoilKick() * modifiers.kickMultiplier() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
         if (isRocketKnockbackWeapon(stats.id())) {
             force *= 4.2D;
             force = Mth.clamp(force, 0.100D, 0.380D);
@@ -895,9 +896,11 @@ public class GunItem extends Item {
         RandomSource random = shooter.getRandom();
         int pellets = Math.max(1, stats.projectileAmount());
         ResourceLocation gunId = stats.id();
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float damage = modifiedDamage(stats, modifiers);
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
-        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, damage / 12.0F + 1.5F);
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
@@ -905,7 +908,7 @@ public class GunItem extends Item {
         }
 
         for (int i = 0; i < pellets; i++) {
-            Vec3 direction = computeDirection(shooter, origin, target, random, stats);
+            Vec3 direction = computeDirection(shooter, origin, target, random, stats, stack);
             Vec3 muzzle = origin.add(direction.scale(0.35F));
 
             if (grenadeLauncher) {
@@ -916,7 +919,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity);
+                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -947,9 +950,11 @@ public class GunItem extends Item {
     public void fireDirectionallyFrom(Level level, LivingEntity shooter, ItemStack stack, Vec3 origin, Vec3 direction) {
         int pellets = Math.max(1, stats.projectileAmount());
         ResourceLocation gunId = stats.id();
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float damage = modifiedDamage(stats, modifiers);
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
-        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, damage / 12.0F + 1.5F);
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         Vec3 normalized = direction.normalize();
@@ -969,7 +974,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity);
+                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -987,20 +992,21 @@ public class GunItem extends Item {
         }
     }
 
-    private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats) {
+    private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats, ItemStack stack) {
         Vec3 base = target != null
                 ? target.getEyePosition().subtract(origin)
                 : shooter.getViewVector(1.0F);
-        return applyLegacySpread(shooter, base, stats, random);
+        return applyLegacySpread(shooter, base, stats, random, stack);
     }
 
-    private static Vec3 applyLegacySpread(LivingEntity shooter, Vec3 baseDirection, GunStats stats, RandomSource random) {
+    private static Vec3 applyLegacySpread(LivingEntity shooter, Vec3 baseDirection, GunStats stats, RandomSource random, ItemStack stack) {
         Vec3 forwards = baseDirection.normalize();
         if (forwards.lengthSqr() < 1.0E-6D) {
             forwards = shooter.getViewVector(1.0F);
         }
 
-        float gunSpread = stats.spread();
+        float baseSpread = modifiedSpread(stats, stack);
+        float gunSpread = baseSpread;
         if (gunSpread == 0.0F) {
             return forwards.normalize();
         }
@@ -1012,19 +1018,19 @@ public class GunItem extends Item {
                 gunSpread *= 0.5F;
             }
             if (!minigun) {
-                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player));
+                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player), baseSpread);
             } else {
-                gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
+                gunSpread = Math.max(gunSpread, baseSpread * MINIGUN_SPREAD_FLOOR);
             }
             if (isBoltActionRifle(stats.id()) && !NetworkHandler.isAiming(player)) {
                 gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
             }
             if (isShotgun(stats.id())) {
-                float shotgunFloor = stats.spread() * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
+                float shotgunFloor = baseSpread * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
                 gunSpread = Math.max(gunSpread, shotgunFloor);
             }
         } else if (isShotgun(stats.id())) {
-            gunSpread = stats.spread() * 0.60F;
+            gunSpread = baseSpread * 0.60F;
         } else {
             float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
             float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
@@ -1101,7 +1107,12 @@ public class GunItem extends Item {
     }
 
     public static float getClientSpreadDegrees(Player player, GunStats stats, boolean aiming) {
-        float gunSpread = stats.spread();
+        return getClientSpreadDegrees(player, ItemStack.EMPTY, stats, aiming);
+    }
+
+    public static float getClientSpreadDegrees(Player player, ItemStack stack, GunStats stats, boolean aiming) {
+        float baseSpread = modifiedSpread(stats, stack);
+        float gunSpread = baseSpread;
         if (gunSpread <= 0.0F) {
             return 0.0F;
         }
@@ -1112,15 +1123,15 @@ public class GunItem extends Item {
             gunSpread *= 0.5F;
         }
         if (!minigun) {
-            gunSpread += getMovementSpreadDegrees(player, stats, aiming);
+            gunSpread += getMovementSpreadDegrees(player, stats, aiming, baseSpread);
         } else {
-            gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
+            gunSpread = Math.max(gunSpread, baseSpread * MINIGUN_SPREAD_FLOOR);
         }
         if (isBoltActionRifle(stats.id()) && !aiming) {
             gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
         }
         if (isShotgun(stats.id())) {
-            float shotgunFloor = stats.spread() * (aiming ? 0.35F : 0.60F);
+            float shotgunFloor = baseSpread * (aiming ? 0.35F : 0.60F);
             gunSpread = Math.max(gunSpread, shotgunFloor);
         }
         return Math.max(0.0F, gunSpread);
@@ -1151,7 +1162,7 @@ public class GunItem extends Item {
         return "bolt_action_rifle".equals(gunId.getPath());
     }
 
-    private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming) {
+    private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming, float baseSpread) {
         if (player.isCrouching() || !isPlayerMoving(player)) {
             return 0.0F;
         }
@@ -1160,7 +1171,15 @@ public class GunItem extends Item {
         if (aiming) {
             multiplier *= 0.65F;
         }
-        return stats.spread() * multiplier;
+        return baseSpread * multiplier;
+    }
+
+    private static float modifiedDamage(GunStats stats, AttachmentModifiers modifiers) {
+        return Math.max(0.0F, stats.damage() * modifiers.damageMultiplier());
+    }
+
+    private static float modifiedSpread(GunStats stats, ItemStack stack) {
+        return Math.max(0.0F, stats.spread() * GunAttachments.modifiers(stack).spreadMultiplier());
     }
 
     private static float getMovementSpreadMultiplier(Player player, GunStats stats) {

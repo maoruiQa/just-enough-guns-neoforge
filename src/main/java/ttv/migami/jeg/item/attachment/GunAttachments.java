@@ -36,6 +36,51 @@ public final class GunAttachments {
         return item(gunStack, type).map(AttachmentItem::modifiers).orElse(AttachmentModifiers.NONE);
     }
 
+    public static AttachmentModifiers modifiers(ItemStack gunStack) {
+        float aimFovModifier = 0.0F;
+        float damageMultiplier = 1.0F;
+        float spreadMultiplier = 1.0F;
+        float recoilMultiplier = 1.0F;
+        float kickMultiplier = 1.0F;
+        double adsSpeedMultiplier = 1.0D;
+        boolean silenced = false;
+        boolean explosiveAmmo = false;
+        boolean flashlight = false;
+        boolean laserPointer = false;
+        boolean annoying = false;
+
+        for (AttachmentType type : AttachmentType.values()) {
+            AttachmentModifiers modifier = modifiers(gunStack, type);
+            if (modifier.aimFovModifier() > 0.0F) {
+                aimFovModifier = modifier.aimFovModifier();
+            }
+            damageMultiplier *= modifier.damageMultiplier();
+            spreadMultiplier *= modifier.spreadMultiplier();
+            recoilMultiplier *= modifier.recoilMultiplier();
+            kickMultiplier *= modifier.kickMultiplier();
+            adsSpeedMultiplier *= modifier.adsSpeedMultiplier();
+            silenced |= modifier.silenced();
+            explosiveAmmo |= modifier.explosiveAmmo();
+            flashlight |= modifier.flashlight();
+            laserPointer |= modifier.laserPointer();
+            annoying |= modifier.annoying();
+        }
+
+        return new AttachmentModifiers(
+                aimFovModifier,
+                damageMultiplier,
+                spreadMultiplier,
+                recoilMultiplier,
+                kickMultiplier,
+                adsSpeedMultiplier,
+                silenced,
+                explosiveAmmo,
+                flashlight,
+                laserPointer,
+                annoying
+        );
+    }
+
     public static boolean set(ItemStack gunStack, AttachmentType type, ItemStack attachmentStack) {
         if (attachmentStack.isEmpty()) {
             clear(gunStack, type);

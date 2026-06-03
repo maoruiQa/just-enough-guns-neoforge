@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 
 /**
  * Keeps 1.20.1-style camera recoil and first-person gun model recoil in sync.
@@ -37,14 +38,20 @@ public final class GunRecoilHandler {
     }
 
     public static void onShot(GunStats stats) {
+        onShot(stats, AttachmentModifiers.NONE);
+    }
+
+    public static void onShot(GunStats stats, AttachmentModifiers modifiers) {
         RecoilProfiles.Parameters parameters = RecoilProfiles.parameters(stats.id());
         float adsReduction = getAdsRecoilReduction(parameters);
-        cameraRecoil = parameters.angle() * adsReduction;
+        float recoilAngle = parameters.angle() * modifiers.recoilMultiplier();
+        float recoilKick = parameters.kick() * modifiers.kickMultiplier();
+        cameraRecoil = recoilAngle * adsReduction;
         progressCameraRecoil = 0.0F;
         cameraRecoilDirection = RANDOM.nextBoolean() ? 1 : -1;
-        gunRecoilNormal = parameters.angle() > 0.0F || parameters.kick() > 0.0F ? 1.0D : 0.0D;
-        gunRecoilAngle = parameters.angle();
-        gunRecoilKick = parameters.kick();
+        gunRecoilNormal = recoilAngle > 0.0F || recoilKick > 0.0F ? 1.0D : 0.0D;
+        gunRecoilAngle = recoilAngle;
+        gunRecoilKick = recoilKick;
         gunRecoilDurationOffset = parameters.durationOffset();
         gunRecoilAdsReduction = parameters.adsReduction();
         gunRecoilRandom = RANDOM.nextFloat();
