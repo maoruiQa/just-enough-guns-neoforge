@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:red_dye" },
+    { "item": "minecraft:yellow_dye" },
+    { "item": "minecraft:blue_dye" }
+  ],
+  "result": { "id": "jeg:toy_spray_can", "count": 1 }
+}

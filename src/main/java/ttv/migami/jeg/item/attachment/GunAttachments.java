@@ -38,6 +38,13 @@ public final class GunAttachments {
                 .map(AttachmentItem.class::cast);
     }
 
+    public static Optional<Item> cosmeticItem(ItemStack gunStack, AttachmentType type) {
+        if (!type.isCosmetic()) {
+            return Optional.empty();
+        }
+        return id(gunStack, type).flatMap(BuiltInRegistries.ITEM::getOptional);
+    }
+
     public static AttachmentModifiers modifiers(ItemStack gunStack, AttachmentType type) {
         return item(gunStack, type).map(AttachmentItem::modifiers).orElse(AttachmentModifiers.NONE);
     }
@@ -95,6 +102,9 @@ public final class GunAttachments {
             clear(gunStack, type);
             return true;
         }
+        if (type.isCosmetic()) {
+            return setCosmetic(gunStack, type, attachmentStack);
+        }
         Item item = attachmentStack.getItem();
         if (!(item instanceof AttachmentItem attachment) || attachment.type() != type || !attachment.canAttachTo(gunStack)) {
             return false;
@@ -109,6 +119,34 @@ public final class GunAttachments {
             gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
         }
         return true;
+    }
+
+    public static boolean setCosmetic(ItemStack gunStack, AttachmentType type, ItemStack attachmentStack) {
+        if (!type.isCosmetic()) {
+            return false;
+        }
+        if (attachmentStack.isEmpty()) {
+            clear(gunStack, type);
+            return true;
+        }
+        if (!isCosmeticStack(type, attachmentStack)) {
+            return false;
+        }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(attachmentStack.getItem());
+        if (id == null) {
+            return false;
+        }
+        gunStack.set(component(type), id.toString());
+        return true;
+    }
+
+    public static boolean isCosmeticStack(AttachmentType type, ItemStack stack) {
+        return switch (type) {
+            case PAINT_JOB -> stack.getItem() instanceof PaintJobCanItem;
+            case DYE -> stack.getItem() instanceof net.minecraft.world.item.DyeItem;
+            case KILL_EFFECT -> stack.getItem() instanceof KillEffectItem;
+            default -> false;
+        };
     }
 
     public static void clear(ItemStack gunStack, AttachmentType type) {

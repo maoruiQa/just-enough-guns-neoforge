@@ -22,6 +22,8 @@ Current NeoForge 1.21.1 foundation:
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
+- Active Forge cosmetic attachment items are registered: classic/toy/whiteout/golden spray cans plus creeper birthday, headpopper, and trickshot badges.
+- Cosmetic attachment items have explicit crafting recipes and are included in the gunsmith manual unlock list.
 
 Behavior wired so far:
 
@@ -29,6 +31,10 @@ Behavior wired so far:
 - A barrel slot `silencer` switches gunfire to the gun's silenced fire sound when available.
 - Pressing `key.jeg.attachments` opens a usable attachment menu while a gun is held in the main hand.
 - The menu now exposes the Forge slot shape: six functional slots plus cosmetic `paint_job`, `dye`, and `kill_effect` slots.
+- Cosmetic slots now accept and persist their matching items:
+  - `paint_job`: registered spray cans.
+  - `dye`: vanilla dye items.
+  - `kill_effect`: registered kill-effect badges.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Damage multipliers are applied to spawned bullet damage.
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.

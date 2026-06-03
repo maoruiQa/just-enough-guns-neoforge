@@ -27,6 +27,8 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.event.RecipeUnlockHandler;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.KillEffectItem;
+import ttv.migami.jeg.item.attachment.PaintJobCanItem;
 import ttv.migami.jeg.item.EnhancedCoolantItem;
 import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -219,6 +221,34 @@ public final class ModItems {
             AttachmentType.SPECIAL,
             AttachmentModifiers.builder().laserPointer().recoilMultiplier(0.4F).kickMultiplier(0.9F).spreadMultiplier(0.75F).adsSpeedMultiplier(0.95D).build(),
             baseProperties(Reference.id("laser_pointer")).stacksTo(1).rarity(Rarity.UNCOMMON)
+    );
+    public static final DeferredHolder<Item, PaintJobCanItem> CLASSIC_SPRAY_CAN = REGISTER.register(
+            "classic_spray_can",
+            () -> new PaintJobCanItem(baseProperties(Reference.id("classic_spray_can")).stacksTo(1).rarity(Rarity.UNCOMMON), "classic")
+    );
+    public static final DeferredHolder<Item, PaintJobCanItem> TOY_SPRAY_CAN = REGISTER.register(
+            "toy_spray_can",
+            () -> new PaintJobCanItem(baseProperties(Reference.id("toy_spray_can")).stacksTo(1).rarity(Rarity.RARE), "toy")
+    );
+    public static final DeferredHolder<Item, PaintJobCanItem> WHITEOUT_SPRAY_CAN = REGISTER.register(
+            "whiteout_spray_can",
+            () -> new PaintJobCanItem(baseProperties(Reference.id("whiteout_spray_can")).stacksTo(1).rarity(Rarity.RARE), "whiteout")
+    );
+    public static final DeferredHolder<Item, PaintJobCanItem> GOLDEN_SPRAY_CAN = REGISTER.register(
+            "golden_spray_can",
+            () -> new PaintJobCanItem(baseProperties(Reference.id("golden_spray_can")).stacksTo(1).rarity(Rarity.EPIC), "golden")
+    );
+    public static final DeferredHolder<Item, KillEffectItem> CREEPER_BIRTHDAY_PARTY_BADGE = REGISTER.register(
+            "creeper_birthday_party_badge",
+            () -> new KillEffectItem(baseProperties(Reference.id("creeper_birthday_party_badge")).stacksTo(1).rarity(Rarity.EPIC))
+    );
+    public static final DeferredHolder<Item, KillEffectItem> HEADPOPPER_BADGE = REGISTER.register(
+            "headpoppper_badge",
+            () -> new KillEffectItem(baseProperties(Reference.id("headpoppper_badge")).stacksTo(1).rarity(Rarity.EPIC))
+    );
+    public static final DeferredHolder<Item, KillEffectItem> TRICKSHOT_BADGE = REGISTER.register(
+            "trickshot_badge",
+            () -> new KillEffectItem(baseProperties(Reference.id("trickshot_badge")).stacksTo(1).rarity(Rarity.EPIC))
     );
     public static final Map<ResourceLocation, DeferredHolder<Item, GunItem>> GUNS = new LinkedHashMap<>();
     public static final Map<BulletproofArmorItem.Tier, DeferredHolder<Item, BulletproofArmorItem>> BULLETPROOF_HELMETS = new LinkedHashMap<>();
@@ -480,6 +510,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
         ATTACHMENTS.keySet().forEach(id -> keys.add(ResourceKey.create(Registries.RECIPE, id)));
+        addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
@@ -498,6 +529,16 @@ public final class ModItems {
         }
 
         return List.copyOf(keys);
+    }
+
+    private static void addCosmeticAttachmentRecipes(java.util.List<ResourceKey<Recipe<?>>> keys) {
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("classic_spray_can")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("toy_spray_can")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("whiteout_spray_can")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("golden_spray_can")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("creeper_birthday_party_badge")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("headpoppper_badge")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("trickshot_badge")));
     }
 
     public static List<ResourceKey<Recipe<?>>> manualRecipes() {
@@ -577,6 +618,13 @@ public final class ModItems {
             event.accept(SHOTGUN_MAGAZINE.get());
             event.accept(MACHINE_GUN_MAGAZINE.get());
             ATTACHMENTS.values().forEach(holder -> event.accept(holder.get()));
+            event.accept(CLASSIC_SPRAY_CAN.get());
+            event.accept(TOY_SPRAY_CAN.get());
+            event.accept(WHITEOUT_SPRAY_CAN.get());
+            event.accept(GOLDEN_SPRAY_CAN.get());
+            event.accept(CREEPER_BIRTHDAY_PARTY_BADGE.get());
+            event.accept(HEADPOPPER_BADGE.get());
+            event.accept(TRICKSHOT_BADGE.get());
             BULLETPROOF_HELMETS.values().forEach(holder -> event.accept(holder.get()));
             BULLETPROOF_VESTS.values().forEach(holder -> event.accept(holder.get()));
             event.accept(PHANTOM_GUNNER_SPAWN_EGG.get());
