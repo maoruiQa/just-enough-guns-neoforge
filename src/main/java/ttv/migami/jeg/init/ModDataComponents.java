@@ -104,6 +104,10 @@ public final class ModDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_UNDER_BARREL_ATTACHMENT = attachmentComponent("gun_under_barrel_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_MAGAZINE_ATTACHMENT = attachmentComponent("gun_magazine_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SPECIAL_ATTACHMENT = attachmentComponent("gun_special_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_SCOPE_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_scope_attachment_damage");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_BARREL_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_barrel_attachment_damage");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_STOCK_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_stock_attachment_damage");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_UNDER_BARREL_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_under_barrel_attachment_damage");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_FLASHLIGHT_POWERED = REGISTER.register(
             "gun_flashlight_powered",
             () -> DataComponentType.<Boolean>builder()
@@ -118,6 +122,16 @@ public final class ModDataComponents {
                 () -> DataComponentType.<String>builder()
                         .persistent(Codec.STRING)
                         .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                        .build()
+        );
+    }
+
+    private static DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> attachmentDamageComponent(String name) {
+        return REGISTER.register(
+                name,
+                () -> DataComponentType.<Integer>builder()
+                        .persistent(Codec.INT)
+                        .networkSynchronized(ByteBufCodecs.VAR_INT)
                         .build()
         );
     }
