@@ -107,7 +107,7 @@ Still to port:
 
 - Forge-accurate attachment screen config/medal buttons and remaining layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Remaining runtime behavior for custom trumpet sonic-ring visuals and full attachment item-stack durability/enchantment parity.
+- Remaining runtime behavior for full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
 
