@@ -58,6 +58,7 @@ public final class NetworkHandler {
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
                 .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
+                .playToServer(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC, NetworkHandler::handleToggleMedals)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
@@ -139,6 +140,18 @@ public final class NetworkHandler {
             ItemStack stack = player.getMainHandItem();
             if (stack.getItem() instanceof FlashlightAttachmentItem) {
                 FlashlightAttachmentItem.charge(stack, player);
+            }
+        });
+    }
+
+    private static void handleToggleMedals(ToggleMedalsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof GunItem) {
+                GunAttachments.toggleMedals(stack);
             }
         });
     }
@@ -497,6 +510,10 @@ public final class NetworkHandler {
 
     public static void sendChargeFlashlight() {
         sendToServer(ChargeFlashlightPayload.INSTANCE);
+    }
+
+    public static void sendToggleMedals() {
+        sendToServer(ToggleMedalsPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(ResourceLocation recipeId) {

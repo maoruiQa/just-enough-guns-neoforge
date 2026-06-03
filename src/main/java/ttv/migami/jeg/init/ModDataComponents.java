@@ -44,6 +44,13 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build()
     );
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_MEDALS_ENABLED = REGISTER.register(
+            "gun_medals_enabled",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build()
+    );
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_RELOAD_TICKS_TOTAL = REGISTER.register(
             "gun_reload_ticks_total",

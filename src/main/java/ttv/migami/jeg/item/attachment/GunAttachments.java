@@ -180,6 +180,16 @@ public final class GunAttachments {
         return hasFlashlight(gunStack) && Boolean.TRUE.equals(gunStack.get(ModDataComponents.GUN_FLASHLIGHT_POWERED.get()));
     }
 
+    public static boolean areMedalsEnabled(ItemStack gunStack) {
+        return Boolean.TRUE.equals(gunStack.get(ModDataComponents.GUN_MEDALS_ENABLED.get()));
+    }
+
+    public static boolean toggleMedals(ItemStack gunStack) {
+        boolean enabled = !areMedalsEnabled(gunStack);
+        gunStack.set(ModDataComponents.GUN_MEDALS_ENABLED.get(), enabled);
+        return enabled;
+    }
+
     public static FlashlightToggleResult toggleFlashlight(ItemStack gunStack, Player player) {
         if (!hasFlashlight(gunStack)) {
             return FlashlightToggleResult.MISSING;

@@ -20,13 +20,22 @@ import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.menu.AttachmentMenu;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMenu> {
     private static final ResourceLocation TEXTURE = Reference.id("textures/gui/attachments.png");
     private static final int SLOT_ICON_U = 176;
     private static final int DISABLED_SLOT_ICON_V = 0;
     private static final int SLOT_ICON_SIZE = 16;
+    private static final int MEDAL_BUTTON_X = -31;
+    private static final int MEDAL_BUTTON_Y = 148;
+    private static final int MEDAL_BUTTON_SIZE = 22;
+    private static final int MEDAL_ENABLED_U = 176;
+    private static final int MEDAL_ENABLED_V = 161;
+    private static final int MEDAL_DISABLED_U = 176;
+    private static final int MEDAL_DISABLED_V = 183;
     private static final int PREVIEW_LIGHT = LightTexture.FULL_BRIGHT;
 
     public AttachmentScreen(AttachmentMenu menu, Inventory playerInventory, Component title) {
@@ -49,6 +58,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
         guiGraphics.blit(TEXTURE, this.leftPos - 71, this.topPos - 18, 203, 0, 32, 202);
+        this.renderMedalButton(guiGraphics);
         this.renderGunPreview(guiGraphics, partialTick);
         this.renderAttachmentSlotIcons(guiGraphics);
     }
@@ -71,6 +81,23 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         this.renderAttachmentSlotTooltip(guiGraphics, mouseX, mouseY);
+        this.renderMedalButtonTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if ((button == 0 || button == 1) && this.isMouseOverMedalButton((int) mouseX, (int) mouseY)) {
+            NetworkHandler.sendToggleMedals();
+            Player player = this.minecraft == null ? null : this.minecraft.player;
+            if (player != null) {
+                var sound = ttv.migami.jeg.init.ModSounds.ALL.get(Reference.id("ui.medal.generic"));
+                if (sound != null) {
+                    player.playSound(sound.get(), 1.0F, 1.0F);
+                }
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private void renderGunPreview(GuiGraphics guiGraphics, float partialTick) {
@@ -142,6 +169,25 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         if (slot.getItem().isEmpty()) {
             guiGraphics.renderComponentTooltip(this.font, List.of(name), mouseX, mouseY);
         }
+    }
+
+    private void renderMedalButton(GuiGraphics guiGraphics) {
+        boolean enabled = GunAttachments.areMedalsEnabled(this.previewGunStack());
+        int u = enabled ? MEDAL_ENABLED_U : MEDAL_DISABLED_U;
+        int v = enabled ? MEDAL_ENABLED_V : MEDAL_DISABLED_V;
+        guiGraphics.blit(TEXTURE, this.leftPos + MEDAL_BUTTON_X, this.topPos + MEDAL_BUTTON_Y, u, v, MEDAL_BUTTON_SIZE, MEDAL_BUTTON_SIZE);
+    }
+
+    private void renderMedalButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.isMouseOverMedalButton(mouseX, mouseY)) {
+            guiGraphics.renderComponentTooltip(this.font, List.of(Component.translatable("slot.jeg.toggle_medals").withStyle(ChatFormatting.YELLOW)), mouseX, mouseY);
+        }
+    }
+
+    private boolean isMouseOverMedalButton(int mouseX, int mouseY) {
+        int x = this.leftPos + MEDAL_BUTTON_X;
+        int y = this.topPos + MEDAL_BUTTON_Y;
+        return mouseX >= x && mouseX < x + MEDAL_BUTTON_SIZE && mouseY >= y && mouseY < y + MEDAL_BUTTON_SIZE;
     }
 
     private boolean canPlaceAttachmentInSlot(Slot slot) {
