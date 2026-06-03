@@ -364,6 +364,11 @@ public final class GunClientEvents {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem) {
+                NetworkHandler.sendOpenAttachments();
+            }
+        }
     }
 
     @SubscribeEvent

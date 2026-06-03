@@ -21,6 +21,7 @@ import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
@@ -48,6 +49,7 @@ public final class NetworkHandler {
                 .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
+                .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
@@ -74,6 +76,17 @@ public final class NetworkHandler {
                 return;
             }
             vehicle.processInput(player, payload.toInput());
+        });
+    }
+
+    private static void handleOpenAttachments(OpenAttachmentsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getMainHandItem().getItem() instanceof GunItem) {
+                player.openMenu(AttachmentMenu.provider());
+            }
         });
     }
 
@@ -419,6 +432,10 @@ public final class NetworkHandler {
 
     public static void sendUnloadMagazine() {
         sendToServer(UnloadMagazineRequestPayload.INSTANCE);
+    }
+
+    public static void sendOpenAttachments() {
+        sendToServer(OpenAttachmentsPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(ResourceLocation recipeId) {

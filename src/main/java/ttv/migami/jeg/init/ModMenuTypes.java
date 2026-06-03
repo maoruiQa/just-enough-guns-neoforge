@@ -7,6 +7,7 @@ import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
@@ -15,6 +16,11 @@ public final class ModMenuTypes {
     private ModMenuTypes() {}
 
     public static final DeferredRegister<MenuType<?>> REGISTER = DeferredRegister.create(Registries.MENU, Reference.MOD_ID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<AttachmentMenu>> ATTACHMENTS = REGISTER.register(
+            "attachments",
+            () -> IMenuTypeExtension.create((windowId, inventory, data) -> new AttachmentMenu(windowId, inventory))
+    );
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleMenu>> VEHICLE_MENU = REGISTER.register(
             "vehicle_menu",
