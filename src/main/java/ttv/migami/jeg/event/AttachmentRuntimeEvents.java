@@ -30,12 +30,16 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.init.ModBlocks;
+import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.particle.LaserOption;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AttachmentRuntimeEvents {
+    private static final double LASER_BEAM_START_OFFSET = 0.75D;
+    private static final double LASER_BEAM_STEP = 0.4D;
+
     private AttachmentRuntimeEvents() {
     }
 
@@ -97,6 +101,7 @@ public final class AttachmentRuntimeEvents {
         }
 
         ServerLevel serverLevel = (ServerLevel) player.level();
+        emitLaserPointerBeamParticles(serverLevel, start, laserEnd);
         if (hitBlock) {
             emitLaserPointerBlockParticle(serverLevel, blockResult);
         }
@@ -111,6 +116,30 @@ public final class AttachmentRuntimeEvents {
                 0.01D,
                 0.0D
         );
+    }
+
+    private static void emitLaserPointerBeamParticles(ServerLevel level, Vec3 start, Vec3 end) {
+        Vec3 offset = end.subtract(start);
+        double length = offset.length();
+        if (length <= LASER_BEAM_START_OFFSET) {
+            return;
+        }
+
+        Vec3 normal = offset.normalize();
+        for (double distance = LASER_BEAM_START_OFFSET; distance < length; distance += LASER_BEAM_STEP) {
+            Vec3 point = start.add(normal.scale(distance));
+            level.sendParticles(
+                    ModParticleTypes.ENTITY_LASER.get(),
+                    point.x,
+                    point.y,
+                    point.z,
+                    1,
+                    0.0D,
+                    0.0D,
+                    0.0D,
+                    0.0D
+            );
+        }
     }
 
     private static void emitLaserPointerBlockParticle(ServerLevel level, BlockHitResult result) {

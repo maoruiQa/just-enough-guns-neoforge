@@ -21,7 +21,7 @@ public class ModParticleTypes {
             DeferredRegister.create(Registries.PARTICLE_TYPE, Reference.MOD_ID);
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ENTITY_LASER =
-            REGISTER.register("entity_laser", () -> new SimpleParticleType(false));
+            REGISTER.register("entity_laser", () -> new SimpleParticleType(true));
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_EXPLOSION =
             REGISTER.register("big_explosion", () -> new SimpleParticleType(true));
