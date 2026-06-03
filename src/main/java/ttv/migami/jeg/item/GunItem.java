@@ -34,7 +34,9 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
@@ -781,10 +783,92 @@ public class GunItem extends Item {
                 .ifPresent(path -> {
                     if ("trumpet".equals(path)) {
                         playSound(level, shooter, Optional.ofNullable(resolveSound(Reference.id("item.doot"))));
+                        applyTrumpetSoundwave(level, shooter);
                     } else if ("explosive_muzzle".equals(path)) {
                         playSound(level, shooter, Optional.of(SoundEvents.FIRECHARGE_USE));
                     }
                 });
+    }
+
+    private void applyTrumpetSoundwave(Level level, LivingEntity shooter) {
+        if (level.isClientSide()) {
+            return;
+        }
+
+        Vec3 look = shooter.getLookAngle();
+        Vec3 origin = shooter.position();
+        double attackRange = 8.0D;
+        double maxDistance = 10.0D;
+        double sweepAngle = Math.toRadians(Mth.clamp(stats.spread(), 25.0F, 100.0F));
+
+        BlockPos basePos = shooter.blockPosition();
+        int fireRange = 10;
+        for (BlockPos pos : BlockPos.betweenClosed(
+                basePos.offset(-fireRange, -fireRange, -fireRange),
+                basePos.offset(fireRange, fireRange, fireRange))) {
+            if (!level.getBlockState(pos).is(Blocks.FIRE)) {
+                continue;
+            }
+            Vec3 fireOffset = Vec3.atCenterOf(pos).subtract(origin);
+            double distance = fireOffset.length();
+            if (distance <= maxDistance && isInsideSoundwaveCone(fireOffset, look, sweepAngle)) {
+                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            }
+        }
+
+        level.playSound(null, shooter.blockPosition(), SoundEvents.SCULK_BLOCK_CHARGE, SoundSource.PLAYERS, 2.0F, 1.0F);
+        ServerLevel serverLevel = (ServerLevel) level;
+        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, shooter.getBoundingBox().inflate(attackRange))) {
+            if (entity == shooter) {
+                continue;
+            }
+
+            Vec3 entityOffset = entity.position().subtract(origin);
+            double distance = entityOffset.length();
+            if (!isInsideSoundwaveCone(entityOffset, look, sweepAngle)) {
+                continue;
+            }
+
+            double distanceMultiplier = 1.0D - Math.min(distance / maxDistance, 1.0D);
+            float adjustedDamage = (float) (stats.damage() * distanceMultiplier);
+            if (adjustedDamage <= 0.0F) {
+                continue;
+            }
+
+            entity.hurt(shooter.damageSources().sonicBoom(shooter), adjustedDamage);
+            entity.invulnerableTime = 0;
+            serverLevel.sendParticles(
+                    ParticleTypes.SCULK_CHARGE_POP,
+                    entity.getX(),
+                    entity.getY() + entity.getBbHeight() * 0.5D,
+                    entity.getZ(),
+                    12,
+                    0.2D,
+                    0.0D,
+                    0.3D,
+                    0.1D
+            );
+        }
+
+        Vec3 particlePos = shooter.getEyePosition().add(look.scale(1.8D));
+        serverLevel.sendParticles(
+                ParticleTypes.SONIC_BOOM,
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                1,
+                look.x,
+                look.y,
+                look.z,
+                0.0D
+        );
+    }
+
+    private static boolean isInsideSoundwaveCone(Vec3 offset, Vec3 look, double sweepAngle) {
+        if (offset.lengthSqr() < 1.0E-6D) {
+            return false;
+        }
+        return Math.acos(offset.normalize().dot(look.normalize())) < sweepAngle * 0.5D;
     }
 
     private int durabilityDamagePerShot(ItemStack stack) {

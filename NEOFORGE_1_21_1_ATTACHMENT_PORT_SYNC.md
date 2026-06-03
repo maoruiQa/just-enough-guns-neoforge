@@ -55,12 +55,16 @@ Behavior wired so far:
   - Firing damages those installed attachments by 1 per shot.
   - When an attachment reaches its registered max damage, the slot is cleared, `item_break` plays, and `chat.jeg.attachment_broke` is shown.
   - This is an adapted representation because this NeoForge port stores attachment item IDs rather than full attachment `ItemStack`s with enchantments/damage.
+- Trumpet barrel attachment soundwave behavior is partially wired:
+  - Firing with `trumpet` still plays `item.doot`.
+  - Server-side soundwave now clears fire blocks in a forward cone, damages living entities in that cone with sonic-boom damage, resets hit invulnerability, and emits vanilla sculk/sonic particles.
+  - The full Forge custom sonic-ring particle visuals remain unported.
 
 Still to port:
 
 - Forge-accurate attachment screen layout, gun preview, slot icon states, and slot hover polish.
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
-- Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, trumpet non-audio effects, and full attachment item-stack durability/enchantment parity.
+- Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: paint job, dye, and kill effect.
 
@@ -78,4 +82,5 @@ Sync checklist for the other maintained branches:
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.
 12. Port attachment durability/breakage for the firing-damaged functional slots.
-13. Then expand remaining runtime modifier/render behavior.
+13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
+14. Then expand remaining runtime modifier/render behavior.
