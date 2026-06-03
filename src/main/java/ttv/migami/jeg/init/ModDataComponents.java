@@ -104,6 +104,9 @@ public final class ModDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_UNDER_BARREL_ATTACHMENT = attachmentComponent("gun_under_barrel_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_MAGAZINE_ATTACHMENT = attachmentComponent("gun_magazine_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SPECIAL_ATTACHMENT = attachmentComponent("gun_special_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_PAINT_JOB_ATTACHMENT = attachmentComponent("gun_paint_job_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_DYE_ATTACHMENT = attachmentComponent("gun_dye_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_KILL_EFFECT_ATTACHMENT = attachmentComponent("gun_kill_effect_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_SCOPE_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_scope_attachment_damage");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_BARREL_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_barrel_attachment_damage");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_STOCK_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_stock_attachment_damage");

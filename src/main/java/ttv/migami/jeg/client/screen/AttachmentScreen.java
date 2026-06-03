@@ -18,14 +18,14 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     public AttachmentScreen(AttachmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 166;
-        this.inventoryLabelY = 73;
+        this.imageHeight = 184;
+        this.inventoryLabelY = 92;
     }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        guiGraphics.fill(this.leftPos + 7, this.topPos + 21, this.leftPos + 169, this.topPos + 57, 0x66000000);
+        guiGraphics.fill(this.leftPos - 71, this.topPos - 8, this.leftPos - 43, this.topPos + 174, 0x66000000);
     }
 
     @Override

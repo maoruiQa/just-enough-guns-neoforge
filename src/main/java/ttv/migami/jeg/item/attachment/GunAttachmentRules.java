@@ -51,6 +51,9 @@ public final class GunAttachmentRules {
         if (!(gunStack.getItem() instanceof GunItem gun)) {
             return false;
         }
+        if (type.isCosmetic()) {
+            return true;
+        }
         return SUPPORTED_TYPES.getOrDefault(gun.getStats().id(), COMMON_FIREARM_TYPES).contains(type);
     }
 

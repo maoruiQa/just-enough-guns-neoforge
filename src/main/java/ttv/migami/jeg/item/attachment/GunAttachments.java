@@ -194,6 +194,9 @@ public final class GunAttachments {
             case UNDER_BARREL -> ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT.get();
             case MAGAZINE -> ModDataComponents.GUN_MAGAZINE_ATTACHMENT.get();
             case SPECIAL -> ModDataComponents.GUN_SPECIAL_ATTACHMENT.get();
+            case PAINT_JOB -> ModDataComponents.GUN_PAINT_JOB_ATTACHMENT.get();
+            case DYE -> ModDataComponents.GUN_DYE_ATTACHMENT.get();
+            case KILL_EFFECT -> ModDataComponents.GUN_KILL_EFFECT_ATTACHMENT.get();
         };
     }
 

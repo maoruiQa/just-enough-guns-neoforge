@@ -44,19 +44,23 @@ public final class AttachmentMenu extends AbstractContainerMenu {
         this.loadAttachments();
 
         for (int index = 0; index < ATTACHMENT_SLOT_COUNT; index++) {
-            this.addSlot(new AttachmentSlot(this.attachments, this.weapon, TYPES[index], playerInventory.player, index, 17 + index * 24, 32));
+            AttachmentType type = TYPES[index];
+            int y = type.isCosmetic()
+                    ? 8 + 26 + index * 18 - 18
+                    : 8 + index * 18 - 18;
+            this.addSlot(new AttachmentSlot(this.attachments, this.weapon, type, playerInventory.player, index, -64, y));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 102 + row * 18));
             }
         }
 
         for (int col = 0; col < 9; col++) {
             Slot slot = col == this.selectedSlot
-                    ? new LockedSlot(playerInventory, col, 8 + col * 18, 142)
-                    : new Slot(playerInventory, col, 8 + col * 18, 142);
+                    ? new LockedSlot(playerInventory, col, 8 + col * 18, 160)
+                    : new Slot(playerInventory, col, 8 + col * 18, 160);
             this.addSlot(slot);
         }
         this.loaded = true;

@@ -6,7 +6,10 @@ public enum AttachmentType {
     STOCK("stock"),
     UNDER_BARREL("under_barrel"),
     MAGAZINE("magazine"),
-    SPECIAL("special");
+    SPECIAL("special"),
+    PAINT_JOB("paint_job"),
+    DYE("dye"),
+    KILL_EFFECT("kill_effect");
 
     private final String key;
 
@@ -16,5 +19,9 @@ public enum AttachmentType {
 
     public String key() {
         return this.key;
+    }
+
+    public boolean isCosmetic() {
+        return this == PAINT_JOB || this == DYE || this == KILL_EFFECT;
     }
 }

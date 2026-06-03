@@ -13,9 +13,12 @@ Current NeoForge 1.21.1 foundation:
   - `gun_under_barrel_attachment`
   - `gun_magazine_attachment`
   - `gun_special_attachment`
+  - `gun_paint_job_attachment`
+  - `gun_dye_attachment`
+  - `gun_kill_effect_attachment`
 - `GunAttachments` is the canonical read/write helper. Future UI, renderer, and gameplay code should use it instead of adding ad-hoc tags.
 - `GunAttachmentRules` is the current per-gun support matrix for slot validation.
-- `AttachmentMenu` is the first NeoForge menu port. It exposes the six functional slots and writes through `GunAttachments`.
+- `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
@@ -25,6 +28,7 @@ Behavior wired so far:
 - `bolt_action_rifle` only uses the scoped ADS/FOV/overlay path when its scope slot has an attachment.
 - A barrel slot `silencer` switches gunfire to the gun's silenced fire sound when available.
 - Pressing `key.jeg.attachments` opens a usable attachment menu while a gun is held in the main hand.
+- The menu now exposes the Forge slot shape: six functional slots plus cosmetic `paint_job`, `dye`, and `kill_effect` slots.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Damage multipliers are applied to spawned bullet damage.
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
