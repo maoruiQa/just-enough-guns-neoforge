@@ -39,6 +39,7 @@ Behavior wired so far:
 - Empty attachment slots now draw the Forge icon strip, inactive slots draw a cross, and dragging an incompatible item over an empty attachment slot shows the Forge incompatibility tooltip.
 - The attachment screen closes when the selected main-hand item stops being a gun, matching the Forge screen lifetime behavior.
 - The attachment screen renders the held gun preview and gun name above the main panel.
+- The attachment screen now renders the Forge mini config button. It opens a registered NeoForge `IConfigScreenFactory` screen when available, otherwise it shows the existing Forge-style "Install Configured" chat hint.
 - The attachment screen now renders the Forge medal toggle button, sends a server-authoritative toggle payload, and stores the gun's kill-medal toggle in the synced `gun_medals_enabled` component.
 - Cosmetic slots now accept and persist their matching items:
   - `paint_job`: registered spray cans.
@@ -108,7 +109,7 @@ Behavior wired so far:
 
 Still to port:
 
-- Forge-accurate attachment screen config button and remaining layout polish.
+- Remaining Forge attachment-screen layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining runtime behavior for full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.

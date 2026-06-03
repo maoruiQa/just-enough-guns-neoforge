@@ -6,17 +6,23 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
@@ -29,6 +35,11 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int SLOT_ICON_U = 176;
     private static final int DISABLED_SLOT_ICON_V = 0;
     private static final int SLOT_ICON_SIZE = 16;
+    private static final int CONFIG_BUTTON_X = 159;
+    private static final int CONFIG_BUTTON_Y = 90;
+    private static final int CONFIG_BUTTON_U = 192;
+    private static final int CONFIG_BUTTON_V = 0;
+    private static final int CONFIG_BUTTON_SIZE = 10;
     private static final int MEDAL_BUTTON_X = -31;
     private static final int MEDAL_BUTTON_Y = 148;
     private static final int MEDAL_BUTTON_SIZE = 22;
@@ -58,6 +69,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
         guiGraphics.blit(TEXTURE, this.leftPos - 71, this.topPos - 18, 203, 0, 32, 202);
+        this.renderConfigButton(guiGraphics, mouseX, mouseY);
         this.renderMedalButton(guiGraphics);
         this.renderGunPreview(guiGraphics, partialTick);
         this.renderAttachmentSlotIcons(guiGraphics);
@@ -81,11 +93,16 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         this.renderAttachmentSlotTooltip(guiGraphics, mouseX, mouseY);
+        this.renderConfigButtonTooltip(guiGraphics, mouseX, mouseY);
         this.renderMedalButtonTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if ((button == 0 || button == 1) && this.isMouseOverConfigButton((int) mouseX, (int) mouseY)) {
+            this.openConfigScreen();
+            return true;
+        }
         if ((button == 0 || button == 1) && this.isMouseOverMedalButton((int) mouseX, (int) mouseY)) {
             NetworkHandler.sendToggleMedals();
             Player player = this.minecraft == null ? null : this.minecraft.player;
@@ -133,6 +150,46 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         );
         buffer.endBatch();
         poseStack.popPose();
+    }
+
+    private void renderConfigButton(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        int x = this.leftPos + CONFIG_BUTTON_X;
+        int y = this.topPos + CONFIG_BUTTON_Y;
+        guiGraphics.blit(TEXTURE, x, y, CONFIG_BUTTON_U, CONFIG_BUTTON_V, CONFIG_BUTTON_SIZE, CONFIG_BUTTON_SIZE);
+        if (this.isMouseOverConfigButton(mouseX, mouseY)) {
+            guiGraphics.fillGradient(x, y, x + CONFIG_BUTTON_SIZE, y + CONFIG_BUTTON_SIZE, 0x80FFFFFF, 0x80FFFFFF);
+        }
+    }
+
+    private void renderConfigButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.isMouseOverConfigButton(mouseX, mouseY)) {
+            guiGraphics.renderComponentTooltip(this.font, List.of(Component.translatable("jeg.button.config.tooltip")), mouseX, mouseY);
+        }
+    }
+
+    private boolean isMouseOverConfigButton(int mouseX, int mouseY) {
+        int x = this.leftPos + CONFIG_BUTTON_X;
+        int y = this.topPos + CONFIG_BUTTON_Y;
+        return mouseX >= x && mouseX < x + CONFIG_BUTTON_SIZE && mouseY >= y && mouseY < y + CONFIG_BUTTON_SIZE;
+    }
+
+    private void openConfigScreen() {
+        ModList.get().getModContainerById(Reference.MOD_ID).ifPresent(container -> {
+            Screen screen = container.getCustomExtension(IConfigScreenFactory.class)
+                    .map(factory -> factory.createScreen(container, this))
+                    .orElse(null);
+            if (screen != null) {
+                this.minecraft.setScreen(screen);
+            } else if (this.minecraft != null && this.minecraft.player != null) {
+                MutableComponent modName = Component.literal("Configured");
+                modName.setStyle(modName.getStyle()
+                        .withColor(ChatFormatting.YELLOW)
+                        .withUnderlined(true)
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("jeg.chat.open_curseforge_page")))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.curseforge.com/minecraft/mc-mods/configured")));
+                this.minecraft.player.displayClientMessage(Component.translatable("jeg.chat.install_configured", modName), false);
+            }
+        });
     }
 
     private void renderAttachmentSlotIcons(GuiGraphics guiGraphics) {
