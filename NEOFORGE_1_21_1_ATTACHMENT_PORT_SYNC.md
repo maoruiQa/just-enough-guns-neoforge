@@ -72,6 +72,9 @@ Behavior wired so far:
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
+- Gun paint-job rendering is partially wired:
+  - If the cosmetic `paint_job` slot contains a spray can, animated gun rendering checks `textures/animated/gun/paintjob/<paintJob>/<gun>.png`.
+  - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
 
 Still to port:
 
@@ -79,7 +82,7 @@ Still to port:
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
 - Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
-- Cosmetic slots: paint job, dye, and kill effect.
+- Cosmetic slots: dye behavior, kill effect behavior, attachment paint-job rendering, and any Forge paint-job model overrides.
 
 Sync checklist for the other maintained branches:
 

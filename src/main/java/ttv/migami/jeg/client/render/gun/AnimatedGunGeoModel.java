@@ -8,8 +8,6 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
     private static final String MODEL_ROOT = "geo/item/gun/";
     private static final String ANIMATION_ROOT = "animations/item/";
-    private static final String TEXTURE_ITEM_ROOT = "textures/item/";
-    private static final String TEXTURE_ANIM_ROOT = "textures/animated/gun/";
     private static final String FALLBACK = "abstract_gun";
 
     @Override
@@ -19,10 +17,7 @@ public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
 
     @Override
     public ResourceLocation getTextureResource(AnimatedGunItem animatable) {
-        String p = path(animatable);
-        ResourceLocation primary = Reference.id(TEXTURE_ANIM_ROOT + p + ".png");
-        ResourceLocation fallback = Reference.id(TEXTURE_ITEM_ROOT + p + ".png");
-        return exists(primary) ? primary : fallback;
+        return GunPaintJobTextures.baseTexture(animatable);
     }
 
     @Override
@@ -35,7 +30,4 @@ public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
         return path == null || path.isBlank() ? FALLBACK : path;
     }
 
-    private static boolean exists(ResourceLocation id) {
-        return net.minecraft.client.Minecraft.getInstance().getResourceManager().getResource(id).isPresent();
-    }
 }

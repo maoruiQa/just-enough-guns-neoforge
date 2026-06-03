@@ -89,6 +89,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         return this.renderPerspective;
     }
 
+    @Override
+    public ResourceLocation getTextureLocation(AnimatedGunItem animatable) {
+        return GunPaintJobTextures.texture(animatable, this.getCurrentItemStack());
+    }
+
     public boolean isFirstPersonContext() {
         ItemDisplayContext ctx = this.renderPerspective;
         if (isFirstPersonDisplay(ctx)) {
