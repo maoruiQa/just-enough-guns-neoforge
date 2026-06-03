@@ -20,6 +20,7 @@ Current NeoForge 1.21.1 foundation:
 - `GunAttachmentRules` is the current per-gun support matrix for slot validation.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
+- `AttachmentScreen` draws Forge-style slot icons, disabled-slot crosses, and incompatible-slot hover feedback from the current menu validation rules.
 - Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
 - Forge attachment Geo assets were copied under `src/main/resources/assets/jeg/geo/item/attachment/`.
@@ -32,6 +33,7 @@ Behavior wired so far:
 - A barrel slot `silencer` switches gunfire to the gun's silenced fire sound when available.
 - Pressing `key.jeg.attachments` opens a usable attachment menu while a gun is held in the main hand.
 - The menu now exposes the Forge slot shape: six functional slots plus cosmetic `paint_job`, `dye`, and `kill_effect` slots.
+- Empty attachment slots now draw the Forge icon strip, inactive slots draw a cross, and dragging an incompatible item over an empty attachment slot shows the Forge incompatibility tooltip.
 - Cosmetic slots now accept and persist their matching items:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.
@@ -93,7 +95,7 @@ Behavior wired so far:
 
 Still to port:
 
-- Forge-accurate attachment screen layout, gun preview, slot icon states, and slot hover polish.
+- Forge-accurate attachment screen gun preview, config/medal buttons, and remaining layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining runtime behavior for flashlight item battery/charging, laser pointer beam particles, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
