@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "CGC",
+    "RCR",
+    " I "
+  ],
+  "key": {
+    "G": { "item": "minecraft:tinted_glass" },
+    "R": { "item": "minecraft:redstone" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "I": { "item": "minecraft:iron_ingot" }
+  },
+  "result": { "id": "jeg:holographic_sight", "count": 1 }
+}

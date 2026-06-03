@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -36,9 +37,14 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem> 
             int packedLight,
             int packedOverlay
     ) {
+        if (!(getRenderer() instanceof AnimatedGunRenderer renderer)) {
+            return;
+        }
+        ItemStack stack = renderer.getCurrentItemStack();
         if (!"attachment_bone".equals(bone.getName())
                 || !BOLT_ACTION_RIFLE.equals(animatable.getStats().id())
-                || !GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                || stack == null
+                || !GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
             return;
         }
 

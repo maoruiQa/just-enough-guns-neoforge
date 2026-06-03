@@ -163,14 +163,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             // );
         }
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
-            if (shouldHideScopedFirstPersonGun(gun)) {
+            if (shouldHideScopedFirstPersonGun(stack, gun)) {
                 return;
             }
 
             poseStack.pushPose();
             try {
                 if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
-                    applyFirstPersonAdsTransform(gun, displayContext, poseStack);
+                    applyFirstPersonAdsTransform(stack, gun, displayContext, poseStack);
                 }
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
@@ -209,13 +209,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
     }
 
-    private static void applyFirstPersonAdsTransform(AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
+    private static void applyFirstPersonAdsTransform(ItemStack stack, AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
         float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
             return;
         }
 
-        ForgeZoomOffset zoom = scopedBoltActionRifle(gun)
+        ForgeZoomOffset zoom = scopedBoltActionRifle(stack, gun)
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
         if (zoom == null) {
@@ -313,13 +313,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
 
-    private static boolean scopedBoltActionRifle(AnimatedGunItem gun) {
+    private static boolean scopedBoltActionRifle(ItemStack stack, AnimatedGunItem gun) {
         return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled();
+                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
     }
 
-    private static boolean shouldHideScopedFirstPersonGun(AnimatedGunItem gun) {
-        return scopedBoltActionRifle(gun) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
+    private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {
+        return scopedBoltActionRifle(stack, gun) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 
     @Override
@@ -339,7 +339,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         String boneName = bone.getName();
         ItemStack stack = this.getCurrentItemStack();
         if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            GunAttachmentVisibility.apply(gun.getStats().id(), bone);
+            GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
         }
 

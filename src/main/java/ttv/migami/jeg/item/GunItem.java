@@ -49,6 +49,8 @@ import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -754,8 +756,15 @@ public class GunItem extends Item {
             player.getCooldowns().addCooldown(stack.getItem(), Math.max(1, stats.fireDelay()));
         }
 
-        playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
+        playSound(level, player, fireSoundFor(stack));
         return true;
+    }
+
+    private Optional<SoundEvent> fireSoundFor(ItemStack stack) {
+        if (GunAttachments.modifiers(stack, AttachmentType.BARREL).silenced()) {
+            return stats.silencedFireSoundEvent().or(stats::fireSoundEvent).or(stats::enchantedFireSoundEvent);
+        }
+        return stats.fireSoundEvent().or(stats::enchantedFireSoundEvent);
     }
 
     private void applyRecoilBackstep(Player player) {

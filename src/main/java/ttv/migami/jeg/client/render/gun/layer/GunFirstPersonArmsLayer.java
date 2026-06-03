@@ -62,7 +62,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         String boneName = bone.getName();
         ItemStack stack = renderer.getCurrentItemStack();
         if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            GunAttachmentVisibility.apply(gun.getStats().id(), bone);
+            GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
         }
 
         if (!"left_arm".equals(boneName) && !"right_arm".equals(boneName)

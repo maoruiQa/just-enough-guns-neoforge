@@ -133,7 +133,7 @@ public final class GunClientEvents {
             return;
         }
         if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
             float current = event.getNewFovModifier();
             float target = SCOPE_VIEWPORT_FOV / configuredFov();
             event.setNewFovModifier(Math.max(0.1F, Mth.lerp(ads, current, target)));
@@ -335,7 +335,7 @@ public final class GunClientEvents {
                     applyLocalVisualRecoil(gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
-                    forceExitScopedAdsAfterShot(gun);
+                    forceExitScopedAdsAfterShot(heldMain, gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -494,7 +494,7 @@ public final class GunClientEvents {
             applyLocalVisualRecoil(gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
-            forceExitScopedAdsAfterShot(gun);
+            forceExitScopedAdsAfterShot(stack, gun);
         }
     }
 
@@ -530,9 +530,9 @@ public final class GunClientEvents {
         return gun.getMagazineAmmo(stack) > 0;
     }
 
-    private static void forceExitScopedAdsAfterShot(GunItem gun) {
+    private static void forceExitScopedAdsAfterShot(ItemStack stack, GunItem gun) {
         if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
             AimingHandler.get().suppressUntilUseReleased();
         }
     }

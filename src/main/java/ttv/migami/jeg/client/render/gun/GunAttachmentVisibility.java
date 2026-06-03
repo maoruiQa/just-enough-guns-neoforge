@@ -3,6 +3,7 @@ package ttv.migami.jeg.client.render.gun;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.GeoBone;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -58,10 +59,10 @@ public final class GunAttachmentVisibility {
     private GunAttachmentVisibility() {
     }
 
-    public static void apply(ResourceLocation gunId, GeoBone bone) {
+    public static void apply(ResourceLocation gunId, ItemStack stack, GeoBone bone) {
         String boneName = bone.getName();
         if (Reference.id("bolt_action_rifle").equals(gunId)) {
-            applyBoltActionRifle(bone, boneName);
+            applyBoltActionRifle(stack, bone, boneName);
             return;
         }
 
@@ -79,13 +80,14 @@ public final class GunAttachmentVisibility {
         }
     }
 
-    private static void applyBoltActionRifle(GeoBone bone, String boneName) {
+    private static void applyBoltActionRifle(ItemStack stack, GeoBone bone, String boneName) {
+        boolean scoped = GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
         if ("attachment_bone".equals(boneName)) {
-            bone.setHidden(!GunScopeSupport.isBoltActionRifleScopeEnabled());
+            bone.setHidden(!scoped);
             return;
         }
         if ("iron_sight".equals(boneName)) {
-            bone.setHidden(GunScopeSupport.isBoltActionRifleScopeEnabled());
+            bone.setHidden(scoped);
             return;
         }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {

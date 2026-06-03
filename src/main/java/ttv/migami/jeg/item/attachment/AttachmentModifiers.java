@@ -1,0 +1,106 @@
+package ttv.migami.jeg.item.attachment;
+
+public record AttachmentModifiers(
+        float aimFovModifier,
+        float damageMultiplier,
+        float spreadMultiplier,
+        float recoilMultiplier,
+        float kickMultiplier,
+        double adsSpeedMultiplier,
+        boolean silenced,
+        boolean explosiveAmmo,
+        boolean flashlight,
+        boolean laserPointer,
+        boolean annoying
+) {
+    public static final AttachmentModifiers NONE = builder().build();
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private float aimFovModifier = 0.0F;
+        private float damageMultiplier = 1.0F;
+        private float spreadMultiplier = 1.0F;
+        private float recoilMultiplier = 1.0F;
+        private float kickMultiplier = 1.0F;
+        private double adsSpeedMultiplier = 1.0D;
+        private boolean silenced;
+        private boolean explosiveAmmo;
+        private boolean flashlight;
+        private boolean laserPointer;
+        private boolean annoying;
+
+        public Builder aimFovModifier(float value) {
+            this.aimFovModifier = value;
+            return this;
+        }
+
+        public Builder damageMultiplier(float value) {
+            this.damageMultiplier = value;
+            return this;
+        }
+
+        public Builder spreadMultiplier(float value) {
+            this.spreadMultiplier = value;
+            return this;
+        }
+
+        public Builder recoilMultiplier(float value) {
+            this.recoilMultiplier = value;
+            return this;
+        }
+
+        public Builder kickMultiplier(float value) {
+            this.kickMultiplier = value;
+            return this;
+        }
+
+        public Builder adsSpeedMultiplier(double value) {
+            this.adsSpeedMultiplier = value;
+            return this;
+        }
+
+        public Builder silenced() {
+            this.silenced = true;
+            return this;
+        }
+
+        public Builder explosiveAmmo() {
+            this.explosiveAmmo = true;
+            return this;
+        }
+
+        public Builder flashlight() {
+            this.flashlight = true;
+            return this;
+        }
+
+        public Builder laserPointer() {
+            this.laserPointer = true;
+            return this;
+        }
+
+        public Builder annoying() {
+            this.annoying = true;
+            return this;
+        }
+
+        public AttachmentModifiers build() {
+            return new AttachmentModifiers(
+                    this.aimFovModifier,
+                    this.damageMultiplier,
+                    this.spreadMultiplier,
+                    this.recoilMultiplier,
+                    this.kickMultiplier,
+                    this.adsSpeedMultiplier,
+                    this.silenced,
+                    this.explosiveAmmo,
+                    this.flashlight,
+                    this.laserPointer,
+                    this.annoying
+            );
+        }
+    }
+}

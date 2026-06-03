@@ -97,4 +97,21 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build()
     );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SCOPE_ATTACHMENT = attachmentComponent("gun_scope_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_BARREL_ATTACHMENT = attachmentComponent("gun_barrel_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_STOCK_ATTACHMENT = attachmentComponent("gun_stock_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_UNDER_BARREL_ATTACHMENT = attachmentComponent("gun_under_barrel_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_MAGAZINE_ATTACHMENT = attachmentComponent("gun_magazine_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SPECIAL_ATTACHMENT = attachmentComponent("gun_special_attachment");
+
+    private static DeferredHolder<DataComponentType<?>, DataComponentType<String>> attachmentComponent(String name) {
+        return REGISTER.register(
+                name,
+                () -> DataComponentType.<String>builder()
+                        .persistent(Codec.STRING)
+                        .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                        .build()
+        );
+    }
 }

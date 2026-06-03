@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "III",
+    "SLL",
+    "S  "
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "L": { "item": "minecraft:leather" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "result": { "id": "jeg:tactical_stock", "count": 1 }
+}

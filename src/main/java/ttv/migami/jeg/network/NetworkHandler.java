@@ -311,16 +311,16 @@ public final class NetworkHandler {
             if (shot && GunItem.isHoldToFireWeapon(stack)) {
                 HOLD_FIRE_START_TICKS.remove(player.getUUID());
             }
-            if (shot && shouldForceExitAdsAfterShot(gun)) {
+            if (shot && shouldForceExitAdsAfterShot(stack, gun)) {
                 player.getPersistentData().putBoolean(AIMING_TAG, false);
                 player.stopUsingItem();
             }
         });
     }
 
-    private static boolean shouldForceExitAdsAfterShot(GunItem gun) {
+    private static boolean shouldForceExitAdsAfterShot(ItemStack stack, GunItem gun) {
         return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled();
+                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
     }
 
     private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {

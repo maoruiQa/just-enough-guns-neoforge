@@ -30,7 +30,7 @@ public final class ScopeOverlayRenderer {
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof GunItem gun)
                 || !BOLT_ACTION_RIFLE.equals(gun.getStats().id())
-                || !GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                || !GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
             return;
         }
 
