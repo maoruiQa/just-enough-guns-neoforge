@@ -729,7 +729,7 @@ public class GunItem extends Item {
                     break;
                 }
                 fireAt(level, player, stack, null);
-                stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+                stack.hurtAndBreak(durabilityDamagePerShot(stack), player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
                 shotsFired++;
             }
             if (shotsFired <= 0) {
@@ -763,6 +763,7 @@ public class GunItem extends Item {
         }
 
         playSound(level, player, fireSoundFor(stack));
+        playAttachmentFireSounds(level, player, stack);
         return true;
     }
 
@@ -771,6 +772,28 @@ public class GunItem extends Item {
             return stats.silencedFireSoundEvent().or(stats::fireSoundEvent).or(stats::enchantedFireSoundEvent);
         }
         return stats.fireSoundEvent().or(stats::enchantedFireSoundEvent);
+    }
+
+    private void playAttachmentFireSounds(Level level, LivingEntity shooter, ItemStack stack) {
+        GunAttachments.id(stack, AttachmentType.BARREL)
+                .map(ResourceLocation::getPath)
+                .ifPresent(path -> {
+                    if ("trumpet".equals(path)) {
+                        playSound(level, shooter, Optional.ofNullable(resolveSound(Reference.id("item.doot"))));
+                    } else if ("explosive_muzzle".equals(path)) {
+                        playSound(level, shooter, Optional.of(SoundEvents.FIRECHARGE_USE));
+                    }
+                });
+    }
+
+    private int durabilityDamagePerShot(ItemStack stack) {
+        return GunAttachments.modifiers(stack).explosiveAmmo() ? 5 : 1;
+    }
+
+    @Nullable
+    private SoundEvent resolveSound(ResourceLocation soundId) {
+        var holder = ModSounds.ALL.get(soundId);
+        return holder != null ? holder.get() : null;
     }
 
     private void applyRecoilBackstep(Player player, ItemStack stack) {
