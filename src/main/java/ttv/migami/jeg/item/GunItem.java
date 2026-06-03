@@ -948,7 +948,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage);
+                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1003,7 +1003,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage);
+                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {

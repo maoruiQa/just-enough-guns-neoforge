@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.BaseFireBlock;
@@ -52,6 +54,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.item.BulletproofArmorItem;
@@ -103,9 +106,12 @@ public class BulletEntity extends Projectile {
     private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 4.0F;
     private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.5D;
     private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
+    private static final float EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE = 0.1F;
+    private static final float EXPLOSIVE_MUZZLE_STONE_BREAK_CHANCE = 0.05F;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_EXPLOSIVE_AMMO = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
 
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
@@ -124,6 +130,10 @@ public class BulletEntity extends Projectile {
     }
 
     public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity, float damage) {
+        this(level, shooter, stats, velocity, damage, false);
+    }
+
+    public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity, float damage, boolean explosiveAmmo) {
         this(ModEntities.BULLET.get(), level);
         this.setOwner(shooter);
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
@@ -134,6 +144,7 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TRAIL_COLOR, stats.trailColor());
         this.entityData.set(DATA_TRAIL_LENGTH, stats.clampedTrailLength());
         this.entityData.set(DATA_SIZE, stats.clampedProjectileSize());
+        this.entityData.set(DATA_EXPLOSIVE_AMMO, explosiveAmmo);
         this.setVelocityAndRotation(velocity);
         this.setNoGravity(false);
         // DO NOT use noPhysics for flare gun - it prevents proper ticking
@@ -152,6 +163,7 @@ public class BulletEntity extends Projectile {
         builder.define(DATA_SIZE, 0.05F);
         builder.define(DATA_TICKS_LIVED, 0);
         builder.define(DATA_HIT_SOLID_BLOCK, false);
+        builder.define(DATA_EXPLOSIVE_AMMO, false);
     }
 
     @Override
@@ -644,10 +656,15 @@ public class BulletEntity extends Projectile {
             }
 
             if (Config.bulletBlockDestructionEnabled()) {
+                boolean destroyedByExplosiveAmmo = this.entityData.get(DATA_EXPLOSIVE_AMMO)
+                        && tryDestroyExplosiveAmmoBlock(serverLevel, hitPos, hitState);
+
                 // Try to destroy the block based on tier and bullet power
-                ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
-                    serverLevel, hitPos, stats
-                );
+                if (!destroyedByExplosiveAmmo) {
+                    ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
+                        serverLevel, hitPos, stats
+                    );
+                }
             }
         }
 
@@ -665,6 +682,7 @@ public class BulletEntity extends Projectile {
         output.putFloat("TrailLength", this.entityData.get(DATA_TRAIL_LENGTH));
         output.putFloat("ProjectileSize", this.entityData.get(DATA_SIZE));
         output.putInt("Ticks", this.entityData.get(DATA_TICKS_LIVED));
+        output.putBoolean("ExplosiveAmmo", this.entityData.get(DATA_EXPLOSIVE_AMMO));
     }
 
     @Override
@@ -676,9 +694,37 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TRAIL_LENGTH, input.contains("TrailLength") ? input.getFloat("TrailLength") : this.entityData.get(DATA_TRAIL_LENGTH));
         this.entityData.set(DATA_SIZE, input.contains("ProjectileSize") ? input.getFloat("ProjectileSize") : this.entityData.get(DATA_SIZE));
         this.entityData.set(DATA_TICKS_LIVED, input.contains("Ticks") ? input.getInt("Ticks") : this.entityData.get(DATA_TICKS_LIVED));
+        this.entityData.set(DATA_EXPLOSIVE_AMMO, input.contains("ExplosiveAmmo") && input.getBoolean("ExplosiveAmmo"));
         this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
+    }
+
+    private boolean tryDestroyExplosiveAmmoBlock(ServerLevel level, BlockPos pos, BlockState state) {
+        Entity owner = this.getOwner();
+        if (!(owner instanceof Player) && !level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            return false;
+        }
+
+        boolean wood = (state.is(BlockTags.MINEABLE_WITH_AXE) && state.is(BlockTags.DRAGON_IMMUNE))
+                || state.is(ModTags.Blocks.WOOD);
+        boolean stone = (state.is(BlockTags.MINEABLE_WITH_PICKAXE) && state.is(BlockTags.DRAGON_IMMUNE))
+                || state.is(ModTags.Blocks.STONE);
+        if (!wood && !stone) {
+            return false;
+        }
+
+        float destroySpeed = state.getDestroySpeed(level, pos);
+        if (destroySpeed < 0.0F) {
+            return false;
+        }
+
+        float baseChance = wood ? EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE : EXPLOSIVE_MUZZLE_STONE_BREAK_CHANCE;
+        if (this.random.nextFloat() < baseChance / (destroySpeed + 1.0F)) {
+            level.destroyBlock(pos, false);
+            return true;
+        }
+        return false;
     }
 
     public GunStats getGunStats() {
