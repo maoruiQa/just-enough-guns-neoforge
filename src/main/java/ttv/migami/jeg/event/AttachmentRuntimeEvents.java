@@ -3,6 +3,7 @@ package ttv.migami.jeg.event;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -22,12 +23,14 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.init.ModBlocks;
+import ttv.migami.jeg.particle.LaserOption;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -67,8 +70,10 @@ public final class AttachmentRuntimeEvents {
         EntityHitResult entityResult = rayTraceEntities(player, start, end, 100.0D);
 
         Vec3 laserEnd = blockResult.getLocation();
+        boolean hitBlock = blockResult.getType() == HitResult.Type.BLOCK;
         if (entityResult != null && start.distanceTo(entityResult.getLocation()) < start.distanceTo(blockResult.getLocation())) {
             laserEnd = entityResult.getLocation();
+            hitBlock = false;
             Entity hitEntity = entityResult.getEntity();
             if (hitEntity instanceof LivingEntity livingEntity && Config.glowingLaserPointers() && NetworkHandler.isAiming(player)) {
                 livingEntity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 5, 0, false, false, true));
@@ -91,7 +96,11 @@ public final class AttachmentRuntimeEvents {
             }
         }
 
-        ((ServerLevel) player.level()).sendParticles(
+        ServerLevel serverLevel = (ServerLevel) player.level();
+        if (hitBlock) {
+            emitLaserPointerBlockParticle(serverLevel, blockResult);
+        }
+        serverLevel.sendParticles(
                 ParticleTypes.END_ROD,
                 laserEnd.x,
                 laserEnd.y,
@@ -100,6 +109,22 @@ public final class AttachmentRuntimeEvents {
                 0.01D,
                 0.01D,
                 0.01D,
+                0.0D
+        );
+    }
+
+    private static void emitLaserPointerBlockParticle(ServerLevel level, BlockHitResult result) {
+        Direction face = result.getDirection();
+        Vec3 hit = result.getLocation();
+        level.sendParticles(
+                new LaserOption(face, result.getBlockPos()),
+                hit.x + 0.005D * face.getStepX(),
+                hit.y + 0.005D * face.getStepY(),
+                hit.z + 0.005D * face.getStepZ(),
+                1,
+                0.0D,
+                0.0D,
+                0.0D,
                 0.0D
         );
     }

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
+import ttv.migami.jeg.particle.LaserOption;
 
 public class ModParticleTypes {
     public static final DeferredRegister<ParticleType<?>> REGISTER =
@@ -46,6 +47,8 @@ public class ModParticleTypes {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_SONIC_RING =
             REGISTER.register("big_sonic_ring", () -> new SimpleParticleType(true));
 
+    public static final DeferredHolder<ParticleType<?>, ParticleType<LaserOption>> LASER =
+            REGISTER.register("laser", () -> createOptions(LaserOption.CODEC, false, LaserOption.STREAM_CODEC));
     public static final DeferredHolder<ParticleType<?>, ParticleType<CannonMuzzleFlareOption>> CANNON_MUZZLE_FLARE =
             REGISTER.register("cannon_muzzle_flare", () -> createOptions(CannonMuzzleFlareOption.CODEC, true, CannonMuzzleFlareOption.STREAM_CODEC));
 

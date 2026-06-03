@@ -11,6 +11,7 @@ import ttv.migami.jeg.client.particle.BigExplosionParticle;
 import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
+import ttv.migami.jeg.client.particle.LaserParticle;
 import ttv.migami.jeg.client.particle.SmallExplosionParticle;
 import ttv.migami.jeg.client.particle.SonicRingParticle;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -21,6 +22,8 @@ public final class ParticleFactoryRegistry {
 
     @SubscribeEvent
     public static void onRegisterParticleFactory(RegisterParticleProvidersEvent event) {
+        event.registerSpecial(ModParticleTypes.LASER.get(), (option, level, x, y, z, xSpeed, ySpeed, zSpeed) ->
+                new LaserParticle(level, x, y, z, option.direction(), option.pos()));
         event.registerSpriteSet(ModParticleTypes.BIG_EXPLOSION.get(), BigExplosionParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.SMALL_EXPLOSION.get(), SmallExplosionParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.SMOKE.get(), SmokeParticle.Provider::new);
