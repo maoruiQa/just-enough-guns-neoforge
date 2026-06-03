@@ -89,6 +89,8 @@ Behavior wired so far:
 - Gun paint-job rendering is partially wired:
   - If the cosmetic `paint_job` slot contains a spray can, animated gun rendering checks `textures/animated/gun/paintjob/<paintJob>/<gun>.png`.
   - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
+  - Forge 1.20.1 also probes `geo/item/gun/paintjob/<paintJob>/<gun>.geo.json`, but the only Forge reference asset found is `paintjob/scorched/burst_rifle.geo.json`.
+  - `scorched_spray_can` is disabled in Forge 1.20.1 and is not registered in this NeoForge port, and this branch currently has no gun paint-job Geo override assets. Treat gun paint-job model overrides as conditional future asset support, not as a live missing behavior for the active registered spray cans.
 - Scope attachment model rendering is partially wired:
   - Installed scope-slot attachments render as Geo models at the gun model's `attachment_bone`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
@@ -110,7 +112,7 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining runtime behavior for full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
-- Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
+- Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
