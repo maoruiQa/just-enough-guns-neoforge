@@ -119,6 +119,9 @@ public final class GunAttachmentVisibility {
         if (isInstalled(stack, AttachmentType.UNDER_BARREL, boneName)) {
             return false;
         }
+        if (isDefaultMagazineBone(boneName)) {
+            return GunAttachments.has(stack, AttachmentType.MAGAZINE);
+        }
         if (isInstalled(stack, AttachmentType.MAGAZINE, boneName)) {
             return false;
         }
@@ -135,6 +138,10 @@ public final class GunAttachmentVisibility {
         return "attachment_bone".equals(boneName) || "scope".equals(boneName) || "railing".equals(boneName);
     }
 
+    private static boolean isDefaultMagazineBone(String boneName) {
+        return "default_mag".equals(boneName) || "default_mag_2".equals(boneName);
+    }
+
     private static boolean isInstalled(ItemStack stack, AttachmentType type, String boneName) {
         return GunAttachments.id(stack, type)
                 .map(id -> id.getPath().equals(boneName))
@@ -144,8 +151,8 @@ public final class GunAttachmentVisibility {
     private static boolean isGenericInstalledBone(ItemStack stack, String boneName) {
         return switch (boneName) {
             case "under_barrel", "grip" -> GunAttachments.has(stack, AttachmentType.UNDER_BARREL);
-            case "extended_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "extended_mag");
-            case "drum_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "drum_mag");
+            case "extended_mag_2", "extended_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "extended_mag");
+            case "drum_mag_2", "drum_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "drum_mag");
             case "light_handguard", "light_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "light_stock");
             case "tactical_handguard", "tactical_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "tactical_stock");
             case "weighted_handguard", "weighted_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "weighted_stock");

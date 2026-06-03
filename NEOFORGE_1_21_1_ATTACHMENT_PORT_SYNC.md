@@ -59,6 +59,9 @@ Behavior wired so far:
   - Firing with `trumpet` still plays `item.doot`.
   - Server-side soundwave now clears fire blocks in a forward cone, damages living entities in that cone with sonic-boom damage, resets hit invulnerability, and emits vanilla sculk/sonic particles.
   - The full Forge custom sonic-ring particle visuals remain unported.
+- Attachment renderer visibility has initial magazine coverage:
+  - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
+  - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
 
 Still to port:
 
