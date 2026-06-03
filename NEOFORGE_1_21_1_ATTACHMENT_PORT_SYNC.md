@@ -68,6 +68,7 @@ Behavior wired so far:
   - Flashlight attachments now refuse to toggle when server config disables flashlights.
   - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
+  - Standalone flashlight items now keep Forge-style battery/powered state, right-click toggling, attack-key charging, durability-bar battery display, and dynamic-light output while held.
   - Laser pointer attachments apply Glowing to aimed-at living entities while ADS is active when `attachments.glowingLaserPointers` is enabled.
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
   - Laser pointer attachments emit custom `entity_laser` beam particles along the traced ray.
@@ -106,7 +107,7 @@ Still to port:
 
 - Forge-accurate attachment screen config/medal buttons and remaining layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Remaining runtime behavior for standalone flashlight item charging, custom trumpet sonic-ring visuals, and full attachment item-stack durability/enchantment parity.
+- Remaining runtime behavior for custom trumpet sonic-ring visuals and full attachment item-stack durability/enchantment parity.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering, any Forge paint-job model overrides, and runtime validation of kill-effect/dye visuals.
 

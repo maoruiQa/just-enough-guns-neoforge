@@ -32,6 +32,7 @@ import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.particle.LaserOption;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -52,17 +53,22 @@ public final class AttachmentRuntimeEvents {
         }
 
         ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem)) {
-            return;
-        }
         if (player.isSprinting() && !player.getCooldowns().isOnCooldown(stack.getItem())) {
             return;
         }
 
-        if (GunAttachments.modifiers(stack).laserPointer()) {
-            tickLaserPointer(player);
+        boolean refreshFlashlight = false;
+        if (stack.getItem() instanceof GunItem) {
+            if (GunAttachments.modifiers(stack).laserPointer()) {
+                tickLaserPointer(player);
+            }
+            refreshFlashlight = Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player);
         }
-        if (Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player)) {
+
+        refreshFlashlight |= Config.allowFlashlights()
+                && (FlashlightAttachmentItem.isPowered(player.getMainHandItem())
+                || FlashlightAttachmentItem.isPowered(player.getOffhandItem()));
+        if (refreshFlashlight) {
             tickFlashlight(player);
         }
     }

@@ -23,6 +23,7 @@ import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.item.MagazineItem;
@@ -56,6 +57,7 @@ public final class NetworkHandler {
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
+                .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
@@ -125,6 +127,18 @@ public final class NetworkHandler {
             if (sound != null) {
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                         sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
+        });
+    }
+
+    private static void handleChargeFlashlight(ChargeFlashlightPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof FlashlightAttachmentItem) {
+                FlashlightAttachmentItem.charge(stack, player);
             }
         });
     }
@@ -479,6 +493,10 @@ public final class NetworkHandler {
 
     public static void sendToggleFlashlight() {
         sendToServer(ToggleFlashlightPayload.INSTANCE);
+    }
+
+    public static void sendChargeFlashlight() {
+        sendToServer(ChargeFlashlightPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(ResourceLocation recipeId) {

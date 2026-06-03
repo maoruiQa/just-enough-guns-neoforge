@@ -40,6 +40,7 @@ import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
@@ -357,6 +358,11 @@ public final class GunClientEvents {
             nextVisualShotTickMain = 0L;
             resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
+        }
+
+        if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && minecraft.options.keyAttack.isDown()) {
+            NetworkHandler.sendChargeFlashlight();
+            minecraft.options.keyAttack.setDown(false);
         }
 
         // R key reload (server-authoritative). Keep swap-hands reload as fallback/compat.

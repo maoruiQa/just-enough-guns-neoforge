@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -34,6 +35,7 @@ import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.DescribedAmmoItem;
 import ttv.migami.jeg.item.EnemyVehicleSpawnItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.MagazineItem;
@@ -212,9 +214,11 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, AttachmentItem> FLASHLIGHT = registerAttachment(
             "flashlight",
-            AttachmentType.SPECIAL,
-            AttachmentModifiers.builder().flashlight().adsSpeedMultiplier(0.95D).build(),
-            baseProperties(Reference.id("flashlight")).stacksTo(1).rarity(Rarity.UNCOMMON)
+            () -> new FlashlightAttachmentItem(
+                    AttachmentType.SPECIAL,
+                    AttachmentModifiers.builder().flashlight().adsSpeedMultiplier(0.95D).build(),
+                    baseProperties(Reference.id("flashlight")).stacksTo(1).rarity(Rarity.UNCOMMON)
+            )
     );
     public static final DeferredHolder<Item, AttachmentItem> LASER_POINTER = registerAttachment(
             "laser_pointer",
@@ -597,8 +601,15 @@ public final class ModItems {
             AttachmentModifiers modifiers,
             Item.Properties properties
     ) {
+        return registerAttachment(path, () -> new AttachmentItem(type, modifiers, properties));
+    }
+
+    private static DeferredHolder<Item, AttachmentItem> registerAttachment(
+            String path,
+            Supplier<? extends AttachmentItem> supplier
+    ) {
         ResourceLocation id = Reference.id(path);
-        DeferredHolder<Item, AttachmentItem> holder = REGISTER.register(path, () -> new AttachmentItem(type, modifiers, properties));
+        DeferredHolder<Item, AttachmentItem> holder = REGISTER.register(path, supplier);
         ATTACHMENTS.put(id, holder);
         return holder;
     }
