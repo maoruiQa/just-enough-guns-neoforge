@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +20,9 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
@@ -50,6 +53,7 @@ public final class NetworkHandler {
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
+                .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
@@ -86,6 +90,23 @@ public final class NetworkHandler {
             }
             if (player.getMainHandItem().getItem() instanceof GunItem) {
                 player.openMenu(AttachmentMenu.provider());
+            }
+        });
+    }
+
+    private static void handleToggleFlashlight(ToggleFlashlightPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (!(stack.getItem() instanceof GunItem) || !GunAttachments.toggleFlashlight(stack)) {
+                return;
+            }
+            var sound = ModSounds.ALL.get(Reference.id("item.flashlight"));
+            if (sound != null) {
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                        sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
             }
         });
     }
@@ -436,6 +457,10 @@ public final class NetworkHandler {
 
     public static void sendOpenAttachments() {
         sendToServer(OpenAttachmentsPayload.INSTANCE);
+    }
+
+    public static void sendToggleFlashlight() {
+        sendToServer(ToggleFlashlightPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(ResourceLocation recipeId) {

@@ -78,6 +78,9 @@ public final class Config {
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue ALLOW_FLASHLIGHTS;
+    public static final ModConfigSpec.IntValue FLASHLIGHT_DISTANCE;
+    public static final ModConfigSpec.BooleanValue GLOWING_LASER_POINTERS;
     private static final Map<String, ModConfigSpec.ConfigValue<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
     private static final Map<String, Map<String, ModConfigSpec.DoubleValue>> GUNNER_GROWTH_CONFIGS = new LinkedHashMap<>();
     private static final String DEFAULT_GUNNER_TERRAIN_SUPPORT_BLOCK = "minecraft:dirt";
@@ -128,6 +131,18 @@ public final class Config {
         UI_SHOW_HIT_FEEDBACK = serverBuilder
                 .comment("If true, clients display hit feedback markers when bullets hit living entities.")
                 .define("showHitFeedback", true);
+        serverBuilder.pop();
+
+        serverBuilder.push("attachments");
+        ALLOW_FLASHLIGHTS = serverBuilder
+                .comment("If true, powered flashlight attachments place temporary dynamic light blocks.")
+                .define("allowFlashlights", true);
+        FLASHLIGHT_DISTANCE = serverBuilder
+                .comment("Maximum block distance flashlight attachments can illuminate.")
+                .defineInRange("flashlightDistance", 32, 1, 64);
+        GLOWING_LASER_POINTERS = serverBuilder
+                .comment("If true, laser pointer attachments apply Glowing to aimed-at living entities while ADS is active.")
+                .define("glowingLaserPointers", true);
         serverBuilder.pop();
 
         serverBuilder.push("spawns");
@@ -511,6 +526,18 @@ public final class Config {
 
     public static boolean magazineFeedEnabled() {
         return MAGAZINE_FEED_ENABLED.get();
+    }
+
+    public static boolean allowFlashlights() {
+        return ALLOW_FLASHLIGHTS.get();
+    }
+
+    public static int flashlightDistance() {
+        return Mth.clamp(FLASHLIGHT_DISTANCE.get(), 1, 64);
+    }
+
+    public static boolean glowingLaserPointers() {
+        return GLOWING_LASER_POINTERS.get();
     }
 
     public static boolean gunnerTerrainPlacementEnabled() {

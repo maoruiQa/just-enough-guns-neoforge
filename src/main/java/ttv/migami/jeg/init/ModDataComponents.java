@@ -104,6 +104,13 @@ public final class ModDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_UNDER_BARREL_ATTACHMENT = attachmentComponent("gun_under_barrel_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_MAGAZINE_ATTACHMENT = attachmentComponent("gun_magazine_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SPECIAL_ATTACHMENT = attachmentComponent("gun_special_attachment");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_FLASHLIGHT_POWERED = REGISTER.register(
+            "gun_flashlight_powered",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build()
+    );
 
     private static DeferredHolder<DataComponentType<?>, DataComponentType<String>> attachmentComponent(String name) {
         return REGISTER.register(

@@ -27,6 +27,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping MELEE = new KeyMapping(
+            "key.jeg.melee",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
             InputConstants.Type.KEYSYM,
@@ -96,6 +103,7 @@ public final class KeyBindings {
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(RELOAD);
         event.register(ATTACHMENTS);
+        event.register(MELEE);
         event.register(VEHICLE_FREE_LOOK);
         event.register(VEHICLE_SWITCH_WEAPON);
         event.register(VEHICLE_PREVIOUS_WEAPON);

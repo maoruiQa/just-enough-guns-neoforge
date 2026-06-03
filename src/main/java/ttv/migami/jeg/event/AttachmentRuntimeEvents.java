@@ -1,0 +1,147 @@
+package ttv.migami.jeg.event;
+
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.animal.Ocelot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import ttv.migami.jeg.Config;
+import ttv.migami.jeg.block.DynamicLightBlock;
+import ttv.migami.jeg.init.ModBlocks;
+import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
+import ttv.migami.jeg.network.NetworkHandler;
+
+public final class AttachmentRuntimeEvents {
+    private AttachmentRuntimeEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        Level level = player.level();
+        if (level.isClientSide() || player.isDeadOrDying() || player.isSpectator()) {
+            return;
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        if (!(stack.getItem() instanceof GunItem)) {
+            return;
+        }
+        if (player.isSprinting() && !player.getCooldowns().isOnCooldown(stack.getItem())) {
+            return;
+        }
+
+        if (GunAttachments.modifiers(stack).laserPointer()) {
+            tickLaserPointer(player);
+        }
+        if (GunAttachments.isFlashlightPowered(stack)) {
+            tickFlashlight(player);
+        }
+    }
+
+    private static void tickLaserPointer(Player player) {
+        Vec3 start = player.getEyePosition();
+        Vec3 end = start.add(player.getLookAngle().scale(100.0D));
+        BlockHitResult blockResult = player.level().clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        EntityHitResult entityResult = rayTraceEntities(player, start, end, 100.0D);
+
+        Vec3 laserEnd = blockResult.getLocation();
+        if (entityResult != null && start.distanceTo(entityResult.getLocation()) < start.distanceTo(blockResult.getLocation())) {
+            laserEnd = entityResult.getLocation();
+            Entity hitEntity = entityResult.getEntity();
+            if (hitEntity instanceof LivingEntity livingEntity && Config.glowingLaserPointers() && NetworkHandler.isAiming(player)) {
+                livingEntity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 5, 0, false, false, true));
+            }
+        }
+
+        for (Class<? extends PathfinderMob> mobType : List.of(Cat.class, Ocelot.class)) {
+            List<? extends PathfinderMob> mobs = player.level().getEntitiesOfClass(
+                    mobType,
+                    new AABB(laserEnd.subtract(5.0D, 5.0D, 5.0D), laserEnd.add(5.0D, 5.0D, 5.0D))
+            );
+            for (PathfinderMob mob : mobs) {
+                if (mob instanceof Cat cat && cat.isInSittingPose()) {
+                    continue;
+                }
+                if (mob.getRandom().nextFloat() < 0.02F) {
+                    mob.getJumpControl().jump();
+                }
+                mob.getNavigation().moveTo(laserEnd.x, laserEnd.y, laserEnd.z, 1.2D);
+            }
+        }
+    }
+
+    private static void tickFlashlight(Player player) {
+        if (!Config.allowFlashlights()) {
+            return;
+        }
+
+        Level level = player.level();
+        double distance = 2.0D;
+        for (int index = 0; index < Config.flashlightDistance(); index++) {
+            BlockHitResult result = level.clip(new ClipContext(
+                    player.getEyePosition(1.0F),
+                    player.getEyePosition(1.0F).add(player.getViewVector(1.0F).scale(distance)),
+                    ClipContext.Block.OUTLINE,
+                    ClipContext.Fluid.NONE,
+                    player
+            ));
+            refreshDynamicLight(level, result.getBlockPos());
+            distance += 1.0D;
+        }
+    }
+
+    private static void refreshDynamicLight(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
+            DynamicLightBlock.setDelay(level, pos, 2.0D);
+        } else if (state.isAir()) {
+            level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
+        } else if (state.is(Blocks.WATER)) {
+            BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
+                    .defaultBlockState()
+                    .setValue(BlockStateProperties.WATERLOGGED, true);
+            level.setBlock(pos, dynamicLight, 3);
+        }
+    }
+
+    private static EntityHitResult rayTraceEntities(Player player, Vec3 start, Vec3 end, double range) {
+        Level level = player.level();
+        EntityHitResult closest = null;
+        double closestDistance = range;
+
+        for (Entity entity : level.getEntities(player, new AABB(start, start).inflate(range), Entity::isPickable)) {
+            AABB box = entity.getBoundingBox().inflate(0.3D);
+            Optional<Vec3> hitPos = box.clip(start, end);
+            if (hitPos.isEmpty()) {
+                continue;
+            }
+            double distance = start.distanceTo(hitPos.get());
+            if (distance < closestDistance) {
+                closest = new EntityHitResult(entity, hitPos.get());
+                closestDistance = distance;
+            }
+        }
+
+        return closest;
+    }
+}

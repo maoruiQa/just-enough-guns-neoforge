@@ -98,11 +98,37 @@ public final class GunAttachments {
             return false;
         }
         gunStack.set(component(type), id.toString());
+        if (type == AttachmentType.SPECIAL && !attachment.modifiers().flashlight()) {
+            gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
+        }
         return true;
     }
 
     public static void clear(ItemStack gunStack, AttachmentType type) {
         gunStack.remove(component(type));
+        if (type == AttachmentType.SPECIAL) {
+            gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
+        }
+    }
+
+    public static boolean hasFlashlight(ItemStack gunStack) {
+        return item(gunStack, AttachmentType.SPECIAL)
+                .map(AttachmentItem::modifiers)
+                .map(AttachmentModifiers::flashlight)
+                .orElse(false);
+    }
+
+    public static boolean isFlashlightPowered(ItemStack gunStack) {
+        return hasFlashlight(gunStack) && Boolean.TRUE.equals(gunStack.get(ModDataComponents.GUN_FLASHLIGHT_POWERED.get()));
+    }
+
+    public static boolean toggleFlashlight(ItemStack gunStack) {
+        if (!hasFlashlight(gunStack)) {
+            return false;
+        }
+        boolean powered = !isFlashlightPowered(gunStack);
+        gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), powered);
+        return true;
     }
 
     private static DataComponentType<String> component(AttachmentType type) {
