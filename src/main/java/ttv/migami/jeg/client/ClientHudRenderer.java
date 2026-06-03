@@ -5,7 +5,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 
@@ -55,7 +54,6 @@ public final class ClientHudRenderer {
     }
 
     private static HudData buildGunHud(LocalPlayer player, ItemStack stack, GunItem gun) {
-        GunStats stats = gun.getStats();
         int current = gun.usesLoadedAmmo() ? gun.getMagazineAmmo(stack) : gun.countInventoryAmmo(player);
         String reserveText;
         if (gun.usesMagazineSwapReload()) {
@@ -68,7 +66,7 @@ public final class ClientHudRenderer {
             }
             reserveText = formatReserve(reserve);
         }
-        return new HudData(stack.getHoverName().getString(), gun.usesLoadedAmmo() ? Math.min(current, stats.magazineSize()) : current, reserveText, rarityColor(stack));
+        return new HudData(stack.getHoverName().getString(), gun.usesLoadedAmmo() ? Math.min(current, gun.magazineSize(stack)) : current, reserveText, rarityColor(stack));
     }
 
     private static int rarityColor(ItemStack stack) {

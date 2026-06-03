@@ -30,12 +30,16 @@ Behavior wired so far:
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
 - Recoil/kick multipliers are applied to local visual recoil and heavy-gun backstep.
 - Scope FOV modifiers affect ADS FOV, and ADS speed multipliers affect client aim-in/aim-out progress.
+- Magazine capacity modifiers are applied to loaded gun capacity, reload limits, tooltips, and the ammo HUD:
+  - `extended_mag` uses Forge parity behavior: +50% capacity, with `infantry_rifle` forced to 20.
+  - `drum_mag` uses Forge parity behavior: +100% capacity, with `infantry_rifle` forced to 40.
 
 Still to port:
 
 - Forge-accurate attachment screen layout, gun preview, slot icon states, and slot hover polish.
 - Rendering visibility for installed attachments on every supported gun, not only the current bolt-action built-in scope layer.
-- Remaining runtime behavior for magazine capacity, explosive muzzle, flashlight, laser pointer, trumpet, and durability/breakage.
+- Remaining runtime behavior for explosive muzzle, flashlight, laser pointer, trumpet, and durability/breakage.
+- Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: paint job, dye, and kill effect.
 
 Sync checklist for the other maintained branches:
@@ -48,4 +52,5 @@ Sync checklist for the other maintained branches:
 6. Rewire silencer sound behavior through the barrel slot.
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
-9. Then expand remaining runtime modifier/render behavior.
+9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
+10. Then expand remaining runtime modifier/render behavior.

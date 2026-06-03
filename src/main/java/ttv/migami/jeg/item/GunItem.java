@@ -50,6 +50,7 @@ import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
+import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
@@ -187,6 +188,10 @@ public class GunItem extends Item {
         return this.stats.magazineSize();
     }
 
+    public int magazineSize(ItemStack stack) {
+        return modifiedMagazineSize(stack);
+    }
+
     @Override
     public ItemStack getDefaultInstance() {
         ItemStack stack = super.getDefaultInstance();
@@ -247,7 +252,8 @@ public class GunItem extends Item {
             return 0;
         }
         ensureAmmoInitialized(stack);
-        return stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+        int maxAmmo = modifiedMagazineSize(stack);
+        return Mth.clamp(stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), maxAmmo), 0, maxAmmo);
     }
 
     public int getMagazineAmmo(ItemStack stack) {
@@ -352,7 +358,7 @@ public class GunItem extends Item {
 
     private void setAmmo(ItemStack stack, int value) {
         if (usesLoadedAmmo()) {
-            stack.set(ModDataComponents.GUN_AMMO.get(), Mth.clamp(value, 0, stats.magazineSize()));
+            stack.set(ModDataComponents.GUN_AMMO.get(), Mth.clamp(value, 0, modifiedMagazineSize(stack)));
         }
     }
 
@@ -1182,6 +1188,25 @@ public class GunItem extends Item {
         return Math.max(0.0F, stats.spread() * GunAttachments.modifiers(stack).spreadMultiplier());
     }
 
+    private int modifiedMagazineSize(ItemStack stack) {
+        int baseCapacity = Math.max(0, stats.magazineSize());
+        double multiplier = GunAttachments.modifiers(stack).magazineCapacityMultiplier();
+        if (multiplier <= 1.0D) {
+            return baseCapacity;
+        }
+        if ("infantry_rifle".equals(stats.id().getPath())) {
+            return GunAttachments.id(stack, AttachmentType.MAGAZINE)
+                    .map(ResourceLocation::getPath)
+                    .map(path -> switch (path) {
+                        case "extended_mag" -> 20;
+                        case "drum_mag" -> 40;
+                        default -> baseCapacity;
+                    })
+                    .orElse(baseCapacity);
+        }
+        return Math.max(baseCapacity, (int) (baseCapacity * multiplier));
+    }
+
     private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
         boolean sprinting = player.isSprinting();
         if (isLargeMovementSpreadWeapon(stats)) {
@@ -1271,7 +1296,8 @@ public class GunItem extends Item {
     private boolean tryReloadWithMagazineSwap(Level level, Player player, ItemStack stack, boolean notify) {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
-        if (ammo >= stats.magazineSize()) {
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (ammo >= maxAmmo) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
             }
@@ -1279,7 +1305,7 @@ public class GunItem extends Item {
         }
 
         if (player.getAbilities().instabuild) {
-            setAmmo(stack, stats.magazineSize());
+            setAmmo(stack, maxAmmo);
             finishReload(level, player, stack);
             return true;
         }
@@ -1305,6 +1331,7 @@ public class GunItem extends Item {
             return false;
         }
 
+        int oldMagazineCapacity = magazine.getCapacity();
         ItemStack oldMagazine = createStoredMagazineStack(ammo);
         magazineStack.shrink(1);
         if (magazineStack.isEmpty()) {
@@ -1312,6 +1339,7 @@ public class GunItem extends Item {
         }
 
         returnStoredMagazine(player, oldMagazine);
+        returnExcessStoredAmmo(player, Math.max(0, ammo - oldMagazineCapacity));
         setAmmo(stack, newAmmo);
         finishReload(level, player, stack);
         return true;
@@ -1320,14 +1348,15 @@ public class GunItem extends Item {
     private boolean tryReloadWithLooseAmmo(Level level, Player player, ItemStack stack, boolean notify) {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
-        if (ammo >= stats.magazineSize()) {
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (ammo >= maxAmmo) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
             }
             return false;
         }
 
-        int needed = stats.magazineSize() - ammo;
+        int needed = maxAmmo - ammo;
         int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
         if (pulled <= 0) {
             if (notify) {
@@ -1451,6 +1480,30 @@ public class GunItem extends Item {
         }
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
+        }
+    }
+
+    private void returnExcessStoredAmmo(Player player, int ammoCount) {
+        if (ammoCount <= 0) {
+            return;
+        }
+        ResourceLocation ammoId = getCompatibleAmmoId();
+        if (ammoId == null) {
+            return;
+        }
+        Item ammoItem = BuiltInRegistries.ITEM.getOptional(ammoId).orElse(null);
+        if (ammoItem == null) {
+            return;
+        }
+        int remaining = ammoCount;
+        int maxStack = Math.max(1, ammoItem.getDefaultMaxStackSize());
+        while (remaining > 0) {
+            int count = Math.min(remaining, maxStack);
+            ItemStack ammoStack = new ItemStack(ammoItem, count);
+            if (!player.getInventory().add(ammoStack)) {
+                player.drop(ammoStack, false);
+            }
+            remaining -= count;
         }
     }
 
@@ -1665,7 +1718,7 @@ public class GunItem extends Item {
         tooltip.add(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
 
         if (usesLoadedAmmo()) {
-            tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));
+            tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), modifiedMagazineSize(stack)));
         }
 
         if (usesOverheatMechanic()) {

@@ -199,13 +199,13 @@ public final class ModItems {
     public static final DeferredHolder<Item, AttachmentItem> EXTENDED_MAG = registerAttachment(
             "extended_mag",
             AttachmentType.MAGAZINE,
-            AttachmentModifiers.builder().adsSpeedMultiplier(0.95D).build(),
+            AttachmentModifiers.builder().adsSpeedMultiplier(0.95D).magazineCapacityMultiplier(1.5D).build(),
             baseProperties(Reference.id("extended_mag")).stacksTo(1)
     );
     public static final DeferredHolder<Item, AttachmentItem> DRUM_MAG = registerAttachment(
             "drum_mag",
             AttachmentType.MAGAZINE,
-            AttachmentModifiers.builder().adsSpeedMultiplier(0.9D).build(),
+            AttachmentModifiers.builder().adsSpeedMultiplier(0.9D).magazineCapacityMultiplier(2.0D).build(),
             baseProperties(Reference.id("drum_mag")).stacksTo(1)
     );
     public static final DeferredHolder<Item, AttachmentItem> FLASHLIGHT = registerAttachment(

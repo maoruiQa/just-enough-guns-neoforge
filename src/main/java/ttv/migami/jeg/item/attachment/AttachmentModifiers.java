@@ -7,6 +7,7 @@ public record AttachmentModifiers(
         float recoilMultiplier,
         float kickMultiplier,
         double adsSpeedMultiplier,
+        double magazineCapacityMultiplier,
         boolean silenced,
         boolean explosiveAmmo,
         boolean flashlight,
@@ -26,6 +27,7 @@ public record AttachmentModifiers(
         private float recoilMultiplier = 1.0F;
         private float kickMultiplier = 1.0F;
         private double adsSpeedMultiplier = 1.0D;
+        private double magazineCapacityMultiplier = 1.0D;
         private boolean silenced;
         private boolean explosiveAmmo;
         private boolean flashlight;
@@ -62,6 +64,11 @@ public record AttachmentModifiers(
             return this;
         }
 
+        public Builder magazineCapacityMultiplier(double value) {
+            this.magazineCapacityMultiplier = value;
+            return this;
+        }
+
         public Builder silenced() {
             this.silenced = true;
             return this;
@@ -95,6 +102,7 @@ public record AttachmentModifiers(
                     this.recoilMultiplier,
                     this.kickMultiplier,
                     this.adsSpeedMultiplier,
+                    this.magazineCapacityMultiplier,
                     this.silenced,
                     this.explosiveAmmo,
                     this.flashlight,

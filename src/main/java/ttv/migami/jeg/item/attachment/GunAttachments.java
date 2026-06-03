@@ -43,6 +43,7 @@ public final class GunAttachments {
         float recoilMultiplier = 1.0F;
         float kickMultiplier = 1.0F;
         double adsSpeedMultiplier = 1.0D;
+        double magazineCapacityMultiplier = 1.0D;
         boolean silenced = false;
         boolean explosiveAmmo = false;
         boolean flashlight = false;
@@ -59,6 +60,7 @@ public final class GunAttachments {
             recoilMultiplier *= modifier.recoilMultiplier();
             kickMultiplier *= modifier.kickMultiplier();
             adsSpeedMultiplier *= modifier.adsSpeedMultiplier();
+            magazineCapacityMultiplier *= modifier.magazineCapacityMultiplier();
             silenced |= modifier.silenced();
             explosiveAmmo |= modifier.explosiveAmmo();
             flashlight |= modifier.flashlight();
@@ -73,6 +75,7 @@ public final class GunAttachments {
                 recoilMultiplier,
                 kickMultiplier,
                 adsSpeedMultiplier,
+                magazineCapacityMultiplier,
                 silenced,
                 explosiveAmmo,
                 flashlight,
