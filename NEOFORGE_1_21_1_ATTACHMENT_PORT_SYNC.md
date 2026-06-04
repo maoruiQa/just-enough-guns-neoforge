@@ -146,6 +146,7 @@ Behavior wired so far:
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Positioned non-scope attachment rendering is partially wired:
   - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `barrel`, `under_barrel`, and `special` slots.
+  - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
   - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same paint-job -> base -> fallback texture resolution.
   - The gun model's baked barrel, under-barrel, and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
