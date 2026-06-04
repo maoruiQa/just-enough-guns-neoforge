@@ -59,6 +59,9 @@ public class AttachmentItem extends Item {
         if (this.modifiers.annoying()) {
             addPerk(perks, true, "perk.jeg.annoying.positive");
         }
+        if (this.modifiers.increasedJamming()) {
+            addPerk(perks, false, "perk.jeg.increased_jamming.negative");
+        }
         if (this.modifiers.damageMultiplier() > 1.0F) {
             addPerk(perks, true, "perk.jeg.modified_damage.positive");
         } else if (this.modifiers.damageMultiplier() < 1.0F) {

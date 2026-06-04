@@ -13,7 +13,8 @@ public record AttachmentModifiers(
         boolean explosiveAmmo,
         boolean flashlight,
         boolean laserPointer,
-        boolean annoying
+        boolean annoying,
+        boolean increasedJamming
 ) {
     public static final AttachmentModifiers NONE = builder().build();
 
@@ -35,6 +36,7 @@ public record AttachmentModifiers(
         private boolean flashlight;
         private boolean laserPointer;
         private boolean annoying;
+        private boolean increasedJamming;
 
         public Builder aimFovModifier(float value) {
             this.aimFovModifier = value;
@@ -101,6 +103,11 @@ public record AttachmentModifiers(
             return this;
         }
 
+        public Builder increasedJamming() {
+            this.increasedJamming = true;
+            return this;
+        }
+
         public AttachmentModifiers build() {
             return new AttachmentModifiers(
                     this.aimFovModifier,
@@ -115,7 +122,8 @@ public record AttachmentModifiers(
                     this.explosiveAmmo,
                     this.flashlight,
                     this.laserPointer,
-                    this.annoying
+                    this.annoying,
+                    this.increasedJamming
             );
         }
     }

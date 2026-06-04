@@ -173,7 +173,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, AttachmentItem> EXPLOSIVE_MUZZLE = registerAttachment(
             "explosive_muzzle",
             AttachmentType.BARREL,
-            AttachmentModifiers.builder().explosiveAmmo().damageMultiplier(1.1F).recoilMultiplier(1.5F).kickMultiplier(1.35F).spreadMultiplier(1.3F).adsSpeedMultiplier(0.9D).build(),
+            AttachmentModifiers.builder().explosiveAmmo().increasedJamming().damageMultiplier(1.1F).recoilMultiplier(1.5F).kickMultiplier(1.35F).spreadMultiplier(1.3F).adsSpeedMultiplier(0.9D).build(),
             baseProperties(Reference.id("explosive_muzzle")).stacksTo(1).durability(64).rarity(Rarity.UNCOMMON)
     );
     public static final DeferredHolder<Item, AttachmentItem> TRUMPET = registerAttachment(

@@ -135,6 +135,7 @@ public final class GunAttachments {
         boolean flashlight = false;
         boolean laserPointer = false;
         boolean annoying = false;
+        boolean increasedJamming = false;
 
         for (AttachmentType type : AttachmentType.values()) {
             AttachmentModifiers modifier = modifiers(gunStack, type);
@@ -153,6 +154,7 @@ public final class GunAttachments {
             flashlight |= modifier.flashlight();
             laserPointer |= modifier.laserPointer();
             annoying |= modifier.annoying();
+            increasedJamming |= modifier.increasedJamming();
         }
 
         return new AttachmentModifiers(
@@ -168,7 +170,8 @@ public final class GunAttachments {
                 explosiveAmmo,
                 flashlight,
                 laserPointer,
-                annoying
+                annoying,
+                increasedJamming
         );
     }
 
