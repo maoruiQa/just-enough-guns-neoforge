@@ -165,6 +165,7 @@ Behavior wired so far:
   - Reload requests now start a pending reload instead of immediately consuming ammo or swapping magazines.
   - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
   - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
+  - Reload cancellation now queues a fresh draw animation and clears the stale held/draw animation cache, so switching back to the interrupted gun replays the authored draw sequence instead of dropping straight to idle.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.

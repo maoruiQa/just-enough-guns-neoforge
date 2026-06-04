@@ -2076,6 +2076,7 @@ public class GunItem extends Item {
     private void cancelPendingReload(Player player, ItemStack stack) {
         PENDING_RELOADS.remove(player.getUUID());
         clearReloadVisualState(stack);
+        queueDrawAfterReloadCancel(player, stack);
     }
 
     private void completePendingReload(Level level, Player player, ItemStack stack) {
@@ -2124,6 +2125,7 @@ public class GunItem extends Item {
         HeldGunState currentState = held ? heldGunState(player, stack, slot, selected) : null;
         if (currentState == null) {
             clearReloadVisualState(stack);
+            queueDrawAfterReloadCancel(player, stack);
             forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack, slot);
             return;
         }
@@ -2135,10 +2137,19 @@ public class GunItem extends Item {
         }
         if (!currentState.equals(previousState) && currentState.stackIdentity() == previousState.stackIdentity()) {
             clearReloadVisualState(stack);
+            queueDrawAfterReloadCancel(player, stack);
             CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
             return;
         }
         CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
+    }
+
+    private static void queueDrawAfterReloadCancel(Player player, ItemStack stack) {
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+        HELD_DRAW_STATES.remove(player.getUUID());
+        if (stack.getItem() instanceof AnimatedGunItem) {
+            AnimatedGunItem.clearRecentDrawAnimation();
+        }
     }
 
     private static HeldGunState heldGunState(Player player, ItemStack stack, int slot, boolean selected) {

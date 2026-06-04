@@ -250,7 +250,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientDrawAnimationDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
     }
 
-    private static void clearRecentDrawAnimation() {
+    static void clearRecentDrawAnimation() {
         clientDrawStack = ItemStack.EMPTY;
         clientDrawAnimationDeadlineNanos = 0L;
     }
