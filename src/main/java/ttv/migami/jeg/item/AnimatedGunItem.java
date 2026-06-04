@@ -144,12 +144,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
+        if (hasRecentDrawAnimation(stack)) {
+            return DRAW;
+        }
         if (stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) <= 0) {
             return null;
         }
-        if (!matchesHeldStack(stack, clientDrawStack) || System.nanoTime() > clientDrawAnimationDeadlineNanos) {
-            rememberDrawAnimation(stack);
-        }
+        rememberDrawAnimation(stack);
         return DRAW;
     }
 
@@ -263,7 +264,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     static void restartDrawAnimation(ItemStack stack) {
         clearRecentDrawAnimation();
-        requestDrawAnimationReset(stack);
+        rememberDrawAnimation(stack);
+    }
+
+    private static boolean hasRecentDrawAnimation(ItemStack stack) {
+        return System.nanoTime() <= clientDrawAnimationDeadlineNanos && matchesHeldStack(stack, clientDrawStack);
     }
 
     private static void requestDrawAnimationReset(ItemStack stack) {
