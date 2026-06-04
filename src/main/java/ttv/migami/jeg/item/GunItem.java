@@ -136,7 +136,8 @@ public class GunItem extends Item {
     private static final Map<Integer, Integer> OVERHEAT_PENDING_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_COOL_NUMERATOR = new HashMap<>();
     private static final Map<UUID, PendingReload> PENDING_RELOADS = new HashMap<>();
-    private static final Map<UUID, QueuedReloadCancelDraw> RELOAD_CANCEL_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, QueuedReloadCancelDraw> SERVER_RELOAD_CANCEL_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, QueuedReloadCancelDraw> CLIENT_RELOAD_CANCEL_DRAW_STATES = new HashMap<>();
     private static final Map<UUID, HeldGunState> HELD_DRAW_STATES = new HashMap<>();
     private static final Map<UUID, HeldGunState> CLIENT_RELOAD_VISUAL_STATES = new HashMap<>();
     private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
@@ -2102,7 +2103,7 @@ public class GunItem extends Item {
         UUID playerId = player.getUUID();
         HeldGunState currentState = held ? heldGunState(player, stack, slot, selected) : null;
         if (currentState == null) {
-            if (hasQueuedReloadCancelDraw(playerId, stack, slot)) {
+            if (hasQueuedReloadCancelDraw(SERVER_RELOAD_CANCEL_DRAW_STATES, playerId, stack, slot)) {
                 forgetHeldGunState(HELD_DRAW_STATES, playerId, stack, slot);
                 return;
             }
@@ -2116,7 +2117,7 @@ public class GunItem extends Item {
         }
 
         HeldGunState previousState = HELD_DRAW_STATES.get(playerId);
-        if (consumeQueuedReloadCancelDraw(playerId, stack, slot)
+        if (consumeQueuedReloadCancelDraw(SERVER_RELOAD_CANCEL_DRAW_STATES, playerId, stack, slot)
                 || !currentState.equals(previousState)
                 || !stack.has(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get())) {
             HELD_DRAW_STATES.put(playerId, currentState);
@@ -2144,7 +2145,7 @@ public class GunItem extends Item {
         HeldGunState currentState = held ? heldGunState(player, stack, slot, selected) : null;
         if (currentState == null) {
             clearReloadVisualState(stack);
-            queueDrawAfterReloadCancel(player, stack, slot, false);
+            queueDrawAfterReloadCancel(player, stack, slot, true);
             forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack, slot);
             return;
         }
@@ -2156,26 +2157,43 @@ public class GunItem extends Item {
         }
         if (!currentState.equals(previousState) && currentState.stackIdentity() == previousState.stackIdentity()) {
             clearReloadVisualState(stack);
-            queueDrawAfterReloadCancel(player, stack, slot, false);
+            queueDrawAfterReloadCancel(player, stack, slot, true);
             CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
             return;
         }
         CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
     }
 
+    private void updateClientDrawState(Player player, ItemStack stack, int slot, boolean held) {
+        if (!held || isReloading(stack)) {
+            return;
+        }
+
+        if (consumeQueuedReloadCancelDraw(CLIENT_RELOAD_CANCEL_DRAW_STATES, player.getUUID(), stack, slot)) {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+            if (stack.getItem() instanceof AnimatedGunItem) {
+                AnimatedGunItem.restartDrawAnimation(stack);
+            }
+        }
+    }
+
     private static void queueDrawAfterReloadCancel(Player player, ItemStack stack, int slot, boolean preserveUntilHeld) {
         stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
         HELD_DRAW_STATES.remove(player.getUUID());
         if (preserveUntilHeld) {
-            RELOAD_CANCEL_DRAW_STATES.put(player.getUUID(), new QueuedReloadCancelDraw(slot, System.identityHashCode(stack), stack.copy()));
+            reloadCancelDrawStates(player).put(player.getUUID(), new QueuedReloadCancelDraw(slot, System.identityHashCode(stack), stack.copy()));
         }
         if (stack.getItem() instanceof AnimatedGunItem) {
             AnimatedGunItem.restartDrawAnimation(stack);
         }
     }
 
-    private static boolean hasQueuedReloadCancelDraw(UUID playerId, ItemStack stack, int slot) {
-        QueuedReloadCancelDraw queued = RELOAD_CANCEL_DRAW_STATES.get(playerId);
+    private static Map<UUID, QueuedReloadCancelDraw> reloadCancelDrawStates(Player player) {
+        return player.level().isClientSide() ? CLIENT_RELOAD_CANCEL_DRAW_STATES : SERVER_RELOAD_CANCEL_DRAW_STATES;
+    }
+
+    private static boolean hasQueuedReloadCancelDraw(Map<UUID, QueuedReloadCancelDraw> states, UUID playerId, ItemStack stack, int slot) {
+        QueuedReloadCancelDraw queued = states.get(playerId);
         if (queued == null) {
             return false;
         }
@@ -2183,23 +2201,23 @@ public class GunItem extends Item {
             return true;
         }
         if (queued.inventorySlot() == slot) {
-            RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+            states.remove(playerId);
         }
         return false;
     }
 
-    private static boolean consumeQueuedReloadCancelDraw(UUID playerId, ItemStack stack, int slot) {
-        QueuedReloadCancelDraw queued = RELOAD_CANCEL_DRAW_STATES.get(playerId);
+    private static boolean consumeQueuedReloadCancelDraw(Map<UUID, QueuedReloadCancelDraw> states, UUID playerId, ItemStack stack, int slot) {
+        QueuedReloadCancelDraw queued = states.get(playerId);
         if (queued == null) {
             return false;
         }
         if (!queued.matchesStack(stack, slot)) {
             if (queued.inventorySlot() == slot) {
-                RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+                states.remove(playerId);
             }
             return false;
         }
-        RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+        states.remove(playerId);
         return true;
     }
 
@@ -2292,6 +2310,7 @@ public class GunItem extends Item {
             boolean held = selected || stack == player.getMainHandItem() || stack == player.getOffhandItem();
             if (level.isClientSide()) {
                 updateClientReloadVisualState(player, stack, slot, selected, held);
+                updateClientDrawState(player, stack, slot, held);
             } else {
                 updateDrawState(player, stack, slot, selected, held);
                 updateReloadVisualState(level, player, stack, slot, held);

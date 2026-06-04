@@ -166,6 +166,7 @@ Behavior wired so far:
   - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
   - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
   - Reload cancellation now queues a fresh draw animation, preserves that queued draw while the interrupted stack is not held, clears the stale held/draw animation cache, and forces the GeckoLib draw controller to restart once, so switching back to the interrupted gun replays the authored draw sequence instead of dropping straight to idle.
+  - The queued reload-cancel draw is tracked separately on the logical server and client; the client consumes its own queue when the interrupted stack becomes held again so GeckoLib restarts `draw` at switch-back time, not only at the original cancellation tick.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
