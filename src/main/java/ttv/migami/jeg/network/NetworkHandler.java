@@ -75,6 +75,8 @@ public final class NetworkHandler {
                 .playToClient(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleAssemblyRecipeSync)
                 .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
                 .playToClient(HeadshotMedalPayload.TYPE, HeadshotMedalPayload.STREAM_CODEC, NetworkHandler::handleHeadshotMedal)
+                .playToClient(MedalPayload.TYPE, MedalPayload.STREAM_CODEC, NetworkHandler::handleMedal)
+                .playToClient(KillMedalPayload.TYPE, KillMedalPayload.STREAM_CODEC, NetworkHandler::handleKillMedal)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
                 .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
     }
@@ -279,6 +281,21 @@ public final class NetworkHandler {
         context.enqueueWork(() -> invokeClientStatic(
                 "ttv.migami.jeg.client.medal.MedalManager",
                 "showHeadshot",
+                new Class<?>[0]));
+    }
+
+    private static void handleMedal(MedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showMedal",
+                new Class<?>[] { int.class },
+                payload.medal().ordinal()));
+    }
+
+    private static void handleKillMedal(KillMedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showKill",
                 new Class<?>[0]));
     }
 
@@ -653,6 +670,14 @@ public final class NetworkHandler {
 
     public static void sendHeadshotMedal(ServerPlayer player) {
         player.connection.send(HeadshotMedalPayload.INSTANCE);
+    }
+
+    public static void sendMedal(ServerPlayer player, MedalType medal) {
+        player.connection.send(new MedalPayload(medal));
+    }
+
+    public static void sendKillMedal(ServerPlayer player) {
+        player.connection.send(KillMedalPayload.INSTANCE);
     }
 
     public static void sendUiConfig(ServerPlayer player) {

@@ -1190,6 +1190,10 @@ public class GunItem extends Item {
         );
         GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
         bullet.setMedalsEnabled(GunAttachments.areMedalsEnabled(stack));
+        if (shooter instanceof Player player && !player.isCreative()
+                && stack.getItem() instanceof GunItem gun && gun.usesLoadedAmmo()) {
+            bullet.setJustEnoughAmmoMedal(gun.getAmmo(stack) < 1);
+        }
         applyFlareDye(stack, stats, bullet);
         return bullet;
     }

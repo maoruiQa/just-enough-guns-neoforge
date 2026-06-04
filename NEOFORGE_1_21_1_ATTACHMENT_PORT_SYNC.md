@@ -64,6 +64,8 @@ Behavior wired so far:
 - The attachment screen now renders the Forge medal toggle button, sends a server-authoritative toggle payload, and stores the gun's kill-medal toggle in the synced `gun_medals_enabled` component.
   - Forge's global medal-disable behavior is adapted as the persistent server config `ui.hideMedals`, exposed through `/justEnoughGuns config ui hideMedals` and synced to clients with the existing UI config payload; when enabled, the attachment-screen medal button shows the disabled tooltip and ignores clicks.
   - Headshot kills from bullets fired with `gun_medals_enabled` true now send a client headshot medal payload unless `ui.hideMedals` is enabled. The client renders the existing `combat_headshot` medal texture and plays `ui.medal.headshot`.
+  - Forge-style kill medal runtime is now queued client-side through `KillMedalPayload` and `MedalPayload`: normal gun kills use the multikill window, and special medals cover `gear_boom`, `combat_hush`, `gear_bbq`, `combat_kingslayer`, and `combat_just_enough_ammo`.
+  - Bullet deaths use the firing bullet's medal-enabled and last-ammo snapshots, so bullet medal behavior follows the gun state at shot time instead of the player's later main-hand state.
 - Cosmetic slots now accept and persist their matching items:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.
@@ -176,9 +178,10 @@ Behavior wired so far:
   - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated `SwordItem` barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
   - Bayonet rendering checks `textures/animated/attachment/paintjob/<paintJob>/<sword>.png` before the base sword attachment texture, matching the Forge attachment texture fallback path.
   - Bayonet rendering still needs runtime visual validation across first-person and third-person contexts before broader non-scope attachment rendering is attempted.
-- Kill-effect badges are partially wired for held-gun bullets:
+- Kill-effect badges and kill medals are partially wired for held-gun bullets:
   - Bullet headshot kill handling now marks dead targets with the Forge `JEGDying` guard even when no kill-effect badge is installed, so medal/kill-effect delivery does not repeat on the same dead target.
   - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
+  - Bullet deaths now feed the Forge-style generic and special kill medal event path; headshot medals remain emitted from the bullet headshot kill-effect path.
   - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
   - Headshot kills with `headpoppper_badge` apply the `popped` kill effect, which emits popcorn particles and beehive pop sounds while ticking.
   - Headshot kills with `trickshot_badge` apply the `trickshotted` kill effect, which emits hit-marker particles and Forge-style hit/air-horn/goose sounds while ticking.

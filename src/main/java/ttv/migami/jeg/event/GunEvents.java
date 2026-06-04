@@ -13,8 +13,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -29,17 +34,21 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.network.MedalType;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -51,6 +60,7 @@ public final class GunEvents {
     private static final String VEHICLE_RETURN_DIMENSION_TAG = "Dimension";
     private static final String VEHICLE_RETURN_UUID_TAG = "Vehicle";
     private static final String VEHICLE_RETURN_SEAT_TAG = "Seat";
+    private static final MedalKillContext DISABLED_MEDAL_CONTEXT = new MedalKillContext(false, false);
 
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
@@ -126,6 +136,60 @@ public final class GunEvents {
         }
     }
 
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (Config.hideMedals()) {
+            return;
+        }
+
+        LivingEntity entity = event.getEntity();
+        if (entity.level().isClientSide() || (!(entity instanceof Enemy) && !(entity instanceof Player))) {
+            return;
+        }
+
+        DamageSource source = event.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        MedalKillContext context = medalKillContext(player, source);
+        if (!context.enabled()) {
+            return;
+        }
+
+        if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {
+            NetworkHandler.sendMedal(player, MedalType.GEAR_BOOM);
+        }
+
+        NetworkHandler.sendKillMedal(player);
+
+        if (entity instanceof Creeper creeper && creeper.getSwellDir() > 0) {
+            NetworkHandler.sendMedal(player, MedalType.COMBAT_HUSH);
+        }
+        if (entity.isOnFire()) {
+            NetworkHandler.sendMedal(player, MedalType.GEAR_BBQ);
+        }
+        if (entity.getTags().contains(JEG_ELITE_GUNNER_TAG)) {
+            NetworkHandler.sendMedal(player, MedalType.COMBAT_KINGSLAYER);
+        }
+        if (context.justEnoughAmmo()) {
+            NetworkHandler.sendMedal(player, MedalType.COMBAT_JUST_ENOUGH_AMMO);
+        }
+    }
+
+    private static MedalKillContext medalKillContext(ServerPlayer player, DamageSource source) {
+        if (source.getDirectEntity() instanceof BulletEntity bullet) {
+            return new MedalKillContext(bullet.shouldSendMedals(), bullet.shouldSendJustEnoughAmmoMedal());
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        if (!(stack.getItem() instanceof GunItem gun) || !GunAttachments.areMedalsEnabled(stack)) {
+            return DISABLED_MEDAL_CONTEXT;
+        }
+        boolean justEnoughAmmo = !player.isCreative() && gun.getMagazineAmmo(stack) < 1;
+        return new MedalKillContext(true, justEnoughAmmo);
+    }
+
     private static void grantStartingManual(ServerPlayer player) {
         player.awardRecipesByKey(ModItems.unlockGunRecipeKeys().stream().map(ResourceKey::location).toList());
 
@@ -191,6 +255,9 @@ public final class GunEvents {
             }
         }
         return null;
+    }
+
+    private record MedalKillContext(boolean enabled, boolean justEnoughAmmo) {
     }
 
     private static void sendAvailableCommands(ServerPlayer player) {

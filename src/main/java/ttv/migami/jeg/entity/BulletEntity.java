@@ -129,6 +129,7 @@ public class BulletEntity extends Projectile {
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
     private boolean medalsEnabled;
+    private boolean justEnoughAmmoMedal;
 
     // Client-side rocket trail storage
     private List<Vec3> trailPositions;
@@ -172,6 +173,18 @@ public class BulletEntity extends Projectile {
 
     public void setMedalsEnabled(boolean medalsEnabled) {
         this.medalsEnabled = medalsEnabled;
+    }
+
+    public boolean shouldSendMedals() {
+        return medalsEnabled && !Config.hideMedals();
+    }
+
+    public void setJustEnoughAmmoMedal(boolean justEnoughAmmoMedal) {
+        this.justEnoughAmmoMedal = justEnoughAmmoMedal;
+    }
+
+    public boolean shouldSendJustEnoughAmmoMedal() {
+        return justEnoughAmmoMedal;
     }
 
     public void setFlareColor(int color) {
@@ -501,7 +514,7 @@ public class BulletEntity extends Projectile {
         if (this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
             return;
         }
-        if (this.getOwner() instanceof ServerPlayer player && this.medalsEnabled && !Config.hideMedals()) {
+        if (this.getOwner() instanceof ServerPlayer player && shouldSendMedals()) {
             NetworkHandler.sendHeadshotMedal(player);
         }
 
@@ -782,6 +795,7 @@ public class BulletEntity extends Projectile {
         output.putBoolean("ExplosiveAmmo", this.entityData.get(DATA_EXPLOSIVE_AMMO));
         output.putString("KillEffect", this.entityData.get(DATA_KILL_EFFECT));
         output.putBoolean("MedalsEnabled", this.medalsEnabled);
+        output.putBoolean("JustEnoughAmmoMedal", this.justEnoughAmmoMedal);
         output.putInt("FlareColor", this.entityData.get(DATA_FLARE_COLOR));
     }
 
@@ -797,6 +811,7 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_EXPLOSIVE_AMMO, input.contains("ExplosiveAmmo") && input.getBoolean("ExplosiveAmmo"));
         this.entityData.set(DATA_KILL_EFFECT, input.contains("KillEffect") ? input.getString("KillEffect") : "");
         this.medalsEnabled = input.contains("MedalsEnabled") && input.getBoolean("MedalsEnabled");
+        this.justEnoughAmmoMedal = input.contains("JustEnoughAmmoMedal") && input.getBoolean("JustEnoughAmmoMedal");
         this.entityData.set(DATA_FLARE_COLOR, input.contains("FlareColor") ? input.getInt("FlareColor") : NO_FLARE_COLOR);
         this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
