@@ -113,13 +113,7 @@ public final class AttachmentMenu extends AbstractContainerMenu {
     private void loadAttachments() {
         for (int index = 0; index < TYPES.length; index++) {
             AttachmentType type = TYPES[index];
-            ItemStack stack = type.isCosmetic()
-                    ? GunAttachments.cosmeticItem(this.weapon, type)
-                            .map(ItemStack::new)
-                            .orElse(ItemStack.EMPTY)
-                    : GunAttachments.item(this.weapon, type)
-                            .map(ItemStack::new)
-                            .orElse(ItemStack.EMPTY);
+            ItemStack stack = GunAttachments.stack(this.weapon, type).orElse(ItemStack.EMPTY);
             this.attachments.setItem(index, stack);
         }
     }

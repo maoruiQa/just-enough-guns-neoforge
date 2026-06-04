@@ -28,10 +28,17 @@ public final class GunAttachments {
     }
 
     public static boolean has(ItemStack gunStack, AttachmentType type) {
-        return id(gunStack, type).isPresent();
+        return stack(gunStack, type).isPresent() || id(gunStack, type).isPresent();
     }
 
     public static Optional<ResourceLocation> id(ItemStack gunStack, AttachmentType type) {
+        ItemStack stored = gunStack.get(stackComponent(type));
+        if (stored != null && !stored.isEmpty()) {
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(stored.getItem());
+            if (id != null) {
+                return Optional.of(id);
+            }
+        }
         String raw = gunStack.get(component(type));
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
@@ -39,9 +46,19 @@ public final class GunAttachments {
         return Optional.ofNullable(ResourceLocation.tryParse(raw));
     }
 
-    public static Optional<AttachmentItem> item(ItemStack gunStack, AttachmentType type) {
-        return id(gunStack, type)
+    public static Optional<ItemStack> stack(ItemStack gunStack, AttachmentType type) {
+        ItemStack stored = gunStack.get(stackComponent(type));
+        if (stored != null && !stored.isEmpty()) {
+            return Optional.of(stored.copyWithCount(1));
+        }
+        return idFromComponent(gunStack, type)
                 .flatMap(BuiltInRegistries.ITEM::getOptional)
+                .map(ItemStack::new);
+    }
+
+    public static Optional<AttachmentItem> item(ItemStack gunStack, AttachmentType type) {
+        return stack(gunStack, type)
+                .map(ItemStack::getItem)
                 .filter(AttachmentItem.class::isInstance)
                 .map(AttachmentItem.class::cast);
     }
@@ -50,7 +67,7 @@ public final class GunAttachments {
         if (!type.isCosmetic()) {
             return Optional.empty();
         }
-        return id(gunStack, type).flatMap(BuiltInRegistries.ITEM::getOptional);
+        return stack(gunStack, type).map(ItemStack::getItem);
     }
 
     public static AttachmentModifiers modifiers(ItemStack gunStack, AttachmentType type) {
@@ -122,6 +139,7 @@ public final class GunAttachments {
             return false;
         }
         gunStack.set(component(type), id.toString());
+        gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
         removeDamage(gunStack, type);
         if (type == AttachmentType.SPECIAL) {
             if (attachment.modifiers().flashlight()) {
@@ -149,6 +167,7 @@ public final class GunAttachments {
             return false;
         }
         gunStack.set(component(type), id.toString());
+        gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
         return true;
     }
 
@@ -163,6 +182,7 @@ public final class GunAttachments {
 
     public static void clear(ItemStack gunStack, AttachmentType type) {
         gunStack.remove(component(type));
+        gunStack.remove(stackComponent(type));
         removeDamage(gunStack, type);
         if (type == AttachmentType.SPECIAL) {
             removeFlashlightState(gunStack);
@@ -236,13 +256,17 @@ public final class GunAttachments {
     }
 
     private static void damageOnShot(ItemStack gunStack, AttachmentType type, Level level, Player player) {
-        Optional<AttachmentItem> attachment = item(gunStack, type);
-        if (attachment.isEmpty()) {
+        Optional<ItemStack> storedAttachment = stack(gunStack, type);
+        if (storedAttachment.isEmpty()) {
             removeDamage(gunStack, type);
             return;
         }
 
-        ItemStack attachmentStack = new ItemStack(attachment.get());
+        ItemStack attachmentStack = storedAttachment.get();
+        if (!(attachmentStack.getItem() instanceof AttachmentItem)) {
+            removeDamage(gunStack, type);
+            return;
+        }
         if (!attachmentStack.isDamageableItem()) {
             removeDamage(gunStack, type);
             return;
@@ -255,14 +279,25 @@ public final class GunAttachments {
 
         int maxDamage = attachmentStack.getMaxDamage();
         int currentDamage = Math.max(0, gunStack.getOrDefault(damageComponent, 0));
+        currentDamage = Math.max(currentDamage, attachmentStack.getDamageValue());
         if (currentDamage >= maxDamage - 1) {
             level.playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
             clear(gunStack, type);
             Component message = Component.translatable("chat.jeg.attachment_broke").withStyle(ChatFormatting.GRAY);
             player.displayClientMessage(message, true);
         } else {
+            attachmentStack.setDamageValue(currentDamage + 1);
+            gunStack.set(stackComponent(type), attachmentStack);
             gunStack.set(damageComponent, currentDamage + 1);
         }
+    }
+
+    private static Optional<ResourceLocation> idFromComponent(ItemStack gunStack, AttachmentType type) {
+        String raw = gunStack.get(component(type));
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(ResourceLocation.tryParse(raw));
     }
 
     private static void removeDamage(ItemStack gunStack, AttachmentType type) {
@@ -305,6 +340,20 @@ public final class GunAttachments {
             case PAINT_JOB -> ModDataComponents.GUN_PAINT_JOB_ATTACHMENT.get();
             case DYE -> ModDataComponents.GUN_DYE_ATTACHMENT.get();
             case KILL_EFFECT -> ModDataComponents.GUN_KILL_EFFECT_ATTACHMENT.get();
+        };
+    }
+
+    private static DataComponentType<ItemStack> stackComponent(AttachmentType type) {
+        return switch (type) {
+            case SCOPE -> ModDataComponents.GUN_SCOPE_ATTACHMENT_STACK.get();
+            case BARREL -> ModDataComponents.GUN_BARREL_ATTACHMENT_STACK.get();
+            case STOCK -> ModDataComponents.GUN_STOCK_ATTACHMENT_STACK.get();
+            case UNDER_BARREL -> ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_STACK.get();
+            case MAGAZINE -> ModDataComponents.GUN_MAGAZINE_ATTACHMENT_STACK.get();
+            case SPECIAL -> ModDataComponents.GUN_SPECIAL_ATTACHMENT_STACK.get();
+            case PAINT_JOB -> ModDataComponents.GUN_PAINT_JOB_ATTACHMENT_STACK.get();
+            case DYE -> ModDataComponents.GUN_DYE_ATTACHMENT_STACK.get();
+            case KILL_EFFECT -> ModDataComponents.GUN_KILL_EFFECT_ATTACHMENT_STACK.get();
         };
     }
 

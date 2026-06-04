@@ -6,7 +6,7 @@ Current NeoForge 1.21.1 foundation:
 
 - Attachment item definitions live in `src/main/java/ttv/migami/jeg/item/attachment/`.
 - Registered attachment items live in `ModItems.ATTACHMENTS`.
-- Gun attachment state is stored as one item id data component per slot in `ModDataComponents`:
+- Gun attachment state is stored as one item id data component plus one full `ItemStack` data component per slot in `ModDataComponents`. The item id remains the compatibility/read fallback for guns written before stack storage existed:
   - `gun_scope_attachment`
   - `gun_barrel_attachment`
   - `gun_stock_attachment`
@@ -16,6 +16,15 @@ Current NeoForge 1.21.1 foundation:
   - `gun_paint_job_attachment`
   - `gun_dye_attachment`
   - `gun_kill_effect_attachment`
+  - `gun_scope_attachment_stack`
+  - `gun_barrel_attachment_stack`
+  - `gun_stock_attachment_stack`
+  - `gun_under_barrel_attachment_stack`
+  - `gun_magazine_attachment_stack`
+  - `gun_special_attachment_stack`
+  - `gun_paint_job_attachment_stack`
+  - `gun_dye_attachment_stack`
+  - `gun_kill_effect_attachment_stack`
 - Flashlight attachment runtime state is stored on the gun stack:
   - `gun_flashlight_powered`
   - `gun_flashlight_battery`
@@ -46,6 +55,7 @@ Behavior wired so far:
   - `dye`: vanilla dye items.
   - `kill_effect`: registered kill-effect badges.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
+- Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.
 - Damage multipliers are applied to spawned bullet damage.
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
 - Recoil/kick multipliers are applied to local visual recoil and heavy-gun backstep.
@@ -76,10 +86,10 @@ Behavior wired so far:
   - Laser pointer attachments emit custom `entity_laser` beam particles along the traced ray.
   - Laser pointer attachments emit the Forge-style custom red block-face laser particle on block hits, plus a small vanilla endpoint glint.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
-  - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack.
-  - Firing damages those installed attachments by 1 per shot.
+  - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack for legacy compatibility.
+  - Firing damages those installed attachments by 1 per shot and writes the updated damage back to the stored attachment `ItemStack`.
   - When an attachment reaches its registered max damage, the slot is cleared, `item_break` plays, and `chat.jeg.attachment_broke` is shown.
-  - This is an adapted representation because this NeoForge port stores attachment item IDs rather than full attachment `ItemStack`s with enchantments/damage.
+  - The integer damage component is still read as a fallback for guns written before full attachment stack storage existed.
 - Trumpet barrel attachment soundwave behavior is partially wired:
   - Firing with `trumpet` still plays `item.doot`.
   - Server-side soundwave now clears fire blocks in a forward cone, damages living entities in that cone with sonic-boom damage, resets hit invulnerability, and emits vanilla sculk/sonic particles.
@@ -111,14 +121,17 @@ Still to port:
 
 - Remaining Forge attachment-screen layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Remaining runtime behavior for full attachment item-stack durability/enchantment parity.
+- Decide whether to support Forge's pseudo vanilla attachments in this port:
+  - Forge 1.20.1 accepts vanilla `spyglass` as a scope-like attachment.
+  - Forge 1.20.1 accepts vanilla swords as bayonet/barrel attachments.
+  - NeoForge 1.21.1 now has the storage shape needed for non-`AttachmentItem` stacks, but slot validation and runtime/render behavior for these pseudo attachments have not been ported yet.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
 1. Port `AttachmentType`, `AttachmentModifiers`, `AttachmentItem`, `GunAttachments`, and `GunAttachmentRules`.
-2. Add equivalent persistent/network-synced gun attachment components.
+2. Add equivalent persistent/network-synced gun attachment id and stack components, with id fallback for old guns.
 3. Register the same attachment items and add them to combat creative tab/manual recipes.
 4. Copy item definitions, item models, textures, and recipes.
 5. Rewire bolt-action scoped ADS to read the stack's scope slot instead of a global flag.
