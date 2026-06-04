@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -19,11 +20,13 @@ import ttv.migami.jeg.client.render.gun.GunAttachmentGeoModel;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
+import ttv.migami.jeg.item.attachment.PaintJobCanItem;
 
 public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunItem> {
     private static final String ATTACHMENT_BONE = "attachment_bone";
     private static final String MODEL_ROOT = "geo/item/attachment/";
     private static final String TEXTURE_ROOT = "textures/animated/attachment/";
+    private static final String PAINT_JOB_TEXTURE_ROOT = "textures/animated/attachment/paintjob/";
     private static final Map<ResourceLocation, String> VANILLA_SWORD_ATTACHMENTS = Map.of(
             ResourceLocation.withDefaultNamespace("wooden_sword"), "wooden_sword",
             ResourceLocation.withDefaultNamespace("stone_sword"), "stone_sword",
@@ -75,7 +78,7 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
             return;
         }
 
-        ResourceLocation texture = Reference.id(TEXTURE_ROOT + attachmentName + ".png");
+        ResourceLocation texture = texture(attachmentName, gunStack);
         BakedGeoModel bakedModel = this.attachmentModel.getBakedModel(model);
         RenderType attachmentRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
@@ -100,6 +103,28 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
         }
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id == null ? null : VANILLA_SWORD_ATTACHMENTS.get(id);
+    }
+
+    private static ResourceLocation texture(String attachmentName, ItemStack gunStack) {
+        String paintJob = paintJob(gunStack);
+        if (paintJob != null) {
+            ResourceLocation painted = Reference.id(PAINT_JOB_TEXTURE_ROOT + paintJob + "/" + attachmentName + ".png");
+            if (exists(painted)) {
+                return painted;
+            }
+        }
+
+        return Reference.id(TEXTURE_ROOT + attachmentName + ".png");
+    }
+
+    private static String paintJob(ItemStack gunStack) {
+        Item item = GunAttachments.cosmeticItem(gunStack, AttachmentType.PAINT_JOB).orElse(null);
+        if (!(item instanceof PaintJobCanItem paintJobCanItem)) {
+            return null;
+        }
+
+        String paintJob = paintJobCanItem.paintJob();
+        return paintJob == null || paintJob.isBlank() ? null : paintJob;
     }
 
     private static boolean exists(ResourceLocation id) {

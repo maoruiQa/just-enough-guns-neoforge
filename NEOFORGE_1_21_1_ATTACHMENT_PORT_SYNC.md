@@ -143,6 +143,7 @@ Behavior wired so far:
   - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
   - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.
   - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated vanilla sword barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
+  - Bayonet rendering checks `textures/animated/attachment/paintjob/<paintJob>/<sword>.png` before the base sword attachment texture, matching the Forge attachment texture fallback path.
   - Bayonet rendering still needs runtime visual validation across first-person and third-person contexts before broader non-scope attachment rendering is attempted.
 - Kill-effect badges are partially wired for held-gun bullets:
   - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
@@ -160,7 +161,7 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla sword bayonet rendering is code-wired through the copied Forge assets, but needs runtime visual validation and positioning follow-up.
-- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, attachment paint-job rendering for non-scope attachments, active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
+- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, broader non-scope attachment paint-job rendering once non-scope positional models are ported, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
