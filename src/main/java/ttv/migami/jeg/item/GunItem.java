@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -69,6 +70,10 @@ public class GunItem extends Item {
     private static final ResourceLocation GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
     private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
     private static final ResourceLocation FLARE_GUN_ID = Reference.id("flare_gun");
+    private static final ResourceLocation SHOTGUN_SHELL_ID = Reference.id("shotgun_shell");
+    private static final ResourceLocation HANDMADE_SHELL_ID = Reference.id("handmade_shell");
+    private static final ResourceLocation SPECTRE_ROUND_ID = Reference.id("spectre_round");
+    private static final ResourceLocation BLAZE_ROUND_ID = Reference.id("blaze_round");
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
@@ -1159,6 +1164,7 @@ public class GunItem extends Item {
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
             refreshGunfireLight(serverLevel, shooter, stack);
+            ejectCasing(serverLevel, shooter);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1215,6 +1221,7 @@ public class GunItem extends Item {
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
             refreshGunfireLight(serverLevel, shooter, stack);
+            ejectCasing(serverLevel, shooter);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1252,17 +1259,33 @@ public class GunItem extends Item {
             return;
         }
 
-        BlockPos pos = BlockPos.containing(shooter.getEyePosition());
-        BlockState state = level.getBlockState(pos);
-        if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
-            DynamicLightBlock.setDelay(level, pos, 2.0D);
-        } else if (state.isAir()) {
-            level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
-        } else if (state.is(Blocks.WATER)) {
-            BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
-                    .defaultBlockState()
-                    .setValue(BlockStateProperties.WATERLOGGED, true);
-            level.setBlock(pos, dynamicLight, 3);
+        Vec3 eye = shooter.getEyePosition();
+        Vec3 look = shooter.getLookAngle();
+        BlockPos[] candidates = new BlockPos[] {
+                BlockPos.containing(eye.add(look.scale(0.45D))),
+                BlockPos.containing(eye),
+                BlockPos.containing(eye.add(0.0D, 0.35D, 0.0D))
+        };
+
+        for (BlockPos pos : candidates) {
+            BlockState state = level.getBlockState(pos);
+            if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.isAir()) {
+                level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.is(Blocks.WATER)) {
+                BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
+                        .defaultBlockState()
+                        .setValue(BlockStateProperties.WATERLOGGED, true);
+                level.setBlock(pos, dynamicLight, 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
         }
     }
 
@@ -1276,6 +1299,74 @@ public class GunItem extends Item {
                 || "atlantean_spear".equals(path)
                 || path.endsWith("bow")
                 || path.endsWith("blowpipe");
+    }
+
+    private void ejectCasing(ServerLevel level, LivingEntity shooter) {
+        SimpleParticleType particle = casingParticle();
+        if (particle == null) {
+            return;
+        }
+
+        Vec3 look = shooter.getLookAngle();
+        Vec3 right = new Vec3(-look.z, 0.0D, look.x);
+        if (right.lengthSqr() < 1.0E-6D) {
+            right = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3 forward = new Vec3(look.x, 0.0D, look.z);
+        if (forward.lengthSqr() < 1.0E-6D) {
+            forward = Vec3.ZERO;
+        } else {
+            forward = forward.normalize();
+        }
+
+        double divisor = shooter instanceof Player player && NetworkHandler.isAiming(player) ? 0.4D : 0.5D;
+        Vec3 particlePos = shooter.position()
+                .add(right.scale(divisor))
+                .add(forward.scale(divisor))
+                .add(0.0D, shooter.getEyeHeight() - 0.4D, 0.0D);
+        Vec3 velocity = right.scale(0.05D).add(0.0D, 0.02D, 0.0D);
+
+        level.sendParticles(
+                particle,
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                0,
+                velocity.x,
+                velocity.y,
+                velocity.z,
+                1.0D
+        );
+    }
+
+    @Nullable
+    private SimpleParticleType casingParticle() {
+        ResourceLocation ammo = stats.ammoItem();
+        if (ammo == null) {
+            return null;
+        }
+
+        String path = stats.id().getPath();
+        if ("finger_gun".equals(path)
+                || "typhoonee".equals(path)
+                || "atlantean_spear".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe")) {
+            return null;
+        }
+
+        if (SPECTRE_ROUND_ID.equals(ammo) || BLAZE_ROUND_ID.equals(ammo)) {
+            return ModParticleTypes.SPECTRE_CASING_PARTICLE.get();
+        }
+        if (SHOTGUN_SHELL_ID.equals(ammo) || HANDMADE_SHELL_ID.equals(ammo) || "grenade".equals(ammo.getPath()) || "flare".equals(ammo.getPath())) {
+            return ModParticleTypes.SHELL_PARTICLE.get();
+        }
+        if ("fire_charge".equals(ammo.getPath())) {
+            return null;
+        }
+        return ModParticleTypes.CASING_PARTICLE.get();
     }
 
     public static BulletEntity createBullet(Level level, LivingEntity shooter, ItemStack stack, GunStats stats, Vec3 velocity) {

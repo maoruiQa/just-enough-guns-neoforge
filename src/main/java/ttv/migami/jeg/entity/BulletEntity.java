@@ -44,11 +44,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.joml.Vector3f;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.GunnerFactionRelations;
@@ -787,8 +789,25 @@ public class BulletEntity extends Projectile {
 
     private void spawnHardBlockImpactParticles(ServerLevel level, BlockHitResult result, BlockState state) {
         Vec3 hit = result.getLocation();
-        if (state.is(ModTags.Blocks.METAL) || state.is(ModTags.Blocks.STONE)) {
-            level.sendParticles(
+        boolean stoneLike = state.is(ModTags.Blocks.STONE) || state.is(BlockTags.MINEABLE_WITH_PICKAXE);
+        boolean woodLike = state.is(ModTags.Blocks.WOOD) || state.is(BlockTags.MINEABLE_WITH_AXE);
+        boolean metalLike = state.is(ModTags.Blocks.METAL);
+
+        if (metalLike || stoneLike) {
+            sendLongDistanceParticles(
+                    level,
+                    new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.15F), 1.1F),
+                    hit.x,
+                    hit.y,
+                    hit.z,
+                    3,
+                    0.035D,
+                    0.035D,
+                    0.035D,
+                    0.02D
+            );
+            sendLongDistanceParticles(
+                    level,
                     ParticleTypes.ELECTRIC_SPARK,
                     hit.x,
                     hit.y,
@@ -800,8 +819,9 @@ public class BulletEntity extends Projectile {
                     0.02D
             );
         }
-        if (state.is(ModTags.Blocks.STONE) || state.is(ModTags.Blocks.WOOD)) {
-            level.sendParticles(
+        if (stoneLike || woodLike) {
+            sendLongDistanceParticles(
+                    level,
                     ParticleTypes.CLOUD,
                     hit.x,
                     hit.y,

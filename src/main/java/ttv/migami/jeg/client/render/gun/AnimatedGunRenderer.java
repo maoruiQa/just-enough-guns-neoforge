@@ -242,14 +242,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        boolean scopedBoltAction = scopedBoltActionRifle(stack, gun);
-        ForgeZoomOffset zoom = scopedBoltAction
+        boolean telescopicSight = hasTelescopicSight(stack);
+        ForgeZoomOffset zoom = telescopicSight
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
         if (zoom == null) {
             return;
         }
-        if (!scopedBoltAction) {
+        if (!telescopicSight) {
             zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
         }
 
@@ -352,13 +352,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         );
     }
 
-    private static boolean scopedBoltActionRifle(ItemStack stack, AnimatedGunItem gun) {
-        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
+    private static boolean hasTelescopicSight(ItemStack stack) {
+        return GunScopeSupport.hasTelescopicSight(stack);
     }
 
     private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {
-        return scopedBoltActionRifle(stack, gun) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
+        return hasTelescopicSight(stack) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 
     @Override

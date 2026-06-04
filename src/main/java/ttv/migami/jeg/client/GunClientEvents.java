@@ -150,8 +150,7 @@ public final class GunClientEvents {
         if (ads <= 0.0F) {
             return;
         }
-        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
+        if (GunScopeSupport.hasTelescopicSight(stack)) {
             float current = event.getNewFovModifier();
             float target = SCOPE_VIEWPORT_FOV / configuredFov();
             event.setNewFovModifier(Math.max(0.1F, Mth.lerp(ads, current, target)));
@@ -577,7 +576,7 @@ public final class GunClientEvents {
 
     private static void forceExitScopedAdsAfterShot(ItemStack stack, GunItem gun) {
         if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
+                && GunScopeSupport.hasTelescopicSight(stack)) {
             AimingHandler.get().suppressUntilUseReleased();
         }
     }
@@ -664,7 +663,7 @@ public final class GunClientEvents {
         }
 
         poseStack.pushPose();
-        poseStack.translate(xOffset, flash.yOffset() * 0.0625D, flash.zOffset() * 0.0625D);
+        poseStack.translate(xOffset, (flash.yOffset() - 8.0D) * 0.0625D, flash.zOffset() * 0.0625D);
         poseStack.mulPose(Axis.ZP.rotationDegrees(state.random * 360.0F));
         poseStack.mulPose(Axis.XP.rotationDegrees(state.random >= 0.5F ? 180.0F : 0.0F));
         renderMuzzleFlashQuad(poseStack, bufferSource, held, flash);

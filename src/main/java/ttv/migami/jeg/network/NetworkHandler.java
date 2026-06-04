@@ -455,7 +455,7 @@ public final class NetworkHandler {
 
     private static boolean shouldForceExitAdsAfterShot(ItemStack stack, GunItem gun) {
         return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
+                && GunScopeSupport.hasTelescopicSight(stack);
     }
 
     private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {

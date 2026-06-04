@@ -111,13 +111,13 @@ public final class GunAttachmentVisibility {
     }
 
     private static void applyBoltActionRifle(ItemStack stack, GeoBone bone, String boneName) {
-        boolean scoped = GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
+        boolean scopeInstalled = GunAttachments.has(stack, AttachmentType.SCOPE);
         if ("attachment_bone".equals(boneName)) {
-            bone.setHidden(!scoped);
+            bone.setHidden(!scopeInstalled);
             return;
         }
         if ("iron_sight".equals(boneName)) {
-            bone.setHidden(scoped);
+            bone.setHidden(scopeInstalled);
             return;
         }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {

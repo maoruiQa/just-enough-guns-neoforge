@@ -108,14 +108,14 @@ public final class DynamicLightBlock extends BaseEntityBlock implements SimpleWa
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        level.scheduleTick(pos, this, 2);
-        setDelay(level, pos, 2.0D);
+        level.scheduleTick(pos, this, 1);
+        setDelay(level, pos, 0.5D);
     }
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         expireOrDecrement(level, pos);
-        level.scheduleTick(pos, this, 2);
+        level.scheduleTick(pos, this, 1);
     }
 
     public static void setDelay(LevelAccessor level, BlockPos pos, double delay) {

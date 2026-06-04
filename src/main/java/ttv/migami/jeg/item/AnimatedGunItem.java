@@ -47,6 +47,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, Animation.LoopType.HOLD_ON_LAST_FRAME);
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_RELOAD_COMPONENT_GRACE_NANOS = 250_000_000L;
+    private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private static volatile boolean loggedRendererProvider;
@@ -57,6 +58,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientReloadStack = ItemStack.EMPTY;
     private static RawAnimation clientReloadAnimation;
     private static long clientReloadAnimationDeadlineNanos;
+    private static ItemStack clientDrawStack = ItemStack.EMPTY;
+    private static long clientDrawAnimationDeadlineNanos;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -86,6 +89,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
+        if (shouldContinueDrawAnimation(state.getController(), stack)) {
+            return PlayState.CONTINUE;
+        }
 
         RawAnimation drawAnimation = drawAnimationFor(stack);
         if (drawAnimation != null) {
@@ -112,12 +118,18 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 if (stack.getItem() instanceof AnimatedGunItem gun) {
                     var profile = GunPoseProfile.forGun(gun.getStats().id());
                     if (profile.canApplySprintingAnimation()) {
+                        if (hasAnimation(state.getController().getCurrentRawAnimation(), ANIM_SPRINT)) {
+                            return PlayState.CONTINUE;
+                        }
                         return state.setAndContinue(SPRINT);
                     }
                 }
             }
         }
 
+        if (hasAnimation(state.getController().getCurrentRawAnimation(), "idle")) {
+            return PlayState.CONTINUE;
+        }
         return state.setAndContinue(IDLE);
     }
 
@@ -125,7 +137,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
-        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0 ? DRAW : null;
+        if (stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) <= 0) {
+            return null;
+        }
+        if (!matchesHeldStack(stack, clientDrawStack) || System.nanoTime() > clientDrawAnimationDeadlineNanos) {
+            rememberDrawAnimation(stack);
+        }
+        return DRAW;
     }
 
     private static RawAnimation reloadAnimationFor(ItemStack stack) {
@@ -214,6 +232,27 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientReloadStack = ItemStack.EMPTY;
         clientReloadAnimation = null;
         clientReloadAnimationDeadlineNanos = 0L;
+    }
+
+    private static boolean shouldContinueDrawAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (!hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW) || stack == null || stack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() <= clientDrawAnimationDeadlineNanos && matchesHeldStack(stack, clientDrawStack)) {
+            return true;
+        }
+        clearRecentDrawAnimation();
+        return false;
+    }
+
+    private static void rememberDrawAnimation(ItemStack stack) {
+        clientDrawStack = stack.copy();
+        clientDrawAnimationDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+    }
+
+    private static void clearRecentDrawAnimation() {
+        clientDrawStack = ItemStack.EMPTY;
+        clientDrawAnimationDeadlineNanos = 0L;
     }
 
     private static boolean triggerPendingClientShoot(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {

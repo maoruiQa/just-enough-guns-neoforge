@@ -43,6 +43,12 @@ public class ModParticleTypes {
             REGISTER.register("blue_flame", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
             REGISTER.register("gun_muzzle_flash", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CASING_PARTICLE =
+            REGISTER.register("casing", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SHELL_PARTICLE =
+            REGISTER.register("shell", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SPECTRE_CASING_PARTICLE =
+            REGISTER.register("spectre_casing", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SONIC_RING =
             REGISTER.register("sonic_ring", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_SONIC_RING =
