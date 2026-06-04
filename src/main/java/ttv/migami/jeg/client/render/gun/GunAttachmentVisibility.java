@@ -95,8 +95,8 @@ public final class GunAttachmentVisibility {
 
         Boolean attachmentVisibility = installedAttachmentVisibility(gunId, stack, boneName);
         if (attachmentVisibility != null) {
-            if (!attachmentVisibility && BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
-                bone.setChildrenHidden(false);
+            if (BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
+                bone.setChildrenHidden(attachmentVisibility);
             }
             bone.setHidden(attachmentVisibility);
             return;
@@ -164,6 +164,9 @@ public final class GunAttachmentVisibility {
             return !isInstalled(stack, AttachmentType.STOCK, "makeshift_stock");
         }
         if (isInstalled(stack, AttachmentType.STOCK, boneName)) {
+            return false;
+        }
+        if (isInstalled(stack, AttachmentType.UNDER_BARREL, boneName)) {
             return false;
         }
         if (isDefaultMagazineBone(boneName)) {

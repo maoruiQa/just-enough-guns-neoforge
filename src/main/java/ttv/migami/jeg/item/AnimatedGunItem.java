@@ -86,6 +86,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     private PlayState animationPredicate(AnimationState<AnimatedGunItem> state) {
         ItemStack stack = state.getData(DataTickets.ITEMSTACK);
+        if (isNonFirstPersonPerspective(state)) {
+            return PlayState.STOP;
+        }
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
@@ -279,6 +282,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientShootStack = ItemStack.EMPTY;
         clientShootAiming = false;
         clientShootTriggerDeadlineNanos = 0L;
+    }
+
+    private static boolean isNonFirstPersonPerspective(AnimationState<AnimatedGunItem> state) {
+        var perspective = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
+        return perspective != null && !perspective.firstPerson();
     }
 
     private static boolean isFirstPersonRender(AnimationState<AnimatedGunItem> state, ItemStack stack) {

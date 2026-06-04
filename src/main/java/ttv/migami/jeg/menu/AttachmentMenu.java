@@ -21,7 +21,6 @@ import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
-import ttv.migami.jeg.item.attachment.GunAttachmentRules;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class AttachmentMenu extends AbstractContainerMenu {
@@ -154,7 +153,7 @@ public final class AttachmentMenu extends AbstractContainerMenu {
 
         @Override
         public boolean isActive() {
-            return GunAttachmentRules.canAttach(this.weapon, this.type);
+            return GunAttachments.canUseAttachmentSlot(this.weapon, this.type);
         }
 
         @Override

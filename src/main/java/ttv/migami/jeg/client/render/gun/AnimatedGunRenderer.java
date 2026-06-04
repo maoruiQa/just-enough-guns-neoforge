@@ -208,6 +208,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         if (isThirdPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
+            stopThirdPersonAnimations(gun, stack);
             poseStack.pushPose();
             try {
                 applyThirdPersonAnimatedTransform(gun, poseStack);
@@ -233,6 +234,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
+    }
+
+    private static void stopThirdPersonAnimations(AnimatedGunItem gun, ItemStack stack) {
+        var manager = gun.getAnimatableInstanceCache()
+                .getManagerForId(software.bernie.geckolib.animatable.GeoItem.getId(stack));
+        var controller = manager.getAnimationControllers().get(AnimatedGunItem.CONTROLLER);
+        if (controller != null) {
+            controller.forceAnimationReset();
+            controller.stop();
+        }
+        manager.clearSnapshotCache();
     }
 
     private static void applyFirstPersonAdsTransform(ItemStack stack, AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
@@ -374,20 +386,22 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int color
     ) {
         String boneName = bone.getName();
-        ItemStack stack = this.getCurrentItemStack();
-        if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
-            debugFirstPersonBones(stack, boneName);
-            if ("attachment_bone".equals(boneName)) {
-                renderFirstPersonMuzzleFlashForBone(poseStack, bone, stack, bufferSource);
+        if (!isReRender) {
+            ItemStack stack = this.getCurrentItemStack();
+            if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
+                GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
+                debugFirstPersonBones(stack, boneName);
+                if ("attachment_bone".equals(boneName)) {
+                    renderFirstPersonMuzzleFlashForBone(poseStack, bone, stack, bufferSource);
+                }
             }
-        }
 
-        boolean armBone = isArmBone(boneName);
-        if (armBone) {
-            bone.setHidden(true);
-            bone.setChildrenHidden(false);
-            renderArmForBone(poseStack, bone, boneName, bufferSource, packedLight);
+            boolean armBone = isArmBone(boneName);
+            if (armBone) {
+                bone.setHidden(true);
+                bone.setChildrenHidden(false);
+                renderArmForBone(poseStack, bone, boneName, bufferSource, packedLight);
+            }
         }
 
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);

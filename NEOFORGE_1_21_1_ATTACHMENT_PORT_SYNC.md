@@ -81,7 +81,7 @@ Behavior wired so far:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
   - Vanilla `spyglass` scope attachments provide Forge-style scope modifiers; vanilla sword bayonets affect systems that check the stored stack directly.
-- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can only install `makeshift_stock`, with `phantom_smg` treated like `custom_smg`, except `assault_rifle` is intentionally allowed to install standard `light_stock`, `tactical_stock`, and `weighted_stock` attachments for the NeoForge port. Ordinary stock-capable guns still reject `makeshift_stock`.
+- `makeshift_stock` is now accepted by any gun that supports the stock slot, plus the old Forge makeshift-only guns (`semi_auto_pistol` and `waterpipe_shotgun`) through a makeshift-only stock-slot exception. Standard stocks still use the normal per-gun `STOCK` support matrix.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
@@ -161,6 +161,7 @@ Behavior wired so far:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
   - Draw operation locking remains short and server-authoritative, but the client animation predicate now keeps the visual `draw` sequence alive long enough for authored draw animations to finish instead of letting sprint/idle immediately replace it.
   - The animation predicate now continues already-playing idle and sprint animations instead of resetting the same fallback animation every frame.
+  - Non-first-person item render perspectives stop the GeckoLib gun animation predicate, and third-person render entry points explicitly stop the item controller and clear snapshots, so third-person gun renders keep the static Geo pose and do not play draw, reload, shoot, sprint, or idle animations.
   - Reload requests now start a pending reload instead of immediately consuming ammo or swapping magazines.
   - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
   - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
@@ -194,7 +195,10 @@ Behavior wired so far:
   - The shared `attachment_bone` remains visible when any scope, barrel, under-barrel, special, or bayonet render path is active, so independent Geo attachments such as `vertical_grip` and `angled_grip` have a render anchor even when no scope is installed.
   - The gun model's baked barrel and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
   - Gun models that already include baked `light_grip`, `vertical_grip`, and `angled_grip` bones (`combat_rifle`, `pump_shotgun`, and `holy_shotgun`) now reveal their authored parent/child grip bones for the installed under-barrel attachment instead of rendering a second independent Geo grip at the wrong coordinate frame. Their `under_barrel`/`grip` parent bones explicitly keep children visible so vertical and angled grip child geometry is not suppressed after the default hidden-bone pass.
+  - Independent under-barrel attachment Geo roots named `vertical_grip` or `angled_grip` are no longer run through the gun model visibility pass during attachment re-rendering, preventing the shared default hidden-bone list from hiding the attachment model itself while `LightGrip` remains unaffected.
+  - Baked under-barrel parent bones now set child-hidden state from the same installed-grip decision as their own hidden state, so `combat_rifle`, `pump_shotgun`, and `holy_shotgun` do not retain hidden child grip geometry after switching between grip states.
   - Standard stock rendering stays baked for guns with authored `light_stock`, `tactical_stock`, and `weighted_stock` bones, while `assault_rifle` renders standard stocks through the independent attachment layer. Its baked `makeshift_stock` bone remains reserved for the installed `makeshift_stock`.
+  - Non-baked `makeshift_stock` rendering has independent stock transforms for `burst_rifle`, `combat_rifle`, `hollenfire_mk2`, `service_rifle`, `semi_auto_pistol`, and `waterpipe_shotgun`; standard stocks on baked-stock guns remain owned by the gun Geo model.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
   - `magazine` is intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for that slot on most guns.
 - Vanilla sword bayonet render assets are staged:
