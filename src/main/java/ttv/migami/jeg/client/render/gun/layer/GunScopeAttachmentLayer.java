@@ -54,8 +54,12 @@ public final class GunScopeAttachmentLayer extends GeoRenderLayer<AnimatedGunIte
         if (gunStack == null || gunStack.isEmpty()) {
             return;
         }
+        ItemStack attachmentStack = GunAttachments.stack(gunStack, AttachmentType.SCOPE).orElse(ItemStack.EMPTY);
+        if (!GunAttachments.canAttachStack(gunStack, AttachmentType.SCOPE, attachmentStack)) {
+            return;
+        }
         ResourceLocation attachmentId = GunAttachments.id(gunStack, AttachmentType.SCOPE).orElse(null);
-        if (attachmentId == null || GunAttachments.item(gunStack, AttachmentType.SCOPE).isEmpty()) {
+        if (attachmentId == null) {
             return;
         }
 

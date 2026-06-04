@@ -122,7 +122,7 @@ Behavior wired so far:
   - Forge 1.20.1 also probes `geo/item/gun/paintjob/<paintJob>/<gun>.geo.json`, but the only Forge reference asset found is `paintjob/scorched/burst_rifle.geo.json`.
   - `scorched_spray_can` is disabled in Forge 1.20.1 and is not registered in this NeoForge port, and this branch currently has no gun paint-job Geo override assets. Treat gun paint-job model overrides as conditional future asset support, not as a live missing behavior for the active registered spray cans.
 - Scope attachment model rendering is partially wired:
-  - Installed scope-slot attachments render as Geo models at the gun model's `attachment_bone`.
+  - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
