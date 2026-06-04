@@ -56,6 +56,7 @@ public final class AttachmentRuntimeEvents {
     private static final long BAYONET_CHARGE_TICKS = 40L;
     private static final double BAYONET_CHARGE_RANGE = 1.5D;
     private static final double BAYONET_CHARGE_SWEEP_ANGLE = Math.toRadians(100.0D);
+    private static final float BAYONET_DAMAGE_DIVISOR = 1.5F;
     private static final int BAYONET_CHARGE_DAMAGE = 15;
     private static final double BAYONET_MELEE_RANGE = 2.0D;
     private static final double BAYONET_MELEE_SWEEP_ANGLE = Math.toRadians(100.0D);
@@ -128,8 +129,8 @@ public final class AttachmentRuntimeEvents {
                 player.isSprinting() ? BAYONET_SPRINT_MELEE_COOLDOWN_TICKS : BAYONET_MELEE_COOLDOWN_TICKS
         );
 
-        float damage = bayonetDamage(player, bayonet) / 1.5F;
-        if (bayonet.isDamageableItem() && bayonet.getDamageValue() > bayonet.getMaxDamage() * 2 / 3) {
+        float damage = bayonetDamage(player, bayonet) / BAYONET_DAMAGE_DIVISOR;
+        if (isBayonetTooDamaged(bayonet)) {
             damage = 0.0F;
         }
 
@@ -180,8 +181,8 @@ public final class AttachmentRuntimeEvents {
         }
 
         ItemStack bayonet = attachment.get();
-        float damage = bayonetDamage(player, bayonet);
-        if (bayonet.isDamageableItem() && bayonet.getDamageValue() >= bayonet.getMaxDamage() * 2 / 3) {
+        float damage = bayonetDamage(player, bayonet) / BAYONET_DAMAGE_DIVISOR;
+        if (isBayonetTooDamaged(bayonet)) {
             damage = 0.0F;
         }
 
@@ -242,6 +243,10 @@ public final class AttachmentRuntimeEvents {
                     .sum();
         }
         return (float) (baseDamage + enchantmentLevel(player, bayonet, Enchantments.SHARPNESS));
+    }
+
+    private static boolean isBayonetTooDamaged(ItemStack bayonet) {
+        return bayonet.isDamageableItem() && bayonet.getDamageValue() > bayonet.getMaxDamage() / BAYONET_DAMAGE_DIVISOR;
     }
 
     private static void damageStoredBayonet(Player player, ItemStack gunStack, ItemStack bayonet, int amount) {

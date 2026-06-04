@@ -80,7 +80,7 @@ Behavior wired so far:
 - Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: only guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can install it, with `phantom_smg` treated like `custom_smg`; ordinary stock-capable guns still reject `makeshift_stock`.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
-  - Charge damage uses the installed sword's attack damage plus Sharpness.
+  - Charge damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
   - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
   - Successful charge hits damage the stored bayonet stack by 15, gated by `combat.gunDurability`, creative mode, and Mending, then clear the barrel slot when the sword breaks.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
