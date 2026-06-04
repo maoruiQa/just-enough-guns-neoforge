@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import javax.annotation.Nullable;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -35,7 +34,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -796,7 +794,9 @@ public class GunItem extends Item {
                 .ifPresent(path -> {
                     if ("trumpet".equals(path)) {
                         playSound(level, shooter, Optional.ofNullable(resolveSound(Reference.id("item.doot"))));
-                        applyTrumpetSoundwave(level, shooter);
+                        if (stats.projectileAmount() > 3) {
+                            applyTrumpetSoundwave(level, shooter);
+                        }
                     } else if ("explosive_muzzle".equals(path)) {
                         playSound(level, shooter, Optional.of(SoundEvents.FIRECHARGE_USE));
                     }
@@ -812,24 +812,11 @@ public class GunItem extends Item {
         Vec3 origin = shooter.position();
         double attackRange = 8.0D;
         double maxDistance = 10.0D;
-        double sweepAngle = Math.toRadians(Mth.clamp(stats.spread(), 25.0F, 100.0F));
+        double sweepAngle = Math.toRadians(100.0D);
+        double pushStrength = 2.0D;
 
-        BlockPos basePos = shooter.blockPosition();
-        int fireRange = 10;
-        for (BlockPos pos : BlockPos.betweenClosed(
-                basePos.offset(-fireRange, -fireRange, -fireRange),
-                basePos.offset(fireRange, fireRange, fireRange))) {
-            if (!level.getBlockState(pos).is(Blocks.FIRE)) {
-                continue;
-            }
-            Vec3 fireOffset = Vec3.atCenterOf(pos).subtract(origin);
-            double distance = fireOffset.length();
-            if (distance <= maxDistance && isInsideSoundwaveCone(fireOffset, look, sweepAngle)) {
-                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            }
-        }
-
-        level.playSound(null, shooter.blockPosition(), SoundEvents.SCULK_BLOCK_CHARGE, SoundSource.PLAYERS, 2.0F, 1.0F);
+        shooter.push(-look.x, -look.y, -look.z);
+        shooter.fallDistance = 0.0F;
         ServerLevel serverLevel = (ServerLevel) level;
         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, shooter.getBoundingBox().inflate(attackRange))) {
             if (entity == shooter) {
@@ -843,23 +830,10 @@ public class GunItem extends Item {
             }
 
             double distanceMultiplier = 1.0D - Math.min(distance / maxDistance, 1.0D);
-            float adjustedDamage = (float) (stats.damage() * distanceMultiplier);
-            if (adjustedDamage <= 0.0F) {
-                continue;
-            }
-
-            entity.hurt(shooter.damageSources().sonicBoom(shooter), adjustedDamage);
-            entity.invulnerableTime = 0;
-            serverLevel.sendParticles(
-                    ParticleTypes.SCULK_CHARGE_POP,
-                    entity.getX(),
-                    entity.getY() + entity.getBbHeight() * 0.5D,
-                    entity.getZ(),
-                    12,
-                    0.2D,
-                    0.0D,
-                    0.3D,
-                    0.1D
+            entity.push(
+                    look.x * pushStrength * distanceMultiplier,
+                    look.y * pushStrength * distanceMultiplier,
+                    look.z * pushStrength * distanceMultiplier
             );
         }
 

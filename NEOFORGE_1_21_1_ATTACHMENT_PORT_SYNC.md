@@ -143,7 +143,7 @@ Behavior wired so far:
   - The integer damage component is still read as a fallback for guns written before full attachment stack storage existed.
 - Trumpet barrel attachment soundwave behavior is partially wired:
   - Firing with `trumpet` still plays `item.doot`.
-  - Server-side soundwave now clears fire blocks in a forward cone, damages living entities in that cone with sonic-boom damage, resets hit invulnerability, and emits vanilla sculk/sonic particles.
+  - Forge-style blast behavior is limited to guns with `projectileAmount > 3`: the shooter is pushed backward and nearby living entities in the forward cone are pushed away without extra damage.
   - The custom `sonic_ring` and `big_sonic_ring` particle types/providers are registered and emitted from the trumpet soundwave.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
