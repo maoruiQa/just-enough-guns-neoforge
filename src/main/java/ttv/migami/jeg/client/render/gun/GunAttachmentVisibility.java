@@ -135,13 +135,7 @@ public final class GunAttachmentVisibility {
         if ("iron_sight".equals(boneName) || "modified_iron_sight".equals(boneName) || "stock_iron_sight".equals(boneName)) {
             return GunAttachments.has(stack, AttachmentType.SCOPE);
         }
-        if (isInstalled(stack, AttachmentType.BARREL, boneName)) {
-            return false;
-        }
         if (isInstalled(stack, AttachmentType.STOCK, boneName)) {
-            return false;
-        }
-        if (isInstalled(stack, AttachmentType.UNDER_BARREL, boneName)) {
             return false;
         }
         if (isDefaultMagazineBone(boneName)) {
@@ -152,9 +146,6 @@ public final class GunAttachmentVisibility {
         }
         if ("flashlight_glow".equals(boneName)) {
             return !GunAttachments.isFlashlightPowered(stack);
-        }
-        if (isInstalled(stack, AttachmentType.SPECIAL, boneName)) {
-            return false;
         }
         if (isGenericInstalledBone(stack, boneName)) {
             return false;
@@ -185,7 +176,6 @@ public final class GunAttachmentVisibility {
 
     private static boolean isGenericInstalledBone(ItemStack stack, String boneName) {
         return switch (boneName) {
-            case "under_barrel", "grip" -> GunAttachments.has(stack, AttachmentType.UNDER_BARREL);
             case "extended_mag_2", "extended_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "extended_mag");
             case "drum_mag_2", "drum_magazine" -> isInstalled(stack, AttachmentType.MAGAZINE, "drum_mag");
             case "light_handguard", "light_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "light_stock");
