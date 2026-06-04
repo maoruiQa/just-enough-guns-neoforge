@@ -56,6 +56,7 @@ Behavior wired so far:
 - The attachment screen now adapts Forge's client-side config-button polish as NeoForge client config keys:
   - `rendering.hideAttachmentConfigButton` hides the config button.
   - `rendering.attachmentButtonAlignment` accepts `left` or `right` and positions the config button with the same Forge title-width/right-edge formulas.
+- The attachment screen now preserves the Forge left-panel thank-you hover tooltip.
 - The attachment screen now renders the Forge medal toggle button, sends a server-authoritative toggle payload, and stores the gun's kill-medal toggle in the synced `gun_medals_enabled` component.
   - Forge's global medal-disable behavior is adapted as the persistent server config `ui.hideMedals`, exposed through `/justEnoughGuns config ui hideMedals` and synced to clients with the existing UI config payload; when enabled, the attachment-screen medal button shows the disabled tooltip and ignores clicks.
 - Cosmetic slots now accept and persist their matching items:

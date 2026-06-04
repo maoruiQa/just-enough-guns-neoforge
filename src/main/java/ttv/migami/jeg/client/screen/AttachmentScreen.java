@@ -42,6 +42,9 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int CONFIG_BUTTON_U = 192;
     private static final int CONFIG_BUTTON_V = 0;
     private static final int CONFIG_BUTTON_SIZE = 10;
+    private static final int THANKS_BUTTON_X = -67;
+    private static final int THANKS_BUTTON_Y = 100;
+    private static final int THANKS_BUTTON_SIZE = 22;
     private static final int MEDAL_BUTTON_X = -31;
     private static final int MEDAL_BUTTON_Y = 148;
     private static final int MEDAL_BUTTON_SIZE = 22;
@@ -96,6 +99,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         this.renderAttachmentSlotTooltip(guiGraphics, mouseX, mouseY);
         this.renderConfigButtonTooltip(guiGraphics, mouseX, mouseY);
+        this.renderThanksTooltip(guiGraphics, mouseX, mouseY);
         this.renderMedalButtonTooltip(guiGraphics, mouseX, mouseY);
     }
 
@@ -189,6 +193,23 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return this.leftPos + this.font.width(this.title) + 11;
         }
         return this.leftPos + this.imageWidth - 17;
+    }
+
+    private void renderThanksTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.isMouseOverThanksButton(mouseX, mouseY)) {
+            guiGraphics.renderComponentTooltip(
+                    this.font,
+                    List.of(Component.translatable("cutesy.jeg.thanks"), Component.literal("- MigaMi")),
+                    mouseX,
+                    mouseY
+            );
+        }
+    }
+
+    private boolean isMouseOverThanksButton(int mouseX, int mouseY) {
+        int x = this.leftPos + THANKS_BUTTON_X;
+        int y = this.topPos + THANKS_BUTTON_Y;
+        return mouseX >= x && mouseX < x + THANKS_BUTTON_SIZE && mouseY >= y && mouseY < y + THANKS_BUTTON_SIZE;
     }
 
     private void openConfigScreen() {
