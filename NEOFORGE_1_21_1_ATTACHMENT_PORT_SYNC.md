@@ -165,7 +165,7 @@ Behavior wired so far:
   - Reload requests now start a pending reload instead of immediately consuming ammo or swapping magazines.
   - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
   - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
-  - Reload cancellation now queues a fresh draw animation, clears the stale held/draw animation cache, and forces the GeckoLib draw controller to restart once, so switching back to the interrupted gun replays the authored draw sequence instead of dropping straight to idle.
+  - Reload cancellation now queues a fresh draw animation, preserves that queued draw while the interrupted stack is not held, clears the stale held/draw animation cache, and forces the GeckoLib draw controller to restart once, so switching back to the interrupted gun replays the authored draw sequence instead of dropping straight to idle.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
@@ -186,7 +186,7 @@ Behavior wired so far:
   - Scope attachments use the Forge 1.20.1 generated `setScope(...)` slot transforms through `GunAttachmentTransforms`, so guns with different authored scope rails such as `combat_rifle` and `assault_rifle` mount the same scope assets through data instead of ad-hoc per-gun offsets.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
   - The JEG long-scope overlay, scoped FOV path, and scoped mouse-sensitivity reduction are now gated specifically by the installed `telescopic_sight` attachment. Other scope-slot attachments follow the normal iron-sight/attachment ADS path.
-  - `combat_rifle` and `service_rifle` with `holographic_sight` use the mounted scope ADS calculation derived from Forge's scope-slot camera formula, preserving the non-telescopic input/FOV behavior while aiming through the actual holographic sight rail height.
+  - `combat_rifle` and `service_rifle` with `holographic_sight` keep the normal non-telescopic ADS path and apply only a small per-gun Y correction for their slightly high holographic-sight view.
   - The telescopic-sight scoped path is gun-agnostic: any gun with `telescopic_sight` uses the scoped overlay/FOV path, while bolt-action forced ADS release remains limited to bolt-action rifle plus `telescopic_sight`.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.

@@ -49,13 +49,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
-    private static final double FORGE_SCOPE_SIGHT_Y_OFFSET = 0.54D;
-    private static final double FORGE_SCOPE_SIGHT_Z_OFFSET = -0.16D;
-    private static final double ADS_UNIT = 0.0625D;
     private static final ResourceLocation HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
-    private static final Set<ResourceLocation> MOUNTED_HOLOGRAPHIC_ADS_GUNS = Set.of(
-            Reference.id("combat_rifle"),
-            Reference.id("service_rifle")
+    private static final Map<ResourceLocation, ForgeZoomOffset> HOLOGRAPHIC_ADS_CORRECTIONS = Map.of(
+            Reference.id("combat_rifle"), zoom(0.0D, -0.25D, 0.0D),
+            Reference.id("service_rifle"), zoom(0.0D, -0.25D, 0.0D)
     );
     private static final Map<ResourceLocation, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
             Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
@@ -372,30 +369,28 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static ForgeZoomOffset withAttachmentAdsOffset(ItemStack stack, ResourceLocation gunId, ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
-        if (usesMountedHolographicAds(stack, gunId)) {
-            ForgeZoomOffset mountedScope = mountedScopeAdsOffset(gunId);
-            if (mountedScope != null) {
-                return mountedScope;
+        ForgeZoomOffset result = withAttachmentAdsOffset(zoom, modifiers);
+        if (hasHolographicSight(stack)) {
+            ForgeZoomOffset correction = HOLOGRAPHIC_ADS_CORRECTIONS.get(gunId);
+            if (correction != null) {
+                return withCorrection(result, correction);
             }
         }
-        return withAttachmentAdsOffset(zoom, modifiers);
+        return result;
     }
 
-    private static boolean usesMountedHolographicAds(ItemStack stack, ResourceLocation gunId) {
-        return MOUNTED_HOLOGRAPHIC_ADS_GUNS.contains(gunId)
-                && GunAttachments.id(stack, AttachmentType.SCOPE)
+    private static boolean hasHolographicSight(ItemStack stack) {
+        return GunAttachments.id(stack, AttachmentType.SCOPE)
                 .map(HOLOGRAPHIC_SIGHT::equals)
                 .orElse(false);
     }
 
-    private static ForgeZoomOffset mountedScopeAdsOffset(ResourceLocation gunId) {
-        return GunAttachmentTransforms.transform(gunId, AttachmentType.SCOPE)
-                .map(scope -> zoom(
-                        -scope.x(),
-                        scope.y() + ((FORGE_SCOPE_SIGHT_Y_OFFSET - FORGE_IRON_SIGHT_Y_OFFSET) / ADS_UNIT),
-                        ((FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET - FORGE_SCOPE_SIGHT_Z_OFFSET) / ADS_UNIT) - scope.z()
-                ))
-                .orElse(null);
+    private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + correction.xOffset(),
+                zoom.yOffset() + correction.yOffset(),
+                zoom.zOffset() + correction.zOffset()
+        );
     }
 
     private static boolean hasTelescopicSight(ItemStack stack) {
