@@ -39,6 +39,7 @@ Current NeoForge 1.21.1 foundation:
 - Forge attachment Geo assets were copied under `src/main/resources/assets/jeg/geo/item/attachment/`.
 - Active Forge cosmetic attachment items are registered: classic/toy/whiteout/golden spray cans plus creeper birthday, headpopper, and trickshot badges.
 - Static registration audit: the active Forge 1.20.1 attachment/cosmetic item set matches this NeoForge port exactly: 5 scopes, 4 stocks, 3 barrels, 3 under-barrels, 2 magazine attachments, 2 special attachments, 4 spray cans, and 3 kill-effect badges.
+- Static resource audit: every active attachment/cosmetic item has `assets/jeg/items/<id>.json`, `assets/jeg/models/item/<id>.json`, and `data/jeg/recipe/<id>.json` with a matching `jeg:<id>` result. Every active functional attachment also has `geo/item/attachment/<id>.geo.json` and `textures/animated/attachment/<id>.png`.
 - Functional attachments, active spray cans, and kill-effect badges have explicit crafting recipes and are included in the gunsmith manual and explicit gun-recipe unlock paths.
 
 Behavior wired so far:
