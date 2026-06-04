@@ -85,7 +85,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (isNonFirstPersonPerspective(state)) {
             return PlayState.STOP;
         }
-        clearInterruptedReloadAnimation(state.getController(), stack);
+        if (clearInterruptedReloadAnimation(state.getController(), stack)) {
+            RawAnimation drawAnimation = drawAnimationFor(stack);
+            return state.setAndContinue(drawAnimation != null ? drawAnimation : IDLE);
+        }
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
@@ -127,7 +130,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             }
         }
 
-        if (hasAnimation(state.getController().getCurrentRawAnimation(), "idle")) {
+        if (isIdleOnlyAnimation(state.getController().getCurrentRawAnimation())) {
             return PlayState.CONTINUE;
         }
         return state.setAndContinue(IDLE);
@@ -188,20 +191,27 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         };
     }
 
-    private static void clearInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+    private static boolean clearInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
         if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
-            return;
+            return false;
         }
         if (stack != null && !stack.isEmpty()
                 && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
-            return;
+            return false;
         }
         controller.forceAnimationReset();
         controller.stop();
+        return true;
     }
 
     private static boolean isReloadAnimation(RawAnimation animation) {
         return hasAnyAnimation(animation, ANIM_RELOAD, ANIM_RELOAD_START, ANIM_RELOAD_LOOP, ANIM_RELOAD_STOP);
+    }
+
+    private static boolean isIdleOnlyAnimation(RawAnimation animation) {
+        return animation != null
+                && animation.getAnimationStages().size() == 1
+                && "idle".equals(animation.getAnimationStages().getFirst().animationName());
     }
 
     private static boolean hasAnimation(RawAnimation animation, String animationName) {
