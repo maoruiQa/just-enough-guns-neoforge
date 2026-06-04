@@ -58,6 +58,11 @@ Behavior wired so far:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
   - These pseudo attachments intentionally have no `AttachmentModifiers`; they affect systems that check slot presence or the stored stack directly.
+- Sword bayonet sprint-charge behavior is partially wired:
+  - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
+  - Charge damage uses the installed sword's attack damage plus Sharpness.
+  - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
+  - Successful charge hits damage the stored bayonet stack by 8 and clear the barrel slot when the sword breaks.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.
 - Damage multipliers are applied to spawned bullet damage.
@@ -127,7 +132,7 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla `spyglass` scope attachment rendering is not ported yet; current scope rendering is still limited to registered Geo scope attachment items.
-  - Vanilla sword bayonet rendering, sprint-stab behavior, and bayonet durability behavior are not ported yet.
+  - Vanilla sword bayonet rendering and melee-key sweep behavior are not ported yet.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 

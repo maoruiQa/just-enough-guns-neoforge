@@ -58,6 +58,18 @@ public final class GunAttachments {
                 .map(ItemStack::new);
     }
 
+    public static void updateStoredStack(ItemStack gunStack, AttachmentType type, ItemStack attachmentStack) {
+        if (attachmentStack.isEmpty()) {
+            clear(gunStack, type);
+            return;
+        }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(attachmentStack.getItem());
+        if (id != null) {
+            gunStack.set(component(type), id.toString());
+            gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
+        }
+    }
+
     public static Optional<AttachmentItem> item(ItemStack gunStack, AttachmentType type) {
         return stack(gunStack, type)
                 .map(ItemStack::getItem)

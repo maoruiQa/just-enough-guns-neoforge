@@ -1,20 +1,31 @@
 package ttv.migami.jeg.event;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -34,12 +45,18 @@ import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.particle.LaserOption;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AttachmentRuntimeEvents {
+    private static final long BAYONET_CHARGE_TICKS = 40L;
+    private static final double BAYONET_CHARGE_RANGE = 1.5D;
+    private static final double BAYONET_CHARGE_SWEEP_ANGLE = Math.toRadians(100.0D);
+    private static final int BAYONET_CHARGE_DAMAGE = 8;
     private static final double LASER_BEAM_START_OFFSET = 0.75D;
     private static final double LASER_BEAM_STEP = 0.4D;
+    private static final Map<UUID, Long> BAYONET_SPRINT_START_TICKS = new HashMap<>();
 
     private AttachmentRuntimeEvents() {
     }
@@ -53,11 +70,17 @@ public final class AttachmentRuntimeEvents {
         }
 
         ItemStack stack = player.getMainHandItem();
+
+        boolean refreshFlashlight = false;
+        if (stack.getItem() instanceof GunItem) {
+            tickBayonetCharge(player, stack);
+        } else {
+            BAYONET_SPRINT_START_TICKS.remove(player.getUUID());
+        }
         if (player.isSprinting() && !player.getCooldowns().isOnCooldown(stack.getItem())) {
             return;
         }
 
-        boolean refreshFlashlight = false;
         if (stack.getItem() instanceof GunItem) {
             if (GunAttachments.modifiers(stack).laserPointer()) {
                 tickLaserPointer(player);
@@ -71,6 +94,100 @@ public final class AttachmentRuntimeEvents {
         if (refreshFlashlight) {
             tickFlashlight(player);
         }
+    }
+
+    private static void tickBayonetCharge(Player player, ItemStack gunStack) {
+        UUID playerId = player.getUUID();
+        Optional<ItemStack> attachment = GunAttachments.stack(gunStack, AttachmentType.BARREL);
+        if (!player.isSprinting() || attachment.isEmpty() || !(attachment.get().getItem() instanceof SwordItem)) {
+            BAYONET_SPRINT_START_TICKS.remove(playerId);
+            return;
+        }
+
+        long gameTime = player.level().getGameTime();
+        BAYONET_SPRINT_START_TICKS.putIfAbsent(playerId, gameTime);
+        if (gameTime - BAYONET_SPRINT_START_TICKS.get(playerId) < BAYONET_CHARGE_TICKS) {
+            return;
+        }
+        if (player.getCooldowns().isOnCooldown(gunStack.getItem()) || player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+            return;
+        }
+
+        ItemStack bayonet = attachment.get();
+        float damage = bayonetDamage(player, bayonet);
+        if (bayonet.isDamageableItem() && bayonet.getDamageValue() >= bayonet.getMaxDamage() * 2 / 3) {
+            damage = 0.0F;
+        }
+
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 10, 0, false, false));
+        if (damage <= 0.0F) {
+            return;
+        }
+
+        AABB hitBox = player.getBoundingBox().inflate(BAYONET_CHARGE_RANGE);
+        boolean damaged = false;
+        int knockback = enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK);
+        int fireAspect = enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT);
+        int sweepingEdge = enchantmentLevel(player, bayonet, Enchantments.SWEEPING_EDGE);
+        for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> target != player && target.isAlive())) {
+            if (!isInBayonetArc(player, target)) {
+                continue;
+            }
+            if (target.hurt(player.damageSources().playerAttack(player), damage)) {
+                damaged = true;
+                Vec3 direction = target.position().subtract(player.position()).normalize();
+                target.push(direction.x * knockback, 0.5D, direction.z * knockback);
+                if (fireAspect > 0) {
+                    target.igniteForSeconds(2.0F * fireAspect);
+                }
+            }
+        }
+
+        if (damaged) {
+            if (sweepingEdge < 2) {
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
+            }
+            damageStoredBayonet(player, gunStack, bayonet);
+        }
+    }
+
+    private static boolean isInBayonetArc(Player player, LivingEntity target) {
+        Vec3 offset = target.position().subtract(player.position());
+        if (offset.lengthSqr() <= 0.0001D) {
+            return true;
+        }
+        return Math.acos(offset.normalize().dot(player.getLookAngle().normalize())) < BAYONET_CHARGE_SWEEP_ANGLE / 3.0D;
+    }
+
+    private static float bayonetDamage(Player player, ItemStack bayonet) {
+        double baseDamage = player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
+        if (bayonet.getItem() instanceof SwordItem swordItem) {
+            baseDamage = swordItem.getDefaultAttributeModifiers().modifiers().stream()
+                    .filter(entry -> entry.attribute().is(Attributes.ATTACK_DAMAGE))
+                    .mapToDouble(entry -> entry.modifier().amount())
+                    .sum();
+        }
+        return (float) (baseDamage + enchantmentLevel(player, bayonet, Enchantments.SHARPNESS));
+    }
+
+    private static void damageStoredBayonet(Player player, ItemStack gunStack, ItemStack bayonet) {
+        if (player.getAbilities().instabuild || !bayonet.isDamageableItem()) {
+            return;
+        }
+        int damage = bayonet.getDamageValue() + BAYONET_CHARGE_DAMAGE;
+        if (damage >= bayonet.getMaxDamage()) {
+            player.level().playSound(player, player.blockPosition(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+            GunAttachments.clear(gunStack, AttachmentType.BARREL);
+        } else {
+            bayonet.setDamageValue(damage);
+            GunAttachments.updateStoredStack(gunStack, AttachmentType.BARREL, bayonet);
+        }
+    }
+
+    private static int enchantmentLevel(Player player, ItemStack stack, net.minecraft.resources.ResourceKey<Enchantment> enchantment) {
+        HolderLookup.RegistryLookup<Enchantment> lookup = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        Optional<Holder.Reference<Enchantment>> holder = lookup.get(enchantment);
+        return holder.map(value -> EnchantmentHelper.getItemEnchantmentLevel(value, stack)).orElse(0);
     }
 
     private static void tickLaserPointer(Player player) {
