@@ -4,7 +4,9 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunDefinitions;
@@ -21,6 +23,13 @@ public final class ClientModSetup {
         }
         event.registerItem(new RepairToolClientExtensions(), ModItems.REPAIR_TOOL.get());
         event.registerItem(new VehicleAssemblingTableClientExtensions(), ModItems.VEHICLE_ASSEMBLING_TABLE.get());
+    }
+
+    @SubscribeEvent
+    public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
+        ModItems.ATTACHMENTS.values().forEach(holder ->
+                event.register((stack, tintIndex) -> tintIndex == 0 ? DyedItemColor.getOrDefault(stack, -1) : -1, holder.get())
+        );
     }
 
     @SubscribeEvent

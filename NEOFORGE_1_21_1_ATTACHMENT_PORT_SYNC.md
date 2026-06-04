@@ -59,6 +59,7 @@ Behavior wired so far:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.
   - `kill_effect`: registered kill-effect badges.
+- Functional attachment items are tagged as vanilla `minecraft:dyeable` and have a client item-color handler that reads `DataComponents.DYED_COLOR`, adapting Forge 1.20.1's `IColored` attachment item data semantics to NeoForge 1.21.1 components. Because attachment slots persist full `ItemStack`s, dyed attachment components are preserved when installed on guns.
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
@@ -156,7 +157,7 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla sword bayonet rendering is code-wired through the copied Forge assets, but needs runtime visual validation and positioning follow-up.
-- Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
+- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
@@ -177,4 +178,5 @@ Sync checklist for the other maintained branches:
 14. Port scope attachment model rendering with paint-job texture fallback, including the copied Forge spyglass pseudo-scope model asset.
 15. Port pseudo vanilla sword bayonet melee-key behavior with the dedicated melee payload.
 16. Copy vanilla sword bayonet Geo/texture assets, then add a dedicated bayonet render layer and runtime-validate its first-person/third-person positioning.
-17. Then expand remaining runtime modifier/render behavior.
+17. Add the vanilla `minecraft:dyeable` tag and item-color handler for functional attachment items so dyed attachment stacks survive menu install/removal.
+18. Then expand remaining runtime modifier/render behavior.

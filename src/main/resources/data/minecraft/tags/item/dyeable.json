@@ -1,0 +1,24 @@
+{
+  "replace": false,
+  "values": [
+    "jeg:reflex_sight",
+    "jeg:monocle_sight",
+    "jeg:holographic_sight",
+    "jeg:combat_scope",
+    "jeg:telescopic_sight",
+    "jeg:makeshift_stock",
+    "jeg:light_stock",
+    "jeg:tactical_stock",
+    "jeg:weighted_stock",
+    "jeg:silencer",
+    "jeg:explosive_muzzle",
+    "jeg:trumpet",
+    "jeg:light_grip",
+    "jeg:vertical_grip",
+    "jeg:angled_grip",
+    "jeg:extended_mag",
+    "jeg:drum_mag",
+    "jeg:flashlight",
+    "jeg:laser_pointer"
+  ]
+}
