@@ -162,14 +162,18 @@ Behavior wired so far:
   - Bullets carry the firing gun's `dye` cosmetic slot color when the gun is `flare_gun`.
   - Flare smoke uses `colored_flare_smoke` with the dye's firework RGB color when a dye is installed.
   - Flare guns without a dye keep the existing default red flare smoke.
+- Cosmetic item parity audit:
+  - Forge 1.20.1's active cosmetic attachment item set is mirrored: `classic_spray_can`, `toy_spray_can`, `whiteout_spray_can`, `golden_spray_can`, `creeper_birthday_party_badge`, `headpoppper_badge`, and `trickshot_badge`.
+  - The disabled Forge spray cans (`camo`, `scorched`, `anime`) remain unregistered in this port; matching resource leftovers are not active attachment items.
+  - Paint-job can and kill-effect badge tooltip/foil behavior matches the Forge 1.20.1 item classes.
 
 Still to port:
 
 - Remaining Forge attachment-screen layout polish that depends on Forge-only client config options such as button hiding/alignment.
-- Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Remaining pseudo vanilla attachment runtime/render behavior:
-  - Vanilla sword bayonet rendering is code-wired through the copied Forge assets, but needs runtime visual validation and positioning follow-up.
-- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, broader non-scope attachment paint-job rendering once non-scope positional models are ported, and runtime validation of kill-effect/dye visuals.
+- Runtime visual validation remains intentionally skipped for now per current task scope; smoke tests are the gate for these slices.
+- Remaining pseudo vanilla attachment render behavior:
+  - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
+- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
