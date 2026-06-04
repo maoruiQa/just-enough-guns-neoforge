@@ -2,9 +2,12 @@ package ttv.migami.jeg.item.attachment;
 
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -14,14 +17,18 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpyglassItem;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.AttachmentItem;
 import ttv.migami.jeg.item.GunItem;
-import ttv.migami.jeg.Reference;
 
 public final class GunAttachments {
     public static final int FLASHLIGHT_MAX_BATTERY = 600;
+    private static final ResourceLocation EXPLOSIVE_MUZZLE = Reference.id("explosive_muzzle");
     private static final ResourceLocation MAKESHIFT_STOCK = Reference.id("makeshift_stock");
     private static final Set<ResourceLocation> MAKESHIFT_STOCK_GUNS = Set.of(
             Reference.id("assault_rifle"),
@@ -259,6 +266,17 @@ public final class GunAttachments {
         return gunStack.getItem() instanceof GunItem gun && MAKESHIFT_STOCK_GUNS.contains(gun.getStats().id());
     }
 
+    private static boolean isExplosiveMuzzle(ItemStack stack) {
+        return EXPLOSIVE_MUZZLE.equals(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+    }
+
+    private static boolean hasMending(Player player, ItemStack stack) {
+        HolderLookup.RegistryLookup<Enchantment> lookup = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        return lookup.get(Enchantments.MENDING)
+                .map((Holder.Reference<Enchantment> holder) -> EnchantmentHelper.getItemEnchantmentLevel(holder, stack) > 0)
+                .orElse(false);
+    }
+
     public static void clear(ItemStack gunStack, AttachmentType type) {
         gunStack.remove(component(type));
         gunStack.remove(stackComponent(type));
@@ -328,6 +346,9 @@ public final class GunAttachments {
         if (player.getAbilities().instabuild) {
             return;
         }
+        if (hasMending(player, gunStack)) {
+            return;
+        }
         damageOnShot(gunStack, AttachmentType.SCOPE, level, player);
         damageOnShot(gunStack, AttachmentType.BARREL, level, player);
         damageOnShot(gunStack, AttachmentType.STOCK, level, player);
@@ -348,6 +369,9 @@ public final class GunAttachments {
         }
         if (!attachmentStack.isDamageableItem()) {
             removeDamage(gunStack, type);
+            return;
+        }
+        if (hasMending(player, attachmentStack) && !isExplosiveMuzzle(attachmentStack)) {
             return;
         }
 

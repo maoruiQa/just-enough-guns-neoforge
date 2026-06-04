@@ -129,6 +129,7 @@ Behavior wired so far:
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
   - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack for legacy compatibility.
   - Firing damages those installed attachments by 1 per shot and writes the updated damage back to the stored attachment `ItemStack`.
+  - Forge's Mending gates are preserved: a Mending gun skips attachment wear entirely, and Mending attachments skip wear except for the Forge `explosive_muzzle` barrel exception.
   - When an attachment reaches its registered max damage, the slot is cleared, `item_break` plays, and `chat.jeg.attachment_broke` is shown.
   - The integer damage component is still read as a fallback for guns written before full attachment stack storage existed.
 - Trumpet barrel attachment soundwave behavior is partially wired:
