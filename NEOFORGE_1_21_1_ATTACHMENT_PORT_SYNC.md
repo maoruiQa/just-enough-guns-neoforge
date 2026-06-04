@@ -78,6 +78,7 @@ Behavior wired so far:
 - Magazine capacity modifiers are applied to loaded gun capacity, reload limits, tooltips, and the ammo HUD:
   - `extended_mag` uses Forge parity behavior: +50% capacity, with `infantry_rifle` forced to 20.
   - `drum_mag` uses Forge parity behavior: +100% capacity, with `infantry_rifle` forced to 40.
+  - The separate NeoForge loaded `MagazineItem` ammo containers keep their existing fixed capacities and do not need extended/drum variants. When a gun has a magazine attachment installed, reloads use the Forge-style loose-ammo path so the gun can fill to the attachment-modified capacity; guns without a magazine attachment keep the existing NeoForge magazine-swap reload path and HUD reserve display.
 - Barrel attachment fire side effects are partially wired:
   - `trumpet` plays `item.doot` after firing.
   - `explosive_muzzle` plays the fire-charge sound after firing and consumes 5 gun durability per shot.
@@ -155,7 +156,6 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla sword bayonet rendering is code-wired through the copied Forge assets, but needs runtime visual validation and positioning follow-up.
-- Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:

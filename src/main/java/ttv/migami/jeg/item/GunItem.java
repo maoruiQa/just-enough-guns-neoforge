@@ -227,6 +227,10 @@ public class GunItem extends Item {
                 && (isThirtyRoundRifle() || isCustomSmg() || isMagazineSwapPistol() || isMagazineSwapShotgun() || isMachineGunMagazineSwap());
     }
 
+    public boolean usesMagazineSwapReload(ItemStack stack) {
+        return usesMagazineSwapReload() && !hasMagazineAttachment(stack);
+    }
+
     public boolean usesLegacyLoadedReload() {
         return usesLoadedAmmo() && !usesMagazineSwapReload();
     }
@@ -250,6 +254,10 @@ public class GunItem extends Item {
 
     private boolean isMachineGunMagazineSwap() {
         return "light_machine_gun".equals(stats.id().getPath()) && stats.magazineSize() == 150;
+    }
+
+    private static boolean hasMagazineAttachment(ItemStack stack) {
+        return GunAttachments.id(stack, AttachmentType.MAGAZINE).isPresent();
     }
 
     private int getAmmo(ItemStack stack) {
@@ -1472,7 +1480,7 @@ public class GunItem extends Item {
             return false;
         }
 
-        if (usesMagazineSwapReload()) {
+        if (usesMagazineSwapReload(stack)) {
             return tryReloadWithMagazineSwap(level, player, stack, notify);
         }
         return tryReloadWithLooseAmmo(level, player, stack, notify);
@@ -1495,7 +1503,7 @@ public class GunItem extends Item {
             return true;
         }
 
-        MagazineInventoryScan scan = scanCompatibleMagazines(player);
+        MagazineInventoryScan scan = scanCompatibleMagazines(player, stack);
         if (scan.bestMagazineSlot() < 0) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
@@ -1573,10 +1581,17 @@ public class GunItem extends Item {
         }
     }
 
+    private MagazineInventoryScan scanCompatibleMagazines(Player player, ItemStack stack) {
+        if (!usesMagazineSwapReload(stack)) {
+            return new MagazineInventoryScan(0, 0, -1);
+        }
+        return scanCompatibleMagazines(player);
+    }
+
     private MagazineInventoryScan scanCompatibleMagazines(Player player) {
         MagazineItem compatibleMagazine = getCompatibleMagazineItem();
         ResourceLocation ammoId = getCompatibleAmmoId();
-        if (!usesMagazineSwapReload() || compatibleMagazine == null || ammoId == null) {
+        if (compatibleMagazine == null || ammoId == null) {
             return new MagazineInventoryScan(0, 0, -1);
         }
 
@@ -1617,6 +1632,19 @@ public class GunItem extends Item {
         if (!usesMagazineSwapReload()) {
             return null;
         }
+        return getCompatibleMagazineItemUnchecked();
+    }
+
+    @Nullable
+    private MagazineItem getCompatibleMagazineItem(ItemStack stack) {
+        if (!usesMagazineSwapReload(stack)) {
+            return null;
+        }
+        return getCompatibleMagazineItemUnchecked();
+    }
+
+    @Nullable
+    private MagazineItem getCompatibleMagazineItemUnchecked() {
         if (isThirtyRoundRifle()) {
             return ModItems.RIFLE_MAGAZINE.get();
         }
@@ -1645,7 +1673,7 @@ public class GunItem extends Item {
     }
 
     private ItemStack createStoredMagazineStack(int ammoCount) {
-        MagazineItem compatibleMagazine = getCompatibleMagazineItem();
+        MagazineItem compatibleMagazine = getCompatibleMagazineItemUnchecked();
         if (compatibleMagazine == null) {
             return ItemStack.EMPTY;
         }

@@ -56,7 +56,7 @@ public final class ClientHudRenderer {
     private static HudData buildGunHud(LocalPlayer player, ItemStack stack, GunItem gun) {
         int current = gun.usesLoadedAmmo() ? gun.getMagazineAmmo(stack) : gun.countInventoryAmmo(player);
         String reserveText;
-        if (gun.usesMagazineSwapReload()) {
+        if (gun.usesMagazineSwapReload(stack)) {
             GunItem.MagazineInventorySummary summary = gun.getMagazineInventorySummary(player);
             reserveText = player.getAbilities().instabuild ? "INF MAG" : formatMagazineReserve(summary.loadedMagazineCount());
         } else {
