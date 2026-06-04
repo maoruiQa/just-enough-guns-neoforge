@@ -30,6 +30,7 @@ Current NeoForge 1.21.1 foundation:
   - `gun_flashlight_battery`
 - `GunAttachments` is the canonical read/write helper. Future UI, renderer, and gameplay code should use it instead of adding ad-hoc tags.
 - `GunAttachmentRules` is the current per-gun support matrix for slot validation. It mirrors Forge 1.20.1's generated `data/jeg/guns/*.json` `modules.attachments` slot presence, with `phantom_smg` treated like its NeoForge-local `custom_smg` source because Forge 1.20.1 has no `phantom_smg` gun JSON.
+- Static attachment-rule audit: all 32 current NeoForge `GunDefinitions.ALL` gun ids have a Forge 1.20.1 generated gun JSON source, using the intentional `phantom_smg` -> `custom_smg` mapping. The six functional slot rules in `GunAttachmentRules` match Forge `modules.attachments` presence for every current gun, with no extra NeoForge rule entries.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
