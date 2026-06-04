@@ -136,6 +136,8 @@ public class GunItem extends Item {
     private static final Map<Integer, Integer> OVERHEAT_PENDING_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_COOL_NUMERATOR = new HashMap<>();
     private static final Map<UUID, PendingReload> PENDING_RELOADS = new HashMap<>();
+    private static final Map<UUID, HeldGunState> HELD_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, HeldGunState> CLIENT_RELOAD_VISUAL_STATES = new HashMap<>();
     private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
     private static final Set<String> SHOTGUN_IDS = Set.of(
             "double_barrel_shotgun",
@@ -212,6 +214,12 @@ public class GunItem extends Item {
     private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot) {}
 
     private record PendingReload(InteractionHand hand, int selectedSlot, ItemStack stackSnapshot) {}
+
+    private record HeldGunState(InteractionHand hand, int selectedSlot, int inventorySlot, int stackIdentity) {
+        private boolean matchesStack(ItemStack stack, int slot) {
+            return this.inventorySlot == slot && this.stackIdentity == System.identityHashCode(stack);
+        }
+    }
 
     public GunItem(Properties properties, GunStats stats) {
         super(properties);
@@ -2079,15 +2087,22 @@ public class GunItem extends Item {
         }
     }
 
-    private void updateDrawState(ItemStack stack, boolean held) {
-        if (!held) {
+    private void updateDrawState(Player player, ItemStack stack, int slot, boolean selected, boolean held) {
+        UUID playerId = player.getUUID();
+        HeldGunState currentState = held ? heldGunState(player, stack, slot, selected) : null;
+        if (currentState == null) {
             clearDrawState(stack);
+            forgetHeldGunState(HELD_DRAW_STATES, playerId, stack, slot);
             return;
         }
         if (isReloading(stack)) {
+            HELD_DRAW_STATES.put(playerId, currentState);
             return;
         }
-        if (!stack.has(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get())) {
+
+        HeldGunState previousState = HELD_DRAW_STATES.get(playerId);
+        if (!currentState.equals(previousState) || !stack.has(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get())) {
+            HELD_DRAW_STATES.put(playerId, currentState);
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
             return;
         }
@@ -2095,6 +2110,60 @@ public class GunItem extends Item {
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
         if (remainingTicks > 0) {
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), remainingTicks - 1);
+        }
+    }
+
+    private void updateClientReloadVisualState(Player player, ItemStack stack, int slot, boolean selected, boolean held) {
+        UUID playerId = player.getUUID();
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack, slot);
+            return;
+        }
+
+        HeldGunState currentState = held ? heldGunState(player, stack, slot, selected) : null;
+        if (currentState == null) {
+            clearReloadVisualState(stack);
+            forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack, slot);
+            return;
+        }
+
+        HeldGunState previousState = CLIENT_RELOAD_VISUAL_STATES.get(playerId);
+        if (previousState == null) {
+            CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
+            return;
+        }
+        if (!currentState.equals(previousState) && currentState.stackIdentity() == previousState.stackIdentity()) {
+            clearReloadVisualState(stack);
+            CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
+            return;
+        }
+        CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
+    }
+
+    private static HeldGunState heldGunState(Player player, ItemStack stack, int slot, boolean selected) {
+        InteractionHand hand = heldHand(player, stack, selected);
+        if (hand == null) {
+            return null;
+        }
+        int selectedSlot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : -1;
+        return new HeldGunState(hand, selectedSlot, slot, System.identityHashCode(stack));
+    }
+
+    private static InteractionHand heldHand(Player player, ItemStack stack, boolean selected) {
+        if (stack == player.getOffhandItem()) {
+            return InteractionHand.OFF_HAND;
+        }
+        if (selected || stack == player.getMainHandItem()) {
+            return InteractionHand.MAIN_HAND;
+        }
+        return null;
+    }
+
+    private static void forgetHeldGunState(Map<UUID, HeldGunState> states, UUID playerId, ItemStack stack, int slot) {
+        HeldGunState previousState = states.get(playerId);
+        if (previousState != null && previousState.matchesStack(stack, slot)) {
+            states.remove(playerId);
         }
     }
 
@@ -2157,10 +2226,14 @@ public class GunItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, level, entity, slot, selected);
-        if (!level.isClientSide() && entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
+        if (entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
             boolean held = selected || stack == player.getMainHandItem() || stack == player.getOffhandItem();
-            updateDrawState(stack, held);
-            updateReloadVisualState(level, player, stack, held);
+            if (level.isClientSide()) {
+                updateClientReloadVisualState(player, stack, slot, selected, held);
+            } else {
+                updateDrawState(player, stack, slot, selected, held);
+                updateReloadVisualState(level, player, stack, held);
+            }
         }
         if (level.isClientSide() || !usesOverheatMechanic()) {
             return;

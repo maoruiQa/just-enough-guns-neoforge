@@ -46,7 +46,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation RELOAD_STOP = RawAnimation.begin().then(ANIM_RELOAD_STOP, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, Animation.LoopType.HOLD_ON_LAST_FRAME);
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
-    private static final long CLIENT_RELOAD_COMPONENT_GRACE_NANOS = 250_000_000L;
     private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -55,9 +54,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientShootStack = ItemStack.EMPTY;
     private static boolean clientShootAiming;
     private static long clientShootTriggerDeadlineNanos;
-    private static ItemStack clientReloadStack = ItemStack.EMPTY;
-    private static RawAnimation clientReloadAnimation;
-    private static long clientReloadAnimationDeadlineNanos;
     private static ItemStack clientDrawStack = ItemStack.EMPTY;
     private static long clientDrawAnimationDeadlineNanos;
 
@@ -87,6 +83,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private PlayState animationPredicate(AnimationState<AnimatedGunItem> state) {
         ItemStack stack = state.getData(DataTickets.ITEMSTACK);
         if (isNonFirstPersonPerspective(state)) {
+            return PlayState.STOP;
+        }
+        if (stopInterruptedReloadAnimation(state.getController(), stack)) {
             return PlayState.STOP;
         }
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
@@ -156,7 +155,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         if (remainingTicks <= 0) {
-            return recentReloadAnimationFor(stack);
+            return null;
         }
 
         int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
@@ -166,7 +165,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             case RELOAD_STAGE_STOP -> RELOAD_STOP;
             default -> RELOAD;
         };
-        rememberReloadAnimation(stack, animation);
         return animation;
     }
 
@@ -178,7 +176,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         if (remainingTicks <= 0) {
-            return recentReloadAnimationFor(stack) != null;
+            controller.forceAnimationReset();
+            controller.stop();
+            return false;
         }
 
         int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
@@ -188,6 +188,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             case RELOAD_STAGE_STOP -> hasAnimation(current, ANIM_RELOAD_STOP);
             default -> hasAnimation(current, ANIM_RELOAD);
         };
+    }
+
+    private static boolean stopInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
+            return false;
+        }
+        if (stack != null && !stack.isEmpty()
+                && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            return false;
+        }
+        controller.forceAnimationReset();
+        controller.stop();
+        return true;
     }
 
     private static boolean isReloadAnimation(RawAnimation animation) {
@@ -212,29 +225,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                     }
                     return false;
                 });
-    }
-
-    private static void rememberReloadAnimation(ItemStack stack, RawAnimation animation) {
-        clientReloadStack = stack.copy();
-        clientReloadAnimation = animation;
-        clientReloadAnimationDeadlineNanos = System.nanoTime() + CLIENT_RELOAD_COMPONENT_GRACE_NANOS;
-    }
-
-    private static RawAnimation recentReloadAnimationFor(ItemStack stack) {
-        if (clientReloadAnimation == null || System.nanoTime() > clientReloadAnimationDeadlineNanos) {
-            clearRecentReloadAnimation();
-            return null;
-        }
-        if (!matchesHeldStack(stack, clientReloadStack)) {
-            return null;
-        }
-        return clientReloadAnimation;
-    }
-
-    private static void clearRecentReloadAnimation() {
-        clientReloadStack = ItemStack.EMPTY;
-        clientReloadAnimation = null;
-        clientReloadAnimationDeadlineNanos = 0L;
     }
 
     private static boolean shouldContinueDrawAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {

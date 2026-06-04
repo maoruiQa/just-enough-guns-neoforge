@@ -17,7 +17,7 @@ public final class GunAttachmentTransforms {
             entry("bolt_action_rifle", scope(0.0D, 5.0D, -4.4D), barrel(0.0D, 4.905D, -14.5D), special(-1.0D, 4.0D, -7.0D)),
             entry("burst_rifle", scope(0.0D, 5.73D, 5.4D), barrel(0.0D, 4.34D, -5.5D), stock(0.0D, 3.0D, 8.1D), underBarrel(0.0D, 2.975D, -0.78D), special(-1.2D, 4.335D, -2.0D)),
             entry("combat_pistol", barrel(0.0D, 5.5D, -3.2D), special(-0.8D, 5.2D, 0.0D)),
-            entry("combat_rifle", scope(0.0D, 5.885D, 4.8D), barrel(0.0D, 4.585D, -7.855D), stock(0.0D, 6.0D, 8.1D), underBarrel(0.0D, 0.0D, 0.0D), special(-1.2D, 4.63D, -1.8D)),
+            entry("combat_rifle", scope(0.0D, 5.885D, 4.8D), barrel(0.0D, 4.585D, -7.855D), stock(0.0D, 3.0D, 8.1D), underBarrel(0.0D, 0.0D, 0.0D), special(-1.2D, 4.63D, -1.8D)),
             entry("custom_smg", barrel(0.0D, 4.475D, -1.2D), special(-0.8D, 3.8D, 0.0D)),
             entry("grenade_launcher", scope(0.0D, 4.5D, 0.0D), underBarrel(0.0D, 2.5D, -2.5D)),
             entry("hollenfire_mk2", scope(0.0D, 5.305D, 4.5D), stock(0.0D, 3.0D, 8.1D), underBarrel(0.0D, 2.725D, -1.0D), special(-1.9D, 4.7D, -4.0D)),
