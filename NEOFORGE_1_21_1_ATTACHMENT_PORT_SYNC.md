@@ -72,6 +72,7 @@ Behavior wired so far:
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.
 - Damage multipliers are applied to spawned bullet damage.
+  - Bullet creation for held-gun firing now goes through `GunItem.createBullet`, so player, gunner, phantom, and legacy `GunAttackGoal` gunfire share the same damage, explosive-ammo, kill-effect, and flare-dye attachment state propagation. Vehicle-mounted weapons still construct bullets from vehicle weapon data because they do not have a gun `ItemStack` attachment context.
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
 - Recoil/kick multipliers are applied to local visual recoil and heavy-gun backstep.
 - Scope FOV modifiers affect ADS FOV, and ADS speed multipliers affect client aim-in/aim-out progress.
@@ -141,7 +142,7 @@ Behavior wired so far:
   - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.
   - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated vanilla sword barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
   - Bayonet rendering still needs runtime visual validation across first-person and third-person contexts before broader non-scope attachment rendering is attempted.
-- Kill-effect badges are partially wired for player-fired bullets:
+- Kill-effect badges are partially wired for held-gun bullets:
   - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
   - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
   - Headshot kills with `headpoppper_badge` apply the `popped` kill effect, which emits popcorn particles and beehive pop sounds while ticking.

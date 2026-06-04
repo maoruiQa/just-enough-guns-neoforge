@@ -1103,9 +1103,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
-                GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
-                applyFlareDye(stack, stats, bullet);
+                BulletEntity bullet = createBullet(level, shooter, stack, stats, velocity);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1160,9 +1158,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity, damage, modifiers.explosiveAmmo());
-                GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
-                applyFlareDye(stack, stats, bullet);
+                BulletEntity bullet = createBullet(level, shooter, stack, stats, velocity);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -1178,6 +1174,21 @@ public class GunItem extends Item {
                 // Disabling shoot trigger avoids intermittent invisibility caused by per-shot animated state.
             }
         }
+    }
+
+    public static BulletEntity createBullet(Level level, LivingEntity shooter, ItemStack stack, GunStats stats, Vec3 velocity) {
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        BulletEntity bullet = new BulletEntity(
+                level,
+                shooter,
+                stats,
+                velocity,
+                modifiedDamage(stats, modifiers),
+                modifiers.explosiveAmmo()
+        );
+        GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
+        applyFlareDye(stack, stats, bullet);
+        return bullet;
     }
 
     private static void applyFlareDye(ItemStack stack, GunStats stats, BulletEntity bullet) {

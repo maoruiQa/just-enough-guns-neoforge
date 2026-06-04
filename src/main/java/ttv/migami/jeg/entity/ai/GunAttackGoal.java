@@ -3077,7 +3077,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                     this.shooter.level().addFreshEntity(grenade);
                 } else {
                     Vec3 velocity = direction.scale(stats.projectileSpeed());
-                    BulletEntity bullet = new BulletEntity(this.shooter.level(), this.shooter, stats, velocity);
+                    BulletEntity bullet = GunItem.createBullet(this.shooter.level(), this.shooter, heldItem, stats, velocity);
                     bullet.initialisePosition(muzzle);
                     this.shooter.level().addFreshEntity(bullet);
                     if (this.shooter.level() instanceof ServerLevel serverLevel && GunItem.isBulletClassWeapon(stats.id())) {
