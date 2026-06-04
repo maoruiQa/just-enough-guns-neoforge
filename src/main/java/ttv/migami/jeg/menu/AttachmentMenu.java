@@ -1,5 +1,8 @@
 package ttv.migami.jeg.menu;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -9,6 +12,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModMenuTypes;
@@ -162,6 +168,12 @@ public final class AttachmentMenu extends AbstractContainerMenu {
         }
 
         @Override
+        public boolean mayPickup(@NotNull Player player) {
+            ItemStack stack = this.getItem();
+            return (stack.isEmpty() || player.getAbilities().instabuild || !hasBindingCurse(player, stack)) && super.mayPickup(player);
+        }
+
+        @Override
         public void setChanged() {
             super.setChanged();
             if (!this.player.level().isClientSide()) {
@@ -170,6 +182,13 @@ public final class AttachmentMenu extends AbstractContainerMenu {
                     this.player.level().playSound(null, this.player.getX(), this.player.getY() + 1.0D, this.player.getZ(), holder.get(), SoundSource.PLAYERS, 0.5F, this.hasItem() ? 1.0F : 0.75F);
                 }
             }
+        }
+
+        private static boolean hasBindingCurse(Player player, ItemStack stack) {
+            HolderLookup.RegistryLookup<Enchantment> lookup = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            return lookup.get(Enchantments.BINDING_CURSE)
+                    .map((Holder.Reference<Enchantment> holder) -> EnchantmentHelper.getItemEnchantmentLevel(holder, stack) > 0)
+                    .orElse(false);
         }
     }
 

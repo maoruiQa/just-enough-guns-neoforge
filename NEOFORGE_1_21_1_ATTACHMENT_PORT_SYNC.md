@@ -46,6 +46,7 @@ Behavior wired so far:
 - A barrel slot `silencer` switches gunfire to the gun's silenced fire sound when available.
 - Pressing `key.jeg.attachments` opens a usable attachment menu while a gun is held in the main hand.
 - The menu now exposes the Forge slot shape: six functional slots plus cosmetic `paint_job`, `dye`, and `kill_effect` slots.
+- Attachment slots now preserve Forge's pickup rule for binding-curse attachments: non-creative players cannot remove a bound attachment from a gun.
 - Empty attachment slots now draw the Forge icon strip, inactive slots draw a cross, and dragging an incompatible item over an empty attachment slot shows the Forge incompatibility tooltip.
 - The attachment screen closes when the selected main-hand item stops being a gun, matching the Forge screen lifetime behavior.
 - The attachment screen renders the held gun preview and gun name above the main panel.
@@ -162,6 +163,7 @@ Sync checklist for the other maintained branches:
 5. Rewire bolt-action scoped ADS to read the stack's scope slot instead of a global flag.
 6. Rewire silencer sound behavior through the barrel slot.
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
+   - Include Forge's binding-curse pickup lock on attachment slots.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
