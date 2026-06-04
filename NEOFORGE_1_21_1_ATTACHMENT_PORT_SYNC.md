@@ -129,6 +129,10 @@ Behavior wired so far:
   - Vanilla `spyglass` scope attachments render the vanilla spyglass overlay while aiming; bolt-action rifle scoped ADS keeps using the existing JEG long-scope overlay.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
+- Vanilla sword bayonet render assets are staged:
+  - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
+  - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.
+  - Runtime bayonet rendering still needs a safe non-scope positioning layer; the current `attachment_bone` path remains scope-oriented.
 - Kill-effect badges are partially wired for player-fired bullets:
   - Bullets carry the firing gun's `kill_effect` cosmetic slot id.
   - Headshot kills with `creeper_birthday_party_badge` spawn confetti/explosion particles and play `item.kill_effect.birthday_party`.
@@ -144,7 +148,7 @@ Still to port:
 - Remaining Forge attachment-screen layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
-  - Vanilla sword bayonet rendering is not ported yet.
+  - Vanilla sword bayonet rendering is not ported yet; assets are present, but the render positioning layer is still missing.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
@@ -165,4 +169,5 @@ Sync checklist for the other maintained branches:
 13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
 14. Port scope attachment model rendering with paint-job texture fallback, including the copied Forge spyglass pseudo-scope model asset.
 15. Port pseudo vanilla sword bayonet melee-key behavior with the dedicated melee payload.
-16. Then expand remaining runtime modifier/render behavior.
+16. Copy vanilla sword bayonet Geo/texture assets, then add a safe non-scope positioning layer before enabling runtime bayonet rendering.
+17. Then expand remaining runtime modifier/render behavior.
