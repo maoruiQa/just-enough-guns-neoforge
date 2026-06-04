@@ -2148,7 +2148,7 @@ public class GunItem extends Item {
         stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
         HELD_DRAW_STATES.remove(player.getUUID());
         if (stack.getItem() instanceof AnimatedGunItem) {
-            AnimatedGunItem.clearRecentDrawAnimation();
+            AnimatedGunItem.restartDrawAnimation(stack);
         }
     }
 
