@@ -53,6 +53,9 @@ Behavior wired so far:
 - The attachment screen closes when the selected main-hand item stops being a gun, matching the Forge screen lifetime behavior.
 - The attachment screen renders the held gun preview and gun name above the main panel.
 - The attachment screen now renders the Forge mini config button. It opens a registered NeoForge `IConfigScreenFactory` screen when available, otherwise it shows the existing Forge-style "Install Configured" chat hint.
+- The attachment screen now adapts Forge's client-side config-button polish as NeoForge client config keys:
+  - `rendering.hideAttachmentConfigButton` hides the config button.
+  - `rendering.attachmentButtonAlignment` accepts `left` or `right` and positions the config button with the same Forge title-width/right-edge formulas.
 - The attachment screen now renders the Forge medal toggle button, sends a server-authoritative toggle payload, and stores the gun's kill-medal toggle in the synced `gun_medals_enabled` component.
   - Forge's global medal-disable behavior is adapted as the persistent server config `ui.hideMedals`, exposed through `/justEnoughGuns config ui hideMedals` and synced to clients with the existing UI config payload; when enabled, the attachment-screen medal button shows the disabled tooltip and ignores clicks.
 - Cosmetic slots now accept and persist their matching items:
@@ -177,7 +180,6 @@ Behavior wired so far:
 
 Still to port:
 
-- Remaining Forge attachment-screen layout polish that depends on Forge-only client config options such as button hiding/alignment.
 - Runtime visual validation remains intentionally skipped for now per current task scope; smoke tests are the gate for these slices.
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
@@ -194,6 +196,7 @@ Sync checklist for the other maintained branches:
 6. Rewire silencer sound behavior through the barrel slot.
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
    - Include Forge's binding-curse enchantment support for attachment items and pickup lock on attachment slots.
+   - Include the attachment-screen config button's hide/alignment client config equivalents if the target branch has a client config surface.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
    - Preserve the current NeoForge caveat unless the target branch has matching systems: no global low-durability jamming system, and `explosive_muzzle`'s Forge jamming implication is represented through the already-ported 5 durability damage per shot.
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.

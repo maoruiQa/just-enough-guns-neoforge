@@ -22,6 +22,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue SHOW_HITMARKER;
     public static final ModConfigSpec.ConfigValue<String> DYNAMIC_CROSSHAIR_DOT_MODE;
     public static final ModConfigSpec.DoubleValue DYNAMIC_CROSSHAIR_DOT_THRESHOLD;
+    public static final ModConfigSpec.BooleanValue HIDE_ATTACHMENT_CONFIG_BUTTON;
+    public static final ModConfigSpec.ConfigValue<String> ATTACHMENT_BUTTON_ALIGNMENT;
 
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
@@ -120,6 +122,12 @@ public final class Config {
         DYNAMIC_CROSSHAIR_DOT_THRESHOLD = clientBuilder
                 .comment("Spread threshold where the dynamic crosshair center dot is shown.")
                 .defineInRange("dynamicCrosshairDotThreshold", 0.8D, 0.0D, 90.0D);
+        HIDE_ATTACHMENT_CONFIG_BUTTON = clientBuilder
+                .comment("If true, hide the config button on the attachment screen.")
+                .define("hideAttachmentConfigButton", false);
+        ATTACHMENT_BUTTON_ALIGNMENT = clientBuilder
+                .comment("Attachment-screen button alignment: left or right.")
+                .define("attachmentButtonAlignment", "right");
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
@@ -883,6 +891,14 @@ public final class Config {
 
     public static double dynamicCrosshairDotThreshold() {
         return Mth.clamp(DYNAMIC_CROSSHAIR_DOT_THRESHOLD.get(), 0.0D, 90.0D);
+    }
+
+    public static boolean hideAttachmentConfigButton() {
+        return HIDE_ATTACHMENT_CONFIG_BUTTON.get();
+    }
+
+    public static boolean leftAttachmentButtons() {
+        return "left".equalsIgnoreCase(ATTACHMENT_BUTTON_ALIGNMENT.get());
     }
 
     private static double clamp01(double value) {

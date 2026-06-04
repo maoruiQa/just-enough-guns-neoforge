@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.item.GunItem;
@@ -37,7 +38,6 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int SLOT_ICON_U = 176;
     private static final int DISABLED_SLOT_ICON_V = 0;
     private static final int SLOT_ICON_SIZE = 16;
-    private static final int CONFIG_BUTTON_X = 159;
     private static final int CONFIG_BUTTON_Y = 90;
     private static final int CONFIG_BUTTON_U = 192;
     private static final int CONFIG_BUTTON_V = 0;
@@ -158,7 +158,10 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     }
 
     private void renderConfigButton(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        int x = this.leftPos + CONFIG_BUTTON_X;
+        if (Config.hideAttachmentConfigButton()) {
+            return;
+        }
+        int x = this.configButtonX();
         int y = this.topPos + CONFIG_BUTTON_Y;
         guiGraphics.blit(TEXTURE, x, y, CONFIG_BUTTON_U, CONFIG_BUTTON_V, CONFIG_BUTTON_SIZE, CONFIG_BUTTON_SIZE);
         if (this.isMouseOverConfigButton(mouseX, mouseY)) {
@@ -167,15 +170,25 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     }
 
     private void renderConfigButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        if (this.isMouseOverConfigButton(mouseX, mouseY)) {
+        if (!Config.hideAttachmentConfigButton() && this.isMouseOverConfigButton(mouseX, mouseY)) {
             guiGraphics.renderComponentTooltip(this.font, List.of(Component.translatable("jeg.button.config.tooltip")), mouseX, mouseY);
         }
     }
 
     private boolean isMouseOverConfigButton(int mouseX, int mouseY) {
-        int x = this.leftPos + CONFIG_BUTTON_X;
+        if (Config.hideAttachmentConfigButton()) {
+            return false;
+        }
+        int x = this.configButtonX();
         int y = this.topPos + CONFIG_BUTTON_Y;
         return mouseX >= x && mouseX < x + CONFIG_BUTTON_SIZE && mouseY >= y && mouseY < y + CONFIG_BUTTON_SIZE;
+    }
+
+    private int configButtonX() {
+        if (Config.leftAttachmentButtons()) {
+            return this.leftPos + this.font.width(this.title) + 11;
+        }
+        return this.leftPos + this.imageWidth - 17;
     }
 
     private void openConfigScreen() {
