@@ -776,7 +776,7 @@ public class GunItem extends Item {
             player.getCooldowns().addCooldown(stack.getItem(), Math.max(1, stats.fireDelay()));
         }
 
-        playSound(level, player, fireSoundFor(stack));
+        playFireSound(level, player, stack, fireSoundFor(stack));
         playAttachmentFireSounds(level, player, stack);
         return true;
     }
@@ -1459,13 +1459,22 @@ public class GunItem extends Item {
     }
 
     private void playSound(Level level, LivingEntity shooter, Optional<SoundEvent> sound) {
+        playSound(level, shooter, sound, 7.5F);
+    }
+
+    private void playFireSound(Level level, LivingEntity shooter, ItemStack stack, Optional<SoundEvent> sound) {
+        float volume = (float) (7.5D * GunAttachments.modifiers(stack).fireSoundRadiusMultiplier());
+        playSound(level, shooter, sound, Math.max(0.0F, volume));
+    }
+
+    private void playSound(Level level, LivingEntity shooter, Optional<SoundEvent> sound, float volume) {
         SoundSource source = shooter instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
         double x = shooter.getX();
         double y = shooter.getY();
         double z = shooter.getZ();
         sound.ifPresentOrElse(
-                value -> level.playSound(null, x, y, z, value, source, 7.5F, 1.0F),
-                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, 7.5F, 1.1F)
+                value -> level.playSound(null, x, y, z, value, source, volume, 1.0F),
+                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, volume, 1.1F)
         );
     }
 

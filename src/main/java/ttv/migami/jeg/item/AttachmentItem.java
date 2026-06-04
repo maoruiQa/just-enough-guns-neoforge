@@ -42,6 +42,11 @@ public class AttachmentItem extends Item {
         if (this.modifiers.silenced()) {
             addPerk(perks, true, "perk.jeg.silenced.positive");
         }
+        if (this.modifiers.fireSoundRadiusMultiplier() < 1.0D) {
+            addPerk(perks, true, "perk.jeg.sound_radius.positive");
+        } else if (this.modifiers.fireSoundRadiusMultiplier() > 1.0D) {
+            addPerk(perks, false, "perk.jeg.sound_radius.negative");
+        }
         if (this.modifiers.explosiveAmmo()) {
             addPerk(perks, true, "perk.jeg.explosive_ammo.positive");
         }

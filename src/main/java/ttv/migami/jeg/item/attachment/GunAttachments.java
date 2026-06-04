@@ -107,6 +107,7 @@ public final class GunAttachments {
         float kickMultiplier = 1.0F;
         double adsSpeedMultiplier = 1.0D;
         double magazineCapacityMultiplier = 1.0D;
+        double fireSoundRadiusMultiplier = 1.0D;
         boolean silenced = false;
         boolean explosiveAmmo = false;
         boolean flashlight = false;
@@ -124,6 +125,7 @@ public final class GunAttachments {
             kickMultiplier *= modifier.kickMultiplier();
             adsSpeedMultiplier *= modifier.adsSpeedMultiplier();
             magazineCapacityMultiplier *= modifier.magazineCapacityMultiplier();
+            fireSoundRadiusMultiplier = Math.min(fireSoundRadiusMultiplier, modifier.fireSoundRadiusMultiplier());
             silenced |= modifier.silenced();
             explosiveAmmo |= modifier.explosiveAmmo();
             flashlight |= modifier.flashlight();
@@ -139,6 +141,7 @@ public final class GunAttachments {
                 kickMultiplier,
                 adsSpeedMultiplier,
                 magazineCapacityMultiplier,
+                fireSoundRadiusMultiplier,
                 silenced,
                 explosiveAmmo,
                 flashlight,

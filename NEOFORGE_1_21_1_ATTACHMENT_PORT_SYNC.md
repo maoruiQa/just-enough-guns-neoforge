@@ -63,9 +63,8 @@ Behavior wired so far:
 - Functional attachment items are tagged as vanilla `minecraft:dyeable` and have a client item-color handler that reads `DataComponents.DYED_COLOR`, adapting Forge 1.20.1's `IColored` attachment item data semantics to NeoForge 1.21.1 components. Because attachment slots persist full `ItemStack`s, dyed attachment components are preserved when installed on guns.
 - Functional attachment item tooltips now show Forge-style `Perks:` entries derived from the currently ported modifier fields, including silencer, explosive ammo, flashlight, laser pointer, trumpet, damage, spread, recoil/kick, and ADS speed effects.
 - Functional attachment modifier parity audit:
-  - Registered NeoForge modifier values match Forge 1.20.1's active `GunModifiers` for scope FOV, ADS speed, recoil/kick, spread, damage, silencer, explosive ammo, flashlight, laser pointer, trumpet, extended magazine, and drum magazine behavior.
+  - Registered NeoForge modifier values match Forge 1.20.1's active `GunModifiers` for scope FOV, ADS speed, recoil/kick, spread, damage, silencer, silencer fire sound radius, explosive ammo, flashlight, laser pointer, trumpet, extended magazine, and drum magazine behavior.
   - Forge's `INCREASED_JAMMING` marker on `explosive_muzzle` is not represented because this NeoForge branch has no active gun-jamming runtime system to wire it into.
-  - Forge's silencer also advertises reduced fire sound radius in tooltip logic; this NeoForge port currently switches to silenced fire sounds but does not model a separate attachment-controlled sound-radius modifier.
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
@@ -178,7 +177,7 @@ Still to port:
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
 - Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
-- Modifier details not yet represented as behavior: Forge `INCREASED_JAMMING` on `explosive_muzzle` and Forge's separate silencer fire sound radius reduction.
+- Modifier details not yet represented as behavior: Forge `INCREASED_JAMMING` on `explosive_muzzle`.
 
 Sync checklist for the other maintained branches:
 
@@ -191,7 +190,7 @@ Sync checklist for the other maintained branches:
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
    - Include Forge's binding-curse enchantment support for attachment items and pickup lock on attachment slots.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
-   - Preserve the current NeoForge caveats unless the target branch has matching systems: no jamming modifier without a jamming runtime, and no separate silencer sound-radius modifier unless the branch models fire sound radius.
+   - Preserve the current NeoForge caveat unless the target branch has matching systems: no jamming modifier without a jamming runtime.
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.

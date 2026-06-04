@@ -167,7 +167,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, AttachmentItem> SILENCER = registerAttachment(
             "silencer",
             AttachmentType.BARREL,
-            AttachmentModifiers.builder().silenced().build(),
+            AttachmentModifiers.builder().silenced().fireSoundRadiusMultiplier(0.25D).build(),
             baseProperties(Reference.id("silencer")).stacksTo(1).durability(500)
     );
     public static final DeferredHolder<Item, AttachmentItem> EXPLOSIVE_MUZZLE = registerAttachment(
