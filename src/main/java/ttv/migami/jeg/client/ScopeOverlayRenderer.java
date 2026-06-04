@@ -14,6 +14,7 @@ import ttv.migami.jeg.item.GunItem;
 
 public final class ScopeOverlayRenderer {
     private static final ResourceLocation SCOPE_OVERLAY = Reference.id("textures/scope_long_overlay.png");
+    private static final ResourceLocation SPYGLASS_OVERLAY = ResourceLocation.withDefaultNamespace("textures/misc/spyglass_scope.png");
     private static final ResourceLocation BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
     private static final int TEXTURE_SIZE = 256;
 
@@ -28,9 +29,7 @@ public final class ScopeOverlayRenderer {
         }
 
         ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem gun)
-                || !BOLT_ACTION_RIFLE.equals(gun.getStats().id())
-                || !GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
+        if (!(stack.getItem() instanceof GunItem gun) || !hasScopedOverlay(stack, gun)) {
             return;
         }
 
@@ -43,8 +42,16 @@ public final class ScopeOverlayRenderer {
         int height = minecraft.getWindow().getGuiScaledHeight();
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, Mth.clamp((ads - 0.5F) * 2.0F, 0.0F, 1.0F));
-        guiGraphics.blit(SCOPE_OVERLAY, 0, 0, width, height, 0.0F, 0.0F, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
+        ResourceLocation overlay = GunScopeSupport.hasSpyglassScope(stack) ? SPYGLASS_OVERLAY : SCOPE_OVERLAY;
+        guiGraphics.blit(overlay, 0, 0, width, height, 0.0F, 0.0F, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.defaultBlendFunc();
+    }
+
+    private static boolean hasScopedOverlay(ItemStack stack, GunItem gun) {
+        if (GunScopeSupport.hasSpyglassScope(stack)) {
+            return true;
+        }
+        return BOLT_ACTION_RIFLE.equals(gun.getStats().id()) && GunScopeSupport.isBoltActionRifleScopeEnabled(stack);
     }
 }

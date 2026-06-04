@@ -19,6 +19,10 @@ import ttv.migami.jeg.item.AttachmentItem;
 
 public final class GunAttachments {
     public static final int FLASHLIGHT_MAX_BATTERY = 600;
+    private static final AttachmentModifiers SPYGLASS_SCOPE_MODIFIERS = AttachmentModifiers.builder()
+            .aimFovModifier(0.2F)
+            .adsSpeedMultiplier(0.76D)
+            .build();
 
     private GunAttachments() {
     }
@@ -85,7 +89,14 @@ public final class GunAttachments {
     }
 
     public static AttachmentModifiers modifiers(ItemStack gunStack, AttachmentType type) {
-        return item(gunStack, type).map(AttachmentItem::modifiers).orElse(AttachmentModifiers.NONE);
+        Optional<AttachmentItem> attachment = item(gunStack, type);
+        if (attachment.isPresent()) {
+            return attachment.get().modifiers();
+        }
+        if (type == AttachmentType.SCOPE && stack(gunStack, type).map(ItemStack::getItem).filter(SpyglassItem.class::isInstance).isPresent()) {
+            return SPYGLASS_SCOPE_MODIFIERS;
+        }
+        return AttachmentModifiers.NONE;
     }
 
     public static AttachmentModifiers modifiers(ItemStack gunStack) {

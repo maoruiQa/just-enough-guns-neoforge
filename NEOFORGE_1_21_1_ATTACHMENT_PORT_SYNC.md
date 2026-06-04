@@ -58,7 +58,7 @@ Behavior wired so far:
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
-  - These pseudo attachments intentionally have no `AttachmentModifiers`; they affect systems that check slot presence or the stored stack directly.
+  - Vanilla `spyglass` scope attachments provide Forge-style scope modifiers; vanilla sword bayonets affect systems that check the stored stack directly.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness.
@@ -70,6 +70,7 @@ Behavior wired so far:
 - Spread multipliers are applied to server projectile spread and the client dynamic crosshair.
 - Recoil/kick multipliers are applied to local visual recoil and heavy-gun backstep.
 - Scope FOV modifiers affect ADS FOV, and ADS speed multipliers affect client aim-in/aim-out progress.
+  - Vanilla `spyglass` scope attachments use Forge's pseudo-scope behavior: `0.2F` aim FOV modifier and slowest ADS speed.
 - Magazine capacity modifiers are applied to loaded gun capacity, reload limits, tooltips, and the ammo HUD:
   - `extended_mag` uses Forge parity behavior: +50% capacity, with `infantry_rifle` forced to 20.
   - `drum_mag` uses Forge parity behavior: +100% capacity, with `infantry_rifle` forced to 40.
@@ -125,6 +126,7 @@ Behavior wired so far:
   - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
+  - Vanilla `spyglass` scope attachments render the vanilla spyglass overlay while aiming; bolt-action rifle scoped ADS keeps using the existing JEG long-scope overlay.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Kill-effect badges are partially wired for player-fired bullets:
