@@ -138,7 +138,7 @@ public final class GunAttachmentVisibility {
 
     private static Boolean installedAttachmentVisibility(ResourceLocation gunId, ItemStack stack, String boneName) {
         if ("attachment_bone".equals(boneName)) {
-            return !(GunAttachments.has(stack, AttachmentType.SCOPE) || hasSwordBayonet(stack));
+            return !hasAttachmentBoneRenderPath(stack);
         }
         if (isScopeBone(boneName)) {
             return !GunAttachments.has(stack, AttachmentType.SCOPE);
@@ -147,7 +147,7 @@ public final class GunAttachmentVisibility {
             return GunAttachments.has(stack, AttachmentType.SCOPE);
         }
         if ("makeshift_stock".equals(boneName) && MAKESHIFT_STOCK_VISUAL_GUNS.contains(gunId)) {
-            return !GunAttachments.has(stack, AttachmentType.STOCK);
+            return !isInstalled(stack, AttachmentType.STOCK, "makeshift_stock");
         }
         if (isInstalled(stack, AttachmentType.STOCK, boneName)) {
             return false;
@@ -169,6 +169,14 @@ public final class GunAttachmentVisibility {
 
     private static boolean isScopeBone(String boneName) {
         return "attachment_bone".equals(boneName) || "scope".equals(boneName);
+    }
+
+    private static boolean hasAttachmentBoneRenderPath(ItemStack stack) {
+        return GunAttachments.has(stack, AttachmentType.SCOPE)
+                || GunAttachments.has(stack, AttachmentType.BARREL)
+                || GunAttachments.has(stack, AttachmentType.UNDER_BARREL)
+                || GunAttachments.has(stack, AttachmentType.SPECIAL)
+                || hasSwordBayonet(stack);
     }
 
     private static boolean hasSwordBayonet(ItemStack stack) {

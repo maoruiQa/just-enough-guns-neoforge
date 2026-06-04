@@ -81,7 +81,7 @@ Behavior wired so far:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
   - Vanilla `spyglass` scope attachments provide Forge-style scope modifiers; vanilla sword bayonets affect systems that check the stored stack directly.
-- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: only guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can install it, with `phantom_smg` treated like `custom_smg`; ordinary stock-capable guns still reject `makeshift_stock`.
+- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can only install `makeshift_stock`, with `phantom_smg` treated like `custom_smg`; ordinary stock-capable guns still reject `makeshift_stock`.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
@@ -155,6 +155,7 @@ Behavior wired so far:
   - Forge's yellow trail-color gun list is applied at bullet creation without hand-editing generated `GunDefinitions.java`.
   - Client muzzle flash rendering is no longer suppressed while the local player is ADS.
   - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, using the Forge muzzle-flash profile position relative to that bone's pivot so ADS/draw/reload transforms move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
+  - Third-person/world-space muzzle flashes are nudged forward along the shooter's view vector so the billboard sits in front of the gun body rather than behind the muzzle.
   - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
 - Draw/reload interaction parity is partially wired:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
@@ -166,7 +167,7 @@ Behavior wired so far:
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
-  - Guns whose copied Geo model only has a baked `makeshift_stock` stock visual (`abstract_gun`, `assault_rifle`, `custom_smg`, `double_barrel_shotgun`, `phantom_smg`, `pump_shotgun`, `revolver`, and `semi_auto_rifle`) reveal that stock visual when any stock-slot attachment is installed. Guns with dedicated `light_stock`, `tactical_stock`, and `weighted_stock` bones still reveal only the matching installed stock.
+  - Guns whose copied Geo model only has a baked `makeshift_stock` stock visual (`abstract_gun`, `assault_rifle`, `custom_smg`, `double_barrel_shotgun`, `phantom_smg`, `pump_shotgun`, `revolver`, and `semi_auto_rifle`) reveal that stock visual only when `makeshift_stock` is installed. Guns with dedicated `light_stock`, `tactical_stock`, and `weighted_stock` bones still reveal only the matching installed stock.
 - Attachment bone visibility preserves authored base rails such as `service_rifle`'s `railing` while still hiding unsupported generic rail bones by default.
 - Light machine gun render visibility now mirrors Forge's `bullet_1` through `bullet_7` bone thresholds by hiding exposed bullet bones above the current synced `gun_ammo` count.
 - Gun paint-job rendering is partially wired:
@@ -190,6 +191,7 @@ Behavior wired so far:
   - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `scope`, `barrel`, `under_barrel`, and `special` slots.
   - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `scope`, `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
   - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same paint-job -> base -> fallback texture resolution.
+  - The shared `attachment_bone` remains visible when any scope, barrel, under-barrel, special, or bayonet render path is active, so independent Geo attachments such as `vertical_grip` and `angled_grip` have a render anchor even when no scope is installed.
   - The gun model's baked barrel, under-barrel, and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
   - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.

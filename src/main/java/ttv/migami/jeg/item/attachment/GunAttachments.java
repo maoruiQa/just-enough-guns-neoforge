@@ -246,6 +246,9 @@ public final class GunAttachments {
         }
         Item item = attachmentStack.getItem();
         if (item instanceof AttachmentItem attachment) {
+            if (type == AttachmentType.STOCK && canUseMakeshiftStock(gunStack) && !isMakeshiftStock(item)) {
+                return false;
+            }
             if (isMakeshiftStock(item) && !canUseMakeshiftStock(gunStack)) {
                 return false;
             }
