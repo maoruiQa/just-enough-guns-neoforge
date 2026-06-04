@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
@@ -105,6 +106,9 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return true;
         }
         if ((button == 0 || button == 1) && this.isMouseOverMedalButton((int) mouseX, (int) mouseY)) {
+            if (ClientUiConfig.hideMedals()) {
+                return true;
+            }
             NetworkHandler.sendToggleMedals();
             Player player = this.minecraft == null ? null : this.minecraft.player;
             if (player != null) {
@@ -242,8 +246,14 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
 
     private void renderMedalButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (this.isMouseOverMedalButton(mouseX, mouseY)) {
-            guiGraphics.renderComponentTooltip(this.font, List.of(Component.translatable("slot.jeg.toggle_medals").withStyle(ChatFormatting.YELLOW)), mouseX, mouseY);
+            guiGraphics.renderComponentTooltip(this.font, List.of(medalButtonTooltip()), mouseX, mouseY);
         }
+    }
+
+    private static Component medalButtonTooltip() {
+        return ClientUiConfig.hideMedals()
+                ? Component.translatable("slot.jeg.toggle_medals.disabled").withStyle(ChatFormatting.YELLOW)
+                : Component.translatable("slot.jeg.toggle_medals").withStyle(ChatFormatting.YELLOW);
     }
 
     private boolean isMouseOverMedalButton(int mouseX, int mouseY) {

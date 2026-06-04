@@ -271,9 +271,10 @@ public final class NetworkHandler {
         context.enqueueWork(() -> invokeClientStatic(
                 "ttv.migami.jeg.client.ClientUiConfig",
                 "update",
-                new Class<?>[] { boolean.class, boolean.class },
+                new Class<?>[] { boolean.class, boolean.class, boolean.class },
                 payload.showCrosshair(),
-                payload.showHitFeedback()));
+                payload.showHitFeedback(),
+                payload.hideMedals()));
     }
 
     private static void handleVehicleDataSync(VehicleDataSyncPayload payload, IPayloadContext context) {
@@ -636,7 +637,7 @@ public final class NetworkHandler {
     }
 
     public static void sendUiConfig(ServerPlayer player) {
-        player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+        player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals()));
     }
 
     public static void sendVehicleData(ServerPlayer player) {
@@ -645,7 +646,7 @@ public final class NetworkHandler {
     }
 
     public static void broadcastUiConfig(MinecraftServer server) {
-        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
+        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals());
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.connection.send(payload);
         }

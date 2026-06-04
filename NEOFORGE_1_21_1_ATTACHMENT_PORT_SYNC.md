@@ -54,6 +54,7 @@ Behavior wired so far:
 - The attachment screen renders the held gun preview and gun name above the main panel.
 - The attachment screen now renders the Forge mini config button. It opens a registered NeoForge `IConfigScreenFactory` screen when available, otherwise it shows the existing Forge-style "Install Configured" chat hint.
 - The attachment screen now renders the Forge medal toggle button, sends a server-authoritative toggle payload, and stores the gun's kill-medal toggle in the synced `gun_medals_enabled` component.
+  - Forge's global medal-disable behavior is adapted as the persistent server config `ui.hideMedals`, exposed through `/justEnoughGuns config ui hideMedals` and synced to clients with the existing UI config payload; when enabled, the attachment-screen medal button shows the disabled tooltip and ignores clicks.
 - Cosmetic slots now accept and persist their matching items:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.

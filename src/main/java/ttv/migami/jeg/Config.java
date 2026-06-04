@@ -78,6 +78,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue UI_HIDE_MEDALS;
     public static final ModConfigSpec.BooleanValue ALLOW_FLASHLIGHTS;
     public static final ModConfigSpec.IntValue FLASHLIGHT_DISTANCE;
     public static final ModConfigSpec.BooleanValue GLOWING_LASER_POINTERS;
@@ -131,6 +132,9 @@ public final class Config {
         UI_SHOW_HIT_FEEDBACK = serverBuilder
                 .comment("If true, clients display hit feedback markers when bullets hit living entities.")
                 .define("showHitFeedback", true);
+        UI_HIDE_MEDALS = serverBuilder
+                .comment("If true, kill medals are disabled and the attachment-screen medal toggle cannot be changed.")
+                .define("hideMedals", false);
         serverBuilder.pop();
 
         serverBuilder.push("attachments");
@@ -344,6 +348,7 @@ public final class Config {
 
         registerCommandConfig("ui.showCrosshair", UI_SHOW_CROSSHAIR);
         registerCommandConfig("ui.showHitFeedback", UI_SHOW_HIT_FEEDBACK);
+        registerCommandConfig("ui.hideMedals", UI_HIDE_MEDALS);
         registerCommandConfig("patrol.enabled", FACTION_PATROL_ENABLED);
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
@@ -846,6 +851,10 @@ public final class Config {
 
     public static boolean showHitFeedback() {
         return UI_SHOW_HIT_FEEDBACK.get();
+    }
+
+    public static boolean hideMedals() {
+        return UI_HIDE_MEDALS.get();
     }
 
     public static boolean legacyBulletTrailEnabled() {

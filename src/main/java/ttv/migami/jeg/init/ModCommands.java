@@ -175,7 +175,8 @@ public final class ModCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> configUiCommand() {
         return Commands.literal("ui")
                 .then(configBooleanConfigCommand("crosshair", "ui.showCrosshair"))
-                .then(configBooleanConfigCommand("hitFeedback", "ui.showHitFeedback"));
+                .then(configBooleanConfigCommand("hitFeedback", "ui.showHitFeedback"))
+                .then(configBooleanConfigCommand("hideMedals", "ui.hideMedals"));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configMobCommand() {
