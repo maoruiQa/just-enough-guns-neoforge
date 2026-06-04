@@ -54,6 +54,10 @@ Behavior wired so far:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.
   - `kill_effect`: registered kill-effect badges.
+- Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
+  - Vanilla `spyglass` items can be installed in supported scope slots.
+  - Vanilla sword items can be installed in supported barrel slots.
+  - These pseudo attachments intentionally have no `AttachmentModifiers`; they affect systems that check slot presence or the stored stack directly.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.
 - Damage multipliers are applied to spawned bullet damage.
@@ -121,16 +125,15 @@ Still to port:
 
 - Remaining Forge attachment-screen layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
-- Decide whether to support Forge's pseudo vanilla attachments in this port:
-  - Forge 1.20.1 accepts vanilla `spyglass` as a scope-like attachment.
-  - Forge 1.20.1 accepts vanilla swords as bayonet/barrel attachments.
-  - NeoForge 1.21.1 now has the storage shape needed for non-`AttachmentItem` stacks, but slot validation and runtime/render behavior for these pseudo attachments have not been ported yet.
+- Remaining pseudo vanilla attachment runtime/render behavior:
+  - Vanilla `spyglass` scope attachment rendering is not ported yet; current scope rendering is still limited to registered Geo scope attachment items.
+  - Vanilla sword bayonet rendering, sprint-stab behavior, and bayonet durability behavior are not ported yet.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
 Sync checklist for the other maintained branches:
 
-1. Port `AttachmentType`, `AttachmentModifiers`, `AttachmentItem`, `GunAttachments`, and `GunAttachmentRules`.
+1. Port `AttachmentType`, `AttachmentModifiers`, `AttachmentItem`, `GunAttachments`, and `GunAttachmentRules`, including pseudo vanilla attachment stack validation for spyglass and swords.
 2. Add equivalent persistent/network-synced gun attachment id and stack components, with id fallback for old guns.
 3. Register the same attachment items and add them to combat creative tab/manual recipes.
 4. Copy item definitions, item models, textures, and recipes.

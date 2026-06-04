@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModSounds;
-import ttv.migami.jeg.item.AttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachmentRules;
@@ -154,12 +153,7 @@ public final class AttachmentMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            if (this.type.isCosmetic()) {
-                return GunAttachments.isCosmeticStack(this.type, stack);
-            }
-            return stack.getItem() instanceof AttachmentItem attachment
-                    && attachment.type() == this.type
-                    && attachment.canAttachTo(this.weapon);
+            return GunAttachments.canAttachStack(this.weapon, this.type, stack);
         }
 
         @Override

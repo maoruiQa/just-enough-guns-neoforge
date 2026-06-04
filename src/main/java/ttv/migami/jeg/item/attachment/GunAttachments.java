@@ -11,6 +11,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpyglassItem;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.Level;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.AttachmentItem;
@@ -131,7 +133,7 @@ public final class GunAttachments {
             return setCosmetic(gunStack, type, attachmentStack);
         }
         Item item = attachmentStack.getItem();
-        if (!(item instanceof AttachmentItem attachment) || attachment.type() != type || !attachment.canAttachTo(gunStack)) {
+        if (!canAttachStack(gunStack, type, attachmentStack)) {
             return false;
         }
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
@@ -141,7 +143,7 @@ public final class GunAttachments {
         gunStack.set(component(type), id.toString());
         gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
         removeDamage(gunStack, type);
-        if (type == AttachmentType.SPECIAL) {
+        if (item instanceof AttachmentItem attachment && type == AttachmentType.SPECIAL) {
             if (attachment.modifiers().flashlight()) {
                 ensureFlashlightBattery(gunStack);
             } else {
@@ -171,11 +173,36 @@ public final class GunAttachments {
         return true;
     }
 
+    public static boolean canAttachStack(ItemStack gunStack, AttachmentType type, ItemStack attachmentStack) {
+        if (attachmentStack.isEmpty()) {
+            return true;
+        }
+        if (type.isCosmetic()) {
+            return isCosmeticStack(type, attachmentStack);
+        }
+        if (!GunAttachmentRules.canAttach(gunStack, type)) {
+            return false;
+        }
+        Item item = attachmentStack.getItem();
+        if (item instanceof AttachmentItem attachment) {
+            return attachment.type() == type && attachment.canAttachTo(gunStack);
+        }
+        return isPseudoAttachmentStack(type, attachmentStack);
+    }
+
     public static boolean isCosmeticStack(AttachmentType type, ItemStack stack) {
         return switch (type) {
             case PAINT_JOB -> stack.getItem() instanceof PaintJobCanItem;
             case DYE -> stack.getItem() instanceof net.minecraft.world.item.DyeItem;
             case KILL_EFFECT -> stack.getItem() instanceof KillEffectItem;
+            default -> false;
+        };
+    }
+
+    public static boolean isPseudoAttachmentStack(AttachmentType type, ItemStack stack) {
+        return switch (type) {
+            case SCOPE -> stack.getItem() instanceof SpyglassItem;
+            case BARREL -> stack.getItem() instanceof SwordItem;
             default -> false;
         };
     }
