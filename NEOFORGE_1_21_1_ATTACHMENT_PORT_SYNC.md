@@ -155,6 +155,7 @@ Behavior wired so far:
   - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
   - Animated gun model lookup now checks `geo/item/gun/paintjob/<paintJob>/<gun>.geo.json` with the currently rendered gun stack before falling back to the base gun Geo model.
   - The only Forge reference paint-job Geo asset found is `paintjob/scorched/burst_rifle.geo.json`; `scorched_spray_can` is disabled in Forge 1.20.1 and is not registered in this NeoForge port, and this branch currently has no gun paint-job Geo override assets for active spray cans. The support path is present for future assets, but has no active resource hit yet.
+  - Static active paint-job texture audit: the registered Forge/NeoForge spray cans are `classic`, `toy`, `whiteout`, and `golden`; this branch has the matching active texture sets for current NeoForge guns (`classic`: 6, `toy`: 10, `whiteout`: 3, `golden`: 15). Forge has one extra active `golden/compound_bow.png`, but `compound_bow` is not a current NeoForge 1.21.1 gun target.
   - Static paint-job fallback audit: Forge 1.20.1's attachment paint-job model override is commented out while its attachment texture override is active. NeoForge mirrors that active behavior by checking attachment paint-job textures first and falling back to base attachment textures; scope rendering only uses a paint-job attachment Geo model when such a resource actually exists.
   - `AnimatedGunRenderer.getTextureLocation` owns the animated gun texture override, so `AnimatedGunGeoModel.getTextureResource` intentionally keeps returning the base texture resource.
 - Scope attachment model rendering is partially wired:
@@ -200,7 +201,7 @@ Still to port:
 - Runtime visual validation remains intentionally skipped for now per current task scope; smoke tests are the gate for these slices.
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
-- Cosmetic slots: active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
+- Cosmetic slots: runtime validation of active paint-job, kill-effect, and dye visuals.
 - Forge global low-durability gun jamming is not ported as a general system; do not recreate it as an attachment-only behavior.
 
 Sync checklist for the other maintained branches:
@@ -226,4 +227,5 @@ Sync checklist for the other maintained branches:
 16. Copy vanilla sword bayonet Geo/texture assets, then add a dedicated bayonet render layer and runtime-validate its first-person/third-person positioning.
 17. Add the vanilla `minecraft:dyeable` tag and item-color handler for functional attachment items so dyed attachment stacks survive menu install/removal.
 18. Port cosmetic dye render tint for animated guns and flare-smoke color propagation.
-19. Then expand remaining runtime modifier/render behavior.
+19. Port the attachment-screen kill-medal toggle, synced `ui.hideMedals`, bullet headshot medals, generic kill medals, and Forge special kill medals.
+20. Then expand remaining runtime modifier/render behavior.
