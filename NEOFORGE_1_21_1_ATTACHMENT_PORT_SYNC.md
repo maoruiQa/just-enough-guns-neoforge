@@ -137,6 +137,8 @@ Behavior wired so far:
   - Guns without a matching paint-job texture fall back to the existing animated gun texture, then the item texture.
   - Animated gun model lookup now checks `geo/item/gun/paintjob/<paintJob>/<gun>.geo.json` with the currently rendered gun stack before falling back to the base gun Geo model.
   - The only Forge reference paint-job Geo asset found is `paintjob/scorched/burst_rifle.geo.json`; `scorched_spray_can` is disabled in Forge 1.20.1 and is not registered in this NeoForge port, and this branch currently has no gun paint-job Geo override assets for active spray cans. The support path is present for future assets, but has no active resource hit yet.
+  - Static paint-job fallback audit: Forge 1.20.1's attachment paint-job model override is commented out while its attachment texture override is active. NeoForge mirrors that active behavior by checking attachment paint-job textures first and falling back to base attachment textures; scope rendering only uses a paint-job attachment Geo model when such a resource actually exists.
+  - `AnimatedGunRenderer.getTextureLocation` owns the animated gun texture override, so `AnimatedGunGeoModel.getTextureResource` intentionally keeps returning the base texture resource.
 - Scope attachment model rendering is partially wired:
   - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
