@@ -19,6 +19,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
@@ -56,6 +57,7 @@ public final class NetworkHandler {
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
+                .playToServer(MeleePayload.TYPE, MeleePayload.STREAM_CODEC, NetworkHandler::handleMelee)
                 .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
                 .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
                 .playToServer(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC, NetworkHandler::handleToggleMedals)
@@ -108,28 +110,49 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem)) {
                 return;
             }
-            if (!Config.allowFlashlights()) {
-                Component message = Component.translatable("chat.jeg.disabled_flashlights").withStyle(ChatFormatting.GRAY);
-                player.displayClientMessage(message, true);
-                return;
-            }
-            GunAttachments.FlashlightToggleResult result = GunAttachments.toggleFlashlight(stack, player);
-            if (result == GunAttachments.FlashlightToggleResult.MISSING) {
-                return;
-            }
-            if (result == GunAttachments.FlashlightToggleResult.DEAD) {
-                Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
-                player.displayClientMessage(message, true);
-            }
-            ResourceLocation soundId = result == GunAttachments.FlashlightToggleResult.DEAD
-                    ? Reference.id("item.goose")
-                    : Reference.id("item.flashlight");
-            var sound = ModSounds.ALL.get(soundId);
-            if (sound != null) {
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                        sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-            }
+            toggleGunFlashlight(player, stack);
         });
+    }
+
+    private static void handleMelee(MeleePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (!(stack.getItem() instanceof GunItem)) {
+                return;
+            }
+            toggleGunFlashlight(player, stack);
+            AttachmentRuntimeEvents.handleBayonetMelee(player);
+        });
+    }
+
+    private static void toggleGunFlashlight(ServerPlayer player, ItemStack stack) {
+        if (!GunAttachments.hasFlashlight(stack)) {
+            return;
+        }
+        if (!Config.allowFlashlights()) {
+            Component message = Component.translatable("chat.jeg.disabled_flashlights").withStyle(ChatFormatting.GRAY);
+            player.displayClientMessage(message, true);
+            return;
+        }
+        GunAttachments.FlashlightToggleResult result = GunAttachments.toggleFlashlight(stack, player);
+        if (result == GunAttachments.FlashlightToggleResult.MISSING) {
+            return;
+        }
+        if (result == GunAttachments.FlashlightToggleResult.DEAD) {
+            Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
+            player.displayClientMessage(message, true);
+        }
+        ResourceLocation soundId = result == GunAttachments.FlashlightToggleResult.DEAD
+                ? Reference.id("item.goose")
+                : Reference.id("item.flashlight");
+        var sound = ModSounds.ALL.get(soundId);
+        if (sound != null) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
     }
 
     private static void handleChargeFlashlight(ChargeFlashlightPayload payload, IPayloadContext context) {
@@ -502,6 +525,10 @@ public final class NetworkHandler {
 
     public static void sendOpenAttachments() {
         sendToServer(OpenAttachmentsPayload.INSTANCE);
+    }
+
+    public static void sendMelee() {
+        sendToServer(MeleePayload.INSTANCE);
     }
 
     public static void sendToggleFlashlight() {

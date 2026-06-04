@@ -12,6 +12,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -54,6 +57,11 @@ public final class AttachmentRuntimeEvents {
     private static final double BAYONET_CHARGE_RANGE = 1.5D;
     private static final double BAYONET_CHARGE_SWEEP_ANGLE = Math.toRadians(100.0D);
     private static final int BAYONET_CHARGE_DAMAGE = 8;
+    private static final double BAYONET_MELEE_RANGE = 2.0D;
+    private static final double BAYONET_MELEE_SWEEP_ANGLE = Math.toRadians(100.0D);
+    private static final int BAYONET_MELEE_DAMAGE = 8;
+    private static final int BAYONET_MELEE_COOLDOWN_TICKS = 15;
+    private static final int BAYONET_SPRINT_MELEE_COOLDOWN_TICKS = 40;
     private static final double LASER_BEAM_START_OFFSET = 0.75D;
     private static final double LASER_BEAM_STEP = 0.4D;
     private static final Map<UUID, Long> BAYONET_SPRINT_START_TICKS = new HashMap<>();
@@ -94,6 +102,64 @@ public final class AttachmentRuntimeEvents {
         if (refreshFlashlight) {
             tickFlashlight(player);
         }
+    }
+
+    public static void handleBayonetMelee(ServerPlayer player) {
+        ItemStack gunStack = player.getMainHandItem();
+        if (!(gunStack.getItem() instanceof GunItem) || player.getCooldowns().isOnCooldown(gunStack.getItem())) {
+            return;
+        }
+
+        Optional<ItemStack> attachment = GunAttachments.stack(gunStack, AttachmentType.BARREL);
+        if (attachment.isEmpty() || !(attachment.get().getItem() instanceof SwordItem)) {
+            return;
+        }
+
+        ItemStack bayonet = attachment.get();
+        Level level = player.level();
+        if (player.isSprinting()) {
+            Vec3 look = player.getLookAngle();
+            player.push(look.x, look.y, look.z);
+        }
+
+        level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 2.0F, 1.0F);
+        player.getCooldowns().addCooldown(
+                gunStack.getItem(),
+                player.isSprinting() ? BAYONET_SPRINT_MELEE_COOLDOWN_TICKS : BAYONET_MELEE_COOLDOWN_TICKS
+        );
+
+        float damage = bayonetDamage(player, bayonet) / 1.5F;
+        if (bayonet.isDamageableItem() && bayonet.getDamageValue() > bayonet.getMaxDamage() * 2 / 3) {
+            damage = 0.0F;
+        }
+
+        boolean damaged = false;
+        int knockback = enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK);
+        int fireAspect = enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT);
+        for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(BAYONET_MELEE_RANGE))) {
+            if (target == player || !target.isAlive() || !isInMeleeArc(player, target)) {
+                continue;
+            }
+
+            Vec3 direction = target.position().subtract(player.position()).normalize();
+            target.push(direction.x * knockback, 0.5D, direction.z * knockback);
+            if (damage > 0.0F && target.hurt(player.damageSources().playerAttack(player), damage)) {
+                damaged = true;
+                if (fireAspect > 0) {
+                    target.igniteForSeconds(2.0F * fireAspect);
+                }
+            }
+        }
+
+        if (damage <= 0.0F) {
+            level.playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 3.0F, 1.0F);
+        } else if (damaged) {
+            damageStoredBayonet(player, gunStack, bayonet, BAYONET_MELEE_DAMAGE);
+        }
+
+        Vec3 look = player.getLookAngle();
+        Vec3 particlePos = player.position().add(look.x * 1.8D, look.y * 1.8D + player.getEyeHeight(), look.z * 1.8D);
+        ((ServerLevel) level).sendParticles(ParticleTypes.SWEEP_ATTACK, particlePos.x, particlePos.y, particlePos.z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
     }
 
     private static void tickBayonetCharge(Player player, ItemStack gunStack) {
@@ -147,7 +213,7 @@ public final class AttachmentRuntimeEvents {
             if (sweepingEdge < 2) {
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
             }
-            damageStoredBayonet(player, gunStack, bayonet);
+            damageStoredBayonet(player, gunStack, bayonet, BAYONET_CHARGE_DAMAGE);
         }
     }
 
@@ -157,6 +223,14 @@ public final class AttachmentRuntimeEvents {
             return true;
         }
         return Math.acos(offset.normalize().dot(player.getLookAngle().normalize())) < BAYONET_CHARGE_SWEEP_ANGLE / 3.0D;
+    }
+
+    private static boolean isInMeleeArc(Player player, LivingEntity target) {
+        Vec3 offset = target.position().subtract(player.position());
+        if (offset.lengthSqr() <= 0.0001D) {
+            return true;
+        }
+        return Math.acos(offset.normalize().dot(player.getLookAngle().normalize())) < BAYONET_MELEE_SWEEP_ANGLE / 2.0D;
     }
 
     private static float bayonetDamage(Player player, ItemStack bayonet) {
@@ -170,11 +244,11 @@ public final class AttachmentRuntimeEvents {
         return (float) (baseDamage + enchantmentLevel(player, bayonet, Enchantments.SHARPNESS));
     }
 
-    private static void damageStoredBayonet(Player player, ItemStack gunStack, ItemStack bayonet) {
+    private static void damageStoredBayonet(Player player, ItemStack gunStack, ItemStack bayonet, int amount) {
         if (player.getAbilities().instabuild || !bayonet.isDamageableItem()) {
             return;
         }
-        int damage = bayonet.getDamageValue() + BAYONET_CHARGE_DAMAGE;
+        int damage = bayonet.getDamageValue() + amount;
         if (damage >= bayonet.getMaxDamage()) {
             player.level().playSound(player, player.blockPosition(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
             GunAttachments.clear(gunStack, AttachmentType.BARREL);

@@ -381,8 +381,8 @@ public final class GunClientEvents {
             }
         }
         if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && ttv.migami.jeg.item.attachment.GunAttachments.hasFlashlight(heldMain)) {
-                NetworkHandler.sendToggleFlashlight();
+            if (heldMain.getItem() instanceof GunItem) {
+                NetworkHandler.sendMelee();
             }
         }
     }

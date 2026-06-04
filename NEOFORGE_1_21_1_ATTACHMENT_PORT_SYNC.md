@@ -32,6 +32,7 @@ Current NeoForge 1.21.1 foundation:
 - `GunAttachmentRules` is the current per-gun support matrix for slot validation.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
+- `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
 - `AttachmentScreen` draws Forge-style slot icons, disabled-slot crosses, incompatible-slot hover feedback, and a rotating held-gun preview from the current menu validation/rendering rules.
 - Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
@@ -86,6 +87,7 @@ Behavior wired so far:
   - `gun_flashlight_battery` stores adapted flashlight battery life on the gun stack, using Forge's 600 tick max battery.
 - Special-slot flashlight and laser pointer runtime behavior is partially wired:
   - Pressing `key.jeg.melee` while holding a gun with a flashlight toggles the powered state and plays `item.flashlight`.
+  - Pressing `key.jeg.melee` while holding a gun with a vanilla sword in the barrel slot performs the Forge-style bayonet sweep.
   - Flashlight attachments now refuse to toggle when server config disables flashlights.
   - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
@@ -94,6 +96,14 @@ Behavior wired so far:
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
   - Laser pointer attachments emit custom `entity_laser` beam particles along the traced ray.
   - Laser pointer attachments emit the Forge-style custom red block-face laser particle on block hits, plus a small vanilla endpoint glint.
+- Sword bayonet melee-key behavior is wired:
+  - Pressing `key.jeg.melee` sends a dedicated `MeleePayload`, so sword bayonets work even when the gun has no flashlight.
+  - The server validates that the main-hand item is a gun and the barrel slot stores a vanilla sword stack.
+  - The sweep uses Forge's 2 block range and 100 degree forward arc.
+  - Sweep damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
+  - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
+  - Successful sweep hits damage the stored bayonet stack by 8 and clear the barrel slot when the sword breaks.
+  - The sweep applies a 15 tick gun cooldown, or 40 ticks while sprinting, and emits the vanilla sweep sound and particle.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
   - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack for legacy compatibility.
   - Firing damages those installed attachments by 1 per shot and writes the updated damage back to the stored attachment `ItemStack`.
@@ -132,7 +142,7 @@ Still to port:
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla `spyglass` scope attachment rendering is not ported yet; current scope rendering is still limited to registered Geo scope attachment items.
-  - Vanilla sword bayonet rendering and melee-key sweep behavior are not ported yet.
+  - Vanilla sword bayonet rendering is not ported yet.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
 
@@ -152,4 +162,5 @@ Sync checklist for the other maintained branches:
 12. Port attachment durability/breakage for the firing-damaged functional slots.
 13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
 14. Port scope attachment model rendering with paint-job texture fallback.
-15. Then expand remaining runtime modifier/render behavior.
+15. Port pseudo vanilla sword bayonet melee-key behavior with the dedicated melee payload.
+16. Then expand remaining runtime modifier/render behavior.
