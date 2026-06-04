@@ -76,6 +76,7 @@ Behavior wired so far:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
   - Vanilla `spyglass` scope attachments provide Forge-style scope modifiers; vanilla sword bayonets affect systems that check the stored stack directly.
+- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: only guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can install it, with `phantom_smg` treated like `custom_smg`; ordinary stock-capable guns still reject `makeshift_stock`.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness.

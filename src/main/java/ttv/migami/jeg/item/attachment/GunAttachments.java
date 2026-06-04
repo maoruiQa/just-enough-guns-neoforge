@@ -1,6 +1,7 @@
 package ttv.migami.jeg.item.attachment;
 
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.ChatFormatting;
@@ -16,9 +17,23 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.Level;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.AttachmentItem;
+import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.Reference;
 
 public final class GunAttachments {
     public static final int FLASHLIGHT_MAX_BATTERY = 600;
+    private static final ResourceLocation MAKESHIFT_STOCK = Reference.id("makeshift_stock");
+    private static final Set<ResourceLocation> MAKESHIFT_STOCK_GUNS = Set.of(
+            Reference.id("assault_rifle"),
+            Reference.id("custom_smg"),
+            Reference.id("double_barrel_shotgun"),
+            Reference.id("phantom_smg"),
+            Reference.id("pump_shotgun"),
+            Reference.id("revolver"),
+            Reference.id("semi_auto_pistol"),
+            Reference.id("semi_auto_rifle"),
+            Reference.id("waterpipe_shotgun")
+    );
     private static final AttachmentModifiers SPYGLASS_SCOPE_MODIFIERS = AttachmentModifiers.builder()
             .aimFovModifier(0.2F)
             .adsSpeedMultiplier(0.76D)
@@ -211,6 +226,9 @@ public final class GunAttachments {
         }
         Item item = attachmentStack.getItem();
         if (item instanceof AttachmentItem attachment) {
+            if (isMakeshiftStock(item) && !canUseMakeshiftStock(gunStack)) {
+                return false;
+            }
             return attachment.type() == type && attachment.canAttachTo(gunStack);
         }
         return isPseudoAttachmentStack(type, attachmentStack);
@@ -231,6 +249,14 @@ public final class GunAttachments {
             case BARREL -> stack.getItem() instanceof SwordItem;
             default -> false;
         };
+    }
+
+    private static boolean isMakeshiftStock(Item item) {
+        return MAKESHIFT_STOCK.equals(BuiltInRegistries.ITEM.getKey(item));
+    }
+
+    private static boolean canUseMakeshiftStock(ItemStack gunStack) {
+        return gunStack.getItem() instanceof GunItem gun && MAKESHIFT_STOCK_GUNS.contains(gun.getStats().id());
     }
 
     public static void clear(ItemStack gunStack, AttachmentType type) {
