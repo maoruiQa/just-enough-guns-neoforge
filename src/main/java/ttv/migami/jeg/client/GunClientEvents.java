@@ -36,6 +36,7 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
@@ -274,6 +275,7 @@ public final class GunClientEvents {
             renderCenteredOverlayPrompt(event.getGuiGraphics(), promptText, promptColor);
         }
 
+        MedalManager.render(event.getGuiGraphics());
         ClientHudRenderer.render(event.getGuiGraphics());
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
             ScopeOverlayRenderer.render(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
@@ -285,6 +287,7 @@ public final class GunClientEvents {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         GunRecoilHandler.tick();
+        MedalManager.tick();
         if (Config.legacyBulletTrailEnabled()) {
             // Tick bullet trail renderer to age and remove old trails.
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();

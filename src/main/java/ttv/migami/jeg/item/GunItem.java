@@ -1189,6 +1189,7 @@ public class GunItem extends Item {
                 modifiers.explosiveAmmo()
         );
         GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
+        bullet.setMedalsEnabled(GunAttachments.areMedalsEnabled(stack));
         applyFlareDye(stack, stats, bullet);
         return bullet;
     }

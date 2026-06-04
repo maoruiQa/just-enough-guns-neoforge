@@ -74,6 +74,7 @@ public final class NetworkHandler {
                 .playToClient(VehicleDataSyncPayload.TYPE, VehicleDataSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleDataSync)
                 .playToClient(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleAssemblyRecipeSync)
                 .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
+                .playToClient(HeadshotMedalPayload.TYPE, HeadshotMedalPayload.STREAM_CODEC, NetworkHandler::handleHeadshotMedal)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
                 .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
     }
@@ -272,6 +273,13 @@ public final class NetworkHandler {
                 "playHitMarker",
                 new Class<?>[] { boolean.class },
                 payload.critical()));
+    }
+
+    private static void handleHeadshotMedal(HeadshotMedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showHeadshot",
+                new Class<?>[0]));
     }
 
     private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
@@ -641,6 +649,10 @@ public final class NetworkHandler {
 
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         player.connection.send(new HitMarkerPayload(critical));
+    }
+
+    public static void sendHeadshotMedal(ServerPlayer player) {
+        player.connection.send(HeadshotMedalPayload.INSTANCE);
     }
 
     public static void sendUiConfig(ServerPlayer player) {

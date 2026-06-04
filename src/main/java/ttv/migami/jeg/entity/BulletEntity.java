@@ -128,6 +128,7 @@ public class BulletEntity extends Projectile {
 
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
+    private boolean medalsEnabled;
 
     // Client-side rocket trail storage
     private List<Vec3> trailPositions;
@@ -167,6 +168,10 @@ public class BulletEntity extends Projectile {
 
     public void setKillEffect(ResourceLocation itemId) {
         this.entityData.set(DATA_KILL_EFFECT, itemId.toString());
+    }
+
+    public void setMedalsEnabled(boolean medalsEnabled) {
+        this.medalsEnabled = medalsEnabled;
     }
 
     public void setFlareColor(int color) {
@@ -493,8 +498,16 @@ public class BulletEntity extends Projectile {
             return;
         }
 
+        if (this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (this.getOwner() instanceof ServerPlayer player && this.medalsEnabled && !Config.hideMedals()) {
+            NetworkHandler.sendHeadshotMedal(player);
+        }
+
         ResourceLocation killEffectId = ResourceLocation.tryParse(this.entityData.get(DATA_KILL_EFFECT));
-        if (killEffectId == null || this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
+        if (killEffectId == null) {
+            target.addTag(DYING_TAG);
             return;
         }
 
@@ -768,6 +781,7 @@ public class BulletEntity extends Projectile {
         output.putInt("Ticks", this.entityData.get(DATA_TICKS_LIVED));
         output.putBoolean("ExplosiveAmmo", this.entityData.get(DATA_EXPLOSIVE_AMMO));
         output.putString("KillEffect", this.entityData.get(DATA_KILL_EFFECT));
+        output.putBoolean("MedalsEnabled", this.medalsEnabled);
         output.putInt("FlareColor", this.entityData.get(DATA_FLARE_COLOR));
     }
 
@@ -782,6 +796,7 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TICKS_LIVED, input.contains("Ticks") ? input.getInt("Ticks") : this.entityData.get(DATA_TICKS_LIVED));
         this.entityData.set(DATA_EXPLOSIVE_AMMO, input.contains("ExplosiveAmmo") && input.getBoolean("ExplosiveAmmo"));
         this.entityData.set(DATA_KILL_EFFECT, input.contains("KillEffect") ? input.getString("KillEffect") : "");
+        this.medalsEnabled = input.contains("MedalsEnabled") && input.getBoolean("MedalsEnabled");
         this.entityData.set(DATA_FLARE_COLOR, input.contains("FlareColor") ? input.getInt("FlareColor") : NO_FLARE_COLOR);
         this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
