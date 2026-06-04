@@ -136,6 +136,9 @@ Behavior wired so far:
   - The sweep applies a 15 tick gun cooldown, or 40 ticks while sprinting, and emits the vanilla sweep sound and particle.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
   - Forge's `gunDurability` config is adapted as the persistent server config `combat.gunDurability`; when disabled, firing does not damage the gun or installed attachments.
+  - Forge's global low-durability gun jamming config is adapted as persistent server config `combat.gunJamming`; when enabled, low-durability guns can fail before consuming ammo, play the pistol cock sound, show `chat.jeg.jam`, and receive the Forge-style extended cooldown.
+  - Guns at or past their next-shot break threshold fail before firing and play the item break sound, matching Forge's pre-shot durability gate.
+  - `explosive_muzzle` still increases gun wear to 5 durability per shot and carries the `increased_jamming` perk, causing the low-durability jam threshold to start earlier than the base Forge threshold.
   - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack for legacy compatibility.
   - Firing damages those installed attachments by 1 per shot and writes the updated damage back to the stored attachment `ItemStack`.
   - Forge's Mending gates are preserved: a Mending gun skips attachment wear entirely, and Mending attachments skip wear except for the Forge `explosive_muzzle` barrel exception.
@@ -202,7 +205,6 @@ Still to port:
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
 - Cosmetic slots: runtime validation of active paint-job, kill-effect, and dye visuals.
-- Forge global low-durability gun jamming is not ported as a general system; do not recreate it as an attachment-only behavior.
 
 Sync checklist for the other maintained branches:
 
@@ -216,7 +218,7 @@ Sync checklist for the other maintained branches:
    - Include Forge's binding-curse enchantment support for attachment items and pickup lock on attachment slots.
    - Include the attachment-screen config button's hide/alignment client config equivalents if the target branch has a client config surface.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
-   - Preserve the current NeoForge caveat unless the target branch has matching systems: no global low-durability jamming system, and `explosive_muzzle`'s Forge jamming implication is represented through the already-ported 5 durability damage per shot.
+   - Include `combat.gunJamming`, the low-durability pre-shot jam gate, the next-shot break gate, and the `increased_jamming` threshold behavior used by `explosive_muzzle`.
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.

@@ -44,6 +44,7 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
     public static final ModConfigSpec.BooleanValue GUN_DURABILITY_ENABLED;
+    public static final ModConfigSpec.BooleanValue GUN_JAMMING_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
@@ -234,6 +235,9 @@ public final class Config {
         GUN_DURABILITY_ENABLED = serverBuilder
                 .comment("If true, guns and installed attachments receive durability damage when a gun is fired.")
                 .define("gunDurability", true);
+        GUN_JAMMING_ENABLED = serverBuilder
+                .comment("If true, low-durability guns can jam and fail to fire.")
+                .define("gunJamming", true);
         BULLET_BLOCK_DESTRUCTION_ENABLED = serverBuilder
                 .comment("If true, bullets can destroy hit blocks based on penetration and bullet power rules.")
                 .define("bulletBlockDestructionEnabled", true);
@@ -369,6 +373,7 @@ public final class Config {
         registerCommandConfig("mob.mechanism.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
         registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
         registerCommandConfig("combat.gunDurability", GUN_DURABILITY_ENABLED);
+        registerCommandConfig("combat.gunJamming", GUN_JAMMING_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
@@ -540,6 +545,10 @@ public final class Config {
 
     public static boolean gunDurabilityEnabled() {
         return GUN_DURABILITY_ENABLED.get();
+    }
+
+    public static boolean gunJammingEnabled() {
+        return GUN_JAMMING_ENABLED.get();
     }
 
     public static boolean bulletBlockDestructionEnabled() {

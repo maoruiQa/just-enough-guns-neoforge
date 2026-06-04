@@ -67,6 +67,9 @@ public class GunItem extends Item {
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
     private static final int GRENADE_FUSE_TICKS = 600;
+    private static final double LOW_DURABILITY_JAM_THRESHOLD = 1.75D;
+    private static final double INCREASED_JAM_THRESHOLD = 2.25D;
+    private static final float JAM_CHANCE = 0.025F;
     private static final Set<String> AUTOMATIC_IDS = Set.of(
             "abstract_gun",
             "assault_rifle",
@@ -729,6 +732,9 @@ public class GunItem extends Item {
             // Removed custom trail rendering - rely on server-sent particles instead
             // which have proper depth testing and don't render through blocks
         } else {
+            if (shouldJamBeforeShot(level, player, stack)) {
+                return false;
+            }
             updateSpreadTracker(player, stats.id());
             int shotsFired = 0;
             int shotsToFire = shotsPerTrigger();
@@ -919,6 +925,38 @@ public class GunItem extends Item {
 
     private int durabilityDamagePerShot(ItemStack stack) {
         return GunAttachments.modifiers(stack).explosiveAmmo() ? 5 : 1;
+    }
+
+    private boolean shouldJamBeforeShot(Level level, Player player, ItemStack stack) {
+        if (!Config.gunDurabilityEnabled() || !stack.isDamageableItem()) {
+            return false;
+        }
+
+        int damageAmount = durabilityDamagePerShot(stack);
+        if (stack.getDamageValue() >= stack.getMaxDamage() - damageAmount) {
+            level.playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
+            player.getCooldowns().addCooldown(stack.getItem(), Math.max(1, stats.fireDelay()));
+            return true;
+        }
+
+        if (!Config.gunJammingEnabled()) {
+            return false;
+        }
+
+        double threshold = GunAttachments.modifiers(stack).increasedJamming()
+                ? INCREASED_JAM_THRESHOLD
+                : LOW_DURABILITY_JAM_THRESHOLD;
+        if (stack.getDamageValue() < stack.getMaxDamage() / threshold) {
+            return false;
+        }
+        if (player.getRandom().nextFloat() >= JAM_CHANCE) {
+            return false;
+        }
+
+        playSound(level, player, Optional.ofNullable(resolveSound(Reference.id("item.pistol.cock"))), 1.0F);
+        player.displayClientMessage(Component.translatable("chat.jeg.jam").withStyle(ChatFormatting.GRAY), true);
+        player.getCooldowns().addCooldown(stack.getItem(), Mth.clamp(stats.fireDelay() * 10, 1, 60));
+        return true;
     }
 
     @Nullable
