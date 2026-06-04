@@ -95,13 +95,16 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
+
+        RawAnimation drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null && resetDrawAnimationIfRequested(state.getController(), stack)) {
+            return state.setAndContinue(drawAnimation);
+        }
         if (shouldContinueDrawAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
 
-        RawAnimation drawAnimation = drawAnimationFor(stack);
         if (drawAnimation != null) {
-            resetDrawAnimationIfRequested(state.getController(), stack);
             return state.setAndContinue(drawAnimation);
         }
 
@@ -280,16 +283,18 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientDrawResetDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
     }
 
-    private static void resetDrawAnimationIfRequested(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+    private static boolean resetDrawAnimationIfRequested(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
         if (clientDrawResetStack.isEmpty()) {
-            return;
+            return false;
         }
         if (System.nanoTime() > clientDrawResetDeadlineNanos || !matchesHeldStack(stack, clientDrawResetStack)) {
             clearDrawAnimationReset();
-            return;
+            return false;
         }
         controller.forceAnimationReset();
+        controller.stop();
         clearDrawAnimationReset();
+        return true;
     }
 
     private static void clearDrawAnimationReset() {

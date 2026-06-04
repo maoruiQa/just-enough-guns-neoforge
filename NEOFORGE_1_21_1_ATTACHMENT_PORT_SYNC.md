@@ -168,6 +168,7 @@ Behavior wired so far:
   - Reload cancellation now queues a fresh draw animation, preserves that queued draw while the interrupted stack is not held, clears the stale held/draw animation cache, and forces the GeckoLib draw controller to restart once, so switching back to the interrupted gun replays the authored draw sequence instead of dropping straight to idle.
   - The queued reload-cancel draw is tracked separately on the logical server and client; the client consumes its own queue when the interrupted stack becomes held again so GeckoLib restarts `draw` at switch-back time, not only at the original cancellation tick.
   - Client draw replay also keeps a short local draw window independent of the stack's `gun_draw_ticks_remaining` component because the ItemStack handed to GeckoLib rendering can lag behind the inventory stack component after slot changes.
+  - Draw restart requests are consumed before the predicate's normal "continue current draw" branch; otherwise GeckoLib can continue a stale down-tilted draw/reload pose until the visual window expires and then snap directly back to idle.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
