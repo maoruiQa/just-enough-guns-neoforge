@@ -56,7 +56,7 @@ public final class AttachmentRuntimeEvents {
     private static final long BAYONET_CHARGE_TICKS = 40L;
     private static final double BAYONET_CHARGE_RANGE = 1.5D;
     private static final double BAYONET_CHARGE_SWEEP_ANGLE = Math.toRadians(100.0D);
-    private static final int BAYONET_CHARGE_DAMAGE = 8;
+    private static final int BAYONET_CHARGE_DAMAGE = 15;
     private static final double BAYONET_MELEE_RANGE = 2.0D;
     private static final double BAYONET_MELEE_SWEEP_ANGLE = Math.toRadians(100.0D);
     private static final int BAYONET_MELEE_DAMAGE = 8;
@@ -245,7 +245,8 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static void damageStoredBayonet(Player player, ItemStack gunStack, ItemStack bayonet, int amount) {
-        if (player.getAbilities().instabuild || !bayonet.isDamageableItem()) {
+        if (player.getAbilities().instabuild || !Config.gunDurabilityEnabled() || !bayonet.isDamageableItem()
+                || enchantmentLevel(player, bayonet, Enchantments.MENDING) > 0) {
             return;
         }
         int damage = bayonet.getDamageValue() + amount;

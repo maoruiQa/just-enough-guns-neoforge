@@ -82,7 +82,7 @@ Behavior wired so far:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness.
   - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
-  - Successful charge hits damage the stored bayonet stack by 8 and clear the barrel slot when the sword breaks.
+  - Successful charge hits damage the stored bayonet stack by 15, gated by `combat.gunDurability`, creative mode, and Mending, then clear the barrel slot when the sword breaks.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.
 - Damage multipliers are applied to spawned bullet damage.
@@ -121,11 +121,11 @@ Behavior wired so far:
   - Laser pointer attachments emit the Forge-style custom red block-face laser particle on block hits, plus a small vanilla endpoint glint.
 - Sword bayonet melee-key behavior is wired:
   - Pressing `key.jeg.melee` sends a dedicated `MeleePayload`, so sword bayonets work even when the gun has no flashlight.
-  - The server validates that the main-hand item is a gun and the barrel slot stores a vanilla sword stack.
+  - The server validates that the main-hand item is a gun and the barrel slot stores a `SwordItem` stack.
   - The sweep uses Forge's 2 block range and 100 degree forward arc.
   - Sweep damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
   - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
-  - Successful sweep hits damage the stored bayonet stack by 8 and clear the barrel slot when the sword breaks.
+  - Successful sweep hits damage the stored bayonet stack by 8, gated by `combat.gunDurability`, creative mode, and Mending, then clear the barrel slot when the sword breaks.
   - The sweep applies a 15 tick gun cooldown, or 40 ticks while sprinting, and emits the vanilla sweep sound and particle.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
   - Forge's `gunDurability` config is adapted as the persistent server config `combat.gunDurability`; when disabled, firing does not damage the gun or installed attachments.
@@ -168,7 +168,7 @@ Behavior wired so far:
   - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
   - Forge 1.20.1's `modded_sword.geo.json` fallback is copied so non-vanilla `SwordItem` barrel attachments can render with their item texture when the texture exists.
   - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.
-  - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated vanilla sword barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
+  - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated `SwordItem` barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
   - Bayonet rendering checks `textures/animated/attachment/paintjob/<paintJob>/<sword>.png` before the base sword attachment texture, matching the Forge attachment texture fallback path.
   - Bayonet rendering still needs runtime visual validation across first-person and third-person contexts before broader non-scope attachment rendering is attempted.
 - Kill-effect badges are partially wired for held-gun bullets:
