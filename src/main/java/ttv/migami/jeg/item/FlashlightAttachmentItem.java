@@ -125,6 +125,7 @@ public class FlashlightAttachmentItem extends AttachmentItem {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
         tooltip.add(Component.translatable("info.jeg.tooltip_item.flashlight").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
         tooltip.add(Component.translatable("info.jeg.tooltip_item.flashlight_help").withStyle(ChatFormatting.GRAY));

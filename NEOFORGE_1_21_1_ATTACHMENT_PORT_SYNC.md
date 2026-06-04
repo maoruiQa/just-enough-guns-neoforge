@@ -61,6 +61,7 @@ Behavior wired so far:
   - `kill_effect`: registered kill-effect badges.
 - Functional attachment slot availability now follows the Forge 1.20.1 per-gun attachment matrix instead of default-opening all functional slots for guns without explicit NeoForge entries. Cosmetic slots remain available for every gun, matching Forge's attachment-screen rules.
 - Functional attachment items are tagged as vanilla `minecraft:dyeable` and have a client item-color handler that reads `DataComponents.DYED_COLOR`, adapting Forge 1.20.1's `IColored` attachment item data semantics to NeoForge 1.21.1 components. Because attachment slots persist full `ItemStack`s, dyed attachment components are preserved when installed on guns.
+- Functional attachment item tooltips now show Forge-style `Perks:` entries derived from the currently ported modifier fields, including silencer, explosive ammo, flashlight, laser pointer, trumpet, damage, spread, recoil/kick, and ADS speed effects.
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
