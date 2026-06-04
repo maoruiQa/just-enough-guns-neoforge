@@ -166,6 +166,7 @@ Behavior wired so far:
   - Headshot kills with `headpoppper_badge` apply the `popped` kill effect, which emits popcorn particles and beehive pop sounds while ticking.
   - Headshot kills with `trickshot_badge` apply the `trickshotted` kill effect, which emits hit-marker particles and Forge-style hit/air-horn/goose sounds while ticking.
 - Dye cosmetic behavior is partially wired for `flare_gun`:
+  - Animated gun Geo rendering uses the installed dye cosmetic's firework color as its render tint, matching Forge 1.20.1's `DyeUtils.getStoredDyeRGB` renderer path.
   - Bullets carry the firing gun's `dye` cosmetic slot color when the gun is `flare_gun`.
   - Flare smoke uses `colored_flare_smoke` with the dye's firework RGB color when a dye is installed.
   - Flare guns without a dye keep the existing default red flare smoke.
@@ -180,7 +181,7 @@ Still to port:
 - Runtime visual validation remains intentionally skipped for now per current task scope; smoke tests are the gate for these slices.
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
-- Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
+- Cosmetic slots: active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
 - Forge global low-durability gun jamming is not ported as a general system; do not recreate it as an attachment-only behavior.
 
 Sync checklist for the other maintained branches:
@@ -204,4 +205,5 @@ Sync checklist for the other maintained branches:
 15. Port pseudo vanilla sword bayonet melee-key behavior with the dedicated melee payload.
 16. Copy vanilla sword bayonet Geo/texture assets, then add a dedicated bayonet render layer and runtime-validate its first-person/third-person positioning.
 17. Add the vanilla `minecraft:dyeable` tag and item-color handler for functional attachment items so dyed attachment stacks survive menu install/removal.
-18. Then expand remaining runtime modifier/render behavior.
+18. Port cosmetic dye render tint for animated guns and flare-smoke color propagation.
+19. Then expand remaining runtime modifier/render behavior.

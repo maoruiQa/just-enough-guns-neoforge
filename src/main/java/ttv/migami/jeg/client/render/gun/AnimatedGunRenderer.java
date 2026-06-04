@@ -19,10 +19,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
@@ -32,6 +34,8 @@ import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final long DEBUG_WINDOW_NANOS = 2_000_000_000L;
@@ -102,6 +106,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     @Override
     public ResourceLocation getTextureLocation(AnimatedGunItem animatable) {
         return GunPaintJobTextures.texture(animatable, this.getCurrentItemStack());
+    }
+
+    @Override
+    public Color getRenderColor(AnimatedGunItem animatable, float partialTick, int packedLight) {
+        return Color.ofOpaque(dyeColor(this.getCurrentItemStack()));
     }
 
     public boolean isFirstPersonContext() {
@@ -536,6 +545,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static boolean isArmBone(String boneName) {
         return "left_arm".equals(boneName) || "right_arm".equals(boneName)
                 || "fake_left_arm".equals(boneName) || "fake_right_arm".equals(boneName);
+    }
+
+    private static int dyeColor(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 0xFFFFFF;
+        }
+        return GunAttachments.cosmeticItem(stack, AttachmentType.DYE)
+                .filter(DyeItem.class::isInstance)
+                .map(DyeItem.class::cast)
+                .map(dye -> dye.getDyeColor().getFireworkColor())
+                .orElse(0xFFFFFF);
     }
 
     private static boolean isSameHeldItem(ItemStack renderStack, ItemStack heldStack) {
