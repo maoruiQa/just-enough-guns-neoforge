@@ -670,6 +670,24 @@ public final class GunClientEvents {
         poseStack.popPose();
     }
 
+    public static void renderFirstPersonMuzzleFlashAtCurrentPose(PoseStack poseStack, MultiBufferSource bufferSource, ItemStack held) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || !(held.getItem() instanceof GunItem)) {
+            return;
+        }
+
+        MuzzleFlashState state = MUZZLE_FLASHES.get(minecraft.player.getId());
+        if (state == null) {
+            return;
+        }
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.ZP.rotationDegrees(state.random * 360.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(state.random >= 0.5F ? 180.0F : 0.0F));
+        renderMuzzleFlashQuad(poseStack, bufferSource, held, muzzleFlashProfile(held));
+        poseStack.popPose();
+    }
+
     private static void renderMuzzleFlashQuad(PoseStack poseStack, MultiBufferSource bufferSource, ItemStack held, MuzzleFlashProfile flash) {
         float size = (float) flash.size();
         poseStack.scale(size, size, 1.0F);

@@ -48,6 +48,17 @@ public final class GunAttachmentVisibility {
             "flashlight_glow"
     );
 
+    private static final Set<ResourceLocation> MAKESHIFT_STOCK_VISUAL_GUNS = Set.of(
+            Reference.id("abstract_gun"),
+            Reference.id("assault_rifle"),
+            Reference.id("custom_smg"),
+            Reference.id("double_barrel_shotgun"),
+            Reference.id("phantom_smg"),
+            Reference.id("pump_shotgun"),
+            Reference.id("revolver"),
+            Reference.id("semi_auto_rifle")
+    );
+
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
             rule(Reference.id("combat_rifle"),
                     Set.of("iron_sight"),
@@ -77,7 +88,7 @@ public final class GunAttachmentVisibility {
             }
         }
 
-        Boolean attachmentVisibility = installedAttachmentVisibility(stack, boneName);
+        Boolean attachmentVisibility = installedAttachmentVisibility(gunId, stack, boneName);
         if (attachmentVisibility != null) {
             bone.setHidden(attachmentVisibility);
             return;
@@ -125,7 +136,7 @@ public final class GunAttachmentVisibility {
         }
     }
 
-    private static Boolean installedAttachmentVisibility(ItemStack stack, String boneName) {
+    private static Boolean installedAttachmentVisibility(ResourceLocation gunId, ItemStack stack, String boneName) {
         if ("attachment_bone".equals(boneName)) {
             return !(GunAttachments.has(stack, AttachmentType.SCOPE) || hasSwordBayonet(stack));
         }
@@ -134,6 +145,9 @@ public final class GunAttachmentVisibility {
         }
         if ("iron_sight".equals(boneName) || "modified_iron_sight".equals(boneName) || "stock_iron_sight".equals(boneName)) {
             return GunAttachments.has(stack, AttachmentType.SCOPE);
+        }
+        if ("makeshift_stock".equals(boneName) && MAKESHIFT_STOCK_VISUAL_GUNS.contains(gunId)) {
+            return !GunAttachments.has(stack, AttachmentType.STOCK);
         }
         if (isInstalled(stack, AttachmentType.STOCK, boneName)) {
             return false;

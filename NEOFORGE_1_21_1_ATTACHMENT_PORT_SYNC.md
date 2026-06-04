@@ -166,6 +166,7 @@ Behavior wired so far:
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
+  - Guns whose copied Geo model only has a baked `makeshift_stock` stock visual (`abstract_gun`, `assault_rifle`, `custom_smg`, `double_barrel_shotgun`, `phantom_smg`, `pump_shotgun`, `revolver`, and `semi_auto_rifle`) reveal that stock visual when any stock-slot attachment is installed. Guns with dedicated `light_stock`, `tactical_stock`, and `weighted_stock` bones still reveal only the matching installed stock.
 - Attachment bone visibility preserves authored base rails such as `service_rifle`'s `railing` while still hiding unsupported generic rail bones by default.
 - Light machine gun render visibility now mirrors Forge's `bullet_1` through `bullet_7` bone thresholds by hiding exposed bullet bones above the current synced `gun_ammo` count.
 - Gun paint-job rendering is partially wired:
@@ -179,6 +180,7 @@ Behavior wired so far:
 - Scope attachment model rendering is partially wired:
   - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
+  - Short scope models (`reflex_sight`, `monocle_sight`, `holographic_sight`, and `combat_scope`) are normalized to the same visual center as `telescopic_sight` before rendering, fixing copied Geo assets whose model-space height differs from the long scope without adding a combat-rifle-specific transform.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
   - The JEG long-scope overlay, scoped FOV path, and scoped mouse-sensitivity reduction are now gated specifically by the installed `telescopic_sight` attachment. Other scope-slot attachments follow the normal iron-sight/attachment ADS path.
   - The telescopic-sight scoped path is gun-agnostic: any gun with `telescopic_sight` uses the scoped overlay/FOV path, while bolt-action forced ADS release remains limited to bolt-action rifle plus `telescopic_sight`.
@@ -188,6 +190,7 @@ Behavior wired so far:
   - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `barrel`, `under_barrel`, and `special` slots.
   - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
   - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same paint-job -> base -> fallback texture resolution.
+  - Local first-person muzzle flashes for guns with a `barrel` transform now render at that same model-space barrel transform while visiting `attachment_bone`, instead of applying root-model muzzle profile coordinates a second time inside the bone coordinate space.
   - The gun model's baked barrel, under-barrel, and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
   - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.

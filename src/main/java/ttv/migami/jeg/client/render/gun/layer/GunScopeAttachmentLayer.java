@@ -2,6 +2,7 @@ package ttv.migami.jeg.client.render.gun.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -27,6 +28,12 @@ public final class GunScopeAttachmentLayer extends GeoRenderLayer<AnimatedGunIte
     private static final String PAINT_JOB_MODEL_ROOT = "geo/item/attachment/paintjob/";
     private static final String PAINT_JOB_TEXTURE_ROOT = "textures/animated/attachment/paintjob/";
     private static final double SCOPE_MODEL_Y_OFFSET = -3.0D / 16.0D;
+    private static final Map<String, Double> MODEL_CENTER_Y_NORMALIZATION = Map.of(
+            "reflex_sight", 0.98993D,
+            "monocle_sight", 1.01734D,
+            "holographic_sight", 1.08917D,
+            "combat_scope", 0.90595D
+    );
 
     private final GunAttachmentGeoModel attachmentModel = new GunAttachmentGeoModel();
 
@@ -74,7 +81,7 @@ public final class GunScopeAttachmentLayer extends GeoRenderLayer<AnimatedGunIte
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
 
         poseStack.pushPose();
-        poseStack.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+        poseStack.translate(0.0D, scopeModelYOffset(attachmentId), 0.0D);
         getRenderer().reRender(
                 bakedModel,
                 poseStack,
@@ -88,6 +95,11 @@ public final class GunScopeAttachmentLayer extends GeoRenderLayer<AnimatedGunIte
                 0xFFFFFFFF
         );
         poseStack.popPose();
+    }
+
+    private static double scopeModelYOffset(ResourceLocation attachmentId) {
+        double normalizedCenter = MODEL_CENTER_Y_NORMALIZATION.getOrDefault(attachmentId.getPath(), 0.0D);
+        return SCOPE_MODEL_Y_OFFSET + normalizedCenter / 16.0D;
     }
 
     private static ResourceLocation model(ResourceLocation attachmentId, ItemStack gunStack) {
