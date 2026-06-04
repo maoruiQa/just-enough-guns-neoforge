@@ -116,7 +116,7 @@ Behavior wired so far:
 - Special-slot flashlight and laser pointer runtime behavior is partially wired:
   - Pressing `key.jeg.melee` while holding a gun with a flashlight toggles the powered state and plays `item.flashlight`.
   - Pressing `key.jeg.melee` while holding a gun with a vanilla sword in the barrel slot performs the Forge-style bayonet sweep.
-  - Flashlight and laser pointer server ticks continue while sprinting or charging with a bayonet, matching Forge's independent event handlers.
+  - Gun-mounted flashlight and laser pointer output pauses while the player is sprinting and the main-hand gun is not on cooldown; the powered state is preserved and resumes after sprinting stops.
   - Flashlight attachments now refuse to toggle when server config disables flashlights.
   - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
@@ -124,8 +124,7 @@ Behavior wired so far:
   - Standalone flashlight items now keep Forge-style battery/powered state, right-click toggling, attack-key charging, durability-bar battery display, and dynamic-light output while held.
   - Laser pointer attachments apply Glowing to aimed-at living entities while ADS is active when `attachments.glowingLaserPointers` is enabled.
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
-  - Laser pointer attachments emit custom `entity_laser` beam particles along the traced ray.
-  - Laser pointer attachments emit the Forge-style custom red block-face laser particle on block hits, plus a small vanilla endpoint glint.
+  - Laser pointer attachments now emit only the Forge-style custom red block-face laser particle on block hits; they no longer spawn red beam particles along the ray or a vanilla endpoint glint.
 - Sword bayonet melee-key behavior is wired:
   - Pressing `key.jeg.melee` sends a dedicated `MeleePayload`, so sword bayonets work even when the gun has no flashlight.
   - The server validates that the main-hand item is a gun and the barrel slot stores a `SwordItem` stack.
@@ -148,6 +147,18 @@ Behavior wired so far:
   - Firing with `trumpet` still plays `item.doot`.
   - Forge-style blast behavior is limited to guns with `projectileAmount > 3`: the shooter is pushed backward and nearby living entities in the forward cone are pushed away without extra damage.
   - The custom `sonic_ring` and `big_sonic_ring` particle types/providers are registered and emitted from the trumpet soundwave.
+- Gunfire visual parity is partially wired:
+  - Successful non-silenced player gunfire refreshes a short-lived `dynamic_light` block at the player's eye position, excluding Forge's non-flash weapons such as `finger_gun`, `typhoonee`, `atlantean_spear`, bows, and blowpipes.
+  - Bullet impacts on `jeg:metal` and `jeg:stone` tagged blocks emit yellow electric sparks; stone and wood impacts also emit a small cloud puff.
+  - Forge's yellow trail-color gun list is applied at bullet creation without hand-editing generated `GunDefinitions.java`.
+  - Client muzzle flash rendering is no longer suppressed while the local player is ADS.
+  - Local first-person muzzle flashes are rendered from the animated gun item pose stack so ADS/draw/reload transforms move the flash with the held gun; world-space billboard flashes remain for third-person and other entities.
+  - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
+- Draw/reload interaction parity is partially wired:
+  - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
+  - Reload requests now start a pending reload instead of immediately consuming ammo or swapping magazines.
+  - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
+  - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
@@ -222,6 +233,7 @@ Sync checklist for the other maintained branches:
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.
+   - Preserve gun-mounted flashlight/laser sprint pause and laser point-only behavior; do not reintroduce beam particles along the ray.
 12. Port attachment durability/breakage for the firing-damaged functional slots.
 13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
 14. Port scope attachment model rendering with paint-job texture fallback, including the copied Forge spyglass pseudo-scope model asset.
@@ -230,4 +242,6 @@ Sync checklist for the other maintained branches:
 17. Add the vanilla `minecraft:dyeable` tag and item-color handler for functional attachment items so dyed attachment stacks survive menu install/removal.
 18. Port cosmetic dye render tint for animated guns and flare-smoke color propagation.
 19. Port the attachment-screen kill-medal toggle, synced `ui.hideMedals`, bullet headshot medals, generic kill medals, and Forge special kill medals.
-20. Then expand remaining runtime modifier/render behavior.
+20. Port gunfire visual parity: player gunfire dynamic light, hard-block impact sparks/cloud puffs, Forge yellow bullet trail color overrides, ADS-visible item-pose first-person muzzle flashes, and forced alternate muzzle-flash UVs.
+21. Port draw/reload interaction parity: synced draw timer, draw operation lock, delayed reload completion, and reload cancellation when the player changes hand/slot.
+22. Then expand remaining runtime modifier/render behavior.

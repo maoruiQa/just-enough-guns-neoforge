@@ -28,6 +28,7 @@ import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.layer.GunBayonetAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
@@ -198,10 +199,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
                     applyFirstPersonAdsTransform(stack, gun, displayContext, poseStack);
                 }
-                if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
-                    return;
+                if (!renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
+                    super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
                 }
-                super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+                GunClientEvents.renderFirstPersonMuzzleFlash(poseStack, bufferSource, stack, resolveRenderedHand());
             } finally {
                 poseStack.popPose();
             }

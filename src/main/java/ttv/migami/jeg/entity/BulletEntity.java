@@ -761,6 +761,8 @@ public class BulletEntity extends Projectile {
             ServerLevel serverLevel = (ServerLevel) this.level();
             GunStats stats = getGunStats();
 
+            spawnHardBlockImpactParticles(serverLevel, result, hitState);
+
             if (Config.blockHitAnimationEnabled()) {
                 serverLevel.levelEvent(2001, hitPos, Block.getId(hitState));
             }
@@ -781,6 +783,36 @@ public class BulletEntity extends Projectile {
         // Block stopped the bullet - call super and discard it
         super.onHitBlock(result);
         this.discard();
+    }
+
+    private void spawnHardBlockImpactParticles(ServerLevel level, BlockHitResult result, BlockState state) {
+        Vec3 hit = result.getLocation();
+        if (state.is(ModTags.Blocks.METAL) || state.is(ModTags.Blocks.STONE)) {
+            level.sendParticles(
+                    ParticleTypes.ELECTRIC_SPARK,
+                    hit.x,
+                    hit.y,
+                    hit.z,
+                    2,
+                    0.04D,
+                    0.04D,
+                    0.04D,
+                    0.02D
+            );
+        }
+        if (state.is(ModTags.Blocks.STONE) || state.is(ModTags.Blocks.WOOD)) {
+            level.sendParticles(
+                    ParticleTypes.CLOUD,
+                    hit.x,
+                    hit.y,
+                    hit.z,
+                    1,
+                    0.04D,
+                    0.04D,
+                    0.04D,
+                    0.01D
+            );
+        }
     }
 
     @Override
@@ -861,6 +893,10 @@ public class BulletEntity extends Projectile {
 
     public int getTrailColor() {
         return this.entityData.get(DATA_TRAIL_COLOR);
+    }
+
+    public void setTrailColor(int color) {
+        this.entityData.set(DATA_TRAIL_COLOR, color);
     }
 
     public float getTrailLengthMultiplier() {

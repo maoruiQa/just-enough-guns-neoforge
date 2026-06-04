@@ -500,7 +500,7 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem gun)) {
                 return;
             }
-            boolean reloaded = gun.tryReload(player.level(), player, stack, true);
+            boolean reloaded = gun.tryReload(player.level(), player, payload.hand(), true);
             if (reloaded) {
                 player.swing(payload.hand(), true);
             }

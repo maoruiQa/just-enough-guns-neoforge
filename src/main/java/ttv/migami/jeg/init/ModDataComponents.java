@@ -74,6 +74,13 @@ public final class ModDataComponents {
                     .build()
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_DRAW_TICKS_REMAINING = REGISTER.register(
+            "gun_draw_ticks_remaining",
+            () -> DataComponentType.<Integer>builder()
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_WATER_COOLING_TICKS_TOTAL = REGISTER.register(
             "gun_water_cooling_ticks_total",
             () -> DataComponentType.<Integer>builder()

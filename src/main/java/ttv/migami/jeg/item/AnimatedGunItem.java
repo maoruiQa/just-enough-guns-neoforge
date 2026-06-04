@@ -34,10 +34,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String ANIM_RELOAD_STOP = "reload_stop";
     public static final String ANIM_AIM_SHOOT = "aim_shoot";
     public static final String ANIM_SPRINT = "sprint";
+    public static final String ANIM_DRAW = "draw";
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation SHOOT = RawAnimation.begin().then(ANIM_SHOOT, Animation.LoopType.PLAY_ONCE);
     private static final RawAnimation AIM_SHOOT = RawAnimation.begin().then(ANIM_AIM_SHOOT, Animation.LoopType.PLAY_ONCE);
+    private static final RawAnimation DRAW = RawAnimation.begin().then(ANIM_DRAW, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation RELOAD = RawAnimation.begin().then(ANIM_RELOAD, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation RELOAD_START = RawAnimation.begin().then(ANIM_RELOAD_START, Animation.LoopType.PLAY_ONCE).thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_LOOP = RawAnimation.begin().thenLoop(ANIM_RELOAD_LOOP);
@@ -71,6 +73,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         ).receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
+                .triggerableAnim(ANIM_DRAW, DRAW)
                 .triggerableAnim(ANIM_RELOAD, RELOAD)
                 .triggerableAnim(ANIM_RELOAD_START, RELOAD_START)
                 .triggerableAnim(ANIM_RELOAD_LOOP, RELOAD_LOOP)
@@ -82,6 +85,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         ItemStack stack = state.getData(DataTickets.ITEMSTACK);
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
+        }
+
+        RawAnimation drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null) {
+            return state.setAndContinue(drawAnimation);
         }
 
         RawAnimation reloadAnimation = reloadAnimationFor(stack);
@@ -111,6 +119,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         return state.setAndContinue(IDLE);
+    }
+
+    private static RawAnimation drawAnimationFor(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0 ? DRAW : null;
     }
 
     private static RawAnimation reloadAnimationFor(ItemStack stack) {

@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -34,12 +35,16 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.JustEnoughGuns;
+import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -47,6 +52,7 @@ import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -66,6 +72,7 @@ public class GunItem extends Item {
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
+    private static final int FORGE_YELLOW_TRAIL_COLOR = 0xFFFFFF00;
     private static final int GRENADE_FUSE_TICKS = 600;
     private static final double LOW_DURABILITY_JAM_THRESHOLD = 1.75D;
     private static final double INCREASED_JAM_THRESHOLD = 2.25D;
@@ -110,6 +117,7 @@ public class GunItem extends Item {
     static final int RELOAD_STAGE_START = 1;
     static final int RELOAD_STAGE_LOOP = 2;
     static final int RELOAD_STAGE_STOP = 3;
+    private static final int DRAW_TICKS = 14;
     private static final int ROCKET_RELOAD_START_TICKS = 46;
     private static final int ROCKET_RELOAD_LOOP_TICKS = 29;
     private static final int ROCKET_RELOAD_STOP_TICKS = 38;
@@ -122,6 +130,7 @@ public class GunItem extends Item {
     private static final Map<Integer, Integer> MINIGUN_PENDING_HEAT_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_PENDING_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_COOL_NUMERATOR = new HashMap<>();
+    private static final Map<UUID, PendingReload> PENDING_RELOADS = new HashMap<>();
     private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
     private static final Set<String> SHOTGUN_IDS = Set.of(
             "double_barrel_shotgun",
@@ -138,6 +147,34 @@ public class GunItem extends Item {
             "grenade_launcher",
             "hypersonic_cannon",
             "typhoonee"
+    );
+    private static final Set<String> FORGE_YELLOW_TRAIL_IDS = Set.of(
+            "abstract_gun",
+            "finger_gun",
+            "revolver",
+            "waterpipe_shotgun",
+            "custom_smg",
+            "double_barrel_shotgun",
+            "semi_auto_pistol",
+            "semi_auto_rifle",
+            "assault_rifle",
+            "pump_shotgun",
+            "combat_pistol",
+            "burst_rifle",
+            "combat_rifle",
+            "bolt_action_rifle",
+            "bubble_cannon",
+            "repeating_shotgun",
+            "infantry_rifle",
+            "service_rifle",
+            "hollenfire_mk2",
+            "subsonic_rifle",
+            "supersonic_shotgun",
+            "hypersonic_cannon",
+            "rocket_launcher",
+            "grenade_launcher",
+            "light_machine_gun",
+            "minigun"
     );
     private static final Set<String> HEAVY_BACKSTEP_IDS = Set.of(
             "light_machine_gun",
@@ -168,6 +205,8 @@ public class GunItem extends Item {
     public record MagazineInventorySummary(int loadedMagazineCount, int emptyMagazineCount) {}
 
     private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot) {}
+
+    private record PendingReload(InteractionHand hand, int selectedSlot, ItemStack stackSnapshot) {}
 
     public GunItem(Properties properties, GunStats stats) {
         super(properties);
@@ -339,6 +378,18 @@ public class GunItem extends Item {
 
     public static void clearTriggerLock(ItemStack stack) {
         setTriggerLocked(stack, false);
+    }
+
+    public static boolean isOperationLocked(ItemStack stack) {
+        return isReloading(stack) || isDrawing(stack);
+    }
+
+    public static boolean isReloading(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    public static boolean isDrawing(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0;
     }
 
     @Override
@@ -693,6 +744,10 @@ public class GunItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         ensureAmmoInitialized(stack);
         boolean automatic = isAutomatic();
+
+        if (isOperationLocked(stack)) {
+            return false;
+        }
 
         if (!automatic && isTriggerLocked(stack)) {
             return false;
@@ -1103,6 +1158,7 @@ public class GunItem extends Item {
         Vec3 shooterMotion = shooter.getDeltaMovement();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1158,6 +1214,7 @@ public class GunItem extends Item {
         Vec3 normalized = direction.normalize();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1190,6 +1247,37 @@ public class GunItem extends Item {
         }
     }
 
+    private void refreshGunfireLight(ServerLevel level, LivingEntity shooter, ItemStack stack) {
+        if (!(shooter instanceof Player) || shouldSkipGunfireLight(stack)) {
+            return;
+        }
+
+        BlockPos pos = BlockPos.containing(shooter.getEyePosition());
+        BlockState state = level.getBlockState(pos);
+        if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
+            DynamicLightBlock.setDelay(level, pos, 2.0D);
+        } else if (state.isAir()) {
+            level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
+        } else if (state.is(Blocks.WATER)) {
+            BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
+                    .defaultBlockState()
+                    .setValue(BlockStateProperties.WATERLOGGED, true);
+            level.setBlock(pos, dynamicLight, 3);
+        }
+    }
+
+    private boolean shouldSkipGunfireLight(ItemStack stack) {
+        if (GunAttachments.modifiers(stack).silenced()) {
+            return true;
+        }
+        String path = stats.id().getPath();
+        return "finger_gun".equals(path)
+                || "typhoonee".equals(path)
+                || "atlantean_spear".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
+    }
+
     public static BulletEntity createBullet(Level level, LivingEntity shooter, ItemStack stack, GunStats stats, Vec3 velocity) {
         AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
         BulletEntity bullet = new BulletEntity(
@@ -1207,7 +1295,14 @@ public class GunItem extends Item {
             bullet.setJustEnoughAmmoMedal(gun.getAmmo(stack) < 1);
         }
         applyFlareDye(stack, stats, bullet);
+        applyForgeTrailColor(stats, bullet);
         return bullet;
+    }
+
+    private static void applyForgeTrailColor(GunStats stats, BulletEntity bullet) {
+        if (FORGE_YELLOW_TRAIL_IDS.contains(stats.id().getPath())) {
+            bullet.setTrailColor(FORGE_YELLOW_TRAIL_COLOR);
+        }
     }
 
     private static void applyFlareDye(ItemStack stack, GunStats stats, BulletEntity bullet) {
@@ -1515,17 +1610,26 @@ public class GunItem extends Item {
     }
 
     public boolean tryReload(Level level, Player player, ItemStack stack, boolean notify) {
+        InteractionHand hand = stack == player.getOffhandItem() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        return tryReload(level, player, hand, notify);
+    }
+
+    public boolean tryReload(Level level, Player player, InteractionHand hand, boolean notify) {
+        ItemStack stack = player.getItemInHand(hand);
         if (!usesLoadedAmmo()) {
+            return false;
+        }
+        if (isOperationLocked(stack) || PENDING_RELOADS.containsKey(player.getUUID())) {
             return false;
         }
 
         if (usesMagazineSwapReload(stack)) {
-            return tryReloadWithMagazineSwap(level, player, stack, notify);
+            return tryStartReloadWithMagazineSwap(level, player, hand, stack, notify);
         }
-        return tryReloadWithLooseAmmo(level, player, stack, notify);
+        return tryStartReloadWithLooseAmmo(level, player, hand, stack, notify);
     }
 
-    private boolean tryReloadWithMagazineSwap(Level level, Player player, ItemStack stack, boolean notify) {
+    private boolean tryStartReloadWithMagazineSwap(Level level, Player player, InteractionHand hand, ItemStack stack, boolean notify) {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
         int maxAmmo = modifiedMagazineSize(stack);
@@ -1537,9 +1641,7 @@ public class GunItem extends Item {
         }
 
         if (player.getAbilities().instabuild) {
-            setAmmo(stack, maxAmmo);
-            finishReload(level, player, stack);
-            return true;
+            return startPendingReload(level, player, hand, stack);
         }
 
         MagazineInventoryScan scan = scanCompatibleMagazines(player, stack);
@@ -1563,6 +1665,33 @@ public class GunItem extends Item {
             return false;
         }
 
+        return startPendingReload(level, player, hand, stack);
+    }
+
+    private boolean completeReloadWithMagazineSwap(Level level, Player player, ItemStack stack) {
+        ensureAmmoInitialized(stack);
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (player.getAbilities().instabuild) {
+            setAmmo(stack, maxAmmo);
+            return true;
+        }
+
+        int ammo = getAmmo(stack);
+        MagazineInventoryScan scan = scanCompatibleMagazines(player, stack);
+        if (scan.bestMagazineSlot() < 0) {
+            return false;
+        }
+
+        ItemStack magazineStack = player.getInventory().getItem(scan.bestMagazineSlot());
+        if (!(magazineStack.getItem() instanceof MagazineItem magazine)) {
+            return false;
+        }
+
+        int newAmmo = magazine.getAmmoCount(magazineStack);
+        if (newAmmo <= 0) {
+            return false;
+        }
+
         int oldMagazineCapacity = magazine.getCapacity();
         ItemStack oldMagazine = createStoredMagazineStack(ammo);
         magazineStack.shrink(1);
@@ -1573,11 +1702,10 @@ public class GunItem extends Item {
         returnStoredMagazine(player, oldMagazine);
         returnExcessStoredAmmo(player, Math.max(0, ammo - oldMagazineCapacity));
         setAmmo(stack, newAmmo);
-        finishReload(level, player, stack);
         return true;
     }
 
-    private boolean tryReloadWithLooseAmmo(Level level, Player player, ItemStack stack, boolean notify) {
+    private boolean tryStartReloadWithLooseAmmo(Level level, Player player, InteractionHand hand, ItemStack stack, boolean notify) {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
         int maxAmmo = modifiedMagazineSize(stack);
@@ -1589,28 +1717,44 @@ public class GunItem extends Item {
         }
 
         int needed = maxAmmo - ammo;
-        int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
-        if (pulled <= 0) {
+        int available = player.getAbilities().instabuild ? needed : countInventoryAmmo(player);
+        if (available <= 0) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_ammo"));
             }
             return false;
         }
 
+        return startPendingReload(level, player, hand, stack);
+    }
+
+    private boolean completeReloadWithLooseAmmo(Player player, ItemStack stack) {
+        ensureAmmoInitialized(stack);
+        int ammo = getAmmo(stack);
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (ammo >= maxAmmo) {
+            return false;
+        }
+
+        int needed = maxAmmo - ammo;
+        int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
+        if (pulled <= 0) {
+            return false;
+        }
+
         setAmmo(stack, ammo + pulled);
-        finishReload(level, player, stack);
         return true;
     }
 
-    private void finishReload(Level level, Player player, ItemStack stack) {
+    private boolean startPendingReload(Level level, Player player, InteractionHand hand, ItemStack stack) {
         int reloadTicks = Math.max(1, stats.totalReloadTime());
-        player.getCooldowns().addCooldown(stack.getItem(), reloadTicks);
         playSound(level, player, stats.reloadStartSoundEvent());
+        PENDING_RELOADS.put(player.getUUID(), new PendingReload(hand, player.getInventory().selected, stack.copy()));
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
             startReloadVisualState(stack, reloadTicks);
             if ("rocket_launcher".equals(stats.id().getPath())) {
-                return;
+                return true;
             }
             if (usesSegmentedReloadAnimation()) {
                 animated.triggerReloadStart(level, player, stack);
@@ -1618,6 +1762,7 @@ public class GunItem extends Item {
                 animated.triggerReload(level, player, stack);
             }
         }
+        return true;
     }
 
     private MagazineInventoryScan scanCompatibleMagazines(Player player, ItemStack stack) {
@@ -1784,13 +1929,14 @@ public class GunItem extends Item {
             return;
         }
 
-        if (!held) {
-            clearReloadVisualState(stack);
+        if (!held || !isPendingReloadStillHeld(player, stack)) {
+            cancelPendingReload(player, stack);
             return;
         }
 
         remainingTicks--;
         if (remainingTicks <= 0) {
+            completePendingReload(level, player, stack);
             clearReloadVisualState(stack);
             return;
         }
@@ -1811,6 +1957,53 @@ public class GunItem extends Item {
                 );
                 triggerSegmentedReloadStage(animated, level, player, stack, newStage);
             }
+        }
+    }
+
+    private boolean isPendingReloadStillHeld(Player player, ItemStack stack) {
+        PendingReload pending = PENDING_RELOADS.get(player.getUUID());
+        if (pending == null) {
+            return false;
+        }
+
+        if (pending.hand() == InteractionHand.MAIN_HAND && player.getInventory().selected != pending.selectedSlot()) {
+            return false;
+        }
+
+        ItemStack current = player.getItemInHand(pending.hand());
+        return current == stack && ItemStack.isSameItem(current, pending.stackSnapshot());
+    }
+
+    private void cancelPendingReload(Player player, ItemStack stack) {
+        PENDING_RELOADS.remove(player.getUUID());
+        clearReloadVisualState(stack);
+    }
+
+    private void completePendingReload(Level level, Player player, ItemStack stack) {
+        PENDING_RELOADS.remove(player.getUUID());
+        if (usesMagazineSwapReload(stack)) {
+            completeReloadWithMagazineSwap(level, player, stack);
+        } else {
+            completeReloadWithLooseAmmo(player, stack);
+        }
+    }
+
+    private void updateDrawState(ItemStack stack, boolean held) {
+        if (!held) {
+            clearDrawState(stack);
+            return;
+        }
+        if (isReloading(stack)) {
+            return;
+        }
+        if (!stack.has(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get())) {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+            return;
+        }
+
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        if (remainingTicks > 0) {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), remainingTicks - 1);
         }
     }
 
@@ -1866,11 +2059,16 @@ public class GunItem extends Item {
         stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
     }
 
+    private static void clearDrawState(ItemStack stack) {
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+    }
+
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, level, entity, slot, selected);
         if (!level.isClientSide() && entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
             boolean held = selected || stack == player.getMainHandItem() || stack == player.getOffhandItem();
+            updateDrawState(stack, held);
             updateReloadVisualState(level, player, stack, held);
         }
         if (level.isClientSide() || !usesOverheatMechanic()) {

@@ -44,13 +44,12 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.init.ModBlocks;
-import ttv.migami.jeg.init.ModParticleTypes;
-import ttv.migami.jeg.particle.LaserOption;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.particle.LaserOption;
 
 public final class AttachmentRuntimeEvents {
     private static final long BAYONET_CHARGE_TICKS = 40L;
@@ -63,8 +62,6 @@ public final class AttachmentRuntimeEvents {
     private static final int BAYONET_MELEE_DAMAGE = 8;
     private static final int BAYONET_MELEE_COOLDOWN_TICKS = 15;
     private static final int BAYONET_SPRINT_MELEE_COOLDOWN_TICKS = 40;
-    private static final double LASER_BEAM_START_OFFSET = 0.75D;
-    private static final double LASER_BEAM_STEP = 0.4D;
     private static final Map<UUID, Long> BAYONET_SPRINT_START_TICKS = new HashMap<>();
 
     private AttachmentRuntimeEvents() {
@@ -88,10 +85,11 @@ public final class AttachmentRuntimeEvents {
         }
 
         if (stack.getItem() instanceof GunItem) {
-            if (GunAttachments.modifiers(stack).laserPointer()) {
+            boolean pauseGunLights = shouldPauseGunPoweredAttachments(player, stack);
+            if (!pauseGunLights && GunAttachments.modifiers(stack).laserPointer()) {
                 tickLaserPointer(player);
             }
-            refreshFlashlight = Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player);
+            refreshFlashlight = !pauseGunLights && Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player);
         }
 
         refreshFlashlight |= Config.allowFlashlights()
@@ -100,6 +98,12 @@ public final class AttachmentRuntimeEvents {
         if (refreshFlashlight) {
             tickFlashlight(player);
         }
+    }
+
+    private static boolean shouldPauseGunPoweredAttachments(Player player, ItemStack gunStack) {
+        return player.isSprinting()
+                && gunStack.getItem() instanceof GunItem
+                && !player.getCooldowns().isOnCooldown(gunStack.getItem());
     }
 
     public static void handleBayonetMelee(ServerPlayer player) {
@@ -333,45 +337,8 @@ public final class AttachmentRuntimeEvents {
             }
         }
 
-        ServerLevel serverLevel = (ServerLevel) player.level();
-        emitLaserPointerBeamParticles(serverLevel, start, laserEnd);
         if (hitBlock) {
-            emitLaserPointerBlockParticle(serverLevel, blockResult);
-        }
-        serverLevel.sendParticles(
-                ParticleTypes.END_ROD,
-                laserEnd.x,
-                laserEnd.y,
-                laserEnd.z,
-                1,
-                0.01D,
-                0.01D,
-                0.01D,
-                0.0D
-        );
-    }
-
-    private static void emitLaserPointerBeamParticles(ServerLevel level, Vec3 start, Vec3 end) {
-        Vec3 offset = end.subtract(start);
-        double length = offset.length();
-        if (length <= LASER_BEAM_START_OFFSET) {
-            return;
-        }
-
-        Vec3 normal = offset.normalize();
-        for (double distance = LASER_BEAM_START_OFFSET; distance < length; distance += LASER_BEAM_STEP) {
-            Vec3 point = start.add(normal.scale(distance));
-            level.sendParticles(
-                    ModParticleTypes.ENTITY_LASER.get(),
-                    point.x,
-                    point.y,
-                    point.z,
-                    1,
-                    0.0D,
-                    0.0D,
-                    0.0D,
-                    0.0D
-            );
+            emitLaserPointerBlockParticle((ServerLevel) player.level(), blockResult);
         }
     }
 
