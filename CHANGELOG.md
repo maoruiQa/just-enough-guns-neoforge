@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.2-patch - 2026-06-04
+
+### Fixed
+- Fixed first-person animated gun positioning on NeoForge 26.1.2 while keeping compatibility with NeoForge 26.1.0.
+
 ## 1.6.2 - 2026-05-27
 
 ### Changed

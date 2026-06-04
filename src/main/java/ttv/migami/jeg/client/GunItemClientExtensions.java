@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.common.NeoForgeVersion;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
@@ -22,6 +23,8 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
+    private static final boolean NEOFORGE_APPLIES_GENERIC_HAND_TRANSFORM =
+            neoforgeVersionAtLeast(26, 1, 2);
     private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
     private static final float SCOPED_BOLT_ACTION_SCALE_MULTIPLIER = 1.1F;
     private static final double FIRST_PERSON_TRANSLATE_X = -3.0D / 16.0D;
@@ -86,6 +89,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             float equipProcess,
             float swingProcess
     ) {
+        if (NEOFORGE_APPLIES_GENERIC_HAND_TRANSFORM) {
+            return false;
+        }
         return applyForStats(this.stats, poseStack, player, arm, partialTick, equipProcess, swingProcess);
     }
 
@@ -247,5 +253,41 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
     private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
+    }
+
+    private static boolean neoforgeVersionAtLeast(int targetMajor, int targetMinor, int targetPatch) {
+        int[] version = parseLeadingVersion(NeoForgeVersion.getVersion());
+        if (version[0] != targetMajor) {
+            return version[0] > targetMajor;
+        }
+        if (version[1] != targetMinor) {
+            return version[1] > targetMinor;
+        }
+        return version[2] >= targetPatch;
+    }
+
+    private static int[] parseLeadingVersion(String version) {
+        int[] parsed = new int[] {0, 0, 0};
+        if (version == null || version.isEmpty()) {
+            return parsed;
+        }
+
+        String[] parts = version.split("\\.");
+        for (int i = 0; i < parsed.length && i < parts.length; i++) {
+            parsed[i] = parseLeadingInt(parts[i]);
+        }
+        return parsed;
+    }
+
+    private static int parseLeadingInt(String value) {
+        int result = 0;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < '0' || c > '9') {
+                break;
+            }
+            result = result * 10 + c - '0';
+        }
+        return result;
     }
 }

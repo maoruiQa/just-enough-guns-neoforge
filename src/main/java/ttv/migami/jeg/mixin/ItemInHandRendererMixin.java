@@ -12,13 +12,13 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ttv.migami.jeg.client.GunItemClientExtensions;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.GunItem;
 
@@ -179,24 +179,15 @@ public final class ItemInHandRendererMixin {
         float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
         float equipProcess = Float.isNaN(this.jeg$capturedEquipProcess) ? 0.0F : this.jeg$capturedEquipProcess;
         float swingProcess = Float.isNaN(this.jeg$capturedSwingProcess) ? 0.0F : this.jeg$capturedSwingProcess;
-        IClientItemExtensions extensions = IClientItemExtensions.of(stack);
-        if (!extensions.applyForgeHandTransform(
+        GunItemClientExtensions.applyForStats(
+                gun.getStats(),
                 poseStack,
                 player,
                 arm,
-                stack,
                 partialTick,
                 equipProcess,
                 swingProcess
-        )) {
-            ttv.migami.jeg.client.GunHandTransform.apply(
-                    poseStack,
-                    player,
-                    arm,
-                    gun.getStats(),
-                    partialTick
-            );
-        }
+        );
     }
 
     @Unique
