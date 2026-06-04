@@ -80,9 +80,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static volatile long nextRenderDebugNanos;
     private static volatile long nextArmDebugNanos;
     private static volatile long nextGuiDebugNanos;
+    private final AnimatedGunGeoModel gunModel;
 
     public AnimatedGunRenderer() {
-        super(new AnimatedGunGeoModel());
+        this(new AnimatedGunGeoModel());
+    }
+
+    private AnimatedGunRenderer(AnimatedGunGeoModel gunModel) {
+        super(gunModel);
+        this.gunModel = gunModel;
         this.addRenderLayer(new GunScopeAttachmentLayer(this));
         this.addRenderLayer(new GunBayonetAttachmentLayer(this));
     }
@@ -156,6 +162,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int packedLight,
             int packedOverlay
     ) {
+        this.gunModel.setCurrentStack(stack);
         if (displayContext == ItemDisplayContext.GUI && renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
             return;
         }

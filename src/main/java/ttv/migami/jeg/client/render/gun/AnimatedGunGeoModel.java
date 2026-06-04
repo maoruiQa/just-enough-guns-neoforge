@@ -1,18 +1,19 @@
 package ttv.migami.jeg.client.render.gun;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.model.GeoModel;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
-    private static final String MODEL_ROOT = "geo/item/gun/";
     private static final String ANIMATION_ROOT = "animations/item/";
     private static final String FALLBACK = "abstract_gun";
+    private ItemStack currentStack = ItemStack.EMPTY;
 
     @Override
     public ResourceLocation getModelResource(AnimatedGunItem animatable) {
-        return Reference.id(MODEL_ROOT + path(animatable) + ".geo.json");
+        return GunPaintJobTextures.model(animatable, this.currentStack);
     }
 
     @Override
@@ -28,6 +29,10 @@ public final class AnimatedGunGeoModel extends GeoModel<AnimatedGunItem> {
     private static String path(AnimatedGunItem item) {
         String path = item.getStats().id().getPath();
         return path == null || path.isBlank() ? FALLBACK : path;
+    }
+
+    void setCurrentStack(ItemStack stack) {
+        this.currentStack = stack == null ? ItemStack.EMPTY : stack;
     }
 
 }
