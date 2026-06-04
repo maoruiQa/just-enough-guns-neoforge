@@ -56,7 +56,7 @@ public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final float SCOPE_VIEWPORT_FOV = 20.0F;
     private static final ResourceLocation MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
-    private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 0.75D;
+    private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 1.35D;
     private static final ResourceLocation OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final ResourceLocation HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int TIMER_BAR_WIDTH = 64;

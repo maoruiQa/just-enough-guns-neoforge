@@ -95,6 +95,9 @@ public final class GunAttachmentVisibility {
 
         Boolean attachmentVisibility = installedAttachmentVisibility(gunId, stack, boneName);
         if (attachmentVisibility != null) {
+            if (!attachmentVisibility && BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
+                bone.setChildrenHidden(false);
+            }
             bone.setHidden(attachmentVisibility);
             return;
         }

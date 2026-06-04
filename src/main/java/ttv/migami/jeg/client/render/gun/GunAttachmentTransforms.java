@@ -12,7 +12,7 @@ public final class GunAttachmentTransforms {
     private static final double UNIT = 1.0D / 16.0D;
     private static final Map<ResourceLocation, Map<AttachmentType, Transform>> TRANSFORMS = Map.ofEntries(
             entry("abstract_gun", scope(0.0D, 4.715D, 5.0D), barrel(0.0D, 3.97D, -4.5D), underBarrel(0.0D, 2.7D, 0.3D), special(-1.0D, 4.0D, 0.0D)),
-            entry("assault_rifle", scope(0.0D, 4.715D, 5.0D), barrel(0.0D, 3.97D, -4.5D), stock(0.0D, 4.5D, 8.1D), underBarrel(0.0D, 2.7D, 0.3D), special(-1.0D, 4.0D, 0.0D)),
+            entry("assault_rifle", scope(0.0D, 4.715D, 5.0D), barrel(0.0D, 3.97D, -4.5D), stock(0.0D, 3.0D, 8.1D), underBarrel(0.0D, 2.7D, 0.3D), special(-1.0D, 4.0D, 0.0D)),
             entry("blossom_rifle", scope(0.0D, 6.0D, 3.0D), barrel(0.0D, 5.1D, -9.4D), underBarrel(0.0D, 3.9D, 0.0D), special(-1.1D, 5.0D, -6.2D)),
             entry("bolt_action_rifle", scope(0.0D, 5.0D, -4.4D), barrel(0.0D, 4.905D, -14.5D), special(-1.0D, 4.0D, -7.0D)),
             entry("burst_rifle", scope(0.0D, 5.73D, 5.4D), barrel(0.0D, 4.34D, -5.5D), underBarrel(0.0D, 2.975D, -0.78D), special(-1.2D, 4.335D, -2.0D)),
