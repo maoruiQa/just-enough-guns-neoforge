@@ -104,6 +104,9 @@ public final class GunAttachmentVisibility {
     }
 
     private static Boolean installedAttachmentVisibility(ItemStack stack, String boneName) {
+        if ("attachment_bone".equals(boneName)) {
+            return !(GunAttachments.has(stack, AttachmentType.SCOPE) || hasSwordBayonet(stack));
+        }
         if (isScopeBone(boneName)) {
             return !GunAttachments.has(stack, AttachmentType.SCOPE);
         }
@@ -136,6 +139,13 @@ public final class GunAttachmentVisibility {
 
     private static boolean isScopeBone(String boneName) {
         return "attachment_bone".equals(boneName) || "scope".equals(boneName) || "railing".equals(boneName);
+    }
+
+    private static boolean hasSwordBayonet(ItemStack stack) {
+        return GunAttachments.stack(stack, AttachmentType.BARREL)
+                .map(ItemStack::getItem)
+                .filter(net.minecraft.world.item.SwordItem.class::isInstance)
+                .isPresent();
     }
 
     private static boolean isDefaultMagazineBone(String boneName) {
