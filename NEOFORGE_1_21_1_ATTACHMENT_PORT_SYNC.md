@@ -34,11 +34,11 @@ Current NeoForge 1.21.1 foundation:
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
 - `AttachmentScreen` draws Forge-style slot icons, disabled-slot crosses, incompatible-slot hover feedback, and a rotating held-gun preview from the current menu validation/rendering rules.
-- Recipes are standard crafting recipes under `src/main/resources/data/jeg/recipes/`.
+- Recipes are standard 1.21 crafting recipes under `src/main/resources/data/jeg/recipe/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
 - Forge attachment Geo assets were copied under `src/main/resources/assets/jeg/geo/item/attachment/`.
 - Active Forge cosmetic attachment items are registered: classic/toy/whiteout/golden spray cans plus creeper birthday, headpopper, and trickshot badges.
-- Cosmetic attachment items have explicit crafting recipes and are included in the gunsmith manual unlock list.
+- Functional attachments, active spray cans, and kill-effect badges have explicit crafting recipes and are included in the gunsmith manual unlock list.
 
 Behavior wired so far:
 
