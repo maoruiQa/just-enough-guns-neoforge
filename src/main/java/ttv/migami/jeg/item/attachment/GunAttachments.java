@@ -44,6 +44,7 @@ public final class GunAttachments {
     private static final AttachmentModifiers SPYGLASS_SCOPE_MODIFIERS = AttachmentModifiers.builder()
             .aimFovModifier(0.2F)
             .adsSpeedMultiplier(0.76D)
+            .adsViewOffset(0.0D, 1.0D, -3.15D)
             .build();
 
     private GunAttachments() {
@@ -60,8 +61,8 @@ public final class GunAttachments {
     }
 
     public static Optional<ResourceLocation> id(ItemStack gunStack, AttachmentType type) {
-        ItemStack stored = gunStack.get(stackComponent(type));
-        if (stored != null && !stored.isEmpty()) {
+        ItemStack stored = stackFromComponent(gunStack, type);
+        if (!stored.isEmpty()) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(stored.getItem());
             if (id != null) {
                 return Optional.of(id);
@@ -75,8 +76,8 @@ public final class GunAttachments {
     }
 
     public static Optional<ItemStack> stack(ItemStack gunStack, AttachmentType type) {
-        ItemStack stored = gunStack.get(stackComponent(type));
-        if (stored != null && !stored.isEmpty()) {
+        ItemStack stored = stackFromComponent(gunStack, type);
+        if (!stored.isEmpty()) {
             return Optional.of(stored.copyWithCount(1));
         }
         return idFromComponent(gunStack, type)
@@ -92,7 +93,7 @@ public final class GunAttachments {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(attachmentStack.getItem());
         if (id != null) {
             gunStack.set(component(type), id.toString());
-            gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
+            gunStack.set(stackComponent(type), new StoredAttachmentStack(attachmentStack));
         }
     }
 
@@ -128,6 +129,9 @@ public final class GunAttachments {
         float recoilMultiplier = 1.0F;
         float kickMultiplier = 1.0F;
         double adsSpeedMultiplier = 1.0D;
+        double adsViewXOffset = 0.0D;
+        double adsViewYOffset = 0.0D;
+        double adsViewZOffset = 0.0D;
         double magazineCapacityMultiplier = 1.0D;
         double fireSoundRadiusMultiplier = 1.0D;
         boolean silenced = false;
@@ -147,6 +151,9 @@ public final class GunAttachments {
             recoilMultiplier *= modifier.recoilMultiplier();
             kickMultiplier *= modifier.kickMultiplier();
             adsSpeedMultiplier *= modifier.adsSpeedMultiplier();
+            adsViewXOffset += modifier.adsViewXOffset();
+            adsViewYOffset += modifier.adsViewYOffset();
+            adsViewZOffset += modifier.adsViewZOffset();
             magazineCapacityMultiplier *= modifier.magazineCapacityMultiplier();
             fireSoundRadiusMultiplier = Math.min(fireSoundRadiusMultiplier, modifier.fireSoundRadiusMultiplier());
             silenced |= modifier.silenced();
@@ -164,6 +171,9 @@ public final class GunAttachments {
                 recoilMultiplier,
                 kickMultiplier,
                 adsSpeedMultiplier,
+                adsViewXOffset,
+                adsViewYOffset,
+                adsViewZOffset,
                 magazineCapacityMultiplier,
                 fireSoundRadiusMultiplier,
                 silenced,
@@ -192,7 +202,7 @@ public final class GunAttachments {
             return false;
         }
         gunStack.set(component(type), id.toString());
-        gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
+        gunStack.set(stackComponent(type), new StoredAttachmentStack(attachmentStack));
         removeDamage(gunStack, type);
         if (item instanceof AttachmentItem attachment && type == AttachmentType.SPECIAL) {
             if (attachment.modifiers().flashlight()) {
@@ -220,7 +230,7 @@ public final class GunAttachments {
             return false;
         }
         gunStack.set(component(type), id.toString());
-        gunStack.set(stackComponent(type), attachmentStack.copyWithCount(1));
+        gunStack.set(stackComponent(type), new StoredAttachmentStack(attachmentStack));
         return true;
     }
 
@@ -393,9 +403,14 @@ public final class GunAttachments {
             player.displayClientMessage(message, true);
         } else {
             attachmentStack.setDamageValue(currentDamage + 1);
-            gunStack.set(stackComponent(type), attachmentStack);
+            gunStack.set(stackComponent(type), new StoredAttachmentStack(attachmentStack));
             gunStack.set(damageComponent, currentDamage + 1);
         }
+    }
+
+    private static ItemStack stackFromComponent(ItemStack gunStack, AttachmentType type) {
+        StoredAttachmentStack stored = gunStack.get(stackComponent(type));
+        return stored == null ? ItemStack.EMPTY : stored.toItemStack();
     }
 
     private static Optional<ResourceLocation> idFromComponent(ItemStack gunStack, AttachmentType type) {
@@ -449,7 +464,7 @@ public final class GunAttachments {
         };
     }
 
-    private static DataComponentType<ItemStack> stackComponent(AttachmentType type) {
+    private static DataComponentType<StoredAttachmentStack> stackComponent(AttachmentType type) {
         return switch (type) {
             case SCOPE -> ModDataComponents.GUN_SCOPE_ATTACHMENT_STACK.get();
             case BARREL -> ModDataComponents.GUN_BARREL_ATTACHMENT_STACK.get();

@@ -7,6 +7,9 @@ public record AttachmentModifiers(
         float recoilMultiplier,
         float kickMultiplier,
         double adsSpeedMultiplier,
+        double adsViewXOffset,
+        double adsViewYOffset,
+        double adsViewZOffset,
         double magazineCapacityMultiplier,
         double fireSoundRadiusMultiplier,
         boolean silenced,
@@ -29,6 +32,9 @@ public record AttachmentModifiers(
         private float recoilMultiplier = 1.0F;
         private float kickMultiplier = 1.0F;
         private double adsSpeedMultiplier = 1.0D;
+        private double adsViewXOffset = 0.0D;
+        private double adsViewYOffset = 0.0D;
+        private double adsViewZOffset = 0.0D;
         private double magazineCapacityMultiplier = 1.0D;
         private double fireSoundRadiusMultiplier = 1.0D;
         private boolean silenced;
@@ -65,6 +71,13 @@ public record AttachmentModifiers(
 
         public Builder adsSpeedMultiplier(double value) {
             this.adsSpeedMultiplier = value;
+            return this;
+        }
+
+        public Builder adsViewOffset(double x, double y, double z) {
+            this.adsViewXOffset = x;
+            this.adsViewYOffset = y;
+            this.adsViewZOffset = z;
             return this;
         }
 
@@ -116,6 +129,9 @@ public record AttachmentModifiers(
                     this.recoilMultiplier,
                     this.kickMultiplier,
                     this.adsSpeedMultiplier,
+                    this.adsViewXOffset,
+                    this.adsViewYOffset,
+                    this.adsViewZOffset,
                     this.magazineCapacityMultiplier,
                     this.fireSoundRadiusMultiplier,
                     this.silenced,

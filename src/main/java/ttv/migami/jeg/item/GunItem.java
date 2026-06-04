@@ -1966,8 +1966,11 @@ public class GunItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID) ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR : stats.damage();
-        tooltip.add(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID)
+                ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR
+                : modifiedDamage(stats, modifiers);
+        tooltip.add(Component.translatable("info.jeg.damage", String.format(Locale.US, "%.1f", displayDamage)));
 
         if (usesLoadedAmmo()) {
             tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), modifiedMagazineSize(stack)));

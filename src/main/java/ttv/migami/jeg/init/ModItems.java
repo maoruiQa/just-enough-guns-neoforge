@@ -113,31 +113,31 @@ public final class ModItems {
     public static final DeferredHolder<Item, AttachmentItem> REFLEX_SIGHT = registerAttachment(
             "reflex_sight",
             AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.7F).adsSpeedMultiplier(0.95D).build(),
+            AttachmentModifiers.builder().aimFovModifier(0.7F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.65D, -1.2D).build(),
             baseProperties(Reference.id("reflex_sight")).stacksTo(1).durability(800)
     );
     public static final DeferredHolder<Item, AttachmentItem> MONOCLE_SIGHT = registerAttachment(
             "monocle_sight",
             AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.7F).adsSpeedMultiplier(0.95D).build(),
+            AttachmentModifiers.builder().aimFovModifier(0.7F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.65D, -1.2D).build(),
             baseProperties(Reference.id("monocle_sight")).stacksTo(1).durability(800)
     );
     public static final DeferredHolder<Item, AttachmentItem> HOLOGRAPHIC_SIGHT = registerAttachment(
             "holographic_sight",
             AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.5F).adsSpeedMultiplier(0.95D).build(),
+            AttachmentModifiers.builder().aimFovModifier(0.5F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.75D, -1.6D).build(),
             baseProperties(Reference.id("holographic_sight")).stacksTo(1).durability(800).rarity(Rarity.UNCOMMON)
     );
     public static final DeferredHolder<Item, AttachmentItem> COMBAT_SCOPE = registerAttachment(
             "combat_scope",
             AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.3F).adsSpeedMultiplier(0.95D).build(),
+            AttachmentModifiers.builder().aimFovModifier(0.3F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.85D, -2.4D).build(),
             baseProperties(Reference.id("combat_scope")).stacksTo(1).durability(800).rarity(Rarity.RARE)
     );
     public static final DeferredHolder<Item, AttachmentItem> TELESCOPIC_SIGHT = registerAttachment(
             "telescopic_sight",
             AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.2F).adsSpeedMultiplier(0.76D).build(),
+            AttachmentModifiers.builder().aimFovModifier(0.2F).adsSpeedMultiplier(0.76D).adsViewOffset(0.0D, 1.0D, -3.15D).build(),
             baseProperties(Reference.id("telescopic_sight")).stacksTo(1).durability(800).rarity(Rarity.EPIC)
     );
     public static final DeferredHolder<Item, AttachmentItem> MAKESHIFT_STOCK = registerAttachment(

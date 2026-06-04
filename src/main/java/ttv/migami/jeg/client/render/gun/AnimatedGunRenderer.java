@@ -35,6 +35,7 @@ import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
@@ -240,11 +241,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        ForgeZoomOffset zoom = scopedBoltActionRifle(stack, gun)
+        boolean scopedBoltAction = scopedBoltActionRifle(stack, gun);
+        ForgeZoomOffset zoom = scopedBoltAction
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
         if (zoom == null) {
             return;
+        }
+        if (!scopedBoltAction) {
+            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
         }
 
         ItemTransform transform = staticItemFirstPersonTransform(gun.getStats().id(), displayContext);
@@ -336,6 +341,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
+    }
+
+    private static ForgeZoomOffset withAttachmentAdsOffset(ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + modifiers.adsViewXOffset(),
+                zoom.yOffset() + modifiers.adsViewYOffset(),
+                zoom.zOffset() + modifiers.adsViewZOffset()
+        );
     }
 
     private static boolean scopedBoltActionRifle(ItemStack stack, AnimatedGunItem gun) {

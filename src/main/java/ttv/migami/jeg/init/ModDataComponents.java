@@ -4,10 +4,10 @@ import com.mojang.serialization.Codec;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.item.attachment.StoredAttachmentStack;
 
 public final class ModDataComponents {
     private ModDataComponents() {}
@@ -115,15 +115,15 @@ public final class ModDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_PAINT_JOB_ATTACHMENT = attachmentComponent("gun_paint_job_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_DYE_ATTACHMENT = attachmentComponent("gun_dye_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_KILL_EFFECT_ATTACHMENT = attachmentComponent("gun_kill_effect_attachment");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_SCOPE_ATTACHMENT_STACK = attachmentStackComponent("gun_scope_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_BARREL_ATTACHMENT_STACK = attachmentStackComponent("gun_barrel_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_STOCK_ATTACHMENT_STACK = attachmentStackComponent("gun_stock_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_UNDER_BARREL_ATTACHMENT_STACK = attachmentStackComponent("gun_under_barrel_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_MAGAZINE_ATTACHMENT_STACK = attachmentStackComponent("gun_magazine_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_SPECIAL_ATTACHMENT_STACK = attachmentStackComponent("gun_special_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_PAINT_JOB_ATTACHMENT_STACK = attachmentStackComponent("gun_paint_job_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_DYE_ATTACHMENT_STACK = attachmentStackComponent("gun_dye_attachment_stack");
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> GUN_KILL_EFFECT_ATTACHMENT_STACK = attachmentStackComponent("gun_kill_effect_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_SCOPE_ATTACHMENT_STACK = attachmentStackComponent("gun_scope_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_BARREL_ATTACHMENT_STACK = attachmentStackComponent("gun_barrel_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_STOCK_ATTACHMENT_STACK = attachmentStackComponent("gun_stock_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_UNDER_BARREL_ATTACHMENT_STACK = attachmentStackComponent("gun_under_barrel_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_MAGAZINE_ATTACHMENT_STACK = attachmentStackComponent("gun_magazine_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_SPECIAL_ATTACHMENT_STACK = attachmentStackComponent("gun_special_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_PAINT_JOB_ATTACHMENT_STACK = attachmentStackComponent("gun_paint_job_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_DYE_ATTACHMENT_STACK = attachmentStackComponent("gun_dye_attachment_stack");
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> GUN_KILL_EFFECT_ATTACHMENT_STACK = attachmentStackComponent("gun_kill_effect_attachment_stack");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_SCOPE_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_scope_attachment_damage");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_BARREL_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_barrel_attachment_damage");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_STOCK_ATTACHMENT_DAMAGE = attachmentDamageComponent("gun_stock_attachment_damage");
@@ -153,12 +153,12 @@ public final class ModDataComponents {
         );
     }
 
-    private static DeferredHolder<DataComponentType<?>, DataComponentType<ItemStack>> attachmentStackComponent(String name) {
+    private static DeferredHolder<DataComponentType<?>, DataComponentType<StoredAttachmentStack>> attachmentStackComponent(String name) {
         return REGISTER.register(
                 name,
-                () -> DataComponentType.<ItemStack>builder()
-                        .persistent(ItemStack.CODEC)
-                        .networkSynchronized(ItemStack.STREAM_CODEC)
+                () -> DataComponentType.<StoredAttachmentStack>builder()
+                        .persistent(StoredAttachmentStack.CODEC)
+                        .networkSynchronized(StoredAttachmentStack.STREAM_CODEC)
                         .build()
         );
     }
