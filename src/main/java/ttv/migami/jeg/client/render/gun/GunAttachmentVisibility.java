@@ -138,7 +138,7 @@ public final class GunAttachmentVisibility {
     }
 
     private static boolean isScopeBone(String boneName) {
-        return "attachment_bone".equals(boneName) || "scope".equals(boneName) || "railing".equals(boneName);
+        return "attachment_bone".equals(boneName) || "scope".equals(boneName);
     }
 
     private static boolean hasSwordBayonet(ItemStack stack) {
