@@ -38,7 +38,7 @@ Current NeoForge 1.21.1 foundation:
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
 - Forge attachment Geo assets were copied under `src/main/resources/assets/jeg/geo/item/attachment/`.
 - Active Forge cosmetic attachment items are registered: classic/toy/whiteout/golden spray cans plus creeper birthday, headpopper, and trickshot badges.
-- Functional attachments, active spray cans, and kill-effect badges have explicit crafting recipes and are included in the gunsmith manual unlock list.
+- Functional attachments, active spray cans, and kill-effect badges have explicit crafting recipes and are included in the gunsmith manual and explicit gun-recipe unlock paths.
 
 Behavior wired so far:
 

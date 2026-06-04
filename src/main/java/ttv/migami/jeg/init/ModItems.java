@@ -566,6 +566,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
         ATTACHMENTS.keySet().forEach(id -> keys.add(ResourceKey.create(Registries.RECIPE, id)));
+        addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
