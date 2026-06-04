@@ -2,8 +2,13 @@ package ttv.migami.jeg.item;
 
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -15,14 +20,16 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
-import ttv.migami.jeg.JustEnoughGuns;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AnimatedGunItem extends GunItem implements GeoItem {
@@ -47,10 +54,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, Animation.LoopType.HOLD_ON_LAST_FRAME);
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
+    private static final ResourceLocation GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
+    private static final ResourceLocation GUN_SCREW_SOUND = Reference.id("item.gun_screw");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private static volatile boolean loggedRendererProvider;
-    private static volatile long nextClientReloadDebugNanos;
     private static ItemStack clientShootStack = ItemStack.EMPTY;
     private static boolean clientShootAiming;
     private static long clientShootTriggerDeadlineNanos;
@@ -71,7 +79,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 CONTROLLER,
                 0,
                 this::animationPredicate
-        ).receiveTriggeredAnimations()
+        ).setSoundKeyframeHandler(this::soundListener)
+                .receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
                 .triggerableAnim(ANIM_DRAW, DRAW)
@@ -110,7 +119,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         RawAnimation reloadAnimation = reloadAnimationFor(stack);
         if (reloadAnimation != null) {
-            debugClientReloadPredicate(stack);
             return state.setAndContinue(reloadAnimation);
         }
 
@@ -187,6 +195,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (remainingTicks <= 0) {
             controller.forceAnimationReset();
             controller.stop();
+            clearAnimatableSnapshot(stack);
             return false;
         }
 
@@ -209,6 +218,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         controller.forceAnimationReset();
         controller.stop();
+        clearAnimatableSnapshot(stack);
         return true;
     }
 
@@ -270,6 +280,28 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         rememberDrawAnimation(stack);
     }
 
+    static void restartDrawAnimationAfterReloadCancel(ItemStack stack) {
+        clearReloadVisualState(stack);
+        restartDrawAnimation(stack);
+    }
+
+    private static void clearReloadVisualState(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+    }
+
+    private static void clearAnimatableSnapshot(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
+            return;
+        }
+        var manager = gun.getAnimatableInstanceCache().getManagerForId(GeoItem.getId(stack));
+        manager.clearSnapshotCache();
+    }
+
     private static boolean hasRecentDrawAnimation(ItemStack stack) {
         return System.nanoTime() <= clientDrawAnimationDeadlineNanos && matchesHeldStack(stack, clientDrawStack);
     }
@@ -293,6 +325,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         controller.forceAnimationReset();
         controller.stop();
+        clearAnimatableSnapshot(stack);
         clearDrawAnimationReset();
         return true;
     }
@@ -382,6 +415,54 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientShootTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
     }
 
+    private void soundListener(SoundKeyframeEvent<AnimatedGunItem> event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.player == null) {
+            return;
+        }
+
+        Player player = minecraft.player;
+        ItemStack stack = player.getMainHandItem();
+        GunItem gun = stack.getItem() instanceof GunItem mainHandGun ? mainHandGun : null;
+        if (gun == null) {
+            stack = player.getOffhandItem();
+            gun = stack.getItem() instanceof GunItem offHandGun ? offHandGun : null;
+        }
+        if (gun == null) {
+            return;
+        }
+
+        SoundEvent sound = soundForKeyframe(event.getKeyframeData().getSound(), gun.getStats());
+        if (sound != null) {
+            player.playSound(sound, 1.0F, 1.0F);
+        }
+    }
+
+    private static SoundEvent soundForKeyframe(String key, GunStats stats) {
+        return switch (key) {
+            case "rustle" -> resolveSound(GUN_RUSTLE_SOUND);
+            case "screw" -> resolveSound(GUN_SCREW_SOUND);
+            case "reload_mag_out" -> stats.reloadStartSoundEvent().orElse(null);
+            case "reload_mag_in" -> stats.reloadLoadSoundEvent().orElse(null);
+            case "reload_end" -> stats.reloadEndSoundEvent().orElse(null);
+            case "ejector_pull" -> resolveSound(stats.ejectorPullSound());
+            case "ejector_release" -> resolveSound(stats.ejectorReleaseSound());
+            case "jammed" -> SoundEvents.ANVIL_LAND;
+            default -> null;
+        };
+    }
+
+    private static SoundEvent resolveSound(ResourceLocation id) {
+        if (id == null) {
+            return null;
+        }
+        var holder = ModSounds.ALL.get(id);
+        if (holder != null) {
+            return holder.get();
+        }
+        return BuiltInRegistries.SOUND_EVENT.getOptional(id).orElse(null);
+    }
+
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
@@ -424,31 +505,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return;
         }
         long id = GeoItem.getOrAssignId(stack, serverLevel);
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RELOAD_DEBUG] trigger animation={} id={} item={} entity={} remaining={} stage={}",
-                animation,
-                id,
-                stack.getItem(),
-                triggerEntity.getType().getDescriptionId(),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
-        );
         triggerAnim(triggerEntity, id, CONTROLLER, animation);
-    }
-
-    private static void debugClientReloadPredicate(ItemStack stack) {
-        long now = System.nanoTime();
-        if (now < nextClientReloadDebugNanos) {
-            return;
-        }
-        nextClientReloadDebugNanos = now + 1_000_000_000L;
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RELOAD_DEBUG] client predicate item={} remaining={} total={} stage={}",
-                stack.getItem(),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), 0),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
-        );
     }
 
     public void triggerShoot(Level level, Entity triggerEntity, ItemStack stack) {

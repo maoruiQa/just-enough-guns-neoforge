@@ -191,6 +191,7 @@ public final class GunAttachmentVisibility {
     private static boolean hasAttachmentBoneRenderPath(ItemStack stack) {
         return GunAttachments.has(stack, AttachmentType.SCOPE)
                 || GunAttachments.has(stack, AttachmentType.BARREL)
+                || GunAttachments.has(stack, AttachmentType.STOCK)
                 || GunAttachments.has(stack, AttachmentType.UNDER_BARREL)
                 || GunAttachments.has(stack, AttachmentType.SPECIAL)
                 || hasSwordBayonet(stack);

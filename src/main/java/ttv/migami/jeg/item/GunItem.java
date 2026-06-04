@@ -2023,13 +2023,6 @@ public class GunItem extends Item {
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), usesSegmentedReloadAnimation() ? RELOAD_STAGE_START : RELOAD_STAGE_NONE);
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_RELOAD_DEBUG] start visual state item={} total={} segmented={} stage={}",
-                stack.getItem(),
-                totalTicks,
-                usesSegmentedReloadAnimation(),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE)
-        );
     }
 
     private void updateReloadVisualState(Level level, Player player, ItemStack stack, int slot, boolean held) {
@@ -2058,13 +2051,6 @@ public class GunItem extends Item {
             stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), newStage);
             if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated
                     && !"rocket_launcher".equals(stats.id().getPath())) {
-                JustEnoughGuns.LOGGER.info(
-                        "[JEG_RELOAD_DEBUG] stage change item={} oldStage={} newStage={} remaining={}",
-                        stack.getItem(),
-                        oldStage,
-                        newStage,
-                        remainingTicks
-                );
                 triggerSegmentedReloadStage(animated, level, player, stack, newStage);
             }
         }
@@ -2165,15 +2151,21 @@ public class GunItem extends Item {
     }
 
     private void updateClientDrawState(Player player, ItemStack stack, int slot, boolean held) {
-        if (!held || isReloading(stack)) {
+        if (!held) {
             return;
         }
 
         if (consumeQueuedReloadCancelDraw(CLIENT_RELOAD_CANCEL_DRAW_STATES, player.getUUID(), stack, slot)) {
+            clearReloadVisualState(stack);
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
             if (stack.getItem() instanceof AnimatedGunItem) {
-                AnimatedGunItem.restartDrawAnimation(stack);
+                AnimatedGunItem.restartDrawAnimationAfterReloadCancel(stack);
             }
+            return;
+        }
+
+        if (isReloading(stack)) {
+            return;
         }
     }
 
@@ -2184,7 +2176,7 @@ public class GunItem extends Item {
             reloadCancelDrawStates(player).put(player.getUUID(), new QueuedReloadCancelDraw(slot, System.identityHashCode(stack), stack.copy()));
         }
         if (stack.getItem() instanceof AnimatedGunItem) {
-            AnimatedGunItem.restartDrawAnimation(stack);
+            AnimatedGunItem.restartDrawAnimationAfterReloadCancel(stack);
         }
     }
 
