@@ -30,6 +30,7 @@ public final class GunAttachments {
     public static final int FLASHLIGHT_MAX_BATTERY = 600;
     private static final ResourceLocation EXPLOSIVE_MUZZLE = Reference.id("explosive_muzzle");
     private static final ResourceLocation MAKESHIFT_STOCK = Reference.id("makeshift_stock");
+    private static final ResourceLocation ASSAULT_RIFLE = Reference.id("assault_rifle");
     private static final Set<ResourceLocation> MAKESHIFT_STOCK_GUNS = Set.of(
             Reference.id("assault_rifle"),
             Reference.id("custom_smg"),
@@ -246,7 +247,7 @@ public final class GunAttachments {
         }
         Item item = attachmentStack.getItem();
         if (item instanceof AttachmentItem attachment) {
-            if (type == AttachmentType.STOCK && canUseMakeshiftStock(gunStack) && !isMakeshiftStock(item)) {
+            if (type == AttachmentType.STOCK && canUseMakeshiftStock(gunStack) && !canUseStandardStocks(gunStack) && !isMakeshiftStock(item)) {
                 return false;
             }
             if (isMakeshiftStock(item) && !canUseMakeshiftStock(gunStack)) {
@@ -280,6 +281,10 @@ public final class GunAttachments {
 
     private static boolean canUseMakeshiftStock(ItemStack gunStack) {
         return gunStack.getItem() instanceof GunItem gun && MAKESHIFT_STOCK_GUNS.contains(gun.getStats().id());
+    }
+
+    private static boolean canUseStandardStocks(ItemStack gunStack) {
+        return gunStack.getItem() instanceof GunItem gun && ASSAULT_RIFLE.equals(gun.getStats().id());
     }
 
     private static boolean isExplosiveMuzzle(ItemStack stack) {

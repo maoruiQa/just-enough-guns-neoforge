@@ -3,6 +3,7 @@ package ttv.migami.jeg.client.render.gun.layer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.EnumSet;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -28,8 +29,33 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
     private static final String MODEL_ROOT = "geo/item/attachment/";
     private static final String TEXTURE_ROOT = "textures/animated/attachment/";
     private static final String PAINT_JOB_TEXTURE_ROOT = "textures/animated/attachment/paintjob/";
+    private static final ResourceLocation MAKESHIFT_STOCK = Reference.id("makeshift_stock");
+    private static final Set<ResourceLocation> BAKED_UNDER_BARREL_GUNS = Set.of(
+            Reference.id("combat_rifle"),
+            Reference.id("holy_shotgun"),
+            Reference.id("pump_shotgun")
+    );
+    private static final Set<ResourceLocation> BAKED_STANDARD_STOCK_GUNS = Set.of(
+            Reference.id("blossom_rifle"),
+            Reference.id("burst_rifle"),
+            Reference.id("combat_rifle"),
+            Reference.id("hollenfire_mk2"),
+            Reference.id("service_rifle")
+    );
+    private static final Set<ResourceLocation> BAKED_MAKESHIFT_STOCK_GUNS = Set.of(
+            Reference.id("abstract_gun"),
+            Reference.id("assault_rifle"),
+            Reference.id("custom_smg"),
+            Reference.id("double_barrel_shotgun"),
+            Reference.id("holy_shotgun"),
+            Reference.id("phantom_smg"),
+            Reference.id("pump_shotgun"),
+            Reference.id("revolver"),
+            Reference.id("semi_auto_rifle")
+    );
     private static final EnumSet<AttachmentType> RENDERED_TYPES = EnumSet.of(
             AttachmentType.BARREL,
+            AttachmentType.STOCK,
             AttachmentType.UNDER_BARREL,
             AttachmentType.SPECIAL
     );
@@ -90,6 +116,9 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
         if (attachmentId == null) {
             return;
         }
+        if (isOwnedByBakedGunModel(type, gunId, attachmentId)) {
+            return;
+        }
 
         GunAttachmentTransforms.Transform transform = GunAttachmentTransforms.transform(gunId, type).orElse(null);
         if (transform == null || !transform.isVisible()) {
@@ -124,6 +153,19 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
                 0xFFFFFFFF
         );
         poseStack.popPose();
+    }
+
+    private static boolean isOwnedByBakedGunModel(AttachmentType type, ResourceLocation gunId, ResourceLocation attachmentId) {
+        if (type == AttachmentType.UNDER_BARREL) {
+            return BAKED_UNDER_BARREL_GUNS.contains(gunId);
+        }
+        if (type != AttachmentType.STOCK) {
+            return false;
+        }
+        if (MAKESHIFT_STOCK.equals(attachmentId)) {
+            return BAKED_MAKESHIFT_STOCK_GUNS.contains(gunId);
+        }
+        return BAKED_STANDARD_STOCK_GUNS.contains(gunId);
     }
 
     private static ResourceLocation texture(ResourceLocation attachmentId, ItemStack gunStack) {

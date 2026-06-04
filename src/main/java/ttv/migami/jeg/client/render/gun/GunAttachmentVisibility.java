@@ -58,6 +58,11 @@ public final class GunAttachmentVisibility {
             Reference.id("revolver"),
             Reference.id("semi_auto_rifle")
     );
+    private static final Set<ResourceLocation> BAKED_UNDER_BARREL_GUNS = Set.of(
+            Reference.id("combat_rifle"),
+            Reference.id("holy_shotgun"),
+            Reference.id("pump_shotgun")
+    );
 
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
             rule(Reference.id("combat_rifle"),
@@ -146,6 +151,12 @@ public final class GunAttachmentVisibility {
         if ("iron_sight".equals(boneName) || "modified_iron_sight".equals(boneName) || "stock_iron_sight".equals(boneName)) {
             return GunAttachments.has(stack, AttachmentType.SCOPE);
         }
+        if (BAKED_UNDER_BARREL_GUNS.contains(gunId)) {
+            Boolean bakedGripVisibility = bakedGripVisibility(stack, boneName);
+            if (bakedGripVisibility != null) {
+                return bakedGripVisibility;
+            }
+        }
         if ("makeshift_stock".equals(boneName) && MAKESHIFT_STOCK_VISUAL_GUNS.contains(gunId)) {
             return !isInstalled(stack, AttachmentType.STOCK, "makeshift_stock");
         }
@@ -188,6 +199,19 @@ public final class GunAttachmentVisibility {
 
     private static boolean isDefaultMagazineBone(String boneName) {
         return "default_mag".equals(boneName) || "default_mag_2".equals(boneName);
+    }
+
+    private static Boolean bakedGripVisibility(ItemStack stack, String boneName) {
+        boolean gripInstalled = isInstalled(stack, AttachmentType.UNDER_BARREL, "light_grip")
+                || isInstalled(stack, AttachmentType.UNDER_BARREL, "vertical_grip")
+                || isInstalled(stack, AttachmentType.UNDER_BARREL, "angled_grip");
+        if ("under_barrel".equals(boneName) || "grip".equals(boneName)) {
+            return !gripInstalled;
+        }
+        if ("light_grip".equals(boneName) || "vertical_grip".equals(boneName) || "angled_grip".equals(boneName)) {
+            return !isInstalled(stack, AttachmentType.UNDER_BARREL, boneName);
+        }
+        return null;
     }
 
     private static boolean isInstalled(ItemStack stack, AttachmentType type, String boneName) {

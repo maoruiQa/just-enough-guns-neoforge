@@ -81,7 +81,7 @@ Behavior wired so far:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
   - Vanilla `spyglass` scope attachments provide Forge-style scope modifiers; vanilla sword bayonets affect systems that check the stored stack directly.
-- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can only install `makeshift_stock`, with `phantom_smg` treated like `custom_smg`; ordinary stock-capable guns still reject `makeshift_stock`.
+- Forge's `makeshift_stock` slot rule is restored without porting the old makeshift gun subclasses: guns that were Forge `MakeshiftGunItem`/`AnimatedMakeshiftGunItem` sources can only install `makeshift_stock`, with `phantom_smg` treated like `custom_smg`, except `assault_rifle` is intentionally allowed to install standard `light_stock`, `tactical_stock`, and `weighted_stock` attachments for the NeoForge port. Ordinary stock-capable guns still reject `makeshift_stock`.
 - Sword bayonet sprint-charge behavior is partially wired:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
@@ -155,7 +155,7 @@ Behavior wired so far:
   - Forge's yellow trail-color gun list is applied at bullet creation without hand-editing generated `GunDefinitions.java`.
   - Client muzzle flash rendering is no longer suppressed while the local player is ADS.
   - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, using the Forge muzzle-flash profile position relative to that bone's pivot so ADS/draw/reload transforms move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
-  - Third-person/world-space muzzle flashes are nudged forward along the shooter's view vector so the billboard sits in front of the gun body rather than behind the muzzle.
+  - Third-person/world-space muzzle flashes are nudged farther forward along the shooter's view vector so the billboard sits closer to the gun muzzle instead of the front-middle of the gun body.
   - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
 - Draw/reload interaction parity is partially wired:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
@@ -188,13 +188,15 @@ Behavior wired so far:
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Positioned non-scope attachment rendering is partially wired:
-  - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `scope`, `barrel`, `under_barrel`, and `special` slots.
+  - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `scope`, `barrel`, `under_barrel`, and `special` slots, with an added `assault_rifle` standard-stock transform derived from the baked makeshift-stock anchor because that gun has no baked `light_stock`/`tactical_stock`/`weighted_stock` bones.
   - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `scope`, `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
   - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same paint-job -> base -> fallback texture resolution.
   - The shared `attachment_bone` remains visible when any scope, barrel, under-barrel, special, or bayonet render path is active, so independent Geo attachments such as `vertical_grip` and `angled_grip` have a render anchor even when no scope is installed.
-  - The gun model's baked barrel, under-barrel, and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
+  - The gun model's baked barrel and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
+  - Gun models that already include baked `light_grip`, `vertical_grip`, and `angled_grip` bones (`combat_rifle`, `pump_shotgun`, and `holy_shotgun`) now reveal their authored parent/child grip bones for the installed under-barrel attachment instead of rendering a second independent Geo grip at the wrong coordinate frame.
+  - Standard stock rendering stays baked for guns with authored `light_stock`, `tactical_stock`, and `weighted_stock` bones, while `assault_rifle` renders standard stocks through the independent attachment layer. Its baked `makeshift_stock` bone remains reserved for the installed `makeshift_stock`.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
-  - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.
+  - `magazine` is intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for that slot on most guns.
 - Vanilla sword bayonet render assets are staged:
   - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
   - Forge 1.20.1's `modded_sword.geo.json` fallback is copied so non-vanilla `SwordItem` barrel attachments can render with their item texture when the texture exists.
