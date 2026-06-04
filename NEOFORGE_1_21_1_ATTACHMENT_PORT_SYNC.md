@@ -154,7 +154,7 @@ Behavior wired so far:
   - Casing particles are registered for `casing`, `shell`, and `spectre_casing`; successful gunfire emits one server-side casing/shell particle near the shooter's gun side based on the gun ammo item instead of one particle per pellet.
   - Forge's yellow trail-color gun list is applied at bullet creation without hand-editing generated `GunDefinitions.java`.
   - Client muzzle flash rendering is no longer suppressed while the local player is ADS.
-  - Local first-person muzzle flashes are rendered from the animated gun item pose stack so ADS/draw/reload transforms move the flash with the held gun; the first-person path applies the same model-space Y origin correction used by attachment transforms. World-space billboard flashes remain for third-person and other entities.
+  - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, so ADS/draw/reload transforms and the gun's bone coordinate space move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
   - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
 - Draw/reload interaction parity is partially wired:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
@@ -180,11 +180,10 @@ Behavior wired so far:
   - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
-  - The JEG long-scope overlay and scoped FOV path are now gated specifically by the installed `telescopic_sight` attachment. Other scope-slot attachments follow the normal iron-sight/attachment ADS path.
+  - The JEG long-scope overlay, scoped FOV path, and scoped mouse-sensitivity reduction are now gated specifically by the installed `telescopic_sight` attachment. Other scope-slot attachments follow the normal iron-sight/attachment ADS path.
   - The telescopic-sight scoped path is gun-agnostic: any gun with `telescopic_sight` uses the scoped overlay/FOV path, while bolt-action forced ADS release remains limited to bolt-action rifle plus `telescopic_sight`.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
-  - Scope rendering can now reuse `GunAttachmentTransforms` for per-gun scope offsets; `combat_rifle` has a scoped attachment transform override so its installed scope is not forced through the old one-size-fits-all layer offset.
 - Positioned non-scope attachment rendering is partially wired:
   - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `barrel`, `under_barrel`, and `special` slots.
   - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.

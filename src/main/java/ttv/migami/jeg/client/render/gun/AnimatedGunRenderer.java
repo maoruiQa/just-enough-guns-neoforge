@@ -202,7 +202,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 if (!renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
                 }
-                GunClientEvents.renderFirstPersonMuzzleFlash(poseStack, bufferSource, stack, resolveRenderedHand());
             } finally {
                 poseStack.popPose();
             }
@@ -379,6 +378,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
+            if ("attachment_bone".equals(boneName)) {
+                renderFirstPersonMuzzleFlashForBone(poseStack, bone, stack, bufferSource);
+            }
         }
 
         boolean armBone = isArmBone(boneName);
@@ -389,6 +391,29 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
+    }
+
+    private void renderFirstPersonMuzzleFlashForBone(
+            PoseStack poseStack,
+            GeoBone bone,
+            ItemStack stack,
+            MultiBufferSource bufferSource
+    ) {
+        if (!isFirstPersonContext()) {
+            return;
+        }
+
+        poseStack.pushPose();
+        try {
+            RenderUtil.translateMatrixToBone(poseStack, bone);
+            RenderUtil.translateToPivotPoint(poseStack, bone);
+            RenderUtil.rotateMatrixAroundBone(poseStack, bone);
+            RenderUtil.scaleMatrixForBone(poseStack, bone);
+            RenderUtil.translateAwayFromPivotPoint(poseStack, bone);
+            GunClientEvents.renderFirstPersonMuzzleFlash(poseStack, bufferSource, stack, resolveRenderedHand());
+        } finally {
+            poseStack.popPose();
+        }
     }
 
     private void renderArmForBone(
