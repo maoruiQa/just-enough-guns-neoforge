@@ -112,6 +112,7 @@ Behavior wired so far:
 - Special-slot flashlight and laser pointer runtime behavior is partially wired:
   - Pressing `key.jeg.melee` while holding a gun with a flashlight toggles the powered state and plays `item.flashlight`.
   - Pressing `key.jeg.melee` while holding a gun with a vanilla sword in the barrel slot performs the Forge-style bayonet sweep.
+  - Flashlight and laser pointer server ticks continue while sprinting or charging with a bayonet, matching Forge's independent event handlers.
   - Flashlight attachments now refuse to toggle when server config disables flashlights.
   - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.

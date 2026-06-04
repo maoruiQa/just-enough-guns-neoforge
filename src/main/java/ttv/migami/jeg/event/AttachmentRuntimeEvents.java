@@ -86,9 +86,6 @@ public final class AttachmentRuntimeEvents {
         } else {
             BAYONET_SPRINT_START_TICKS.remove(player.getUUID());
         }
-        if (player.isSprinting() && !player.getCooldowns().isOnCooldown(stack.getItem())) {
-            return;
-        }
 
         if (stack.getItem() instanceof GunItem) {
             if (GunAttachments.modifiers(stack).laserPointer()) {
