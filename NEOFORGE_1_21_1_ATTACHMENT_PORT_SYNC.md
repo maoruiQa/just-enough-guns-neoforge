@@ -124,6 +124,7 @@ Behavior wired so far:
 - Scope attachment model rendering is partially wired:
   - Installed scope-slot attachments render as Geo models at the gun model's `attachment_bone`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
+  - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Kill-effect badges are partially wired for player-fired bullets:
@@ -141,7 +142,6 @@ Still to port:
 - Remaining Forge attachment-screen layout polish.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
-  - Vanilla `spyglass` scope attachment rendering is not ported yet; current scope rendering is still limited to registered Geo scope attachment items.
   - Vanilla sword bayonet rendering is not ported yet.
 - Decide whether the separate NeoForge loaded `MagazineItem` ammo containers need extended/drum variants or scaling. Current behavior changes the gun capacity, while existing loaded magazine items keep their own fixed container capacities.
 - Cosmetic slots: attachment dye/render behavior beyond flare smoke, attachment paint-job rendering for non-scope attachments, conditional future support for gun paint-job model overrides if active assets/paint jobs are added, and runtime validation of kill-effect/dye visuals.
@@ -161,6 +161,6 @@ Sync checklist for the other maintained branches:
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.
 12. Port attachment durability/breakage for the firing-damaged functional slots.
 13. Port trumpet soundwave gameplay behavior with adapted vanilla particles.
-14. Port scope attachment model rendering with paint-job texture fallback.
+14. Port scope attachment model rendering with paint-job texture fallback, including the copied Forge spyglass pseudo-scope model asset.
 15. Port pseudo vanilla sword bayonet melee-key behavior with the dedicated melee payload.
 16. Then expand remaining runtime modifier/render behavior.
