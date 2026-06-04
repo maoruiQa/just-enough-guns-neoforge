@@ -64,7 +64,7 @@ Behavior wired so far:
 - Functional attachment item tooltips now show Forge-style `Perks:` entries derived from the currently ported modifier fields, including silencer, explosive ammo, flashlight, laser pointer, trumpet, damage, spread, recoil/kick, and ADS speed effects.
 - Functional attachment modifier parity audit:
   - Registered NeoForge modifier values match Forge 1.20.1's active `GunModifiers` for scope FOV, ADS speed, recoil/kick, spread, damage, silencer, silencer fire sound radius, explosive ammo, flashlight, laser pointer, trumpet, extended magazine, and drum magazine behavior.
-  - Forge's `INCREASED_JAMMING` marker on `explosive_muzzle` is not represented because this NeoForge branch has no active gun-jamming runtime system to wire it into.
+  - Forge's `INCREASED_JAMMING` marker on `explosive_muzzle` is a tooltip marker in Forge 1.20.1. The actual Forge jam risk is driven by gun durability, and this NeoForge port already mirrors the gameplay-relevant explosive-muzzle side effect by damaging the gun 5 durability per shot instead of 1.
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
   - Vanilla sword items can be installed in supported barrel slots.
@@ -177,7 +177,7 @@ Still to port:
 - Remaining pseudo vanilla attachment render behavior:
   - Vanilla and modded sword bayonet rendering is code-wired through the copied Forge assets, but still needs later runtime visual validation and positioning follow-up.
 - Cosmetic slots: attachment dye/render behavior beyond item tint and flare smoke, active gun paint-job Geo assets if new registered spray cans need them, and runtime validation of kill-effect/dye visuals.
-- Modifier details not yet represented as behavior: Forge `INCREASED_JAMMING` on `explosive_muzzle`.
+- Forge global low-durability gun jamming is not ported as a general system; do not recreate it as an attachment-only behavior.
 
 Sync checklist for the other maintained branches:
 
@@ -190,7 +190,7 @@ Sync checklist for the other maintained branches:
 7. Port `AttachmentMenu`, `AttachmentScreen`, `OpenAttachmentsPayload`, and the attachment keybinding.
    - Include Forge's binding-curse enchantment support for attachment items and pickup lock on attachment slots.
 8. Port the combined runtime modifier helper and wire damage, spread, recoil/kick, ADS FOV, and ADS speed through the active gameplay/client paths.
-   - Preserve the current NeoForge caveat unless the target branch has matching systems: no jamming modifier without a jamming runtime.
+   - Preserve the current NeoForge caveat unless the target branch has matching systems: no global low-durability jamming system, and `explosive_muzzle`'s Forge jamming implication is represented through the already-ported 5 durability damage per shot.
 9. Port magazine capacity modifiers and update reload, tooltip, and HUD cap display.
 10. Port barrel attachment fire side effects for trumpet/explosive muzzle audio, explosive muzzle gun wear, and explosive muzzle block interaction.
 11. Port dynamic-light infrastructure plus flashlight/laser server tick behavior.
