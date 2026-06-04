@@ -29,7 +29,7 @@ Current NeoForge 1.21.1 foundation:
   - `gun_flashlight_powered`
   - `gun_flashlight_battery`
 - `GunAttachments` is the canonical read/write helper. Future UI, renderer, and gameplay code should use it instead of adding ad-hoc tags.
-- `GunAttachmentRules` is the current per-gun support matrix for slot validation.
+- `GunAttachmentRules` is the current per-gun support matrix for slot validation. It mirrors Forge 1.20.1's generated `data/jeg/guns/*.json` `modules.attachments` slot presence, with `phantom_smg` treated like its NeoForge-local `custom_smg` source because Forge 1.20.1 has no `phantom_smg` gun JSON.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
@@ -59,6 +59,7 @@ Behavior wired so far:
   - `paint_job`: registered spray cans.
   - `dye`: vanilla dye items.
   - `kill_effect`: registered kill-effect badges.
+- Functional attachment slot availability now follows the Forge 1.20.1 per-gun attachment matrix instead of default-opening all functional slots for guns without explicit NeoForge entries. Cosmetic slots remain available for every gun, matching Forge's attachment-screen rules.
 - Functional attachment items are tagged as vanilla `minecraft:dyeable` and have a client item-color handler that reads `DataComponents.DYED_COLOR`, adapting Forge 1.20.1's `IColored` attachment item data semantics to NeoForge 1.21.1 components. Because attachment slots persist full `ItemStack`s, dyed attachment components are preserved when installed on guns.
 - Forge-style pseudo vanilla attachments now pass attachment menu validation and persist as full stored stacks:
   - Vanilla `spyglass` items can be installed in supported scope slots.
