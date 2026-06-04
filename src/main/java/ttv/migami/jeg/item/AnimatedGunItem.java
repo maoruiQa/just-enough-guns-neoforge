@@ -195,7 +195,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (remainingTicks <= 0) {
             controller.forceAnimationReset();
             controller.stop();
-            clearAnimatableSnapshot(stack);
             return false;
         }
 
@@ -218,7 +217,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         controller.forceAnimationReset();
         controller.stop();
-        clearAnimatableSnapshot(stack);
         return true;
     }
 
@@ -294,14 +292,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
     }
 
-    private static void clearAnimatableSnapshot(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
-            return;
-        }
-        var manager = gun.getAnimatableInstanceCache().getManagerForId(GeoItem.getId(stack));
-        manager.clearSnapshotCache();
-    }
-
     private static boolean hasRecentDrawAnimation(ItemStack stack) {
         return System.nanoTime() <= clientDrawAnimationDeadlineNanos && matchesHeldStack(stack, clientDrawStack);
     }
@@ -325,7 +315,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         controller.forceAnimationReset();
         controller.stop();
-        clearAnimatableSnapshot(stack);
         clearDrawAnimationReset();
         return true;
     }
