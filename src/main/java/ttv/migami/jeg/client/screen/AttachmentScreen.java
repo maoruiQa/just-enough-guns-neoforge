@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -82,7 +83,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
         } else {
             guiGraphics.drawCenteredString(this.font, gunStack.getHoverName(), this.imageWidth / 2, -42, gunStack.getRarity().color().getColor());
-            guiGraphics.drawCenteredString(this.font, Component.literal(Reference.MOD_ID), this.imageWidth / 2, -30, 0x686C71);
+            guiGraphics.drawCenteredString(this.font, this.previewGunModName(gunStack), this.imageWidth / 2, -30, 0x686C71);
         }
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
     }
@@ -224,7 +225,11 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return;
         }
         if (slot.getItem().isEmpty()) {
-            guiGraphics.renderComponentTooltip(this.font, List.of(name), mouseX, mouseY);
+            if (type == AttachmentType.BARREL) {
+                guiGraphics.renderComponentTooltip(this.font, List.of(name, Component.translatable("slot.jeg.attachment.swords").withStyle(ChatFormatting.YELLOW)), mouseX, mouseY);
+            } else {
+                guiGraphics.renderComponentTooltip(this.font, List.of(name), mouseX, mouseY);
+            }
         }
     }
 
@@ -277,5 +282,16 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         }
         ItemStack stack = player.getMainHandItem();
         return stack.getItem() instanceof GunItem ? stack : ItemStack.EMPTY;
+    }
+
+    private Component previewGunModName(ItemStack gunStack) {
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(gunStack.getItem());
+        if (Reference.id("abstract_gun").equals(itemId)) {
+            return Component.literal("JEG: Gun-Packs!");
+        }
+        String modName = ModList.get().getModContainerById(itemId.getNamespace())
+                .map(container -> container.getModInfo().getDisplayName())
+                .orElse("JEG: Add-on");
+        return Component.literal(modName);
     }
 }

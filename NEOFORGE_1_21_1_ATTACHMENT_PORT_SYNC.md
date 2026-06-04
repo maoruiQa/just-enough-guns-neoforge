@@ -49,6 +49,7 @@ Behavior wired so far:
 - Registered attachment items now accept Binding Curse through NeoForge 1.21.1's holder-based enchantment support hook.
 - Attachment slots now preserve Forge's pickup rule for binding-curse attachments: non-creative players cannot remove a bound attachment from a gun.
 - Empty attachment slots now draw the Forge icon strip, inactive slots draw a cross, and dragging an incompatible item over an empty attachment slot shows the Forge incompatibility tooltip.
+- The empty barrel slot tooltip now includes Forge's sword-bayonet hint, and the rotating gun preview shows the owning mod display name instead of a raw mod id.
 - The attachment screen closes when the selected main-hand item stops being a gun, matching the Forge screen lifetime behavior.
 - The attachment screen renders the held gun preview and gun name above the main panel.
 - The attachment screen now renders the Forge mini config button. It opens a registered NeoForge `IConfigScreenFactory` screen when available, otherwise it shows the existing Forge-style "Install Configured" chat hint.
@@ -148,7 +149,7 @@ Behavior wired so far:
 
 Still to port:
 
-- Remaining Forge attachment-screen layout polish.
+- Remaining Forge attachment-screen layout polish that depends on Forge-only client config options such as button hiding/alignment.
 - Positional model rendering for non-scope attachments. The copied Forge models/textures are present, but barrel, stock, under-barrel, magazine, and special attachment models still need the equivalent of Forge's attachment-position/scale data before they can be rendered independently without overlapping or mounting at the wrong point.
 - Remaining pseudo vanilla attachment runtime/render behavior:
   - Vanilla sword bayonet rendering is code-wired through the copied Forge assets, but needs runtime visual validation and positioning follow-up.
