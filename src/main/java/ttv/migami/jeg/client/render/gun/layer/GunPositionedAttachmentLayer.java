@@ -98,6 +98,9 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
         }
 
         ResourceLocation texture = texture(attachmentId, gunStack);
+        if (!exists(texture)) {
+            return;
+        }
         BakedGeoModel bakedModel = this.attachmentModel.getBakedModel(model);
         RenderType attachmentRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
@@ -129,7 +132,11 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
             }
         }
 
-        return Reference.id(TEXTURE_ROOT + attachment + ".png");
+        ResourceLocation base = Reference.id(TEXTURE_ROOT + attachment + ".png");
+        if (exists(base)) {
+            return base;
+        }
+        return Reference.id(TEXTURE_ROOT + "combat_scope.png");
     }
 
     private static String paintJob(ItemStack gunStack) {
