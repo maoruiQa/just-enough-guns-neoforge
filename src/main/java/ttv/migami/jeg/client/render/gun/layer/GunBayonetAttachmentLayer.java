@@ -10,6 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -78,7 +79,7 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
             return;
         }
 
-        ResourceLocation texture = texture(attachmentName, gunStack);
+        ResourceLocation texture = texture(attachmentStack, attachmentName, gunStack);
         if (!exists(texture)) {
             return;
         }
@@ -105,10 +106,22 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
             return null;
         }
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        return id == null ? null : VANILLA_SWORD_ATTACHMENTS.get(id);
+        if (id == null) {
+            return null;
+        }
+        String vanilla = VANILLA_SWORD_ATTACHMENTS.get(id);
+        if (vanilla != null) {
+            return vanilla;
+        }
+        return stack.getItem() instanceof SwordItem ? "modded_sword" : null;
     }
 
-    private static ResourceLocation texture(String attachmentName, ItemStack gunStack) {
+    private static ResourceLocation texture(ItemStack attachmentStack, String attachmentName, ItemStack gunStack) {
+        ResourceLocation attachmentId = BuiltInRegistries.ITEM.getKey(attachmentStack.getItem());
+        if ("modded_sword".equals(attachmentName) && attachmentId != null) {
+            return ResourceLocation.fromNamespaceAndPath(attachmentId.getNamespace(), "textures/item/" + attachmentId.getPath() + ".png");
+        }
+
         String paintJob = paintJob(gunStack);
         if (paintJob != null) {
             ResourceLocation painted = Reference.id(PAINT_JOB_TEXTURE_ROOT + paintJob + "/" + attachmentName + ".png");

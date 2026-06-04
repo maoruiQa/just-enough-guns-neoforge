@@ -148,6 +148,7 @@ Behavior wired so far:
   - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.
 - Vanilla sword bayonet render assets are staged:
   - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
+  - Forge 1.20.1's `modded_sword.geo.json` fallback is copied so non-vanilla `SwordItem` barrel attachments can render with their item texture when the texture exists.
   - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.
   - Runtime bayonet rendering uses a dedicated `GunBayonetAttachmentLayer` that renders validated vanilla sword barrel stacks at `attachment_bone`, matching Forge 1.20.1's bayonet render hook without sharing scope-layer state.
   - Bayonet rendering checks `textures/animated/attachment/paintjob/<paintJob>/<sword>.png` before the base sword attachment texture, matching the Forge attachment texture fallback path.
