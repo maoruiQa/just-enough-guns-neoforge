@@ -128,6 +128,7 @@ Behavior wired so far:
   - Successful sweep hits damage the stored bayonet stack by 8 and clear the barrel slot when the sword breaks.
   - The sweep applies a 15 tick gun cooldown, or 40 ticks while sprinting, and emits the vanilla sweep sound and particle.
 - Attachment durability/breakage is partially wired for the Forge-damaged firing slots:
+  - Forge's `gunDurability` config is adapted as the persistent server config `combat.gunDurability`; when disabled, firing does not damage the gun or installed attachments.
   - `scope`, `barrel`, `stock`, and `under_barrel` each have a persistent integer damage component on the gun stack for legacy compatibility.
   - Firing damages those installed attachments by 1 per shot and writes the updated damage back to the stored attachment `ItemStack`.
   - Forge's Mending gates are preserved: a Mending gun skips attachment wear entirely, and Mending attachments skip wear except for the Forge `explosive_muzzle` barrel exception.

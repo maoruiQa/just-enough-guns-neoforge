@@ -43,6 +43,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue RECOIL_BACKSTEP_ENABLED;
     public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
+    public static final ModConfigSpec.BooleanValue GUN_DURABILITY_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
@@ -230,6 +231,9 @@ public final class Config {
         BLOCK_HIT_ANIMATION_ENABLED = serverBuilder
                 .comment("If true, bullets hitting a block trigger the vanilla block hit particle animation event.")
                 .define("blockHitAnimationEnabled", true);
+        GUN_DURABILITY_ENABLED = serverBuilder
+                .comment("If true, guns and installed attachments receive durability damage when a gun is fired.")
+                .define("gunDurability", true);
         BULLET_BLOCK_DESTRUCTION_ENABLED = serverBuilder
                 .comment("If true, bullets can destroy hit blocks based on penetration and bullet power rules.")
                 .define("bulletBlockDestructionEnabled", true);
@@ -364,6 +368,7 @@ public final class Config {
         registerCommandConfig("mob.mechanism.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
         registerCommandConfig("mob.mechanism.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
         registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
+        registerCommandConfig("combat.gunDurability", GUN_DURABILITY_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
@@ -531,6 +536,10 @@ public final class Config {
 
     public static boolean blockHitAnimationEnabled() {
         return BLOCK_HIT_ANIMATION_ENABLED.get();
+    }
+
+    public static boolean gunDurabilityEnabled() {
+        return GUN_DURABILITY_ENABLED.get();
     }
 
     public static boolean bulletBlockDestructionEnabled() {

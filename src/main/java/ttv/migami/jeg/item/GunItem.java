@@ -742,8 +742,10 @@ public class GunItem extends Item {
                     break;
                 }
                 fireAt(level, player, stack, null);
-                stack.hurtAndBreak(durabilityDamagePerShot(stack), player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
-                GunAttachments.damageOnShot(stack, level, player);
+                if (Config.gunDurabilityEnabled()) {
+                    stack.hurtAndBreak(durabilityDamagePerShot(stack), player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+                    GunAttachments.damageOnShot(stack, level, player);
+                }
                 shotsFired++;
             }
             if (shotsFired <= 0) {
