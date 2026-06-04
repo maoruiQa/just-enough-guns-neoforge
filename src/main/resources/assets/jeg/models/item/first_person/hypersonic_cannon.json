@@ -3,16 +3,21 @@
     "display":  {
                     "firstperson_righthand":  {
                                                   "translation":  [
-                                                                      -3,
-                                                                      0,
-                                                                      -3
-                                                                  ]
+                                                                      -2.5,
+                                                                      10,
+                                                                      -2.5
+                                                                  ],
+                                                  "scale":  [
+                                                                1.25,
+                                                                1.25,
+                                                                1.25
+                                                            ]
                                               },
                     "firstperson_lefthand":  {
                                                  "translation":  [
-                                                                     -3,
-                                                                     0,
-                                                                     -3
+                                                                     3.75,
+                                                                     -3.25,
+                                                                     0
                                                                  ]
                                              }
                 }

@@ -85,9 +85,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (isNonFirstPersonPerspective(state)) {
             return PlayState.STOP;
         }
-        if (stopInterruptedReloadAnimation(state.getController(), stack)) {
-            return PlayState.STOP;
-        }
+        clearInterruptedReloadAnimation(state.getController(), stack);
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
@@ -190,17 +188,16 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         };
     }
 
-    private static boolean stopInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+    private static void clearInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
         if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
-            return false;
+            return;
         }
         if (stack != null && !stack.isEmpty()
                 && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
-            return false;
+            return;
         }
         controller.forceAnimationReset();
         controller.stop();
-        return true;
     }
 
     private static boolean isReloadAnimation(RawAnimation animation) {
