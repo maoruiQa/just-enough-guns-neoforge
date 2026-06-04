@@ -381,10 +381,14 @@ public final class GunClientEvents {
             }
         }
         if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof GunItem && !isMeleeBlockedGun(heldMain)) {
                 NetworkHandler.sendMelee();
             }
         }
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        return stack.getItem() instanceof GunItem gun && "minigun".equals(gun.getStats().id().getPath());
     }
 
     @SubscribeEvent

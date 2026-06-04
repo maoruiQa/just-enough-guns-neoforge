@@ -34,6 +34,7 @@ Current NeoForge 1.21.1 foundation:
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
 - `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
+  - `minigun` is blocked from this melee-key path on both client and server, matching Forge 1.20.1's client guard.
 - `AttachmentScreen` draws Forge-style slot icons, disabled-slot crosses, incompatible-slot hover feedback, and a rotating held-gun preview from the current menu validation/rendering rules.
 - Recipes are standard 1.21 crafting recipes under `src/main/resources/data/jeg/recipe/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.

@@ -123,9 +123,16 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem)) {
                 return;
             }
+            if (isMeleeBlockedGun(stack)) {
+                return;
+            }
             toggleGunFlashlight(player, stack);
             AttachmentRuntimeEvents.handleBayonetMelee(player);
         });
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        return stack.getItem() instanceof GunItem gun && "minigun".equals(gun.getStats().id().getPath());
     }
 
     private static void toggleGunFlashlight(ServerPlayer player, ItemStack stack) {
