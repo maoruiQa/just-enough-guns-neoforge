@@ -82,6 +82,8 @@ Behavior wired so far:
   - Sprinting with a sword installed in the barrel slot for 40 ticks enables a Forge-style forward charge hit.
   - Charge damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
   - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
+  - Charge hits skip targets still in hit invulnerability, set the player hit-invulnerability window, emit Forge-style sweep audio and damage-indicator particles, and push the player backward when Sweeping Edge is below level 3.
+  - Charge block collisions play the Forge break sound and push the player backward, scaled by bayonet Knockback.
   - Successful charge hits damage the stored bayonet stack by 15, gated by `combat.gunDurability`, creative mode, and Mending, then clear the barrel slot when the sword breaks.
 - Installed attachment modifiers are now combined through `GunAttachments.modifiers(ItemStack)`.
 - Installed attachments now preserve their full stored `ItemStack` when present, including damage and other item components. Legacy guns that only have the attachment id components still resolve through the id fallback.

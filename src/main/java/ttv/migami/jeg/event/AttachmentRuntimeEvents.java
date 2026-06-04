@@ -185,37 +185,70 @@ public final class AttachmentRuntimeEvents {
         if (isBayonetTooDamaged(bayonet)) {
             damage = 0.0F;
         }
+        int knockback = enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK);
+        int fireAspect = enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT);
+        int sweepingEdge = enchantmentLevel(player, bayonet, Enchantments.SWEEPING_EDGE);
 
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 10, 0, false, false));
         if (damage <= 0.0F) {
+            handleBayonetBlockCollision(player, knockback);
             return;
         }
 
         AABB hitBox = player.getBoundingBox().inflate(BAYONET_CHARGE_RANGE);
         boolean damaged = false;
-        int knockback = enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK);
-        int fireAspect = enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT);
-        int sweepingEdge = enchantmentLevel(player, bayonet, Enchantments.SWEEPING_EDGE);
         for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> target != player && target.isAlive())) {
-            if (!isInBayonetArc(player, target)) {
+            if (target.invulnerableTime != 0 || !isInBayonetArc(player, target)) {
                 continue;
             }
-            if (target.hurt(player.damageSources().playerAttack(player), damage)) {
-                damaged = true;
-                Vec3 direction = target.position().subtract(player.position()).normalize();
-                target.push(direction.x * knockback, 0.5D, direction.z * knockback);
-                if (fireAspect > 0) {
-                    target.igniteForSeconds(2.0F * fireAspect);
-                }
-            }
-        }
-
-        if (damaged) {
+            player.invulnerableTime = 40;
             if (sweepingEdge < 2) {
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
             }
+            Vec3 direction = target.position().subtract(player.position()).normalize();
+            target.push(direction.x * knockback, 0.5D, direction.z * knockback);
+            if (target.hurt(player.damageSources().playerAttack(player), damage)) {
+                damaged = true;
+                player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 2.0F, 1.0F);
+                if (fireAspect > 0) {
+                    target.igniteForSeconds(2.0F * fireAspect);
+                }
+                ((ServerLevel) player.level()).sendParticles(
+                        ParticleTypes.DAMAGE_INDICATOR,
+                        target.getX(),
+                        target.getY(),
+                        target.getZ(),
+                        (int) damage,
+                        0.3D,
+                        target.getBbHeight(),
+                        0.3D,
+                        0.2D
+                );
+            }
+            if (sweepingEdge < 3) {
+                Vec3 pushBack = player.position().subtract(target.position()).normalize();
+                player.push(pushBack.x, 0.5D, pushBack.z);
+            }
+        }
+        handleBayonetBlockCollision(player, knockback);
+
+        if (damaged) {
             damageStoredBayonet(player, gunStack, bayonet, BAYONET_CHARGE_DAMAGE);
         }
+    }
+
+    private static void handleBayonetBlockCollision(Player player, int knockback) {
+        Vec3 start = player.getEyePosition(1.0F);
+        Vec3 end = start.add(player.getLookAngle().scale(0.5D));
+        HitResult hitResult = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        if (hitResult.getType() != HitResult.Type.BLOCK) {
+            return;
+        }
+
+        Vec3 pushBack = player.getLookAngle().normalize().scale(-1.0D);
+        double pushBackForce = 1.0D + knockback / 4.0D;
+        player.level().playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 3.0F, 1.0F);
+        player.push(pushBack.x * pushBackForce, 0.5D, pushBack.z * pushBackForce);
     }
 
     private static boolean isInBayonetArc(Player player, LivingEntity target) {
