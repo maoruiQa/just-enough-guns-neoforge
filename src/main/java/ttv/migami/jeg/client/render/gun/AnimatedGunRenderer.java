@@ -410,17 +410,15 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             RenderUtil.rotateMatrixAroundBone(poseStack, bone);
             RenderUtil.scaleMatrixForBone(poseStack, bone);
             RenderUtil.translateAwayFromPivotPoint(poseStack, bone);
-            if (stack.getItem() instanceof AnimatedGunItem gun) {
-                GunAttachmentTransforms.transform(gun.getStats().id(), AttachmentType.BARREL).ifPresentOrElse(
-                        transform -> {
-                            transform.apply(poseStack);
-                            GunClientEvents.renderFirstPersonMuzzleFlashAtCurrentPose(poseStack, bufferSource, stack);
-                        },
-                        () -> GunClientEvents.renderFirstPersonMuzzleFlash(poseStack, bufferSource, stack, resolveRenderedHand())
-                );
-            } else {
-                GunClientEvents.renderFirstPersonMuzzleFlash(poseStack, bufferSource, stack, resolveRenderedHand());
-            }
+            GunClientEvents.renderFirstPersonMuzzleFlashRelativeToBone(
+                    poseStack,
+                    bufferSource,
+                    stack,
+                    resolveRenderedHand(),
+                    bone.getPivotX(),
+                    bone.getPivotY(),
+                    bone.getPivotZ()
+            );
         } finally {
             poseStack.popPose();
         }

@@ -154,7 +154,7 @@ Behavior wired so far:
   - Casing particles are registered for `casing`, `shell`, and `spectre_casing`; successful gunfire emits one server-side casing/shell particle near the shooter's gun side based on the gun ammo item instead of one particle per pellet.
   - Forge's yellow trail-color gun list is applied at bullet creation without hand-editing generated `GunDefinitions.java`.
   - Client muzzle flash rendering is no longer suppressed while the local player is ADS.
-  - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, so ADS/draw/reload transforms and the gun's bone coordinate space move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
+  - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, using the Forge muzzle-flash profile position relative to that bone's pivot so ADS/draw/reload transforms move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
   - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
 - Draw/reload interaction parity is partially wired:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
@@ -180,17 +180,16 @@ Behavior wired so far:
 - Scope attachment model rendering is partially wired:
   - Installed scope-slot stacks render as Geo models at the gun model's `attachment_bone` after validation through `GunAttachments.canAttachStack`.
   - Scope attachment rendering resolves `geo/item/attachment/<attachment>.geo.json`.
-  - Short scope models (`reflex_sight`, `monocle_sight`, `holographic_sight`, and `combat_scope`) are normalized to the same visual center as `telescopic_sight` before rendering, fixing copied Geo assets whose model-space height differs from the long scope without adding a combat-rifle-specific transform.
+  - Scope attachments use the Forge 1.20.1 generated `setScope(...)` slot transforms through `GunAttachmentTransforms`, so guns with different authored scope rails such as `combat_rifle` and `assault_rifle` mount the same scope assets through data instead of ad-hoc per-gun offsets.
   - Vanilla `spyglass` scope attachments render through the same scope layer using Forge 1.20.1's copied `spyglass.geo.json` and `spyglass.png` assets.
   - The JEG long-scope overlay, scoped FOV path, and scoped mouse-sensitivity reduction are now gated specifically by the installed `telescopic_sight` attachment. Other scope-slot attachments follow the normal iron-sight/attachment ADS path.
   - The telescopic-sight scoped path is gun-agnostic: any gun with `telescopic_sight` uses the scoped overlay/FOV path, while bolt-action forced ADS release remains limited to bolt-action rifle plus `telescopic_sight`.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
 - Positioned non-scope attachment rendering is partially wired:
-  - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `barrel`, `under_barrel`, and `special` slots.
-  - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
+  - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `scope`, `barrel`, `under_barrel`, and `special` slots.
+  - Static coverage check: every Forge 1.20.1 gun JSON that declares a supported `scope`, `barrel`, `underBarrel`, or `special` slot has a matching `GunAttachmentTransforms` entry; `phantom_smg` intentionally reuses the local `custom_smg` transform mapping.
   - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same paint-job -> base -> fallback texture resolution.
-  - Local first-person muzzle flashes for guns with a `barrel` transform now render at that same model-space barrel transform while visiting `attachment_bone`, instead of applying root-model muzzle profile coordinates a second time inside the bone coordinate space.
   - The gun model's baked barrel, under-barrel, and special attachment bones remain hidden while the independent Geo layer owns those slots, avoiding duplicate attachment geometry.
   - Vanilla sword barrel attachments are skipped here and remain owned by the dedicated bayonet layer to avoid duplicate rendering.
   - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.
