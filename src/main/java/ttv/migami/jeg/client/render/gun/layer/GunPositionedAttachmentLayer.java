@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -79,6 +80,9 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
     ) {
         ItemStack attachmentStack = GunAttachments.stack(gunStack, type).orElse(ItemStack.EMPTY);
         if (!GunAttachments.canAttachStack(gunStack, type, attachmentStack)) {
+            return;
+        }
+        if (type == AttachmentType.BARREL && attachmentStack.getItem() instanceof SwordItem) {
             return;
         }
 

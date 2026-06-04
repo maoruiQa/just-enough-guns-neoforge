@@ -79,6 +79,9 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
         }
 
         ResourceLocation texture = texture(attachmentName, gunStack);
+        if (!exists(texture)) {
+            return;
+        }
         BakedGeoModel bakedModel = this.attachmentModel.getBakedModel(model);
         RenderType attachmentRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
