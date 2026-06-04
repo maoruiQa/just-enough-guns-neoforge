@@ -141,6 +141,10 @@ Behavior wired so far:
   - Vanilla `spyglass` scope attachments render the vanilla spyglass overlay while aiming; bolt-action rifle scoped ADS keeps using the existing JEG long-scope overlay.
   - If the gun has a `paint_job` cosmetic slot, scope attachment rendering first checks `textures/animated/attachment/paintjob/<paintJob>/<attachment>.png`, then falls back to `textures/animated/attachment/<attachment>.png`.
   - This replaces the earlier hard-coded bolt-action `combat_scope` layer, so non-combat scopes now use their own model assets where present.
+- Positioned non-scope attachment rendering is partially wired:
+  - Forge 1.20.1 generated gun attachment transforms are adapted into a NeoForge client helper for `barrel`, `under_barrel`, and `special` slots.
+  - Installed attachment Geo models for those slots render at the gun model's `attachment_bone` with the Forge position/scale data and the same attachment paint-job texture fallback.
+  - `stock` and `magazine` are intentionally still handled by baked gun-model bone visibility for now because the Forge reference data uses `scale: 0.0` for those slots on most guns.
 - Vanilla sword bayonet render assets are staged:
   - Forge 1.20.1's `wooden_sword`, `stone_sword`, `iron_sword`, `golden_sword`, `diamond_sword`, and `netherite_sword` bayonet Geo assets are copied under `geo/item/attachment/`.
   - Matching `textures/animated/attachment/*_sword.png` assets are present and match the Forge reference hashes.

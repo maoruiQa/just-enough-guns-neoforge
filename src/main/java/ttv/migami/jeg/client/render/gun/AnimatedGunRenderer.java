@@ -28,6 +28,7 @@ import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.layer.GunBayonetAttachmentLayer;
+import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -91,6 +92,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         this.gunModel = gunModel;
         this.addRenderLayer(new GunScopeAttachmentLayer(this));
         this.addRenderLayer(new GunBayonetAttachmentLayer(this));
+        this.addRenderLayer(new GunPositionedAttachmentLayer(this));
     }
 
     public ItemDisplayContext currentPerspective() {
