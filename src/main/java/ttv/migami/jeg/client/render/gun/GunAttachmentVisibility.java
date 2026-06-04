@@ -44,7 +44,8 @@ public final class GunAttachmentVisibility {
             "weighted_hg_grip",
             "ejector",
             "bolt",
-            "chamber"
+            "chamber",
+            "flashlight_glow"
     );
 
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
@@ -148,6 +149,9 @@ public final class GunAttachmentVisibility {
         }
         if (isInstalled(stack, AttachmentType.MAGAZINE, boneName)) {
             return false;
+        }
+        if ("flashlight_glow".equals(boneName)) {
+            return !GunAttachments.isFlashlightPowered(stack);
         }
         if (isInstalled(stack, AttachmentType.SPECIAL, boneName)) {
             return false;

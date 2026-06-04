@@ -100,6 +100,7 @@ Behavior wired so far:
   - Flashlight attachments now refuse to toggle when server config disables flashlights.
   - Powered flashlight attachments drain battery for non-creative players, turn off at zero, and show Forge's dead-battery chat message.
   - Powered flashlight attachments refresh `dynamic_light` blocks along the player's look ray, gated by `attachments.allowFlashlights` and `attachments.flashlightDistance`.
+  - Animated gun `flashlight_glow` bones now mirror the installed flashlight powered state, matching Forge's glow-bone visibility rule.
   - Standalone flashlight items now keep Forge-style battery/powered state, right-click toggling, attack-key charging, durability-bar battery display, and dynamic-light output while held.
   - Laser pointer attachments apply Glowing to aimed-at living entities while ADS is active when `attachments.glowingLaserPointers` is enabled.
   - Laser pointer attachments also pull nearby cats/ocelots toward the hit point like Forge 1.20.1.
