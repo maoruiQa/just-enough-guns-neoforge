@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.0-pre - 2026-06-05
 
 ### Added
 - Added Forge-style gun melee handling on the V key, including flashlight toggles, baseline melee sweeps, sword bayonet damage, and first-person `melee`/`bayonet` animations for animated guns.
