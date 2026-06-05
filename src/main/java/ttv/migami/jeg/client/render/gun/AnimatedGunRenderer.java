@@ -31,6 +31,7 @@ import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.render.gun.layer.GunAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -88,6 +89,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
         this.withRenderLayer(new GunBuiltinScopeLayer(this));
+        this.withRenderLayer(new GunAttachmentLayer(this));
         // Render player-skin arms in first-person, driven by GeckoLib arm bones in the gun animations.
         this.withRenderLayer(new GunFirstPersonArmsLayer(this));
     }
@@ -313,8 +315,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         Identifier finalGunId = gunId;
+        ItemStack gunStack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
         ItemDisplayContext ctx = resolveStableContext(renderState);
-        passInfo.addBoneUpdater((info, snapshots) -> GunAttachmentVisibility.apply(finalGunId, snapshots));
+        passInfo.addBoneUpdater((info, snapshots) -> GunAttachmentVisibility.apply(finalGunId, gunStack, snapshots));
         if (isFirstPerson(ctx)) {
             passInfo.addBoneUpdater((info, snapshots) ->
                     FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {

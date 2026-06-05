@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " G ",
+    "CRC",
+    " I "
+  ],
+  "key": {
+    "G": "minecraft:glass_pane",
+    "C": "minecraft:copper_ingot",
+    "R": "minecraft:redstone_torch",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "jeg:flashlight",
+    "count": 1
+  }
+}

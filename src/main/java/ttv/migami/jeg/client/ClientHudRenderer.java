@@ -69,7 +69,7 @@ public final class ClientHudRenderer {
             }
             reserveText = formatReserve(reserve);
         }
-        return new HudData(stack.getHoverName().getString(), gun.usesLoadedAmmo() ? Math.min(current, stats.magazineSize()) : current, reserveText, rarityColor(stack));
+        return new HudData(stack.getHoverName().getString(), gun.usesLoadedAmmo() ? Math.min(current, gun.magazineSize(stack)) : current, reserveText, rarityColor(stack));
     }
 
     private static int rarityColor(ItemStack stack) {

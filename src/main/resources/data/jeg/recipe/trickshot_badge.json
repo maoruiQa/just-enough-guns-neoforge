@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:target",
+    "minecraft:arrow",
+    "minecraft:gold_nugget"
+  ],
+  "result": {
+    "id": "jeg:trickshot_badge",
+    "count": 1
+  }
+}

@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.FactionEventTicker;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.GunMobValues;
@@ -79,6 +80,7 @@ public final class JustEnoughGuns {
         // Register game events immediately to ensure proper initialization order
         // This prevents the ModelManager.reload() NullPointerException
         NeoForge.EVENT_BUS.register(GunEvents.class);
+        NeoForge.EVENT_BUS.register(AttachmentRuntimeEvents.class);
         NeoForge.EVENT_BUS.register(GunnerMobSpawner.class);
         NeoForge.EVENT_BUS.register(EnemyVehicleController.class);
         NeoForge.EVENT_BUS.register(FactionEventTicker.class);

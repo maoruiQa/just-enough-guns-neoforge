@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "GII",
+    "SLL",
+    "S  "
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "I": "minecraft:iron_ingot",
+    "L": "minecraft:leather",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "jeg:weighted_stock",
+    "count": 1
+  }
+}

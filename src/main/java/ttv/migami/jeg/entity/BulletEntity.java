@@ -5,12 +5,16 @@ import java.util.List;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -43,6 +47,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.faction.GunnerFactionRelations;
@@ -52,13 +58,18 @@ import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.init.ModTags;
 import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.BulletTrailPayload;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.particle.ColoredFlareOption;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -107,9 +118,19 @@ public class BulletEntity extends Projectile {
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_EXPLOSIVE_AMMO = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_KILL_EFFECT = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> DATA_FLARE_COLOR = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
+    private static final String DYING_TAG = "JEGDying";
+    private static final int NO_FLARE_COLOR = -1;
+    private static final float EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE = 0.1F;
+    private static final float EXPLOSIVE_MUZZLE_STONE_BREAK_CHANCE = 0.05F;
+    private static final float EXPLOSIVE_MUZZLE_ARMOR_PIERCING_MULTIPLIER = 0.75F;
 
     // Client-side only: track if we've hit a solid block (to stop particle rendering permanently)
     private boolean clientHitSolidBlock = false;
+    private boolean medalsEnabled;
+    private boolean justEnoughAmmoMedal;
 
     // Client-side rocket trail storage
     private List<Vec3> trailPositions;
@@ -121,21 +142,50 @@ public class BulletEntity extends Projectile {
     }
 
     public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity) {
+        this(level, shooter, stats, velocity, stats.damage(), false);
+    }
+
+    public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity, float damage, boolean explosiveAmmo) {
         this(ModEntities.BULLET.get(), level);
         this.setOwner(shooter);
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.entityData.set(DATA_GUN, stats.id().toString());
-        this.entityData.set(DATA_DAMAGE, stats.damage());
+        this.entityData.set(DATA_DAMAGE, damage);
         this.entityData.set(DATA_LIFE, projectileLifeFor(stats));
         this.entityData.set(DATA_FALLOFF_LIFE, Math.max(1, stats.projectileLife()));
         this.entityData.set(DATA_TRAIL_COLOR, stats.trailColor());
         this.entityData.set(DATA_TRAIL_LENGTH, stats.clampedTrailLength());
         this.entityData.set(DATA_SIZE, stats.clampedProjectileSize());
+        this.entityData.set(DATA_EXPLOSIVE_AMMO, explosiveAmmo);
         this.setVelocityAndRotation(velocity);
         this.setNoGravity(false);
         // DO NOT use noPhysics for flare gun - it prevents proper ticking
         this.refreshDimensions();
         this.setOldPosAndRot();
+    }
+
+    public void setKillEffect(Identifier itemId) {
+        this.entityData.set(DATA_KILL_EFFECT, itemId.toString());
+    }
+
+    public void setMedalsEnabled(boolean medalsEnabled) {
+        this.medalsEnabled = medalsEnabled;
+    }
+
+    public boolean shouldSendMedals() {
+        return medalsEnabled && !Config.hideMedals();
+    }
+
+    public void setJustEnoughAmmoMedal(boolean justEnoughAmmoMedal) {
+        this.justEnoughAmmoMedal = justEnoughAmmoMedal;
+    }
+
+    public void setFlareColor(int color) {
+        this.entityData.set(DATA_FLARE_COLOR, color & 0xFFFFFF);
+    }
+
+    public boolean shouldSendJustEnoughAmmoMedal() {
+        return justEnoughAmmoMedal;
     }
 
     @Override
@@ -149,6 +199,9 @@ public class BulletEntity extends Projectile {
         builder.define(DATA_SIZE, 0.05F);
         builder.define(DATA_TICKS_LIVED, 0);
         builder.define(DATA_HIT_SOLID_BLOCK, false);
+        builder.define(DATA_EXPLOSIVE_AMMO, false);
+        builder.define(DATA_KILL_EFFECT, "");
+        builder.define(DATA_FLARE_COLOR, NO_FLARE_COLOR);
     }
 
     @Override
@@ -353,6 +406,9 @@ public class BulletEntity extends Projectile {
                     if (hurt && livingOwner instanceof ServerPlayer shooter) {
                         NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
                     }
+                    if (hurt) {
+                        applyKillEffect(living, result);
+                    }
                 } else {
                     hitEntity.hurt(source, this.entityData.get(DATA_DAMAGE));
                 }
@@ -402,8 +458,14 @@ public class BulletEntity extends Projectile {
 
                 ServerLevel serverLevel = (ServerLevel) this.level();
                 boolean hurt = living.hurtServer(serverLevel, source, damage);
+                if (hurt && this.entityData.get(DATA_EXPLOSIVE_AMMO)) {
+                    living.igniteForSeconds(2);
+                }
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
                     NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                }
+                if (hurt) {
+                    applyKillEffect(living, result);
                 }
 
                 boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
@@ -447,6 +509,73 @@ public class BulletEntity extends Projectile {
 
     private static boolean isCriticalHit(EntityHitResult result, LivingEntity living) {
         return result.getLocation().y >= living.getEyeY() - 0.20D;
+    }
+
+    private void applyKillEffect(LivingEntity target, EntityHitResult result) {
+        if (!isCriticalHit(result, target) || !target.isDeadOrDying() || target.entityTags().contains(DYING_TAG)) {
+            return;
+        }
+
+        if (this.level().isClientSide() || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (this.getOwner() instanceof ServerPlayer player && shouldSendMedals()) {
+            NetworkHandler.sendHeadshotMedal(player);
+        }
+
+        Identifier killEffectId = Identifier.tryParse(this.entityData.get(DATA_KILL_EFFECT));
+        if (killEffectId == null) {
+            target.addTag(DYING_TAG);
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.CREEPER_BIRTHDAY_PARTY_BADGE.get()))) {
+            sendLongDistanceParticles(
+                    serverLevel,
+                    ModParticleTypes.CONFETTI.get(),
+                    target.getX(),
+                    target.getY() + target.getEyeHeight() / 1.5D,
+                    target.getZ(),
+                    64,
+                    target.getBbWidth() / 1.5D,
+                    target.getBbHeight() - target.getEyeHeight(),
+                    target.getBbWidth() / 1.5D,
+                    0.0D
+            );
+            sendLongDistanceParticles(
+                    serverLevel,
+                    ParticleTypes.EXPLOSION,
+                    target.getX(),
+                    target.getY() + target.getEyeHeight(),
+                    target.getZ(),
+                    1,
+                    target.getBbWidth() / 1.5D,
+                    target.getBbHeight() - target.getEyeHeight(),
+                    target.getBbWidth() / 1.5D,
+                    0.0D
+            );
+            play(serverLevel, target, "item.kill_effect.birthday_party", 5.0F, 1.0F);
+            target.addTag(DYING_TAG);
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.HEADPOPPER_BADGE.get()))) {
+            target.addEffect(new MobEffectInstance(ModEffects.POPPED, 60, 0, false, false));
+            target.addTag(DYING_TAG);
+            return;
+        }
+
+        if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.TRICKSHOT_BADGE.get()))) {
+            target.addEffect(new MobEffectInstance(ModEffects.TRICKSHOTTED, 60, 0, false, false));
+            target.addTag(DYING_TAG);
+        }
+    }
+
+    private static void play(ServerLevel level, LivingEntity entity, String soundPath, float volume, float pitch) {
+        DeferredHolder<SoundEvent, SoundEvent> holder = ModSounds.ALL.get(Reference.id(soundPath));
+        if (holder != null) {
+            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), holder.get(), SoundSource.PLAYERS, volume, pitch);
+        }
     }
 
     private float applyNormalDamageFalloff(float baseDamage, GunStats stats) {
@@ -544,7 +673,8 @@ public class BulletEntity extends Projectile {
             return rawDamage;
         }
 
-        BallisticProtection.BallisticResult result = BallisticProtection.applyToArmorHit(rawDamage, stats, stack, slot, rocketDirectHit);
+        float armorPiercingMultiplier = this.entityData.get(DATA_EXPLOSIVE_AMMO) ? EXPLOSIVE_MUZZLE_ARMOR_PIERCING_MULTIPLIER : 1.0F;
+        BallisticProtection.BallisticResult result = BallisticProtection.applyToArmorHit(rawDamage, stats, stack, slot, rocketDirectHit, armorPiercingMultiplier);
         if (result.durabilityDamage() > 0) {
             stack.hurtAndBreak(result.durabilityDamage(), target, slot);
         }
@@ -642,16 +772,48 @@ public class BulletEntity extends Projectile {
             }
 
             if (Config.bulletBlockDestructionEnabled()) {
+                boolean destroyedByExplosiveAmmo = this.entityData.get(DATA_EXPLOSIVE_AMMO)
+                        && tryDestroyExplosiveAmmoBlock(serverLevel, hitPos, hitState);
+
                 // Try to destroy the block based on tier and bullet power
-                ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
-                    serverLevel, hitPos, stats
-                );
+                if (!destroyedByExplosiveAmmo) {
+                    ttv.migami.jeg.gun.BulletPenetrationHelper.tryDestroyBlock(
+                        serverLevel, hitPos, stats
+                    );
+                }
             }
         }
 
         // Block stopped the bullet - call super and discard it
         super.onHitBlock(result);
         this.discard();
+    }
+
+    private boolean tryDestroyExplosiveAmmoBlock(ServerLevel level, BlockPos pos, BlockState state) {
+        Entity owner = this.getOwner();
+        if (!(owner instanceof Player)) {
+            return false;
+        }
+
+        boolean wood = (state.is(BlockTags.MINEABLE_WITH_AXE) && state.is(BlockTags.DRAGON_IMMUNE))
+                || state.is(ModTags.Blocks.WOOD);
+        boolean stone = (state.is(BlockTags.MINEABLE_WITH_PICKAXE) && state.is(BlockTags.DRAGON_IMMUNE))
+                || state.is(ModTags.Blocks.STONE);
+        if (!wood && !stone) {
+            return false;
+        }
+
+        float destroySpeed = state.getDestroySpeed(level, pos);
+        if (destroySpeed < 0.0F) {
+            return false;
+        }
+
+        float baseChance = wood ? EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE : EXPLOSIVE_MUZZLE_STONE_BREAK_CHANCE;
+        if (this.random.nextFloat() < baseChance / (destroySpeed + 1.0F)) {
+            level.destroyBlock(pos, false);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -663,6 +825,11 @@ public class BulletEntity extends Projectile {
         output.putFloat("TrailLength", this.entityData.get(DATA_TRAIL_LENGTH));
         output.putFloat("ProjectileSize", this.entityData.get(DATA_SIZE));
         output.putInt("Ticks", this.entityData.get(DATA_TICKS_LIVED));
+        output.putBoolean("ExplosiveAmmo", this.entityData.get(DATA_EXPLOSIVE_AMMO));
+        output.putString("KillEffect", this.entityData.get(DATA_KILL_EFFECT));
+        output.putInt("FlareColor", this.entityData.get(DATA_FLARE_COLOR));
+        output.putBoolean("MedalsEnabled", this.medalsEnabled);
+        output.putBoolean("JustEnoughAmmoMedal", this.justEnoughAmmoMedal);
     }
 
     @Override
@@ -674,6 +841,11 @@ public class BulletEntity extends Projectile {
         this.entityData.set(DATA_TRAIL_LENGTH, input.getFloatOr("TrailLength", this.entityData.get(DATA_TRAIL_LENGTH)));
         this.entityData.set(DATA_SIZE, input.getFloatOr("ProjectileSize", this.entityData.get(DATA_SIZE)));
         this.entityData.set(DATA_TICKS_LIVED, input.getIntOr("Ticks", this.entityData.get(DATA_TICKS_LIVED)));
+        this.entityData.set(DATA_EXPLOSIVE_AMMO, input.getBooleanOr("ExplosiveAmmo", false));
+        this.entityData.set(DATA_KILL_EFFECT, input.getStringOr("KillEffect", ""));
+        this.entityData.set(DATA_FLARE_COLOR, input.getIntOr("FlareColor", NO_FLARE_COLOR));
+        this.medalsEnabled = input.getBooleanOr("MedalsEnabled", false);
+        this.justEnoughAmmoMedal = input.getBooleanOr("JustEnoughAmmoMedal", false);
         this.entityData.set(DATA_LIFE, projectileLifeFor(getGunStats()));
         this.refreshDimensions();
         this.setVelocityAndRotation(this.getDeltaMovement());
@@ -1143,7 +1315,12 @@ public class BulletEntity extends Projectile {
         double py = this.getY() - motion.y;
         double pz = this.getZ() - motion.z;
 
-        level.addParticle(ModParticleTypes.FLARE_SMOKE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        int flareColor = this.entityData.get(DATA_FLARE_COLOR);
+        if (flareColor == NO_FLARE_COLOR) {
+            level.addParticle(ModParticleTypes.FLARE_SMOKE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
+        } else {
+            level.addParticle(new ColoredFlareOption(flareColor), px, py, pz, 0.0D, 0.1D, 0.0D);
+        }
         level.addParticle(ModParticleTypes.FIRE.get(), px, py, pz, 0.0D, 0.0D, 0.0D);
         level.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0D, 0.0D, 0.0D);
     }

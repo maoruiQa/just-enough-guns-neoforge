@@ -4,10 +4,13 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -16,11 +19,17 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
@@ -47,6 +56,11 @@ public final class NetworkHandler {
                 .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
+                .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
+                .playToServer(MeleePayload.TYPE, MeleePayload.STREAM_CODEC, NetworkHandler::handleMelee)
+                .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
+                .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
+                .playToServer(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC, NetworkHandler::handleToggleMedals)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
@@ -60,8 +74,113 @@ public final class NetworkHandler {
                 .playToClient(VehicleDataSyncPayload.TYPE, VehicleDataSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleDataSync)
                 .playToClient(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC, NetworkHandler::handleVehicleAssemblyRecipeSync)
                 .playToClient(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC, NetworkHandler::handleHitMarker)
+                .playToClient(HeadshotMedalPayload.TYPE, HeadshotMedalPayload.STREAM_CODEC, NetworkHandler::handleHeadshotMedal)
+                .playToClient(MedalPayload.TYPE, MedalPayload.STREAM_CODEC, NetworkHandler::handleMedal)
+                .playToClient(KillMedalPayload.TYPE, KillMedalPayload.STREAM_CODEC, NetworkHandler::handleKillMedal)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
                 .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
+    }
+
+    private static void handleOpenAttachments(OpenAttachmentsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player && player.getMainHandItem().getItem() instanceof GunItem) {
+                player.openMenu(AttachmentMenu.provider());
+            }
+        });
+    }
+
+    private static void handleToggleFlashlight(ToggleFlashlightPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof GunItem) {
+                toggleGunFlashlight(player, stack);
+            }
+        });
+    }
+
+    private static void handleMelee(MeleePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (!(stack.getItem() instanceof GunItem)) {
+                return;
+            }
+            if (isMeleeBlockedGun(stack) || GunItem.isDrawing(stack) || player.getCooldowns().isOnCooldown(stack)) {
+                return;
+            }
+            GunItem.cancelReloadForImmediateAction(player, stack);
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerMelee(player.level(), player, stack);
+            }
+            toggleGunFlashlight(player, stack);
+            AttachmentRuntimeEvents.handleBayonetMelee(player);
+        });
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
+    }
+
+    private static void toggleGunFlashlight(ServerPlayer player, ItemStack stack) {
+        if (!GunAttachments.hasFlashlight(stack)) {
+            return;
+        }
+        if (!Config.allowFlashlights()) {
+            Component message = Component.translatable("chat.jeg.disabled_flashlights").withStyle(ChatFormatting.GRAY);
+            player.sendSystemMessage(message, true);
+            return;
+        }
+        GunAttachments.FlashlightToggleResult result = GunAttachments.toggleFlashlight(stack, player);
+        if (result == GunAttachments.FlashlightToggleResult.MISSING) {
+            return;
+        }
+        if (result == GunAttachments.FlashlightToggleResult.DEAD) {
+            Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
+            player.sendSystemMessage(message, true);
+        }
+        Identifier soundId = result == GunAttachments.FlashlightToggleResult.DEAD
+                ? Reference.id("item.goose")
+                : Reference.id("item.flashlight");
+        var sound = ModSounds.ALL.get(soundId);
+        if (sound != null) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+    }
+
+    private static void handleChargeFlashlight(ChargeFlashlightPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof FlashlightAttachmentItem) {
+                FlashlightAttachmentItem.charge(stack, player);
+            }
+        });
+    }
+
+    private static void handleToggleMedals(ToggleMedalsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof GunItem) {
+                GunAttachments.toggleMedals(stack);
+            }
+        });
     }
 
     private static void handleVehicleInput(VehicleInputPayload payload, IPayloadContext context) {
@@ -164,13 +283,36 @@ public final class NetworkHandler {
                 payload.critical()));
     }
 
+    private static void handleHeadshotMedal(HeadshotMedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showHeadshot",
+                new Class<?>[0]));
+    }
+
+    private static void handleMedal(MedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showMedal",
+                new Class<?>[] { int.class },
+                payload.medal().ordinal()));
+    }
+
+    private static void handleKillMedal(KillMedalPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.medal.MedalManager",
+                "showKill",
+                new Class<?>[0]));
+    }
+
     private static void handleUiConfig(UiConfigPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> invokeClientStatic(
                 "ttv.migami.jeg.client.ClientUiConfig",
                 "update",
-                new Class<?>[] { boolean.class, boolean.class },
+                new Class<?>[] { boolean.class, boolean.class, boolean.class },
                 payload.showCrosshair(),
-                payload.showHitFeedback()));
+                payload.showHitFeedback(),
+                payload.hideMedals()));
     }
 
     private static void handleVehicleDataSync(VehicleDataSyncPayload payload, IPayloadContext context) {
@@ -310,16 +452,16 @@ public final class NetworkHandler {
             if (shot && GunItem.isHoldToFireWeapon(stack)) {
                 HOLD_FIRE_START_TICKS.remove(player.getUUID());
             }
-            if (shot && shouldForceExitAdsAfterShot(gun)) {
+            if (shot && shouldForceExitAdsAfterShot(stack, gun)) {
                 player.getPersistentData().putBoolean(AIMING_TAG, false);
                 player.stopUsingItem();
             }
         });
     }
 
-    private static boolean shouldForceExitAdsAfterShot(GunItem gun) {
+    private static boolean shouldForceExitAdsAfterShot(ItemStack stack, GunItem gun) {
         return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled();
+                && GunScopeSupport.hasTelescopicSight(stack);
     }
 
     private static boolean hasCompletedHoldFire(ServerPlayer player, ItemStack stack) {
@@ -364,7 +506,7 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem gun)) {
                 return;
             }
-            boolean reloaded = gun.tryReload(player.level(), player, stack, true);
+            boolean reloaded = gun.tryReload(player.level(), player, stack, payload.hand(), true);
             if (reloaded) {
                 player.swing(payload.hand(), true);
             }
@@ -418,6 +560,26 @@ public final class NetworkHandler {
 
     public static void sendUnloadMagazine() {
         sendToServer(UnloadMagazineRequestPayload.INSTANCE);
+    }
+
+    public static void sendOpenAttachments() {
+        sendToServer(OpenAttachmentsPayload.INSTANCE);
+    }
+
+    public static void sendMelee() {
+        sendToServer(MeleePayload.INSTANCE);
+    }
+
+    public static void sendToggleFlashlight() {
+        sendToServer(ToggleFlashlightPayload.INSTANCE);
+    }
+
+    public static void sendChargeFlashlight() {
+        sendToServer(ChargeFlashlightPayload.INSTANCE);
+    }
+
+    public static void sendToggleMedals() {
+        sendToServer(ToggleMedalsPayload.INSTANCE);
     }
 
     public static void sendAssembleVehicle(Identifier recipeId) {
@@ -512,8 +674,20 @@ public final class NetworkHandler {
         player.connection.send(new HitMarkerPayload(critical));
     }
 
+    public static void sendHeadshotMedal(ServerPlayer player) {
+        player.connection.send(HeadshotMedalPayload.INSTANCE);
+    }
+
+    public static void sendMedal(ServerPlayer player, MedalType medal) {
+        player.connection.send(new MedalPayload(medal));
+    }
+
+    public static void sendKillMedal(ServerPlayer player) {
+        player.connection.send(KillMedalPayload.INSTANCE);
+    }
+
     public static void sendUiConfig(ServerPlayer player) {
-        player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+        player.connection.send(new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals()));
     }
 
     public static void sendVehicleData(ServerPlayer player) {
@@ -522,7 +696,7 @@ public final class NetworkHandler {
     }
 
     public static void broadcastUiConfig(MinecraftServer server) {
-        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
+        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals());
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.connection.send(payload);
         }

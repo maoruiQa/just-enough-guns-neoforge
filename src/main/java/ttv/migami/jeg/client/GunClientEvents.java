@@ -54,14 +54,17 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -111,6 +114,8 @@ public final class GunClientEvents {
     private static int rocketHoldTicks;
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
+    private static ItemStack lastMainHandStackReference = ItemStack.EMPTY;
+    private static int lastMainHandSlot = -1;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
     private static final Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = Map.ofEntries(
@@ -180,7 +185,7 @@ public final class GunClientEvents {
             return;
         }
         if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
             float current = event.getNewFovModifier();
             float target = SCOPE_VIEWPORT_FOV / configuredFov();
             event.setNewFovModifier(Math.max(0.1F, Mth.lerp(ads, current, target)));
@@ -308,6 +313,7 @@ public final class GunClientEvents {
             renderCenteredOverlayPrompt(event.getGuiGraphics(), promptText, promptColor);
         }
 
+        MedalManager.render(event.getGuiGraphics());
         ClientHudRenderer.render(event.getGuiGraphics());
         if (player.getMainHandItem().getItem() instanceof GunItem || player.getOffhandItem().getItem() instanceof GunItem) {
             ScopeOverlayRenderer.render(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
@@ -329,6 +335,7 @@ public final class GunClientEvents {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         GunRecoilHandler.tick();
+        MedalManager.tick();
         if (Config.legacyBulletTrailEnabled()) {
             // Tick bullet trail renderer to age and remove old trails.
             ttv.migami.jeg.client.render.BulletTrailRenderer.tick();
@@ -348,6 +355,7 @@ public final class GunClientEvents {
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
+            clearImmediateGunSwitchState();
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             return;
@@ -356,6 +364,8 @@ public final class GunClientEvents {
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
         tickVehicleFireAudio(player);
+        tickImmediateGunSwitch(player);
+        GunItem.tickClientVisualState(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -382,7 +392,7 @@ public final class GunClientEvents {
                     NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
-                    applyLocalVisualRecoil(player, gun);
+                    applyLocalVisualRecoil(player, heldMain, gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(gun);
@@ -404,6 +414,11 @@ public final class GunClientEvents {
             GunRecoilHandler.stopImmediate();
         }
 
+        if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && minecraft.options.keyAttack.isDown()) {
+            NetworkHandler.sendChargeFlashlight();
+            minecraft.options.keyAttack.setDown(false);
+        }
+
         // R key reload / coolant use (server-authoritative).
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
@@ -417,7 +432,37 @@ public final class GunClientEvents {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem) {
+                NetworkHandler.sendOpenAttachments();
+            }
+        }
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+                GunItem.cancelReloadForImmediateAction(player, heldMain);
+                if (heldMain.getItem() instanceof AnimatedGunItem) {
+                    AnimatedGunItem.triggerClientMelee(minecraft.player);
+                }
+                NetworkHandler.sendMelee();
+            }
+        }
 
+    }
+
+    private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
+        return !isMeleeBlockedGun(stack)
+                && !GunItem.isDrawing(stack)
+                && !player.getCooldowns().isOnCooldown(stack);
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
     }
 
     @SubscribeEvent
@@ -470,6 +515,7 @@ public final class GunClientEvents {
         nextVisualShotTickMain = 0L;
         AimingHandler.get().reset();
         resetRocketHold(false);
+        clearImmediateGunSwitchState();
         GunRecoilHandler.stopImmediate();
         CrosshairHandler.reset();
         if (stunRingingSound != null) {
@@ -514,8 +560,40 @@ public final class GunClientEvents {
         return true;
     }
 
-    private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
-        GunRecoilHandler.onShot(gun.getStats());
+    private static void tickImmediateGunSwitch(LocalPlayer player) {
+        int selectedSlot = player.getInventory().getSelectedSlot();
+        ItemStack current = player.getMainHandItem();
+        boolean changed = selectedSlot != lastMainHandSlot;
+
+        if (changed && lastMainHandStackReference.getItem() instanceof AnimatedGunItem
+                && lastMainHandStackReference != current
+                && GunItem.isReloading(lastMainHandStackReference)) {
+            GunItem.cancelClientReloadVisualForSwitch(player, lastMainHandStackReference, lastMainHandSlot);
+        }
+
+        if (changed
+                && current.getItem() instanceof AnimatedGunItem
+                && lastMainHandSlot >= 0
+                && lastMainHandStackReference != current
+                && !ItemStack.isSameItemSameComponents(lastMainHandStackReference, current)) {
+            GunItem.startClientDrawAnimationForSwitch(player, current);
+        }
+
+        rememberMainHandStack(current, selectedSlot);
+    }
+
+    private static void rememberMainHandStack(ItemStack stack, int selectedSlot) {
+        lastMainHandStackReference = stack;
+        lastMainHandSlot = selectedSlot;
+    }
+
+    private static void clearImmediateGunSwitchState() {
+        lastMainHandStackReference = ItemStack.EMPTY;
+        lastMainHandSlot = -1;
+    }
+
+    private static void applyLocalVisualRecoil(LocalPlayer player, ItemStack stack, GunItem gun) {
+        GunRecoilHandler.onShot(gun.getStats(), GunAttachments.modifiers(stack));
         AnimatedGunItem.suppressSprintAnimationBriefly();
     }
 
@@ -558,7 +636,7 @@ public final class GunClientEvents {
         NetworkHandler.sendShoot(net.minecraft.world.InteractionHand.MAIN_HAND);
         rocketShotSent = true;
         if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
-            applyLocalVisualRecoil(player, gun);
+            applyLocalVisualRecoil(player, stack, gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
             forceExitScopedAdsAfterShot(gun);

@@ -22,6 +22,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue SHOW_HITMARKER;
     public static final ModConfigSpec.ConfigValue<String> DYNAMIC_CROSSHAIR_DOT_MODE;
     public static final ModConfigSpec.DoubleValue DYNAMIC_CROSSHAIR_DOT_THRESHOLD;
+    public static final ModConfigSpec.BooleanValue HIDE_ATTACHMENT_CONFIG_BUTTON;
+    public static final ModConfigSpec.ConfigValue<String> ATTACHMENT_BUTTON_ALIGNMENT;
 
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
@@ -42,6 +44,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue RECOIL_BACKSTEP_ENABLED;
     public static final ModConfigSpec.DoubleValue RECOIL_BACKSTEP_SCALE;
     public static final ModConfigSpec.BooleanValue BLOCK_HIT_ANIMATION_ENABLED;
+    public static final ModConfigSpec.BooleanValue GUN_DURABILITY_ENABLED;
+    public static final ModConfigSpec.BooleanValue GUN_JAMMING_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
@@ -79,6 +83,10 @@ public final class Config {
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue UI_HIDE_MEDALS;
+    public static final ModConfigSpec.BooleanValue ALLOW_FLASHLIGHTS;
+    public static final ModConfigSpec.IntValue FLASHLIGHT_DISTANCE;
+    public static final ModConfigSpec.BooleanValue GLOWING_LASER_POINTERS;
     private static final Map<String, ModConfigSpec.ConfigValue<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
     private static final Map<String, Map<String, ModConfigSpec.DoubleValue>> GUNNER_GROWTH_CONFIGS = new LinkedHashMap<>();
     private static final String DEFAULT_GUNNER_TERRAIN_SUPPORT_BLOCK = "minecraft:dirt";
@@ -117,6 +125,12 @@ public final class Config {
         DYNAMIC_CROSSHAIR_DOT_THRESHOLD = clientBuilder
                 .comment("Spread threshold where the dynamic crosshair center dot is shown.")
                 .defineInRange("dynamicCrosshairDotThreshold", 0.8D, 0.0D, 90.0D);
+        HIDE_ATTACHMENT_CONFIG_BUTTON = clientBuilder
+                .comment("If true, hide the config button on the attachment screen.")
+                .define("hideAttachmentConfigButton", false);
+        ATTACHMENT_BUTTON_ALIGNMENT = clientBuilder
+                .comment("Attachment-screen button alignment: left or right.")
+                .define("attachmentButtonAlignment", "right");
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
@@ -129,6 +143,21 @@ public final class Config {
         UI_SHOW_HIT_FEEDBACK = serverBuilder
                 .comment("If true, clients display hit feedback markers when bullets hit living entities.")
                 .define("showHitFeedback", true);
+        UI_HIDE_MEDALS = serverBuilder
+                .comment("If true, kill medals are disabled and the attachment-screen medal toggle cannot be changed.")
+                .define("hideMedals", false);
+        serverBuilder.pop();
+
+        serverBuilder.push("attachments");
+        ALLOW_FLASHLIGHTS = serverBuilder
+                .comment("If true, powered flashlight attachments place temporary dynamic light blocks.")
+                .define("allowFlashlights", true);
+        FLASHLIGHT_DISTANCE = serverBuilder
+                .comment("Maximum block distance flashlight attachments can illuminate.")
+                .defineInRange("flashlightDistance", 32, 1, 64);
+        GLOWING_LASER_POINTERS = serverBuilder
+                .comment("If true, laser pointer attachments apply Glowing to aimed-at living entities while ADS is active.")
+                .define("glowingLaserPointers", true);
         serverBuilder.pop();
 
         serverBuilder.push("spawns");
@@ -208,6 +237,12 @@ public final class Config {
         BLOCK_HIT_ANIMATION_ENABLED = serverBuilder
                 .comment("If true, bullets hitting a block trigger the vanilla block hit particle animation event.")
                 .define("blockHitAnimationEnabled", true);
+        GUN_DURABILITY_ENABLED = serverBuilder
+                .comment("If true, guns and installed attachments receive durability damage when a gun is fired.")
+                .define("gunDurability", true);
+        GUN_JAMMING_ENABLED = serverBuilder
+                .comment("If true, low-durability guns can jam and fail to fire.")
+                .define("gunJamming", true);
         BULLET_BLOCK_DESTRUCTION_ENABLED = serverBuilder
                 .comment("If true, bullets can destroy hit blocks based on penetration and bullet power rules.")
                 .define("bulletBlockDestructionEnabled", true);
@@ -334,6 +369,7 @@ public final class Config {
 
         registerCommandConfig("ui.showCrosshair", UI_SHOW_CROSSHAIR);
         registerCommandConfig("ui.showHitFeedback", UI_SHOW_HIT_FEEDBACK);
+        registerCommandConfig("ui.hideMedals", UI_HIDE_MEDALS);
         registerCommandConfig("patrol.enabled", FACTION_PATROL_ENABLED);
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
@@ -341,6 +377,8 @@ public final class Config {
         registerCommandConfig("mob.mechanism.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
         registerCommandConfig("mob.mechanism.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
         registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
+        registerCommandConfig("combat.gunDurability", GUN_DURABILITY_ENABLED);
+        registerCommandConfig("combat.gunJamming", GUN_JAMMING_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
@@ -514,12 +552,32 @@ public final class Config {
         return BLOCK_HIT_ANIMATION_ENABLED.get();
     }
 
+    public static boolean gunDurabilityEnabled() {
+        return GUN_DURABILITY_ENABLED.get();
+    }
+
+    public static boolean gunJammingEnabled() {
+        return GUN_JAMMING_ENABLED.get();
+    }
+
     public static boolean bulletBlockDestructionEnabled() {
         return BULLET_BLOCK_DESTRUCTION_ENABLED.get();
     }
 
     public static boolean magazineFeedEnabled() {
         return MAGAZINE_FEED_ENABLED.get();
+    }
+
+    public static boolean allowFlashlights() {
+        return ALLOW_FLASHLIGHTS.get();
+    }
+
+    public static int flashlightDistance() {
+        return Mth.clamp(FLASHLIGHT_DISTANCE.get(), 1, 64);
+    }
+
+    public static boolean glowingLaserPointers() {
+        return GLOWING_LASER_POINTERS.get();
     }
 
     public static void setBulletBlockDestructionEnabled(boolean enabled) {
@@ -830,6 +888,10 @@ public final class Config {
         return UI_SHOW_HIT_FEEDBACK.get();
     }
 
+    public static boolean hideMedals() {
+        return UI_HIDE_MEDALS.get();
+    }
+
     public static boolean legacyBulletTrailEnabled() {
         return LEGACY_BULLET_TRAIL_ENABLED.get();
     }
@@ -856,6 +918,14 @@ public final class Config {
 
     public static double dynamicCrosshairDotThreshold() {
         return Mth.clamp(DYNAMIC_CROSSHAIR_DOT_THRESHOLD.get(), 0.0D, 90.0D);
+    }
+
+    public static boolean hideAttachmentConfigButton() {
+        return HIDE_ATTACHMENT_CONFIG_BUTTON.get();
+    }
+
+    public static boolean leftAttachmentButtons() {
+        return "left".equalsIgnoreCase(ATTACHMENT_BUTTON_ALIGNMENT.get());
     }
 
     private static double clamp01(double value) {

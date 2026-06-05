@@ -8,6 +8,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.effect.FactionOmenEffect;
 import ttv.migami.jeg.effect.IncurableEffect;
+import ttv.migami.jeg.effect.KillEffectEffect;
 import ttv.migami.jeg.effect.SmokedEffect;
 
 public final class ModEffects {
@@ -34,5 +35,15 @@ public final class ModEffects {
     public static final DeferredHolder<MobEffect, MobEffect> SMOKED = REGISTER.register(
             "smoked",
             () -> new SmokedEffect(MobEffectCategory.HARMFUL, 0x666666)
+    );
+
+    public static final DeferredHolder<MobEffect, MobEffect> POPPED = REGISTER.register(
+            "popped",
+            () -> new KillEffectEffect(MobEffectCategory.HARMFUL, 0xFFE8A3)
+    );
+
+    public static final DeferredHolder<MobEffect, MobEffect> TRICKSHOTTED = REGISTER.register(
+            "trickshotted",
+            () -> new KillEffectEffect(MobEffectCategory.HARMFUL, 0xFFDF4D)
     );
 }

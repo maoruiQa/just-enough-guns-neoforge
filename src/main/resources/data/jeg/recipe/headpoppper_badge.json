@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:firework_rocket",
+    "minecraft:gold_nugget"
+  ],
+  "result": {
+    "id": "jeg:headpoppper_badge",
+    "count": 1
+  }
+}

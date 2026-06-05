@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "GSG",
+    "ICI",
+    " R "
+  ],
+  "key": {
+    "G": "minecraft:glass_pane",
+    "S": "minecraft:spyglass",
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:copper_ingot",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "jeg:telescopic_sight",
+    "count": 1
+  }
+}
