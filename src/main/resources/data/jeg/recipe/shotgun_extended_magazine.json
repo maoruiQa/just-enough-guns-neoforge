@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "INI",
+    "NMN",
+    " N "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "M": "jeg:shotgun_magazine",
+    "N": "minecraft:iron_nugget"
+  },
+  "result": {
+    "id": "jeg:shotgun_extended_magazine",
+    "count": 1
+  }
+}

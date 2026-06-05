@@ -6,6 +6,7 @@ import net.minecraft.world.InteractionHand;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
@@ -54,8 +55,20 @@ public final class ClientNetworkHandler {
             context.client().execute(() -> CrosshairHandler.playHitMarker(payload.critical()));
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(HeadshotMedalPayload.TYPE, (payload, context) -> {
+            context.client().execute(MedalManager::showHeadshot);
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(MedalPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> MedalManager.showMedal(payload.medal().ordinal()));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(KillMedalPayload.TYPE, (payload, context) -> {
+            context.client().execute(MedalManager::showKill);
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(UiConfigPayload.TYPE, (payload, context) -> {
-            context.client().execute(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback()));
+            context.client().execute(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback(), payload.hideMedals()));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(VehicleDataSyncPayload.TYPE, (payload, context) -> {
@@ -109,6 +122,26 @@ public final class ClientNetworkHandler {
 
     public static void sendUnloadMagazine() {
         ClientPlayNetworking.send(UnloadMagazineRequestPayload.INSTANCE);
+    }
+
+    public static void sendOpenAttachments() {
+        ClientPlayNetworking.send(OpenAttachmentsPayload.INSTANCE);
+    }
+
+    public static void sendToggleMedals() {
+        ClientPlayNetworking.send(ToggleMedalsPayload.INSTANCE);
+    }
+
+    public static void sendMelee() {
+        ClientPlayNetworking.send(MeleePayload.INSTANCE);
+    }
+
+    public static void sendToggleFlashlight() {
+        ClientPlayNetworking.send(ToggleFlashlightPayload.INSTANCE);
+    }
+
+    public static void sendChargeFlashlight() {
+        ClientPlayNetworking.send(ChargeFlashlightPayload.INSTANCE);
     }
 
     public static void sendAiming(boolean aiming) {

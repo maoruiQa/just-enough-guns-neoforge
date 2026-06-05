@@ -39,20 +39,28 @@ public final class MagazineItem extends Item {
     );
 
     public enum MagazineType {
-        PISTOL(12, 5, Set.of(Reference.id("pistol_ammo"))),
-        SMG(32, 5, Set.of(Reference.id("pistol_ammo"))),
-        RIFLE(30, 5, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID)),
-        SHOTGUN(8, 5, Set.of(Reference.id("shotgun_shell"), Reference.id("handmade_shell"), Reference.id("spectre_round"), ECHO_SHARD_ID)),
-        MACHINE_GUN(150, 2, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID));
+        PISTOL(12, 5, Set.of(Reference.id("pistol_ammo")), null),
+        SMG(32, 5, Set.of(Reference.id("pistol_ammo")), null),
+        SMG_EXTENDED(48, 5, Set.of(Reference.id("pistol_ammo")), SMG),
+        SMG_DRUM(64, 5, Set.of(Reference.id("pistol_ammo")), SMG),
+        RIFLE(30, 5, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID), null),
+        RIFLE_EXTENDED(45, 5, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID), RIFLE),
+        RIFLE_DRUM(60, 5, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID), RIFLE),
+        SHOTGUN(8, 5, Set.of(Reference.id("shotgun_shell"), Reference.id("handmade_shell"), Reference.id("spectre_round"), ECHO_SHARD_ID), null),
+        SHOTGUN_EXTENDED(12, 5, Set.of(Reference.id("shotgun_shell"), Reference.id("handmade_shell"), Reference.id("spectre_round"), ECHO_SHARD_ID), SHOTGUN),
+        SHOTGUN_DRUM(16, 5, Set.of(Reference.id("shotgun_shell"), Reference.id("handmade_shell"), Reference.id("spectre_round"), ECHO_SHARD_ID), SHOTGUN),
+        MACHINE_GUN(150, 2, Set.of(Reference.id("rifle_ammo"), Reference.id("blaze_round"), Reference.id("spectre_round"), ECHO_SHARD_ID), null);
 
         private final int capacity;
         private final int cooldownTicks;
         private final Set<Identifier> compatibleAmmo;
+        private final MagazineType baseType;
 
-        MagazineType(int capacity, int cooldownTicks, Set<Identifier> compatibleAmmo) {
+        MagazineType(int capacity, int cooldownTicks, Set<Identifier> compatibleAmmo, @Nullable MagazineType baseType) {
             this.capacity = capacity;
             this.cooldownTicks = cooldownTicks;
             this.compatibleAmmo = compatibleAmmo;
+            this.baseType = baseType == null ? this : baseType;
         }
 
         public int capacity() {
@@ -66,6 +74,14 @@ public final class MagazineItem extends Item {
         public boolean supports(Identifier ammoId) {
             return compatibleAmmo.contains(ammoId);
         }
+
+        public MagazineType baseType() {
+            return baseType;
+        }
+
+        public boolean isVariantOf(MagazineType type) {
+            return baseType == type;
+        }
     }
 
     private final MagazineType type;
@@ -73,6 +89,10 @@ public final class MagazineItem extends Item {
     public MagazineItem(Properties properties, MagazineType type) {
         super(properties);
         this.type = type;
+    }
+
+    public MagazineType type() {
+        return type;
     }
 
     public record UnloadResult(boolean transferredAmmo, boolean showOffhandFullPrompt) {}

@@ -28,7 +28,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.ClipContext;
@@ -37,7 +39,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -48,6 +49,9 @@ import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
 // NOTE: AnimatedGunItem extends GunItem and adds GeckoLib animation triggers.
@@ -57,11 +61,15 @@ import ttv.migami.jeg.util.HudMessageHelper;
 
 public class GunItem extends Item {
     private static final Identifier GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
+    private static final Identifier FLARE_GUN_ID = Reference.id("flare_gun");
     private static final Identifier ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
     private static final int GRENADE_FUSE_TICKS = 600;
+    private static final double LOW_DURABILITY_JAM_THRESHOLD = 1.75D;
+    private static final double INCREASED_JAM_THRESHOLD = 2.25D;
+    private static final float JAM_CHANCE = 0.025F;
     private static final Set<String> AUTOMATIC_IDS = Set.of(
             "abstract_gun",
             "assault_rifle",
@@ -98,19 +106,77 @@ public class GunItem extends Item {
             "typhoonee"
     );
 
-    private static final int RELOAD_STAGE_NONE = 0;
-    private static final int RELOAD_STAGE_START = 1;
-    private static final int RELOAD_STAGE_LOOP = 2;
-    private static final int RELOAD_STAGE_STOP = 3;
+    static final int RELOAD_STAGE_NONE = 0;
+    static final int RELOAD_STAGE_START = 1;
+    static final int RELOAD_STAGE_LOOP = 2;
+    static final int RELOAD_STAGE_STOP = 3;
+    private static final int DRAW_TICKS = 14;
+    private static final int ROCKET_RELOAD_START_TICKS = 46;
+    private static final int ROCKET_RELOAD_LOOP_TICKS = 29;
+    private static final int ROCKET_RELOAD_STOP_TICKS = 38;
+    private static final Map<String, Integer> RELOAD_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("abstract_gun", 70),
+            Map.entry("assault_rifle", 70),
+            Map.entry("blossom_rifle", 96),
+            Map.entry("burst_rifle", 51),
+            Map.entry("combat_pistol", 79),
+            Map.entry("combat_rifle", 51),
+            Map.entry("custom_smg", 60),
+            Map.entry("flamethrower", 205),
+            Map.entry("hollenfire_mk2", 120),
+            Map.entry("hypersonic_cannon", 90),
+            Map.entry("infantry_rifle", 57),
+            Map.entry("light_machine_gun", 130),
+            Map.entry("minigun", 43),
+            Map.entry("phantom_smg", 60),
+            Map.entry("semi_auto_pistol", 79),
+            Map.entry("semi_auto_rifle", 60),
+            Map.entry("service_rifle", 51),
+            Map.entry("soulhunter_mk2", 130),
+            Map.entry("subsonic_rifle", 52),
+            Map.entry("waterpipe_shotgun", 56)
+    );
+    private static final Map<String, Integer> RELOAD_START_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("bolt_action_rifle", 20),
+            Map.entry("double_barrel_shotgun", 38),
+            Map.entry("flare_gun", 21),
+            Map.entry("grenade_launcher", 40),
+            Map.entry("holy_shotgun", 10),
+            Map.entry("pump_shotgun", 10),
+            Map.entry("python", 43),
+            Map.entry("repeating_shotgun", 12),
+            Map.entry("revolver", 43),
+            Map.entry("rocket_launcher", ROCKET_RELOAD_START_TICKS),
+            Map.entry("supersonic_shotgun", 10),
+            Map.entry("typhoonee", ROCKET_RELOAD_START_TICKS)
+    );
+    private static final Map<String, Integer> RELOAD_STOP_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("bolt_action_rifle", 22),
+            Map.entry("double_barrel_shotgun", 16),
+            Map.entry("flare_gun", 15),
+            Map.entry("holy_shotgun", 20),
+            Map.entry("pump_shotgun", 20),
+            Map.entry("python", 15),
+            Map.entry("repeating_shotgun", 29),
+            Map.entry("revolver", 15),
+            Map.entry("rocket_launcher", ROCKET_RELOAD_STOP_TICKS),
+            Map.entry("supersonic_shotgun", 20),
+            Map.entry("typhoonee", ROCKET_RELOAD_STOP_TICKS)
+    );
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
     private static final int WATER_COOL_DURATION_TICKS = 60;
     private static final Identifier WATER_COOL_SOUND_ID = Reference.id("item.cooldown_with_water");
     private static final Map<UUID, SpreadTrackerState> SPREAD_TRACKERS = new WeakHashMap<>();
     private static final Map<UUID, Integer> MINIGUN_PENDING_HEAT_SHOTS = new HashMap<>();
-    private static final Map<Integer, Integer> MINIGUN_PENDING_HEAT_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_PENDING_NUMERATOR = new HashMap<>();
     private static final Map<Integer, Integer> OVERHEAT_COOL_NUMERATOR = new HashMap<>();
+    private static final Map<UUID, PendingReload> PENDING_RELOADS = new HashMap<>();
+    private static final Map<UUID, QueuedReloadCancelDraw> SERVER_RELOAD_CANCEL_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, QueuedReloadCancelDraw> CLIENT_RELOAD_CANCEL_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, HeldGunState> HELD_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, HeldGunState> CLIENT_HELD_DRAW_STATES = new HashMap<>();
+    private static final Map<UUID, HeldGunState> CLIENT_RELOAD_VISUAL_STATES = new HashMap<>();
     private static final int MINIGUN_HEAT_BATCH_SHOTS = 3;
     private static final Set<String> SHOTGUN_IDS = Set.of(
             "double_barrel_shotgun",
@@ -158,7 +224,35 @@ public class GunItem extends Item {
 
     public record MagazineInventorySummary(int loadedMagazineCount, int emptyMagazineCount) {}
 
-    private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot) {}
+    private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot, int bestMagazineCapacity) {}
+
+    private record PendingReload(
+            InteractionHand hand,
+            int selectedSlot,
+            ItemStack stack,
+            ItemStack stackSnapshot,
+            int magazineSlot,
+            @Nullable Identifier magazineItemId,
+            @Nullable Identifier magazineAmmoId,
+            int magazineAmmoCount
+    ) {}
+
+    private record PendingMagazineSwap(int slot, Identifier magazineItemId, Identifier ammoItemId, int ammoCount, int magazineCapacity) {}
+
+    private record HeldGunState(InteractionHand hand, int selectedSlot, int stackIdentity, ItemStack stackSnapshot) {
+        private boolean matchesStack(ItemStack stack) {
+            return this.stackIdentity == System.identityHashCode(stack)
+                    || isSameStackIgnoringAnimationState(stack, this.stackSnapshot);
+        }
+    }
+
+    private record QueuedReloadCancelDraw(int selectedSlot, int stackIdentity, ItemStack stackSnapshot) {
+        private boolean matchesStack(ItemStack stack, int slot) {
+            return this.selectedSlot == slot
+                    && (this.stackIdentity == System.identityHashCode(stack)
+                    || isSameStackIgnoringAnimationState(stack, this.stackSnapshot));
+        }
+    }
 
     public GunItem(Properties properties, GunStats stats) {
         super(properties);
@@ -183,6 +277,10 @@ public class GunItem extends Item {
 
     public int magazineSize() {
         return this.stats.magazineSize();
+    }
+
+    public int magazineSize(ItemStack stack) {
+        return modifiedMagazineSize(stack);
     }
 
     @Override
@@ -245,7 +343,7 @@ public class GunItem extends Item {
             return 0;
         }
         ensureAmmoInitialized(stack);
-        return stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), stats.magazineSize());
+        return stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), modifiedMagazineSize(stack));
     }
 
     public int getMagazineAmmo(ItemStack stack) {
@@ -319,6 +417,13 @@ public class GunItem extends Item {
         setTriggerLocked(stack, false);
     }
 
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        if (slotChanged) {
+            return true;
+        }
+        return !ItemStack.isSameItem(oldStack, newStack);
+    }
+
     public int countInventoryAmmo(Player player) {
         if (player.getAbilities().instabuild) {
             return Integer.MAX_VALUE;
@@ -342,8 +447,40 @@ public class GunItem extends Item {
 
     private void setAmmo(ItemStack stack, int value) {
         if (usesLoadedAmmo()) {
-            stack.set(ModDataComponents.GUN_AMMO.get(), Mth.clamp(value, 0, stats.magazineSize()));
+            stack.set(ModDataComponents.GUN_AMMO.get(), Mth.clamp(value, 0, modifiedMagazineSize(stack)));
         }
+    }
+
+    private int modifiedMagazineSize(ItemStack stack) {
+        int baseCapacity = Math.max(0, stats.magazineSize());
+        if (Config.magazineFeedEnabled()) {
+            if (!usesMagazineSwapReload()) {
+                return baseCapacity;
+            }
+            MagazineItem loadedMagazine = getLoadedMagazineItem(stack);
+            if (loadedMagazine != null && isCompatibleMagazine(loadedMagazine)) {
+                return loadedMagazine.getCapacity();
+            }
+
+            MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+            return baseMagazine != null ? baseMagazine.getCapacity() : baseCapacity;
+        }
+
+        double multiplier = GunAttachments.modifiers(stack).magazineCapacityMultiplier();
+        if (multiplier <= 1.0D) {
+            return baseCapacity;
+        }
+        if ("infantry_rifle".equals(stats.id().getPath())) {
+            return GunAttachments.id(stack, AttachmentType.MAGAZINE)
+                    .map(Identifier::getPath)
+                    .map(path -> switch (path) {
+                        case "extended_mag" -> 20;
+                        case "drum_mag" -> 40;
+                        default -> baseCapacity;
+                    })
+                    .orElse(baseCapacity);
+        }
+        return Math.max(baseCapacity, (int) (baseCapacity * multiplier));
     }
 
     public boolean usesOverheatMechanic() {
@@ -383,12 +520,16 @@ public class GunItem extends Item {
     public static boolean tryStartWaterCooling(Level level, Player player, InteractionHand hand) {
         ItemStack coolant = player.getItemInHand(hand);
         ItemStack gunStack = hand == InteractionHand.OFF_HAND ? player.getMainHandItem() : player.getOffhandItem();
-        if (!isCoolant(coolant)) {
+        boolean coolantMatch = isCoolant(coolant);
+        boolean canCool = canWaterCool(gunStack);
+        boolean alreadyCooling = isCoolingWithWater(gunStack);
+        if (!coolantMatch) {
             return false;
         }
-        if (!canWaterCool(gunStack) || isCoolingWithWater(gunStack)) {
+        if (!canCool || alreadyCooling) {
             return false;
         }
+
         startWaterCooling(gunStack);
         return true;
     }
@@ -415,16 +556,19 @@ public class GunItem extends Item {
         if (!(livingEntity instanceof Player player)) {
             return coolant;
         }
+
         ItemStack currentOffhand = player.getOffhandItem();
         ItemStack currentMainhand = player.getMainHandItem();
         ItemStack gunStack = coolant == currentOffhand ? currentMainhand : currentOffhand;
         if (!isCoolant(coolant) || !canWaterCool(gunStack)) {
             return coolant;
         }
+
         applyWaterCooling(gunStack, coolant);
         clearWaterCooling(gunStack);
         playWaterCoolingSound(level, player);
         player.awardStat(Stats.ITEM_USED.get(ModItems.COOLANT.get()));
+
         if (!player.getAbilities().instabuild && coolant == player.getOffhandItem()) {
             player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.GLASS_BOTTLE));
             return player.getOffhandItem();
@@ -549,17 +693,7 @@ public class GunItem extends Item {
         } else {
             OVERHEAT_PENDING_NUMERATOR.remove(stackKey);
         }
-        int next = applyHeatDelta(trackedHeat, wholeDelta);
-        JustEnoughGuns.LOGGER.info("[debug/overheat] frac item={} trackedHeat={} numeratorDelta={} denominator={} pendingBefore={} wholeDelta={} pendingAfter={} next={}",
-                stack.getItem(),
-                trackedHeat,
-                numeratorDelta,
-                denominator,
-                pendingBefore,
-                wholeDelta,
-                pendingAfter,
-                next);
-        return next;
+        return applyHeatDelta(trackedHeat, wholeDelta);
     }
 
     private static void addOverheatForShots(ItemStack stack, Identifier gunId, int shotsFired, @Nullable Player shooter) {
@@ -619,13 +753,12 @@ public class GunItem extends Item {
         if (tryStartWaterCooling(level, player, hand)) {
             return InteractionResult.SUCCESS_SERVER;
         }
-        // Right-click is reserved for ADS. Shooting is driven by left-click C2S shoot packets.
-        return isCoolant(stack) ? InteractionResult.CONSUME : InteractionResult.CONSUME;
+        return isCoolant(stack) ? InteractionResult.CONSUME : (tryShoot(level, player, hand) ? InteractionResult.SUCCESS : InteractionResult.FAIL);
     }
 
     @Override
-    public net.minecraft.world.item.ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return isCoolant(stack) ? net.minecraft.world.item.ItemUseAnimation.NONE : super.getUseAnimation(stack);
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return isCoolant(stack) ? ItemUseAnimation.NONE : super.getUseAnimation(stack);
     }
 
     @Override
@@ -699,9 +832,24 @@ public class GunItem extends Item {
 
             // Client-side instant trail calculation for fast bullets
             Identifier gunId = stats.id();
-            // Removed custom trail rendering - rely on server-sent particles instead
-            // which have proper depth testing and don't render through blocks
+            if (Config.legacyBulletTrailEnabled()
+                    && isBulletClassWeapon(gunId)
+                    && isLocalClientPlayer(player)
+                    && isFirstPersonCamera()) {
+                Vec3 look = player.getViewVector(1.0F);
+                if (look.lengthSqr() > 1.0E-6D) {
+                    Vec3 direction = look.normalize();
+                    Vec3 start = currentFirstPersonMuzzlePosition(player, stack);
+                    if (start == null) {
+                        start = player.getEyePosition().add(direction.scale(0.35F));
+                    }
+                    calculateInstantTrail(start, direction, stats, player);
+                }
+            }
         } else {
+            if (shouldJamBeforeShot(level, player, stack)) {
+                return false;
+            }
             updateSpreadTracker(player, stats.id());
             int shotsFired = 0;
             int shotsToFire = shotsPerTrigger();
@@ -713,7 +861,10 @@ public class GunItem extends Item {
                     break;
                 }
                 fireAt(level, player, stack, null);
-                stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+                if (Config.gunDurabilityEnabled()) {
+                    stack.hurtAndBreak(durabilityDamagePerShot(stack), player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+                    GunAttachments.damageOnShot(stack, level, player);
+                }
                 shotsFired++;
             }
             if (shotsFired <= 0) {
@@ -721,23 +872,14 @@ public class GunItem extends Item {
             }
 
             if (usesOverheatMechanic()) {
-                int beforeHeat = getTrackedHeat(stack);
                 addOverheatForShots(stack, stats.id(), shotsFired, player);
-                JustEnoughGuns.LOGGER.info("[debug/heat] tryShoot server gun={} hand={} shotsFired={} beforeHeat={} afterHeat={} ammoAfter={} cooldown={}",
-                        stats.id(),
-                        hand,
-                        shotsFired,
-                        beforeHeat,
-                        getTrackedHeat(stack),
-                        getAmmo(stack),
-                        Math.max(1, stats.fireDelay()));
             }
 
             if (stack.getItem() instanceof AnimatedGunItem animated) {
                 animated.triggerShoot(level, player, stack);
             }
 
-            applyRecoilBackstep(player);
+            applyRecoilBackstep(player, stack);
 
             if (!automatic) {
                 setTriggerLocked(stack, true);
@@ -746,11 +888,195 @@ public class GunItem extends Item {
             player.getCooldowns().addCooldown(stack, Math.max(1, stats.fireDelay()));
         }
 
-        playSound(level, player, stats.fireSoundEvent().or(stats::enchantedFireSoundEvent));
+        playFireSound(level, player, stack, fireSoundFor(stack));
+        playAttachmentFireSounds(level, player, stack);
         return true;
     }
 
-    private void applyRecoilBackstep(Player player) {
+    private static boolean isLocalClientPlayer(Player player) {
+        Object minecraft = minecraftInstance();
+        if (minecraft == null) {
+            return false;
+        }
+        try {
+            return minecraft.getClass().getField("player").get(minecraft) == player;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isFirstPersonCamera() {
+        Object minecraft = minecraftInstance();
+        if (minecraft == null) {
+            return false;
+        }
+        try {
+            Object options = minecraft.getClass().getField("options").get(minecraft);
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            Object firstPerson = cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType);
+            return firstPerson instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private static Vec3 currentFirstPersonMuzzlePosition(Player player, ItemStack stack) {
+        try {
+            Class<?> localPlayerClass = Class.forName("net.minecraft.client.player.LocalPlayer");
+            Class<?> eventsClass = Class.forName("ttv.migami.jeg.client.GunClientEvents");
+            Object value = eventsClass
+                    .getMethod("getCurrentFirstPersonMuzzlePosition", localPlayerClass, ItemStack.class)
+                    .invoke(null, player, stack);
+            return value instanceof Vec3 pos ? pos : null;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static void calculateInstantTrail(Vec3 start, Vec3 direction, GunStats stats, Player player) {
+        try {
+            Class<?> calculatorClass = Class.forName("ttv.migami.jeg.client.BulletTrailCalculator");
+            calculatorClass
+                    .getMethod("calculateInstantTrail", Vec3.class, Vec3.class, GunStats.class, Player.class)
+                    .invoke(null, start, direction, stats, player);
+        } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    private static Object minecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            return minecraftClass.getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private Optional<SoundEvent> fireSoundFor(ItemStack stack) {
+        if (GunAttachments.modifiers(stack).silenced()) {
+            return stats.silencedFireSoundEvent().or(stats::fireSoundEvent).or(stats::enchantedFireSoundEvent);
+        }
+        return stats.fireSoundEvent().or(stats::enchantedFireSoundEvent);
+    }
+
+    private void playAttachmentFireSounds(Level level, LivingEntity shooter, ItemStack stack) {
+        GunAttachments.id(stack, AttachmentType.BARREL)
+                .map(Identifier::getPath)
+                .ifPresent(path -> {
+                    if ("trumpet".equals(path)) {
+                        playSound(level, shooter, Optional.ofNullable(resolveSound(Reference.id("item.doot"))));
+                        if (stats.projectileAmount() > 3) {
+                            applyTrumpetSoundwave(level, shooter);
+                        }
+                    } else if ("explosive_muzzle".equals(path)) {
+                        playSound(level, shooter, Optional.of(SoundEvents.FIRECHARGE_USE));
+                    }
+                });
+    }
+
+    private void applyTrumpetSoundwave(Level level, LivingEntity shooter) {
+        if (level.isClientSide()) {
+            return;
+        }
+
+        Vec3 look = shooter.getLookAngle();
+        Vec3 origin = shooter.position();
+        double attackRange = 8.0D;
+        double maxDistance = 10.0D;
+        double sweepAngle = Math.toRadians(100.0D);
+        double pushStrength = 2.0D;
+
+        shooter.push(-look.x, -look.y, -look.z);
+        shooter.fallDistance = 0.0F;
+        ServerLevel serverLevel = (ServerLevel) level;
+        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, shooter.getBoundingBox().inflate(attackRange))) {
+            if (entity == shooter) {
+                continue;
+            }
+
+            Vec3 entityOffset = entity.position().subtract(origin);
+            double distance = entityOffset.length();
+            if (!isInsideSoundwaveCone(entityOffset, look, sweepAngle)) {
+                continue;
+            }
+
+            double distanceMultiplier = 1.0D - Math.min(distance / maxDistance, 1.0D);
+            entity.push(
+                    look.x * pushStrength * distanceMultiplier,
+                    look.y * pushStrength * distanceMultiplier,
+                    look.z * pushStrength * distanceMultiplier
+            );
+        }
+
+        Vec3 particlePos = shooter.getEyePosition().add(look.scale(1.8D));
+        emitTrumpetSoundwaveParticles(serverLevel, particlePos, look);
+        serverLevel.sendParticles(
+                ParticleTypes.SONIC_BOOM,
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                1,
+                look.x,
+                look.y,
+                look.z,
+                0.0D
+        );
+    }
+
+    private static void emitTrumpetSoundwaveParticles(ServerLevel level, Vec3 particlePos, Vec3 look) {
+        level.sendParticles(ParticleTypes.SONIC_BOOM, particlePos.x, particlePos.y, particlePos.z, 1, look.x, look.y, look.z, 0.0D);
+    }
+
+    private static boolean isInsideSoundwaveCone(Vec3 offset, Vec3 look, double sweepAngle) {
+        if (offset.lengthSqr() < 1.0E-6D) {
+            return false;
+        }
+        return Math.acos(offset.normalize().dot(look.normalize())) < sweepAngle * 0.5D;
+    }
+
+    private int durabilityDamagePerShot(ItemStack stack) {
+        return GunAttachments.modifiers(stack).explosiveAmmo() ? 5 : 1;
+    }
+
+    private boolean shouldJamBeforeShot(Level level, Player player, ItemStack stack) {
+        if (!Config.gunDurabilityEnabled() || !stack.isDamageableItem()) {
+            return false;
+        }
+
+        int damageAmount = durabilityDamagePerShot(stack);
+        if (stack.getDamageValue() >= stack.getMaxDamage() - damageAmount) {
+            level.playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            player.getCooldowns().addCooldown(stack, Math.max(1, stats.fireDelay()));
+            return true;
+        }
+
+        if (!Config.gunJammingEnabled()) {
+            return false;
+        }
+
+        double threshold = GunAttachments.modifiers(stack).increasedJamming()
+                ? INCREASED_JAM_THRESHOLD
+                : LOW_DURABILITY_JAM_THRESHOLD;
+        if (stack.getDamageValue() < stack.getMaxDamage() / threshold) {
+            return false;
+        }
+        if (player.getRandom().nextFloat() >= JAM_CHANCE) {
+            return false;
+        }
+
+        playSound(level, player, Optional.ofNullable(resolveSound(Reference.id("item.pistol.cock"))), 1.0F);
+        HudMessageHelper.showActionBar(player, Component.translatable("chat.jeg.jam").withStyle(ChatFormatting.GRAY));
+        player.getCooldowns().addCooldown(stack, Mth.clamp(stats.fireDelay() * 10, 1, 60));
+        return true;
+    }
+
+    @Nullable
+    private SoundEvent resolveSound(Identifier soundId) {
+        var holder = ModSounds.ALL.get(soundId);
+        return holder != null ? holder.get() : null;
+    }
+
+    private void applyRecoilBackstep(Player player, ItemStack stack) {
         if (!Config.recoilBackstepEnabled()) {
             return;
         }
@@ -758,7 +1084,8 @@ public class GunItem extends Item {
             return;
         }
 
-        double force = stats.recoilKick() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        double force = stats.recoilKick() * modifiers.kickMultiplier() * RecoilProfiles.multiplier(stats.id()) * 0.20D;
         if (isRocketKnockbackWeapon(stats.id())) {
             force *= 4.2D;
             force = Mth.clamp(force, 0.100D, 0.380D);
@@ -878,9 +1205,11 @@ public class GunItem extends Item {
         RandomSource random = shooter.getRandom();
         int pellets = Math.max(1, stats.projectileAmount());
         Identifier gunId = stats.id();
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float damage = modifiedDamage(stats, modifiers);
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
-        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, damage / 12.0F + 1.5F);
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
@@ -888,7 +1217,7 @@ public class GunItem extends Item {
         }
 
         for (int i = 0; i < pellets; i++) {
-            Vec3 direction = computeDirection(shooter, origin, target, random, stats);
+            Vec3 direction = computeDirection(shooter, origin, target, random, stats, stack);
             Vec3 muzzle = origin.add(direction.scale(0.35F));
 
             if (grenadeLauncher) {
@@ -899,7 +1228,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = direction.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity);
+                BulletEntity bullet = createBullet(level, shooter, stack, stats, velocity);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -930,9 +1259,11 @@ public class GunItem extends Item {
     public void fireDirectionallyFrom(Level level, LivingEntity shooter, ItemStack stack, Vec3 origin, Vec3 direction) {
         int pellets = Math.max(1, stats.projectileAmount());
         Identifier gunId = stats.id();
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float damage = modifiedDamage(stats, modifiers);
 
         boolean grenadeLauncher = gunId.equals(GRENADE_LAUNCHER_ID);
-        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, stats.damage() / 12.0F + 1.5F);
+        float grenadePower = grenadeLauncher ? GRENADE_BASE_POWER : Math.max(1.8F, damage / 12.0F + 1.5F);
         int fuseTicks = grenadeLauncher ? GRENADE_FUSE_TICKS : 40;
         Vec3 shooterMotion = shooter.getDeltaMovement();
         Vec3 normalized = direction.normalize();
@@ -952,7 +1283,7 @@ public class GunItem extends Item {
                 level.addFreshEntity(grenade);
             } else {
                 Vec3 velocity = normalized.scale(stats.projectileSpeed());
-                BulletEntity bullet = new BulletEntity(level, shooter, stats, velocity);
+                BulletEntity bullet = createBullet(level, shooter, stack, stats, velocity);
                 bullet.initialisePosition(muzzle);
                 level.addFreshEntity(bullet);
                 if (level instanceof ServerLevel serverLevel && isBulletClassWeapon(stats.id())) {
@@ -970,20 +1301,57 @@ public class GunItem extends Item {
         }
     }
 
-    private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats) {
+    public static BulletEntity createBullet(Level level, LivingEntity shooter, ItemStack stack, GunStats stats, Vec3 velocity) {
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        BulletEntity bullet = new BulletEntity(
+                level,
+                shooter,
+                stats,
+                velocity,
+                modifiedDamage(stats, modifiers),
+                modifiers.explosiveAmmo()
+        );
+        GunAttachments.id(stack, AttachmentType.KILL_EFFECT).ifPresent(bullet::setKillEffect);
+        bullet.setMedalsEnabled(GunAttachments.areMedalsEnabled(stack));
+        if (shooter instanceof Player player && !player.getAbilities().instabuild
+                && stack.getItem() instanceof GunItem gun && gun.usesLoadedAmmo()) {
+            bullet.setJustEnoughAmmoMedal(gun.getAmmo(stack) < 1);
+        }
+        applyFlareDye(stack, stats, bullet);
+        return bullet;
+    }
+
+    private static void applyFlareDye(ItemStack stack, GunStats stats, BulletEntity bullet) {
+        if (!FLARE_GUN_ID.equals(stats.id())) {
+            return;
+        }
+        GunAttachments.cosmeticItem(stack, AttachmentType.DYE)
+                .map(GunItem::dyeFireworkColor)
+                .ifPresent(bullet::setFlareColor);
+    }
+
+    private static int dyeFireworkColor(Item item) {
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
+        String path = itemId.getPath();
+        String dyeName = path.endsWith("_dye") ? path.substring(0, path.length() - 4) : path;
+        return DyeColor.byName(dyeName, DyeColor.RED).getFireworkColor();
+    }
+
+    private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats, ItemStack stack) {
         Vec3 base = target != null
                 ? target.getEyePosition().subtract(origin)
                 : shooter.getViewVector(1.0F);
-        return applyLegacySpread(shooter, base, stats, random);
+        return applyLegacySpread(shooter, base, stats, random, stack);
     }
 
-    private static Vec3 applyLegacySpread(LivingEntity shooter, Vec3 baseDirection, GunStats stats, RandomSource random) {
+    private static Vec3 applyLegacySpread(LivingEntity shooter, Vec3 baseDirection, GunStats stats, RandomSource random, ItemStack stack) {
         Vec3 forwards = baseDirection.normalize();
         if (forwards.lengthSqr() < 1.0E-6D) {
             forwards = shooter.getViewVector(1.0F);
         }
 
-        float gunSpread = stats.spread();
+        float baseSpread = modifiedSpread(stats, stack);
+        float gunSpread = baseSpread;
         if (gunSpread == 0.0F) {
             return forwards.normalize();
         }
@@ -995,19 +1363,19 @@ public class GunItem extends Item {
                 gunSpread *= 0.5F;
             }
             if (!minigun) {
-                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player));
+                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player), baseSpread);
             } else {
-                gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
+                gunSpread = Math.max(gunSpread, baseSpread * MINIGUN_SPREAD_FLOOR);
             }
             if (isBoltActionRifle(stats.id()) && !NetworkHandler.isAiming(player)) {
                 gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
             }
             if (isShotgunWeapon(stats.id())) {
-                float shotgunFloor = stats.spread() * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
+                float shotgunFloor = baseSpread * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
                 gunSpread = Math.max(gunSpread, shotgunFloor);
             }
         } else if (isShotgunWeapon(stats.id())) {
-            gunSpread = stats.spread() * 0.60F;
+            gunSpread = baseSpread * 0.60F;
         } else {
             float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
             float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
@@ -1084,7 +1452,12 @@ public class GunItem extends Item {
     }
 
     public static float getClientSpreadDegrees(Player player, GunStats stats, boolean aiming) {
-        float gunSpread = stats.spread();
+        return getClientSpreadDegrees(player, ItemStack.EMPTY, stats, aiming);
+    }
+
+    public static float getClientSpreadDegrees(Player player, ItemStack stack, GunStats stats, boolean aiming) {
+        float baseSpread = modifiedSpread(stats, stack);
+        float gunSpread = baseSpread;
         if (gunSpread <= 0.0F) {
             return 0.0F;
         }
@@ -1095,15 +1468,15 @@ public class GunItem extends Item {
             gunSpread *= 0.5F;
         }
         if (!minigun) {
-            gunSpread += getMovementSpreadDegrees(player, stats, aiming);
+            gunSpread += getMovementSpreadDegrees(player, stats, aiming, baseSpread);
         } else {
-            gunSpread = Math.max(gunSpread, stats.spread() * MINIGUN_SPREAD_FLOOR);
+            gunSpread = Math.max(gunSpread, baseSpread * MINIGUN_SPREAD_FLOOR);
         }
         if (isBoltActionRifle(stats.id()) && !aiming) {
             gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
         }
         if (isShotgunWeapon(stats.id())) {
-            float shotgunFloor = stats.spread() * (aiming ? 0.35F : 0.60F);
+            float shotgunFloor = baseSpread * (aiming ? 0.35F : 0.60F);
             gunSpread = Math.max(gunSpread, shotgunFloor);
         }
         return Math.max(0.0F, gunSpread);
@@ -1130,7 +1503,7 @@ public class GunItem extends Item {
         return "bolt_action_rifle".equals(gunId.getPath());
     }
 
-    private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming) {
+    private static float getMovementSpreadDegrees(Player player, GunStats stats, boolean aiming, float baseSpread) {
         if (player.isCrouching() || !isPlayerMoving(player)) {
             return 0.0F;
         }
@@ -1139,7 +1512,15 @@ public class GunItem extends Item {
         if (aiming) {
             multiplier *= 0.65F;
         }
-        return stats.spread() * multiplier;
+        return baseSpread * multiplier;
+    }
+
+    private static float modifiedDamage(GunStats stats, AttachmentModifiers modifiers) {
+        return Math.max(0.0F, stats.damage() * modifiers.damageMultiplier());
+    }
+
+    private static float modifiedSpread(GunStats stats, ItemStack stack) {
+        return Math.max(0.0F, stats.spread() * GunAttachments.modifiers(stack).spreadMultiplier());
     }
 
     private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
@@ -1190,13 +1571,22 @@ public class GunItem extends Item {
     }
 
     private void playSound(Level level, LivingEntity shooter, Optional<SoundEvent> sound) {
+        playSound(level, shooter, sound, 7.5F);
+    }
+
+    private void playFireSound(Level level, LivingEntity shooter, ItemStack stack, Optional<SoundEvent> sound) {
+        float volume = (float) (7.5D * GunAttachments.modifiers(stack).fireSoundRadiusMultiplier());
+        playSound(level, shooter, sound, Math.max(0.0F, volume));
+    }
+
+    private void playSound(Level level, LivingEntity shooter, Optional<SoundEvent> sound, float volume) {
         SoundSource source = shooter instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
         double x = shooter.getX();
         double y = shooter.getY();
         double z = shooter.getZ();
         sound.ifPresentOrElse(
-                value -> level.playSound(null, x, y, z, value, source, 7.5F, 1.0F),
-                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, 7.5F, 1.1F)
+                value -> level.playSound(null, x, y, z, value, source, volume, 1.0F),
+                () -> level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, source, volume, 1.1F)
         );
     }
 
@@ -1218,134 +1608,199 @@ public class GunItem extends Item {
     }
 
     public boolean tryReload(Level level, Player player, ItemStack stack, boolean notify) {
+        return tryReload(level, player, stack, resolveReloadHand(player, stack), notify);
+    }
+
+    public boolean tryReload(Level level, Player player, ItemStack stack, InteractionHand hand, boolean notify) {
         if (!usesLoadedAmmo()) {
+            return false;
+        }
+        if (isReloading(stack) || PENDING_RELOADS.containsKey(player.getUUID())) {
             return false;
         }
 
         if (usesMagazineSwapReload()) {
-            return tryReloadWithMagazineSwap(level, player, stack, notify);
+            return tryReloadWithMagazineSwap(level, player, stack, hand, notify);
         }
-        return tryReloadWithLooseAmmo(level, player, stack, notify);
+        return tryReloadWithLooseAmmo(level, player, stack, hand, notify);
     }
 
-    private boolean tryReloadWithMagazineSwap(Level level, Player player, ItemStack stack, boolean notify) {
+    private boolean tryReloadWithMagazineSwap(Level level, Player player, ItemStack stack, InteractionHand hand, boolean notify) {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
-        if (ammo >= stats.magazineSize()) {
-            if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
-            }
-            return false;
-        }
+        int maxAmmo = modifiedMagazineSize(stack);
 
         if (player.getAbilities().instabuild) {
-            setAmmo(stack, stats.magazineSize());
-            finishReload(level, player, stack);
-            return true;
+            if (ammo >= maxAmmo) {
+                if (notify) {
+                    HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
+                }
+                return false;
+            }
+            return startPendingReload(level, player, hand, stack, null);
         }
 
-        MagazineInventoryScan scan = scanCompatibleMagazines(player);
-        if (scan.bestMagazineSlot() < 0) {
+        PendingMagazineSwap selectedMagazine = findReloadMagazine(player, stack);
+        if (selectedMagazine == null) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
             }
             return false;
         }
 
-        ItemStack magazineStack = player.getInventory().getItem(scan.bestMagazineSlot());
-        if (!(magazineStack.getItem() instanceof MagazineItem magazine)) {
-            return false;
-        }
-
-        int newAmmo = magazine.getAmmoCount(magazineStack);
-        if (newAmmo <= 0) {
-            if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
-            }
-            return false;
-        }
-
-        ItemStack oldMagazine = createStoredMagazineStack(ammo);
-        magazineStack.shrink(1);
-        if (magazineStack.isEmpty()) {
-            player.getInventory().setItem(scan.bestMagazineSlot(), ItemStack.EMPTY);
-        }
-
-        returnStoredMagazine(player, oldMagazine);
-        setAmmo(stack, newAmmo);
-        finishReload(level, player, stack);
-        return true;
-    }
-
-    private boolean tryReloadWithLooseAmmo(Level level, Player player, ItemStack stack, boolean notify) {
-        ensureAmmoInitialized(stack);
-        int ammo = getAmmo(stack);
-        if (ammo >= stats.magazineSize()) {
+        if (ammo >= maxAmmo && isSameLoadedMagazineType(stack, selectedMagazine.magazineItemId())) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
             }
             return false;
         }
 
-        int needed = stats.magazineSize() - ammo;
-        int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
-        if (pulled <= 0) {
+        return startPendingReload(level, player, hand, stack, selectedMagazine);
+    }
+
+    private boolean tryReloadWithLooseAmmo(Level level, Player player, ItemStack stack, InteractionHand hand, boolean notify) {
+        ensureAmmoInitialized(stack);
+        int ammo = getAmmo(stack);
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (ammo >= maxAmmo) {
+            if (notify) {
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
+            }
+            return false;
+        }
+
+        int needed = maxAmmo - ammo;
+        int available = player.getAbilities().instabuild ? needed : countInventoryAmmo(player);
+        if (available <= 0) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_ammo"));
             }
             return false;
         }
 
-        setAmmo(stack, ammo + pulled);
-        finishReload(level, player, stack);
-        return true;
+        return startPendingReload(level, player, hand, stack, null);
     }
 
-    private void finishReload(Level level, Player player, ItemStack stack) {
+    private boolean startPendingReload(Level level, Player player, InteractionHand hand, ItemStack stack, @Nullable PendingMagazineSwap pendingMagazine) {
         int reloadTicks = Math.max(1, stats.totalReloadTime());
         player.getCooldowns().addCooldown(stack, reloadTicks);
         playSound(level, player, stats.reloadStartSoundEvent());
+        PENDING_RELOADS.put(player.getUUID(), new PendingReload(
+                hand,
+                player.getInventory().getSelectedSlot(),
+                stack,
+                stack.copy(),
+                pendingMagazine != null ? pendingMagazine.slot() : -1,
+                pendingMagazine != null ? pendingMagazine.magazineItemId() : null,
+                pendingMagazine != null ? pendingMagazine.ammoItemId() : null,
+                pendingMagazine != null ? pendingMagazine.ammoCount() : 0
+        ));
 
-        // Track reload progress on the stack so we can drive segmented reload animations over time.
-        startReloadVisualState(stack, reloadTicks);
         if (level instanceof ServerLevel serverLevel) {
             stack.set(ModDataComponents.GUN_RELOAD_END_TICK.get(), serverLevel.getGameTime() + reloadTicks);
         }
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
+            startReloadVisualState(stack, reloadTicks, pendingMagazine);
             if (usesSegmentedReloadAnimation()) {
                 animated.triggerReloadStart(level, player, stack);
             } else {
                 animated.triggerReload(level, player, stack);
             }
         }
+        return true;
+    }
+
+    private boolean completeReloadWithMagazineSwap(Level level, Player player, ItemStack stack, @Nullable PendingReload pending) {
+        ensureAmmoInitialized(stack);
+        if (player.getAbilities().instabuild) {
+            setAmmo(stack, modifiedMagazineSize(stack));
+            return true;
+        }
+
+        if (pending == null || pending.magazineSlot() < 0 || pending.magazineItemId() == null || pending.magazineAmmoId() == null || pending.magazineAmmoCount() <= 0) {
+            return false;
+        }
+
+        ItemStack magazineStack = player.getInventory().getItem(pending.magazineSlot());
+        if (!(magazineStack.getItem() instanceof MagazineItem magazine)) {
+            return false;
+        }
+
+        Identifier magazineItemId = BuiltInRegistries.ITEM.getKey(magazineStack.getItem());
+        if (!pending.magazineItemId().equals(magazineItemId) || !isCompatibleMagazine(magazine)) {
+            return false;
+        }
+        if (!pending.magazineAmmoId().equals(magazine.getAmmoItemId(magazineStack))) {
+            return false;
+        }
+
+        int newAmmo = magazine.getAmmoCount(magazineStack);
+        if (newAmmo <= 0 || newAmmo != pending.magazineAmmoCount()) {
+            return false;
+        }
+
+        int ammo = getAmmo(stack);
+        ItemStack oldMagazine = createStoredMagazineStack(stack, ammo);
+        magazineStack.shrink(1);
+        if (magazineStack.isEmpty()) {
+            player.getInventory().setItem(pending.magazineSlot(), ItemStack.EMPTY);
+        }
+
+        returnStoredMagazine(player, oldMagazine);
+        setLoadedMagazineItem(stack, magazineItemId);
+        setAmmo(stack, newAmmo);
+        return true;
+    }
+
+    private boolean completeReloadWithLooseAmmo(Player player, ItemStack stack) {
+        ensureAmmoInitialized(stack);
+        int ammo = getAmmo(stack);
+        int maxAmmo = modifiedMagazineSize(stack);
+        if (ammo >= maxAmmo) {
+            return false;
+        }
+
+        int needed = maxAmmo - ammo;
+        int pulled = player.getAbilities().instabuild ? needed : removeAmmoFromInventory(player, needed);
+        if (pulled <= 0) {
+            return false;
+        }
+
+        setAmmo(stack, ammo + pulled);
+        return true;
+    }
+
+    private static InteractionHand resolveReloadHand(Player player, ItemStack stack) {
+        return player.getOffhandItem() == stack ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
     }
 
     private MagazineInventoryScan scanCompatibleMagazines(Player player) {
-        MagazineItem compatibleMagazine = getCompatibleMagazineItem();
+        MagazineItem.MagazineType compatibleType = getCompatibleMagazineType();
         Identifier ammoId = getCompatibleAmmoId();
-        if (!usesMagazineSwapReload() || compatibleMagazine == null || ammoId == null) {
-            return new MagazineInventoryScan(0, 0, -1);
+        if (!usesMagazineSwapReload() || compatibleType == null || ammoId == null) {
+            return new MagazineInventoryScan(0, 0, -1, 0);
         }
 
         int loadedCount = 0;
         int emptyCount = 0;
         int bestSlot = -1;
         int bestAmmoCount = -1;
+        int bestMagazineCapacity = 0;
 
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack candidate = player.getInventory().getItem(slot);
-            if (!candidate.is(compatibleMagazine)) {
+            if (!(candidate.getItem() instanceof MagazineItem magazine) || !magazine.type().isVariantOf(compatibleType)) {
                 continue;
             }
 
-            int ammoCount = compatibleMagazine.getAmmoCount(candidate);
+            int ammoCount = magazine.getAmmoCount(candidate);
             if (ammoCount <= 0) {
                 emptyCount++;
                 continue;
             }
 
-            Identifier storedAmmoId = compatibleMagazine.getAmmoItemId(candidate);
+            Identifier storedAmmoId = magazine.getAmmoItemId(candidate);
             if (!ammoId.equals(storedAmmoId)) {
                 continue;
             }
@@ -1354,17 +1809,58 @@ public class GunItem extends Item {
             if (ammoCount > bestAmmoCount) {
                 bestAmmoCount = ammoCount;
                 bestSlot = slot;
+                bestMagazineCapacity = magazine.getCapacity();
             }
         }
 
-        return new MagazineInventoryScan(loadedCount, emptyCount, bestSlot);
+        return new MagazineInventoryScan(loadedCount, emptyCount, bestSlot, bestMagazineCapacity);
     }
 
     @Nullable
-    private MagazineItem getCompatibleMagazineItem() {
+    private PendingMagazineSwap findReloadMagazine(Player player, ItemStack stack) {
+        MagazineItem.MagazineType compatibleType = getCompatibleMagazineType();
+        Identifier ammoId = getCompatibleAmmoId();
+        if (!usesMagazineSwapReload() || compatibleType == null || ammoId == null) {
+            return null;
+        }
+
+        boolean preferDifferentType = getAmmo(stack) >= modifiedMagazineSize(stack);
+        PendingMagazineSwap best = null;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack candidate = player.getInventory().getItem(slot);
+            if (!(candidate.getItem() instanceof MagazineItem magazine) || !magazine.type().isVariantOf(compatibleType)) {
+                continue;
+            }
+
+            int ammoCount = magazine.getAmmoCount(candidate);
+            if (ammoCount <= 0 || !ammoId.equals(magazine.getAmmoItemId(candidate))) {
+                continue;
+            }
+
+            Identifier itemId = BuiltInRegistries.ITEM.getKey(candidate.getItem());
+            PendingMagazineSwap swap = new PendingMagazineSwap(slot, itemId, ammoId, ammoCount, magazine.getCapacity());
+            boolean swapDifferentType = !isSameLoadedMagazineType(stack, swap.magazineItemId());
+            boolean bestDifferentType = best != null && !isSameLoadedMagazineType(stack, best.magazineItemId());
+            if (best == null
+                    || (preferDifferentType && swapDifferentType && !bestDifferentType)
+                    || (swapDifferentType == bestDifferentType && swap.ammoCount() > best.ammoCount())) {
+                best = swap;
+            }
+        }
+        return best;
+    }
+
+    @Nullable
+    private MagazineItem.MagazineType getCompatibleMagazineType() {
         if (!usesMagazineSwapReload()) {
             return null;
         }
+        MagazineItem magazine = getCompatibleMagazineItemUnchecked();
+        return magazine != null ? magazine.type() : null;
+    }
+
+    @Nullable
+    private MagazineItem getCompatibleMagazineItemUnchecked() {
         if (isThirtyRoundRifle()) {
             return ModItems.RIFLE_MAGAZINE.get();
         }
@@ -1392,8 +1888,16 @@ public class GunItem extends Item {
         return ammoId;
     }
 
-    private ItemStack createStoredMagazineStack(int ammoCount) {
-        MagazineItem compatibleMagazine = getCompatibleMagazineItem();
+    private boolean isCompatibleMagazine(MagazineItem magazine) {
+        MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+        return baseMagazine != null && magazine.type().isVariantOf(baseMagazine.type());
+    }
+
+    private ItemStack createStoredMagazineStack(ItemStack gunStack, int ammoCount) {
+        MagazineItem compatibleMagazine = getLoadedMagazineItem(gunStack);
+        if (compatibleMagazine == null || !isCompatibleMagazine(compatibleMagazine)) {
+            compatibleMagazine = getCompatibleMagazineItemUnchecked();
+        }
         if (compatibleMagazine == null) {
             return ItemStack.EMPTY;
         }
@@ -1405,6 +1909,67 @@ public class GunItem extends Item {
         }
         stack.set(ModDataComponents.MAGAZINE_AMMO_COUNT.get(), Mth.clamp(ammoCount, 0, compatibleMagazine.getCapacity()));
         return stack;
+    }
+
+    @Nullable
+    private MagazineItem getLoadedMagazineItem(ItemStack gunStack) {
+        Identifier id = getLoadedMagazineItemId(gunStack);
+        if (id == null) {
+            return null;
+        }
+        Item item = BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+        return item instanceof MagazineItem magazine ? magazine : null;
+    }
+
+    private void setLoadedMagazineItem(ItemStack gunStack, @Nullable Identifier id) {
+        if (id == null || !BuiltInRegistries.ITEM.getOptional(id).map(MagazineItem.class::isInstance).orElse(false)) {
+            gunStack.remove(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get());
+            return;
+        }
+        gunStack.set(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get(), id.toString());
+    }
+
+    private void setReloadMagazineVisuals(ItemStack gunStack, @Nullable PendingMagazineSwap pendingMagazine) {
+        Identifier from = getLoadedMagazineItemId(gunStack);
+        if (from == null) {
+            MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+            if (baseMagazine != null) {
+                from = BuiltInRegistries.ITEM.getKey(baseMagazine);
+            }
+        }
+        Identifier to = pendingMagazine != null ? pendingMagazine.magazineItemId() : from;
+        setReloadMagazineVisual(gunStack, ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get(), from);
+        setReloadMagazineVisual(gunStack, ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get(), to);
+    }
+
+    private static void setReloadMagazineVisual(ItemStack gunStack, net.minecraft.core.component.DataComponentType<String> component, @Nullable Identifier id) {
+        if (id == null) {
+            gunStack.remove(component);
+            return;
+        }
+        gunStack.set(component, id.toString());
+    }
+
+    private boolean isSameLoadedMagazineType(ItemStack gunStack, Identifier id) {
+        Identifier storedId = getLoadedMagazineItemId(gunStack);
+        if (storedId == null) {
+            MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+            return baseMagazine != null && BuiltInRegistries.ITEM.getKey(baseMagazine).equals(id);
+        }
+        return id.equals(storedId);
+    }
+
+    @Nullable
+    private Identifier getLoadedMagazineItemId(ItemStack gunStack) {
+        String stored = gunStack.get(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get());
+        if (stored == null || stored.isBlank()) {
+            return null;
+        }
+        Identifier id = Identifier.tryParse(stored);
+        if (id == null || !BuiltInRegistries.ITEM.getOptional(id).map(MagazineItem.class::isInstance).orElse(false)) {
+            return null;
+        }
+        return id;
     }
 
     private void returnStoredMagazine(Player player, ItemStack stack) {
@@ -1420,23 +1985,32 @@ public class GunItem extends Item {
         return SEGMENTED_RELOAD_ANIM_IDS.contains(stats.id().getPath());
     }
 
-    private void startReloadVisualState(ItemStack stack, int reloadTicks) {
-        int totalTicks = Math.max(1, reloadTicks);
+    private void startReloadVisualState(ItemStack stack, int reloadTicks, @Nullable PendingMagazineSwap pendingMagazine) {
+        int totalTicks = Math.max(1, getReloadVisualTicks(reloadTicks));
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), usesSegmentedReloadAnimation() ? RELOAD_STAGE_START : RELOAD_STAGE_NONE);
+        if (usesMagazineSwapReload()) {
+            setReloadMagazineVisuals(stack, pendingMagazine);
+        }
     }
 
     private void updateReloadVisualState(Level level, Player player, ItemStack stack, boolean held) {
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
-        if (remainingTicks <= 0 || !held) {
-            clearReloadState(stack);
+        if (remainingTicks <= 0) {
+            clearReloadVisualState(stack);
+            return;
+        }
+
+        if (!held || !isPendingReloadStillHeld(player, stack)) {
+            cancelPendingReload(player, stack);
             return;
         }
 
         remainingTicks--;
         if (remainingTicks <= 0) {
-            clearReloadState(stack);
+            completePendingReload(level, player, stack);
+            clearReloadVisualState(stack);
             return;
         }
 
@@ -1448,6 +2022,32 @@ public class GunItem extends Item {
             if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated) {
                 triggerSegmentedReloadStage(animated, level, player, stack, newStage);
             }
+        }
+    }
+
+    private boolean isPendingReloadStillHeld(Player player, ItemStack stack) {
+        PendingReload pending = PENDING_RELOADS.get(player.getUUID());
+        if (pending == null) {
+            return true;
+        }
+        return pending.stack() == stack
+                && player.getInventory().getSelectedSlot() == pending.selectedSlot()
+                && player.getItemInHand(pending.hand()) == stack
+                && isSameStackIgnoringAnimationState(stack, pending.stackSnapshot());
+    }
+
+    private void cancelPendingReload(Player player, ItemStack stack) {
+        PENDING_RELOADS.remove(player.getUUID());
+        clearReloadVisualState(stack);
+        queueDrawAfterReloadCancel(player, stack, heldSlot(player, stack), true);
+    }
+
+    private void completePendingReload(Level level, Player player, ItemStack stack) {
+        PendingReload pending = PENDING_RELOADS.remove(player.getUUID());
+        if (usesMagazineSwapReload()) {
+            completeReloadWithMagazineSwap(level, player, stack, pending);
+        } else {
+            completeReloadWithLooseAmmo(player, stack);
         }
     }
 
@@ -1477,51 +2077,92 @@ public class GunItem extends Item {
 
     private int getSegmentedReloadStartTicks(int totalTicks) {
         if ("rocket_launcher".equals(stats.id().getPath())) {
-            return 46;
+            return ROCKET_RELOAD_START_TICKS;
         }
-        return Mth.clamp(totalTicks / 4, 4, 12);
+        int defaultTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        return Math.max(defaultTicks, RELOAD_START_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), defaultTicks));
     }
 
     private int getSegmentedReloadStopTicks(int totalTicks) {
         if ("rocket_launcher".equals(stats.id().getPath())) {
-            return 38;
+            return ROCKET_RELOAD_STOP_TICKS;
         }
-        return Mth.clamp(totalTicks / 4, 4, 12);
+        int defaultTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        return Math.max(defaultTicks, RELOAD_STOP_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), defaultTicks));
     }
 
-    private static void clearReloadState(ItemStack stack) {
-        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+    private int getReloadVisualTicks(int reloadTicks) {
+        if ("rocket_launcher".equals(stats.id().getPath()) && usesSegmentedReloadAnimation()) {
+            int minVisualTicks = ROCKET_RELOAD_START_TICKS + ROCKET_RELOAD_LOOP_TICKS + ROCKET_RELOAD_STOP_TICKS;
+            return Math.max(reloadTicks, minVisualTicks);
+        }
+        if (usesSegmentedReloadAnimation()) {
+            String gunId = stats.id().getPath();
+            int minVisualTicks = RELOAD_START_ANIMATION_MIN_TICKS.getOrDefault(gunId, 0)
+                    + RELOAD_STOP_ANIMATION_MIN_TICKS.getOrDefault(gunId, 0);
+            return Math.max(reloadTicks, minVisualTicks);
+        }
+        return Math.max(reloadTicks, RELOAD_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), reloadTicks));
+    }
+
+    private static void clearReloadVisualState(ItemStack stack) {
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
         stack.remove(ModDataComponents.GUN_RELOAD_END_TICK.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get());
+    }
+
+    public static boolean isDrawing(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    public static boolean isReloading(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    public static void cancelReloadForImmediateAction(Player player, ItemStack stack) {
+        UUID playerId = player.getUUID();
+        PENDING_RELOADS.remove(playerId);
+        SERVER_RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+        CLIENT_RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+        HELD_DRAW_STATES.remove(playerId);
+        CLIENT_HELD_DRAW_STATES.remove(playerId);
+        CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
+        clearReloadVisualState(stack);
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
     }
 
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, level, entity, slot);
-        boolean selected = entity instanceof Player
-                && (slot == EquipmentSlot.MAINHAND || slot == EquipmentSlot.OFFHAND);
 
-        if (entity instanceof Player player) {
+        boolean selected = entity instanceof Player player
+                && (stack == player.getMainHandItem() || stack == player.getOffhandItem());
+
+        if (entity instanceof Player player && stack.getItem() instanceof AnimatedGunItem) {
             updateReloadVisualState(level, player, stack, selected);
+            updateDrawVisualState(player, stack, selected);
         }
 
-        if (usesOverheatMechanic()) {
-            boolean heldInHand = selected;
-            if (isCoolingWithWater(stack)) {
-                int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
-                if (remainingCooling > 0) {
-                    stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), remainingCooling - 1);
-                }
-                if (remainingCooling <= 1) {
-                    if (entity instanceof Player playerHolder) {
-                        ItemStack coolantStack = playerHolder.getOffhandItem().is(ModItems.COOLANT.get()) || playerHolder.getOffhandItem().is(ModItems.ENHANCED_COOLANT.get()) ? playerHolder.getOffhandItem() : ItemStack.EMPTY;
-                        if (!coolantStack.isEmpty()) {
-                            finishWaterCooling(coolantStack, level, playerHolder);
-                            playerHolder.stopUsingItem();
-                        } else {
-                            clearWaterCooling(stack);
-                        }
+        if (!usesOverheatMechanic()) {
+            return;
+        }
+
+        boolean heldInHand = selected;
+
+        if (isCoolingWithWater(stack)) {
+            int remainingCooling = stack.getOrDefault(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), 0);
+            if (remainingCooling > 0) {
+                stack.set(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get(), remainingCooling - 1);
+            }
+            if (remainingCooling <= 1) {
+                if (entity instanceof Player playerHolder) {
+                    ItemStack coolantStack = playerHolder.getOffhandItem().is(ModItems.COOLANT.get()) || playerHolder.getOffhandItem().is(ModItems.ENHANCED_COOLANT.get()) ? playerHolder.getOffhandItem() : ItemStack.EMPTY;
+                    if (!coolantStack.isEmpty()) {
+                        finishWaterCooling(coolantStack, level, playerHolder);
+                        playerHolder.stopUsingItem();
                     } else {
                         clearWaterCooling(stack);
                     }
@@ -1534,6 +2175,13 @@ public class GunItem extends Item {
                     coolOverheat(stack, heldInHand);
                 }
             }
+        } else {
+            boolean coolingBlockedByFiring = heldInHand
+                    && entity instanceof Player playerHolder
+                    && playerHolder.getCooldowns().isOnCooldown(stack);
+            if (!coolingBlockedByFiring && (!heldInHand || (level.getGameTime() & 1L) == 0L)) {
+                coolOverheat(stack, heldInHand);
+            }
         }
         if (!(entity instanceof Player player)) {
             return;
@@ -1543,6 +2191,257 @@ public class GunItem extends Item {
         }
 
         cancelWaterCoolingIfInvalid(player);
+    }
+
+    private static void updateDrawVisualState(Player player, ItemStack stack, boolean held) {
+        UUID playerId = player.getUUID();
+        int slot = heldSlot(player, stack);
+        HeldGunState currentState = held ? heldGunState(player, stack) : null;
+        Map<UUID, QueuedReloadCancelDraw> queuedStates = player.level().isClientSide()
+                ? CLIENT_RELOAD_CANCEL_DRAW_STATES
+                : SERVER_RELOAD_CANCEL_DRAW_STATES;
+        Map<UUID, HeldGunState> heldStates = player.level().isClientSide()
+                ? CLIENT_HELD_DRAW_STATES
+                : HELD_DRAW_STATES;
+        if (currentState == null) {
+            if (hasQueuedReloadCancelDraw(queuedStates, playerId, stack, slot)) {
+                forgetHeldGunState(heldStates, playerId, stack);
+                return;
+            }
+            stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+            forgetHeldGunState(heldStates, playerId, stack);
+            return;
+        }
+        if (consumeQueuedReloadCancelDraw(queuedStates, playerId, stack, slot)) {
+            heldStates.put(playerId, currentState);
+            clearReloadVisualState(stack);
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+            return;
+        }
+        heldStates.put(playerId, currentState);
+
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        if (remainingTicks > 1) {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), remainingTicks - 1);
+        } else if (remainingTicks == 1) {
+            stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        }
+    }
+
+    private static void queueDrawAfterReloadCancel(Player player, ItemStack stack, int slot, boolean preserveUntilHeld) {
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+        HELD_DRAW_STATES.remove(player.getUUID());
+        CLIENT_HELD_DRAW_STATES.remove(player.getUUID());
+        if (preserveUntilHeld) {
+            reloadCancelDrawStates(player).put(player.getUUID(), new QueuedReloadCancelDraw(slot, System.identityHashCode(stack), stack.copy()));
+        }
+    }
+
+    private static Map<UUID, QueuedReloadCancelDraw> reloadCancelDrawStates(Player player) {
+        return player.level().isClientSide() ? CLIENT_RELOAD_CANCEL_DRAW_STATES : SERVER_RELOAD_CANCEL_DRAW_STATES;
+    }
+
+    private static boolean hasQueuedReloadCancelDraw(Map<UUID, QueuedReloadCancelDraw> states, UUID playerId, ItemStack stack, int slot) {
+        QueuedReloadCancelDraw queued = states.get(playerId);
+        if (queued == null) {
+            return false;
+        }
+        if (queued.matchesStack(stack, slot)) {
+            return true;
+        }
+        if (queued.selectedSlot() == slot) {
+            states.remove(playerId);
+        }
+        return false;
+    }
+
+    private static boolean consumeQueuedReloadCancelDraw(Map<UUID, QueuedReloadCancelDraw> states, UUID playerId, ItemStack stack, int slot) {
+        QueuedReloadCancelDraw queued = states.get(playerId);
+        if (queued == null) {
+            return false;
+        }
+        if (!queued.matchesStack(stack, slot)) {
+            if (queued.selectedSlot() == slot) {
+                states.remove(playerId);
+            }
+            return false;
+        }
+        states.remove(playerId);
+        return true;
+    }
+
+    private static HeldGunState heldGunState(Player player, ItemStack stack) {
+        InteractionHand hand = heldHand(player, stack);
+        if (hand == null) {
+            return null;
+        }
+        int selectedSlot = hand == InteractionHand.MAIN_HAND ? player.getInventory().getSelectedSlot() : -1;
+        return new HeldGunState(hand, selectedSlot, System.identityHashCode(stack), stack.copy());
+    }
+
+    private static InteractionHand heldHand(Player player, ItemStack stack) {
+        if (stack == player.getOffhandItem()) {
+            return InteractionHand.OFF_HAND;
+        }
+        if (stack == player.getMainHandItem()) {
+            return InteractionHand.MAIN_HAND;
+        }
+        return null;
+    }
+
+    private static int heldSlot(Player player, ItemStack stack) {
+        if (stack == player.getMainHandItem()) {
+            return player.getInventory().getSelectedSlot();
+        }
+        if (stack == player.getOffhandItem()) {
+            return -1;
+        }
+        return player.getInventory().getSelectedSlot();
+    }
+
+    private void updateClientReloadVisualState(Player player, ItemStack stack, boolean held) {
+        UUID playerId = player.getUUID();
+        int slot = heldSlot(player, stack);
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack);
+            return;
+        }
+
+        HeldGunState currentState = held ? heldGunState(player, stack) : null;
+        if (currentState == null) {
+            clearReloadVisualState(stack);
+            if (slot >= 0) {
+                queueDrawAfterReloadCancel(player, stack, slot, true);
+            }
+            forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack);
+            return;
+        }
+
+        HeldGunState previousState = CLIENT_RELOAD_VISUAL_STATES.get(playerId);
+        if (previousState == null) {
+            CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
+        } else if (!isSameHeldGunState(currentState, previousState) && currentState.stackIdentity() == previousState.stackIdentity()) {
+            clearReloadVisualState(stack);
+            if (slot >= 0) {
+                queueDrawAfterReloadCancel(player, stack, slot, true);
+            }
+            CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
+            return;
+        }
+        CLIENT_RELOAD_VISUAL_STATES.put(playerId, currentState);
+
+        remainingTicks--;
+        if (remainingTicks <= 0) {
+            clearReloadVisualState(stack);
+            forgetHeldGunState(CLIENT_RELOAD_VISUAL_STATES, playerId, stack);
+            return;
+        }
+
+        stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), remainingTicks);
+        if (usesSegmentedReloadAnimation()) {
+            stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), computeSegmentedReloadStage(stack, remainingTicks));
+        }
+    }
+
+    private static boolean isSameHeldGunState(HeldGunState currentState, HeldGunState previousState) {
+        if (currentState == previousState) {
+            return true;
+        }
+        if (currentState == null || previousState == null) {
+            return false;
+        }
+        return currentState.hand() == previousState.hand()
+                && currentState.selectedSlot() == previousState.selectedSlot()
+                && isSameStackIgnoringAnimationState(currentState.stackSnapshot(), previousState.stackSnapshot());
+    }
+
+    private static void forgetHeldGunState(Map<UUID, HeldGunState> states, UUID playerId, ItemStack stack) {
+        HeldGunState previousState = states.get(playerId);
+        if (previousState != null && previousState.matchesStack(stack)) {
+            states.remove(playerId);
+        }
+    }
+
+    private static boolean isSameStackIgnoringAnimationState(ItemStack first, ItemStack second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null || first.isEmpty() || second == null || second.isEmpty()) {
+            return false;
+        }
+        if (ItemStack.isSameItemSameComponents(first, second)) {
+            return true;
+        }
+        if (!ItemStack.isSameItem(first, second)) {
+            return false;
+        }
+
+        ItemStack firstCopy = first.copy();
+        ItemStack secondCopy = second.copy();
+        clearHeldGunMatchState(firstCopy);
+        clearHeldGunMatchState(secondCopy);
+        return ItemStack.isSameItemSameComponents(firstCopy, secondCopy);
+    }
+
+    private static void clearHeldGunMatchState(ItemStack stack) {
+        clearReloadVisualState(stack);
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+    }
+
+    public static void startClientDrawAnimationForSwitch(Player player, ItemStack stack) {
+        if (player == null || !player.level().isClientSide() || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem)) {
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        int slot = player.getInventory().getSelectedSlot();
+        clearReloadVisualState(stack);
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+
+        HeldGunState currentState = heldGunState(player, stack);
+        if (currentState != null) {
+            CLIENT_HELD_DRAW_STATES.put(playerId, currentState);
+        } else {
+            CLIENT_HELD_DRAW_STATES.remove(playerId);
+        }
+        CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
+        CLIENT_RELOAD_CANCEL_DRAW_STATES.remove(playerId);
+    }
+
+    public static void cancelClientReloadVisualForSwitch(Player player, ItemStack stack, int slot) {
+        if (player == null || !player.level().isClientSide() || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem)) {
+            return;
+        }
+        if (!isReloading(stack)) {
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        clearReloadVisualState(stack);
+        if (slot >= 0) {
+            queueDrawAfterReloadCancel(player, stack, slot, true);
+        }
+        CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
+        forgetHeldGunState(CLIENT_HELD_DRAW_STATES, playerId, stack);
+    }
+
+    public static void tickClientVisualState(Player player) {
+        if (player == null || !player.level().isClientSide()) {
+            return;
+        }
+
+        ItemStack main = player.getMainHandItem();
+        if (main.getItem() instanceof GunItem gun && main.getItem() instanceof AnimatedGunItem) {
+            gun.updateClientReloadVisualState(player, main, true);
+            updateDrawVisualState(player, main, true);
+        }
+
+        ItemStack offhand = player.getOffhandItem();
+        if (offhand.getItem() instanceof GunItem gun && offhand.getItem() instanceof AnimatedGunItem && offhand != main) {
+            gun.updateClientReloadVisualState(player, offhand, true);
+            updateDrawVisualState(player, offhand, true);
+        }
     }
 
     private int removeAmmoFromInventory(Player player, int needed) {
@@ -1604,11 +2503,14 @@ public class GunItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
-        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID) ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR : stats.damage();
-        tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format("%.1f", displayDamage)));
+        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
+        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID)
+                ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR
+                : modifiedDamage(stats, modifiers);
+        tooltipAdder.accept(Component.translatable("info.jeg.damage", String.format(Locale.US, "%.1f", displayDamage)));
 
         if (usesLoadedAmmo()) {
-            tooltipAdder.accept(Component.translatable("info.jeg.ammo", getAmmo(stack), stats.magazineSize()));
+            tooltipAdder.accept(Component.translatable("info.jeg.ammo", getAmmo(stack), modifiedMagazineSize(stack)));
         }
 
         if (usesOverheatMechanic()) {
@@ -1625,7 +2527,11 @@ public class GunItem extends Item {
             tooltipAdder.accept(Component.translatable("info.jeg.ammo_type", ammoName));
         }
 
-        float armorPiercing = BallisticProtection.effectiveArmorPiercing(this.stats, BallisticProtection.isRocketDirectHit(this.stats));
+        float armorPiercing = BallisticProtection.effectiveArmorPiercing(
+                this.stats,
+                BallisticProtection.isRocketDirectHit(this.stats),
+                modifiers.explosiveAmmo() ? 0.75F : 1.0F
+        );
         tooltipAdder.accept(Component.literal("Armor Piercing: " + String.format(Locale.US, "%.2f", armorPiercing)));
 
         double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
@@ -1637,5 +2543,6 @@ public class GunItem extends Item {
         if (stats.projectileAmount() > 1) {
             tooltipAdder.accept(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
         }
+        tooltipAdder.accept(Component.translatable("info.jeg.open_attachments_z").withStyle(ChatFormatting.YELLOW));
     }
 }

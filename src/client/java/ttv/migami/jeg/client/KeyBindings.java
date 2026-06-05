@@ -19,6 +19,20 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping ATTACHMENTS = new KeyMapping(
+            "key.jeg.attachments",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Z,
+            CATEGORY
+    );
+
+    public static final KeyMapping MELEE = new KeyMapping(
+            "key.jeg.melee",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
             InputConstants.Type.KEYSYM,
@@ -88,6 +102,8 @@ public final class KeyBindings {
         }
         initialised = true;
         KeyMappingHelper.registerKeyMapping(RELOAD);
+        KeyMappingHelper.registerKeyMapping(ATTACHMENTS);
+        KeyMappingHelper.registerKeyMapping(MELEE);
         KeyMappingHelper.registerKeyMapping(VEHICLE_FREE_LOOK);
         KeyMappingHelper.registerKeyMapping(VEHICLE_SWITCH_WEAPON);
         KeyMappingHelper.registerKeyMapping(VEHICLE_PREVIOUS_WEAPON);

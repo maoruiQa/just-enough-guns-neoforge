@@ -1,8 +1,7 @@
 {
-  "fabric:load_conditions": [
+  "neoforge:conditions": [
     {
-      "condition": "fabric:or",
-      "values": []
+      "type": "neoforge:never"
     }
   ],
   "type": "minecraft:crafting_shaped",

@@ -7,6 +7,7 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
+import ttv.migami.jeg.particle.ColoredFlareOption;
 
 public final class FlareSmokeParticle extends ExplodeParticle {
     private FlareSmokeParticle(
@@ -105,6 +106,30 @@ public final class FlareSmokeParticle extends ExplodeParticle {
         ) {
             return new FlareSmokeParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites,
                     0.0F, 0.6F, 0.8F, 5.0F, 80, 81);
+        }
+    }
+
+    public static final class ColoredProvider implements ParticleProvider<ColoredFlareOption> {
+        private final SpriteSet sprites;
+
+        public ColoredProvider(SpriteSet sprites) {
+            this.sprites = sprites;
+        }
+
+        @Override
+        public Particle createParticle(
+                ColoredFlareOption option,
+                ClientLevel level,
+                double x,
+                double y,
+                double z,
+                double xSpeed,
+                double ySpeed,
+                double zSpeed,
+                RandomSource random
+        ) {
+            return new FlareSmokeParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites,
+                    option.red(), option.green(), option.blue(), 6.0F, 120, 121);
         }
     }
 }

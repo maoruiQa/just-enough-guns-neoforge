@@ -22,6 +22,7 @@ public final class ParticleFactoryRegistry {
         registry.register(ModParticleTypes.FLARE_SMOKE.get(), FlareSmokeParticle.SmokeProvider::new);
         registry.register(ModParticleTypes.FLARE.get(), FlareSmokeParticle.RedProvider::new);
         registry.register(ModParticleTypes.BLUE_FLARE.get(), FlareSmokeParticle.BlueProvider::new);
+        registry.register(ModParticleTypes.COLORED_FLARE_SMOKE.get(), FlareSmokeParticle.ColoredProvider::new);
 
         registry.register(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         registry.register(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);

@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
+import ttv.migami.jeg.particle.ColoredFlareOption;
+import ttv.migami.jeg.particle.LaserOption;
 
 public class ModParticleTypes {
     public static final DeferredRegister<ParticleType<?>> REGISTER =
@@ -42,9 +44,19 @@ public class ModParticleTypes {
             REGISTER.register("blue_flame", FabricParticleTypes::simple);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
             REGISTER.register("gun_muzzle_flash", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CONFETTI =
+            REGISTER.register("confetti", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> HIT_MARKER =
+            REGISTER.register("hit_marker", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> POPCORN =
+            REGISTER.register("popcorn", FabricParticleTypes::simple);
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<CannonMuzzleFlareOption>> CANNON_MUZZLE_FLARE =
             REGISTER.register("cannon_muzzle_flare", () -> createOptions(CannonMuzzleFlareOption.CODEC, true, CannonMuzzleFlareOption.STREAM_CODEC));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<LaserOption>> LASER =
+            REGISTER.register("laser", () -> createOptions(LaserOption.CODEC, false, LaserOption.STREAM_CODEC));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ColoredFlareOption>> COLORED_FLARE_SMOKE =
+            REGISTER.register("colored_flare_smoke", () -> createOptions(ColoredFlareOption.CODEC, true, ColoredFlareOption.STREAM_CODEC));
 
     public static <T extends ParticleOptions> ParticleType<T> createOptions(MapCodec<T> codec, boolean overrideLimiter, StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec) {
         return new ParticleType<>(overrideLimiter) {

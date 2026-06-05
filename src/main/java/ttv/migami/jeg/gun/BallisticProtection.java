@@ -76,11 +76,16 @@ public final class BallisticProtection {
     }
 
     public static float effectiveArmorPiercing(GunStats stats, boolean rocketDirectHit) {
+        return effectiveArmorPiercing(stats, rocketDirectHit, 1.0F);
+    }
+
+    public static float effectiveArmorPiercing(GunStats stats, boolean rocketDirectHit, float multiplier) {
         float override = explicitArmorPiercing(stats);
+        float safeMultiplier = Math.max(0.0F, multiplier);
         if (override >= 0.0F) {
-            return override;
+            return override * safeMultiplier;
         }
-        return baseArmorPiercing(stats, rocketDirectHit) * gunArmorPiercingMultiplier(stats);
+        return baseArmorPiercing(stats, rocketDirectHit) * gunArmorPiercingMultiplier(stats) * safeMultiplier;
     }
 
     private static float explicitArmorPiercing(GunStats stats) {
@@ -101,11 +106,15 @@ public final class BallisticProtection {
     }
 
     public static BallisticResult applyToArmorHit(float rawDamage, GunStats stats, ItemStack armorStack, EquipmentSlot slot, boolean rocketDirectHit) {
+        return applyToArmorHit(rawDamage, stats, armorStack, slot, rocketDirectHit, 1.0F);
+    }
+
+    public static BallisticResult applyToArmorHit(float rawDamage, GunStats stats, ItemStack armorStack, EquipmentSlot slot, boolean rocketDirectHit, float armorPiercingMultiplier) {
         if (!(armorStack.getItem() instanceof BulletproofArmorItem armorItem)) {
             return BallisticResult.unmodified(rawDamage);
         }
         ArmorProfile profile = armorProfile(armorItem.tier(), slot);
-        return apply(rawDamage, effectiveArmorPiercing(stats, rocketDirectHit), profile);
+        return apply(rawDamage, effectiveArmorPiercing(stats, rocketDirectHit, armorPiercingMultiplier), profile);
     }
 
     public static BallisticResult applyToIntrinsicArmor(float rawDamage, GunStats stats, IntrinsicArmorProfile profile, boolean rocketDirectHit) {

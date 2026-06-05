@@ -56,12 +56,14 @@ import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.client.render.entity.BulletRenderer;
 import ttv.migami.jeg.client.render.entity.GhoulRenderer;
 import ttv.migami.jeg.client.render.entity.PhantomGunnerGeoRenderer;
 import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
+import ttv.migami.jeg.client.screen.AttachmentScreen;
 import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -70,8 +72,10 @@ import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
@@ -145,6 +149,8 @@ public final class FabricClientBootstrap {
     private static int rocketHoldTicks;
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
+    private static ItemStack lastMainHandStackReference = ItemStack.EMPTY;
+    private static int lastMainHandSlot = -1;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
     private static final Map<Integer, VehicleFireSoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
@@ -288,6 +294,7 @@ public final class FabricClientBootstrap {
         EntityRendererRegistry.register(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
 
         BlockEntityRendererRegistry.register(ModBlockEntities.VEHICLE_ASSEMBLING_TABLE.get(), VehicleAssemblingTableBlockEntityRenderer::new);
+        registerMenuScreen(ModMenuTypes.ATTACHMENT_MENU.get(), (menu, inventory, title) -> new AttachmentScreen((AttachmentMenu) menu, inventory, title));
         registerMenuScreen(ModMenuTypes.VEHICLE_MENU.get(), (menu, inventory, title) -> new VehicleScreen((VehicleMenu) menu, inventory, title));
         registerMenuScreen(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), (menu, inventory, title) -> new VehicleAssemblingScreen((VehicleAssemblingMenu) menu, inventory, title));
         registerMenuScreen(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), (menu, inventory, title) -> new VehicleChargingStationScreen((VehicleChargingStationMenu) menu, inventory, title));
@@ -306,6 +313,7 @@ public final class FabricClientBootstrap {
         ClientTickEvents.START_CLIENT_TICK.register(FabricClientBootstrap::handleOffhandSwapOverride);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             GunRecoilHandler.tick();
+            MedalManager.tick();
             if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
                 BulletTrailRenderer.tick();
             }
@@ -313,6 +321,12 @@ public final class FabricClientBootstrap {
             CrosshairHandler.tick();
             tickTransientPrompts(client);
 
+            if (client.player != null) {
+                tickImmediateGunSwitch(client.player);
+                GunItem.tickClientVisualState(client.player);
+            } else {
+                clearImmediateGunSwitchState();
+            }
             handleCombatInput(client);
             if (client.player != null) {
                 tickVehicleFireAudio(client.player);
@@ -335,6 +349,7 @@ public final class FabricClientBootstrap {
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
+            clearImmediateGunSwitchState();
             stunRingingSound = null;
             AimingHandler.get().reset();
             GunRecoilHandler.stopImmediate();
@@ -459,6 +474,12 @@ public final class FabricClientBootstrap {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
 
+        while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem) {
+                ClientNetworkHandler.sendOpenAttachments();
+            }
+        }
+
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
@@ -493,6 +514,18 @@ public final class FabricClientBootstrap {
             GunRecoilHandler.stopImmediate();
         }
 
+        if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && client.options.keyAttack.isDown()) {
+            ClientNetworkHandler.sendChargeFlashlight();
+            client.options.keyAttack.setDown(false);
+        }
+
+        while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+                GunItem.cancelReloadForImmediateAction(player, heldMain);
+                ClientNetworkHandler.sendMelee();
+            }
+        }
+
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
@@ -502,6 +535,22 @@ public final class FabricClientBootstrap {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
             }
         }
+    }
+
+    private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
+        return !isMeleeBlockedGun(stack)
+                && !GunItem.isDrawing(stack)
+                && !player.getCooldowns().isOnCooldown(stack);
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
     }
 
     private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
@@ -587,6 +636,38 @@ public final class FabricClientBootstrap {
             player.swingTime = 0;
             player.swinging = false;
         }
+    }
+
+    private static void tickImmediateGunSwitch(LocalPlayer player) {
+        int selectedSlot = player.getInventory().getSelectedSlot();
+        ItemStack current = player.getMainHandItem();
+        boolean changed = selectedSlot != lastMainHandSlot;
+
+        if (changed && lastMainHandStackReference.getItem() instanceof AnimatedGunItem
+                && lastMainHandStackReference != current
+                && GunItem.isReloading(lastMainHandStackReference)) {
+            GunItem.cancelClientReloadVisualForSwitch(player, lastMainHandStackReference, lastMainHandSlot);
+        }
+
+        if (changed
+                && current.getItem() instanceof AnimatedGunItem
+                && lastMainHandSlot >= 0
+                && lastMainHandStackReference != current
+                && !ItemStack.isSameItemSameComponents(lastMainHandStackReference, current)) {
+            GunItem.startClientDrawAnimationForSwitch(player, current);
+        }
+
+        rememberMainHandStack(current, selectedSlot);
+    }
+
+    private static void rememberMainHandStack(ItemStack stack, int selectedSlot) {
+        lastMainHandStackReference = stack;
+        lastMainHandSlot = selectedSlot;
+    }
+
+    private static void clearImmediateGunSwitchState() {
+        lastMainHandStackReference = ItemStack.EMPTY;
+        lastMainHandSlot = -1;
     }
 
     public static void renderOverheatBar(GuiGraphicsExtractor guiGraphics) {

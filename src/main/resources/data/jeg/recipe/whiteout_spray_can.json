@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:white_dye",
+    "minecraft:quartz"
+  ],
+  "result": {
+    "id": "jeg:whiteout_spray_can",
+    "count": 1
+  }
+}

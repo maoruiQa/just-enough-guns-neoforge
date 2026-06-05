@@ -5,6 +5,9 @@ import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -16,11 +19,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
@@ -52,6 +61,11 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MeleePayload.TYPE, MeleePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC);
@@ -63,6 +77,9 @@ public final class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HeadshotMedalPayload.TYPE, HeadshotMedalPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MedalPayload.TYPE, MedalPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(KillMedalPayload.TYPE, KillMedalPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleDataSyncPayload.TYPE, VehicleDataSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC);
@@ -80,6 +97,21 @@ public final class NetworkHandler {
         });
         ServerPlayNetworking.registerGlobalReceiver(UnloadMagazineRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleUnloadMagazineRequest(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(OpenAttachmentsPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleOpenAttachments(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ToggleMedalsPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleToggleMedals(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(MeleePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleMelee(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ToggleFlashlightPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleToggleFlashlight(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ChargeFlashlightPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleChargeFlashlight(context.player()));
         });
         ServerPlayNetworking.registerGlobalReceiver(TriggerReleasePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleTriggerRelease(payload, context.player()));
@@ -205,7 +237,7 @@ public final class NetworkHandler {
         if (!(stack.getItem() instanceof GunItem gun)) {
             return;
         }
-        boolean reloaded = gun.tryReload(player.level(), player, stack, true);
+        boolean reloaded = gun.tryReload(player.level(), player, stack, payload.hand(), true);
         if (reloaded) {
             player.swing(payload.hand());
         }
@@ -223,6 +255,91 @@ public final class NetworkHandler {
         }
         if (result.transferredAmmo()) {
             player.swing(InteractionHand.MAIN_HAND);
+        }
+    }
+
+    private static void handleOpenAttachments(ServerPlayer player) {
+        if (player.getMainHandItem().getItem() instanceof GunItem) {
+            player.openMenu(AttachmentMenu.provider());
+        }
+    }
+
+    private static void handleToggleMedals(ServerPlayer player) {
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof GunItem) {
+            GunAttachments.toggleMedals(stack);
+        }
+    }
+
+    private static void handleToggleFlashlight(ServerPlayer player) {
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof GunItem) {
+            toggleGunFlashlight(player, stack);
+        }
+    }
+
+    private static void handleMelee(ServerPlayer player) {
+        if (player.isSpectator()) {
+            return;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (!(stack.getItem() instanceof GunItem)) {
+            return;
+        }
+        if (isMeleeBlockedGun(stack) || GunItem.isDrawing(stack) || player.getCooldowns().isOnCooldown(stack)) {
+            return;
+        }
+        GunItem.cancelReloadForImmediateAction(player, stack);
+        if (stack.getItem() instanceof AnimatedGunItem animated) {
+            animated.triggerMelee(player.level(), player, stack);
+        }
+        toggleGunFlashlight(player, stack);
+        AttachmentRuntimeEvents.handleBayonetMelee(player);
+    }
+
+    private static boolean isMeleeBlockedGun(ItemStack stack) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
+    }
+
+    private static void toggleGunFlashlight(ServerPlayer player, ItemStack stack) {
+        if (!GunAttachments.hasFlashlight(stack)) {
+            return;
+        }
+        if (!Config.allowFlashlights()) {
+            Component message = Component.translatable("chat.jeg.disabled_flashlights").withStyle(ChatFormatting.GRAY);
+            player.sendSystemMessage(message, true);
+            return;
+        }
+        GunAttachments.FlashlightToggleResult result = GunAttachments.toggleFlashlight(stack, player);
+        if (result == GunAttachments.FlashlightToggleResult.MISSING) {
+            return;
+        }
+        if (result == GunAttachments.FlashlightToggleResult.DEAD) {
+            Component message = Component.translatable("chat.jeg.flashlight_battery_dead").withStyle(ChatFormatting.RED);
+            player.sendSystemMessage(message, true);
+        }
+        var sound = ModSounds.ALL.get(result == GunAttachments.FlashlightToggleResult.DEAD
+                ? Reference.id("item.goose")
+                : Reference.id("item.flashlight"));
+        if (sound != null) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+    }
+
+    private static void handleChargeFlashlight(ServerPlayer player) {
+        if (player.isSpectator()) {
+            return;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof FlashlightAttachmentItem) {
+            FlashlightAttachmentItem.charge(stack, player);
         }
     }
 
@@ -268,8 +385,20 @@ public final class NetworkHandler {
         ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
     }
 
+    public static void sendHeadshotMedal(ServerPlayer player) {
+        ServerPlayNetworking.send(player, HeadshotMedalPayload.INSTANCE);
+    }
+
+    public static void sendMedal(ServerPlayer player, MedalType medal) {
+        ServerPlayNetworking.send(player, new MedalPayload(medal));
+    }
+
+    public static void sendKillMedal(ServerPlayer player) {
+        ServerPlayNetworking.send(player, KillMedalPayload.INSTANCE);
+    }
+
     public static void sendUiConfig(ServerPlayer player) {
-        ServerPlayNetworking.send(player, new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback()));
+        ServerPlayNetworking.send(player, new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals()));
     }
 
     public static void sendVehicleData(ServerPlayer player) {
@@ -278,7 +407,7 @@ public final class NetworkHandler {
     }
 
     public static void broadcastUiConfig(MinecraftServer server) {
-        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback());
+        UiConfigPayload payload = new UiConfigPayload(Config.showCrosshair(), Config.showHitFeedback(), Config.hideMedals());
         for (ServerPlayer player : PlayerLookup.all(server)) {
             ServerPlayNetworking.send(player, payload);
         }

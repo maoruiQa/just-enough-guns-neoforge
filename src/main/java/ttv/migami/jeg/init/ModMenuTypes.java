@@ -4,11 +4,13 @@ import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleMenu;
@@ -17,6 +19,11 @@ public final class ModMenuTypes {
     private ModMenuTypes() {}
 
     public static final DeferredRegister<MenuType<?>> REGISTER = DeferredRegister.create(Registries.MENU, Reference.MOD_ID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<AttachmentMenu>> ATTACHMENT_MENU = REGISTER.register(
+            "attachment_menu",
+            () -> new MenuType<>(AttachmentMenu::new, FeatureFlags.DEFAULT_FLAGS)
+    );
 
     public static final DeferredHolder<MenuType<?>, MenuType<VehicleMenu>> VEHICLE_MENU = REGISTER.register(
             "vehicle_menu",

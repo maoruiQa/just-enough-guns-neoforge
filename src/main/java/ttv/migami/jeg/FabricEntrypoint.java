@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -17,6 +18,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.FactionEventTicker;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.fabric.FabricCreativeTabs;
@@ -108,6 +110,9 @@ public final class FabricEntrypoint implements ModInitializer {
                 return;
             }
             for (var entity : serverLevel.getAllEntities()) {
+                if (entity instanceof Player player) {
+                    AttachmentRuntimeEvents.tickPlayer(player);
+                }
                 EntityTickEvent.Post event = new EntityTickEvent.Post(entity);
                 GunnerMobSpawner.onLivingUpdate(event);
                 HappyGhastArmorEvents.onEntityTick(event);

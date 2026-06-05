@@ -2,6 +2,7 @@ package ttv.migami.jeg.item;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -20,9 +21,11 @@ import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.util.GeckoLibUtil;
-import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
+import ttv.migami.jeg.network.NetworkHandler;
 
 public final class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String CONTROLLER = "controller";
@@ -34,18 +37,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String ANIM_RELOAD_ALT = "reload_alt";
     public static final String ANIM_AIM_SHOOT = "aim_shoot";
     public static final String ANIM_SPRINT = "sprint";
+    public static final String ANIM_DRAW = "draw";
+    public static final String ANIM_MELEE = "melee";
+    public static final String ANIM_BAYONET = "bayonet";
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation SHOOT = RawAnimation.begin().then(ANIM_SHOOT, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation AIM_SHOOT = RawAnimation.begin().then(ANIM_AIM_SHOOT, LoopType.PLAY_ONCE).thenLoop("idle");
+    private static final RawAnimation DRAW = RawAnimation.begin().then(ANIM_DRAW, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation RELOAD = RawAnimation.begin().then(ANIM_RELOAD, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation RELOAD_ALT = RawAnimation.begin().then(ANIM_RELOAD_ALT, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation RELOAD_START = RawAnimation.begin().then(ANIM_RELOAD_START, LoopType.PLAY_ONCE).thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_LOOP = RawAnimation.begin().thenLoop(ANIM_RELOAD_LOOP);
     private static final RawAnimation RELOAD_STOP = RawAnimation.begin().then(ANIM_RELOAD_STOP, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, LoopType.HOLD_ON_LAST_FRAME);
+    private static final RawAnimation MELEE = RawAnimation.begin().then(ANIM_MELEE, LoopType.PLAY_ONCE).thenLoop("idle");
+    private static final RawAnimation BAYONET = RawAnimation.begin().then(ANIM_BAYONET, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_SPRINT_AFTER_SHOOT_SUPPRESSION_NANOS = 250_000_000L;
+    private static final int CLIENT_DRAW_REPLAY_TICKS = 14;
 
     private static final int RELOAD_STAGE_NONE = 0;
     private static final int RELOAD_STAGE_START = 1;
@@ -72,16 +82,24 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         ).receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
+                .triggerableAnim(ANIM_DRAW, DRAW)
                 .triggerableAnim(ANIM_RELOAD, RELOAD)
                 .triggerableAnim(ANIM_RELOAD_ALT, RELOAD_ALT)
                 .triggerableAnim(ANIM_RELOAD_START, RELOAD_START)
                 .triggerableAnim(ANIM_RELOAD_LOOP, RELOAD_LOOP)
                 .triggerableAnim(ANIM_RELOAD_STOP, RELOAD_STOP)
-                .triggerableAnim(ANIM_SPRINT, SPRINT));
+                .triggerableAnim(ANIM_SPRINT, SPRINT)
+                .triggerableAnim(ANIM_MELEE, MELEE)
+                .triggerableAnim(ANIM_BAYONET, BAYONET));
     }
 
     private PlayState animationPredicate(AnimationTest<AnimatedGunItem> test) {
         ItemStack renderStack = resolveRenderStack(test);
+        RawAnimation drawAnimation = drawAnimationFor(renderStack);
+        if (drawAnimation != null) {
+            return test.setAndContinue(drawAnimation);
+        }
+
         if (shouldContinueReloadAnimation(test.controller(), renderStack)) {
             return PlayState.CONTINUE;
         }
@@ -130,6 +148,17 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             case RELOAD_STAGE_STOP -> RELOAD_STOP;
             default -> RELOAD;
         };
+    }
+
+    private static RawAnimation drawAnimationFor(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return null;
+        }
+        if (isSprintingFirstPerson(stack)) {
+            stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+            return null;
+        }
+        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0 ? DRAW : null;
     }
 
     private static boolean shouldContinueReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
@@ -199,6 +228,16 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientSprintAnimationBlockedUntilNanos = System.nanoTime() + CLIENT_SPRINT_AFTER_SHOOT_SUPPRESSION_NANOS;
     }
 
+    static void restartDrawAnimation(ItemStack stack) {
+        if (stack != null && !stack.isEmpty()) {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), CLIENT_DRAW_REPLAY_TICKS);
+        }
+    }
+
+    static void restartDrawAnimationAfterReloadCancel(ItemStack stack) {
+        restartDrawAnimation(stack);
+    }
+
     private static boolean isClientSprintAnimationBlocked() {
         return System.nanoTime() < clientSprintAnimationBlockedUntilNanos;
     }
@@ -249,6 +288,23 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         return matchesHeldStack(stack, clientMainHand(player))
                 || matchesHeldStack(stack, clientOffHand(player));
+    }
+
+    private static boolean isSprintingFirstPerson(ItemStack stack) {
+        Object minecraft = minecraftInstance();
+        Object player = clientPlayer(minecraft);
+        if (minecraft == null || player == null || !isFirstPersonCamera(minecraft)) {
+            return false;
+        }
+        if (!matchesHeldStack(stack, clientMainHand(player)) && !matchesHeldStack(stack, clientOffHand(player))) {
+            return false;
+        }
+        try {
+            Method isSprintingMethod = player.getClass().getMethod("isSprinting");
+            return Boolean.TRUE.equals(isSprintingMethod.invoke(player));
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
     }
 
     private static ItemStack resolveRenderStack(AnimationTest<AnimatedGunItem> test) {
@@ -479,5 +535,15 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     public void triggerReloadStop(Level level, Entity triggerEntity, ItemStack stack) {
         trigger(level, triggerEntity, stack, ANIM_RELOAD_STOP);
+    }
+
+    public void triggerMelee(Level level, Entity triggerEntity, ItemStack stack) {
+        trigger(level, triggerEntity, stack, hasBayonet(stack) ? ANIM_BAYONET : ANIM_MELEE);
+    }
+
+    private static boolean hasBayonet(ItemStack stack) {
+        return GunAttachments.stack(stack, AttachmentType.BARREL)
+                .filter(attachment -> attachment.is(ItemTags.SWORDS))
+                .isPresent();
     }
 }
