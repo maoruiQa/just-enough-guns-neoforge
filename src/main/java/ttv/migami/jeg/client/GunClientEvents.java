@@ -423,7 +423,11 @@ public final class GunClientEvents {
             GunItem.cancelClientReloadVisualForSwitch(player, lastMainHandStackReference, lastMainHandSlot);
         }
 
-        if (changed && current.getItem() instanceof AnimatedGunItem) {
+        if (changed
+                && current.getItem() instanceof AnimatedGunItem
+                && lastMainHandSlot >= 0
+                && lastMainHandStackReference != current
+                && !ItemStack.isSameItemSameComponents(lastMainHandStackReference, current)) {
             GunItem.startClientDrawAnimationForSwitch(player, current);
         }
 
