@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.GunItem;
 
 public final class CrosshairHandler {
@@ -103,7 +104,7 @@ public final class CrosshairHandler {
         if (!(stack.getItem() instanceof GunItem gun) || minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
             return;
         }
-        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())) {
+        if (GunScopeSupport.hasTelescopicSight(stack)) {
             return;
         }
         if (AimingHandler.get().getNormalisedAdsProgress(partialTick) > 0.5F) {

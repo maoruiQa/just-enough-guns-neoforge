@@ -100,7 +100,7 @@ public final class GunAttachmentVisibility {
 
     public static void apply(Identifier gunId, ItemStack stack, BoneSnapshots snapshots) {
         if (Reference.id("bolt_action_rifle").equals(gunId)) {
-            boolean scopeInstalled = GunAttachments.has(stack, AttachmentType.SCOPE) || GunScopeSupport.isBoltActionRifleScopeEnabled();
+            boolean scopeInstalled = GunScopeSupport.hasTelescopicSight(stack);
             snapshots.ifPresent("attachment_bone", snapshot -> snapshot.skipRender(!scopeInstalled));
             snapshots.ifPresent("iron_sight", snapshot -> snapshot.skipRender(scopeInstalled));
             DEFAULT_HIDDEN_ATTACHMENT_BONES.forEach(boneName -> {
@@ -160,11 +160,11 @@ public final class GunAttachmentVisibility {
 
     private static void applyBoltActionRifle(String boneName, BoneSnapshot snapshot) {
         if ("attachment_bone".equals(boneName)) {
-            snapshot.skipRender(!GunScopeSupport.isBoltActionRifleScopeEnabled());
+            snapshot.skipRender(true);
             return;
         }
         if ("iron_sight".equals(boneName)) {
-            snapshot.skipRender(GunScopeSupport.isBoltActionRifleScopeEnabled());
+            snapshot.skipRender(false);
             return;
         }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {

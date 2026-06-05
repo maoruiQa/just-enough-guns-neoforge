@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.GunItem;
@@ -30,8 +29,7 @@ public final class AbstractClientPlayerMixin {
             return;
         }
 
-        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+        if (GunScopeSupport.hasTelescopicSight(mainHand)) {
             float current = cir.getReturnValueF();
             float target = SCOPE_VIEWPORT_FOV / configuredFov();
             cir.setReturnValue(Math.max(0.1F, current + (target - current) * ads));

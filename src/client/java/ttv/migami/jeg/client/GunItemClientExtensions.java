@@ -108,10 +108,12 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float yaw = Mth.lerp(ads, profile.hipYaw(), profile.adsYaw());
         float adsTransition = (float) easeOutQuad(ads);
         float firstPersonScale = profile.scale() * FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER;
-        if (Reference.id("bolt_action_rifle").equals(stats.id()) && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+        ItemStack stack = heldStackForArm(player, arm);
+        boolean telescopicSight = GunScopeSupport.hasTelescopicSight(stack);
+        if (telescopicSight) {
             firstPersonScale *= SCOPED_BOLT_ACTION_SCALE_MULTIPLIER;
         }
-        AdsSightOffset sightOffset = adsSightOffset(stats.id(), firstPersonScale);
+        AdsSightOffset sightOffset = adsSightOffset(stack, stats.id(), firstPersonScale);
         xOffset = Mth.lerp(adsTransition, xOffset, (float) sightOffset.x());
         yOffset = Mth.lerp(adsTransition, yOffset, (float) sightOffset.y());
         zOffset = Mth.lerp(adsTransition, zOffset, (float) sightOffset.z());
@@ -137,6 +139,14 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         applySprintingTransforms(poseStack, player, direction, ads);
         applyRecoilTransforms(poseStack, ads);
         return true;
+    }
+
+    private static ItemStack heldStackForArm(LocalPlayer player, HumanoidArm arm) {
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+        boolean mainHandArm = player.getMainArm() == arm;
+        return mainHandArm ? player.getMainHandItem() : player.getOffhandItem();
     }
 
     private static void applyBobbingTransforms(PoseStack poseStack, Player player, float partialTick, float ads) {
@@ -208,9 +218,8 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         return 1.0D - inverse * inverse;
     }
 
-    private static AdsSightOffset adsSightOffset(Identifier gunId, double firstPersonScale) {
-        ForgeZoomOffset zoom = Reference.id("bolt_action_rifle").equals(gunId)
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()
+    private static AdsSightOffset adsSightOffset(ItemStack stack, Identifier gunId, double firstPersonScale) {
+        ForgeZoomOffset zoom = GunScopeSupport.hasTelescopicSight(stack)
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
         double translateX = FIRST_PERSON_TRANSLATE_X;
