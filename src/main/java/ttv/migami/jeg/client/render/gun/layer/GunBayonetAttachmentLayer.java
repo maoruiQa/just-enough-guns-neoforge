@@ -18,6 +18,7 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunAttachmentGeoModel;
+import ttv.migami.jeg.client.render.gun.GunAttachmentTransforms;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
@@ -60,7 +61,7 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
         }
 
         ItemStack gunStack = renderer.getCurrentItemStack();
-        if (gunStack == null || gunStack.isEmpty()) {
+        if (gunStack == null || gunStack.isEmpty() || !(gunStack.getItem() instanceof AnimatedGunItem gun)) {
             return;
         }
 
@@ -87,6 +88,9 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
         RenderType attachmentRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
 
+        poseStack.pushPose();
+        GunAttachmentTransforms.transform(gun.getStats().id(), AttachmentType.BARREL)
+                .ifPresent(transform -> transform.apply(poseStack));
         getRenderer().reRender(
                 bakedModel,
                 poseStack,
@@ -99,6 +103,7 @@ public final class GunBayonetAttachmentLayer extends GeoRenderLayer<AnimatedGunI
                 packedOverlay,
                 0xFFFFFFFF
         );
+        poseStack.popPose();
     }
 
     private static String attachmentName(ItemStack stack) {

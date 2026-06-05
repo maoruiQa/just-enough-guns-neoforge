@@ -16,6 +16,8 @@
 - Fixed first-person gun draw animations so they only trigger when switching from another hotbar item into the gun, not after inventory screen refreshes or reload state cleanup.
 - Fixed reload animations ending early when an authored GeckoLib reload clip is longer than the gun's gameplay reload timer.
 - Fixed first-person sprint animations so sprinting immediately after switching to a gun can interrupt lingering draw playback before firing.
+- Fixed sword bayonet melee so V-key hits use reliable sword damage, target-center arc checks, and the proper barrel attachment transform.
+- Fixed bayonet first-person animation priority so switching to a bayonet-equipped gun plays the draw animation and sprinting with a bayonet uses the bayonet charge animation instead of the normal run pose.
 - Restored Forge 1.20.1 explosive-muzzle entity-hit ignition while reducing explosive-muzzle armor piercing by 25% for balance.
 - Fixed draw, reload, shoot, sprint, idle, and melee animation priority so first-person GeckoLib controllers recover cleanly after reload cancellation, hotbar switches, and local gunfire.
 - Removed temporary animation and overheat debug logging added during the reload/draw diagnosis pass.
