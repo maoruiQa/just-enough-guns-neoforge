@@ -24,6 +24,7 @@ import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
@@ -126,8 +127,12 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem)) {
                 return;
             }
-            if (isMeleeBlockedGun(stack)) {
+            if (isMeleeBlockedGun(stack) || GunItem.isDrawing(stack) || player.getCooldowns().isOnCooldown(stack.getItem())) {
                 return;
+            }
+            GunItem.cancelReloadForImmediateAction(player, stack);
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerMelee(player.level(), player, stack);
             }
             toggleGunFlashlight(player, stack);
             AttachmentRuntimeEvents.handleBayonetMelee(player);
@@ -135,7 +140,13 @@ public final class NetworkHandler {
     }
 
     private static boolean isMeleeBlockedGun(ItemStack stack) {
-        return stack.getItem() instanceof GunItem gun && "minigun".equals(gun.getStats().id().getPath());
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
     }
 
     private static void toggleGunFlashlight(ServerPlayer player, ItemStack stack) {

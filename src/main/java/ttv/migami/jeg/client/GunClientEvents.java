@@ -72,6 +72,8 @@ public final class GunClientEvents {
     private static int rocketHoldTicks;
     private static boolean rocketHoldStartSent;
     private static boolean rocketShotSent;
+    private static ItemStack lastMainHandStackReference = ItemStack.EMPTY;
+    private static int lastMainHandSlot = -1;
     private static final java.util.Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new java.util.concurrent.ConcurrentHashMap<>();
     private static final Set<String> ALT_MUZZLE_FLASH_IDS = Set.of(
             "subsonic_rifle",
@@ -320,12 +322,14 @@ public final class GunClientEvents {
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
+            clearImmediateGunSwitchState();
             resetRocketHold(false);
             VEHICLE_FIRE_SOUNDS.clear();
             CrosshairHandler.reset();
             return;
         }
 
+        tickImmediateGunSwitch(player);
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
         tickVehicleFireAudio(player);
@@ -398,14 +402,58 @@ public final class GunClientEvents {
             }
         }
         if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && !isMeleeBlockedGun(heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+                GunItem.cancelReloadForImmediateAction(player, heldMain);
+                if (heldMain.getItem() instanceof AnimatedGunItem) {
+                    AnimatedGunItem.triggerClientMelee(minecraft.player);
+                }
                 NetworkHandler.sendMelee();
             }
         }
     }
 
+    private static void tickImmediateGunSwitch(LocalPlayer player) {
+        int selectedSlot = player.getInventory().selected;
+        ItemStack current = player.getMainHandItem();
+        boolean changed = selectedSlot != lastMainHandSlot;
+
+        if (changed && lastMainHandStackReference.getItem() instanceof AnimatedGunItem
+                && lastMainHandStackReference != current
+                && GunItem.isReloading(lastMainHandStackReference)) {
+            GunItem.cancelClientReloadVisualForSwitch(player, lastMainHandStackReference, lastMainHandSlot);
+        }
+
+        if (changed && current.getItem() instanceof AnimatedGunItem) {
+            GunItem.startClientDrawAnimationForSwitch(player, current);
+        }
+
+        rememberMainHandStack(current, selectedSlot);
+    }
+
+    private static void rememberMainHandStack(ItemStack stack, int selectedSlot) {
+        lastMainHandStackReference = stack;
+        lastMainHandSlot = selectedSlot;
+    }
+
+    private static void clearImmediateGunSwitchState() {
+        lastMainHandStackReference = ItemStack.EMPTY;
+        lastMainHandSlot = -1;
+    }
+
+    private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
+        return !isMeleeBlockedGun(stack)
+                && !GunItem.isDrawing(stack)
+                && !player.getCooldowns().isOnCooldown(stack.getItem());
+    }
+
     private static boolean isMeleeBlockedGun(ItemStack stack) {
-        return stack.getItem() instanceof GunItem gun && "minigun".equals(gun.getStats().id().getPath());
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return false;
+        }
+        String path = gun.getStats().id().getPath();
+        return "minigun".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
     }
 
     @SubscribeEvent
@@ -452,6 +500,7 @@ public final class GunClientEvents {
         nextVisualShotTickMain = 0L;
         stunRingingSound = null;
         VEHICLE_FIRE_SOUNDS.clear();
+        clearImmediateGunSwitchState();
         resetRocketHold(false);
         CrosshairHandler.reset();
     }

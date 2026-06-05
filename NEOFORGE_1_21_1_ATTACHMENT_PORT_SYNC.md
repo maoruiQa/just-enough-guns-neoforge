@@ -33,8 +33,8 @@ Current NeoForge 1.21.1 foundation:
 - Static attachment-rule audit: all 32 current NeoForge `GunDefinitions.ALL` gun ids have a Forge 1.20.1 generated gun JSON source, using the intentional `phantom_smg` -> `custom_smg` mapping. The six functional slot rules in `GunAttachmentRules` match Forge `modules.attachments` presence for every current gun, with no extra NeoForge rule entries.
 - `AttachmentMenu` is the first NeoForge menu port. It exposes six functional slots plus the three Forge cosmetic slots and writes through `GunAttachments`.
 - `OpenAttachmentsPayload` opens the menu from the client keybinding.
-- `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles and sword bayonet sweeps.
-  - `minigun` is blocked from this melee-key path on both client and server, matching Forge 1.20.1's client guard.
+- `MeleePayload` sends Forge-style gun melee key presses to the server for flashlight toggles, sword bayonet sweeps, and first-person `melee`/`bayonet` GeckoLib animations.
+  - `minigun`, bow-style gun ids, and blowpipe-style gun ids are blocked from this melee-key path on both client and server, matching Forge 1.20.1's client guard.
 - `AttachmentScreen` draws Forge-style slot icons, disabled-slot crosses, incompatible-slot hover feedback, and a rotating held-gun preview from the current menu validation/rendering rules.
 - Recipes are standard 1.21 crafting recipes under `src/main/resources/data/jeg/recipe/`.
 - Missing item definitions were added under `src/main/resources/assets/jeg/items/`; missing Forge models/textures were copied from Forge 1.20.1.
@@ -128,6 +128,9 @@ Behavior wired so far:
 - Sword bayonet melee-key behavior is wired:
   - Pressing `key.jeg.melee` sends a dedicated `MeleePayload`, so sword bayonets work even when the gun has no flashlight.
   - The server validates that the main-hand item is a gun and the barrel slot stores a `SwordItem` stack.
+  - Pressing `key.jeg.melee` while an animated gun is ready also triggers the authored Forge-name `melee` animation, or `bayonet` when a sword is installed in the barrel slot.
+  - The melee-key path is ignored while the gun is still drawing or on cooldown; reload state is cleared before the melee action, matching Forge's immediate-action tag reset behavior without bypassing draw lock.
+  - Guns without a sword bayonet still perform a short 1 damage sweep so the V-key melee action has baseline Forge-style impact feedback; sword bayonets replace that with sword-derived damage, enchantment effects, and stored-bayonet durability loss.
   - The sweep uses Forge's 2 block range and 100 degree forward arc.
   - Sweep damage uses the installed sword's attack damage plus Sharpness, divided by 1.5 like Forge.
   - Knockback and Fire Aspect enchantments on the installed sword affect hit targets.
@@ -169,9 +172,16 @@ Behavior wired so far:
   - The client now tracks normal held-gun transitions separately from the logical server draw lock. Any non-reloading gun that becomes held again gets an immediate local GeckoLib `draw` restart, covering ordinary switch-back cases as well as guns that were just reloaded and not fired.
   - Reload cancellation now queues a fresh draw animation and preserves that queued draw while the interrupted stack is not held, but it does not start the local GeckoLib draw window at cancellation time. This keeps the draw window from expiring while the player is holding another item.
   - The queued reload-cancel draw is tracked separately on the logical server and client; the client consumes its own queue only when the interrupted stack becomes held again, then strips the stale `gun_reload_ticks_*` visual components and force-resets the controller so GeckoLib restarts `draw` at switch-back time.
+  - The client also tracks main-hand hotbar slot changes on client tick and starts the local draw window immediately when the newly selected stack is an animated gun, instead of waiting for the next item `inventoryTick` or server component sync. This detector intentionally keys on selected slot changes only, so ammo, heat, durability, trigger-lock, or attachment component updates during normal gun use cannot restart `draw` and suppress shoot/reload animations.
+  - Hotbar switches into a gun suppress Minecraft's vanilla re-equip animation so the authored gun `draw` animation owns the full switch visual instead of being delayed behind the vanilla hand-lowering pass.
   - First-person animation decisions resolve the GeckoLib render-copy stack back to the player's live held stack before checking reload/draw components. This prevents a lagged render stack with old reload components from continuing a down-pressed reload pose for several seconds and then snapping to idle without playing the queued draw.
-  - Client draw replay also keeps a short local draw window independent of the stack's `gun_draw_ticks_remaining` component because the ItemStack handed to GeckoLib rendering can lag behind the inventory stack component after slot changes.
-  - Draw restart requests are consumed before the predicate's normal "continue current draw" branch; otherwise GeckoLib can continue a stale down-tilted draw/reload pose until the visual window expires and then snap directly back to idle.
+  - Render-copy/live-stack comparisons and pending-reload stack checks ignore only the transient draw/reload visual components (`gun_draw_ticks_remaining`, `gun_reload_ticks_total`, `gun_reload_ticks_remaining`, and `gun_reload_stage`). This keeps per-tick animation component changes from cancelling the same gun's draw/reload sequence while still preserving ammo, attachment, and durability differences.
+  - Client draw replay tracks the live held stack identity and continues an already-playing `draw` animation until the controller reports it finished, matching Forge's `IsDrawing || current draw unfinished` predicate instead of relying on a fixed visual timeout.
+  - Draw restart requests are consumed before the predicate's normal "continue current draw" branch; otherwise GeckoLib can continue a stale down-tilted draw/reload pose and then snap directly back to idle.
+  - Client draw restarts now go through GeckoLib's triggerable `draw` animation after a controller reset instead of only `setAndContinue(DRAW)`. This lets switch-back draw reclaim the controller from a completed-but-still-current `reload,idle` animation after reload cancellation.
+  - First-person animation controllers reset when the live held animated gun id changes, matching Forge's `lastGunId` controller reset.
+  - Interrupted reloads are cancelled on the server as soon as the pending stack leaves the tracked hand/slot, clear stale reload visual components on the original gun stack, and queue a fresh draw for the next time that stack is held.
+  - First-person predicates immediately stop stale reload controllers once the live held stack no longer has reload components, so an interrupted reload cannot continue playing visually without completing ammo logic. Draw and melee animations are still allowed to finish before idle takes over.
   - Animated gun controllers now register a Forge-style GeckoLib sound keyframe handler. Authored `sound_effects` keys such as `rustle`, `screw`, `reload_mag_out`, `reload_mag_in`, `reload_end`, `ejector_pull`, `ejector_release`, and `jammed` resolve to the current gun's `GunStats` sounds or the shared Forge rustle/screw/jam sounds, so draw/switch animations can play their authored audio.
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.

@@ -76,6 +76,7 @@ public final class AttachmentRuntimeEvents {
         }
 
         ItemStack stack = player.getMainHandItem();
+        GunItem.tickPendingReloads(player);
 
         boolean refreshFlashlight = false;
         if (stack.getItem() instanceof GunItem) {
@@ -108,16 +109,12 @@ public final class AttachmentRuntimeEvents {
 
     public static void handleBayonetMelee(ServerPlayer player) {
         ItemStack gunStack = player.getMainHandItem();
-        if (!(gunStack.getItem() instanceof GunItem) || player.getCooldowns().isOnCooldown(gunStack.getItem())) {
+        if (!(gunStack.getItem() instanceof GunItem)) {
             return;
         }
 
         Optional<ItemStack> attachment = GunAttachments.stack(gunStack, AttachmentType.BARREL);
-        if (attachment.isEmpty() || !(attachment.get().getItem() instanceof SwordItem)) {
-            return;
-        }
-
-        ItemStack bayonet = attachment.get();
+        ItemStack bayonet = attachment.filter(stack -> stack.getItem() instanceof SwordItem).orElse(ItemStack.EMPTY);
         Level level = player.level();
         if (player.isSprinting()) {
             Vec3 look = player.getLookAngle();
@@ -130,14 +127,15 @@ public final class AttachmentRuntimeEvents {
                 player.isSprinting() ? BAYONET_SPRINT_MELEE_COOLDOWN_TICKS : BAYONET_MELEE_COOLDOWN_TICKS
         );
 
-        float damage = bayonetDamage(player, bayonet) / BAYONET_DAMAGE_DIVISOR;
-        if (isBayonetTooDamaged(bayonet)) {
+        boolean hasBayonet = !bayonet.isEmpty();
+        float damage = hasBayonet ? bayonetDamage(player, bayonet) / BAYONET_DAMAGE_DIVISOR : 1.0F;
+        if (hasBayonet && isBayonetTooDamaged(bayonet)) {
             damage = 0.0F;
         }
 
         boolean damaged = false;
-        int knockback = enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK);
-        int fireAspect = enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT);
+        int knockback = hasBayonet ? enchantmentLevel(player, bayonet, Enchantments.KNOCKBACK) : 0;
+        int fireAspect = hasBayonet ? enchantmentLevel(player, bayonet, Enchantments.FIRE_ASPECT) : 0;
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(BAYONET_MELEE_RANGE))) {
             if (target == player || !target.isAlive() || !isInMeleeArc(player, target)) {
                 continue;
@@ -153,9 +151,9 @@ public final class AttachmentRuntimeEvents {
             }
         }
 
-        if (damage <= 0.0F) {
+        if (hasBayonet && damage <= 0.0F) {
             level.playSound(player, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 3.0F, 1.0F);
-        } else if (damaged) {
+        } else if (hasBayonet && damaged) {
             damageStoredBayonet(player, gunStack, bayonet, BAYONET_MELEE_DAMAGE);
         }
 
