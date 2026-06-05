@@ -8,7 +8,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -92,10 +94,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private PlayState animationPredicate(AnimationState<AnimatedGunItem> state) {
-        ItemStack stack = state.getData(DataTickets.ITEMSTACK);
+        ItemStack renderStack = state.getData(DataTickets.ITEMSTACK);
         if (isNonFirstPersonPerspective(state)) {
             return PlayState.STOP;
         }
+        ItemStack stack = animationStateStack(state, renderStack);
+        clearStaleRenderReloadVisualState(renderStack, stack);
         if (clearInterruptedReloadAnimation(state.getController(), stack)) {
             RawAnimation drawAnimation = drawAnimationFor(stack);
             resetDrawAnimationIfRequested(state.getController(), stack);
@@ -183,6 +187,55 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             default -> RELOAD;
         };
         return animation;
+    }
+
+    private static ItemStack animationStateStack(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        ItemStack liveStack = matchingLiveHeldStack(state, renderStack);
+        return liveStack.isEmpty() ? renderStack : liveStack;
+    }
+
+    private static void clearStaleRenderReloadVisualState(ItemStack renderStack, ItemStack liveStack) {
+        if (renderStack == null || renderStack.isEmpty() || liveStack == null || liveStack.isEmpty() || renderStack == liveStack) {
+            return;
+        }
+        if (liveStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) <= 0
+                && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            clearReloadVisualState(renderStack);
+        }
+    }
+
+    private static ItemStack matchingLiveHeldStack(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.player == null) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack perspectiveStack = heldStackForPerspective(minecraft.player, state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE));
+        if (matchesHeldStack(renderStack, perspectiveStack)) {
+            return perspectiveStack;
+        }
+
+        ItemStack mainHand = minecraft.player.getMainHandItem();
+        if (matchesHeldStack(renderStack, mainHand)) {
+            return mainHand;
+        }
+
+        ItemStack offHand = minecraft.player.getOffhandItem();
+        if (matchesHeldStack(renderStack, offHand)) {
+            return offHand;
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    private static ItemStack heldStackForPerspective(Player player, Object perspective) {
+        if (perspective == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            return player.getMainArm() == HumanoidArm.RIGHT ? player.getMainHandItem() : player.getOffhandItem();
+        }
+        if (perspective == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
+            return player.getMainArm() == HumanoidArm.LEFT ? player.getMainHandItem() : player.getOffhandItem();
+        }
+        return ItemStack.EMPTY;
     }
 
     private static boolean shouldContinueReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
