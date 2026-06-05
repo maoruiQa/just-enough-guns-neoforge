@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.ClientHudRenderer;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.ScopeOverlayRenderer;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay;
@@ -28,6 +29,7 @@ public final class GuiMixin {
         FabricClientBootstrap.renderThrowableEffectOverlay(guiGraphics);
         FabricClientBootstrap.renderOverheatBar(guiGraphics);
         VehicleHudOverlay.renderHud(guiGraphics);
+        MedalManager.render(guiGraphics);
         ClientHudRenderer.render(guiGraphics);
         if (player.getVehicle() instanceof VehicleEntity
                 || player.getMainHandItem().getItem() instanceof GunItem

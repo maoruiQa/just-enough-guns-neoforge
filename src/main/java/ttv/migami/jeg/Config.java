@@ -24,6 +24,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue SHOW_HITMARKER;
     public static final ModConfigSpec.StringValue DYNAMIC_CROSSHAIR_DOT_MODE;
     public static final ModConfigSpec.DoubleValue DYNAMIC_CROSSHAIR_DOT_THRESHOLD;
+    public static final ModConfigSpec.BooleanValue HIDE_ATTACHMENT_CONFIG_BUTTON;
+    public static final ModConfigSpec.StringValue ATTACHMENT_BUTTON_ALIGNMENT;
 
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
@@ -80,6 +82,10 @@ public final class Config {
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
+    public static final ModConfigSpec.BooleanValue UI_HIDE_MEDALS;
+    public static final ModConfigSpec.BooleanValue ALLOW_FLASHLIGHTS;
+    public static final ModConfigSpec.IntValue FLASHLIGHT_DISTANCE;
+    public static final ModConfigSpec.BooleanValue GLOWING_LASER_POINTERS;
     private static final Path CLIENT_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-client.toml");
     private static final Path SERVER_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(Reference.MOD_ID + "-server.toml");
     private static final Map<String, ModConfigSpec.Value<?>> COMMAND_CONFIGS = new LinkedHashMap<>();
@@ -120,6 +126,12 @@ public final class Config {
         DYNAMIC_CROSSHAIR_DOT_THRESHOLD = clientBuilder
                 .comment("Spread threshold where the dynamic crosshair center dot is shown.")
                 .defineInRange("dynamicCrosshairDotThreshold", 0.8D, 0.0D, 90.0D);
+        HIDE_ATTACHMENT_CONFIG_BUTTON = clientBuilder
+                .comment("If true, hide the config button on the attachment screen.")
+                .define("hideAttachmentConfigButton", false);
+        ATTACHMENT_BUTTON_ALIGNMENT = clientBuilder
+                .comment("Attachment-screen button alignment: left or right.")
+                .define("attachmentButtonAlignment", "right");
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
@@ -132,6 +144,21 @@ public final class Config {
         UI_SHOW_HIT_FEEDBACK = serverBuilder
                 .comment("If true, clients display hit feedback markers when bullets hit living entities.")
                 .define("showHitFeedback", true);
+        UI_HIDE_MEDALS = serverBuilder
+                .comment("If true, kill medals are disabled and the attachment-screen medal toggle cannot be changed.")
+                .define("hideMedals", false);
+        serverBuilder.pop();
+
+        serverBuilder.push("attachments");
+        ALLOW_FLASHLIGHTS = serverBuilder
+                .comment("If true, powered flashlight attachments place temporary dynamic light blocks.")
+                .define("allowFlashlights", true);
+        FLASHLIGHT_DISTANCE = serverBuilder
+                .comment("Maximum block distance flashlight attachments can illuminate.")
+                .defineInRange("flashlightDistance", 32, 1, 64);
+        GLOWING_LASER_POINTERS = serverBuilder
+                .comment("If true, laser pointer attachments apply Glowing to aimed-at living entities while ADS is active.")
+                .define("glowingLaserPointers", true);
         serverBuilder.pop();
 
         serverBuilder.push("spawns");
@@ -333,6 +360,10 @@ public final class Config {
 
         registerCommandConfig("ui.showCrosshair", UI_SHOW_CROSSHAIR);
         registerCommandConfig("ui.showHitFeedback", UI_SHOW_HIT_FEEDBACK);
+        registerCommandConfig("ui.hideMedals", UI_HIDE_MEDALS);
+        registerCommandConfig("attachments.allowFlashlights", ALLOW_FLASHLIGHTS);
+        registerCommandConfig("attachments.flashlightDistance", FLASHLIGHT_DISTANCE);
+        registerCommandConfig("attachments.glowingLaserPointers", GLOWING_LASER_POINTERS);
         registerCommandConfig("patrol.enabled", FACTION_PATROL_ENABLED);
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
@@ -511,6 +542,14 @@ public final class Config {
 
     public static boolean blockHitAnimationEnabled() {
         return BLOCK_HIT_ANIMATION_ENABLED.get();
+    }
+
+    public static boolean gunDurabilityEnabled() {
+        return true;
+    }
+
+    public static boolean gunJammingEnabled() {
+        return true;
     }
 
     public static boolean bulletBlockDestructionEnabled() {
@@ -829,6 +868,22 @@ public final class Config {
         return UI_SHOW_HIT_FEEDBACK.get();
     }
 
+    public static boolean hideMedals() {
+        return UI_HIDE_MEDALS.get();
+    }
+
+    public static boolean allowFlashlights() {
+        return ALLOW_FLASHLIGHTS.get();
+    }
+
+    public static int flashlightDistance() {
+        return Mth.clamp(FLASHLIGHT_DISTANCE.get(), 1, 64);
+    }
+
+    public static boolean glowingLaserPointers() {
+        return GLOWING_LASER_POINTERS.get();
+    }
+
     public static boolean legacyBulletTrailEnabled() {
         return LEGACY_BULLET_TRAIL_ENABLED.get();
     }
@@ -855,6 +910,14 @@ public final class Config {
 
     public static double dynamicCrosshairDotThreshold() {
         return Mth.clamp(DYNAMIC_CROSSHAIR_DOT_THRESHOLD.get(), 0.0D, 90.0D);
+    }
+
+    public static boolean hideAttachmentConfigButton() {
+        return HIDE_ATTACHMENT_CONFIG_BUTTON.get();
+    }
+
+    public static boolean leftAttachmentButtons() {
+        return "left".equalsIgnoreCase(ATTACHMENT_BUTTON_ALIGNMENT.get());
     }
 
     private static double clamp01(double value) {

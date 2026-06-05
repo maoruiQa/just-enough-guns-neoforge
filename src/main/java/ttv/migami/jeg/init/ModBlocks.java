@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
 import ttv.migami.jeg.vehicle.block.VehicleChargingStationBlock;
 import ttv.migami.jeg.vehicle.block.VehicleContainerBlock;
@@ -15,6 +16,11 @@ public final class ModBlocks {
     private ModBlocks() {}
 
     public static final DeferredRegister<Block> REGISTER = DeferredRegister.create(Registries.BLOCK, Reference.MOD_ID);
+
+    public static final DeferredHolder<Block, DynamicLightBlock> DYNAMIC_LIGHT = REGISTER.register(
+            "dynamic_light",
+            DynamicLightBlock::new
+    );
 
     public static final DeferredHolder<Block, VehicleContainerBlock> VEHICLE_CONTAINER = REGISTER.register(
             "vehicle_container",

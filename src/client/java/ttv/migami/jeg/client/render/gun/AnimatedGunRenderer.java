@@ -32,6 +32,9 @@ import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
+import ttv.migami.jeg.client.render.gun.layer.GunBayonetAttachmentLayer;
+import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
+import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
@@ -87,6 +90,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
         this.addRenderLayer(new GunBuiltinScopeLayer(this));
+        this.addRenderLayer(new GunScopeAttachmentLayer(this));
+        this.addRenderLayer(new GunBayonetAttachmentLayer(this));
+        this.addRenderLayer(new GunPositionedAttachmentLayer(this));
     }
 
     public ItemDisplayContext currentPerspective() {
@@ -363,7 +369,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         String boneName = bone.getName();
         ItemStack stack = this.getCurrentItemStack();
         if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            GunAttachmentVisibility.apply(gun.getStats().id(), bone);
+            GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
         }
 
