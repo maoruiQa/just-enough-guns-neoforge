@@ -374,7 +374,7 @@ public final class FabricClientBootstrap {
                     applyLocalVisualRecoil(player, gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
-                    forceExitScopedAdsAfterShot(gun);
+                    forceExitScopedAdsAfterShot(heldMain, gun);
                 }
             } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
                 GunItem.clearTriggerLock(heldMain);
@@ -531,9 +531,9 @@ public final class FabricClientBootstrap {
         return gun.getMagazineAmmo(stack) > 0;
     }
 
-    private static void forceExitScopedAdsAfterShot(GunItem gun) {
+    private static void forceExitScopedAdsAfterShot(ItemStack stack, GunItem gun) {
         if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+                && GunScopeSupport.hasTelescopicSight(stack)) {
             AimingHandler.get().suppressUntilUseReleased();
         }
     }
@@ -787,7 +787,7 @@ public final class FabricClientBootstrap {
             applyLocalVisualRecoil(player, gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
-            forceExitScopedAdsAfterShot(gun);
+            forceExitScopedAdsAfterShot(stack, gun);
         }
     }
 

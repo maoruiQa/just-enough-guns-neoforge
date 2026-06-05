@@ -39,8 +39,7 @@ public final class GameRendererMixin {
         }
 
         double current = cir.getReturnValue();
-        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+        if (GunScopeSupport.hasTelescopicSight(held)) {
             cir.setReturnValue(Math.max(0.1D, Mth.lerp(ads, current, 20.0D)));
             return;
         }

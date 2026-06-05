@@ -31,7 +31,6 @@ import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
-import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunBayonetAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
@@ -89,7 +88,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
-        this.addRenderLayer(new GunBuiltinScopeLayer(this));
         this.addRenderLayer(new GunScopeAttachmentLayer(this));
         this.addRenderLayer(new GunBayonetAttachmentLayer(this));
         this.addRenderLayer(new GunPositionedAttachmentLayer(this));
@@ -193,14 +191,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             );
         }
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
-            if (shouldHideScopedFirstPersonGun(gun)) {
+            if (shouldHideScopedFirstPersonGun(stack, gun)) {
                 return;
             }
 
             poseStack.pushPose();
             try {
                 if (!"holy_shotgun".equals(gun.getStats().id().getPath())) {
-                    applyFirstPersonAdsTransform(gun, displayContext, poseStack);
+                    applyFirstPersonAdsTransform(stack, gun, displayContext, poseStack);
                 }
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
@@ -239,13 +237,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
     }
 
-    private static void applyFirstPersonAdsTransform(AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
+    private static void applyFirstPersonAdsTransform(ItemStack stack, AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
         float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
             return;
         }
 
-        ForgeZoomOffset zoom = scopedBoltActionRifle(gun)
+        ForgeZoomOffset zoom = hasTelescopicSight(stack)
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
         if (zoom == null) {
@@ -343,13 +341,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
 
-    private static boolean scopedBoltActionRifle(AnimatedGunItem gun) {
-        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled();
+    private static boolean hasTelescopicSight(ItemStack stack) {
+        return GunScopeSupport.hasTelescopicSight(stack);
     }
 
-    private static boolean shouldHideScopedFirstPersonGun(AnimatedGunItem gun) {
-        return scopedBoltActionRifle(gun) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
+    private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {
+        return hasTelescopicSight(stack) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 
     @Override
