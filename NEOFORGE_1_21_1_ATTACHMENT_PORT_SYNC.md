@@ -160,7 +160,7 @@ Behavior wired so far:
   - Local first-person muzzle flashes are rendered while the animated gun renderer visits the gun model's `attachment_bone`, using the Forge muzzle-flash profile position relative to that bone's pivot so ADS/draw/reload transforms move the flash with the held gun. World-space billboard flashes remain for third-person and other entities.
   - Third-person/world-space muzzle flashes use a stronger forward view-vector correction so the billboard sits at the muzzle instead of the front-middle of the gun body.
   - Muzzle flash UV selection mirrors Forge's forced alternate half for `subsonic_rifle`, `flamethrower`, `supersonic_shotgun`, `hypersonic_cannon`, `soulhunter_mk2`, `blossom_rifle`, and `holy_shotgun`; missing Forge muzzle profiles for `atlantean_spear`, `bubble_cannon`, `vindicator_smg`, and `fire_sweeper` are staged in the profile table.
-- Draw/reload interaction parity is partially wired:
+- Draw/reload interaction parity is wired:
   - Animated guns set a synced `gun_draw_ticks_remaining` component when first held and play the authored `draw` animation while blocking firing/reloading.
   - Draw operation locking remains short and server-authoritative, but the client animation predicate now keeps the visual `draw` sequence alive long enough for authored draw animations to finish instead of letting sprint/idle immediately replace it.
   - The animation predicate now continues already-playing idle and sprint animations instead of resetting the same fallback animation every frame.
@@ -179,6 +179,7 @@ Behavior wired so far:
   - Client draw replay tracks the live held stack identity and continues an already-playing `draw` animation until the controller reports it finished, matching Forge's `IsDrawing || current draw unfinished` predicate instead of relying on a fixed visual timeout.
   - Draw restart requests are consumed before the predicate's normal "continue current draw" branch; otherwise GeckoLib can continue a stale down-tilted draw/reload pose and then snap directly back to idle.
   - Client draw restarts now go through GeckoLib's triggerable `draw` animation after a controller reset instead of only `setAndContinue(DRAW)`. This lets switch-back draw reclaim the controller from a completed-but-still-current `reload,idle` animation after reload cancellation.
+  - Final reload-interruption testing showed visible switch-back draw behavior, and the temporary animation trace logs used to prove `triggerDraw` success were removed from production code.
   - First-person animation controllers reset when the live held animated gun id changes, matching Forge's `lastGunId` controller reset.
   - Interrupted reloads are cancelled on the server as soon as the pending stack leaves the tracked hand/slot, clear stale reload visual components on the original gun stack, and queue a fresh draw for the next time that stack is held.
   - First-person predicates immediately stop stale reload controllers once the live held stack no longer has reload components, so an interrupted reload cannot continue playing visually without completing ammo logic. Draw and melee animations are still allowed to finish before idle takes over.

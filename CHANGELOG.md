@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Added Forge-style gun melee handling on the V key, including flashlight toggles, baseline melee sweeps, sword bayonet damage, and first-person `melee`/`bayonet` animations for animated guns.
+
+### Fixed
+- Fixed interrupted reloads so switching away cancels reload progress and switching back replays the gun draw animation visibly instead of continuing or hiding a stale reload pose.
+- Fixed draw, reload, shoot, sprint, idle, and melee animation priority so first-person GeckoLib controllers recover cleanly after reload cancellation, hotbar switches, and local gunfire.
+- Removed temporary animation and overheat debug logging added during the reload/draw diagnosis pass.
+
+### Documentation
+- Updated the NeoForge 1.21.1 attachment-port sync notes with the final draw/reload replay behavior and triggerable draw controller handoff.
+
 ## 1.6.2 - 2026-05-27
 
 ### Changed
