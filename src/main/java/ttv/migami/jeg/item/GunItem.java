@@ -214,9 +214,26 @@ public class GunItem extends Item {
 
     public record MagazineInventorySummary(int loadedMagazineCount, int emptyMagazineCount) {}
 
-    private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot) {}
+    private record MagazineInventoryScan(int loadedMagazineCount, int emptyMagazineCount, int bestMagazineSlot, int bestMagazineCapacity) {}
 
-    private record PendingReload(InteractionHand hand, int selectedSlot, ItemStack stack, ItemStack stackSnapshot) {}
+    private record PendingReload(
+            InteractionHand hand,
+            int selectedSlot,
+            ItemStack stack,
+            ItemStack stackSnapshot,
+            int magazineSlot,
+            @Nullable ResourceLocation magazineItemId,
+            @Nullable ResourceLocation magazineAmmoId,
+            int magazineAmmoCount
+    ) {}
+
+    private record PendingMagazineSwap(
+            int slot,
+            ResourceLocation magazineItemId,
+            ResourceLocation ammoItemId,
+            int ammoCount,
+            int magazineCapacity
+    ) {}
 
     private record HeldGunState(InteractionHand hand, int selectedSlot, int inventorySlot, int stackIdentity, ItemStack stackSnapshot) {
         private boolean matchesStack(ItemStack stack, int slot) {
@@ -294,7 +311,7 @@ public class GunItem extends Item {
     }
 
     public boolean usesMagazineSwapReload(ItemStack stack) {
-        return usesMagazineSwapReload() && !hasMagazineAttachment(stack);
+        return usesMagazineSwapReload();
     }
 
     public boolean usesLegacyLoadedReload() {
@@ -320,10 +337,6 @@ public class GunItem extends Item {
 
     private boolean isMachineGunMagazineSwap() {
         return "light_machine_gun".equals(stats.id().getPath()) && stats.magazineSize() == 150;
-    }
-
-    private static boolean hasMagazineAttachment(ItemStack stack) {
-        return GunAttachments.id(stack, AttachmentType.MAGAZINE).isPresent();
     }
 
     private int getAmmo(ItemStack stack) {
@@ -1630,6 +1643,10 @@ public class GunItem extends Item {
 
     private int modifiedMagazineSize(ItemStack stack) {
         int baseCapacity = Math.max(0, stats.magazineSize());
+        if (Config.magazineFeedEnabled()) {
+            return usesMagazineSwapReload() ? getLoadedMagazineCapacity(stack, baseCapacity) : baseCapacity;
+        }
+
         double multiplier = GunAttachments.modifiers(stack).magazineCapacityMultiplier();
         if (multiplier <= 1.0D) {
             return baseCapacity;
@@ -1645,6 +1662,16 @@ public class GunItem extends Item {
                     .orElse(baseCapacity);
         }
         return Math.max(baseCapacity, (int) (baseCapacity * multiplier));
+    }
+
+    private int getLoadedMagazineCapacity(ItemStack stack, int fallbackCapacity) {
+        MagazineItem loadedMagazine = getLoadedMagazineItem(stack);
+        if (loadedMagazine != null && isCompatibleMagazine(loadedMagazine)) {
+            return loadedMagazine.getCapacity();
+        }
+
+        MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+        return baseMagazine != null ? baseMagazine.getCapacity() : fallbackCapacity;
     }
 
     private static float getMovementSpreadMultiplier(Player player, GunStats stats) {
@@ -1755,42 +1782,36 @@ public class GunItem extends Item {
         ensureAmmoInitialized(stack);
         int ammo = getAmmo(stack);
         int maxAmmo = modifiedMagazineSize(stack);
-        if (ammo >= maxAmmo) {
+
+        if (player.getAbilities().instabuild) {
+            if (ammo >= maxAmmo) {
+                if (notify) {
+                    HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
+                }
+                return false;
+            }
+            return startPendingReload(level, player, hand, stack, null);
+        }
+
+        PendingMagazineSwap selectedMagazine = findReloadMagazine(player, stack);
+        if (selectedMagazine == null) {
+            if (notify) {
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
+            }
+            return false;
+        }
+
+        if (ammo >= maxAmmo && isSameLoadedMagazineType(stack, selectedMagazine.magazineItemId())) {
             if (notify) {
                 HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.magazine_full"));
             }
             return false;
         }
 
-        if (player.getAbilities().instabuild) {
-            return startPendingReload(level, player, hand, stack);
-        }
-
-        MagazineInventoryScan scan = scanCompatibleMagazines(player, stack);
-        if (scan.bestMagazineSlot() < 0) {
-            if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
-            }
-            return false;
-        }
-
-        ItemStack magazineStack = player.getInventory().getItem(scan.bestMagazineSlot());
-        if (!(magazineStack.getItem() instanceof MagazineItem magazine)) {
-            return false;
-        }
-
-        int newAmmo = magazine.getAmmoCount(magazineStack);
-        if (newAmmo <= 0) {
-            if (notify) {
-                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.no_compatible_magazine"));
-            }
-            return false;
-        }
-
-        return startPendingReload(level, player, hand, stack);
+        return startPendingReload(level, player, hand, stack, selectedMagazine);
     }
 
-    private boolean completeReloadWithMagazineSwap(Level level, Player player, ItemStack stack) {
+    private boolean completeReloadWithMagazineSwap(Level level, Player player, ItemStack stack, @Nullable PendingReload pending) {
         ensureAmmoInitialized(stack);
         int maxAmmo = modifiedMagazineSize(stack);
         if (player.getAbilities().instabuild) {
@@ -1798,31 +1819,41 @@ public class GunItem extends Item {
             return true;
         }
 
-        int ammo = getAmmo(stack);
-        MagazineInventoryScan scan = scanCompatibleMagazines(player, stack);
-        if (scan.bestMagazineSlot() < 0) {
+        if (pending == null || pending.magazineSlot() < 0 || pending.magazineItemId() == null || pending.magazineAmmoId() == null || pending.magazineAmmoCount() <= 0) {
             return false;
         }
 
-        ItemStack magazineStack = player.getInventory().getItem(scan.bestMagazineSlot());
+        ItemStack magazineStack = player.getInventory().getItem(pending.magazineSlot());
         if (!(magazineStack.getItem() instanceof MagazineItem magazine)) {
             return false;
         }
 
-        int newAmmo = magazine.getAmmoCount(magazineStack);
-        if (newAmmo <= 0) {
+        ResourceLocation magazineItemId = BuiltInRegistries.ITEM.getKey(magazineStack.getItem());
+        if (!pending.magazineItemId().equals(magazineItemId) || !isCompatibleMagazine(magazine)) {
             return false;
         }
 
-        int oldMagazineCapacity = magazine.getCapacity();
-        ItemStack oldMagazine = createStoredMagazineStack(ammo);
+        ResourceLocation ammoId = magazine.getAmmoItemId(magazineStack);
+        if (!pending.magazineAmmoId().equals(ammoId)) {
+            return false;
+        }
+
+        int newAmmo = magazine.getAmmoCount(magazineStack);
+        if (newAmmo != pending.magazineAmmoCount() || newAmmo <= 0) {
+            return false;
+        }
+
+        int ammo = getAmmo(stack);
+        ItemStack oldMagazine = createStoredMagazineStack(stack, ammo);
+        int oldMagazineCapacity = oldMagazine.getItem() instanceof MagazineItem oldMagazineItem ? oldMagazineItem.getCapacity() : 0;
         magazineStack.shrink(1);
         if (magazineStack.isEmpty()) {
-            player.getInventory().setItem(scan.bestMagazineSlot(), ItemStack.EMPTY);
+            player.getInventory().setItem(pending.magazineSlot(), ItemStack.EMPTY);
         }
 
         returnStoredMagazine(player, oldMagazine);
         returnExcessStoredAmmo(player, Math.max(0, ammo - oldMagazineCapacity));
+        setLoadedMagazineItem(stack, magazineItemId);
         setAmmo(stack, newAmmo);
         return true;
     }
@@ -1847,7 +1878,7 @@ public class GunItem extends Item {
             return false;
         }
 
-        return startPendingReload(level, player, hand, stack);
+        return startPendingReload(level, player, hand, stack, null);
     }
 
     private boolean completeReloadWithLooseAmmo(Player player, ItemStack stack) {
@@ -1868,13 +1899,22 @@ public class GunItem extends Item {
         return true;
     }
 
-    private boolean startPendingReload(Level level, Player player, InteractionHand hand, ItemStack stack) {
+    private boolean startPendingReload(Level level, Player player, InteractionHand hand, ItemStack stack, @Nullable PendingMagazineSwap pendingMagazine) {
         int reloadTicks = Math.max(1, stats.totalReloadTime());
         playSound(level, player, stats.reloadStartSoundEvent());
-        PENDING_RELOADS.put(player.getUUID(), new PendingReload(hand, player.getInventory().selected, stack, stack.copy()));
+        PENDING_RELOADS.put(player.getUUID(), new PendingReload(
+                hand,
+                player.getInventory().selected,
+                stack,
+                stack.copy(),
+                pendingMagazine != null ? pendingMagazine.slot() : -1,
+                pendingMagazine != null ? pendingMagazine.magazineItemId() : null,
+                pendingMagazine != null ? pendingMagazine.ammoItemId() : null,
+                pendingMagazine != null ? pendingMagazine.ammoCount() : 0
+        ));
 
         if (stack.getItem() instanceof AnimatedGunItem animated) {
-            startReloadVisualState(stack, reloadTicks);
+            startReloadVisualState(stack, reloadTicks, pendingMagazine);
             if ("rocket_launcher".equals(stats.id().getPath())) {
                 return true;
             }
@@ -1889,36 +1929,37 @@ public class GunItem extends Item {
 
     private MagazineInventoryScan scanCompatibleMagazines(Player player, ItemStack stack) {
         if (!usesMagazineSwapReload(stack)) {
-            return new MagazineInventoryScan(0, 0, -1);
+            return new MagazineInventoryScan(0, 0, -1, 0);
         }
         return scanCompatibleMagazines(player);
     }
 
     private MagazineInventoryScan scanCompatibleMagazines(Player player) {
-        MagazineItem compatibleMagazine = getCompatibleMagazineItem();
+        MagazineItem.MagazineType compatibleType = getCompatibleMagazineType();
         ResourceLocation ammoId = getCompatibleAmmoId();
-        if (compatibleMagazine == null || ammoId == null) {
-            return new MagazineInventoryScan(0, 0, -1);
+        if (compatibleType == null || ammoId == null) {
+            return new MagazineInventoryScan(0, 0, -1, 0);
         }
 
         int loadedCount = 0;
         int emptyCount = 0;
         int bestSlot = -1;
         int bestAmmoCount = -1;
+        int bestMagazineCapacity = 0;
 
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack candidate = player.getInventory().getItem(slot);
-            if (!candidate.is(compatibleMagazine)) {
+            if (!(candidate.getItem() instanceof MagazineItem magazine) || !magazine.type().isVariantOf(compatibleType)) {
                 continue;
             }
 
-            int ammoCount = compatibleMagazine.getAmmoCount(candidate);
+            int ammoCount = magazine.getAmmoCount(candidate);
             if (ammoCount <= 0) {
                 emptyCount++;
                 continue;
             }
 
-            ResourceLocation storedAmmoId = compatibleMagazine.getAmmoItemId(candidate);
+            ResourceLocation storedAmmoId = magazine.getAmmoItemId(candidate);
             if (!ammoId.equals(storedAmmoId)) {
                 continue;
             }
@@ -1927,26 +1968,57 @@ public class GunItem extends Item {
             if (ammoCount > bestAmmoCount) {
                 bestAmmoCount = ammoCount;
                 bestSlot = slot;
+                bestMagazineCapacity = magazine.getCapacity();
             }
         }
 
-        return new MagazineInventoryScan(loadedCount, emptyCount, bestSlot);
+        return new MagazineInventoryScan(loadedCount, emptyCount, bestSlot, bestMagazineCapacity);
     }
 
     @Nullable
-    private MagazineItem getCompatibleMagazineItem() {
-        if (!usesMagazineSwapReload()) {
-            return null;
-        }
-        return getCompatibleMagazineItemUnchecked();
-    }
-
-    @Nullable
-    private MagazineItem getCompatibleMagazineItem(ItemStack stack) {
+    private PendingMagazineSwap findReloadMagazine(Player player, ItemStack stack) {
         if (!usesMagazineSwapReload(stack)) {
             return null;
         }
-        return getCompatibleMagazineItemUnchecked();
+
+        MagazineItem.MagazineType compatibleType = getCompatibleMagazineType();
+        ResourceLocation ammoId = getCompatibleAmmoId();
+        if (compatibleType == null || ammoId == null) {
+            return null;
+        }
+
+        boolean preferDifferentType = getAmmo(stack) >= modifiedMagazineSize(stack);
+        PendingMagazineSwap best = null;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack candidate = player.getInventory().getItem(slot);
+            if (!(candidate.getItem() instanceof MagazineItem magazine) || !magazine.type().isVariantOf(compatibleType)) {
+                continue;
+            }
+
+            int ammoCount = magazine.getAmmoCount(candidate);
+            if (ammoCount <= 0 || !ammoId.equals(magazine.getAmmoItemId(candidate))) {
+                continue;
+            }
+
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(candidate.getItem());
+            PendingMagazineSwap swap = new PendingMagazineSwap(slot, itemId, ammoId, ammoCount, magazine.getCapacity());
+            boolean swapDifferentType = !isSameLoadedMagazineType(stack, swap.magazineItemId());
+            boolean bestDifferentType = best != null && !isSameLoadedMagazineType(stack, best.magazineItemId());
+            if (best == null
+                    || (preferDifferentType && swapDifferentType && !bestDifferentType)
+                    || (swapDifferentType == bestDifferentType && swap.ammoCount() > best.ammoCount())) {
+                best = swap;
+            }
+        }
+        return best;
+    }
+
+    @Nullable
+    private MagazineItem.MagazineType getCompatibleMagazineType() {
+        if (!usesMagazineSwapReload()) {
+            return null;
+        }
+        return getCompatibleMagazineTypeUnchecked();
     }
 
     @Nullable
@@ -1970,6 +2042,17 @@ public class GunItem extends Item {
     }
 
     @Nullable
+    private MagazineItem.MagazineType getCompatibleMagazineTypeUnchecked() {
+        MagazineItem magazine = getCompatibleMagazineItemUnchecked();
+        return magazine != null ? magazine.type() : null;
+    }
+
+    private boolean isCompatibleMagazine(MagazineItem magazine) {
+        MagazineItem.MagazineType type = getCompatibleMagazineTypeUnchecked();
+        return type != null && magazine.type().isVariantOf(type);
+    }
+
+    @Nullable
     private ResourceLocation getCompatibleAmmoId() {
         ResourceLocation ammoId = stats.ammoItem();
         if (ammoId == null || ammoId.equals(ResourceLocation.fromNamespaceAndPath("minecraft", "air"))) {
@@ -1978,8 +2061,11 @@ public class GunItem extends Item {
         return ammoId;
     }
 
-    private ItemStack createStoredMagazineStack(int ammoCount) {
-        MagazineItem compatibleMagazine = getCompatibleMagazineItemUnchecked();
+    private ItemStack createStoredMagazineStack(ItemStack gunStack, int ammoCount) {
+        MagazineItem compatibleMagazine = getLoadedMagazineItem(gunStack);
+        if (compatibleMagazine == null || !isCompatibleMagazine(compatibleMagazine)) {
+            compatibleMagazine = getCompatibleMagazineItemUnchecked();
+        }
         if (compatibleMagazine == null) {
             return ItemStack.EMPTY;
         }
@@ -1991,6 +2077,50 @@ public class GunItem extends Item {
         }
         stack.set(ModDataComponents.MAGAZINE_AMMO_COUNT.get(), Mth.clamp(ammoCount, 0, compatibleMagazine.getCapacity()));
         return stack;
+    }
+
+    @Nullable
+    private MagazineItem getLoadedMagazineItem(ItemStack gunStack) {
+        String stored = gunStack.get(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get());
+        if (stored == null || stored.isBlank()) {
+            return null;
+        }
+        ResourceLocation id = ResourceLocation.tryParse(stored);
+        if (id == null) {
+            return null;
+        }
+        Item item = BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+        return item instanceof MagazineItem magazine ? magazine : null;
+    }
+
+    private void setLoadedMagazineItem(ItemStack gunStack, @Nullable ResourceLocation id) {
+        if (id == null || !BuiltInRegistries.ITEM.getOptional(id).map(MagazineItem.class::isInstance).orElse(false)) {
+            gunStack.remove(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get());
+            return;
+        }
+        gunStack.set(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get(), id.toString());
+    }
+
+    private boolean isSameLoadedMagazineType(ItemStack gunStack, ResourceLocation id) {
+        ResourceLocation storedId = getLoadedMagazineItemId(gunStack);
+        if (storedId == null) {
+            MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+            return baseMagazine != null && BuiltInRegistries.ITEM.getKey(baseMagazine).equals(id);
+        }
+        return id.equals(storedId);
+    }
+
+    @Nullable
+    private ResourceLocation getLoadedMagazineItemId(ItemStack gunStack) {
+        String stored = gunStack.get(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get());
+        if (stored == null || stored.isBlank()) {
+            return null;
+        }
+        ResourceLocation id = ResourceLocation.tryParse(stored);
+        if (id == null || !BuiltInRegistries.ITEM.getOptional(id).map(MagazineItem.class::isInstance).orElse(false)) {
+            return null;
+        }
+        return id;
     }
 
     private void returnStoredMagazine(Player player, ItemStack stack) {
@@ -2030,11 +2160,14 @@ public class GunItem extends Item {
         return SEGMENTED_RELOAD_ANIM_IDS.contains(stats.id().getPath());
     }
 
-    private void startReloadVisualState(ItemStack stack, int reloadTicks) {
+    private void startReloadVisualState(ItemStack stack, int reloadTicks, @Nullable PendingMagazineSwap pendingMagazine) {
         int totalTicks = Math.max(1, getReloadVisualTicks(reloadTicks));
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), totalTicks);
         stack.set(ModDataComponents.GUN_RELOAD_STAGE.get(), usesSegmentedReloadAnimation() ? RELOAD_STAGE_START : RELOAD_STAGE_NONE);
+        if (usesMagazineSwapReload(stack)) {
+            setReloadMagazineVisuals(stack, pendingMagazine);
+        }
     }
 
     private void updateReloadVisualState(Level level, Player player, ItemStack stack, int slot, boolean held) {
@@ -2101,9 +2234,9 @@ public class GunItem extends Item {
     }
 
     private void completePendingReload(Level level, Player player, ItemStack stack) {
-        PENDING_RELOADS.remove(player.getUUID());
+        PendingReload pending = PENDING_RELOADS.remove(player.getUUID());
         if (usesMagazineSwapReload(stack)) {
-            completeReloadWithMagazineSwap(level, player, stack);
+            completeReloadWithMagazineSwap(level, player, stack, pending);
         } else {
             completeReloadWithLooseAmmo(player, stack);
         }
@@ -2357,6 +2490,30 @@ public class GunItem extends Item {
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
         stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get());
+    }
+
+    private void setReloadMagazineVisuals(ItemStack stack, @Nullable PendingMagazineSwap pendingMagazine) {
+        ResourceLocation from = getLoadedMagazineItemId(stack);
+        if (from == null) {
+            MagazineItem baseMagazine = getCompatibleMagazineItemUnchecked();
+            if (baseMagazine != null) {
+                from = BuiltInRegistries.ITEM.getKey(baseMagazine);
+            }
+        }
+
+        ResourceLocation to = pendingMagazine != null ? pendingMagazine.magazineItemId() : from;
+        setReloadMagazineVisual(stack, ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get(), from);
+        setReloadMagazineVisual(stack, ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get(), to);
+    }
+
+    private static void setReloadMagazineVisual(ItemStack stack, net.minecraft.core.component.DataComponentType<String> component, @Nullable ResourceLocation id) {
+        if (id == null) {
+            stack.remove(component);
+            return;
+        }
+        stack.set(component, id.toString());
     }
 
     private static void clearDrawState(ItemStack stack) {

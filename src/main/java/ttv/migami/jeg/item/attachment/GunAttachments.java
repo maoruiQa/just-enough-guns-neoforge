@@ -21,6 +21,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.item.AttachmentItem;
@@ -30,6 +31,10 @@ public final class GunAttachments {
     public static final int FLASHLIGHT_MAX_BATTERY = 600;
     private static final ResourceLocation EXPLOSIVE_MUZZLE = Reference.id("explosive_muzzle");
     private static final ResourceLocation MAKESHIFT_STOCK = Reference.id("makeshift_stock");
+    private static final Set<ResourceLocation> MAGAZINE_CAPACITY_ATTACHMENTS = Set.of(
+            Reference.id("extended_mag"),
+            Reference.id("drum_mag")
+    );
     private static final Set<ResourceLocation> MAKESHIFT_STOCK_GUNS = Set.of(
             Reference.id("assault_rifle"),
             Reference.id("custom_smg"),
@@ -248,10 +253,18 @@ public final class GunAttachments {
         if (!GunAttachmentRules.canAttach(gunStack, type)) {
             return false;
         }
+        if (type == AttachmentType.MAGAZINE && Config.magazineFeedEnabled() && isMagazineCapacityAttachment(item)) {
+            return false;
+        }
         if (item instanceof AttachmentItem attachment) {
             return attachment.type() == type && attachment.canAttachTo(gunStack);
         }
         return isPseudoAttachmentStack(type, attachmentStack);
+    }
+
+    private static boolean isMagazineCapacityAttachment(Item item) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        return id != null && MAGAZINE_CAPACITY_ATTACHMENTS.contains(id);
     }
 
     public static boolean canUseAttachmentSlot(ItemStack gunStack, AttachmentType type) {

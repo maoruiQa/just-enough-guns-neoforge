@@ -113,6 +113,30 @@ public final class ModDataComponents {
                     .build()
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_LOADED_MAGAZINE_ITEM = REGISTER.register(
+            "gun_loaded_magazine_item",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_RELOAD_FROM_MAGAZINE_ITEM = REGISTER.register(
+            "gun_reload_from_magazine_item",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_RELOAD_TO_MAGAZINE_ITEM = REGISTER.register(
+            "gun_reload_to_magazine_item",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_SCOPE_ATTACHMENT = attachmentComponent("gun_scope_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_BARREL_ATTACHMENT = attachmentComponent("gun_barrel_attachment");
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GUN_STOCK_ATTACHMENT = attachmentComponent("gun_stock_attachment");

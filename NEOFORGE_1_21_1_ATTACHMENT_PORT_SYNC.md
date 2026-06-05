@@ -100,7 +100,16 @@ Behavior wired so far:
 - Magazine capacity modifiers are applied to loaded gun capacity, reload limits, tooltips, and the ammo HUD:
   - `extended_mag` uses Forge parity behavior: +50% capacity, with `infantry_rifle` forced to 20.
   - `drum_mag` uses Forge parity behavior: +100% capacity, with `infantry_rifle` forced to 40.
-  - The separate NeoForge loaded `MagazineItem` ammo containers keep their existing fixed capacities and do not need extended/drum variants. When a gun has a magazine attachment installed, reloads use the Forge-style loose-ammo path so the gun can fill to the attachment-modified capacity; guns without a magazine attachment keep the existing NeoForge magazine-swap reload path and HUD reserve display.
+  - When `combat.magazineFeed` is disabled, these attachment modifiers keep the Forge-style loose-ammo capacity path.
+  - When `combat.magazineFeed` is enabled, `extended_mag` and `drum_mag` can no longer be installed as gun attachments, and existing stored capacity attachments are ignored for capacity/reload routing so they cannot bypass magazine-fed reloads.
+  - Magazine-fed capacity upgrades are represented as loaded `MagazineItem` variants instead:
+    - `rifle_extended_magazine`: 45 rounds; `rifle_drum_magazine`: 60 rounds.
+    - `smg_extended_magazine`: 48 rounds; `smg_drum_magazine`: 64 rounds.
+    - `shotgun_extended_magazine`: 12 rounds; `shotgun_drum_magazine`: 16 rounds.
+  - Guns now store the currently loaded magazine item id in `gun_loaded_magazine_item`; magazine-fed reloads scan same-family base/extended/drum magazines and return the previously loaded magazine type on swap.
+  - Reload start records the selected inventory slot, magazine item id, ammo item id, and ammo count. Reload completion only consumes that exact magazine if it is still present and unchanged; it no longer re-scans inventory after the animation finishes.
+  - Magazine-fed guns can replace a full current magazine with a different same-family magazine type, such as swapping a full drum to a normal magazine. Same-type full reload attempts still return `magazine_full`.
+  - During reload, `gun_reload_from_magazine_item` and `gun_reload_to_magazine_item` store the old and new magazine item ids for model visibility. Creative magazine reloads without an inventory magazine keep the current loaded magazine visual, falling back to the base magazine when no loaded-magazine record exists.
 - Barrel attachment fire side effects are partially wired:
   - `trumpet` plays `item.doot` after firing.
   - `explosive_muzzle` plays the fire-charge sound after firing and consumes 5 gun durability per shot.
@@ -187,6 +196,11 @@ Behavior wired so far:
 - Attachment renderer visibility has initial magazine coverage:
   - Default mag bones (`default_mag`, `default_mag_2`) stay visible until an extended/drum magazine attachment is installed.
   - Installed extended/drum magazine attachments reveal both the primary and secondary model bones where the copied gun models provide dual-mag variants.
+- With `combat.magazineFeed` enabled, magazine model visibility comes from loaded/reloading magazine item components instead of the old `extended_mag` and `drum_mag` attachment ids.
+  - Non-reloading guns resolve `gun_loaded_magazine_item`, falling back to the base magazine.
+  - Reloading guns show `gun_reload_from_magazine_item` during the first half of reload progress and `gun_reload_to_magazine_item` during the second half.
+  - The visibility resolver covers `default_mag/default_mag_2`, `extended_mag/extended_mag_2/extended_magazine`, `drum_mag/drum_mag_2/drum_magazine`, plus `magazine_default/magazine_extended/magazine_drum` and `mag_default/mag_extended/mag_drum`.
+  - With `combat.magazineFeed` disabled, the old attachment-driven extended/drum magazine visibility remains in effect.
   - Guns whose copied Geo model only has a baked `makeshift_stock` stock visual (`abstract_gun`, `assault_rifle`, `custom_smg`, `double_barrel_shotgun`, `phantom_smg`, `pump_shotgun`, `revolver`, and `semi_auto_rifle`) reveal that stock visual only when `makeshift_stock` is installed. Guns with dedicated `light_stock`, `tactical_stock`, and `weighted_stock` bones still reveal only the matching installed stock.
 - Attachment bone visibility preserves authored base rails such as `service_rifle`'s `railing` while still hiding unsupported generic rail bones by default.
 - Light machine gun render visibility now mirrors Forge's `bullet_1` through `bullet_7` bone thresholds by hiding exposed bullet bones above the current synced `gun_ammo` count.

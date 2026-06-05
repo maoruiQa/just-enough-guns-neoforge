@@ -97,13 +97,37 @@ public final class ModItems {
             "smg_magazine",
             () -> new MagazineItem(baseProperties(Reference.id("smg_magazine")).stacksTo(1), MagazineItem.MagazineType.SMG)
     );
+    public static final DeferredHolder<Item, MagazineItem> SMG_EXTENDED_MAGAZINE = REGISTER.register(
+            "smg_extended_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("smg_extended_magazine")).stacksTo(1), MagazineItem.MagazineType.SMG_EXTENDED)
+    );
+    public static final DeferredHolder<Item, MagazineItem> SMG_DRUM_MAGAZINE = REGISTER.register(
+            "smg_drum_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("smg_drum_magazine")).stacksTo(1), MagazineItem.MagazineType.SMG_DRUM)
+    );
     public static final DeferredHolder<Item, MagazineItem> RIFLE_MAGAZINE = REGISTER.register(
             "rifle_magazine",
             () -> new MagazineItem(baseProperties(Reference.id("rifle_magazine")).stacksTo(1), MagazineItem.MagazineType.RIFLE)
     );
+    public static final DeferredHolder<Item, MagazineItem> RIFLE_EXTENDED_MAGAZINE = REGISTER.register(
+            "rifle_extended_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("rifle_extended_magazine")).stacksTo(1), MagazineItem.MagazineType.RIFLE_EXTENDED)
+    );
+    public static final DeferredHolder<Item, MagazineItem> RIFLE_DRUM_MAGAZINE = REGISTER.register(
+            "rifle_drum_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("rifle_drum_magazine")).stacksTo(1), MagazineItem.MagazineType.RIFLE_DRUM)
+    );
     public static final DeferredHolder<Item, MagazineItem> SHOTGUN_MAGAZINE = REGISTER.register(
             "shotgun_magazine",
             () -> new MagazineItem(baseProperties(Reference.id("shotgun_magazine")).stacksTo(1), MagazineItem.MagazineType.SHOTGUN)
+    );
+    public static final DeferredHolder<Item, MagazineItem> SHOTGUN_EXTENDED_MAGAZINE = REGISTER.register(
+            "shotgun_extended_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("shotgun_extended_magazine")).stacksTo(1), MagazineItem.MagazineType.SHOTGUN_EXTENDED)
+    );
+    public static final DeferredHolder<Item, MagazineItem> SHOTGUN_DRUM_MAGAZINE = REGISTER.register(
+            "shotgun_drum_magazine",
+            () -> new MagazineItem(baseProperties(Reference.id("shotgun_drum_magazine")).stacksTo(1), MagazineItem.MagazineType.SHOTGUN_DRUM)
     );
     public static final DeferredHolder<Item, MagazineItem> MACHINE_GUN_MAGAZINE = REGISTER.register(
             "machine_gun_magazine",
@@ -508,11 +532,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        addMagazineRecipes(keys);
         ATTACHMENTS.keySet().forEach(id -> keys.add(ResourceKey.create(Registries.RECIPE, id)));
         addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
@@ -560,11 +580,7 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("enhanced_coolant")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("missile_engine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
-        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
+        addMagazineRecipes(keys);
         ATTACHMENTS.keySet().forEach(id -> keys.add(ResourceKey.create(Registries.RECIPE, id)));
         addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
@@ -573,6 +589,20 @@ public final class ModItems {
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
         return List.copyOf(keys);
+    }
+
+    private static void addMagazineRecipes(java.util.List<ResourceKey<Recipe<?>>> keys) {
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("pistol_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_extended_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("smg_drum_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_extended_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("rifle_drum_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_extended_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("shotgun_drum_magazine")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("machine_gun_magazine")));
     }
 
     public static boolean isDisabledGunId(ResourceLocation id) {
@@ -626,8 +656,14 @@ public final class ModItems {
             event.accept(MISSILE_ENGINE.get());
             event.accept(PISTOL_MAGAZINE.get());
             event.accept(SMG_MAGAZINE.get());
+            event.accept(SMG_EXTENDED_MAGAZINE.get());
+            event.accept(SMG_DRUM_MAGAZINE.get());
             event.accept(RIFLE_MAGAZINE.get());
+            event.accept(RIFLE_EXTENDED_MAGAZINE.get());
+            event.accept(RIFLE_DRUM_MAGAZINE.get());
             event.accept(SHOTGUN_MAGAZINE.get());
+            event.accept(SHOTGUN_EXTENDED_MAGAZINE.get());
+            event.accept(SHOTGUN_DRUM_MAGAZINE.get());
             event.accept(MACHINE_GUN_MAGAZINE.get());
             ATTACHMENTS.values().forEach(holder -> event.accept(holder.get()));
             event.accept(CLASSIC_SPRAY_CAN.get());
