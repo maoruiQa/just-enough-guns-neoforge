@@ -3,8 +3,8 @@ package ttv.migami.jeg.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunMouseSensitivityHandler {
@@ -23,8 +23,8 @@ public final class GunMouseSensitivityHandler {
         if (player == null || !minecraft.options.getCameraType().isFirstPerson()) {
             return 0.0F;
         }
-        if (!(player.getMainHandItem().getItem() instanceof GunItem gun)
-                || !Reference.id("bolt_action_rifle").equals(gun.getStats().id())) {
+        if (!(player.getMainHandItem().getItem() instanceof GunItem)
+                || !GunScopeSupport.hasTelescopicSight(player.getMainHandItem())) {
             return 0.0F;
         }
         return AimingHandler.get().getNormalisedAdsProgress();

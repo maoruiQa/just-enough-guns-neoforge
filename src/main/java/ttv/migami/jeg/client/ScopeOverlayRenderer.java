@@ -15,7 +15,6 @@ import ttv.migami.jeg.item.GunItem;
 
 public final class ScopeOverlayRenderer {
     private static final Identifier SCOPE_OVERLAY = Reference.id("textures/scope_long_overlay.png");
-    private static final Identifier BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
     private static final int TEXTURE_SIZE = 256;
 
     private ScopeOverlayRenderer() {
@@ -29,9 +28,8 @@ public final class ScopeOverlayRenderer {
         }
 
         ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem gun)
-                || !BOLT_ACTION_RIFLE.equals(gun.getStats().id())
-                || !GunScopeSupport.isBoltActionRifleScopeEnabled()) {
+        if (!(stack.getItem() instanceof GunItem)
+                || !GunScopeSupport.hasTelescopicSight(stack)) {
             return;
         }
 

@@ -32,7 +32,6 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.layer.GunAttachmentLayer;
-import ttv.migami.jeg.client.render.gun.layer.GunBuiltinScopeLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -88,7 +87,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
-        this.withRenderLayer(new GunBuiltinScopeLayer(this));
         this.withRenderLayer(new GunAttachmentLayer(this));
         // Render player-skin arms in first-person, driven by GeckoLib arm bones in the gun animations.
         this.withRenderLayer(new GunFirstPersonArmsLayer(this));
@@ -357,8 +355,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return false;
         }
 
-        return Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled()
+        ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
+        return GunScopeSupport.hasTelescopicSight(stack)
                 && AimingHandler.get().getNormalisedAdsProgress() > 0.5F;
     }
 
