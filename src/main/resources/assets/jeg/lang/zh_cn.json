@@ -37,5 +37,9 @@
   "subtitle.jeg.vehicle.lock_warning": "导弹锁定告警",
   "subtitle.jeg.vehicle.locking_warning": "导弹搜索告警",
   "subtitle.jeg.vehicle.locked_warning": "导弹锁定告警",
-  "subtitle.jeg.vehicle.missile_warning": "导弹来袭告警"
+  "subtitle.jeg.vehicle.missile_warning": "导弹来袭告警",
+  "info.jeg.open_attachments_z": "按 Z 打开装配界面",
+  "info.jeg.attachment_item": "配件",
+  "info.jeg.attachment_drum_mag_magazine_feed_disabled": "开启弹夹供弹的服务器不可用",
+  "perk.jeg.armor_piercing.negative": "降低穿甲能力"
 }

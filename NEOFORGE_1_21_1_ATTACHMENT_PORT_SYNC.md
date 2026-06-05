@@ -116,6 +116,8 @@ Behavior wired so far:
 - `explosive_muzzle` marks spawned bullets as explosive ammo and adds Forge-style wood/stone block break chances on block impact:
   - Wood chance: `0.1 / (destroySpeed + 1)`.
   - Stone chance: `0.05 / (destroySpeed + 1)`.
+  - Direct entity hits now restore Forge 1.20.1's explosive-muzzle burn behavior and ignite hurt living targets for 2 seconds.
+  - For balance, explosive-muzzle bullets apply a 0.75x armor-piercing multiplier; gun and attachment tooltips expose the reduced armor-piercing tradeoff.
   - Block breaking is gated by the existing NeoForge `Config.bulletBlockDestructionEnabled()` toggle instead of porting Forge's separate griefing config keys.
   - Non-player shooters still respect `mobGriefing`.
 - Dynamic-light infrastructure is registered for attachment flashlights:
@@ -176,9 +178,12 @@ Behavior wired so far:
   - Non-first-person item render perspectives stop the GeckoLib gun animation predicate, and third-person render entry points explicitly stop the item controller and clear snapshots, so third-person gun renders keep the static Geo pose and do not play draw, reload, shoot, sprint, or idle animations.
   - Reload requests now start a pending reload instead of immediately consuming ammo or swapping magazines.
   - Loaded ammo or magazine swap state is applied only when the reload visual timer completes.
+  - Reload visual timers now use authored GeckoLib clip lengths as minimum durations when those clips are longer than `GunStats.totalReloadTime()`, so the predicate keeps `gun_reload_ticks_remaining` alive until the visible reload can finish.
+  - Single-clip reloads use per-gun authored `reload` lengths as minimum visual durations; segmented reloads use authored `reload_start` and `reload_stop` lengths as minimum stage windows.
   - Switching the held hand or main-hand hotbar slot during reload cancels pending progress and clears reload visual components.
   - The client advances its own reload visual timer and segmented reload stage while the gun remains held, but it still does not apply ammo or magazine state. This keeps GeckoLib from waiting on delayed item-stack component sync after the server-side reload has already finished.
   - The client now tracks normal held-gun transitions separately from the logical server draw lock. Any non-reloading gun that becomes held again gets an immediate local GeckoLib `draw` restart, covering ordinary switch-back cases as well as guns that were just reloaded and not fired.
+  - Sprinting in first person can interrupt a lingering `draw` animation window, so switching to a gun and immediately sprinting reaches the authored sprint animation without needing to fire first.
   - Reload cancellation now queues a fresh draw animation and preserves that queued draw while the interrupted stack is not held, but it does not start the local GeckoLib draw window at cancellation time. This keeps the draw window from expiring while the player is holding another item.
   - The queued reload-cancel draw is tracked separately on the logical server and client; the client consumes its own queue only when the interrupted stack becomes held again, then strips the stale `gun_reload_ticks_*` visual components and force-resets the controller so GeckoLib restarts `draw` at switch-back time.
   - The client also tracks main-hand hotbar slot changes on client tick and starts the local draw window immediately when the newly selected stack is an animated gun, instead of waiting for the next item `inventoryTick` or server component sync. This detector intentionally keys on selected slot changes only, so ammo, heat, durability, trigger-lock, or attachment component updates during normal gun use cannot restart `draw` and suppress shoot/reload animations.

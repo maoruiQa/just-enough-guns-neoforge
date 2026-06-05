@@ -119,6 +119,7 @@ public class BulletEntity extends Projectile {
     private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
     private static final float EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE = 0.1F;
     private static final float EXPLOSIVE_MUZZLE_STONE_BREAK_CHANCE = 0.05F;
+    private static final float EXPLOSIVE_MUZZLE_ARMOR_PIERCING_MULTIPLIER = 0.75F;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
@@ -460,6 +461,9 @@ public class BulletEntity extends Projectile {
                 damage = applyBallisticArmor(living, result, damage, stats, false);
 
                 boolean hurt = living.hurt(source, damage);
+                if (hurt && this.entityData.get(DATA_EXPLOSIVE_AMMO)) {
+                    living.igniteForSeconds(2);
+                }
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
                     NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
                     applyKillEffect(living, result);
@@ -670,7 +674,8 @@ public class BulletEntity extends Projectile {
             return rawDamage;
         }
 
-        BallisticProtection.BallisticResult result = BallisticProtection.applyToArmorHit(rawDamage, stats, stack, slot, rocketDirectHit);
+        float armorPiercingMultiplier = this.entityData.get(DATA_EXPLOSIVE_AMMO) ? EXPLOSIVE_MUZZLE_ARMOR_PIERCING_MULTIPLIER : 1.0F;
+        BallisticProtection.BallisticResult result = BallisticProtection.applyToArmorHit(rawDamage, stats, stack, slot, rocketDirectHit, armorPiercingMultiplier);
         if (result.durabilityDamage() > 0) {
             stack.hurtAndBreak(result.durabilityDamage(), target, slot);
         }

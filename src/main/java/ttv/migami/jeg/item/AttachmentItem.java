@@ -13,6 +13,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachmentRules;
+import ttv.migami.jeg.Reference;
 
 public class AttachmentItem extends Item {
     private final AttachmentType type;
@@ -38,6 +39,11 @@ public class AttachmentItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.translatable("info.jeg.attachment_item").withStyle(ChatFormatting.YELLOW));
+        if (this.type == AttachmentType.MAGAZINE && Reference.id("drum_mag").equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()))) {
+            tooltip.add(Component.translatable("info.jeg.attachment_drum_mag_magazine_feed_disabled").withStyle(ChatFormatting.YELLOW));
+        }
+
         List<Component> perks = new ArrayList<>();
         if (this.modifiers.silenced()) {
             addPerk(perks, true, "perk.jeg.silenced.positive");
@@ -49,6 +55,7 @@ public class AttachmentItem extends Item {
         }
         if (this.modifiers.explosiveAmmo()) {
             addPerk(perks, true, "perk.jeg.explosive_ammo.positive");
+            addPerk(perks, false, "perk.jeg.armor_piercing.negative");
         }
         if (this.modifiers.flashlight()) {
             addPerk(perks, true, "perk.jeg.flashlight.positive");

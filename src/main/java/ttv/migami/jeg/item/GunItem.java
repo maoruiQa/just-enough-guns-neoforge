@@ -126,6 +126,55 @@ public class GunItem extends Item {
     private static final int ROCKET_RELOAD_START_TICKS = 46;
     private static final int ROCKET_RELOAD_LOOP_TICKS = 29;
     private static final int ROCKET_RELOAD_STOP_TICKS = 38;
+    private static final Map<String, Integer> RELOAD_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("abstract_gun", 70),
+            Map.entry("assault_rifle", 70),
+            Map.entry("blossom_rifle", 96),
+            Map.entry("burst_rifle", 51),
+            Map.entry("combat_pistol", 79),
+            Map.entry("combat_rifle", 51),
+            Map.entry("custom_smg", 60),
+            Map.entry("flamethrower", 205),
+            Map.entry("hollenfire_mk2", 120),
+            Map.entry("hypersonic_cannon", 90),
+            Map.entry("infantry_rifle", 57),
+            Map.entry("light_machine_gun", 130),
+            Map.entry("minigun", 43),
+            Map.entry("phantom_smg", 60),
+            Map.entry("semi_auto_pistol", 79),
+            Map.entry("semi_auto_rifle", 60),
+            Map.entry("service_rifle", 51),
+            Map.entry("soulhunter_mk2", 130),
+            Map.entry("subsonic_rifle", 52),
+            Map.entry("waterpipe_shotgun", 56)
+    );
+    private static final Map<String, Integer> RELOAD_START_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("bolt_action_rifle", 20),
+            Map.entry("double_barrel_shotgun", 38),
+            Map.entry("flare_gun", 21),
+            Map.entry("grenade_launcher", 40),
+            Map.entry("holy_shotgun", 10),
+            Map.entry("pump_shotgun", 10),
+            Map.entry("python", 43),
+            Map.entry("repeating_shotgun", 12),
+            Map.entry("revolver", 43),
+            Map.entry("rocket_launcher", ROCKET_RELOAD_START_TICKS),
+            Map.entry("supersonic_shotgun", 10),
+            Map.entry("typhoonee", ROCKET_RELOAD_START_TICKS)
+    );
+    private static final Map<String, Integer> RELOAD_STOP_ANIMATION_MIN_TICKS = Map.ofEntries(
+            Map.entry("bolt_action_rifle", 22),
+            Map.entry("double_barrel_shotgun", 16),
+            Map.entry("flare_gun", 15),
+            Map.entry("holy_shotgun", 20),
+            Map.entry("pump_shotgun", 20),
+            Map.entry("python", 15),
+            Map.entry("repeating_shotgun", 29),
+            Map.entry("revolver", 15),
+            Map.entry("rocket_launcher", ROCKET_RELOAD_STOP_TICKS),
+            Map.entry("supersonic_shotgun", 20),
+            Map.entry("typhoonee", ROCKET_RELOAD_STOP_TICKS)
+    );
     private static final int SPREAD_THRESHOLD_MS = 300;
     private static final int SPREAD_MAX_COUNT = 10;
     private static final int WATER_COOL_DURATION_TICKS = 60;
@@ -2465,14 +2514,16 @@ public class GunItem extends Item {
         if ("rocket_launcher".equals(stats.id().getPath())) {
             return ROCKET_RELOAD_START_TICKS;
         }
-        return Mth.clamp(totalTicks / 4, 4, 12);
+        int defaultTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        return Math.max(defaultTicks, RELOAD_START_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), defaultTicks));
     }
 
     private int getSegmentedReloadStopTicks(int totalTicks) {
         if ("rocket_launcher".equals(stats.id().getPath())) {
             return ROCKET_RELOAD_STOP_TICKS;
         }
-        return Mth.clamp(totalTicks / 4, 4, 12);
+        int defaultTicks = Mth.clamp(totalTicks / 4, 4, 12);
+        return Math.max(defaultTicks, RELOAD_STOP_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), defaultTicks));
     }
 
     private int getReloadVisualTicks(int reloadTicks) {
@@ -2480,7 +2531,13 @@ public class GunItem extends Item {
             int minVisualTicks = ROCKET_RELOAD_START_TICKS + ROCKET_RELOAD_LOOP_TICKS + ROCKET_RELOAD_STOP_TICKS;
             return Math.max(reloadTicks, minVisualTicks);
         }
-        return reloadTicks;
+        if (usesSegmentedReloadAnimation()) {
+            String gunId = stats.id().getPath();
+            int minVisualTicks = RELOAD_START_ANIMATION_MIN_TICKS.getOrDefault(gunId, 0)
+                    + RELOAD_STOP_ANIMATION_MIN_TICKS.getOrDefault(gunId, 0);
+            return Math.max(reloadTicks, minVisualTicks);
+        }
+        return Math.max(reloadTicks, RELOAD_ANIMATION_MIN_TICKS.getOrDefault(stats.id().getPath(), reloadTicks));
     }
 
     private static void clearReloadVisualState(ItemStack stack) {
@@ -2723,8 +2780,12 @@ public class GunItem extends Item {
             tooltip.add(Component.translatable("info.jeg.ammo_type", ammoName));
         }
 
-        float armorPiercing = BallisticProtection.effectiveArmorPiercing(this.stats, BallisticProtection.isRocketDirectHit(this.stats));
-        tooltip.add(Component.literal("Armor Piercing: " + String.format(Locale.US, "%.2f", armorPiercing)));
+        float armorPiercing = BallisticProtection.effectiveArmorPiercing(
+                this.stats,
+                BallisticProtection.isRocketDirectHit(this.stats),
+                modifiers.explosiveAmmo() ? 0.75F : 1.0F
+        );
+        tooltip.add(Component.translatable("info.jeg.armor_piercing", String.format(Locale.US, "%.2f", armorPiercing)));
 
         double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
         if (effectiveRange > 0.0D) {
@@ -2735,6 +2796,7 @@ public class GunItem extends Item {
         if (stats.projectileAmount() > 1) {
             tooltip.add(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
         }
+        tooltip.add(Component.translatable("info.jeg.open_attachments_z").withStyle(ChatFormatting.YELLOW));
     }
 
     private static void addClientDryFireRecoil(float recoilAmount) {

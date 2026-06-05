@@ -187,6 +187,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
+        if (isSprintingFirstPerson(stack)) {
+            clearRecentDrawAnimation();
+            return null;
+        }
         if (hasRecentDrawAnimation(stack)) {
             return DRAW;
         }
@@ -370,6 +374,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (!hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW) || stack == null || stack.isEmpty()) {
             return false;
         }
+        if (isSprintingFirstPerson(stack)) {
+            clearRecentDrawAnimation();
+            controller.forceAnimationReset();
+            controller.stop();
+            return false;
+        }
         boolean drawActive = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
                 || hasRecentDrawAnimation(stack);
         if (drawActive && !controller.hasAnimationFinished() && !AimingHandler.get().isAiming()) {
@@ -377,6 +387,20 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         clearRecentDrawAnimation();
         return false;
+    }
+
+    private static boolean isSprintingFirstPerson(ItemStack stack) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.player == null || !minecraft.options.getCameraType().isFirstPerson()) {
+            return false;
+        }
+        if (!minecraft.player.isSprinting() || AimingHandler.get().isAiming()) {
+            return false;
+        }
+        if (!(stack.getItem() instanceof AnimatedGunItem gun)) {
+            return false;
+        }
+        return GunPoseProfile.forGun(gun.getStats().id()).canApplySprintingAnimation();
     }
 
     private static boolean shouldContinueMeleeAnimation(AnimationController<AnimatedGunItem> controller) {
