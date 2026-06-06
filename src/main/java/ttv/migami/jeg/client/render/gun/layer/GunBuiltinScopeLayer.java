@@ -50,6 +50,7 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            bone.translateAwayFromPivotPoint(passInfo.poseStack());
             BakedGeoModel bakedModel = scopeModel.getBakedModel(Reference.id("item/attachment/combat_scope"));
             collector.submitCustomGeometry(
                     passInfo.poseStack(),

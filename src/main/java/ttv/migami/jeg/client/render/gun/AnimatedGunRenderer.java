@@ -36,6 +36,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static volatile boolean VANILLA_FALLBACK_DISABLED = false;
     private static final double THIRD_PERSON_ANIMATED_Y_CORRECTION = -8.75D / 16.0D;
     private static final double THIRD_PERSON_MINIGUN_FORWARD_CORRECTION = 1.4D;
+    private static final double THIRD_PERSON_MINIGUN_UP_CORRECTION = 1.25D;
     private static final float ATTACHMENT_PREVIEW_X_ROT = 5.0F;
     private static final float ATTACHMENT_PREVIEW_Y_ROT_SPEED = 1.0F;
 
@@ -471,7 +472,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {
         if ("minigun".equals(gunPath)) {
-            poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION - 0.3D, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
+            poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION + THIRD_PERSON_MINIGUN_UP_CORRECTION, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
             return;
         }

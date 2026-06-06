@@ -108,6 +108,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            bone.translateAwayFromPivotPoint(passInfo.poseStack());
             for (AttachmentType type : POSITIONED_TYPES) {
                 renderAttachment(type, passInfo, collector);
             }
