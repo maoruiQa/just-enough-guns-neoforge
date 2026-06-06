@@ -41,18 +41,24 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final Identifier MONOCLE_SIGHT = Reference.id("monocle_sight");
     private static final Identifier HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
     private static final Identifier COMBAT_SCOPE = Reference.id("combat_scope");
+    private static final Identifier TELESCOPIC_SIGHT = Reference.id("telescopic_sight");
+    private static final Identifier SPYGLASS = Identifier.withDefaultNamespace("spyglass");
     private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
             Reference.id("combat_rifle"), Map.of(
                     REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D)
+                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    SPYGLASS, zoom(0.0D, 0.35D, 0.0D)
             ),
             Reference.id("service_rifle"), Map.of(
                     REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D)
+                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    SPYGLASS, zoom(0.0D, 0.35D, 0.0D)
             )
     );
     private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
@@ -254,8 +260,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
         if (!telescopicSight) {
-            zoom = withAttachmentAdsOffset(stack, gunId, zoom, GunAttachments.modifiers(stack));
+            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
         }
+        zoom = withRifleScopeAdsCorrection(stack, gunId, zoom);
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
         double translateZ = FIRST_PERSON_TRANSLATE_Z;
@@ -297,17 +304,16 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         );
     }
 
-    private static ForgeZoomOffset withAttachmentAdsOffset(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
-        ForgeZoomOffset result = withAttachmentAdsOffset(zoom, modifiers);
+    private static ForgeZoomOffset withRifleScopeAdsCorrection(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom) {
         Identifier scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
         if (scopeId == null) {
-            return result;
+            return zoom;
         }
         ForgeZoomOffset correction = RIFLE_SCOPE_ADS_CORRECTIONS.getOrDefault(gunId, Map.of()).get(scopeId);
         if (correction != null) {
-            return withCorrection(result, correction);
+            return withCorrection(zoom, correction);
         }
-        return result;
+        return zoom;
     }
 
     private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
