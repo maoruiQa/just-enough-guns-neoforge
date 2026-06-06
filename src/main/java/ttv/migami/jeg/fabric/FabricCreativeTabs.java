@@ -16,6 +16,25 @@ public final class FabricCreativeTabs {
                 }
             });
             ModItems.AMMO.values().forEach(holder -> entries.accept(holder.get()));
+            entries.accept(ModItems.PISTOL_MAGAZINE.get());
+            entries.accept(ModItems.SMG_MAGAZINE.get());
+            entries.accept(ModItems.SMG_EXTENDED_MAGAZINE.get());
+            entries.accept(ModItems.SMG_DRUM_MAGAZINE.get());
+            entries.accept(ModItems.RIFLE_MAGAZINE.get());
+            entries.accept(ModItems.RIFLE_EXTENDED_MAGAZINE.get());
+            entries.accept(ModItems.RIFLE_DRUM_MAGAZINE.get());
+            entries.accept(ModItems.SHOTGUN_MAGAZINE.get());
+            entries.accept(ModItems.SHOTGUN_EXTENDED_MAGAZINE.get());
+            entries.accept(ModItems.SHOTGUN_DRUM_MAGAZINE.get());
+            entries.accept(ModItems.MACHINE_GUN_MAGAZINE.get());
+            ModItems.ATTACHMENTS.values().forEach(holder -> entries.accept(holder.get()));
+            entries.accept(ModItems.CLASSIC_SPRAY_CAN.get());
+            entries.accept(ModItems.TOY_SPRAY_CAN.get());
+            entries.accept(ModItems.WHITEOUT_SPRAY_CAN.get());
+            entries.accept(ModItems.GOLDEN_SPRAY_CAN.get());
+            entries.accept(ModItems.CREEPER_BIRTHDAY_PARTY_BADGE.get());
+            entries.accept(ModItems.HEADPOPPER_BADGE.get());
+            entries.accept(ModItems.TRICKSHOT_BADGE.get());
             entries.accept(ModItems.MISSILE_ENGINE.get());
             ModItems.BULLETPROOF_HELMETS.values().forEach(holder -> entries.accept(holder.get()));
             ModItems.BULLETPROOF_VESTS.values().forEach(holder -> entries.accept(holder.get()));
