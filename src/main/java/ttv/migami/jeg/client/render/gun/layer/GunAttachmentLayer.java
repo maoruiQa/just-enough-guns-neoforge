@@ -264,7 +264,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         if (exists(base)) {
             return base;
         }
-        return Reference.id(TEXTURE_ROOT + "combat_scope.png");
+        return Reference.id(TEXTURE_ROOT + "reflex_sight.png");
     }
 
     private static Identifier bayonetTexture(ItemStack attachmentStack, String attachmentName, ItemStack gunStack) {
