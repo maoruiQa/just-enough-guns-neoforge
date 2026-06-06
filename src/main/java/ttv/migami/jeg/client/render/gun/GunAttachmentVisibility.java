@@ -135,7 +135,10 @@ public final class GunAttachmentVisibility {
 
         Rule rule = RULES.get(gunId);
         if (rule != null) {
-            rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(false)));
+            rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> {
+                Boolean hidden = installedAttachmentVisibility(gunId, stack, boneName);
+                snapshot.skipRender(hidden != null ? hidden : false);
+            }));
             rule.hidden().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(true)));
         }
 
