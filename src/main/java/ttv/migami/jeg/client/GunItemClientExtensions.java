@@ -45,20 +45,20 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final Identifier SPYGLASS = Identifier.withDefaultNamespace("spyglass");
     private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
             Reference.id("combat_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D),
-                    TELESCOPIC_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    SPYGLASS, zoom(0.0D, 0.35D, 0.0D)
+                    REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.83D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
             ),
             Reference.id("service_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D),
-                    TELESCOPIC_SIGHT, zoom(0.0D, 0.35D, 0.0D),
-                    SPYGLASS, zoom(0.0D, 0.35D, 0.0D)
+                    REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.90D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
             )
     );
     private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
@@ -305,11 +305,15 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static ForgeZoomOffset withRifleScopeAdsCorrection(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom) {
+        Map<Identifier, ForgeZoomOffset> corrections = RIFLE_SCOPE_ADS_CORRECTIONS.get(gunId);
+        if (corrections == null) {
+            return zoom;
+        }
         Identifier scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
         if (scopeId == null) {
             return zoom;
         }
-        ForgeZoomOffset correction = RIFLE_SCOPE_ADS_CORRECTIONS.getOrDefault(gunId, Map.of()).get(scopeId);
+        ForgeZoomOffset correction = corrections.get(scopeId);
         if (correction != null) {
             return withCorrection(zoom, correction);
         }
