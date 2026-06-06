@@ -247,7 +247,7 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static boolean isInBayonetArc(Player player, LivingEntity target) {
-        Vec3 offset = target.position().subtract(player.position());
+        Vec3 offset = targetCenter(target).subtract(player.getEyePosition());
         if (offset.lengthSqr() <= 0.0001D) {
             return true;
         }
@@ -255,11 +255,15 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static boolean isInMeleeArc(Player player, LivingEntity target) {
-        Vec3 offset = target.position().subtract(player.position());
+        Vec3 offset = targetCenter(target).subtract(player.getEyePosition());
         if (offset.lengthSqr() <= 0.0001D) {
             return true;
         }
         return Math.acos(offset.normalize().dot(player.getLookAngle().normalize())) < BAYONET_MELEE_SWEEP_ANGLE / 2.0D;
+    }
+
+    private static Vec3 targetCenter(LivingEntity target) {
+        return target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
     }
 
     private static float bayonetDamage(Player player, ItemStack bayonet) {
