@@ -22,6 +22,7 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
     private static final Identifier BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
     private static final Identifier SCOPE_TEXTURE = Reference.id("textures/animated/attachment/combat_scope.png");
     private static final double SCOPE_MODEL_Y_OFFSET = -4.0D / 16.0D;
+    private static final double SCOPE_RENDER_Y_CORRECTION = -2.0D / 16.0D;
     private final CombatScopeGeoModel scopeModel = new CombatScopeGeoModel();
 
     public GunBuiltinScopeLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
@@ -59,6 +60,7 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
                         scopePose.pushPose();
                         try {
                             scopePose.last().set(pose);
+                            scopePose.translate(0.0D, SCOPE_RENDER_Y_CORRECTION, 0.0D);
                             scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
                             passInfo.renderPosed(() -> bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor()));
                         } finally {

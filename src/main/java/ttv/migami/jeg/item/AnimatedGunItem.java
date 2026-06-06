@@ -78,6 +78,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientSprintSuppressedDrawStack = ItemStack.EMPTY;
     private static long clientSprintSuppressedDrawDeadlineNanos;
     private static long clientSprintAnimationBlockedUntilNanos;
+    private static String lastFirstPersonGunId = "";
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -105,9 +106,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private PlayState animationPredicate(AnimationTest<AnimatedGunItem> test) {
+        if (isNonFirstPersonPerspective(test)) {
+            return PlayState.STOP;
+        }
         ItemStack renderStack = rendererItemStack(test);
         ItemStack stack = animationStateStack(test, renderStack);
         clearStaleRenderReloadVisualState(renderStack, stack);
+        resetControllerOnGunChange(test.controller(), stack);
 
         if (suppressDrawForSprint(test.controller(), stack)) {
             return setSprintOrBayonetSprintAnimation(test, stack);
@@ -207,6 +212,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         rememberDrawAnimation(stack);
         return DRAW;
+    }
+
+    private static void resetControllerOnGunChange(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
+            lastFirstPersonGunId = "";
+            return;
+        }
+        String currentId = gun.getStats().id().toString();
+        if (!lastFirstPersonGunId.isEmpty() && !currentId.equals(lastFirstPersonGunId)) {
+            controller.stopTriggeredAnimation();
+            controller.reset();
+        }
+        lastFirstPersonGunId = currentId;
     }
 
     private static PlayState setSprintAnimation(AnimationTest<AnimatedGunItem> test) {
@@ -398,6 +416,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientMeleeStack = ItemStack.EMPTY;
         clientMeleeBayonet = false;
         clientMeleeTriggerDeadlineNanos = 0L;
+    }
+
+    private static boolean isNonFirstPersonPerspective(AnimationTest<AnimatedGunItem> test) {
+        ItemDisplayContext perspective = test.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
+        return perspective != null && !perspective.firstPerson();
     }
 
     public static void suppressSprintAnimationBriefly() {

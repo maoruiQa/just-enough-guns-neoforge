@@ -346,9 +346,9 @@ public final class AttachmentRuntimeEvents {
         Vec3 hit = result.getLocation();
         level.sendParticles(
                 new LaserOption(face, result.getBlockPos()),
-                hit.x + 0.005D * face.getStepX(),
-                hit.y + 0.005D * face.getStepY(),
-                hit.z + 0.005D * face.getStepZ(),
+                hit.x + 0.03D * face.getStepX(),
+                hit.y + 0.03D * face.getStepY(),
+                hit.z + 0.03D * face.getStepZ(),
                 1,
                 0.0D,
                 0.0D,

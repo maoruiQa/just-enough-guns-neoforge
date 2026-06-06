@@ -37,6 +37,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
     private static final String TEXTURE_ROOT = "textures/animated/attachment/";
     private static final String PAINT_JOB_TEXTURE_ROOT = "textures/animated/attachment/paintjob/";
     private static final double SCOPE_MODEL_Y_OFFSET = -3.0D / 16.0D;
+    private static final double ATTACHMENT_RENDER_Y_CORRECTION = -2.0D / 16.0D;
     private static final Identifier MAKESHIFT_STOCK = Reference.id("makeshift_stock");
     private static final Set<Identifier> BAKED_UNDER_BARREL_GUNS = Set.of(
             Reference.id("combat_rifle"),
@@ -200,6 +201,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             renderPose.pushPose();
             try {
                 renderPose.last().set(pose);
+                renderPose.translate(0.0D, ATTACHMENT_RENDER_Y_CORRECTION, 0.0D);
                 transform.accept(renderPose);
                 passInfo.renderPosed(() -> bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor()));
             } finally {

@@ -22,12 +22,12 @@ public final class LaserParticle extends SingleQuadParticle {
         super(level, x, y, z, sprites.first());
         this.direction = direction;
         this.pos = pos;
-        this.lifetime = 4;
+        this.lifetime = 8;
         this.hasPhysics = false;
         this.gravity = 0.0F;
-        this.quadSize = 0.10F;
+        this.quadSize = 0.16F;
         this.setColor(1.0F, 0.0F, 0.0F);
-        this.alpha = 0.9F;
+        this.alpha = 1.0F;
         this.setSprite(this.sprite);
 
         if (level.getBlockState(pos).isAir()) {
@@ -37,7 +37,7 @@ public final class LaserParticle extends SingleQuadParticle {
 
     @Override
     public @NotNull SingleQuadParticle.Layer getLayer() {
-        return SingleQuadParticle.Layer.TRANSLUCENT_TERRAIN;
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     @Override

@@ -15,7 +15,6 @@ import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Matrix4f;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.geckolib.animatable.GeoItem;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.constant.dataticket.DataTicket;
 import com.geckolib.renderer.GeoItemRenderer;
@@ -134,8 +133,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (isFirstPerson(ctx) && shouldHideScopedFirstPersonGun(renderState)) {
             return;
         }
-        resetStaticPoseAnimations(ctx, renderState);
-
         // Third-person uses GeckoLib for static Geo pose and attachment layers. GUI/inventory keeps the
         // vanilla item model fallback so static item/gui models render normally.
         boolean animatedNonFirstPerson = shouldUseAnimatedNonFirstPerson(ctx, renderState, gunPath);
@@ -472,33 +469,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         return ctx == ItemDisplayContext.FIXED && minecraft != null && minecraft.screen instanceof AttachmentScreen;
     }
 
-    private static void resetStaticPoseAnimations(ItemDisplayContext ctx, GeoRenderState renderState) {
-        if ((!isThirdPerson(ctx) && !isAttachmentScreenPreview(ctx)) || !renderState.hasGeckolibData(ANIMATED_ITEM)) {
-            return;
-        }
-
-        Item item = renderState.getGeckolibData(ANIMATED_ITEM);
-        if (!(item instanceof AnimatedGunItem gun)) {
-            return;
-        }
-
-        ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
-        if (stack.isEmpty()) {
-            return;
-        }
-
-        var manager = gun.getAnimatableInstanceCache().getManagerForId(GeoItem.getId(stack));
-        var controller = manager.getAnimationControllers().get(AnimatedGunItem.CONTROLLER);
-        if (controller != null) {
-            controller.stopTriggeredAnimation();
-            controller.reset();
-        }
-    }
-
     private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {
         if ("minigun".equals(gunPath)) {
             poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION - 0.3D, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
-            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
