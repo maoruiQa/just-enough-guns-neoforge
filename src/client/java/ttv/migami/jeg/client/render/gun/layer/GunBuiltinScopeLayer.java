@@ -14,15 +14,15 @@ import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
-import ttv.migami.jeg.client.render.gun.CombatScopeGeoModel;
+import ttv.migami.jeg.client.render.gun.GunAttachmentGeoModel;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
     private static final Identifier BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
-    private static final Identifier SCOPE_TEXTURE = Reference.id("textures/animated/attachment/combat_scope.png");
+    private static final Identifier SCOPE_TEXTURE = Reference.id("textures/animated/attachment/reflex_sight.png");
     private static final double SCOPE_MODEL_Y_OFFSET = -3.0D / 16.0D;
-    private final CombatScopeGeoModel scopeModel = new CombatScopeGeoModel();
+    private final GunAttachmentGeoModel scopeModel = new GunAttachmentGeoModel();
 
     public GunBuiltinScopeLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
         super(renderer);
@@ -42,16 +42,16 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
     }
 
     private static final class ScopeRenderTask implements PerBoneRender<GeoRenderState> {
-        private final CombatScopeGeoModel scopeModel;
+        private final GunAttachmentGeoModel scopeModel;
 
-        private ScopeRenderTask(CombatScopeGeoModel scopeModel) {
+        private ScopeRenderTask(GunAttachmentGeoModel scopeModel) {
             this.scopeModel = scopeModel;
         }
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
             bone.translateAwayFromPivotPoint(passInfo.poseStack());
-            BakedGeoModel bakedModel = scopeModel.getBakedModel(Reference.id("item/attachment/combat_scope"));
+            BakedGeoModel bakedModel = scopeModel.getBakedModel(Reference.id("item/attachment/reflex_sight"));
             collector.submitCustomGeometry(
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(SCOPE_TEXTURE),

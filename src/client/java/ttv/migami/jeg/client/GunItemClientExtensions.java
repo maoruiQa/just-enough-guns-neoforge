@@ -39,7 +39,6 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final Identifier REFLEX_SIGHT = Reference.id("reflex_sight");
     private static final Identifier MONOCLE_SIGHT = Reference.id("monocle_sight");
     private static final Identifier HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
-    private static final Identifier COMBAT_SCOPE = Reference.id("combat_scope");
     private static final Identifier TELESCOPIC_SIGHT = Reference.id("telescopic_sight");
     private static final Identifier SPYGLASS = Identifier.withDefaultNamespace("spyglass");
     private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
@@ -47,7 +46,6 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
                     REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, -0.83D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
             ),
@@ -55,7 +53,6 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
                     REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, -0.90D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
             )

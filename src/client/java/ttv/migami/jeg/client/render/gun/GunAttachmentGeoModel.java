@@ -9,16 +9,16 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 public final class GunAttachmentGeoModel extends GeoModel<AnimatedGunItem> {
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
-        return Reference.id("item/attachment/combat_scope");
+        return Reference.id("item/attachment/reflex_sight");
     }
 
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
-        return Reference.id("textures/animated/attachment/combat_scope.png");
+        return Reference.id("textures/animated/attachment/reflex_sight.png");
     }
 
     @Override
     public Identifier getAnimationResource(AnimatedGunItem animatable) {
-        return Reference.id("item/attachment/combat_scope");
+        return Reference.id("item/attachment/reflex_sight");
     }
 }
