@@ -52,7 +52,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final ResourceLocation REFLEX_SIGHT = Reference.id("reflex_sight");
     private static final ResourceLocation MONOCLE_SIGHT = Reference.id("monocle_sight");
     private static final ResourceLocation HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
-    private static final ResourceLocation COMBAT_SCOPE = Reference.id("combat_scope");
     private static final ResourceLocation TELESCOPIC_SIGHT = Reference.id("telescopic_sight");
     private static final ResourceLocation SPYGLASS = ResourceLocation.withDefaultNamespace("spyglass");
     private static final Map<ResourceLocation, Map<ResourceLocation, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
@@ -60,7 +59,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                     REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, -0.83D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
             ),
@@ -68,7 +66,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                     REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
                     MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
                     HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
-                    COMBAT_SCOPE, zoom(0.0D, -0.90D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
             )
