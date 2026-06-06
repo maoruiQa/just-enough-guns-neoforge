@@ -60,7 +60,7 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
                         try {
                             scopePose.last().set(pose);
                             scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
-                            passInfo.renderPosed(() -> bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor()));
+                            bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
                         } finally {
                             scopePose.popPose();
                         }

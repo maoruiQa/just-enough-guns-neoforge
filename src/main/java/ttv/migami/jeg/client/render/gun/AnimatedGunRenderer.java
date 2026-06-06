@@ -472,7 +472,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {
         if ("minigun".equals(gunPath)) {
             poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION - 0.3D, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
-            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);

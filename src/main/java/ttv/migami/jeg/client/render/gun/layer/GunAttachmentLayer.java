@@ -201,7 +201,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             try {
                 renderPose.last().set(pose);
                 transform.accept(renderPose);
-                passInfo.renderPosed(() -> bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor()));
+                bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
             } finally {
                 renderPose.popPose();
             }
