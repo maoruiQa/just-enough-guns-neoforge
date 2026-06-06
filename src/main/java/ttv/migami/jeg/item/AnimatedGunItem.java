@@ -109,6 +109,14 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         ItemStack stack = animationStateStack(test, renderStack);
         clearStaleRenderReloadVisualState(renderStack, stack);
 
+        if (suppressDrawForSprint(test.controller(), stack)) {
+            return setSprintOrBayonetSprintAnimation(test, stack);
+        }
+        RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(test, stack);
+        if (pendingDrawAnimation != null) {
+            return test.setAndContinue(pendingDrawAnimation);
+        }
+
         if (triggerPendingClientMelee(test, stack)) {
             return PlayState.CONTINUE;
         }
@@ -118,14 +126,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         if (triggerPendingClientShoot(test, stack)) {
             return PlayState.CONTINUE;
-        }
-
-        if (suppressDrawForSprint(test.controller(), stack)) {
-            return setSprintAnimation(test);
-        }
-        RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(test, stack);
-        if (pendingDrawAnimation != null) {
-            return test.setAndContinue(pendingDrawAnimation);
         }
 
         clearInterruptedReloadAnimation(test.controller(), stack);
@@ -163,7 +163,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             Player player = clientPlayer();
             if (player != null && player.isSprinting() && !isClientAiming() && !isLocalAttackDown(player)
                     && !isClientSprintAnimationBlocked() && canApplySprintingAnimation(stack)) {
-                return setSprintAnimation(test);
+                return setSprintOrBayonetSprintAnimation(test, stack);
             }
         }
 
@@ -214,6 +214,17 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return PlayState.CONTINUE;
         }
         return test.setAndContinue(SPRINT);
+    }
+
+    private static PlayState setSprintOrBayonetSprintAnimation(AnimationTest<AnimatedGunItem> test, ItemStack stack) {
+        if (!hasBayonet(stack)) {
+            return setSprintAnimation(test);
+        }
+        if (hasAnimation(test.controller().getCurrentRawAnimation(), ANIM_BAYONET)) {
+            return PlayState.CONTINUE;
+        }
+        test.controller().reset();
+        return test.setAndContinue(BAYONET);
     }
 
     private static ItemStack animationStateStack(AnimationTest<AnimatedGunItem> test, ItemStack renderStack) {
@@ -501,6 +512,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             clearPendingClientDraw();
             return;
         }
+        clearPendingClientMelee();
         clientDrawTriggerStack = stack.copy();
         clientDrawTriggerDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
     }

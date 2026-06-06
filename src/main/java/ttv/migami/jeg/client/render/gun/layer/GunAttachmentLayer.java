@@ -179,6 +179,8 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                     (pose, buffer) -> {
                         PoseStack attachmentPose = new PoseStack();
                         attachmentPose.last().set(pose);
+                        GunAttachmentTransforms.transform(this.gunId, AttachmentType.BARREL)
+                                .ifPresent(transform -> transform.apply(attachmentPose));
                         passInfo.renderPosed(() -> renderBones(bakedModel, passInfo, attachmentPose, buffer));
                     }
             );
