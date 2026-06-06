@@ -55,14 +55,15 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(SCOPE_TEXTURE),
                     (pose, buffer) -> {
-                        PoseStack scopePose = new PoseStack();
-                        scopePose.last().set(pose);
-                        scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
-                        passInfo.renderPosed(() -> {
-                            for (GeoBone scopeBone : bakedModel.topLevelBones()) {
-                                scopeBone.render(passInfo, scopePose, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
-                            }
-                        });
+                        PoseStack scopePose = passInfo.poseStack();
+                        scopePose.pushPose();
+                        try {
+                            scopePose.last().set(pose);
+                            scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+                            passInfo.renderPosed(() -> bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor()));
+                        } finally {
+                            scopePose.popPose();
+                        }
                     }
             );
         }

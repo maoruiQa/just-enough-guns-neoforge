@@ -18,19 +18,6 @@
       },
       {
         "when": [
-          "thirdperson_righthand",
-          "thirdperson_lefthand"
-        ],
-        "model": {
-          "type": "minecraft:special",
-          "base": "jeg:item/minigun",
-          "model": {
-            "type": "geckolib:geckolib"
-          }
-        }
-      },
-      {
-        "when": [
           "fixed"
         ],
         "model": {

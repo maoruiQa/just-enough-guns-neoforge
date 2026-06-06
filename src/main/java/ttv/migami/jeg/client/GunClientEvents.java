@@ -36,8 +36,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -57,7 +55,6 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.medal.MedalManager;
-import ttv.migami.jeg.client.render.gun.GunAttachmentTransforms;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -67,7 +64,6 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
-import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
@@ -79,7 +75,6 @@ public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final float SCOPE_VIEWPORT_FOV = 12.0F;
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
-    private static final Identifier BEAM_TEXTURE = Reference.id("textures/effect/beam.png");
     private static final Identifier OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final Identifier HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int TIMER_BAR_WIDTH = 64;
@@ -88,10 +83,6 @@ public final class GunClientEvents {
     private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
     private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
     private static final ByteBufferBuilder WORLD_EFFECT_BUFFER = new ByteBufferBuilder(262_144);
-    private static final double LASER_BEAM_DISTANCE = 100.0D;
-    private static final float LASER_BEAM_WIDTH = 0.012F;
-    private static final float FLASHLIGHT_BEAM_NEAR_WIDTH = 0.08F;
-    private static final float FLASHLIGHT_BEAM_FAR_WIDTH = 0.75F;
     private static final float MODEL_FRONT_CLUSTER_DEPTH = 0.45F;
     private static final float MODEL_FRONT_FACE_EPSILON = 0.02F;
     private static final List<String> FIRST_PERSON_MUZZLE_BONE_PRIORITY = List.of("front", "barrel", "gun_body", "bow_body");
@@ -483,8 +474,7 @@ public final class GunClientEvents {
 
         boolean renderTrails = Config.legacyBulletTrailEnabled();
         boolean renderMuzzleFlashes = !MUZZLE_FLASHES.isEmpty();
-        boolean renderBeams = hasVisibleAttachmentBeam(minecraft);
-        if (!renderTrails && !renderMuzzleFlashes && !renderBeams) {
+        if (!renderTrails && !renderMuzzleFlashes) {
             return;
         }
 
@@ -500,197 +490,7 @@ public final class GunClientEvents {
         if (renderMuzzleFlashes) {
             renderMuzzleFlashes(poseStack, bufferSource, partialTick);
         }
-        if (renderBeams) {
-            renderAttachmentBeams(poseStack, bufferSource, partialTick);
-        }
         bufferSource.endBatch();
-    }
-
-    private static boolean hasVisibleAttachmentBeam(Minecraft minecraft) {
-        LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.level == null || player.isSpectator()) {
-            return false;
-        }
-
-        ItemStack main = player.getMainHandItem();
-        boolean pauseGunLights = shouldPauseGunPoweredBeam(player, main);
-        boolean laser = !pauseGunLights
-                && main.getItem() instanceof GunItem
-                && GunAttachments.modifiers(main).laserPointer();
-        boolean flashlight = Config.allowFlashlights()
-                && ((!pauseGunLights && main.getItem() instanceof GunItem && GunAttachments.isFlashlightPowered(main))
-                || FlashlightAttachmentItem.isPowered(main)
-                || FlashlightAttachmentItem.isPowered(player.getOffhandItem()));
-        return laser || flashlight;
-    }
-
-    private static boolean shouldPauseGunPoweredBeam(LocalPlayer player, ItemStack stack) {
-        return stack.getItem() instanceof GunItem
-                && player.isSprinting()
-                && !player.getCooldowns().isOnCooldown(stack);
-    }
-
-    private static void renderAttachmentBeams(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
-        Minecraft minecraft = Minecraft.getInstance();
-        LocalPlayer player = minecraft.player;
-        if (minecraft.level == null || player == null || player.isSpectator()) {
-            return;
-        }
-
-        ItemStack main = player.getMainHandItem();
-        boolean pauseGunLights = shouldPauseGunPoweredBeam(player, main);
-        boolean laser = !pauseGunLights
-                && main.getItem() instanceof GunItem
-                && GunAttachments.modifiers(main).laserPointer();
-        boolean gunFlashlight = Config.allowFlashlights()
-                && !pauseGunLights
-                && main.getItem() instanceof GunItem
-                && GunAttachments.isFlashlightPowered(main);
-        boolean heldFlashlight = Config.allowFlashlights()
-                && (FlashlightAttachmentItem.isPowered(main) || FlashlightAttachmentItem.isPowered(player.getOffhandItem()));
-
-        Vec3 look = player.getViewVector(partialTick);
-        if (look.lengthSqr() < 1.0E-6D) {
-            return;
-        }
-        look = look.normalize();
-
-        Vec3 cameraPos = minecraft.gameRenderer.getMainCamera().position();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityTranslucentEmissive(BEAM_TEXTURE));
-
-        if (laser) {
-            Vec3 start = gunAttachmentBeamStart(player, main, partialTick);
-            Vec3 end = clippedBeamEnd(player, partialTick, LASER_BEAM_DISTANCE);
-            renderBeamQuad(poseStack, consumer, cameraPos, start, end, LASER_BEAM_WIDTH, LASER_BEAM_WIDTH, 255, 16, 16, 190);
-        }
-
-        if (gunFlashlight) {
-            Vec3 start = gunAttachmentBeamStart(player, main, partialTick);
-            Vec3 end = clippedBeamEnd(player, partialTick, Config.flashlightDistance());
-            renderBeamQuad(poseStack, consumer, cameraPos, start, end, FLASHLIGHT_BEAM_NEAR_WIDTH, FLASHLIGHT_BEAM_FAR_WIDTH, 255, 238, 180, 72);
-        } else if (heldFlashlight) {
-            Vec3 eye = player.getEyePosition(partialTick);
-            Vec3 start = eye.add(look.scale(0.25D)).add(0.0D, -0.10D, 0.0D);
-            Vec3 end = clippedBeamEnd(player, partialTick, Config.flashlightDistance());
-            renderBeamQuad(poseStack, consumer, cameraPos, start, end, FLASHLIGHT_BEAM_NEAR_WIDTH, FLASHLIGHT_BEAM_FAR_WIDTH, 255, 238, 180, 72);
-        }
-    }
-
-    private static Vec3 gunAttachmentBeamStart(LocalPlayer player, ItemStack held, float partialTick) {
-        if (!(held.getItem() instanceof GunItem gun)) {
-            return player.getEyePosition(partialTick).add(player.getViewVector(partialTick).scale(0.25D));
-        }
-
-        Vec3 eye = player.getEyePosition(partialTick);
-        Vec3 look = player.getViewVector(partialTick);
-        if (look.lengthSqr() < 1.0E-6D) {
-            return eye;
-        }
-        look = look.normalize();
-
-        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
-        Vec3 side = look.cross(up);
-        if (side.lengthSqr() < 1.0E-6D) {
-            side = new Vec3(1.0D, 0.0D, 0.0D);
-        } else {
-            side = side.normalize();
-        }
-        if (player.getMainArm() == HumanoidArm.LEFT) {
-            side = side.scale(-1.0D);
-        }
-
-        GunAttachmentTransforms.Transform transform = GunAttachmentTransforms.transform(gun.getStats().id(), AttachmentType.SPECIAL).orElse(null);
-        if (transform == null) {
-            return computeMuzzlePosition(player, held, partialTick);
-        }
-
-        double forward = 0.36D - transform.z() * 0.0625D;
-        double sideOffset = transform.x() * 0.0625D;
-        double height = (transform.y() - 4.75D) * 0.0625D;
-        return eye.add(look.scale(forward)).add(side.scale(sideOffset)).add(0.0D, height, 0.0D);
-    }
-
-    private static Vec3 clippedBeamEnd(LocalPlayer player, float partialTick, double distance) {
-        Vec3 start = player.getEyePosition(partialTick);
-        Vec3 look = player.getViewVector(partialTick);
-        if (look.lengthSqr() < 1.0E-6D) {
-            return start;
-        }
-        look = look.normalize();
-        Vec3 unclippedEnd = start.add(look.scale(Math.max(0.5D, distance)));
-        if (player.level() == null) {
-            return unclippedEnd;
-        }
-
-        var result = player.level().clip(new ClipContext(
-                start,
-                unclippedEnd,
-                ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE,
-                player
-        ));
-        return result.getType() == HitResult.Type.MISS ? unclippedEnd : result.getLocation();
-    }
-
-    private static void renderBeamQuad(
-            PoseStack poseStack,
-            VertexConsumer consumer,
-            Vec3 cameraPos,
-            Vec3 start,
-            Vec3 end,
-            float nearWidth,
-            float farWidth,
-            int red,
-            int green,
-            int blue,
-            int alpha
-    ) {
-        Vec3 axis = end.subtract(start);
-        if (axis.lengthSqr() < 1.0E-6D) {
-            return;
-        }
-
-        Vec3 midpoint = start.add(end).scale(0.5D);
-        Vec3 toCamera = cameraPos.subtract(midpoint);
-        Vec3 width = axis.normalize().cross(toCamera.lengthSqr() < 1.0E-6D ? new Vec3(0.0D, 1.0D, 0.0D) : toCamera.normalize());
-        if (width.lengthSqr() < 1.0E-6D) {
-            width = axis.normalize().cross(new Vec3(0.0D, 1.0D, 0.0D));
-        }
-        if (width.lengthSqr() < 1.0E-6D) {
-            width = new Vec3(1.0D, 0.0D, 0.0D);
-        } else {
-            width = width.normalize();
-        }
-
-        Vec3 nearOffset = width.scale(nearWidth * 0.5D);
-        Vec3 farOffset = width.scale(farWidth * 0.5D);
-        Matrix4f matrix = poseStack.last().pose();
-        int light = Brightness.FULL_BRIGHT.pack();
-
-        vertexBeam(consumer, matrix, start.add(nearOffset).subtract(cameraPos), 0.0F, 0.0F, red, green, blue, alpha, light);
-        vertexBeam(consumer, matrix, start.subtract(nearOffset).subtract(cameraPos), 0.0F, 1.0F, red, green, blue, alpha, light);
-        vertexBeam(consumer, matrix, end.subtract(farOffset).subtract(cameraPos), 1.0F, 1.0F, red, green, blue, 0, light);
-        vertexBeam(consumer, matrix, end.add(farOffset).subtract(cameraPos), 1.0F, 0.0F, red, green, blue, 0, light);
-    }
-
-    private static void vertexBeam(
-            VertexConsumer consumer,
-            Matrix4f matrix,
-            Vec3 point,
-            float u,
-            float v,
-            int red,
-            int green,
-            int blue,
-            int alpha,
-            int light
-    ) {
-        consumer.addVertex(matrix, (float) point.x, (float) point.y, (float) point.z)
-                .setColor(red, green, blue, alpha)
-                .setUv(u, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(light)
-                .setNormal(0.0F, 1.0F, 0.0F);
     }
 
     private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
