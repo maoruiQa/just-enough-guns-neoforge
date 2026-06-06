@@ -49,10 +49,29 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
+    private static final ResourceLocation REFLEX_SIGHT = Reference.id("reflex_sight");
+    private static final ResourceLocation MONOCLE_SIGHT = Reference.id("monocle_sight");
     private static final ResourceLocation HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
-    private static final Map<ResourceLocation, ForgeZoomOffset> HOLOGRAPHIC_ADS_CORRECTIONS = Map.of(
-            Reference.id("combat_rifle"), zoom(0.0D, -0.25D, 0.0D),
-            Reference.id("service_rifle"), zoom(0.0D, -0.25D, 0.0D)
+    private static final ResourceLocation COMBAT_SCOPE = Reference.id("combat_scope");
+    private static final ResourceLocation TELESCOPIC_SIGHT = Reference.id("telescopic_sight");
+    private static final ResourceLocation SPYGLASS = ResourceLocation.withDefaultNamespace("spyglass");
+    private static final Map<ResourceLocation, Map<ResourceLocation, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
+            Reference.id("combat_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.83D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
+            ),
+            Reference.id("service_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.90D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
+            )
     );
     private static final Map<ResourceLocation, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
             Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
@@ -266,8 +285,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
         if (!telescopicSight) {
-            zoom = withAttachmentAdsOffset(stack, gun.getStats().id(), zoom, GunAttachments.modifiers(stack));
+            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
         }
+        zoom = withRifleScopeAdsCorrection(stack, gun.getStats().id(), zoom);
 
         ItemTransform transform = staticItemFirstPersonTransform(gun.getStats().id(), displayContext);
         double translateX = transform.translation.x();
@@ -368,21 +388,20 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         );
     }
 
-    private static ForgeZoomOffset withAttachmentAdsOffset(ItemStack stack, ResourceLocation gunId, ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
-        ForgeZoomOffset result = withAttachmentAdsOffset(zoom, modifiers);
-        if (hasHolographicSight(stack)) {
-            ForgeZoomOffset correction = HOLOGRAPHIC_ADS_CORRECTIONS.get(gunId);
-            if (correction != null) {
-                return withCorrection(result, correction);
-            }
+    private static ForgeZoomOffset withRifleScopeAdsCorrection(ItemStack stack, ResourceLocation gunId, ForgeZoomOffset zoom) {
+        Map<ResourceLocation, ForgeZoomOffset> corrections = RIFLE_SCOPE_ADS_CORRECTIONS.get(gunId);
+        if (corrections == null) {
+            return zoom;
         }
-        return result;
-    }
-
-    private static boolean hasHolographicSight(ItemStack stack) {
-        return GunAttachments.id(stack, AttachmentType.SCOPE)
-                .map(HOLOGRAPHIC_SIGHT::equals)
-                .orElse(false);
+        ResourceLocation scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
+        if (scopeId == null) {
+            return zoom;
+        }
+        ForgeZoomOffset correction = corrections.get(scopeId);
+        if (correction != null) {
+            return withCorrection(zoom, correction);
+        }
+        return zoom;
     }
 
     private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
