@@ -37,10 +37,23 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
+    private static final Identifier REFLEX_SIGHT = Reference.id("reflex_sight");
+    private static final Identifier MONOCLE_SIGHT = Reference.id("monocle_sight");
     private static final Identifier HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
-    private static final Map<Identifier, ForgeZoomOffset> HOLOGRAPHIC_ADS_CORRECTIONS = Map.of(
-            Reference.id("combat_rifle"), zoom(0.0D, -0.25D, 0.0D),
-            Reference.id("service_rifle"), zoom(0.0D, -0.25D, 0.0D)
+    private static final Identifier COMBAT_SCOPE = Reference.id("combat_scope");
+    private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
+            Reference.id("combat_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D)
+            ),
+            Reference.id("service_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, 0.35D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.25D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, 0.35D, 0.0D)
+            )
     );
     private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
             Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
@@ -286,19 +299,15 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
     private static ForgeZoomOffset withAttachmentAdsOffset(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
         ForgeZoomOffset result = withAttachmentAdsOffset(zoom, modifiers);
-        if (hasHolographicSight(stack)) {
-            ForgeZoomOffset correction = HOLOGRAPHIC_ADS_CORRECTIONS.get(gunId);
-            if (correction != null) {
-                return withCorrection(result, correction);
-            }
+        Identifier scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
+        if (scopeId == null) {
+            return result;
+        }
+        ForgeZoomOffset correction = RIFLE_SCOPE_ADS_CORRECTIONS.getOrDefault(gunId, Map.of()).get(scopeId);
+        if (correction != null) {
+            return withCorrection(result, correction);
         }
         return result;
-    }
-
-    private static boolean hasHolographicSight(ItemStack stack) {
-        return GunAttachments.id(stack, AttachmentType.SCOPE)
-                .map(HOLOGRAPHIC_SIGHT::equals)
-                .orElse(false);
     }
 
     private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
