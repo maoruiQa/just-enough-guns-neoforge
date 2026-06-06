@@ -21,7 +21,7 @@ public class ModParticleTypes {
             DeferredRegister.create(Registries.PARTICLE_TYPE, Reference.MOD_ID);
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ENTITY_LASER =
-            REGISTER.register("entity_laser", () -> new SimpleParticleType(false));
+            REGISTER.register("entity_laser", () -> new SimpleParticleType(true));
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_EXPLOSION =
             REGISTER.register("big_explosion", () -> new SimpleParticleType(true));
@@ -43,6 +43,12 @@ public class ModParticleTypes {
             REGISTER.register("blue_flame", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
             REGISTER.register("gun_muzzle_flash", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CASING_PARTICLE =
+            REGISTER.register("casing", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SHELL_PARTICLE =
+            REGISTER.register("shell", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SPECTRE_CASING_PARTICLE =
+            REGISTER.register("spectre_casing", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SONIC_RING =
             REGISTER.register("sonic_ring", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BIG_SONIC_RING =

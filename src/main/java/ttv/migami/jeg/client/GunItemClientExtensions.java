@@ -21,6 +21,9 @@ import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final boolean NEOFORGE_APPLIES_GENERIC_HAND_TRANSFORM =
@@ -34,6 +37,11 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
+    private static final Identifier HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
+    private static final Map<Identifier, ForgeZoomOffset> HOLOGRAPHIC_ADS_CORRECTIONS = Map.of(
+            Reference.id("combat_rifle"), zoom(0.0D, -0.25D, 0.0D),
+            Reference.id("service_rifle"), zoom(0.0D, -0.25D, 0.0D)
+    );
     private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
             Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
             Map.entry(Reference.id("assault_rifle"), zoom(0.0D, 3.75D, -1.75D)),
@@ -228,9 +236,13 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static AdsSightOffset adsSightOffset(ItemStack stack, Identifier gunId, double firstPersonScale) {
-        ForgeZoomOffset zoom = GunScopeSupport.hasTelescopicSight(stack)
+        boolean telescopicSight = GunScopeSupport.hasTelescopicSight(stack);
+        ForgeZoomOffset zoom = telescopicSight
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
+        if (!telescopicSight) {
+            zoom = withAttachmentAdsOffset(stack, gunId, zoom, GunAttachments.modifiers(stack));
+        }
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
         double translateZ = FIRST_PERSON_TRANSLATE_Z;
@@ -262,6 +274,39 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
     private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
+    }
+
+    private static ForgeZoomOffset withAttachmentAdsOffset(ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + modifiers.adsViewXOffset(),
+                zoom.yOffset() + modifiers.adsViewYOffset(),
+                zoom.zOffset() + modifiers.adsViewZOffset()
+        );
+    }
+
+    private static ForgeZoomOffset withAttachmentAdsOffset(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
+        ForgeZoomOffset result = withAttachmentAdsOffset(zoom, modifiers);
+        if (hasHolographicSight(stack)) {
+            ForgeZoomOffset correction = HOLOGRAPHIC_ADS_CORRECTIONS.get(gunId);
+            if (correction != null) {
+                return withCorrection(result, correction);
+            }
+        }
+        return result;
+    }
+
+    private static boolean hasHolographicSight(ItemStack stack) {
+        return GunAttachments.id(stack, AttachmentType.SCOPE)
+                .map(HOLOGRAPHIC_SIGHT::equals)
+                .orElse(false);
+    }
+
+    private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + correction.xOffset(),
+                zoom.yOffset() + correction.yOffset(),
+                zoom.zOffset() + correction.zOffset()
+        );
     }
 
     private static boolean neoforgeVersionAtLeast(int targetMajor, int targetMinor, int targetPatch) {

@@ -869,6 +869,10 @@ public class BulletEntity extends Projectile {
         return this.entityData.get(DATA_TRAIL_COLOR);
     }
 
+    public void setTrailColor(int color) {
+        this.entityData.set(DATA_TRAIL_COLOR, color);
+    }
+
     public float getTrailLengthMultiplier() {
         return this.entityData.get(DATA_TRAIL_LENGTH);
     }

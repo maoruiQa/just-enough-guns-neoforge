@@ -9,6 +9,7 @@
     "GunnerWaterConversionMixin"
   ],
   "client": [
+    "GuiGraphicsExtractorAccessor",
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
     "MouseHandlerVehicleMixin",

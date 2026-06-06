@@ -15,6 +15,31 @@
             "type": "geckolib:geckolib"
           }
         }
+      },
+      {
+        "when": [
+          "thirdperson_righthand",
+          "thirdperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/double_barrel_shotgun",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      },
+      {
+        "when": [
+          "fixed"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/double_barrel_shotgun",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
       }
     ],
     "fallback": {

@@ -134,7 +134,9 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             String attachmentName = attachmentId.getPath();
             Identifier model = model(attachmentName);
             Identifier texture = texture(attachmentId, this.gunStack);
-            if (!exists(modelResource(model)) || !exists(texture)) {
+            boolean modelExists = exists(modelResource(model));
+            boolean textureExists = exists(texture);
+            if (!modelExists || !textureExists) {
                 return;
             }
 
@@ -168,7 +170,9 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
             Identifier model = model(attachmentName);
             Identifier texture = bayonetTexture(attachmentStack, attachmentName, this.gunStack);
-            if (!exists(modelResource(model)) || !exists(texture)) {
+            boolean modelExists = exists(modelResource(model));
+            boolean textureExists = exists(texture);
+            if (!modelExists || !textureExists) {
                 return;
             }
 

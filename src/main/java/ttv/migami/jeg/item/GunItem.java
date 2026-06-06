@@ -10,6 +10,7 @@ import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -35,10 +36,14 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -46,6 +51,7 @@ import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -64,9 +70,14 @@ public class GunItem extends Item {
     private static final Identifier GRENADE_LAUNCHER_ID = Reference.id("grenade_launcher");
     private static final Identifier FLARE_GUN_ID = Reference.id("flare_gun");
     private static final Identifier ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
+    private static final Identifier SHOTGUN_SHELL_ID = Reference.id("shotgun_shell");
+    private static final Identifier HANDMADE_SHELL_ID = Reference.id("handmade_shell");
+    private static final Identifier SPECTRE_ROUND_ID = Reference.id("spectre_round");
+    private static final Identifier BLAZE_ROUND_ID = Reference.id("blaze_round");
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
+    private static final int FORGE_YELLOW_TRAIL_COLOR = 0xFFFFFF00;
     private static final int GRENADE_FUSE_TICKS = 600;
     private static final double LOW_DURABILITY_JAM_THRESHOLD = 1.75D;
     private static final double INCREASED_JAM_THRESHOLD = 2.25D;
@@ -196,6 +207,34 @@ public class GunItem extends Item {
             "typhoonee",
             "compound_bow",
             "primitive_bow"
+    );
+    private static final Set<String> FORGE_YELLOW_TRAIL_IDS = Set.of(
+            "abstract_gun",
+            "finger_gun",
+            "revolver",
+            "waterpipe_shotgun",
+            "custom_smg",
+            "double_barrel_shotgun",
+            "semi_auto_pistol",
+            "semi_auto_rifle",
+            "assault_rifle",
+            "pump_shotgun",
+            "combat_pistol",
+            "burst_rifle",
+            "combat_rifle",
+            "bolt_action_rifle",
+            "bubble_cannon",
+            "repeating_shotgun",
+            "infantry_rifle",
+            "service_rifle",
+            "hollenfire_mk2",
+            "subsonic_rifle",
+            "supersonic_shotgun",
+            "hypersonic_cannon",
+            "rocket_launcher",
+            "grenade_launcher",
+            "light_machine_gun",
+            "minigun"
     );
     private static final Set<String> HEAVY_BACKSTEP_IDS = Set.of(
             "light_machine_gun",
@@ -1220,6 +1259,8 @@ public class GunItem extends Item {
         Vec3 shooterMotion = shooter.getDeltaMovement();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
+            ejectCasing(serverLevel, shooter);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1275,6 +1316,8 @@ public class GunItem extends Item {
         Vec3 normalized = direction.normalize();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
+            ejectCasing(serverLevel, shooter);
         }
 
         for (int i = 0; i < pellets; i++) {
@@ -1324,7 +1367,129 @@ public class GunItem extends Item {
             bullet.setJustEnoughAmmoMedal(gun.getAmmo(stack) < 1);
         }
         applyFlareDye(stack, stats, bullet);
+        applyForgeTrailColor(stats, bullet);
         return bullet;
+    }
+
+    private void refreshGunfireLight(ServerLevel level, LivingEntity shooter, ItemStack stack) {
+        if (!(shooter instanceof Player) || shouldSkipGunfireLight(stack)) {
+            return;
+        }
+
+        Vec3 eye = shooter.getEyePosition();
+        Vec3 look = shooter.getLookAngle();
+        BlockPos[] candidates = new BlockPos[] {
+                BlockPos.containing(eye.add(look.scale(0.45D))),
+                BlockPos.containing(eye),
+                BlockPos.containing(eye.add(0.0D, 0.35D, 0.0D))
+        };
+
+        for (BlockPos pos : candidates) {
+            BlockState state = level.getBlockState(pos);
+            if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.isAir()) {
+                level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.is(Blocks.WATER)) {
+                BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
+                        .defaultBlockState()
+                        .setValue(BlockStateProperties.WATERLOGGED, true);
+                level.setBlock(pos, dynamicLight, 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+        }
+    }
+
+    private boolean shouldSkipGunfireLight(ItemStack stack) {
+        if (GunAttachments.modifiers(stack).silenced()) {
+            return true;
+        }
+        String path = stats.id().getPath();
+        return "finger_gun".equals(path)
+                || "typhoonee".equals(path)
+                || "atlantean_spear".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
+    }
+
+    private void ejectCasing(ServerLevel level, LivingEntity shooter) {
+        SimpleParticleType particle = casingParticle();
+        if (particle == null) {
+            return;
+        }
+
+        Vec3 look = shooter.getLookAngle();
+        Vec3 right = new Vec3(-look.z, 0.0D, look.x);
+        if (right.lengthSqr() < 1.0E-6D) {
+            right = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3 forward = new Vec3(look.x, 0.0D, look.z);
+        if (forward.lengthSqr() < 1.0E-6D) {
+            forward = Vec3.ZERO;
+        } else {
+            forward = forward.normalize();
+        }
+
+        double divisor = shooter instanceof Player player && NetworkHandler.isAiming(player) ? 0.4D : 0.5D;
+        Vec3 particlePos = shooter.position()
+                .add(right.scale(divisor))
+                .add(forward.scale(divisor))
+                .add(0.0D, shooter.getEyeHeight() - 0.4D, 0.0D);
+        Vec3 velocity = right.scale(0.05D).add(0.0D, 0.02D, 0.0D);
+
+        level.sendParticles(
+                particle,
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                0,
+                velocity.x,
+                velocity.y,
+                velocity.z,
+                1.0D
+        );
+    }
+
+    @Nullable
+    private SimpleParticleType casingParticle() {
+        Identifier ammo = stats.ammoItem();
+        if (ammo == null) {
+            return null;
+        }
+
+        String path = stats.id().getPath();
+        if ("finger_gun".equals(path)
+                || "typhoonee".equals(path)
+                || "atlantean_spear".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe")) {
+            return null;
+        }
+
+        if (SPECTRE_ROUND_ID.equals(ammo) || BLAZE_ROUND_ID.equals(ammo)) {
+            return ModParticleTypes.SPECTRE_CASING_PARTICLE.get();
+        }
+        if (SHOTGUN_SHELL_ID.equals(ammo) || HANDMADE_SHELL_ID.equals(ammo) || "grenade".equals(ammo.getPath()) || "flare".equals(ammo.getPath())) {
+            return ModParticleTypes.SHELL_PARTICLE.get();
+        }
+        if ("fire_charge".equals(ammo.getPath())) {
+            return null;
+        }
+        return ModParticleTypes.CASING_PARTICLE.get();
+    }
+
+    private static void applyForgeTrailColor(GunStats stats, BulletEntity bullet) {
+        if (FORGE_YELLOW_TRAIL_IDS.contains(stats.id().getPath())) {
+            bullet.setTrailColor(FORGE_YELLOW_TRAIL_COLOR);
+        }
     }
 
     private static void applyFlareDye(ItemStack stack, GunStats stats, BulletEntity bullet) {

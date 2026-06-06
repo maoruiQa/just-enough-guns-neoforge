@@ -6,13 +6,36 @@
       {
         "when": [
           "firstperson_righthand",
-          "firstperson_lefthand",
+          "firstperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/first_person/minigun",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      },
+      {
+        "when": [
           "thirdperson_righthand",
           "thirdperson_lefthand"
         ],
         "model": {
           "type": "minecraft:special",
-          "base": "jeg:item/first_person/minigun",
+          "base": "jeg:item/minigun",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      },
+      {
+        "when": [
+          "fixed"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/minigun",
           "model": {
             "type": "geckolib:geckolib"
           }
