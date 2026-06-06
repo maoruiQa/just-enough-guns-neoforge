@@ -10,7 +10,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -50,6 +52,12 @@ import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.particle.LaserOption;
 
 public final class AttachmentRuntimeEvents {
+    private static final ResourceLocation WOODEN_SWORD = ResourceLocation.withDefaultNamespace("wooden_sword");
+    private static final ResourceLocation STONE_SWORD = ResourceLocation.withDefaultNamespace("stone_sword");
+    private static final ResourceLocation IRON_SWORD = ResourceLocation.withDefaultNamespace("iron_sword");
+    private static final ResourceLocation GOLDEN_SWORD = ResourceLocation.withDefaultNamespace("golden_sword");
+    private static final ResourceLocation DIAMOND_SWORD = ResourceLocation.withDefaultNamespace("diamond_sword");
+    private static final ResourceLocation NETHERITE_SWORD = ResourceLocation.withDefaultNamespace("netherite_sword");
     private static final long BAYONET_CHARGE_TICKS = 40L;
     private static final double BAYONET_CHARGE_RANGE = 1.5D;
     private static final double BAYONET_CHARGE_SWEEP_ANGLE = Math.toRadians(100.0D);
@@ -247,7 +255,7 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static boolean isInBayonetArc(Player player, LivingEntity target) {
-        Vec3 offset = target.position().subtract(player.position());
+        Vec3 offset = targetCenter(target).subtract(player.getEyePosition());
         if (offset.lengthSqr() <= 0.0001D) {
             return true;
         }
@@ -255,22 +263,43 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static boolean isInMeleeArc(Player player, LivingEntity target) {
-        Vec3 offset = target.position().subtract(player.position());
+        Vec3 offset = targetCenter(target).subtract(player.getEyePosition());
         if (offset.lengthSqr() <= 0.0001D) {
             return true;
         }
         return Math.acos(offset.normalize().dot(player.getLookAngle().normalize())) < BAYONET_MELEE_SWEEP_ANGLE / 2.0D;
     }
 
+    private static Vec3 targetCenter(LivingEntity target) {
+        return target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
+    }
+
     private static float bayonetDamage(Player player, ItemStack bayonet) {
         double baseDamage = player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
-        if (bayonet.getItem() instanceof SwordItem swordItem) {
-            baseDamage = swordItem.getDefaultAttributeModifiers().modifiers().stream()
-                    .filter(entry -> entry.attribute().is(Attributes.ATTACK_DAMAGE))
-                    .mapToDouble(entry -> entry.modifier().amount())
-                    .sum();
+        if (bayonet.getItem() instanceof SwordItem) {
+            baseDamage = swordBaseDamage(bayonet);
         }
         return (float) (baseDamage + enchantmentLevel(player, bayonet, Enchantments.SHARPNESS));
+    }
+
+    private static double swordBaseDamage(ItemStack bayonet) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(bayonet.getItem());
+        if (WOODEN_SWORD.equals(id) || GOLDEN_SWORD.equals(id)) {
+            return 4.0D;
+        }
+        if (STONE_SWORD.equals(id)) {
+            return 5.0D;
+        }
+        if (IRON_SWORD.equals(id)) {
+            return 6.0D;
+        }
+        if (DIAMOND_SWORD.equals(id)) {
+            return 7.0D;
+        }
+        if (NETHERITE_SWORD.equals(id)) {
+            return 8.0D;
+        }
+        return 6.0D;
     }
 
     private static boolean isBayonetTooDamaged(ItemStack bayonet) {

@@ -109,7 +109,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         if (shouldPlaySprintAnimation(state, stack)) {
             clearDrawAnimation(stack);
-            return state.setAndContinue(SPRINT);
+            return setSprintOrBayonetSprintAnimation(state, stack);
         }
 
         RawAnimation drawAnimation = drawAnimationFor(state, stack);
@@ -208,6 +208,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack != null && !stack.isEmpty()) {
             stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
         }
+    }
+
+    private static PlayState setSprintOrBayonetSprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
+        if (!hasBayonet(stack)) {
+            return setSprintAnimation(state);
+        }
+        if (hasAnimation(state.getController().getCurrentRawAnimation(), ANIM_BAYONET)) {
+            return PlayState.CONTINUE;
+        }
+        state.getController().forceAnimationReset();
+        state.getController().stop();
+        return state.setAndContinue(BAYONET);
+    }
+
+    private static PlayState setSprintAnimation(AnimationState<AnimatedGunItem> state) {
+        if (hasAnimation(state.getController().getCurrentRawAnimation(), ANIM_SPRINT)) {
+            return PlayState.CONTINUE;
+        }
+        return state.setAndContinue(SPRINT);
     }
 
     private static boolean shouldContinueReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
