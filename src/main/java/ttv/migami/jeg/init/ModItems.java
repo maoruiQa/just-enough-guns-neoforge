@@ -150,12 +150,6 @@ public final class ModItems {
             AttachmentModifiers.builder().aimFovModifier(0.5F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.75D, -1.6D).build(),
             baseProperties(Reference.id("holographic_sight")).stacksTo(1).durability(800).rarity(Rarity.UNCOMMON)
     );
-    public static final DeferredHolder<Item, AttachmentItem> COMBAT_SCOPE = registerAttachment(
-            "combat_scope",
-            AttachmentType.SCOPE,
-            AttachmentModifiers.builder().aimFovModifier(0.3F).adsSpeedMultiplier(0.95D).adsViewOffset(0.0D, 0.85D, -2.4D).build(),
-            baseProperties(Reference.id("combat_scope")).stacksTo(1).durability(800).rarity(Rarity.RARE)
-    );
     public static final DeferredHolder<Item, AttachmentItem> TELESCOPIC_SIGHT = registerAttachment(
             "telescopic_sight",
             AttachmentType.SCOPE,

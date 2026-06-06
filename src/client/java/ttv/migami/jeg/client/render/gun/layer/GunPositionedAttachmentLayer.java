@@ -182,7 +182,7 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
         if (exists(base)) {
             return base;
         }
-        return Reference.id(TEXTURE_ROOT + "combat_scope.png");
+        return Reference.id(TEXTURE_ROOT + "reflex_sight.png");
     }
 
     private static String paintJob(ItemStack gunStack) {

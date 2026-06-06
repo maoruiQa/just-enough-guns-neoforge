@@ -11,14 +11,14 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
-import ttv.migami.jeg.client.render.gun.CombatScopeGeoModel;
+import ttv.migami.jeg.client.render.gun.GunAttachmentGeoModel;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
 
 public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem> {
     private static final ResourceLocation BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
     private static final double SCOPE_MODEL_Y_OFFSET = -3.0D / 16.0D;
-    private final CombatScopeGeoModel scopeModel = new CombatScopeGeoModel();
+    private final GunAttachmentGeoModel scopeModel = new GunAttachmentGeoModel();
 
     public GunBuiltinScopeLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
         super(renderer);
