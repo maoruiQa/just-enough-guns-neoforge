@@ -286,9 +286,17 @@ public final class GunAttachments {
     public static boolean isPseudoAttachmentStack(AttachmentType type, ItemStack stack) {
         return switch (type) {
             case SCOPE -> stack.getItem() instanceof SpyglassItem;
-            case BARREL -> stack.is(ItemTags.SWORDS);
+            case BARREL -> isBayonetStack(stack);
             default -> false;
         };
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static boolean isMakeshiftStock(Item item) {

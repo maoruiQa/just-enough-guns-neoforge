@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.joml.Matrix3x2f;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import ttv.migami.jeg.Config;
@@ -58,8 +59,8 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int MEDAL_ENABLED_V = 161;
     private static final int MEDAL_DISABLED_U = 176;
     private static final int MEDAL_DISABLED_V = 183;
-    private static final float GUN_PREVIEW_HALF_EXTENT = 1.20F;
-    private static final float GUN_PREVIEW_SCALE = 1.35F;
+    private static final float GUN_PREVIEW_HALF_EXTENT = 1.35F;
+    private static final float GUN_PREVIEW_SCALE = 1.5F;
     private static final int GUN_PREVIEW_CENTER_Y = 24;
     private static final int GUN_PREVIEW_SLOT_CENTER_OFFSET = 8;
     private static final Vector3fc[] GUN_PREVIEW_EXTENTS = new Vector3fc[] {
@@ -168,14 +169,6 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return;
         }
 
-        var pose = guiGraphics.pose();
-        pose.pushMatrix();
-        Matrix3x2f previewPose = new Matrix3x2f(pose);
-        float centerX = this.leftPos + this.imageWidth / 2.0F;
-        float centerY = this.topPos + GUN_PREVIEW_CENTER_Y;
-        previewPose.scaleAround(GUN_PREVIEW_SCALE, centerX, centerY);
-        pose.popMatrix();
-
         TrackingItemStackRenderState itemState = new TrackingItemStackRenderState();
         Minecraft.getInstance().getItemModelResolver().updateForLiving(
                 itemState,
@@ -183,11 +176,11 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
                 ItemDisplayContext.FIXED,
                 player
         );
-        forcePreviewExtents(itemState);
+        applyPreviewStateTransform(itemState);
         itemState.setOversizedInGui(true);
 
         GuiItemRenderState guiItemState = new GuiItemRenderState(
-                previewPose,
+                new Matrix3x2f(guiGraphics.pose()),
                 itemState,
                 this.leftPos + this.imageWidth / 2 - GUN_PREVIEW_SLOT_CENTER_OFFSET,
                 this.topPos + GUN_PREVIEW_CENTER_Y - GUN_PREVIEW_SLOT_CENTER_OFFSET,
@@ -374,13 +367,15 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         return Component.literal(modName);
     }
 
-    private static void forcePreviewExtents(ItemStackRenderState itemState) {
+    private static void applyPreviewStateTransform(ItemStackRenderState itemState) {
         try {
             ItemStackRenderState.LayerRenderState[] layers =
                     (ItemStackRenderState.LayerRenderState[]) PreviewStateAccess.LAYERS.get(itemState);
             int count = (int) PreviewStateAccess.ACTIVE_LAYER_COUNT.get(itemState);
+            Matrix4f previewScale = new Matrix4f().scale(GUN_PREVIEW_SCALE);
             for (int i = 0; i < count && i < layers.length; i++) {
                 layers[i].setExtents(() -> GUN_PREVIEW_EXTENTS);
+                layers[i].setLocalTransform(previewScale);
             }
         } catch (IllegalAccessException ignored) {
         }

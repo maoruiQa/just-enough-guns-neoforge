@@ -9,6 +9,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.ItemTags;
 import com.geckolib.animatable.GeoItem;
 import com.geckolib.animatable.client.GeoRenderProvider;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -955,7 +957,15 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     private static boolean hasBayonet(ItemStack stack) {
         return GunAttachments.stack(stack, AttachmentType.BARREL)
-                .filter(attachment -> attachment.is(net.minecraft.tags.ItemTags.SWORDS))
+                .filter(AnimatedGunItem::isBayonetStack)
                 .isPresent();
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        var id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 }
