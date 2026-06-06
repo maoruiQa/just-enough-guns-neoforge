@@ -21,7 +21,7 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
     private static final Identifier BOLT_ACTION_RIFLE = Reference.id("bolt_action_rifle");
     private static final Identifier SCOPE_TEXTURE = Reference.id("textures/animated/attachment/combat_scope.png");
-    private static final double SCOPE_MODEL_Y_OFFSET = -4.0D / 16.0D;
+    private static final double SCOPE_MODEL_Y_OFFSET = -3.0D / 16.0D;
     private final CombatScopeGeoModel scopeModel = new CombatScopeGeoModel();
 
     public GunBuiltinScopeLayer(GeoItemRenderer<AnimatedGunItem> renderer) {
@@ -50,19 +50,21 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            bone.translateAwayFromPivotPoint(passInfo.poseStack());
             BakedGeoModel bakedModel = scopeModel.getBakedModel(Reference.id("item/attachment/combat_scope"));
             collector.submitCustomGeometry(
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(SCOPE_TEXTURE),
                     (pose, buffer) -> {
-                        PoseStack scopePose = new PoseStack();
-                        scopePose.last().set(pose);
-                        scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
-                        passInfo.renderPosed(() -> {
-                            for (GeoBone scopeBone : bakedModel.topLevelBones()) {
-                                scopeBone.render(passInfo, scopePose, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
-                            }
-                        });
+                        PoseStack scopePose = passInfo.poseStack();
+                        scopePose.pushPose();
+                        try {
+                            scopePose.last().set(pose);
+                            scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+                            bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
+                        } finally {
+                            scopePose.popPose();
+                        }
                     }
             );
         }

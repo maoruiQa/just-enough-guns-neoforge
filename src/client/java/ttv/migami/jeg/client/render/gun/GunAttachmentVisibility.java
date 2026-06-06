@@ -2,6 +2,7 @@ package ttv.migami.jeg.client.render.gun;
 
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
@@ -88,7 +89,8 @@ public final class GunAttachmentVisibility {
                     Set.of())
     );
 
-    private GunAttachmentVisibility() {}
+    private GunAttachmentVisibility() {
+    }
 
     public static void apply(Identifier gunId, GeoBone bone) {
         if (Reference.id("bolt_action_rifle").equals(gunId)) {
@@ -110,6 +112,15 @@ public final class GunAttachmentVisibility {
             });
             return;
         }
+        if (Reference.id("light_machine_gun").equals(gunId)) {
+            for (int threshold = 1; threshold <= 7; threshold++) {
+                String boneName = "bullet_" + threshold;
+                Boolean bulletVisibility = lightMachineGunBulletVisibility(stack, boneName);
+                if (bulletVisibility != null) {
+                    snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(bulletVisibility));
+                }
+            }
+        }
 
         DEFAULT_HIDDEN_ATTACHMENT_BONES.forEach(boneName ->
                 snapshots.ifPresent(boneName, snapshot -> {
@@ -124,7 +135,10 @@ public final class GunAttachmentVisibility {
 
         Rule rule = RULES.get(gunId);
         if (rule != null) {
-            rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(false)));
+            rule.visible().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> {
+                Boolean hidden = installedAttachmentVisibility(gunId, stack, boneName);
+                snapshot.skipRender(hidden != null ? hidden : false);
+            }));
             rule.hidden().forEach(boneName -> snapshots.ifPresent(boneName, snapshot -> snapshot.skipRender(true)));
         }
 
@@ -169,6 +183,19 @@ public final class GunAttachmentVisibility {
         }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             snapshot.skipRender(true);
+        }
+    }
+
+    private static Boolean lightMachineGunBulletVisibility(ItemStack stack, String boneName) {
+        if (!boneName.startsWith("bullet_")) {
+            return null;
+        }
+        try {
+            int threshold = Integer.parseInt(boneName.substring("bullet_".length()));
+            int ammo = Math.max(0, stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), 0));
+            return ammo < threshold;
+        } catch (NumberFormatException exception) {
+            return null;
         }
     }
 
@@ -230,9 +257,16 @@ public final class GunAttachmentVisibility {
 
     private static boolean hasSwordBayonet(ItemStack stack) {
         return GunAttachments.stack(stack, AttachmentType.BARREL)
-                .map(attachmentStack -> attachmentStack.is(ItemTags.SWORDS))
-                .filter(isSword -> isSword)
+                .filter(GunAttachmentVisibility::isBayonetStack)
                 .isPresent();
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        var id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static Boolean bakedGripVisibility(ItemStack stack, String boneName) {
@@ -255,12 +289,14 @@ public final class GunAttachmentVisibility {
     }
 
     private static boolean isGenericInstalledBone(ItemStack stack, String boneName) {
-        for (AttachmentType type : AttachmentType.values()) {
-            if (isInstalled(stack, type, boneName)) {
-                return true;
-            }
-        }
-        return false;
+        return switch (boneName) {
+            case "extended_mag_2", "extended_magazine", "magazine_extended", "mag_extended" -> isInstalled(stack, AttachmentType.MAGAZINE, "extended_mag");
+            case "drum_mag_2", "drum_magazine", "magazine_drum", "mag_drum" -> isInstalled(stack, AttachmentType.MAGAZINE, "drum_mag");
+            case "light_handguard", "light_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "light_stock");
+            case "tactical_handguard", "tactical_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "tactical_stock");
+            case "weighted_handguard", "weighted_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "weighted_stock");
+            default -> false;
+        };
     }
 
     private static Boolean magazineItemVisibility(ItemStack stack, String boneName) {
@@ -343,7 +379,11 @@ public final class GunAttachmentVisibility {
                 || "mag_drum".equals(boneName);
     }
 
-    private static Map.Entry<Identifier, Rule> rule(Identifier gunId, Set<String> visible, Set<String> hidden) {
+    private static Map.Entry<Identifier, Rule> rule(
+            Identifier gunId,
+            Set<String> visible,
+            Set<String> hidden
+    ) {
         return Map.entry(gunId, new Rule(visible, hidden));
     }
 

@@ -1,6 +1,7 @@
 package ttv.migami.jeg.client.screen;
 
 import java.net.URI;
+import java.lang.reflect.Field;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -8,6 +9,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.item.TrackingItemStackRenderState;
+import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -17,7 +21,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.ClientUiConfig;
@@ -25,6 +34,7 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.menu.AttachmentMenu;
+import ttv.migami.jeg.mixin.GuiGraphicsExtractorAccessor;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 
 public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMenu> {
@@ -46,6 +56,32 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int MEDAL_ENABLED_V = 161;
     private static final int MEDAL_DISABLED_U = 176;
     private static final int MEDAL_DISABLED_V = 183;
+    private static final float GUN_PREVIEW_HALF_EXTENT = 1.35F;
+    private static final float GUN_PREVIEW_SCALE = 1.5F;
+    private static final int GUN_PREVIEW_CENTER_Y = 24;
+    private static final int GUN_PREVIEW_SLOT_CENTER_OFFSET = 8;
+    private static final Vector3fc[] GUN_PREVIEW_EXTENTS = new Vector3fc[] {
+            new Vector3f(-GUN_PREVIEW_HALF_EXTENT, -GUN_PREVIEW_HALF_EXTENT, -GUN_PREVIEW_HALF_EXTENT),
+            new Vector3f(GUN_PREVIEW_HALF_EXTENT, GUN_PREVIEW_HALF_EXTENT, GUN_PREVIEW_HALF_EXTENT)
+    };
+
+    private static final class PreviewStateAccess {
+        private static final Field LAYERS;
+        private static final Field ACTIVE_LAYER_COUNT;
+
+        static {
+            try {
+                LAYERS = ItemStackRenderState.class.getDeclaredField("layers");
+                LAYERS.setAccessible(true);
+                ACTIVE_LAYER_COUNT = ItemStackRenderState.class.getDeclaredField("activeLayerCount");
+                ACTIVE_LAYER_COUNT.setAccessible(true);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to init item preview render state reflection access", e);
+            }
+        }
+
+        private PreviewStateAccess() {}
+    }
 
     public AttachmentScreen(AttachmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, 184);
@@ -130,12 +166,24 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return;
         }
 
-        var pose = guiGraphics.pose();
-        pose.pushMatrix();
-        pose.translate(this.leftPos + this.imageWidth / 2.0F - 24.0F, this.topPos + 9.0F);
-        pose.scale(3.0F);
-        guiGraphics.item(player, gunStack, 0, 0, player.getId());
-        pose.popMatrix();
+        TrackingItemStackRenderState itemState = new TrackingItemStackRenderState();
+        Minecraft.getInstance().getItemModelResolver().updateForLiving(
+                itemState,
+                gunStack,
+                ItemDisplayContext.FIXED,
+                player
+        );
+        applyPreviewStateTransform(itemState);
+        itemState.setOversizedInGui(true);
+
+        GuiItemRenderState guiItemState = new GuiItemRenderState(
+                new Matrix3x2f(guiGraphics.pose()),
+                itemState,
+                this.leftPos + this.imageWidth / 2 - GUN_PREVIEW_SLOT_CENTER_OFFSET,
+                this.topPos + GUN_PREVIEW_CENTER_Y - GUN_PREVIEW_SLOT_CENTER_OFFSET,
+                ((GuiGraphicsExtractorAccessor) guiGraphics).jeg$getScissorStack().jeg$peek()
+        );
+        ((GuiGraphicsExtractorAccessor) guiGraphics).jeg$getGuiRenderState().addItem(guiItemState);
     }
 
     private void renderConfigButton(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
@@ -305,5 +353,19 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return Component.literal("JEG: Gun-Packs!");
         }
         return Component.literal(Reference.MOD_ID.equals(itemId.getNamespace()) ? "Just Enough Guns" : "JEG: Add-on");
+    }
+
+    private static void applyPreviewStateTransform(ItemStackRenderState itemState) {
+        try {
+            ItemStackRenderState.LayerRenderState[] layers =
+                    (ItemStackRenderState.LayerRenderState[]) PreviewStateAccess.LAYERS.get(itemState);
+            int count = (int) PreviewStateAccess.ACTIVE_LAYER_COUNT.get(itemState);
+            Matrix4f previewScale = new Matrix4f().scale(GUN_PREVIEW_SCALE);
+            for (int i = 0; i < count && i < layers.length; i++) {
+                layers[i].setExtents(() -> GUN_PREVIEW_EXTENTS);
+                layers[i].setLocalTransform(previewScale);
+            }
+        } catch (IllegalAccessException ignored) {
+        }
     }
 }

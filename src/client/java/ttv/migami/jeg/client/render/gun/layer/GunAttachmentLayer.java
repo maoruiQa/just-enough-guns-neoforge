@@ -1,9 +1,11 @@
 package ttv.migami.jeg.client.render.gun.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -106,6 +108,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            bone.translateAwayFromPivotPoint(passInfo.poseStack());
             for (AttachmentType type : POSITIONED_TYPES) {
                 renderAttachment(type, passInfo, collector);
             }
@@ -117,7 +120,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             if (!GunAttachments.canAttachStack(this.gunStack, type, attachmentStack)) {
                 return;
             }
-            if (type == AttachmentType.BARREL && attachmentStack.is(ItemTags.SWORDS)) {
+            if (type == AttachmentType.BARREL && isBayonetStack(attachmentStack)) {
                 return;
             }
 
@@ -134,7 +137,9 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             String attachmentName = attachmentId.getPath();
             Identifier model = model(attachmentName);
             Identifier texture = texture(attachmentId, this.gunStack);
-            if (!exists(modelResource(model)) || !exists(texture)) {
+            boolean modelExists = exists(modelResource(model));
+            boolean textureExists = exists(texture);
+            if (!modelExists || !textureExists) {
                 return;
             }
 
@@ -143,14 +148,13 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(texture),
                     (pose, buffer) -> {
-                        PoseStack attachmentPose = new PoseStack();
-                        attachmentPose.last().set(pose);
-                        if (transform != null) {
-                            transform.apply(attachmentPose);
-                        } else {
-                            attachmentPose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
-                        }
-                        passInfo.renderPosed(() -> renderBones(bakedModel, passInfo, attachmentPose, buffer));
+                        renderModel(bakedModel, passInfo, pose, buffer, attachmentPose -> {
+                            if (transform != null) {
+                                transform.apply(attachmentPose);
+                            } else {
+                                attachmentPose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+                            }
+                        });
                     }
             );
         }
@@ -168,7 +172,9 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
             Identifier model = model(attachmentName);
             Identifier texture = bayonetTexture(attachmentStack, attachmentName, this.gunStack);
-            if (!exists(modelResource(model)) || !exists(texture)) {
+            boolean modelExists = exists(modelResource(model));
+            boolean textureExists = exists(texture);
+            if (!modelExists || !textureExists) {
                 return;
             }
 
@@ -177,18 +183,28 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(texture),
                     (pose, buffer) -> {
-                        PoseStack attachmentPose = new PoseStack();
-                        attachmentPose.last().set(pose);
-                        GunAttachmentTransforms.transform(this.gunId, AttachmentType.BARREL)
-                                .ifPresent(transform -> transform.apply(attachmentPose));
-                        passInfo.renderPosed(() -> renderBones(bakedModel, passInfo, attachmentPose, buffer));
+                        renderModel(bakedModel, passInfo, pose, buffer, attachmentPose ->
+                                GunAttachmentTransforms.transform(this.gunId, AttachmentType.BARREL)
+                                        .ifPresent(transform -> transform.apply(attachmentPose)));
                     }
             );
         }
 
-        private static void renderBones(BakedGeoModel bakedModel, RenderPassInfo<GeoRenderState> passInfo, PoseStack poseStack, com.mojang.blaze3d.vertex.VertexConsumer buffer) {
-            for (GeoBone scopeBone : bakedModel.topLevelBones()) {
-                scopeBone.render(passInfo, poseStack, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
+        private static void renderModel(
+                BakedGeoModel bakedModel,
+                RenderPassInfo<GeoRenderState> passInfo,
+                PoseStack.Pose pose,
+                VertexConsumer buffer,
+                Consumer<PoseStack> transform
+        ) {
+            PoseStack renderPose = passInfo.poseStack();
+            renderPose.pushPose();
+            try {
+                renderPose.last().set(pose);
+                transform.accept(renderPose);
+                bakedModel.render(passInfo, buffer, passInfo.packedLight(), passInfo.packedOverlay(), passInfo.renderColor());
+            } finally {
+                renderPose.popPose();
             }
         }
     }
@@ -223,7 +239,15 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         if (vanilla != null) {
             return vanilla;
         }
-        return stack.is(ItemTags.SWORDS) ? "modded_sword" : null;
+        return isBayonetStack(stack) ? "modded_sword" : null;
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static Identifier texture(Identifier attachmentId, ItemStack gunStack) {

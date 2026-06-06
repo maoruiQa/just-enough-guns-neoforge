@@ -19,6 +19,7 @@
     "ArmedEntityRenderStateMixin",
     "AvatarRendererMixin",
     "GuiAccessor",
+    "GuiGraphicsExtractorAccessor",
     "ItemInHandRendererMixin",
     "InventoryScreenVehicleMixin",
     "GuiMixin",

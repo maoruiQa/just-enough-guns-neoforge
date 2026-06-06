@@ -44,6 +44,12 @@ public class ModParticleTypes {
             REGISTER.register("blue_flame", FabricParticleTypes::simple);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUN_MUZZLE_FLASH =
             REGISTER.register("gun_muzzle_flash", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CASING_PARTICLE =
+            REGISTER.register("casing", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SHELL_PARTICLE =
+            REGISTER.register("shell", FabricParticleTypes::simple);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SPECTRE_CASING_PARTICLE =
+            REGISTER.register("spectre_casing", FabricParticleTypes::simple);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CONFETTI =
             REGISTER.register("confetti", FabricParticleTypes::simple);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> HIT_MARKER =

@@ -6,7 +6,9 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -20,6 +22,9 @@ import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.attachment.AttachmentModifiers;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final float FIRST_PERSON_GLOBAL_SCALE_MULTIPLIER = 1.28F;
@@ -31,6 +36,30 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
+    private static final Identifier REFLEX_SIGHT = Reference.id("reflex_sight");
+    private static final Identifier MONOCLE_SIGHT = Reference.id("monocle_sight");
+    private static final Identifier HOLOGRAPHIC_SIGHT = Reference.id("holographic_sight");
+    private static final Identifier COMBAT_SCOPE = Reference.id("combat_scope");
+    private static final Identifier TELESCOPIC_SIGHT = Reference.id("telescopic_sight");
+    private static final Identifier SPYGLASS = Identifier.withDefaultNamespace("spyglass");
+    private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
+            Reference.id("combat_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.83D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
+            ),
+            Reference.id("service_rifle"), Map.of(
+                    REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
+                    MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
+                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
+                    COMBAT_SCOPE, zoom(0.0D, -0.90D, 0.0D),
+                    TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
+                    SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
+            )
+    );
     private static final Map<Identifier, ForgeZoomOffset> FORGE_ZOOM_OFFSETS = Map.ofEntries(
             Map.entry(Reference.id("abstract_gun"), zoom(0.0D, 3.75D, -1.75D)),
             Map.entry(Reference.id("assault_rifle"), zoom(0.0D, 3.75D, -1.75D)),
@@ -71,6 +100,8 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
     @Override
     public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
+        // Match NeoForge 1.21.10: third-person two-handed hold pose for guns.
+        // First-person pose is handled by applyForgeHandTransform + GeckoLib arms layer for AnimatedGunItem.
         return HumanoidModel.ArmPose.CROSSBOW_HOLD;
     }
 
@@ -125,6 +156,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsTransition, 4.0F, 0.8F)));
         poseStack.scale(firstPersonScale, firstPersonScale, firstPersonScale);
 
+        // Keep vanilla-like equip/swing movement to reduce "hard snap" while switching items.
         float equip = Mth.clamp(equipProcess, 0.0F, 1.0F);
         poseStack.translate(0.0F, -0.6F * equip, 0.0F);
         if (!isBow) {
@@ -136,7 +168,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         applyBobbingTransforms(poseStack, player, partialTick, ads);
         applySwayTransforms(poseStack, player, partialTick, ads);
-        applySprintingTransforms(poseStack, player, direction, ads);
+        applySprintingTransforms(poseStack, player, stack, direction, ads);
         applyRecoilTransforms(poseStack, ads);
         return true;
     }
@@ -180,11 +212,11 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
     }
 
-    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads) {
+    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, ItemStack stack, int direction, float ads) {
         Minecraft minecraft = Minecraft.getInstance();
         boolean attackDown = minecraft != null && minecraft.player == player && minecraft.options.keyAttack.isDown();
         if (!player.isSprinting() || AimingHandler.get().isAiming() || attackDown
-                || GunRecoilHandler.isSuppressingSprintPose()) {
+                || GunRecoilHandler.isSuppressingSprintPose() || hasBayonet(stack)) {
             return;
         }
 
@@ -192,6 +224,20 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.translate(-0.18F * direction * transition, -0.08F * transition, 0.0F);
         poseStack.mulPose(Axis.YP.rotationDegrees(30.0F * direction * transition));
         poseStack.mulPose(Axis.XP.rotationDegrees(-18.0F * transition));
+    }
+
+    private static boolean hasBayonet(ItemStack stack) {
+        return GunAttachments.stack(stack, AttachmentType.BARREL)
+                .filter(GunItemClientExtensions::isBayonetStack)
+                .isPresent();
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static void applyRecoilTransforms(PoseStack poseStack, float ads) {
@@ -219,9 +265,14 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static AdsSightOffset adsSightOffset(ItemStack stack, Identifier gunId, double firstPersonScale) {
-        ForgeZoomOffset zoom = GunScopeSupport.hasTelescopicSight(stack)
+        boolean telescopicSight = GunScopeSupport.hasTelescopicSight(stack);
+        ForgeZoomOffset zoom = telescopicSight
                 ? zoom(0.0D, 5.0D, -4.4D)
                 : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
+        if (!telescopicSight) {
+            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
+        }
+        zoom = withRifleScopeAdsCorrection(stack, gunId, zoom);
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
         double translateZ = FIRST_PERSON_TRANSLATE_Z;
@@ -254,4 +305,37 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static ForgeZoomOffset zoom(double xOffset, double yOffset, double zOffset) {
         return new ForgeZoomOffset(xOffset, yOffset, zOffset);
     }
+
+    private static ForgeZoomOffset withAttachmentAdsOffset(ForgeZoomOffset zoom, AttachmentModifiers modifiers) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + modifiers.adsViewXOffset(),
+                zoom.yOffset() + modifiers.adsViewYOffset(),
+                zoom.zOffset() + modifiers.adsViewZOffset()
+        );
+    }
+
+    private static ForgeZoomOffset withRifleScopeAdsCorrection(ItemStack stack, Identifier gunId, ForgeZoomOffset zoom) {
+        Map<Identifier, ForgeZoomOffset> corrections = RIFLE_SCOPE_ADS_CORRECTIONS.get(gunId);
+        if (corrections == null) {
+            return zoom;
+        }
+        Identifier scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
+        if (scopeId == null) {
+            return zoom;
+        }
+        ForgeZoomOffset correction = corrections.get(scopeId);
+        if (correction != null) {
+            return withCorrection(zoom, correction);
+        }
+        return zoom;
+    }
+
+    private static ForgeZoomOffset withCorrection(ForgeZoomOffset zoom, ForgeZoomOffset correction) {
+        return new ForgeZoomOffset(
+                zoom.xOffset() + correction.xOffset(),
+                zoom.yOffset() + correction.yOffset(),
+                zoom.zOffset() + correction.zOffset()
+        );
+    }
+
 }

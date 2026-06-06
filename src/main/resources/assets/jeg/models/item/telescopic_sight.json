@@ -2,8 +2,9 @@
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
 	"texture_size": [32, 32],
 	"textures": {
-		"2": "jeg:effect/telescopic_glass",
-		"4": "jeg:item/scopes"
+		"2": "jeg:item/telescopic_glass",
+		"4": "jeg:item/scopes",
+		"particle": "jeg:item/scopes"
 	},
 	"elements": [
 		{

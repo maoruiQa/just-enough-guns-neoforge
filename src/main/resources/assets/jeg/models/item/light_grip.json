@@ -1,7 +1,8 @@
 {
 	"credit": "Made with Blockbench",
 	"textures": {
-		"3": "jeg:item/attachments_1"
+		"3": "jeg:item/attachments_1",
+		"particle": "jeg:item/attachments_1"
 	},
 	"elements": [
 		{

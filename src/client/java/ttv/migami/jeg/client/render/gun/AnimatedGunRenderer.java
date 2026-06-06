@@ -1,15 +1,7 @@
 package ttv.migami.jeg.client.render.gun;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.mojang.math.Axis;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
@@ -36,19 +28,17 @@ import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
-import ttv.migami.jeg.item.attachment.AttachmentType;
-import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID + ".AnimatedGunRenderer");
-    private static final Gson GSON = new Gson();
     public static final DataTicket<Item> ANIMATED_ITEM = DataTicket.create("jeg:animated_item", Item.class);
-    private static final Map<String, Map<String, Transform>> TRANSFORMS_CACHE = new ConcurrentHashMap<>();
     private static final Set<String> VANILLA_FALLBACK_WARNED = ConcurrentHashMap.newKeySet();
     private static volatile boolean VANILLA_FALLBACK_DISABLED = false;
-    private static final double THIRD_PERSON_MINIGUN_X_CORRECTION = 0.0D;
-    private static final double THIRD_PERSON_MINIGUN_Y_CORRECTION = -0.28D;
-    private static final double THIRD_PERSON_MINIGUN_FORWARD_CORRECTION = 0.7D;
+    private static final double THIRD_PERSON_ANIMATED_Y_CORRECTION = -8.75D / 16.0D;
+    private static final double THIRD_PERSON_MINIGUN_FORWARD_CORRECTION = 1.4D;
+    private static final double THIRD_PERSON_MINIGUN_UP_CORRECTION = 1.25D;
+    private static final float ATTACHMENT_PREVIEW_X_ROT = 5.0F;
+    private static final float ATTACHMENT_PREVIEW_Y_ROT_SPEED = 1.0F;
 
     // Store vanilla state so we can fall back to 1.21.10-style (vanilla item model) rendering outside first-person.
     private static final DataTicket<ItemStackRenderState> VANILLA_ITEM_STATE =
@@ -85,9 +75,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         private VanillaStateAccess() {}
     }
 
-    private record Transform(float rotX, float rotY, float rotZ, float tx, float ty, float tz, float sx, float sy, float sz) {
-    }
-
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
         this.withRenderLayer(new GunAttachmentLayer(this));
@@ -98,16 +85,19 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     @Override
     public GeoRenderState createRenderState(AnimatedGunItem animatable, GeoItemRenderer.RenderData context) {
         GeoRenderState state = super.createRenderState(animatable, context);
+        ItemStack rawStack = context != null ? context.itemStack() : ItemStack.EMPTY;
+        ItemDisplayContext rawPerspective = context != null ? context.renderPerspective() : ItemDisplayContext.NONE;
+        ItemStack stack = resolveStableStack(rawStack, animatable);
         // Ensure perspective is always present; without it we fall back to NONE and handheld renders look like GUI/ground.
         ItemDisplayContext perspective = resolveStableContext(
-                context != null ? context.renderPerspective() : ItemDisplayContext.NONE,
-                context != null ? context.itemStack() : ItemStack.EMPTY
+                rawPerspective,
+                stack
         );
         state.addGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, perspective);
         state.addGeckolibData(ANIMATED_ITEM, animatable);
+        state.addGeckolibData(ITEM_STACK, stack);
         if (context != null) {
             state.addGeckolibData(VANILLA_ITEM_STATE, context.vanillaRenderState());
-            state.addGeckolibData(ITEM_STACK, context.itemStack());
         }
         state.addGeckolibData(USING_VANILLA_NON_FIRST_PERSON, shouldUseVanillaNonFirstPerson(perspective, state.getOrDefaultGeckolibData(VANILLA_ITEM_STATE, (ItemStackRenderState) null), state, animatable.getStats().id().getPath()));
         return state;
@@ -121,15 +111,18 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         // but it does not guarantee DataTickets.ITEM_RENDER_PERSPECTIVE is populated.
         // If it is missing we fall back to NONE, which makes handheld items render as if they were GUI/ground,
         // producing the "floating upper-left" placement in third person.
+        ItemStack rawStack = context != null ? context.itemStack() : ItemStack.EMPTY;
+        ItemDisplayContext rawPerspective = context != null ? context.renderPerspective() : ItemDisplayContext.NONE;
+        ItemStack stack = resolveStableStack(rawStack, animatable);
         ItemDisplayContext perspective = resolveStableContext(
-                context != null ? context.renderPerspective() : ItemDisplayContext.NONE,
-                context != null ? context.itemStack() : ItemStack.EMPTY
+                rawPerspective,
+                stack
         );
         renderState.addGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, perspective);
         renderState.addGeckolibData(ANIMATED_ITEM, animatable);
+        renderState.addGeckolibData(ITEM_STACK, stack);
         if (context != null) {
             renderState.addGeckolibData(VANILLA_ITEM_STATE, context.vanillaRenderState());
-            renderState.addGeckolibData(ITEM_STACK, context.itemStack());
         }
         renderState.addGeckolibData(USING_VANILLA_NON_FIRST_PERSON, shouldUseVanillaNonFirstPerson(perspective, renderState.getOrDefaultGeckolibData(VANILLA_ITEM_STATE, (ItemStackRenderState) null), renderState, animatable.getStats().id().getPath()));
     }
@@ -141,11 +134,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (isFirstPerson(ctx) && shouldHideScopedFirstPersonGun(renderState)) {
             return;
         }
-
-        // Use GeckoLib where animation or attachment layers are needed. Bare non-first-person guns keep the stable
-        // vanilla item model path that fixes broken inventory/GUI/third-person renders.
-        if (!isFirstPerson(ctx) && !VANILLA_FALLBACK_DISABLED && !shouldUseAnimatedNonFirstPerson(ctx, renderState, gunPath)) {
-            ItemStackRenderState vanilla = renderState.getOrDefaultGeckolibData(VANILLA_ITEM_STATE, (ItemStackRenderState) null);
+        // Third-person uses GeckoLib for static Geo pose and attachment layers. GUI/inventory keeps the
+        // vanilla item model fallback so static item/gui models render normally.
+        boolean animatedNonFirstPerson = shouldUseAnimatedNonFirstPerson(ctx, renderState, gunPath);
+        ItemStackRenderState vanilla = renderState.getOrDefaultGeckolibData(VANILLA_ITEM_STATE, (ItemStackRenderState) null);
+        boolean vanillaEmpty = vanilla == null || vanilla.isEmpty();
+        if (!isFirstPerson(ctx) && !VANILLA_FALLBACK_DISABLED && !animatedNonFirstPerson) {
             if (vanilla != null && !vanilla.isEmpty()) {
                 int packedLight = renderState.getOrDefaultGeckolibData(DataTickets.PACKED_LIGHT, 0);
                 int packedOverlay = renderState.getOrDefaultGeckolibData(DataTickets.PACKED_OVERLAY, 0);
@@ -253,53 +247,19 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         // Always apply GeckoLib centering as the base transform.
         super.adjustRenderPose(passInfo);
 
-        // First-person pose is controlled by IClientItemExtensions.applyForgeHandTransform (1.21.10-style),
-        // and re-applying JSON display transforms here will fight that pipeline.
-        if (ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+        if (isFirstPerson(ctx)) {
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             FabricClientBootstrap.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
         }
 
-        String gunId = "abstract_gun";
-        if (renderState.hasGeckolibData(ANIMATED_ITEM)) {
-            Item item = renderState.getGeckolibData(ANIMATED_ITEM);
-            if (item instanceof AnimatedGunItem gun) {
-                gunId = gun.getStats().id().getPath();
-            }
-        }
-
-        Transform t = getDisplayTransform(gunId, ctx);
-        if (t == null) {
+        if (isAttachmentScreenPreview(ctx)) {
+            applyAttachmentScreenPreviewTransform(passInfo.poseStack());
             return;
         }
 
-        boolean leftHanded = ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
-        float tx = t.tx;
-        float ty = t.ty;
-        float tz = t.tz;
-        float rx = t.rotX;
-        float ry = t.rotY;
-        float rz = t.rotZ;
-
-        // Mirror right-hand transforms for left-hand contexts when no explicit left-hand transform exists.
-        if (leftHanded && !hasExplicitLeftTransform(gunId, ctx)) {
-            tx = -tx;
-            ry = -ry;
-            rz = -rz;
-        }
-
-        // Model JSON translations are in "pixels" (1/16 block).
-        passInfo.poseStack().translate(tx * 0.0625F, ty * 0.0625F, tz * 0.0625F);
-        // Match vanilla ItemTransform rotation order (X then Y then Z).
-        // PoseStack multiplies the current matrix, so we apply in reverse here.
-        passInfo.poseStack().mulPose(Axis.ZP.rotationDegrees(rz));
-        passInfo.poseStack().mulPose(Axis.YP.rotationDegrees(ry));
-        passInfo.poseStack().mulPose(Axis.XP.rotationDegrees(rx));
-        passInfo.poseStack().scale(t.sx, t.sy, t.sz);
-
-        if (isThirdPerson(ctx) && "minigun".equals(gunId)) {
-            applyThirdPersonMinigunTransform(passInfo.poseStack());
+        if (isThirdPerson(ctx)) {
+            applyThirdPersonAnimatedTransform(gunPath, passInfo.poseStack());
         }
     }
 
@@ -325,7 +285,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                         snapshot.skipChildrenRender(false);
                     }))
             );
-        } else if (shouldUseAnimatedThirdPerson(ctx, finalGunId.getPath())) {
+        } else if (shouldUseAnimatedThirdPerson(ctx, finalGunId.getPath()) || isAttachmentScreenPreview(ctx)) {
             passInfo.addBoneUpdater((info, snapshots) ->
                     FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {
                         snapshot.skipRender(true);
@@ -338,13 +298,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static String gunPathFromRenderState(GeoRenderState renderState) {
+        return gunIdFromRenderState(renderState);
+    }
+
+    private static String gunIdFromRenderState(GeoRenderState renderState) {
         if (renderState.hasGeckolibData(ANIMATED_ITEM)) {
             Item item = renderState.getGeckolibData(ANIMATED_ITEM);
             if (item instanceof AnimatedGunItem gun) {
                 return gun.getStats().id().getPath();
             }
         }
-        return "unknown";
+        return "abstract_gun";
     }
 
     private static boolean shouldHideScopedFirstPersonGun(GeoRenderState renderState) {
@@ -394,6 +358,29 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         return ItemDisplayContext.NONE;
+    }
+
+    private static ItemStack resolveStableStack(ItemStack base, Item animatable) {
+        if (base != null && !base.isEmpty()) {
+            return base;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || animatable == null) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack mainHand = mc.player.getMainHandItem();
+        if (!mainHand.isEmpty() && mainHand.getItem() == animatable) {
+            return mainHand;
+        }
+
+        ItemStack offHand = mc.player.getOffhandItem();
+        if (!offHand.isEmpty() && offHand.getItem() == animatable) {
+            return offHand;
+        }
+
+        return ItemStack.EMPTY;
     }
 
     private static ItemDisplayContext resolveStableContext(ItemDisplayContext base, ItemStack stack) {
@@ -459,22 +446,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 : ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
     }
 
-    private static boolean hasExplicitLeftTransform(String gunId, ItemDisplayContext ctx) {
-        String key = contextKey(ctx);
-        if (key == null || !key.endsWith("_lefthand")) {
-            return false;
-        }
-        Map<String, Transform> byKey = TRANSFORMS_CACHE.computeIfAbsent(gunId, AnimatedGunRenderer::loadTransformsForGun);
-        if (byKey.containsKey(key)) {
-            return true;
-        }
-        if (!"abstract_gun".equals(gunId)) {
-            Map<String, Transform> fallback = TRANSFORMS_CACHE.computeIfAbsent("abstract_gun", AnimatedGunRenderer::loadTransformsForGun);
-            return fallback.containsKey(key);
-        }
-        return false;
-    }
-
     private static boolean isFirstPerson(ItemDisplayContext ctx) {
         return ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
     }
@@ -484,161 +455,40 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static boolean shouldUseAnimatedThirdPerson(ItemDisplayContext ctx, String gunPath) {
-        return isThirdPerson(ctx) && "minigun".equals(gunPath);
+        return isThirdPerson(ctx);
     }
 
     private static boolean shouldUseAnimatedNonFirstPerson(ItemDisplayContext ctx, GeoRenderState renderState, String gunPath) {
         if (shouldUseAnimatedThirdPerson(ctx, gunPath)) {
             return true;
         }
-        ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
-        if (!hasVisibleAttachmentLayer(stack)) {
-            return false;
-        }
-        if (isThirdPerson(ctx)) {
-            return true;
-        }
-        Minecraft minecraft = Minecraft.getInstance();
-        return ctx == ItemDisplayContext.GUI && minecraft != null && minecraft.screen instanceof AttachmentScreen;
+        return isAttachmentScreenPreview(ctx);
     }
 
-    private static void applyThirdPersonMinigunTransform(com.mojang.blaze3d.vertex.PoseStack poseStack) {
-        poseStack.translate(THIRD_PERSON_MINIGUN_X_CORRECTION, THIRD_PERSON_MINIGUN_Y_CORRECTION, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
-        poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+    private static boolean isAttachmentScreenPreview(ItemDisplayContext ctx) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return ctx == ItemDisplayContext.FIXED && minecraft != null && minecraft.screen instanceof AttachmentScreen;
+    }
+
+    private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {
+        if ("minigun".equals(gunPath)) {
+            poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION + THIRD_PERSON_MINIGUN_UP_CORRECTION, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+            return;
+        }
+        poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
     }
 
     private static boolean shouldUseVanillaNonFirstPerson(ItemDisplayContext ctx, ItemStackRenderState vanilla, GeoRenderState renderState, String gunPath) {
         return !isFirstPerson(ctx) && !shouldUseAnimatedNonFirstPerson(ctx, renderState, gunPath) && vanilla != null && !vanilla.isEmpty();
     }
 
-    private static boolean hasVisibleAttachmentLayer(ItemStack stack) {
-        return GunAttachments.has(stack, AttachmentType.SCOPE)
-                || GunAttachments.has(stack, AttachmentType.BARREL)
-                || GunAttachments.has(stack, AttachmentType.STOCK)
-                || GunAttachments.has(stack, AttachmentType.UNDER_BARREL)
-                || GunAttachments.has(stack, AttachmentType.SPECIAL);
-    }
-
-    private static Transform getDisplayTransform(String gunId, ItemDisplayContext ctx) {
-        String key = contextKey(ctx);
-        if (key == null) {
-            return null;
-        }
-
-        Map<String, Transform> byKey = TRANSFORMS_CACHE.computeIfAbsent(gunId, AnimatedGunRenderer::loadTransformsForGun);
-        Transform t = byKey.get(key);
-        if (t != null) {
-            return t;
-        }
-
-        // If left-hand transform isn't defined, fall back to right-hand and mirror in code.
-        if (key.endsWith("_lefthand")) {
-            String rightKey = key.replace("_lefthand", "_righthand");
-            t = byKey.get(rightKey);
-            if (t != null) {
-                return t;
-            }
-        }
-
-        // Fallback to abstract_gun if specific gun json missing.
-        if (!"abstract_gun".equals(gunId)) {
-            Map<String, Transform> fallback = TRANSFORMS_CACHE.computeIfAbsent("abstract_gun", AnimatedGunRenderer::loadTransformsForGun);
-            t = fallback.get(key);
-            if (t != null) {
-                return t;
-            }
-            if (key.endsWith("_lefthand")) {
-                String rightKey = key.replace("_lefthand", "_righthand");
-                return fallback.get(rightKey);
-            }
-        }
-
-        return null;
-    }
-
-    private static String contextKey(ItemDisplayContext ctx) {
-        return switch (ctx) {
-            case GUI -> "gui";
-            case FIXED -> "fixed";
-            case GROUND -> "ground";
-            case HEAD -> "head";
-            case FIRST_PERSON_RIGHT_HAND -> "firstperson_righthand";
-            case FIRST_PERSON_LEFT_HAND -> "firstperson_lefthand";
-            case THIRD_PERSON_RIGHT_HAND -> "thirdperson_righthand";
-            case THIRD_PERSON_LEFT_HAND -> "thirdperson_lefthand";
-            default -> null;
-        };
-    }
-
-    private static Map<String, Transform> loadTransformsForGun(String gunId) {
-        Map<String, Transform> out = new ConcurrentHashMap<>();
-        var modelId = Reference.id("models/item/" + gunId + ".json");
-
-        try {
-            var opt = Minecraft.getInstance().getResourceManager().getResource(modelId);
-            if (opt.isEmpty()) {
-                return out;
-            }
-
-            try (var in = opt.get().open();
-                 var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-                JsonObject root = GSON.fromJson(reader, JsonObject.class);
-                JsonObject display = root != null && root.has("display") && root.get("display").isJsonObject()
-                        ? root.getAsJsonObject("display")
-                        : null;
-                if (display == null) {
-                    return out;
-                }
-
-                for (Map.Entry<String, JsonElement> e : display.entrySet()) {
-                    if (!e.getValue().isJsonObject()) {
-                        continue;
-                    }
-                    out.put(e.getKey(), parseTransform(e.getValue().getAsJsonObject()));
-                }
-            }
-        } catch (Exception ignored) {
-            // If anything goes wrong, fall back to GeckoLib's base pose.
-        }
-
-        return out;
-    }
-
-    private static Transform parseTransform(JsonObject obj) {
-        float rx = 0, ry = 0, rz = 0;
-        float tx = 0, ty = 0, tz = 0;
-        float sx = 1, sy = 1, sz = 1;
-
-        if (obj.has("rotation")) {
-            float[] r = readVec3(obj.get("rotation"), 0, 0, 0);
-            rx = r[0];
-            ry = r[1];
-            rz = r[2];
-        }
-        if (obj.has("translation")) {
-            float[] t = readVec3(obj.get("translation"), 0, 0, 0);
-            tx = t[0];
-            ty = t[1];
-            tz = t[2];
-        }
-        if (obj.has("scale")) {
-            float[] s = readVec3(obj.get("scale"), 1, 1, 1);
-            sx = s[0];
-            sy = s[1];
-            sz = s[2];
-        }
-
-        return new Transform(rx, ry, rz, tx, ty, tz, sx, sy, sz);
-    }
-
-    private static float[] readVec3(JsonElement el, float dx, float dy, float dz) {
-        if (!(el instanceof JsonArray arr) || arr.size() < 3) {
-            return new float[] {dx, dy, dz};
-        }
-        return new float[] {
-                arr.get(0).isJsonPrimitive() ? arr.get(0).getAsFloat() : dx,
-                arr.get(1).isJsonPrimitive() ? arr.get(1).getAsFloat() : dy,
-                arr.get(2).isJsonPrimitive() ? arr.get(2).getAsFloat() : dz
-        };
+    private static void applyAttachmentScreenPreviewTransform(com.mojang.blaze3d.vertex.PoseStack poseStack) {
+        Minecraft minecraft = Minecraft.getInstance();
+        float ticks = minecraft != null && minecraft.player != null
+                ? minecraft.player.tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)
+                : 0.0F;
+        poseStack.mulPose(Axis.XP.rotationDegrees(ATTACHMENT_PREVIEW_X_ROT));
+        poseStack.mulPose(Axis.YP.rotationDegrees(ticks * ATTACHMENT_PREVIEW_Y_ROT_SPEED));
     }
 }

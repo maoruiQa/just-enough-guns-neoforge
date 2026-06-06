@@ -5,17 +5,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -108,7 +109,7 @@ public final class AttachmentRuntimeEvents {
         }
 
         Optional<ItemStack> attachment = GunAttachments.stack(gunStack, AttachmentType.BARREL);
-        ItemStack bayonet = attachment.filter(stack -> stack.is(ItemTags.SWORDS)).orElse(ItemStack.EMPTY);
+        ItemStack bayonet = attachment.filter(AttachmentRuntimeEvents::isBayonet).orElse(ItemStack.EMPTY);
         Level level = player.level();
         if (player.isSprinting()) {
             Vec3 look = player.getLookAngle();
@@ -160,7 +161,7 @@ public final class AttachmentRuntimeEvents {
     private static void tickBayonetCharge(Player player, ItemStack gunStack) {
         UUID playerId = player.getUUID();
         Optional<ItemStack> attachment = GunAttachments.stack(gunStack, AttachmentType.BARREL);
-        if (!player.isSprinting() || attachment.isEmpty() || !attachment.get().is(ItemTags.SWORDS)) {
+        if (!player.isSprinting() || attachment.isEmpty() || !isBayonet(attachment.get())) {
             BAYONET_SPRINT_START_TICKS.remove(playerId);
             return;
         }
@@ -268,10 +269,18 @@ public final class AttachmentRuntimeEvents {
 
     private static float bayonetDamage(Player player, ItemStack bayonet) {
         double baseDamage = player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE);
-        if (bayonet.is(ItemTags.SWORDS)) {
+        if (isBayonet(bayonet)) {
             baseDamage = 6.0D;
         }
         return (float) (baseDamage + enchantmentLevel(player, bayonet, Enchantments.SHARPNESS));
+    }
+
+    private static boolean isBayonet(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        var id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static boolean isBayonetTooDamaged(ItemStack bayonet) {
@@ -342,9 +351,9 @@ public final class AttachmentRuntimeEvents {
         Vec3 hit = result.getLocation();
         level.sendParticles(
                 new LaserOption(face, result.getBlockPos()),
-                hit.x + 0.005D * face.getStepX(),
-                hit.y + 0.005D * face.getStepY(),
-                hit.z + 0.005D * face.getStepZ(),
+                hit.x + 0.03D * face.getStepX(),
+                hit.y + 0.03D * face.getStepY(),
+                hit.z + 0.03D * face.getStepZ(),
                 1,
                 0.0D,
                 0.0D,
