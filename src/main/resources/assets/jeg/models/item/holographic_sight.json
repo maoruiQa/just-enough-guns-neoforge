@@ -2,7 +2,8 @@
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
 	"texture_size": [64, 64],
 	"textures": {
-		"2": "jeg:item/holographic_sight"
+		"2": "jeg:item/holographic_sight",
+		"particle": "jeg:item/holographic_sight"
 	},
 	"elements": [
 		{

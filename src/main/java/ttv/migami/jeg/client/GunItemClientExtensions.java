@@ -6,7 +6,9 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -172,7 +174,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         applyBobbingTransforms(poseStack, player, partialTick, ads);
         applySwayTransforms(poseStack, player, partialTick, ads);
-        applySprintingTransforms(poseStack, player, direction, ads);
+        applySprintingTransforms(poseStack, player, stack, direction, ads);
         applyRecoilTransforms(poseStack, ads);
         return true;
     }
@@ -216,11 +218,11 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
     }
 
-    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, int direction, float ads) {
+    private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, ItemStack stack, int direction, float ads) {
         Minecraft minecraft = Minecraft.getInstance();
         boolean attackDown = minecraft != null && minecraft.player == player && minecraft.options.keyAttack.isDown();
         if (!player.isSprinting() || AimingHandler.get().isAiming() || attackDown
-                || GunRecoilHandler.isSuppressingSprintPose()) {
+                || GunRecoilHandler.isSuppressingSprintPose() || hasBayonet(stack)) {
             return;
         }
 
@@ -228,6 +230,20 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         poseStack.translate(-0.18F * direction * transition, -0.08F * transition, 0.0F);
         poseStack.mulPose(Axis.YP.rotationDegrees(30.0F * direction * transition));
         poseStack.mulPose(Axis.XP.rotationDegrees(-18.0F * transition));
+    }
+
+    private static boolean hasBayonet(ItemStack stack) {
+        return GunAttachments.stack(stack, AttachmentType.BARREL)
+                .filter(GunItemClientExtensions::isBayonetStack)
+                .isPresent();
+    }
+
+    private static boolean isBayonetStack(ItemStack stack) {
+        if (stack.is(ItemTags.SWORDS)) {
+            return true;
+        }
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id != null && id.getPath().endsWith("_sword");
     }
 
     private static void applyRecoilTransforms(PoseStack poseStack, float ads) {
