@@ -118,6 +118,7 @@ public final class NetworkHandler {
                 animated.triggerMelee(player.level(), player, stack);
             }
             toggleGunFlashlight(player, stack);
+            GunAttachments.toggleLaserPointer(stack);
             AttachmentRuntimeEvents.handleBayonetMelee(player);
         });
     }
