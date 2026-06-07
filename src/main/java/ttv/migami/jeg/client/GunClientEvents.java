@@ -191,7 +191,7 @@ public final class GunClientEvents {
         }
 
         ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof GunItem gun)) {
+        if (!(stack.getItem() instanceof GunItem)) {
             return;
         }
 
@@ -199,8 +199,7 @@ public final class GunClientEvents {
         if (ads <= 0.0F) {
             return;
         }
-        if (Reference.id("bolt_action_rifle").equals(gun.getStats().id())
-                && GunScopeSupport.isBoltActionRifleScopeEnabled(stack)) {
+        if (GunScopeSupport.hasTelescopicSight(stack)) {
             float current = event.getNewFovModifier();
             float target = SCOPE_VIEWPORT_FOV / configuredFov();
             event.setNewFovModifier(Math.max(0.1F, Mth.lerp(ads, current, target)));
