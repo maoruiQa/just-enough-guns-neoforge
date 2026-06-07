@@ -725,6 +725,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static void clearAnimationMatchState(ItemStack stack) {
         clearReloadVisualState(stack);
         stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_STOCK_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_DAMAGE.get());
     }
 
     @Override

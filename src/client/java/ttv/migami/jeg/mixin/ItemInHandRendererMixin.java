@@ -206,5 +206,10 @@ public final class ItemInHandRendererMixin {
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
         stack.remove(ModDataComponents.GUN_RELOAD_END_TICK.get());
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_STOCK_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_DAMAGE.get());
     }
 }
