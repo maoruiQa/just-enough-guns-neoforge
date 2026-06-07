@@ -110,6 +110,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static volatile long nextRenderDebugNanos;
     private static volatile long nextArmDebugNanos;
     private static volatile long nextGuiDebugNanos;
+    private ItemStack activeRenderStack = ItemStack.EMPTY;
 
     public AnimatedGunRenderer() {
         super(new AnimatedGunGeoModel());
@@ -131,7 +132,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return false;
         }
 
-        ItemStack stack = this.getCurrentItemStack();
+        ItemStack stack = currentRenderStack();
         if (stack == null || stack.isEmpty()) {
             return false;
         }
@@ -165,7 +166,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         HumanoidArm mainArm = mc.player.getMainArm();
-        ItemStack stack = this.getCurrentItemStack();
+        ItemStack stack = currentRenderStack();
         ItemStack main = mc.player.getMainHandItem();
         if (stack != null && isSameHeldItem(stack, main)) {
             return mainArm;
@@ -199,7 +200,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(225.0F));
                 poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(0.0F));
                 // Render the animated model
-                super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+                renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
             } finally {
                 poseStack.popPose();
             }
@@ -216,6 +217,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             );
         }
         if (isFirstPersonDisplay(displayContext) && stack.getItem() instanceof AnimatedGunItem gun) {
+            if (!isHeldForFirstPersonDisplay(stack, displayContext)) {
+                return;
+            }
             if (shouldHideScopedFirstPersonGun(stack, gun)) {
                 return;
             }
@@ -228,7 +232,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 if (renderForgeSpecialModel(stack, gun, poseStack, bufferSource, packedLight, packedOverlay)) {
                     return;
                 }
-                super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+                renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
             } finally {
                 poseStack.popPose();
             }
@@ -238,18 +242,58 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             poseStack.pushPose();
             try {
                 applyThirdPersonAnimatedTransform(gun, poseStack);
-                super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+                renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
             } finally {
                 poseStack.popPose();
             }
             return;
         }
 
-        super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+        renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void renderAnimatedItem(
+            ItemStack stack,
+            ItemDisplayContext displayContext,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay
+    ) {
+        ItemStack previousStack = this.activeRenderStack;
+        this.activeRenderStack = stack;
+        try {
+            super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+        } finally {
+            this.activeRenderStack = previousStack;
+        }
+    }
+
+    private ItemStack currentRenderStack() {
+        return this.activeRenderStack == null || this.activeRenderStack.isEmpty()
+                ? this.getCurrentItemStack()
+                : this.activeRenderStack;
     }
 
     private static boolean isThirdPersonDisplay(ItemDisplayContext context) {
         return context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+    }
+
+    private static boolean isHeldForFirstPersonDisplay(ItemStack stack, ItemDisplayContext context) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null) {
+            return false;
+        }
+
+        if (context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            ItemStack held = mc.player.getMainArm() == HumanoidArm.RIGHT ? mc.player.getMainHandItem() : mc.player.getOffhandItem();
+            return isSameHeldItem(stack, held);
+        }
+        if (context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
+            ItemStack held = mc.player.getMainArm() == HumanoidArm.LEFT ? mc.player.getMainHandItem() : mc.player.getOffhandItem();
+            return isSameHeldItem(stack, held);
+        }
+        return false;
     }
 
     private static void applyThirdPersonAnimatedTransform(AnimatedGunItem gun, PoseStack poseStack) {
@@ -426,7 +470,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int color
     ) {
         String boneName = bone.getName();
-        ItemStack stack = this.getCurrentItemStack();
+        ItemStack stack = currentRenderStack();
         if (!isReRender && stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
@@ -493,7 +537,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        ItemStack stack = this.getCurrentItemStack();
+        ItemStack stack = currentRenderStack();
         if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
             return;
         }
