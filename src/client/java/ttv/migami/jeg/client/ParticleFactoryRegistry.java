@@ -4,8 +4,10 @@ import net.minecraft.client.particle.FlameParticle;
 import net.minecraft.client.particle.SmokeParticle;
 import ttv.migami.jeg.client.particle.BigExplosionParticle;
 import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
+import ttv.migami.jeg.client.particle.EntityLaserParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
+import ttv.migami.jeg.client.particle.LaserParticle;
 import ttv.migami.jeg.client.particle.SmallExplosionParticle;
 import ttv.migami.jeg.init.ModParticleTypes;
 
@@ -14,10 +16,12 @@ public final class ParticleFactoryRegistry {
 
     public static void init() {
         var registry = net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry.getInstance();
+        registry.register(ModParticleTypes.LASER.get(), LaserParticle.Provider::new);
         registry.register(ModParticleTypes.BIG_EXPLOSION.get(), BigExplosionParticle.Provider::new);
         registry.register(ModParticleTypes.SMALL_EXPLOSION.get(), SmallExplosionParticle.Provider::new);
         registry.register(ModParticleTypes.SMOKE.get(), SmokeParticle.Provider::new);
         registry.register(ModParticleTypes.FIRE.get(), FlameParticle.Provider::new);
+        registry.register(ModParticleTypes.ENTITY_LASER.get(), EntityLaserParticle.Provider::new);
 
         registry.register(ModParticleTypes.FLARE_SMOKE.get(), FlareSmokeParticle.SmokeProvider::new);
         registry.register(ModParticleTypes.FLARE.get(), FlareSmokeParticle.RedProvider::new);
