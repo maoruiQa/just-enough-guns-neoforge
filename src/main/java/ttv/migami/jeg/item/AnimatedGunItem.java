@@ -222,6 +222,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private static PlayState setSprintOrBayonetSprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
+        if (hasBayonet(stack)) {
+            return state.setAndContinue(IDLE);
+        }
         return setSprintAnimation(state);
     }
 
