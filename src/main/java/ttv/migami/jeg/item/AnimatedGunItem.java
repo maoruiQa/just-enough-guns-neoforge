@@ -129,8 +129,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return PlayState.CONTINUE;
         }
 
-        if (triggerPendingClientShoot(state, stack)) {
-            return PlayState.CONTINUE;
+        RawAnimation shootAnimation = pendingClientShootAnimationFor(stack);
+        if (shootAnimation != null) {
+            state.getController().forceAnimationReset();
+            clearPendingClientShoot();
+            return state.setAndContinue(shootAnimation);
         }
 
         clearInterruptedReloadAnimation(state.getController(), stack);
@@ -471,24 +474,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientDrawTriggerDeadlineNanos = 0L;
     }
 
-    private static boolean triggerPendingClientShoot(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+    private static RawAnimation pendingClientShootAnimationFor(ItemStack renderStack) {
         if (clientShootStack.isEmpty()) {
-            return false;
+            return null;
         }
         if (System.nanoTime() > clientShootTriggerDeadlineNanos) {
             clearPendingClientShoot();
-            return false;
+            return null;
         }
         if (!matchesHeldStack(renderStack, clientShootStack)) {
-            return false;
+            return null;
         }
 
-        state.getController().forceAnimationReset();
-        boolean triggered = state.getController().tryTriggerAnimation(clientShootAiming ? ANIM_AIM_SHOOT : ANIM_SHOOT);
-        if (triggered) {
-            clearPendingClientShoot();
-        }
-        return triggered;
+        return clientShootAiming ? AIM_SHOOT : SHOOT;
     }
 
     private static boolean triggerPendingClientMelee(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
@@ -696,6 +694,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static void clearAnimationMatchState(ItemStack stack) {
         clearReloadVisualState(stack);
         stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_STOCK_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_DAMAGE.get());
     }
 
     public static void triggerClientShoot(Entity entity, boolean aiming) {
@@ -720,7 +722,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
             clearReloadVisualState(stack);
             clearRecentDrawAnimation();
-            clientShootStack = stack.copy();
+            clientShootStack = stack;
             clientShootAiming = aiming;
             clientShootTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
         } catch (Throwable ignored) {

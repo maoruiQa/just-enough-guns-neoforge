@@ -179,6 +179,10 @@ public final class ItemInHandRendererMixin {
         if (jeg$tryApplyCustomTransform(poseStack, arm)) {
             return;
         }
+        if (this.jeg$capturedStack.getItem() instanceof GunItem) {
+            original.call(instance, poseStack, arm, 0.0F);
+            return;
+        }
         original.call(instance, poseStack, arm, equipProgress);
     }
 
@@ -268,7 +272,12 @@ public final class ItemInHandRendererMixin {
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
         stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
         stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
         stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_TOTAL.get());
         stack.remove(ModDataComponents.GUN_WATER_COOLING_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_STOCK_ATTACHMENT_DAMAGE.get());
+        stack.remove(ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_DAMAGE.get());
     }
 }
