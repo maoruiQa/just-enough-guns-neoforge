@@ -80,8 +80,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static long clientDrawAnimationDeadlineNanos;
     private static ItemStack clientDrawResetStack = ItemStack.EMPTY;
     private static long clientDrawResetDeadlineNanos;
-    private static ItemStack clientSprintSuppressedDrawStack = ItemStack.EMPTY;
-    private static long clientSprintSuppressedDrawDeadlineNanos;
     private static String lastFirstPersonGunId = "";
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
@@ -119,9 +117,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clearStaleRenderReloadVisualState(renderStack, stack);
         resetControllerOnGunChange(state.getController(), stack);
 
-        if (suppressDrawForSprint(state.getController(), stack)) {
-            return setSprintOrBayonetSprintAnimation(state, stack);
-        }
         RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(state, stack);
         if (pendingDrawAnimation != null) {
             return state.setAndContinue(pendingDrawAnimation);
@@ -188,13 +183,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     private static RawAnimation drawAnimationFor(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
-            return null;
-        }
-        if (isSprintingFirstPerson(stack)) {
-            clearRecentDrawAnimation();
-            return null;
-        }
-        if (hasSprintSuppressedDraw(stack)) {
             return null;
         }
         if (hasRecentDrawAnimation(stack)) {
@@ -380,9 +368,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (!hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW) || stack == null || stack.isEmpty()) {
             return false;
         }
-        if (suppressDrawForSprint(controller, stack)) {
-            return false;
-        }
         boolean drawActive = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
                 || hasRecentDrawAnimation(stack);
         if (drawActive && !controller.hasAnimationFinished() && !AimingHandler.get().isAiming()) {
@@ -390,42 +375,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         clearRecentDrawAnimation();
         return false;
-    }
-
-    private static boolean suppressDrawForSprint(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
-        if (!isSprintingFirstPerson(stack)) {
-            return false;
-        }
-
-        boolean hadDrawState = !clientDrawTriggerStack.isEmpty()
-                || !clientDrawStack.isEmpty()
-                || !clientDrawResetStack.isEmpty()
-                || stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
-                || hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW);
-        if (!hadDrawState) {
-            return false;
-        }
-
-        rememberSprintSuppressedDraw(stack);
-        clearRecentDrawAnimation();
-        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
-        controller.forceAnimationReset();
-        controller.stop();
-        return true;
-    }
-
-    private static boolean isSprintingFirstPerson(ItemStack stack) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null || !minecraft.options.getCameraType().isFirstPerson()) {
-            return false;
-        }
-        if (!minecraft.player.isSprinting() || AimingHandler.get().isAiming()) {
-            return false;
-        }
-        if (!(stack.getItem() instanceof AnimatedGunItem gun)) {
-            return false;
-        }
-        return GunPoseProfile.forGun(gun.getStats().id()).canApplySprintingAnimation();
     }
 
     private static PlayState setSprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
@@ -457,8 +406,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     static void clearRecentDrawAnimation() {
         clientDrawStack = ItemStack.EMPTY;
         clientDrawAnimationDeadlineNanos = 0L;
-        clearDrawAnimationReset();
-        clearPendingClientDraw();
     }
 
     static void restartDrawAnimation(ItemStack stack) {
@@ -495,27 +442,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         return matchesHeldStack(stack, clientDrawStack);
     }
 
-    private static void rememberSprintSuppressedDraw(ItemStack stack) {
-        clientSprintSuppressedDrawStack = stack.copy();
-        clientSprintSuppressedDrawDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
-    }
-
-    private static boolean hasSprintSuppressedDraw(ItemStack stack) {
-        if (clientSprintSuppressedDrawStack.isEmpty()) {
-            return false;
-        }
-        if (System.nanoTime() > clientSprintSuppressedDrawDeadlineNanos) {
-            clearSprintSuppressedDraw();
-            return false;
-        }
-        return matchesHeldStack(stack, clientSprintSuppressedDrawStack);
-    }
-
-    private static void clearSprintSuppressedDraw() {
-        clientSprintSuppressedDrawStack = ItemStack.EMPTY;
-        clientSprintSuppressedDrawDeadlineNanos = 0L;
-    }
-
     private static void requestDrawAnimationReset(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             clearDrawAnimationReset();
@@ -529,8 +455,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (clientDrawResetStack.isEmpty()) {
             return false;
         }
-        if (System.nanoTime() > clientDrawResetDeadlineNanos || !matchesHeldStack(stack, clientDrawResetStack)) {
+        if (System.nanoTime() > clientDrawResetDeadlineNanos) {
             clearDrawAnimationReset();
+            return false;
+        }
+        if (!matchesHeldStack(stack, clientDrawResetStack)) {
             return false;
         }
         controller.forceAnimationReset();
@@ -556,11 +485,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     private static RawAnimation pendingClientDrawAnimationFor(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
         if (clientDrawTriggerStack.isEmpty()) {
-            return null;
-        }
-        if (isSprintingFirstPerson(renderStack) || hasSprintSuppressedDraw(renderStack)) {
-            clearPendingClientDraw();
-            clearDrawAnimationReset();
             return null;
         }
         if (System.nanoTime() > clientDrawTriggerDeadlineNanos) {
