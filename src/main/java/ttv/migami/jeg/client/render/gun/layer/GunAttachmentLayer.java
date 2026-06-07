@@ -256,6 +256,10 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         for (String boneName : boneNames) {
             model.getBone(boneName).ifPresent(bone -> {
                 BoneSnapshot snapshot = bone.frameSnapshot;
+                if (snapshot == null) {
+                    snapshot = BoneSnapshot.create(bone);
+                    bone.frameSnapshot = snapshot;
+                }
                 hiddenBones.add(new BoneVisibility(snapshot, snapshot.isHidden(), snapshot.areChildrenHidden()));
                 snapshot.skipRender(true);
             });
