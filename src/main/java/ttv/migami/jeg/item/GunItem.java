@@ -2369,11 +2369,12 @@ public class GunItem extends Item {
                 debugStackName(stack),
                 stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
                 stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0));
-        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
         HELD_DRAW_STATES.remove(player.getUUID());
         CLIENT_HELD_DRAW_STATES.remove(player.getUUID());
         if (preserveUntilHeld) {
             reloadCancelDrawStates(player).put(player.getUUID(), new QueuedReloadCancelDraw(slot, System.identityHashCode(stack), stack.copy()));
+        } else {
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
         }
     }
 
