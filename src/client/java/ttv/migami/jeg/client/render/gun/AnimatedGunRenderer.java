@@ -35,8 +35,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final Set<String> VANILLA_FALLBACK_WARNED = ConcurrentHashMap.newKeySet();
     private static volatile boolean VANILLA_FALLBACK_DISABLED = false;
     private static final double THIRD_PERSON_ANIMATED_Y_CORRECTION = -8.75D / 16.0D;
-    private static final double THIRD_PERSON_MINIGUN_FORWARD_CORRECTION = 1.4D;
-    private static final double THIRD_PERSON_MINIGUN_UP_CORRECTION = 1.25D;
+    private static final double THIRD_PERSON_MINIGUN_FORWARD_CORRECTION = 0.65D;
+    private static final double THIRD_PERSON_MINIGUN_UP_CORRECTION = 0.1D;
     private static final float ATTACHMENT_PREVIEW_X_ROT = 5.0F;
     private static final float ATTACHMENT_PREVIEW_Y_ROT_SPEED = 1.0F;
 
