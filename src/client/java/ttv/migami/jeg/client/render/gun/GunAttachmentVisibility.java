@@ -7,8 +7,9 @@ import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.GeoBone;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.item.attachment.AttachmentType;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 
 public final class GunAttachmentVisibility {
     private static final Set<String> DEFAULT_HIDDEN_ATTACHMENT_BONES = Set.of(
@@ -53,6 +54,11 @@ public final class GunAttachmentVisibility {
             "bolt",
             "chamber"
     );
+    private static final Set<ResourceLocation> BAKED_UNDER_BARREL_GUNS = Set.of(
+            Reference.id("combat_rifle"),
+            Reference.id("holy_shotgun"),
+            Reference.id("pump_shotgun")
+    );
 
     private static final Map<ResourceLocation, Rule> RULES = Map.ofEntries(
             rule(Reference.id("combat_rifle"),
@@ -84,6 +90,15 @@ public final class GunAttachmentVisibility {
             }
         }
 
+        Boolean attachmentVisibility = installedAttachmentVisibility(gunId, stack, boneName);
+        if (attachmentVisibility != null) {
+            if (BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
+                bone.setChildrenHidden(attachmentVisibility);
+            }
+            bone.setHidden(attachmentVisibility);
+            return;
+        }
+
         Rule rule = RULES.get(gunId);
         if (rule != null) {
             Boolean hidden = rule.visibility(boneName);
@@ -99,24 +114,75 @@ public final class GunAttachmentVisibility {
     }
 
     private static void applyBoltActionRifle(ItemStack stack, GeoBone bone, String boneName) {
+        boolean scopeInstalled = GunAttachments.has(stack, AttachmentType.SCOPE);
         if ("attachment_bone".equals(boneName)) {
-            bone.setHidden(!GunScopeSupport.hasTelescopicSight(stack));
+            bone.setHidden(!scopeInstalled);
             return;
         }
         if ("iron_sight".equals(boneName)) {
-            bone.setHidden(GunScopeSupport.hasTelescopicSight(stack));
+            bone.setHidden(scopeInstalled);
             return;
-        }
-        if (Config.magazineFeedEnabled()) {
-            Boolean magazineVisibility = magazineItemVisibility(stack, boneName);
-            if (magazineVisibility != null) {
-                bone.setHidden(magazineVisibility);
-                return;
-            }
         }
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             bone.setHidden(true);
         }
+    }
+
+    private static Boolean installedAttachmentVisibility(ResourceLocation gunId, ItemStack stack, String boneName) {
+        if ("attachment_bone".equals(boneName)) {
+            return !hasAttachmentBoneRenderPath(stack);
+        }
+        if (isScopeBone(boneName)) {
+            return !GunAttachments.has(stack, AttachmentType.SCOPE);
+        }
+        if ("iron_sight".equals(boneName) || "modified_iron_sight".equals(boneName) || "stock_iron_sight".equals(boneName)) {
+            return GunAttachments.has(stack, AttachmentType.SCOPE);
+        }
+        if (BAKED_UNDER_BARREL_GUNS.contains(gunId)) {
+            Boolean bakedGripVisibility = bakedGripVisibility(stack, boneName);
+            if (bakedGripVisibility != null) {
+                return bakedGripVisibility;
+            }
+        }
+        if (Config.magazineFeedEnabled() && isMagazineBone(boneName)) {
+            return true;
+        }
+        if (isInstalled(stack, AttachmentType.STOCK, boneName)) {
+            return false;
+        }
+        if (isInstalled(stack, AttachmentType.UNDER_BARREL, boneName)) {
+            return false;
+        }
+        if (isDefaultMagazineBone(boneName)) {
+            return GunAttachments.has(stack, AttachmentType.MAGAZINE);
+        }
+        if (isInstalled(stack, AttachmentType.MAGAZINE, boneName)) {
+            return false;
+        }
+        if (isGenericInstalledBone(stack, boneName)) {
+            return false;
+        }
+        return null;
+    }
+
+    private static boolean isScopeBone(String boneName) {
+        return "attachment_bone".equals(boneName) || "scope".equals(boneName);
+    }
+
+    private static boolean hasAttachmentBoneRenderPath(ItemStack stack) {
+        return GunAttachments.has(stack, AttachmentType.SCOPE)
+                || GunAttachments.has(stack, AttachmentType.BARREL)
+                || GunAttachments.has(stack, AttachmentType.STOCK)
+                || GunAttachments.has(stack, AttachmentType.UNDER_BARREL)
+                || GunAttachments.has(stack, AttachmentType.SPECIAL)
+                || hasSwordBayonet(stack);
+    }
+
+    private static boolean hasSwordBayonet(ItemStack stack) {
+        return GunAttachments.stack(stack, AttachmentType.BARREL)
+                .map(ItemStack::getItem)
+                .filter(net.minecraft.world.item.SwordItem.class::isInstance)
+                .isPresent();
     }
 
     private static Boolean magazineItemVisibility(ItemStack stack, String boneName) {
@@ -197,6 +263,36 @@ public final class GunAttachmentVisibility {
                 || "drum_magazine".equals(boneName)
                 || "magazine_drum".equals(boneName)
                 || "mag_drum".equals(boneName);
+    }
+
+    private static Boolean bakedGripVisibility(ItemStack stack, String boneName) {
+        boolean gripInstalled = isInstalled(stack, AttachmentType.UNDER_BARREL, "light_grip")
+                || isInstalled(stack, AttachmentType.UNDER_BARREL, "vertical_grip")
+                || isInstalled(stack, AttachmentType.UNDER_BARREL, "angled_grip");
+        if ("under_barrel".equals(boneName) || "grip".equals(boneName)) {
+            return !gripInstalled;
+        }
+        if ("light_grip".equals(boneName) || "vertical_grip".equals(boneName) || "angled_grip".equals(boneName)) {
+            return !isInstalled(stack, AttachmentType.UNDER_BARREL, boneName);
+        }
+        return null;
+    }
+
+    private static boolean isInstalled(ItemStack stack, AttachmentType type, String boneName) {
+        return GunAttachments.id(stack, type)
+                .map(id -> id.getPath().equals(boneName))
+                .orElse(false);
+    }
+
+    private static boolean isGenericInstalledBone(ItemStack stack, String boneName) {
+        return switch (boneName) {
+            case "extended_mag_2", "extended_magazine", "magazine_extended", "mag_extended" -> isInstalled(stack, AttachmentType.MAGAZINE, "extended_mag");
+            case "drum_mag_2", "drum_magazine", "magazine_drum", "mag_drum" -> isInstalled(stack, AttachmentType.MAGAZINE, "drum_mag");
+            case "light_handguard", "light_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "light_stock");
+            case "tactical_handguard", "tactical_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "tactical_stock");
+            case "weighted_handguard", "weighted_hg_grip" -> isInstalled(stack, AttachmentType.STOCK, "weighted_stock");
+            default -> false;
+        };
     }
 
     private static Map.Entry<ResourceLocation, Rule> rule(
