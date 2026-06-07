@@ -426,7 +426,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     ) {
         String boneName = bone.getName();
         ItemStack stack = this.getCurrentItemStack();
-        if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
+        if (!isReRender && stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
         }
@@ -648,3 +648,4 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 || ItemStack.isSameItem(renderStack, heldStack);
     }
 }
+
