@@ -394,7 +394,7 @@ public class SkyShipArmadaStructure extends Structure {
             if (!serverLevel.hasChunkAt(anchorBase)) {
                 return;
             }
-            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
+            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(GUARDIAN_TETHER_RADIUS, 192.0D, GUARDIAN_TETHER_RADIUS)).isEmpty()) {
                 return;
             }
             TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel);
@@ -593,7 +593,7 @@ public class SkyShipArmadaStructure extends Structure {
             if (!serverLevel.hasChunkAt(anchorBase)) {
                 return;
             }
-            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(4.0D)).isEmpty()) {
+            if (!serverLevel.getEntitiesOfClass(TerrorPhantomGuardian.class, new AABB(anchorBase).inflate(GUARDIAN_TETHER_RADIUS, 192.0D, GUARDIAN_TETHER_RADIUS)).isEmpty()) {
                 return;
             }
             TerrorPhantomGuardian guardian = ModEntities.TERROR_PHANTOM_GUARDIAN.get().create(serverLevel);
