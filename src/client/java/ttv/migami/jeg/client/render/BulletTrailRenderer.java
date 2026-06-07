@@ -24,6 +24,8 @@ import ttv.migami.jeg.network.BulletTrailPayload;
  */
 public final class BulletTrailRenderer {
     private static final ResourceLocation TRAIL_TEXTURE = ResourceLocation.fromNamespaceAndPath("jeg", "textures/misc/bullet_trail.png");
+    private static final int LOCAL_FLASH_GUARD_TICKS = 2;
+    private static final double LOCAL_FLASH_GUARD_DISTANCE_SQR = 3.0D * 3.0D;
     private static final Map<Integer, TrailState> TRAILS = new HashMap<>();
     private static final AtomicInteger SYNTHETIC_IDS = new AtomicInteger(-1);
     private static long lastRenderFrame = -1L;
@@ -150,8 +152,24 @@ public final class BulletTrailRenderer {
             if (!trail.trailVisible) {
                 continue;
             }
+            if (shouldSkipForLocalCameraFlash(mc, trail, view)) {
+                continue;
+            }
             renderTrail(trail, poseStack, consumer, view, partialTick);
         }
+    }
+
+    private static boolean shouldSkipForLocalCameraFlash(Minecraft mc, TrailState trail, Vec3 cameraPos) {
+        if (mc.player == null || trail.shooterId < 0) {
+            return false;
+        }
+        if (mc.player.getId() != trail.shooterId) {
+            return false;
+        }
+        if (trail.age > LOCAL_FLASH_GUARD_TICKS) {
+            return false;
+        }
+        return cameraPos.distanceToSqr(trail.position) <= LOCAL_FLASH_GUARD_DISTANCE_SQR;
     }
 
     private static void renderTrail(TrailState trail, PoseStack poseStack, VertexConsumer consumer, Vec3 view, float partialTick) {

@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -35,11 +36,15 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.block.DynamicLightBlock;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
@@ -48,6 +53,7 @@ import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -1249,6 +1255,7 @@ public class GunItem extends Item {
         Vec3 shooterMotion = shooter.getDeltaMovement();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
             ejectCasing(serverLevel, shooter);
         }
 
@@ -1305,6 +1312,7 @@ public class GunItem extends Item {
         Vec3 normalized = direction.normalize();
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
+            refreshGunfireLight(serverLevel, shooter, stack);
             ejectCasing(serverLevel, shooter);
         }
 
@@ -1336,6 +1344,53 @@ public class GunItem extends Item {
                 // Disabling shoot trigger avoids intermittent invisibility caused by per-shot animated state.
             }
         }
+    }
+
+    private void refreshGunfireLight(ServerLevel level, LivingEntity shooter, ItemStack stack) {
+        if (!(shooter instanceof Player) || shouldSkipGunfireLight(stack)) {
+            return;
+        }
+
+        Vec3 eye = shooter.getEyePosition();
+        Vec3 look = shooter.getLookAngle();
+        BlockPos[] candidates = new BlockPos[] {
+                BlockPos.containing(eye.add(look.scale(0.45D))),
+                BlockPos.containing(eye),
+                BlockPos.containing(eye.add(0.0D, 0.35D, 0.0D))
+        };
+
+        for (BlockPos pos : candidates) {
+            BlockState state = level.getBlockState(pos);
+            if (state.is(ModBlocks.DYNAMIC_LIGHT.get())) {
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.isAir()) {
+                level.setBlock(pos, ModBlocks.DYNAMIC_LIGHT.get().defaultBlockState(), 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+            if (state.is(Blocks.WATER)) {
+                BlockState dynamicLight = ModBlocks.DYNAMIC_LIGHT.get()
+                        .defaultBlockState()
+                        .setValue(BlockStateProperties.WATERLOGGED, true);
+                level.setBlock(pos, dynamicLight, 3);
+                DynamicLightBlock.setDelay(level, pos, 0.5D);
+                return;
+            }
+        }
+    }
+
+    private boolean shouldSkipGunfireLight(ItemStack stack) {
+        if (GunAttachments.modifiers(stack).silenced()) {
+            return true;
+        }
+        String path = stats.id().getPath();
+        return "finger_gun".equals(path)
+                || "typhoonee".equals(path)
+                || "atlantean_spear".equals(path)
+                || path.endsWith("bow")
+                || path.endsWith("blowpipe");
     }
 
     private void ejectCasing(ServerLevel level, LivingEntity shooter) {
