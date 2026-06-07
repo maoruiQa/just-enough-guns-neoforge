@@ -13,7 +13,6 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
-import ttv.migami.jeg.client.render.gun.GunAttachmentVisibility;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.client.render.gun.HandRenderInvoker;
 import ttv.migami.jeg.item.AnimatedGunItem;
@@ -60,11 +59,6 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         }
 
         String boneName = bone.getName();
-        ItemStack stack = renderer.getCurrentItemStack();
-        if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
-            GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
-        }
-
         if (!"left_arm".equals(boneName) && !"right_arm".equals(boneName)
                 && !"fake_left_arm".equals(boneName) && !"fake_right_arm".equals(boneName)) {
             return;
@@ -78,7 +72,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
             return;
         }
 
-        stack = renderer.getCurrentItemStack();
+        ItemStack stack = renderer.getCurrentItemStack();
         if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
             return;
         }
