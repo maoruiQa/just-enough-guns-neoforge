@@ -91,7 +91,7 @@ public final class AttachmentRuntimeEvents {
 
         if (stack.getItem() instanceof GunItem) {
             boolean pauseGunLights = shouldPauseGunPoweredAttachments(player, stack);
-            if (!pauseGunLights && GunAttachments.modifiers(stack).laserPointer()) {
+            if (!pauseGunLights && GunAttachments.isLaserPointerPowered(stack)) {
                 tickLaserPointer(player);
             }
             refreshFlashlight = !pauseGunLights && Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player);
@@ -106,9 +106,14 @@ public final class AttachmentRuntimeEvents {
     }
 
     private static boolean shouldPauseGunPoweredAttachments(Player player, ItemStack gunStack) {
-        return player.isSprinting()
-                && gunStack.getItem() instanceof GunItem
-                && !player.getCooldowns().isOnCooldown(gunStack.getItem());
+        return player.isSprinting() && !hasBayonet(gunStack);
+    }
+
+    private static boolean hasBayonet(ItemStack gunStack) {
+        return GunAttachments.stack(gunStack, AttachmentType.BARREL)
+                .map(ItemStack::getItem)
+                .filter(SwordItem.class::isInstance)
+                .isPresent();
     }
 
     public static void handleBayonetMelee(ServerPlayer player) {

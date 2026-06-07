@@ -166,6 +166,13 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build()
     );
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_LASER_POINTER_POWERED = REGISTER.register(
+            "gun_laser_pointer_powered",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build()
+    );
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GUN_FLASHLIGHT_BATTERY = REGISTER.register(
             "gun_flashlight_battery",
             () -> DataComponentType.<Integer>builder()
