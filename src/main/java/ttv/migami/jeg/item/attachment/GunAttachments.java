@@ -215,6 +215,9 @@ public final class GunAttachments {
             } else {
                 removeFlashlightState(gunStack);
             }
+            if (!attachment.modifiers().laserPointer()) {
+                removeLaserPointerState(gunStack);
+            }
         }
         return true;
     }
@@ -320,6 +323,7 @@ public final class GunAttachments {
         removeDamage(gunStack, type);
         if (type == AttachmentType.SPECIAL) {
             removeFlashlightState(gunStack);
+            removeLaserPointerState(gunStack);
         }
     }
 
@@ -332,6 +336,25 @@ public final class GunAttachments {
 
     public static boolean isFlashlightPowered(ItemStack gunStack) {
         return hasFlashlight(gunStack) && Boolean.TRUE.equals(gunStack.get(ModDataComponents.GUN_FLASHLIGHT_POWERED.get()));
+    }
+
+    public static boolean hasLaserPointer(ItemStack gunStack) {
+        return item(gunStack, AttachmentType.SPECIAL)
+                .map(AttachmentItem::modifiers)
+                .map(AttachmentModifiers::laserPointer)
+                .orElse(false);
+    }
+
+    public static boolean isLaserPointerPowered(ItemStack gunStack) {
+        return hasLaserPointer(gunStack) && !Boolean.FALSE.equals(gunStack.get(ModDataComponents.GUN_LASER_POINTER_POWERED.get()));
+    }
+
+    public static boolean toggleLaserPointer(ItemStack gunStack) {
+        if (!hasLaserPointer(gunStack)) {
+            return false;
+        }
+        gunStack.set(ModDataComponents.GUN_LASER_POINTER_POWERED.get(), !isLaserPointerPowered(gunStack));
+        return true;
     }
 
     public static boolean areMedalsEnabled(ItemStack gunStack) {
@@ -472,6 +495,10 @@ public final class GunAttachments {
     private static void removeFlashlightState(ItemStack gunStack) {
         gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_POWERED.get());
         gunStack.remove(ModDataComponents.GUN_FLASHLIGHT_BATTERY.get());
+    }
+
+    private static void removeLaserPointerState(ItemStack gunStack) {
+        gunStack.remove(ModDataComponents.GUN_LASER_POINTER_POWERED.get());
     }
 
     private static DataComponentType<String> component(AttachmentType type) {
