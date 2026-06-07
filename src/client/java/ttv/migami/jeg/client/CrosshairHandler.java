@@ -149,7 +149,8 @@ public final class CrosshairHandler {
 
     private static void renderDynamic(GuiGraphicsExtractor guiGraphics, LocalPlayer player, GunItem gun, int width, int height, float partialTick) {
         float aiming = AimingHandler.get().getNormalisedAdsProgress(partialTick);
-        float spread = GunItem.getClientSpreadDegrees(player, gun.getStats(), aiming > 0.5F);
+        ItemStack stack = player.getMainHandItem();
+        float spread = GunItem.getClientSpreadDegrees(player, stack, gun.getStats(), aiming > 0.5F);
         float spreadPixels = Mth.clamp(spread * DYNAMIC_SPREAD_PIXELS_PER_DEGREE, 0.0F, DYNAMIC_MAX_SPREAD_PIXELS);
         float centerX = Math.round(width / 2.0F) - 0.5F;
         float centerY = Math.round(height / 2.0F) - 0.5F;

@@ -75,6 +75,7 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -492,7 +493,7 @@ public final class FabricClientBootstrap {
                     ClientNetworkHandler.sendShoot(InteractionHand.MAIN_HAND);
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
-                    applyLocalVisualRecoil(player, gun);
+                    applyLocalVisualRecoil(player, heldMain, gun);
                     GunItem.recordClientShotSpread(player, gun.getStats());
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(heldMain, gun);
@@ -587,8 +588,8 @@ public final class FabricClientBootstrap {
         return true;
     }
 
-    private static void applyLocalVisualRecoil(LocalPlayer player, GunItem gun) {
-        GunRecoilHandler.onShot(gun.getStats());
+    private static void applyLocalVisualRecoil(LocalPlayer player, ItemStack stack, GunItem gun) {
+        GunRecoilHandler.onShot(gun.getStats(), GunAttachments.modifiers(stack));
         AnimatedGunItem.suppressSprintAnimationBriefly();
     }
 
@@ -872,7 +873,7 @@ public final class FabricClientBootstrap {
         ClientNetworkHandler.sendShoot(InteractionHand.MAIN_HAND);
         rocketShotSent = true;
         if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
-            applyLocalVisualRecoil(player, gun);
+            applyLocalVisualRecoil(player, stack, gun);
             GunItem.recordClientShotSpread(player, gun.getStats());
             CrosshairHandler.onGunFired();
             forceExitScopedAdsAfterShot(stack, gun);
