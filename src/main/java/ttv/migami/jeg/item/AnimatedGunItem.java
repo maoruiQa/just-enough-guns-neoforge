@@ -1,7 +1,10 @@
 package ttv.migami.jeg.item;
 
 import java.util.function.Consumer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -18,13 +21,17 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.state.KeyFrameEvent;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.animation.object.LoopType;
 import com.geckolib.animation.RawAnimation;
+import com.geckolib.cache.animation.keyframeevent.SoundKeyframeData;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -58,6 +65,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_SPRINT_AFTER_SHOOT_SUPPRESSION_NANOS = 250_000_000L;
     private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
+    private static final Identifier GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
+    private static final Identifier GUN_SCREW_SOUND = Reference.id("item.gun_screw");
 
     private static final int RELOAD_STAGE_NONE = 0;
     private static final int RELOAD_STAGE_START = 1;
@@ -93,7 +102,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 CONTROLLER,
                 0,
                 this::animationPredicate
-        ).receiveTriggeredAnimations()
+        ).setSoundKeyframeHandler(this::soundListener)
+                .receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
                 .triggerableAnim(ANIM_DRAW, DRAW)
@@ -960,5 +970,52 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         var id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return id != null && id.getPath().endsWith("_sword");
+    }
+
+    private void soundListener(KeyFrameEvent<AnimatedGunItem, SoundKeyframeData> event) {
+        Player player = clientPlayer();
+        if (player == null) {
+            return;
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        GunItem gun = stack.getItem() instanceof GunItem mainHandGun ? mainHandGun : null;
+        if (gun == null) {
+            stack = player.getOffhandItem();
+            gun = stack.getItem() instanceof GunItem offHandGun ? offHandGun : null;
+        }
+        if (gun == null) {
+            return;
+        }
+
+        SoundEvent sound = soundForKeyframe(event.keyframeData().getSound(), gun.getStats());
+        if (sound != null) {
+            player.playSound(sound, 1.0F, 1.0F);
+        }
+    }
+
+    private static SoundEvent soundForKeyframe(String key, GunStats stats) {
+        return switch (key) {
+            case "rustle" -> resolveSound(GUN_RUSTLE_SOUND);
+            case "screw" -> resolveSound(GUN_SCREW_SOUND);
+            case "reload_mag_out" -> stats.reloadStartSoundEvent().orElse(null);
+            case "reload_mag_in" -> stats.reloadLoadSoundEvent().orElse(null);
+            case "reload_end" -> stats.reloadEndSoundEvent().orElse(null);
+            case "ejector_pull" -> resolveSound(stats.ejectorPullSound());
+            case "ejector_release" -> resolveSound(stats.ejectorReleaseSound());
+            case "jammed" -> SoundEvents.ANVIL_LAND;
+            default -> null;
+        };
+    }
+
+    private static SoundEvent resolveSound(Identifier id) {
+        if (id == null) {
+            return null;
+        }
+        var holder = ModSounds.ALL.get(id);
+        if (holder != null) {
+            return holder.get();
+        }
+        return BuiltInRegistries.SOUND_EVENT.getOptional(id).orElse(null);
     }
 }
