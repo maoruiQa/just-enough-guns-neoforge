@@ -256,7 +256,7 @@ public final class GunAttachmentVisibility {
             return null;
         }
 
-        MagazineVisualType type = currentMagazineVisualType(stack);
+        MagazineVisualType type = currentMagazineVisualType(stack, boneName);
         return switch (type) {
             case DEFAULT -> !isDefaultMagazineBone(boneName);
             case EXTENDED -> !isExtendedMagazineBone(boneName);
@@ -264,14 +264,13 @@ public final class GunAttachmentVisibility {
         };
     }
 
-    private static MagazineVisualType currentMagazineVisualType(ItemStack stack) {
+    private static MagazineVisualType currentMagazineVisualType(ItemStack stack, String boneName) {
         int totalTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), 0);
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         if (totalTicks > 0 && remainingTicks > 0) {
-            int elapsedTicks = Math.max(0, totalTicks - remainingTicks);
-            String reloadMagazine = elapsedTicks < totalTicks / 2
-                    ? stack.get(ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get())
-                    : stack.get(ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get());
+            String reloadMagazine = isInsertedMagazineBone(boneName)
+                    ? stack.get(ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get())
+                    : stack.get(ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get());
             MagazineVisualType type = magazineVisualType(reloadMagazine);
             if (type != null) {
                 return type;
@@ -280,6 +279,12 @@ public final class GunAttachmentVisibility {
 
         MagazineVisualType loadedType = magazineVisualType(stack.get(ModDataComponents.GUN_LOADED_MAGAZINE_ITEM.get()));
         return loadedType != null ? loadedType : MagazineVisualType.DEFAULT;
+    }
+
+    private static boolean isInsertedMagazineBone(String boneName) {
+        return "default_mag_2".equals(boneName)
+                || "extended_mag_2".equals(boneName)
+                || "drum_mag_2".equals(boneName);
     }
 
     private static MagazineVisualType magazineVisualType(String itemId) {
