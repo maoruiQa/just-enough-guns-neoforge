@@ -539,7 +539,7 @@ public final class LootUtils {
         }
         List<Item> guns = new ArrayList<>();
         ModItems.GUNS.forEach((id, holder) -> {
-            if (EXCLUDED_GUN_LOOT.contains(id) || extraExcluded.contains(id)) {
+            if (EXCLUDED_GUN_LOOT.contains(id) || extraExcluded.contains(id) || ModItems.isDisabledGunId(id)) {
                 return;
             }
             guns.add(holder.get());

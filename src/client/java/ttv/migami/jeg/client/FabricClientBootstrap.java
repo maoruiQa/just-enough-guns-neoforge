@@ -491,7 +491,7 @@ public final class FabricClientBootstrap {
         ItemStack heldOff = player.getOffhandItem();
 
         while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
                 ClientNetworkHandler.sendOpenAttachments();
             }
         }
@@ -499,7 +499,13 @@ public final class FabricClientBootstrap {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            if (GunItem.isHoldToFireWeapon(heldMain)) {
+            boolean drawing = GunItem.isDrawing(heldMain);
+
+            if (drawing) {
+                resetRocketHold(true);
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
+            } else if (GunItem.isHoldToFireWeapon(heldMain)) {
                 tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
             } else if (attackDown) {
                 resetRocketHold(true);
@@ -535,16 +541,16 @@ public final class FabricClientBootstrap {
         }
 
         while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain) && canUseGunMelee(player, heldMain)) {
                 GunItem.cancelReloadForImmediateAction(player, heldMain);
                 ClientNetworkHandler.sendMelee();
             }
         }
 
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem) {
+            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawing(heldOff)) {
                 ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);

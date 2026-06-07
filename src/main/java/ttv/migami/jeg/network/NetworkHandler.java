@@ -173,6 +173,9 @@ public final class NetworkHandler {
         if (!(stack.getItem() instanceof GunItem gun)) {
             return;
         }
+        if (GunItem.isDrawing(stack)) {
+            return;
+        }
         if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
             return;
         }
@@ -197,6 +200,9 @@ public final class NetworkHandler {
             HOLD_FIRE_START_TICKS.remove(player.getUUID());
             return;
         }
+        if (GunItem.isDrawing(stack)) {
+            return;
+        }
         HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
     }
 
@@ -218,6 +224,7 @@ public final class NetworkHandler {
         ItemStack mainHand = player.getMainHandItem();
         if (payload.hand() == InteractionHand.MAIN_HAND
                 && mainHand.getItem() instanceof GunItem
+                && !GunItem.isDrawing(mainHand)
                 && isCoolant(offhand)
                 && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
             player.startUsingItem(InteractionHand.OFF_HAND);
@@ -259,7 +266,8 @@ public final class NetworkHandler {
     }
 
     private static void handleOpenAttachments(ServerPlayer player) {
-        if (player.getMainHandItem().getItem() instanceof GunItem) {
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof GunItem && !GunItem.isDrawing(stack)) {
             player.openMenu(AttachmentMenu.provider());
         }
     }
@@ -273,7 +281,7 @@ public final class NetworkHandler {
 
     private static void handleToggleFlashlight(ServerPlayer player) {
         ItemStack stack = player.getMainHandItem();
-        if (stack.getItem() instanceof GunItem) {
+        if (stack.getItem() instanceof GunItem && !GunItem.isDrawing(stack)) {
             toggleGunFlashlight(player, stack);
         }
     }
@@ -360,6 +368,9 @@ public final class NetworkHandler {
     }
 
     private static void handleAimingState(AimingStatePayload payload, ServerPlayer player) {
+        if (payload.aiming() && GunItem.isDrawing(player.getMainHandItem())) {
+            return;
+        }
         if (payload.aiming()) {
             AIMING_PLAYERS.add(player.getUUID());
         } else {

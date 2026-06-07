@@ -1187,6 +1187,43 @@
       }
     ]
   },
+  "item.gun_draw": {
+    "subtitle": "subtitle.jeg.gun_draw",
+    "sounds": [
+      {
+        "name": "jeg:item/gun_rustle/rustle1",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle2",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle3",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle4",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle5",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle6",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle7",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle8",
+        "stream": true
+      }
+    ]
+  },
   "item.gun_screw": {
     "subtitle": "subtitle.jeg.gun_rustle",
     "sounds": [

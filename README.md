@@ -15,7 +15,7 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 ## Highlights
 
 - Broad firearm lineup: pistols, revolvers, rifles, SMGs, shotguns, machine guns, launchers, bows, flamethrower-style weapons, and special late-game guns.
-- Survival progression: ores, scrap processing, workbenches, schematics, blueprints, ammo, magazines, attachments, skins, and repair items.
+- Survival progression: workbenches, ammo, magazines, attachments, skins, and repair items.
 - Modern gun handling: left-click shooting, right-click aiming, magazine reloads, recoil, movement spread, dynamic crosshair expansion, hit markers, muzzle effects, and bullet trails.
 - Heavy weapon behavior: overheating support, cooling feedback, and hold-to-fire rocket launcher timing.
 - Walkürenritt vehicle warfare: assembled land vehicles, boats, aircraft, helicopters, fixed weapon platforms, vehicle inventories, repair tools, charging support, missiles, decoys, and dedicated vehicle HUDs.

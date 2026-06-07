@@ -39,6 +39,10 @@ import ttv.migami.jeg.network.ClientNetworkHandler;
 
 public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMenu> {
     private static final Identifier TEXTURE = Reference.id("textures/gui/attachments.png");
+    private static final int ATTACHMENT_PANEL_X = -71;
+    private static final int ATTACHMENT_PANEL_Y = -18;
+    private static final int ATTACHMENT_PANEL_WIDTH = 32;
+    private static final int ATTACHMENT_PANEL_HEIGHT = 202;
     private static final int SLOT_ICON_U = 176;
     private static final int DISABLED_SLOT_ICON_V = 0;
     private static final int SLOT_ICON_SIZE = 16;
@@ -155,6 +159,12 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         return super.mouseClicked(event, doubleClick);
     }
 
+    @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top) {
+        return super.hasClickedOutside(mouseX, mouseY, left, top)
+                && !this.isMouseOverAttachmentPanel(mouseX, mouseY, left, top);
+    }
+
     private void renderGunPreview(GuiGraphicsExtractor guiGraphics) {
         ItemStack gunStack = this.previewGunStack();
         if (gunStack.isEmpty()) {
@@ -181,7 +191,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
                 itemState,
                 this.leftPos + this.imageWidth / 2 - GUN_PREVIEW_SLOT_CENTER_OFFSET,
                 this.topPos + GUN_PREVIEW_CENTER_Y - GUN_PREVIEW_SLOT_CENTER_OFFSET,
-                ((GuiGraphicsExtractorAccessor) guiGraphics).jeg$getScissorStack().jeg$peek()
+                null
         );
         ((GuiGraphicsExtractorAccessor) guiGraphics).jeg$getGuiRenderState().addItem(guiItemState);
     }
@@ -218,6 +228,12 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
             return this.leftPos + this.font.width(this.title) + 11;
         }
         return this.leftPos + this.imageWidth - 17;
+    }
+
+    private boolean isMouseOverAttachmentPanel(double mouseX, double mouseY, int left, int top) {
+        int x = left + ATTACHMENT_PANEL_X;
+        int y = top + ATTACHMENT_PANEL_Y;
+        return mouseX >= x && mouseX < x + ATTACHMENT_PANEL_WIDTH && mouseY >= y && mouseY < y + ATTACHMENT_PANEL_HEIGHT;
     }
 
     private void extractThanksTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
