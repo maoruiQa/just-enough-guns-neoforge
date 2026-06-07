@@ -567,7 +567,7 @@ public class GunItem extends Item {
         if (!coolantMatch) {
             return false;
         }
-        if (!canCool || alreadyCooling) {
+        if (!canCool || alreadyCooling || isDrawing(gunStack)) {
             return false;
         }
 
@@ -835,6 +835,9 @@ public class GunItem extends Item {
 
     public boolean tryShoot(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (isDrawing(stack)) {
+            return false;
+        }
         ensureAmmoInitialized(stack);
         boolean automatic = isAutomatic();
 
@@ -1786,6 +1789,9 @@ public class GunItem extends Item {
         if (!usesLoadedAmmo()) {
             return false;
         }
+        if (isDrawing(stack)) {
+            return false;
+        }
         if (isReloading(stack) || PENDING_RELOADS.containsKey(player.getUUID())) {
             return false;
         }
@@ -2294,6 +2300,9 @@ public class GunItem extends Item {
     }
 
     public static void cancelReloadForImmediateAction(Player player, ItemStack stack) {
+        if (isDrawing(stack)) {
+            return;
+        }
         UUID playerId = player.getUUID();
         PENDING_RELOADS.remove(playerId);
         SERVER_RELOAD_CANCEL_DRAW_STATES.remove(playerId);

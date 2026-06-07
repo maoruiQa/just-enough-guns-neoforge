@@ -28,6 +28,11 @@ public final class AimingHandler {
     }
 
     public void tick(LocalPlayer player) {
+        if (GunItem.isDrawing(player.getMainHandItem())) {
+            currentAim = 0.0F;
+            previousAim = 0.0F;
+            return;
+        }
         previousAim = currentAim;
         float aimSpeed = aimSpeed(player);
 
@@ -76,7 +81,7 @@ public final class AimingHandler {
         }
 
         ItemStack mainHand = player.getMainHandItem();
-        if (!(mainHand.getItem() instanceof GunItem)) {
+        if (!(mainHand.getItem() instanceof GunItem) || GunItem.isDrawing(mainHand)) {
             return false;
         }
 

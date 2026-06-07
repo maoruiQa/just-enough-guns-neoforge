@@ -83,7 +83,9 @@ public final class NetworkHandler {
 
     private static void handleOpenAttachments(OpenAttachmentsPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player && player.getMainHandItem().getItem() instanceof GunItem) {
+            if (context.player() instanceof ServerPlayer player
+                    && player.getMainHandItem().getItem() instanceof GunItem
+                    && !GunItem.isDrawing(player.getMainHandItem())) {
                 player.openMenu(AttachmentMenu.provider());
             }
         });
@@ -95,7 +97,7 @@ public final class NetworkHandler {
                 return;
             }
             ItemStack stack = player.getMainHandItem();
-            if (stack.getItem() instanceof GunItem) {
+            if (stack.getItem() instanceof GunItem && !GunItem.isDrawing(stack)) {
                 toggleGunFlashlight(player, stack);
             }
         });
@@ -255,6 +257,9 @@ public final class NetworkHandler {
     private static void handleAimingState(AimingStatePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
+                if (payload.aiming() && GunItem.isDrawing(player.getMainHandItem())) {
+                    return;
+                }
                 player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
             }
         });
@@ -430,6 +435,9 @@ public final class NetworkHandler {
                 HOLD_FIRE_START_TICKS.remove(player.getUUID());
                 return;
             }
+            if (GunItem.isDrawing(stack)) {
+                return;
+            }
             HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
         });
     }
@@ -441,6 +449,9 @@ public final class NetworkHandler {
             }
             ItemStack stack = player.getItemInHand(payload.hand());
             if (!(stack.getItem() instanceof GunItem gun)) {
+                return;
+            }
+            if (GunItem.isDrawing(stack)) {
                 return;
             }
             player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
@@ -488,6 +499,7 @@ public final class NetworkHandler {
             ItemStack mainHand = player.getMainHandItem();
             if (payload.hand() == InteractionHand.MAIN_HAND
                     && mainHand.getItem() instanceof GunItem
+                    && !GunItem.isDrawing(mainHand)
                     && isCoolant(offhand)
                     && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
                 player.startUsingItem(InteractionHand.OFF_HAND);

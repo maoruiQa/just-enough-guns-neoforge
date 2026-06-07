@@ -399,7 +399,12 @@ public final class GunClientEvents {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = minecraft.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            if (GunItem.isHoldToFireWeapon(heldMain)) {
+            boolean drawing = GunItem.isDrawing(heldMain);
+            if (drawing) {
+                resetRocketHold(true);
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
+            } else if (GunItem.isHoldToFireWeapon(heldMain)) {
                 tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
             } else if (attackDown) {
                 resetRocketHold(true);
@@ -436,24 +441,24 @@ public final class GunClientEvents {
 
         // R key reload / coolant use (server-authoritative).
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
                 attackHeldLastTick = false;
                 nextVisualShotTickMain = 0L;
                 GunRecoilHandler.stopImmediate();
-            } else if (heldOff.getItem() instanceof GunItem) {
+            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawing(heldOff)) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
                 NetworkHandler.sendOpenAttachments();
             }
         }
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain) && canUseGunMelee(player, heldMain)) {
                 GunItem.cancelReloadForImmediateAction(player, heldMain);
                 if (heldMain.getItem() instanceof AnimatedGunItem) {
                     AnimatedGunItem.triggerClientMelee(minecraft.player);
