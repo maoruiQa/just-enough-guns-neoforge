@@ -55,7 +55,6 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
-import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import net.minecraft.ChatFormatting;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -2328,11 +2327,6 @@ public class GunItem extends Item {
         }
 
         if (consumeQueuedReloadCancelDraw(CLIENT_RELOAD_CANCEL_DRAW_STATES, playerId, stack, slot)) {
-            JustEnoughGuns.LOGGER.info(
-                    "[JEG_ANIM_DEBUG] consume queued reload-cancel draw player={} slot={} stack={}",
-                    player.getName().getString(),
-                    slot,
-                    debugStackName(stack));
             CLIENT_HELD_DRAW_STATES.put(playerId, currentState);
             clearReloadVisualState(stack);
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
@@ -2361,14 +2355,6 @@ public class GunItem extends Item {
     }
 
     private static void queueDrawAfterReloadCancel(Player player, ItemStack stack, int slot, boolean preserveUntilHeld) {
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_ANIM_DEBUG] queue draw after reload cancel player={} slot={} preserve={} stack={} reloadTicks={} drawTicks={}",
-                player.getName().getString(),
-                slot,
-                preserveUntilHeld,
-                debugStackName(stack),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
-                stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0));
         HELD_DRAW_STATES.remove(player.getUUID());
         CLIENT_HELD_DRAW_STATES.remove(player.getUUID());
         if (preserveUntilHeld) {
@@ -2580,14 +2566,6 @@ public class GunItem extends Item {
         int slot = player.getInventory().selected;
         boolean hadReloadVisual = isReloading(stack);
         int drawTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_ANIM_DEBUG] start client draw for switch player={} slot={} stack={} hadReloadVisual={} reloadTicks={} drawTicks={}",
-                player.getName().getString(),
-                slot,
-                debugStackName(stack),
-                hadReloadVisual,
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
-                drawTicks);
         clearReloadVisualState(stack);
 
         HeldGunState currentState = heldGunState(player, stack, slot, true);
@@ -2599,12 +2577,6 @@ public class GunItem extends Item {
         CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
 
         if (!hadReloadVisual && drawTicks >= DRAW_TICKS) {
-            JustEnoughGuns.LOGGER.info(
-                    "[JEG_ANIM_DEBUG] skip duplicate switch draw restart player={} slot={} stack={} drawTicks={}",
-                    player.getName().getString(),
-                    slot,
-                    debugStackName(stack),
-                    drawTicks);
             return;
         }
 
@@ -2621,35 +2593,16 @@ public class GunItem extends Item {
             return;
         }
         if (!isReloading(stack)) {
-            JustEnoughGuns.LOGGER.info(
-                    "[JEG_ANIM_DEBUG] skip cancel reload visual for switch player={} slot={} stack={} reason=notReloading",
-                    player.getName().getString(),
-                    slot,
-                    debugStackName(stack));
             return;
         }
 
         UUID playerId = player.getUUID();
-        JustEnoughGuns.LOGGER.info(
-                "[JEG_ANIM_DEBUG] cancel client reload visual for switch player={} slot={} stack={} reloadTicks={}",
-                player.getName().getString(),
-                slot,
-                debugStackName(stack),
-                stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0));
         clearReloadVisualState(stack);
         if (slot >= 0) {
             queueDrawAfterReloadCancel(player, stack, slot, true);
         }
         CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
         forgetHeldGunState(CLIENT_HELD_DRAW_STATES, playerId, stack, slot);
-    }
-
-    private static String debugStackName(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return "empty";
-        }
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        return id == null ? stack.getItem().toString() : id.toString();
     }
 
     @Override
