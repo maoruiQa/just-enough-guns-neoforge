@@ -396,16 +396,26 @@ public final class AttachmentRuntimeEvents {
         }
 
         Level level = player.level();
+        Vec3 eye = player.getEyePosition(1.0F);
+        Vec3 look = player.getViewVector(1.0F).normalize();
+        double maxDistance = Config.flashlightDistance() + 1.0D;
+        BlockHitResult obstruction = level.clip(new ClipContext(
+                eye,
+                eye.add(look.scale(maxDistance)),
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                player
+        ));
+        double clearDistance = obstruction.getType() == HitResult.Type.BLOCK
+                ? Math.max(0.0D, eye.distanceTo(obstruction.getLocation()) - 0.05D)
+                : maxDistance;
+
         double distance = 2.0D;
         for (int index = 0; index < Config.flashlightDistance(); index++) {
-            BlockHitResult result = level.clip(new ClipContext(
-                    player.getEyePosition(1.0F),
-                    player.getEyePosition(1.0F).add(player.getViewVector(1.0F).scale(distance)),
-                    ClipContext.Block.OUTLINE,
-                    ClipContext.Fluid.NONE,
-                    player
-            ));
-            refreshDynamicLight(level, result.getBlockPos());
+            if (distance > clearDistance) {
+                break;
+            }
+            refreshDynamicLight(level, BlockPos.containing(eye.add(look.scale(distance))));
             distance += 1.0D;
         }
     }

@@ -2,7 +2,9 @@ package ttv.migami.jeg.client.render.gun.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -137,22 +139,55 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
         BakedGeoModel bakedModel = this.attachmentModel.getBakedModel(model);
         RenderType attachmentRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer attachmentBuffer = bufferSource.getBuffer(attachmentRenderType);
+        List<BoneVisibility> hiddenGlowBones = hideDisabledSpecialGlow(bakedModel, attachmentId, gunStack);
 
         poseStack.pushPose();
-        transform.apply(poseStack);
-        getRenderer().reRender(
-                bakedModel,
-                poseStack,
-                bufferSource,
-                animatable,
-                attachmentRenderType,
-                attachmentBuffer,
-                partialTick,
-                packedLight,
-                packedOverlay,
-                0xFFFFFFFF
-        );
-        poseStack.popPose();
+        try {
+            transform.apply(poseStack);
+            getRenderer().reRender(
+                    bakedModel,
+                    poseStack,
+                    bufferSource,
+                    animatable,
+                    attachmentRenderType,
+                    attachmentBuffer,
+                    partialTick,
+                    packedLight,
+                    packedOverlay,
+                    0xFFFFFFFF
+            );
+        } finally {
+            restore(hiddenGlowBones);
+            poseStack.popPose();
+        }
+    }
+
+    private static List<BoneVisibility> hideDisabledSpecialGlow(BakedGeoModel model, ResourceLocation attachmentId, ItemStack gunStack) {
+        if (Reference.id("flashlight").equals(attachmentId) && !GunAttachments.isFlashlightPowered(gunStack)) {
+            return hideBones(model, "glow", "flashlight_glow");
+        }
+        if (Reference.id("laser_pointer").equals(attachmentId) && !GunAttachments.isLaserPointerPowered(gunStack)) {
+            return hideBones(model, "glow");
+        }
+        return List.of();
+    }
+
+    private static List<BoneVisibility> hideBones(BakedGeoModel model, String... boneNames) {
+        List<BoneVisibility> hiddenBones = new ArrayList<>();
+        for (String boneName : boneNames) {
+            model.getBone(boneName).ifPresent(bone -> {
+                hiddenBones.add(new BoneVisibility(bone, bone.isHidden(), bone.isHidingChildren()));
+                bone.setHidden(true);
+            });
+        }
+        return hiddenBones;
+    }
+
+    private static void restore(List<BoneVisibility> hiddenBones) {
+        for (BoneVisibility hiddenBone : hiddenBones) {
+            hiddenBone.bone().setHidden(hiddenBone.hidden());
+            hiddenBone.bone().setChildrenHidden(hiddenBone.childrenHidden());
+        }
     }
 
     private static boolean isOwnedByBakedGunModel(AttachmentType type, ResourceLocation gunId, ResourceLocation attachmentId) {
@@ -197,5 +232,8 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
 
     private static boolean exists(ResourceLocation id) {
         return Minecraft.getInstance().getResourceManager().getResource(id).isPresent();
+    }
+
+    private record BoneVisibility(GeoBone bone, boolean hidden, boolean childrenHidden) {
     }
 }
