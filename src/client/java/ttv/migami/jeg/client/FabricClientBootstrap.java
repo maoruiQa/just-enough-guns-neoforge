@@ -106,6 +106,7 @@ public final class FabricClientBootstrap {
     private static boolean aimingStateLastSent;
     private static boolean reloadHeldLastTick;
     private static boolean swapOffhandHeldLastTick;
+    private static boolean meleeHeldLastTick;
     private static int offhandFullPromptTicks;
     private static long nextVisualShotTickMain;
     private static int rocketHoldTicks;
@@ -296,6 +297,7 @@ public final class FabricClientBootstrap {
             aimingStateLastSent = false;
             reloadHeldLastTick = false;
             swapOffhandHeldLastTick = false;
+            meleeHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
@@ -343,6 +345,7 @@ public final class FabricClientBootstrap {
             aimingStateLastSent = false;
             reloadHeldLastTick = false;
             swapOffhandHeldLastTick = false;
+            meleeHeldLastTick = false;
             offhandFullPromptTicks = 0;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
@@ -414,12 +417,15 @@ public final class FabricClientBootstrap {
             client.options.keyAttack.setDown(false);
         }
 
-        while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
-                GunItem.cancelReloadForImmediateAction(player, heldMain);
-                ClientNetworkHandler.sendMelee();
-            }
+        boolean meleeDown = KeyBindings.MELEE.isDown()
+                || InputConstants.isKeyDown(client.getWindow().getWindow(), GLFW.GLFW_KEY_V);
+        boolean meleePressed = KeyBindings.MELEE.consumeClick() || (meleeDown && !meleeHeldLastTick);
+        if (!(player.getVehicle() instanceof VehicleEntity) && meleePressed
+                && heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
+            GunItem.cancelReloadForImmediateAction(player, heldMain);
+            ClientNetworkHandler.sendMelee();
         }
+        meleeHeldLastTick = meleeDown;
 
         boolean reloadDown = InputConstants.isKeyDown(client.getWindow().getWindow(), GLFW.GLFW_KEY_R);
         if (reloadDown && !reloadHeldLastTick) {

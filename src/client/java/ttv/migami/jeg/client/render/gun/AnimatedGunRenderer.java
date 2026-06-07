@@ -30,6 +30,7 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.util.RenderUtil;
 import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.render.gun.layer.GunBayonetAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
@@ -429,6 +430,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (!isReRender && stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
             debugFirstPersonBones(stack, boneName);
+            if ("attachment_bone".equals(boneName)) {
+                renderFirstPersonMuzzleFlashForBone(poseStack, bone, stack, bufferSource);
+            }
         }
 
         boolean armBone = isArmBone(boneName);
@@ -441,6 +445,36 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
     }
 
+    private void renderFirstPersonMuzzleFlashForBone(
+            PoseStack poseStack,
+            GeoBone bone,
+            ItemStack stack,
+            MultiBufferSource bufferSource
+    ) {
+        if (!isFirstPersonContext()) {
+            return;
+        }
+
+        poseStack.pushPose();
+        try {
+            RenderUtil.translateMatrixToBone(poseStack, bone);
+            RenderUtil.translateToPivotPoint(poseStack, bone);
+            RenderUtil.rotateMatrixAroundBone(poseStack, bone);
+            RenderUtil.scaleMatrixForBone(poseStack, bone);
+            RenderUtil.translateAwayFromPivotPoint(poseStack, bone);
+            FabricClientBootstrap.renderFirstPersonMuzzleFlashRelativeToBone(
+                    poseStack,
+                    bufferSource,
+                    stack,
+                    resolveRenderedHand(),
+                    bone.getPivotX(),
+                    bone.getPivotY(),
+                    bone.getPivotZ()
+            );
+        } finally {
+            poseStack.popPose();
+        }
+    }
     private void renderArmForBone(
             PoseStack poseStack,
             GeoBone bone,
