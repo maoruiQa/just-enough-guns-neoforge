@@ -471,7 +471,7 @@ public final class FabricClientBootstrap {
     private static void tickImmediateGunSwitch(LocalPlayer player) {
         int selectedSlot = player.getInventory().selected;
         ItemStack current = player.getMainHandItem();
-        boolean changed = selectedSlot != lastMainHandSlot || current != lastMainHandStackReference;
+        boolean changed = selectedSlot != lastMainHandSlot;
 
         if (changed && lastMainHandStackReference.getItem() instanceof AnimatedGunItem
                 && lastMainHandStackReference != current
@@ -487,8 +487,7 @@ public final class FabricClientBootstrap {
 
         if (changed
                 && current.getItem() instanceof AnimatedGunItem
-                && lastMainHandSlot >= 0
-                && lastMainHandStackReference != current) {
+                && lastMainHandSlot >= 0) {
             JustEnoughGuns.LOGGER.info(
                     "[JEG_ANIM_DEBUG] start draw on switch slot={} -> {} previous={} current={} currentDrawTicks={} currentReloadTicks={}",
                     lastMainHandSlot,
