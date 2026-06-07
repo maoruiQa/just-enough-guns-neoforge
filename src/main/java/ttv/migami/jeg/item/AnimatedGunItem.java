@@ -81,6 +81,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static long clientDrawAnimationDeadlineNanos;
     private static ItemStack clientDrawResetStack = ItemStack.EMPTY;
     private static long clientDrawResetDeadlineNanos;
+    private static String lastFirstPersonGunId = "";
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -116,10 +117,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         ItemStack renderStack = state.getData(DataTickets.ITEMSTACK);
         ItemStack stack = animationStateStack(state, renderStack);
         clearStaleRenderReloadVisualState(renderStack, stack);
+        resetControllerOnGunChange(state.getController(), stack);
 
-        RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(state, stack);
-        if (pendingDrawAnimation != null) {
-            return state.setAndContinue(pendingDrawAnimation);
+        if (triggerPendingClientDraw(state, stack)) {
+            return PlayState.CONTINUE;
         }
 
         if (triggerPendingClientMelee(state, stack)) {
@@ -244,6 +245,24 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         return DRAW;
     }
 
+    private static void resetControllerOnGunChange(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
+            lastFirstPersonGunId = "";
+            return;
+        }
+        String currentId = gun.getStats().id().toString();
+        if (!lastFirstPersonGunId.isEmpty() && !currentId.equals(lastFirstPersonGunId)) {
+            JustEnoughGuns.LOGGER.info(
+                    "[JEG_ANIM_DEBUG] reset controller on gun change previous={} current={} stack={}",
+                    lastFirstPersonGunId,
+                    currentId,
+                    debugStackName(stack));
+            controller.forceAnimationReset();
+            controller.stop();
+        }
+        lastFirstPersonGunId = currentId;
+    }
+
     private static PlayState setSprintOrBayonetSprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
         if (hasBayonet(stack)) {
             return state.setAndContinue(IDLE);
@@ -341,6 +360,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         clientDrawStack = stack.copy();
         clientDrawAnimationDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+    }
+
+    private static void startDrawAnimation(ItemStack stack) {
+        rememberDrawAnimation(stack);
         requestDrawAnimationReset(stack);
         queuePendingClientDraw(stack);
     }
@@ -396,7 +419,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack != null && !stack.isEmpty()) {
             clearRecentDrawAnimation();
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
-            rememberDrawAnimation(stack);
+            startDrawAnimation(stack);
         }
     }
 
@@ -430,9 +453,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 clientDrawTriggerDeadlineNanos);
     }
 
-    private static RawAnimation pendingClientDrawAnimationFor(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+    private static boolean triggerPendingClientDraw(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
         if (clientDrawTriggerStack.isEmpty()) {
-            return null;
+            return false;
         }
         if (System.nanoTime() > clientDrawTriggerDeadlineNanos) {
             JustEnoughGuns.LOGGER.info(
@@ -440,7 +463,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                     debugStackName(renderStack),
                     debugStackName(clientDrawTriggerStack));
             clearPendingClientDraw();
-            return null;
+            return false;
         }
         if (!matchesHeldStack(renderStack, clientDrawTriggerStack)) {
             JustEnoughGuns.LOGGER.debug(
@@ -449,7 +472,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                     debugStackName(clientDrawTriggerStack),
                     renderStack == null ? 0 : renderStack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0),
                     clientDrawTriggerStack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0));
-            return null;
+            return false;
         }
         if (renderStack != null && !renderStack.isEmpty()
                 && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
@@ -457,7 +480,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                     "[JEG_ANIM_DEBUG] keep pending client draw reason=render-stack-still-reloading stack={} reloadTicks={}",
                     debugStackName(renderStack),
                     renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0));
-            return null;
+            return false;
         }
 
         JustEnoughGuns.LOGGER.info(
@@ -466,10 +489,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 debugStackName(clientDrawTriggerStack),
                 renderStack == null ? 0 : renderStack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0));
         state.getController().forceAnimationReset();
-        state.getController().stop();
+        boolean triggered = state.getController().tryTriggerAnimation(ANIM_DRAW);
         clearDrawAnimationReset();
-        clearPendingClientDraw();
-        return DRAW;
+        if (triggered) {
+            clearPendingClientDraw();
+        }
+        return triggered;
     }
 
     private static void clearPendingClientDraw() {

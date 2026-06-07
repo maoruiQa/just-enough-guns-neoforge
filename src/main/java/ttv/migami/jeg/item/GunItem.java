@@ -2579,6 +2579,7 @@ public class GunItem extends Item {
         UUID playerId = player.getUUID();
         int slot = player.getInventory().selected;
         boolean hadReloadVisual = isReloading(stack);
+        int drawTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
         JustEnoughGuns.LOGGER.info(
                 "[JEG_ANIM_DEBUG] start client draw for switch player={} slot={} stack={} hadReloadVisual={} reloadTicks={} drawTicks={}",
                 player.getName().getString(),
@@ -2586,9 +2587,8 @@ public class GunItem extends Item {
                 debugStackName(stack),
                 hadReloadVisual,
                 stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0),
-                stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0));
+                drawTicks);
         clearReloadVisualState(stack);
-        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
 
         HeldGunState currentState = heldGunState(player, stack, slot, true);
         if (currentState != null) {
@@ -2598,6 +2598,17 @@ public class GunItem extends Item {
         }
         CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
 
+        if (!hadReloadVisual && drawTicks >= DRAW_TICKS) {
+            JustEnoughGuns.LOGGER.info(
+                    "[JEG_ANIM_DEBUG] skip duplicate switch draw restart player={} slot={} stack={} drawTicks={}",
+                    player.getName().getString(),
+                    slot,
+                    debugStackName(stack),
+                    drawTicks);
+            return;
+        }
+
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
         if (hadReloadVisual) {
             AnimatedGunItem.restartDrawAnimationAfterReloadCancel(stack);
         } else {
