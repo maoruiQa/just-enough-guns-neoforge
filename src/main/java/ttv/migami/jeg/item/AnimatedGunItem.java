@@ -237,14 +237,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private static PlayState setSprintOrBayonetSprintAnimation(AnimationTest<AnimatedGunItem> test, ItemStack stack) {
-        if (!hasBayonet(stack)) {
-            return setSprintAnimation(test);
-        }
-        if (hasAnimation(test.controller().getCurrentRawAnimation(), ANIM_BAYONET)) {
-            return PlayState.CONTINUE;
-        }
-        test.controller().reset();
-        return test.setAndContinue(BAYONET);
+        return setSprintAnimation(test);
     }
 
     private static ItemStack animationStateStack(AnimationTest<AnimatedGunItem> test, ItemStack renderStack) {
