@@ -90,6 +90,12 @@ public final class GunAttachmentVisibility {
             }
         }
 
+        Boolean serviceRifleHandguardVisibility = serviceRifleHandguardVisibility(gunId, stack, boneName);
+        if (serviceRifleHandguardVisibility != null) {
+            bone.setHidden(serviceRifleHandguardVisibility);
+            return;
+        }
+
         Boolean attachmentVisibility = installedAttachmentVisibility(gunId, stack, boneName);
         if (attachmentVisibility != null) {
             if (BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
@@ -111,6 +117,23 @@ public final class GunAttachmentVisibility {
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             bone.setHidden(true);
         }
+    }
+
+    private static Boolean serviceRifleHandguardVisibility(ResourceLocation gunId, ItemStack stack, String boneName) {
+        if (!Reference.id("service_rifle").equals(gunId)) {
+            return null;
+        }
+
+        boolean tacticalStock = isInstalled(stack, AttachmentType.STOCK, "tactical_stock");
+        boolean weightedStock = isInstalled(stack, AttachmentType.STOCK, "weighted_stock");
+        boolean lightHandguard = !tacticalStock && !weightedStock;
+        return switch (boneName) {
+            case "handguard" -> false;
+            case "light_handguard", "light_hg_grip" -> !lightHandguard;
+            case "tactical_handguard", "tactical_hg_grip" -> !tacticalStock;
+            case "weighted_handguard", "weighted_hg_grip" -> !weightedStock;
+            default -> null;
+        };
     }
 
     private static void applyBoltActionRifle(ItemStack stack, GeoBone bone, String boneName) {
