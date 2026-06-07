@@ -83,10 +83,9 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
     private static final String TAG_LAST_ATTACKED_GAME_TIME = "LastAttackedGameTime";
     private static final int TARGET_REACQUIRE_INTERVAL_TICKS = 20;
     private static final double TARGET_REACQUIRE_RANGE = 96.0D;
-    private static final java.util.UUID BOSS_BAR_ID = java.util.UUID.randomUUID();
     private int summonCooldown = SUMMON_INTERVAL_TICKS;
     private final ServerBossEvent bossInfo = new ServerBossEvent(
-            BOSS_BAR_ID,
+            java.util.UUID.randomUUID(),
             this.getDisplayName(),
             BossEvent.BossBarColor.PURPLE,
             BossEvent.BossBarOverlay.PROGRESS
