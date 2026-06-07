@@ -12,16 +12,20 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import com.geckolib.cache.model.BakedGeoModel;
 import com.geckolib.cache.model.GeoBone;
+import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.PerBoneRender;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.GeoRenderLayer;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
 import ttv.migami.jeg.client.render.gun.GunAttachmentGeoModel;
 import ttv.migami.jeg.client.render.gun.GunAttachmentTransforms;
@@ -108,11 +112,31 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            renderFirstPersonMuzzleFlash(passInfo, bone, collector);
             bone.translateAwayFromPivotPoint(passInfo.poseStack());
             for (AttachmentType type : POSITIONED_TYPES) {
                 renderAttachment(type, passInfo, collector);
             }
             renderBayonet(passInfo, collector);
+        }
+
+        private void renderFirstPersonMuzzleFlash(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            ItemDisplayContext ctx = passInfo.renderState()
+                    .getOrDefaultGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, ItemDisplayContext.NONE);
+            if (ctx != ItemDisplayContext.FIRST_PERSON_LEFT_HAND && ctx != ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+                return;
+            }
+
+            HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
+            GunClientEvents.submitFirstPersonMuzzleFlashRelativeToBone(
+                    passInfo.poseStack(),
+                    collector,
+                    this.gunStack,
+                    arm,
+                    bone.pivotX(),
+                    bone.pivotY(),
+                    bone.pivotZ()
+            );
         }
 
         private void renderAttachment(AttachmentType type, RenderPassInfo<GeoRenderState> passInfo, SubmitNodeCollector collector) {

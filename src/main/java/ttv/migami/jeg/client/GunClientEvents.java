@@ -24,6 +24,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.network.chat.Component;
@@ -75,6 +76,7 @@ public final class GunClientEvents {
     private static final float ADS_FOV_FACTOR = 0.35F;
     private static final float SCOPE_VIEWPORT_FOV = 12.0F;
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
+    private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 1.35D;
     private static final Identifier OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final Identifier HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int TIMER_BAR_WIDTH = 64;
@@ -117,6 +119,15 @@ public final class GunClientEvents {
     private static ItemStack lastMainHandStackReference = ItemStack.EMPTY;
     private static int lastMainHandSlot = -1;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
+    private static final Set<String> ALT_MUZZLE_FLASH_IDS = Set.of(
+            "subsonic_rifle",
+            "flamethrower",
+            "supersonic_shotgun",
+            "hypersonic_cannon",
+            "soulhunter_mk2",
+            "blossom_rifle",
+            "holy_shotgun"
+    );
     private static final MuzzleFlashProfile DEFAULT_MUZZLE_FLASH = new MuzzleFlashProfile(0.8D, 0.0D, 3.96D, -4.785D);
     private static final Map<String, MuzzleFlashProfile> MUZZLE_FLASH_PROFILES = Map.ofEntries(
             Map.entry("abstract_gun", DEFAULT_MUZZLE_FLASH),
@@ -136,7 +147,9 @@ public final class GunClientEvents {
             Map.entry("flare_gun", new MuzzleFlashProfile(0.8D, 0.0D, 4.695D, -2.04D)),
             Map.entry("blossom_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.4D, -9.7D)),
             Map.entry("holy_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 3.05D, -3.03D)),
+            Map.entry("atlantean_spear", new MuzzleFlashProfile(0.8D, 0.0D, 2.05D, -4.03D)),
             Map.entry("typhoonee", new MuzzleFlashProfile(0.8D, 0.0D, 2.5D, -3.03D)),
+            Map.entry("bubble_cannon", new MuzzleFlashProfile(0.8D, 0.0D, 2.5D, -3.03D)),
             Map.entry("repeating_shotgun", new MuzzleFlashProfile(0.8D, 0.0D, 4.645D, -10.635D)),
             Map.entry("infantry_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.495D, -9.655D)),
             Map.entry("service_rifle", new MuzzleFlashProfile(0.8D, 0.0D, 4.68D, -9.145D)),
@@ -149,6 +162,8 @@ public final class GunClientEvents {
             Map.entry("light_machine_gun", new MuzzleFlashProfile(0.8D, 0.0D, 4.88D, -10.0D)),
             Map.entry("flamethrower", new MuzzleFlashProfile(0.8D, 0.0D, 4.1D, -11.8D)),
             Map.entry("minigun", new MuzzleFlashProfile(1.0D, 0.0D, -1.1D, -13.0D)),
+            Map.entry("vindicator_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -5.0D)),
+            Map.entry("fire_sweeper", new MuzzleFlashProfile(0.8D, 0.0D, 4.645D, -10.635D)),
             Map.entry("phantom_smg", new MuzzleFlashProfile(0.8D, 0.0D, 4.45D, -2.205D))
     );
     private static final Map<Identifier, Optional<Vector3f>> FIRST_PERSON_MUZZLE_ANCHORS = new ConcurrentHashMap<>();
@@ -691,22 +706,8 @@ public final class GunClientEvents {
         if (minecraft.player != null && minecraft.player.getId() == entityId) {
             boolean aiming = AimingHandler.get().isAiming();
             AnimatedGunItem.triggerClientShoot(minecraft.player, aiming);
-            if (aiming) {
-                return;
-            }
-        }
-        if (usesNoMuzzleFlashGun(entity)) {
-            return;
         }
         MUZZLE_FLASHES.put(entityId, new MuzzleFlashState(2, random));
-    }
-
-    private static boolean usesNoMuzzleFlashGun(Entity entity) {
-        if (!(entity instanceof LivingEntity living)) {
-            return false;
-        }
-        ItemStack held = living.getMainHandItem();
-        return held.getItem() instanceof GunItem gun && Reference.id("rocket_launcher").equals(gun.getStats().id());
     }
 
     public static void captureFirstPersonGunPose(HumanoidArm arm, Matrix4f pose) {
@@ -749,21 +750,16 @@ public final class GunClientEvents {
             if (!(entity instanceof LivingEntity living) || !entity.isAlive()) {
                 continue;
             }
+            if (entity == minecraft.player && minecraft.options.getCameraType().isFirstPerson()) {
+                continue;
+            }
 
             ItemStack held = living.getMainHandItem();
             if (!(held.getItem() instanceof GunItem)) {
                 continue;
             }
-            if (usesNoMuzzleFlashGun(living)) {
-                continue;
-            }
 
-            Vec3 muzzlePos = living == minecraft.player && minecraft.options.getCameraType().isFirstPerson()
-                    ? getCurrentFirstPersonMuzzlePosition(minecraft.player, held)
-                    : null;
-            if (muzzlePos == null) {
-                muzzlePos = computeMuzzlePosition(living, held, partialTick);
-            }
+            Vec3 muzzlePos = computeMuzzlePosition(living, held, partialTick);
             MuzzleFlashProfile flash = muzzleFlashProfile(held);
             poseStack.pushPose();
             poseStack.translate(muzzlePos.x - cameraPos.x, muzzlePos.y - cameraPos.y, muzzlePos.z - cameraPos.z);
@@ -771,42 +767,90 @@ public final class GunClientEvents {
             poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
 
-            float size = (float) flash.size();
-            poseStack.scale(size, size, 1.0F);
-            poseStack.translate(-0.5F, -0.5F, 0.0F);
-
-            float minU = held.isEnchanted() ? 0.5F : 0.0F;
-            float maxU = held.isEnchanted() ? 1.0F : 0.5F;
-            Matrix4f matrix = poseStack.last().pose();
-            VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE));
-
-            consumer.addVertex(matrix, 0.0F, 0.0F, 0.0F)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(maxU, 1.0F)
-                    .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(Brightness.FULL_BRIGHT.pack())
-                    .setNormal(0.0F, 0.0F, 1.0F);
-            consumer.addVertex(matrix, 1.0F, 0.0F, 0.0F)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(minU, 1.0F)
-                    .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(Brightness.FULL_BRIGHT.pack())
-                    .setNormal(0.0F, 0.0F, 1.0F);
-            consumer.addVertex(matrix, 1.0F, 1.0F, 0.0F)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(minU, 0.0F)
-                    .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(Brightness.FULL_BRIGHT.pack())
-                    .setNormal(0.0F, 0.0F, 1.0F);
-            consumer.addVertex(matrix, 0.0F, 1.0F, 0.0F)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(maxU, 0.0F)
-                    .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(Brightness.FULL_BRIGHT.pack())
-                    .setNormal(0.0F, 0.0F, 1.0F);
+            renderMuzzleFlashQuad(poseStack, held, bufferSource.getBuffer(RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE)), flash);
 
             poseStack.popPose();
         }
+    }
+
+    public static void submitFirstPersonMuzzleFlashRelativeToBone(
+            PoseStack poseStack,
+            SubmitNodeCollector collector,
+            ItemStack held,
+            HumanoidArm arm,
+            double bonePivotX,
+            double bonePivotY,
+            double bonePivotZ
+    ) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || !(held.getItem() instanceof GunItem)) {
+            return;
+        }
+
+        MuzzleFlashState state = MUZZLE_FLASHES.get(minecraft.player.getId());
+        if (state == null) {
+            return;
+        }
+
+        MuzzleFlashProfile flash = muzzleFlashProfile(held);
+        double xOffset = flash.xOffset() - bonePivotX;
+        if (arm == HumanoidArm.LEFT) {
+            xOffset *= -1.0D;
+        }
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(xOffset * 0.0625D, (flash.yOffset() - bonePivotY) * 0.0625D, (flash.zOffset() - bonePivotZ) * 0.0625D);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(state.random * 360.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(state.random >= 0.5F ? 180.0F : 0.0F));
+            poseStack.scale((float) flash.size(), (float) flash.size(), 1.0F);
+            poseStack.translate(-0.5F, -0.5F, 0.0F);
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE),
+                    (pose, buffer) -> renderMuzzleFlashQuad(pose.pose(), held, buffer)
+            );
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    private static void renderMuzzleFlashQuad(PoseStack poseStack, ItemStack held, VertexConsumer consumer, MuzzleFlashProfile flash) {
+        float size = (float) flash.size();
+        poseStack.scale(size, size, 1.0F);
+        poseStack.translate(-0.5F, -0.5F, 0.0F);
+        renderMuzzleFlashQuad(poseStack.last().pose(), held, consumer);
+    }
+
+    private static void renderMuzzleFlashQuad(Matrix4f matrix, ItemStack held, VertexConsumer consumer) {
+        boolean alternateFlash = held.isEnchanted() || usesAlternateMuzzleFlash(held);
+        float minU = alternateFlash ? 0.5F : 0.0F;
+        float maxU = alternateFlash ? 1.0F : 0.5F;
+
+        consumer.addVertex(matrix, 0.0F, 0.0F, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setUv(maxU, 1.0F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(Brightness.FULL_BRIGHT.pack())
+                .setNormal(0.0F, 0.0F, 1.0F);
+        consumer.addVertex(matrix, 1.0F, 0.0F, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setUv(minU, 1.0F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(Brightness.FULL_BRIGHT.pack())
+                .setNormal(0.0F, 0.0F, 1.0F);
+        consumer.addVertex(matrix, 1.0F, 1.0F, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setUv(minU, 0.0F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(Brightness.FULL_BRIGHT.pack())
+                .setNormal(0.0F, 0.0F, 1.0F);
+        consumer.addVertex(matrix, 0.0F, 1.0F, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setUv(maxU, 0.0F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(Brightness.FULL_BRIGHT.pack())
+                .setNormal(0.0F, 0.0F, 1.0F);
     }
 
     private static Vec3 computeMuzzlePosition(LivingEntity shooter, ItemStack held, float partialTick) {
@@ -835,7 +879,7 @@ public final class GunClientEvents {
             sideMul *= -1.0D;
         }
 
-        return eye.add(look.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
+        return eye.add(look.scale(forwardMul + THIRD_PERSON_MUZZLE_FORWARD_OFFSET)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
     }
 
     private static MuzzleFlashProfile muzzleFlashProfile(ItemStack held) {
@@ -843,6 +887,10 @@ public final class GunClientEvents {
             return MUZZLE_FLASH_PROFILES.getOrDefault(gun.getStats().id().getPath(), DEFAULT_MUZZLE_FLASH);
         }
         return DEFAULT_MUZZLE_FLASH;
+    }
+
+    private static boolean usesAlternateMuzzleFlash(ItemStack held) {
+        return held.getItem() instanceof GunItem gun && ALT_MUZZLE_FLASH_IDS.contains(gun.getStats().id().getPath());
     }
 
     private static Vec3 computeFirstPersonMuzzlePosition(Minecraft minecraft, LocalPlayer player, ItemStack held) {
