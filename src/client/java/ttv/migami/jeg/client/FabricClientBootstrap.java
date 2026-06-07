@@ -423,6 +423,7 @@ public final class FabricClientBootstrap {
         if (!(player.getVehicle() instanceof VehicleEntity) && meleePressed
                 && heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
             GunItem.cancelReloadForImmediateAction(player, heldMain);
+            AnimatedGunItem.triggerClientMelee(player);
             ClientNetworkHandler.sendMelee();
         }
         meleeHeldLastTick = meleeDown;

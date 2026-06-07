@@ -8,7 +8,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.Level;
@@ -60,7 +62,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation MELEE = RawAnimation.begin().then(ANIM_MELEE, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation BAYONET = RawAnimation.begin().then(ANIM_BAYONET, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
-    private static final long CLIENT_RELOAD_COMPONENT_GRACE_NANOS = 250_000_000L;
     private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
     private static final ResourceLocation GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
     private static final ResourceLocation GUN_SCREW_SOUND = Reference.id("item.gun_screw");
@@ -70,9 +71,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientShootStack = ItemStack.EMPTY;
     private static boolean clientShootAiming;
     private static long clientShootTriggerDeadlineNanos;
-    private static ItemStack clientReloadStack = ItemStack.EMPTY;
-    private static RawAnimation clientReloadAnimation;
-    private static long clientReloadAnimationDeadlineNanos;
+    private static ItemStack clientMeleeStack = ItemStack.EMPTY;
+    private static boolean clientMeleeBayonet;
+    private static long clientMeleeTriggerDeadlineNanos;
+    private static ItemStack clientDrawTriggerStack = ItemStack.EMPTY;
+    private static long clientDrawTriggerDeadlineNanos;
     private static ItemStack clientDrawStack = ItemStack.EMPTY;
     private static long clientDrawAnimationDeadlineNanos;
     private static ItemStack clientDrawResetStack = ItemStack.EMPTY;
@@ -105,9 +108,45 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private PlayState animationPredicate(AnimationState<AnimatedGunItem> state) {
-        ItemStack stack = state.getData(DataTickets.ITEMSTACK);
+        if (isNonFirstPersonPerspective(state)) {
+            return PlayState.STOP;
+        }
+
+        ItemStack renderStack = state.getData(DataTickets.ITEMSTACK);
+        ItemStack stack = animationStateStack(state, renderStack);
+        clearStaleRenderReloadVisualState(renderStack, stack);
+
+        RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(state, stack);
+        if (pendingDrawAnimation != null) {
+            return state.setAndContinue(pendingDrawAnimation);
+        }
+
+        if (triggerPendingClientMelee(state, stack)) {
+            return PlayState.CONTINUE;
+        }
+        if (shouldContinueMeleeAnimation(state.getController())) {
+            return PlayState.CONTINUE;
+        }
+
+        if (triggerPendingClientShoot(state, stack)) {
+            return PlayState.CONTINUE;
+        }
+
+        clearInterruptedReloadAnimation(state.getController(), stack);
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
+        }
+
+        RawAnimation drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null && resetDrawAnimationIfRequested(state.getController(), stack)) {
+            return state.setAndContinue(drawAnimation);
+        }
+        if (shouldContinueDrawAnimation(state.getController(), stack)) {
+            return PlayState.CONTINUE;
+        }
+        drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null) {
+            return state.setAndContinue(drawAnimation);
         }
 
         RawAnimation reloadAnimation = reloadAnimationFor(stack);
@@ -115,20 +154,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return state.setAndContinue(reloadAnimation);
         }
 
-        if (triggerPendingClientShoot(state, stack)) {
-            return PlayState.CONTINUE;
-        }
-
         if (state.getController().isPlayingTriggeredAnimation()) {
-            return PlayState.CONTINUE;
-        }
-
-        RawAnimation drawAnimation = drawAnimationFor(state, stack);
-        if (drawAnimation != null) {
-            resetDrawAnimationIfRequested(state.getController(), stack);
-            return state.setAndContinue(drawAnimation);
-        }
-        if (shouldContinueDrawAnimation(state.getController(), stack)) {
             return PlayState.CONTINUE;
         }
 
@@ -191,23 +217,24 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         if (remainingTicks <= 0) {
-            return recentReloadAnimationFor(stack);
+            return null;
         }
 
         int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
-        RawAnimation animation = switch (stage) {
+        return switch (stage) {
             case RELOAD_STAGE_START -> RELOAD_START;
             case RELOAD_STAGE_LOOP -> RELOAD_LOOP;
             case RELOAD_STAGE_STOP -> RELOAD_STOP;
             default -> RELOAD;
         };
-        rememberReloadAnimation(stack, animation);
-        return animation;
     }
 
-    private static RawAnimation drawAnimationFor(AnimationState<AnimatedGunItem> state, ItemStack stack) {
+    private static RawAnimation drawAnimationFor(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return null;
+        }
+        if (hasRecentDrawAnimation(stack)) {
+            return DRAW;
         }
         if (stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) <= 0) {
             return null;
@@ -238,7 +265,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         if (remainingTicks <= 0) {
-            return recentReloadAnimationFor(stack) != null;
+            controller.forceAnimationReset();
+            controller.stop();
+            return false;
         }
 
         int stage = stack.getOrDefault(ModDataComponents.GUN_RELOAD_STAGE.get(), RELOAD_STAGE_NONE);
@@ -250,8 +279,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         };
     }
 
+    private static boolean clearInterruptedReloadAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
+            return false;
+        }
+        if (stack != null && !stack.isEmpty()
+                && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            return false;
+        }
+        controller.forceAnimationReset();
+        controller.stop();
+        return true;
+    }
+
     private static boolean isReloadAnimation(RawAnimation animation) {
         return hasAnyAnimation(animation, ANIM_RELOAD, ANIM_RELOAD_START, ANIM_RELOAD_LOOP, ANIM_RELOAD_STOP);
+    }
+
+    private static boolean isMeleeAnimation(RawAnimation animation) {
+        return hasAnyAnimation(animation, ANIM_MELEE, ANIM_BAYONET);
     }
 
     private static boolean hasAnimation(RawAnimation animation, String animationName) {
@@ -287,32 +333,15 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         return false;
     }
 
-    private static void rememberReloadAnimation(ItemStack stack, RawAnimation animation) {
-        clientReloadStack = stack.copy();
-        clientReloadAnimation = animation;
-        clientReloadAnimationDeadlineNanos = System.nanoTime() + CLIENT_RELOAD_COMPONENT_GRACE_NANOS;
-    }
-
-    private static RawAnimation recentReloadAnimationFor(ItemStack stack) {
-        if (clientReloadAnimation == null || System.nanoTime() > clientReloadAnimationDeadlineNanos) {
-            clearRecentReloadAnimation();
-            return null;
-        }
-        if (!matchesHeldStack(stack, clientReloadStack)) {
-            return null;
-        }
-        return clientReloadAnimation;
-    }
-
-    private static void clearRecentReloadAnimation() {
-        clientReloadStack = ItemStack.EMPTY;
-        clientReloadAnimation = null;
-        clientReloadAnimationDeadlineNanos = 0L;
-    }
-
     private static void rememberDrawAnimation(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            clearRecentDrawAnimation();
+            return;
+        }
         clientDrawStack = stack.copy();
         clientDrawAnimationDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+        requestDrawAnimationReset(stack);
+        queuePendingClientDraw(stack);
     }
 
     private static boolean hasRecentDrawAnimation(ItemStack stack) {
@@ -352,6 +381,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return false;
         }
         controller.forceAnimationReset();
+        controller.stop();
         clearDrawAnimationReset();
         return true;
     }
@@ -365,13 +395,60 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack != null && !stack.isEmpty()) {
             clearRecentDrawAnimation();
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
-            requestDrawAnimationReset(stack);
+            rememberDrawAnimation(stack);
         }
     }
 
     static void restartDrawAnimationAfterReloadCancel(ItemStack stack) {
-        clearRecentReloadAnimation();
+        clearReloadVisualState(stack);
         restartDrawAnimation(stack);
+    }
+
+    private static void clearReloadVisualState(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
+    }
+
+    private static void queuePendingClientDraw(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            clearPendingClientDraw();
+            return;
+        }
+        clearPendingClientMelee();
+        clientDrawTriggerStack = stack.copy();
+        clientDrawTriggerDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+    }
+
+    private static RawAnimation pendingClientDrawAnimationFor(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        if (clientDrawTriggerStack.isEmpty()) {
+            return null;
+        }
+        if (System.nanoTime() > clientDrawTriggerDeadlineNanos) {
+            clearPendingClientDraw();
+            return null;
+        }
+        if (!matchesHeldStack(renderStack, clientDrawTriggerStack)) {
+            return null;
+        }
+        if (renderStack != null && !renderStack.isEmpty()
+                && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            return null;
+        }
+
+        state.getController().forceAnimationReset();
+        state.getController().stop();
+        clearDrawAnimationReset();
+        clearPendingClientDraw();
+        return DRAW;
+    }
+
+    private static void clearPendingClientDraw() {
+        clientDrawTriggerStack = ItemStack.EMPTY;
+        clientDrawTriggerDeadlineNanos = 0L;
     }
 
     private static boolean triggerPendingClientShoot(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
@@ -394,10 +471,106 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         return triggered;
     }
 
+    private static boolean triggerPendingClientMelee(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        if (clientMeleeStack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() > clientMeleeTriggerDeadlineNanos) {
+            clearPendingClientMelee();
+            return false;
+        }
+        if (!matchesHeldStack(renderStack, clientMeleeStack)) {
+            return false;
+        }
+
+        state.getController().forceAnimationReset();
+        boolean triggered = state.getController().tryTriggerAnimation(clientMeleeBayonet ? ANIM_BAYONET : ANIM_MELEE);
+        if (triggered) {
+            clearPendingClientMelee();
+        }
+        return triggered;
+    }
+
     private static void clearPendingClientShoot() {
         clientShootStack = ItemStack.EMPTY;
         clientShootAiming = false;
         clientShootTriggerDeadlineNanos = 0L;
+    }
+
+    private static void clearPendingClientMelee() {
+        clientMeleeStack = ItemStack.EMPTY;
+        clientMeleeBayonet = false;
+        clientMeleeTriggerDeadlineNanos = 0L;
+    }
+
+    private static boolean shouldContinueMeleeAnimation(AnimationController<AnimatedGunItem> controller) {
+        return isMeleeAnimation(controller.getCurrentRawAnimation()) && !controller.hasAnimationFinished();
+    }
+
+    private static boolean isNonFirstPersonPerspective(AnimationState<AnimatedGunItem> state) {
+        var perspective = state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
+        return perspective != null && !perspective.firstPerson();
+    }
+
+    private static ItemStack animationStateStack(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        ItemStack liveStack = matchingLiveHeldStack(state, renderStack);
+        return liveStack.isEmpty() ? renderStack : liveStack;
+    }
+
+    private static void clearStaleRenderReloadVisualState(ItemStack renderStack, ItemStack liveStack) {
+        if (renderStack == null || renderStack.isEmpty() || liveStack == null || liveStack.isEmpty() || renderStack == liveStack) {
+            return;
+        }
+        if (liveStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) <= 0
+                && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
+            clearReloadVisualState(renderStack);
+        }
+    }
+
+    private static ItemStack matchingLiveHeldStack(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        Object player = clientPlayer();
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack perspectiveStack = heldStackForPerspective(player, state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE));
+        if (matchesHeldStack(renderStack, perspectiveStack) || isStaleRenderCopyOf(renderStack, perspectiveStack)) {
+            return perspectiveStack;
+        }
+
+        ItemStack mainHand = mainHandItem(player);
+        if (matchesHeldStack(renderStack, mainHand) || isStaleRenderCopyOf(renderStack, mainHand)) {
+            return mainHand;
+        }
+
+        ItemStack offHand = offHandItem(player);
+        if (matchesHeldStack(renderStack, offHand) || isStaleRenderCopyOf(renderStack, offHand)) {
+            return offHand;
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    private static boolean isStaleRenderCopyOf(ItemStack renderStack, ItemStack heldStack) {
+        if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
+            return false;
+        }
+        return ItemStack.isSameItem(renderStack, heldStack)
+                && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0
+                && heldStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) <= 0;
+    }
+
+    private static ItemStack heldStackForPerspective(Object player, Object perspective) {
+        if (!(player instanceof Player playerEntity)) {
+            return ItemStack.EMPTY;
+        }
+        if (perspective == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            return playerEntity.getMainArm() == HumanoidArm.RIGHT ? playerEntity.getMainHandItem() : playerEntity.getOffhandItem();
+        }
+        if (perspective == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
+            return playerEntity.getMainArm() == HumanoidArm.LEFT ? playerEntity.getMainHandItem() : playerEntity.getOffhandItem();
+        }
+        return ItemStack.EMPTY;
     }
 
     private boolean shouldPlaySprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
@@ -486,8 +659,23 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (renderStack == null || renderStack.isEmpty() || heldStack == null || heldStack.isEmpty()) {
             return false;
         }
-        return ItemStack.isSameItemSameComponents(renderStack, heldStack)
-                || ItemStack.isSameItem(renderStack, heldStack);
+        if (ItemStack.isSameItemSameComponents(renderStack, heldStack)) {
+            return true;
+        }
+        if (!ItemStack.isSameItem(renderStack, heldStack)) {
+            return false;
+        }
+
+        ItemStack renderCopy = renderStack.copy();
+        ItemStack heldCopy = heldStack.copy();
+        clearAnimationMatchState(renderCopy);
+        clearAnimationMatchState(heldCopy);
+        return ItemStack.isSameItemSameComponents(renderCopy, heldCopy);
+    }
+
+    private static void clearAnimationMatchState(ItemStack stack) {
+        clearReloadVisualState(stack);
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
     }
 
     public static void triggerClientShoot(Entity entity, boolean aiming) {
@@ -510,11 +698,41 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 return;
             }
 
-            clientShootStack = stack;
+            clearReloadVisualState(stack);
+            clearRecentDrawAnimation();
+            clientShootStack = stack.copy();
             clientShootAiming = aiming;
             clientShootTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
         } catch (Throwable ignored) {
             clearPendingClientShoot();
+        }
+    }
+
+    public static void triggerClientMelee(Entity entity) {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            if (minecraft == null) {
+                return;
+            }
+            Object player = minecraftClass.getField("player").get(minecraft);
+            if (player != entity) {
+                return;
+            }
+
+            ItemStack stack = mainHandItem(player);
+            if (!(stack.getItem() instanceof AnimatedGunItem)) {
+                clearPendingClientMelee();
+                return;
+            }
+
+            clearReloadVisualState(stack);
+            clearRecentDrawAnimation();
+            clientMeleeStack = stack.copy();
+            clientMeleeBayonet = hasBayonet(stack);
+            clientMeleeTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
+        } catch (Throwable ignored) {
+            clearPendingClientMelee();
         }
     }
 
@@ -588,6 +806,14 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         } catch (Throwable ignored) {
             return null;
         }
+    }
+
+    private static ItemStack mainHandItem(Object player) {
+        return player instanceof Player playerEntity ? playerEntity.getMainHandItem() : ItemStack.EMPTY;
+    }
+
+    private static ItemStack offHandItem(Object player) {
+        return player instanceof Player playerEntity ? playerEntity.getOffhandItem() : ItemStack.EMPTY;
     }
 
     private static SoundEvent soundForKeyframe(String key, GunStats stats) {
