@@ -475,6 +475,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             poseStack.popPose();
         }
     }
+
     private void renderArmForBone(
             PoseStack poseStack,
             GeoBone bone,
@@ -682,4 +683,3 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 || ItemStack.isSameItem(renderStack, heldStack);
     }
 }
-
