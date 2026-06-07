@@ -2,7 +2,9 @@ package ttv.migami.jeg.client.render.gun.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import com.geckolib.animation.state.BoneSnapshot;
 import com.geckolib.cache.model.BakedGeoModel;
 import com.geckolib.cache.model.GeoBone;
 import com.geckolib.constant.DataTickets;
@@ -172,13 +175,18 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucent(texture),
                     (pose, buffer) -> {
-                        renderModel(bakedModel, passInfo, pose, buffer, attachmentPose -> {
-                            if (transform != null) {
-                                transform.apply(attachmentPose);
-                            } else {
-                                attachmentPose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
-                            }
-                        });
+                        List<BoneVisibility> hiddenGlowBones = hideDisabledSpecialGlow(bakedModel, attachmentId, this.gunStack);
+                        try {
+                            renderModel(bakedModel, passInfo, pose, buffer, attachmentPose -> {
+                                if (transform != null) {
+                                    transform.apply(attachmentPose);
+                                } else {
+                                    attachmentPose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+                                }
+                            });
+                        } finally {
+                            restore(hiddenGlowBones);
+                        }
                     }
             );
         }
@@ -233,6 +241,34 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         }
     }
 
+    private static List<BoneVisibility> hideDisabledSpecialGlow(BakedGeoModel model, Identifier attachmentId, ItemStack gunStack) {
+        if (Reference.id("flashlight").equals(attachmentId) && !GunAttachments.isFlashlightPowered(gunStack)) {
+            return hideBones(model, "glow", "flashlight_glow");
+        }
+        if (Reference.id("laser_pointer").equals(attachmentId) && !GunAttachments.isLaserPointerPowered(gunStack)) {
+            return hideBones(model, "glow");
+        }
+        return List.of();
+    }
+
+    private static List<BoneVisibility> hideBones(BakedGeoModel model, String... boneNames) {
+        List<BoneVisibility> hiddenBones = new ArrayList<>();
+        for (String boneName : boneNames) {
+            model.getBone(boneName).ifPresent(bone -> {
+                BoneSnapshot snapshot = bone.frameSnapshot;
+                hiddenBones.add(new BoneVisibility(snapshot, snapshot.isHidden(), snapshot.areChildrenHidden()));
+                snapshot.skipRender(true);
+            });
+        }
+        return hiddenBones;
+    }
+
+    private static void restore(List<BoneVisibility> hiddenBones) {
+        for (BoneVisibility hiddenBone : hiddenBones) {
+            hiddenBone.snapshot().skipRender(hiddenBone.hidden());
+            hiddenBone.snapshot().skipChildrenRender(hiddenBone.childrenHidden());
+        }
+    }
     private static Identifier model(String attachmentName) {
         return Reference.id(MODEL_ROOT + attachmentName);
     }
@@ -320,5 +356,8 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
     private static boolean exists(Identifier id) {
         return Minecraft.getInstance().getResourceManager().getResource(id).isPresent();
+    }
+
+    private record BoneVisibility(BoneSnapshot snapshot, boolean hidden, boolean childrenHidden) {
     }
 }
