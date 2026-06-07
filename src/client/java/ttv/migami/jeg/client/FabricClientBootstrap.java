@@ -43,6 +43,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.Config;
+import ttv.migami.jeg.JustEnoughGuns;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.audio.StunRingingSound;
 import ttv.migami.jeg.client.handler.AimingHandler;
@@ -470,19 +471,32 @@ public final class FabricClientBootstrap {
     private static void tickImmediateGunSwitch(LocalPlayer player) {
         int selectedSlot = player.getInventory().selected;
         ItemStack current = player.getMainHandItem();
-        boolean changed = selectedSlot != lastMainHandSlot;
+        boolean changed = selectedSlot != lastMainHandSlot || current != lastMainHandStackReference;
 
         if (changed && lastMainHandStackReference.getItem() instanceof AnimatedGunItem
                 && lastMainHandStackReference != current
                 && GunItem.isReloading(lastMainHandStackReference)) {
+            JustEnoughGuns.LOGGER.info(
+                    "[JEG_ANIM_DEBUG] cancel reload visual on switch-away slot={} -> {} previous={} remaining={}",
+                    lastMainHandSlot,
+                    selectedSlot,
+                    stackDebugName(lastMainHandStackReference),
+                    lastMainHandStackReference.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0));
             GunItem.cancelClientReloadVisualForSwitch(player, lastMainHandStackReference, lastMainHandSlot);
         }
 
         if (changed
                 && current.getItem() instanceof AnimatedGunItem
                 && lastMainHandSlot >= 0
-                && lastMainHandStackReference != current
-                && !ItemStack.isSameItemSameComponents(lastMainHandStackReference, current)) {
+                && lastMainHandStackReference != current) {
+            JustEnoughGuns.LOGGER.info(
+                    "[JEG_ANIM_DEBUG] start draw on switch slot={} -> {} previous={} current={} currentDrawTicks={} currentReloadTicks={}",
+                    lastMainHandSlot,
+                    selectedSlot,
+                    stackDebugName(lastMainHandStackReference),
+                    stackDebugName(current),
+                    current.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0),
+                    current.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0));
             GunItem.startClientDrawAnimationForSwitch(player, current);
         }
 
@@ -497,6 +511,14 @@ public final class FabricClientBootstrap {
     private static void clearImmediateGunSwitchState() {
         lastMainHandStackReference = ItemStack.EMPTY;
         lastMainHandSlot = -1;
+    }
+
+    private static String stackDebugName(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return "empty";
+        }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id == null ? stack.getItem().toString() : id.toString();
     }
 
     private static void tickTransientPrompts(Minecraft client) {
