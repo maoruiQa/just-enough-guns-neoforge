@@ -61,6 +61,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation BAYONET = RawAnimation.begin().then(ANIM_BAYONET, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_RELOAD_COMPONENT_GRACE_NANOS = 250_000_000L;
+    private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
     private static final ResourceLocation GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
     private static final ResourceLocation GUN_SCREW_SOUND = Reference.id("item.gun_screw");
 
@@ -72,6 +73,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientReloadStack = ItemStack.EMPTY;
     private static RawAnimation clientReloadAnimation;
     private static long clientReloadAnimationDeadlineNanos;
+    private static ItemStack clientDrawStack = ItemStack.EMPTY;
+    private static long clientDrawAnimationDeadlineNanos;
+    private static ItemStack clientDrawResetStack = ItemStack.EMPTY;
+    private static long clientDrawResetDeadlineNanos;
 
     public AnimatedGunItem(Properties properties, GunStats stats) {
         super(properties, stats);
@@ -118,14 +123,17 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return PlayState.CONTINUE;
         }
 
-        if (shouldPlaySprintAnimation(state, stack)) {
-            clearDrawAnimation(stack);
-            return setSprintOrBayonetSprintAnimation(state, stack);
-        }
-
         RawAnimation drawAnimation = drawAnimationFor(state, stack);
         if (drawAnimation != null) {
+            resetDrawAnimationIfRequested(state.getController(), stack);
             return state.setAndContinue(drawAnimation);
+        }
+        if (shouldContinueDrawAnimation(state.getController(), stack)) {
+            return PlayState.CONTINUE;
+        }
+
+        if (shouldPlaySprintAnimation(state, stack)) {
+            return setSprintOrBayonetSprintAnimation(state, stack);
         }
 
         return state.setAndContinue(IDLE);
@@ -201,24 +209,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
-        if (isSprintingFirstPerson(state, stack)) {
-            clearDrawAnimation(stack);
+        if (stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) <= 0) {
             return null;
         }
-        return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0 ? DRAW : null;
-    }
-
-    private static boolean isSprintingFirstPerson(AnimationState<AnimatedGunItem> state, ItemStack stack) {
-        if (!isFirstPersonRender(state, stack) || isClientAiming()) {
-            return false;
-        }
-        return isClientPlayerSprinting();
-    }
-
-    private static void clearDrawAnimation(ItemStack stack) {
-        if (stack != null && !stack.isEmpty()) {
-            stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
-        }
+        rememberDrawAnimation(stack);
+        return DRAW;
     }
 
     private static PlayState setSprintOrBayonetSprintAnimation(AnimationState<AnimatedGunItem> state, ItemStack stack) {
@@ -279,6 +274,19 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 });
     }
 
+    private static boolean shouldContinueDrawAnimation(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (!hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW) || stack == null || stack.isEmpty()) {
+            return false;
+        }
+        boolean drawActive = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
+                || hasRecentDrawAnimation(stack);
+        if (drawActive && !isClientAiming()) {
+            return true;
+        }
+        clearRecentDrawAnimation();
+        return false;
+    }
+
     private static void rememberReloadAnimation(ItemStack stack, RawAnimation animation) {
         clientReloadStack = stack.copy();
         clientReloadAnimation = animation;
@@ -302,9 +310,62 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientReloadAnimationDeadlineNanos = 0L;
     }
 
+    private static void rememberDrawAnimation(ItemStack stack) {
+        clientDrawStack = stack.copy();
+        clientDrawAnimationDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+    }
+
+    private static boolean hasRecentDrawAnimation(ItemStack stack) {
+        if (clientDrawStack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() > clientDrawAnimationDeadlineNanos) {
+            clearRecentDrawAnimation();
+            return false;
+        }
+        return matchesHeldStack(stack, clientDrawStack);
+    }
+
+    private static void clearRecentDrawAnimation() {
+        clientDrawStack = ItemStack.EMPTY;
+        clientDrawAnimationDeadlineNanos = 0L;
+    }
+
+    private static void requestDrawAnimationReset(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            clearDrawAnimationReset();
+            return;
+        }
+        clientDrawResetStack = stack.copy();
+        clientDrawResetDeadlineNanos = System.nanoTime() + CLIENT_DRAW_VISUAL_NANOS;
+    }
+
+    private static boolean resetDrawAnimationIfRequested(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        if (clientDrawResetStack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() > clientDrawResetDeadlineNanos) {
+            clearDrawAnimationReset();
+            return false;
+        }
+        if (!matchesHeldStack(stack, clientDrawResetStack)) {
+            return false;
+        }
+        controller.forceAnimationReset();
+        clearDrawAnimationReset();
+        return true;
+    }
+
+    private static void clearDrawAnimationReset() {
+        clientDrawResetStack = ItemStack.EMPTY;
+        clientDrawResetDeadlineNanos = 0L;
+    }
+
     static void restartDrawAnimation(ItemStack stack) {
         if (stack != null && !stack.isEmpty()) {
+            clearRecentDrawAnimation();
             stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+            requestDrawAnimationReset(stack);
         }
     }
 
