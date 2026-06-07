@@ -426,8 +426,7 @@ public final class GunClientEvents {
         if (changed
                 && current.getItem() instanceof AnimatedGunItem
                 && lastMainHandSlot >= 0
-                && lastMainHandStackReference != current
-                && !ItemStack.isSameItemSameComponents(lastMainHandStackReference, current)) {
+                && lastMainHandStackReference != current) {
             GunItem.startClientDrawAnimationForSwitch(player, current);
         }
 
