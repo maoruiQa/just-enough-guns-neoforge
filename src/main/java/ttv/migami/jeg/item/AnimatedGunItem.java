@@ -2,8 +2,13 @@ package ttv.migami.jeg.item;
 
 import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.Level;
@@ -15,10 +20,13 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -53,6 +61,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation BAYONET = RawAnimation.begin().then(ANIM_BAYONET, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_RELOAD_COMPONENT_GRACE_NANOS = 250_000_000L;
+    private static final ResourceLocation GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
+    private static final ResourceLocation GUN_SCREW_SOUND = Reference.id("item.gun_screw");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private transient Object cachedGeoItemRenderer;
@@ -75,7 +85,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 CONTROLLER,
                 0,
                 this::animationPredicate
-        ).receiveTriggeredAnimations()
+        ).setSoundKeyframeHandler(this::soundListener)
+                .receiveTriggeredAnimations()
                 .triggerableAnim(ANIM_SHOOT, SHOOT)
                 .triggerableAnim(ANIM_AIM_SHOOT, AIM_SHOOT)
                 .triggerableAnim(ANIM_RELOAD, RELOAD)
@@ -481,5 +492,62 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 .map(ItemStack::getItem)
                 .filter(SwordItem.class::isInstance)
                 .isPresent();
+    }
+
+    private void soundListener(SoundKeyframeEvent<AnimatedGunItem> event) {
+        Player player = clientPlayer();
+        if (player == null) {
+            return;
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        GunItem gun = stack.getItem() instanceof GunItem mainHandGun ? mainHandGun : null;
+        if (gun == null) {
+            stack = player.getOffhandItem();
+            gun = stack.getItem() instanceof GunItem offHandGun ? offHandGun : null;
+        }
+        if (gun == null) {
+            return;
+        }
+
+        SoundEvent sound = soundForKeyframe(event.getKeyframeData().getSound(), gun.getStats());
+        if (sound != null) {
+            player.playSound(sound, 1.0F, 1.0F);
+        }
+    }
+
+    private static Player clientPlayer() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            return minecraft == null ? null : (Player) minecraftClass.getField("player").get(minecraft);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static SoundEvent soundForKeyframe(String key, GunStats stats) {
+        return switch (key) {
+            case "rustle" -> resolveSound(GUN_RUSTLE_SOUND);
+            case "screw" -> resolveSound(GUN_SCREW_SOUND);
+            case "reload_mag_out" -> stats.reloadStartSoundEvent().orElse(null);
+            case "reload_mag_in" -> stats.reloadLoadSoundEvent().orElse(null);
+            case "reload_end" -> stats.reloadEndSoundEvent().orElse(null);
+            case "ejector_pull" -> resolveSound(stats.ejectorPullSound());
+            case "ejector_release" -> resolveSound(stats.ejectorReleaseSound());
+            case "jammed" -> SoundEvents.ANVIL_LAND;
+            default -> null;
+        };
+    }
+
+    private static SoundEvent resolveSound(ResourceLocation id) {
+        if (id == null) {
+            return null;
+        }
+        var holder = ModSounds.ALL.get(id);
+        if (holder != null) {
+            return holder.get();
+        }
+        return BuiltInRegistries.SOUND_EVENT.getOptional(id).orElse(null);
     }
 }
