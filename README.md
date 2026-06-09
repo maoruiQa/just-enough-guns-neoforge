@@ -64,3 +64,12 @@ else:
 ```
 
 The result is then scaled by the armor slot and armor tier durability multipliers and capped before being applied to the armor item.
+
+## Credits And License
+
+This module is a NeoForge 1.21.1-1.21.4 port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
+
+- Original Just Enough Guns code, design, and assets are by MigaMi and are licensed under GPL-3.0.
+- The current SBW-derived Walkurenritt vehicle set covers the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus their vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data. These materials are derived from Superb Warfare (SBW) by the SBW development team and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
+- The SBW-derived Walkurenritt vehicle materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future vehicle content may have different source projects and license terms.
+- This port is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
