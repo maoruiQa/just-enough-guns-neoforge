@@ -136,13 +136,13 @@ Config changes should be tested on a copy of the world before using them on a lo
 
 ## Credits And License
 
-Just Enough Guns New is a fork and modern Fabric/NeoForge port of the original Just Enough Guns project, which targets Forge 1.20.1.
+Just Enough Guns New is a fork and modern Fabric/NeoForge port of the original Just Enough Guns project by MigaMi, which targets Forge 1.20.1: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
 
-- Original Just Enough Guns code, design, and assets belong to the original authors.
-- The Walkürenritt vehicle update ports and adapts portions of Superb Warfare ([SBW] Superb Warfare), a GPLv3 Minecraft warfare mod centered on guns, cannons, and vehicles: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
-- Superb Warfare-derived code, data, and compatible resources are redistributed under GPL-3.0 as part of this GPL-3.0 project. Original Superb Warfare authors retain their upstream copyright.
-- Just Enough Guns New is an independent project and is not affiliated with, endorsed by, or an official addon for Superb Warfare.
+- Original Just Enough Guns code, design, and assets are by MigaMi and are licensed under GPL-3.0.
+- The current SBW-derived Walkurenritt vehicle set covers the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus their vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data. These materials are derived from Superb Warfare (SBW) by the SBW development team and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
+- The SBW-derived Walkurenritt vehicle materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future vehicle content may have different source projects and license terms.
+- Just Enough Guns New is an independent port project and is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
 - Just Enough Guns New porting and maintenance is handled by Rui Mao.
-- Licensed under GPL-3.0.
+- Project code based on Just Enough Guns is licensed under GPL-3.0, except the listed SBW-derived Walkurenritt vehicle materials as noted above.
 
 Suggestions and bug reports are welcome. Clear reproduction steps, Minecraft version, loader, mod version, dependency versions, and crash logs help much more than vague reports.

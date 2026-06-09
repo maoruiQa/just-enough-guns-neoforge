@@ -3,7 +3,7 @@
   "id": "jeg",
   "version": "${version}",
   "name": "jegn",
-  "description": "Port of Just Enough Guns to Fabric.",
+  "description": "Fabric port of MigaMi's GPL-3.0 Just Enough Guns. SBW-derived Walkurenritt vehicles (LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, waveforce tower) and their workbenches/repair tools are by the SBW development team under CC BY-NC-SA 3.0.",
   "authors": [
     "Rui Mao",
     "MigaMi",
