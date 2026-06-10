@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0-pre3-patch - 2026-06-10
+
+### Fixed
+- Fixed NeoForge 26.1 login recipe unlocks so joining players receive every loaded `jeg` recipe, matching the other active branches.
+
 ## 1.7.0-pre - 2026-06-05
 
 ### Added

@@ -1,11 +1,14 @@
 package ttv.migami.jeg.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -39,6 +42,21 @@ public final class RecipeUnlockHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
-        player.awardRecipesByKey(BULLETPROOF_RECIPES);
+
+        MinecraftServer server = player.level().getServer();
+        if (server == null) {
+            return;
+        }
+
+        List<RecipeHolder<?>> jegRecipes = new ArrayList<>();
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            if (holder.id().identifier().getNamespace().equals(Reference.MOD_ID)) {
+                jegRecipes.add(holder);
+            }
+        }
+
+        if (!jegRecipes.isEmpty()) {
+            player.awardRecipes(jegRecipes);
+        }
     }
 }
