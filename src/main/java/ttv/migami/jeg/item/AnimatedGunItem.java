@@ -1,7 +1,7 @@
 package ttv.migami.jeg.item;
 
 import java.util.function.Consumer;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,9 +27,6 @@ import software.bernie.geckolib.animation.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.Reference;
-import ttv.migami.jeg.client.handler.AimingHandler;
-import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
-import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModSounds;
@@ -182,14 +179,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
 
         if (isFirstPersonRender(state, stack)) {
-            var player = software.bernie.geckolib.util.ClientUtil.getClientPlayer();
-            if (player != null && player.isSprinting() && !AimingHandler.get().isAiming()) {
-                if (stack.getItem() instanceof AnimatedGunItem gun) {
-                    var profile = GunPoseProfile.forGun(gun.getStats().id());
-                    if (profile.canApplySprintingAnimation()) {
-                        return setSprintOrBayonetSprintAnimation(state, stack);
-                    }
-                }
+            Player player = clientPlayer();
+            if (player != null && player.isSprinting() && !isClientAiming() && canApplySprintingAnimation(stack)) {
+                return setSprintOrBayonetSprintAnimation(state, stack);
             }
         }
         if (isIdleOnlyAnimation(state.getController().getCurrentRawAnimation())) {
@@ -261,12 +253,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private static ItemStack matchingLiveHeldStack(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null) {
+        Object minecraft = minecraftInstance();
+        Object player = minecraftPlayer(minecraft);
+        if (minecraft == null || player == null) {
             return ItemStack.EMPTY;
         }
 
-        ItemStack perspectiveStack = heldStackForPerspective(minecraft.player, state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE));
+        ItemStack perspectiveStack = heldStackForPerspective(player, state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE));
         if (matchesHeldStack(renderStack, perspectiveStack)) {
             return perspectiveStack;
         }
@@ -274,7 +267,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return perspectiveStack;
         }
 
-        ItemStack mainHand = minecraft.player.getMainHandItem();
+        ItemStack mainHand = mainHandItem(player);
         if (matchesHeldStack(renderStack, mainHand)) {
             return mainHand;
         }
@@ -282,7 +275,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return mainHand;
         }
 
-        ItemStack offHand = minecraft.player.getOffhandItem();
+        ItemStack offHand = offHandItem(player);
         if (matchesHeldStack(renderStack, offHand)) {
             return offHand;
         }
@@ -302,12 +295,15 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 && heldStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) <= 0;
     }
 
-    private static ItemStack heldStackForPerspective(Player player, Object perspective) {
+    private static ItemStack heldStackForPerspective(Object player, Object perspective) {
+        if (!(player instanceof Player playerEntity)) {
+            return ItemStack.EMPTY;
+        }
         if (perspective == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
-            return player.getMainArm() == HumanoidArm.RIGHT ? player.getMainHandItem() : player.getOffhandItem();
+            return playerEntity.getMainArm() == HumanoidArm.RIGHT ? playerEntity.getMainHandItem() : playerEntity.getOffhandItem();
         }
         if (perspective == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
-            return player.getMainArm() == HumanoidArm.LEFT ? player.getMainHandItem() : player.getOffhandItem();
+            return playerEntity.getMainArm() == HumanoidArm.LEFT ? playerEntity.getMainHandItem() : playerEntity.getOffhandItem();
         }
         return ItemStack.EMPTY;
     }
@@ -416,7 +412,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         boolean drawActive = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
                 || hasRecentDrawAnimation(stack);
-        if (drawActive && !controller.hasAnimationFinished() && !AimingHandler.get().isAiming()) {
+        if (drawActive && !controller.hasAnimationFinished() && !isClientAiming()) {
             return true;
         }
         clearRecentDrawAnimation();
@@ -638,17 +634,20 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return true;
         }
 
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null || !minecraft.options.getCameraType().isFirstPerson()) {
+        Object minecraft = minecraftInstance();
+        Object player = minecraftPlayer(minecraft);
+        if (minecraft == null || player == null || !isFirstPersonCamera(minecraft)) {
             return false;
         }
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        return ItemStack.isSameItemSameComponents(stack, minecraft.player.getMainHandItem())
-                || ItemStack.isSameItemSameComponents(stack, minecraft.player.getOffhandItem())
-                || ItemStack.isSameItem(stack, minecraft.player.getMainHandItem())
-                || ItemStack.isSameItem(stack, minecraft.player.getOffhandItem());
+        ItemStack mainHand = mainHandItem(player);
+        ItemStack offHand = offHandItem(player);
+        return ItemStack.isSameItemSameComponents(stack, mainHand)
+                || ItemStack.isSameItemSameComponents(stack, offHand)
+                || ItemStack.isSameItem(stack, mainHand)
+                || ItemStack.isSameItem(stack, offHand);
     }
 
     private static boolean matchesHeldStack(ItemStack renderStack, ItemStack heldStack) {
@@ -678,13 +677,14 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     public static void triggerClientShoot(Entity entity, boolean aiming) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player != entity) {
+        Object minecraft = minecraftInstance();
+        Object player = minecraftPlayer(minecraft);
+        if (!(entity instanceof Player) || minecraft == null || player != entity) {
             return;
         }
 
-        ItemStack mainHand = minecraft.player.getMainHandItem();
-        ItemStack offHand = minecraft.player.getOffhandItem();
+        ItemStack mainHand = mainHandItem(player);
+        ItemStack offHand = offHandItem(player);
         ItemStack stack = mainHand.getItem() instanceof AnimatedGunItem ? mainHand : offHand;
         if (!(stack.getItem() instanceof AnimatedGunItem)) {
             clearPendingClientShoot();
@@ -699,12 +699,13 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     public static void triggerClientMelee(Entity entity) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player != entity) {
+        Object minecraft = minecraftInstance();
+        Object player = minecraftPlayer(minecraft);
+        if (!(entity instanceof Player) || minecraft == null || player != entity) {
             return;
         }
 
-        ItemStack stack = minecraft.player.getMainHandItem();
+        ItemStack stack = mainHandItem(player);
         if (!(stack.getItem() instanceof AnimatedGunItem)) {
             clearPendingClientMelee();
             return;
@@ -725,12 +726,11 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     }
 
     private void soundListener(SoundKeyframeEvent<AnimatedGunItem> event) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.player == null) {
+        Player player = clientPlayer();
+        if (player == null) {
             return;
         }
 
-        Player player = minecraft.player;
         ItemStack stack = player.getMainHandItem();
         GunItem gun = stack.getItem() instanceof GunItem mainHandGun ? mainHandGun : null;
         if (gun == null) {
@@ -793,12 +793,12 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private AnimatedGunRenderer renderer;
+            private BlockEntityWithoutLevelRenderer renderer;
 
             @Override
-            public AnimatedGunRenderer getGeoItemRenderer() {
+            public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
                 if (renderer == null) {
-                    renderer = new AnimatedGunRenderer();
+                    renderer = createClientGunRenderer();
                 }
                 if (!loggedRendererProvider) {
                     loggedRendererProvider = true;
@@ -840,5 +840,80 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     public void triggerMelee(Level level, Entity triggerEntity, ItemStack stack) {
         trigger(level, triggerEntity, stack, hasBayonet(stack) ? ANIM_BAYONET : ANIM_MELEE);
+    }
+
+    private static Object minecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            return minecraftClass.getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    private static Object minecraftPlayer(Object minecraft) {
+        if (minecraft == null) {
+            return null;
+        }
+        try {
+            return minecraft.getClass().getField("player").get(minecraft);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    private static Player clientPlayer() {
+        Object player = minecraftPlayer(minecraftInstance());
+        return player instanceof Player playerEntity ? playerEntity : null;
+    }
+
+    private static ItemStack mainHandItem(Object player) {
+        return player instanceof Player playerEntity ? playerEntity.getMainHandItem() : ItemStack.EMPTY;
+    }
+
+    private static ItemStack offHandItem(Object player) {
+        return player instanceof Player playerEntity ? playerEntity.getOffhandItem() : ItemStack.EMPTY;
+    }
+
+    private static boolean isFirstPersonCamera(Object minecraft) {
+        try {
+            Object options = minecraft.getClass().getField("options").get(minecraft);
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            return (Boolean) cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType);
+        } catch (ReflectiveOperationException e) {
+            return false;
+        }
+    }
+
+    private static boolean isClientAiming() {
+        try {
+            Class<?> aimingHandlerClass = Class.forName("ttv.migami.jeg.client.handler.AimingHandler");
+            Object handler = aimingHandlerClass.getMethod("get").invoke(null);
+            return (Boolean) aimingHandlerClass.getMethod("isAiming").invoke(handler);
+        } catch (ReflectiveOperationException e) {
+            return false;
+        }
+    }
+
+    private static boolean canApplySprintingAnimation(ItemStack stack) {
+        if (!(stack.getItem() instanceof AnimatedGunItem gun)) {
+            return false;
+        }
+        try {
+            Class<?> profileClass = Class.forName("ttv.migami.jeg.client.render.gun.GunPoseProfile");
+            Object profile = profileClass.getMethod("forGun", ResourceLocation.class).invoke(null, gun.getStats().id());
+            return (Boolean) profileClass.getMethod("canApplySprintingAnimation").invoke(profile);
+        } catch (ReflectiveOperationException e) {
+            return false;
+        }
+    }
+
+    private static BlockEntityWithoutLevelRenderer createClientGunRenderer() {
+        try {
+            Class<?> rendererClass = Class.forName("ttv.migami.jeg.client.render.gun.AnimatedGunRenderer");
+            return (BlockEntityWithoutLevelRenderer) rendererClass.getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to create animated gun renderer", e);
+        }
     }
 }

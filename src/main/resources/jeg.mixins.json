@@ -3,14 +3,16 @@
   "package": "ttv.migami.jeg.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "TargetGoalMixin",
+    "GunnerSunBurnMixin",
+    "GunnerWaterConversionMixin"
+  ],
+  "client": [
     "KeyMappingVehicleMixin",
     "MouseHandlerVehicleMixin",
     "MinecraftVehicleHotbarMixin",
-    "TargetGoalMixin",
     "VehicleCameraMixin",
-    "VehicleGameRendererMixin",
-    "GunnerSunBurnMixin",
-    "GunnerWaterConversionMixin"
+    "VehicleGameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
