@@ -14,7 +14,7 @@ import ttv.migami.jeg.item.GunItem;
 @Mixin(AbstractClientPlayer.class)
 public final class AbstractClientPlayerMixin {
     private static final float ADS_FOV_FACTOR = 0.35F;
-    private static final float SCOPE_VIEWPORT_FOV = 12.0F;
+    private static final float SCOPE_VIEWPORT_FOV = 20.0F;
 
     @Inject(method = "getFieldOfViewModifier", at = @At("RETURN"), cancellable = true)
     private void jeg$applyAdsFovModifier(boolean firstPerson, float tickProgress, CallbackInfoReturnable<Float> cir) {
