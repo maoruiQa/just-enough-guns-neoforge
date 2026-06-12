@@ -18,12 +18,12 @@ public final class LaserParticle extends SingleQuadParticle {
     private LaserParticle(ClientLevel level, double x, double y, double z, Direction direction, BlockPos pos, SpriteSet sprites) {
         super(level, x, y, z, sprites.first());
         this.pos = pos;
-        this.lifetime = 1;
+        this.lifetime = 0;
         this.hasPhysics = false;
         this.gravity = 0.0F;
-        this.quadSize = 0.13F;
+        this.quadSize = 0.05F;
         this.setColor(1.0F, 0.0F, 0.0F);
-        this.alpha = 1.0F;
+        this.alpha = 0.9F;
         this.setSprite(this.sprite);
 
         if (level.getBlockState(pos).isAir()) {
@@ -43,7 +43,7 @@ public final class LaserParticle extends SingleQuadParticle {
 
     @Override
     public void tick() {
-        super.tick();
+        this.remove();
         if (this.level.getBlockState(this.pos).isAir()) {
             this.remove();
         }

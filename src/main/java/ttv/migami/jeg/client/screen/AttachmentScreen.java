@@ -60,7 +60,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int MEDAL_DISABLED_U = 176;
     private static final int MEDAL_DISABLED_V = 183;
     private static final float GUN_PREVIEW_HALF_EXTENT = 1.35F;
-    private static final float GUN_PREVIEW_SCALE = 1.5F;
+    private static final float GUN_PREVIEW_SCALE = 3.0F;
     private static final int GUN_PREVIEW_CENTER_Y = 24;
     private static final int GUN_PREVIEW_SLOT_CENTER_OFFSET = 8;
     private static final Vector3fc[] GUN_PREVIEW_EXTENTS = new Vector3fc[] {
@@ -360,6 +360,9 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         Identifier itemId = BuiltInRegistries.ITEM.getKey(gunStack.getItem());
         if (Reference.id("abstract_gun").equals(itemId)) {
             return Component.literal("JEG: Gun-Packs!");
+        }
+        if (Reference.MOD_ID.equals(itemId.getNamespace())) {
+            return Component.literal("JEGN");
         }
         String modName = ModList.get().getModContainerById(itemId.getNamespace())
                 .map(container -> container.getModInfo().getDisplayName())
