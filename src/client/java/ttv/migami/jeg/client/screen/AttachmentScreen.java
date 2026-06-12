@@ -340,6 +340,6 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         if (Reference.id("abstract_gun").equals(itemId)) {
             return Component.literal("JEG: Gun-Packs!");
         }
-        return Component.literal(Reference.MOD_ID.equals(itemId.getNamespace()) ? "Just Enough Guns" : "JEG: Add-on");
+        return Component.literal(Reference.MOD_ID.equals(itemId.getNamespace()) ? "JEGN" : "JEG: Add-on");
     }
 }

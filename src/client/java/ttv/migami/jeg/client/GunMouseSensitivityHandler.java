@@ -9,7 +9,7 @@ import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.GunItem;
 
 public final class GunMouseSensitivityHandler {
-    private static final float BOLT_ACTION_ADS_SENSITIVITY = 0.35F;
+    private static final float BOLT_ACTION_ADS_SENSITIVITY = 0.2F;
     private static final double SENSITIVITY_SCALE = 0.6000000238418579D;
     private static final double SENSITIVITY_OFFSET = 0.20000000298023224D;
 
