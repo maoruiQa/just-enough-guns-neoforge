@@ -1,11 +1,6 @@
 # Changelog
 
-## 1.7.0-pre3-patch - 2026-06-10
-
-### Fixed
-- Fixed NeoForge 26.1 login recipe unlocks so joining players receive every loaded `jeg` recipe, matching the other active branches.
-
-## 1.7.0-pre - 2026-06-05
+## 1.7.0 - 2026-06-12
 
 ### Added
 - Added Forge-style gun melee handling on the V key, including flashlight toggles, baseline melee sweeps, sword bayonet damage, and first-person `melee`/`bayonet` animations for animated guns.
@@ -14,6 +9,7 @@
 - Added yellow tooltip hints for gun attachment-screen access and attachment items, including the magazine-feed incompatibility warning on the drum-mag attachment.
 
 ### Fixed
+- Fixed NeoForge 26.1 login recipe unlocks so joining players receive every loaded `jeg` recipe, matching the other active branches.
 - Fixed magazine-fed servers so extended-mag and drum-mag attachments can no longer be installed on guns or used from old gun data to bypass magazine-fed reload behavior.
 - Fixed magazine-fed reload swaps so full guns can replace the current magazine with a different valid magazine type, and reload completion validates the exact magazine selected when the reload began instead of re-scanning inventory.
 - Fixed magazine-fed reload visuals so animated gun models show the old magazine type during the first half of reload and the new magazine type during the second half.
@@ -25,6 +21,11 @@
 - Fixed bayonet first-person animation priority so switching to a bayonet-equipped gun plays the draw animation and sprinting with a bayonet uses the bayonet charge animation instead of the normal run pose.
 - Restored Forge 1.20.1 explosive-muzzle entity-hit ignition while reducing explosive-muzzle armor piercing by 25% for balance.
 - Fixed draw, reload, shoot, sprint, idle, and melee animation priority so first-person GeckoLib controllers recover cleanly after reload cancellation, hotbar switches, and local gunfire.
+- Fixed grenade launcher grenades so launcher-fired grenades explode promptly instead of using an excessive fuse.
+- Fixed telescope-sight ADS mouse sensitivity and FOV behavior so scoped aiming matches the 1.21.1 feel more closely.
+- Fixed the attachment screen gun preview size and vertical placement on the 26.1 item preview pipeline.
+- Fixed the attachment screen mod label for built-in JEGN guns.
+- Fixed laser pointer block red dots so they no longer leave a visible afterimage.
 - Removed temporary animation and overheat debug logging added during the reload/draw diagnosis pass.
 
 ### Documentation
