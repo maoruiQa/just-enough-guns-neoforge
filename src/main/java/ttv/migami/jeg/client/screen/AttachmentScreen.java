@@ -333,6 +333,9 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         if (Reference.id("abstract_gun").equals(itemId)) {
             return Component.literal("JEG: Gun-Packs!");
         }
+        if (Reference.MOD_ID.equals(itemId.getNamespace())) {
+            return Component.literal("JEGN");
+        }
         String modName = ModList.get().getModContainerById(itemId.getNamespace())
                 .map(container -> container.getModInfo().getDisplayName())
                 .orElse("JEG: Add-on");
