@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0-pre - 2026-06-05
+## 1.7.0 - 2026-06-12
 
 ### Added
 - Added Forge-style gun melee handling on the V key, including flashlight toggles, baseline melee sweeps, sword bayonet damage, and first-person `melee`/`bayonet` animations for animated guns.
@@ -20,6 +20,9 @@
 - Fixed bayonet first-person animation priority so switching to a bayonet-equipped gun plays the draw animation and sprinting with a bayonet uses the bayonet charge animation instead of the normal run pose.
 - Restored Forge 1.20.1 explosive-muzzle entity-hit ignition while reducing explosive-muzzle armor piercing by 25% for balance.
 - Fixed draw, reload, shoot, sprint, idle, and melee animation priority so first-person GeckoLib controllers recover cleanly after reload cancellation, hotbar switches, and local gunfire.
+- Fixed grenade launcher grenades so launcher-fired grenades explode promptly instead of using an excessive fuse.
+- Fixed telescope-sight ADS mouse sensitivity so scoped bolt-action aiming slows the mouse further.
+- Fixed the attachment screen mod label for built-in JEGN guns.
 - Removed temporary animation and overheat debug logging added during the reload/draw diagnosis pass.
 
 ### Documentation
