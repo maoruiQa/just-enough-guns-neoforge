@@ -218,6 +218,9 @@ public final class GunAttachmentVisibility {
         if ("makeshift_stock".equals(boneName) && MAKESHIFT_STOCK_VISUAL_GUNS.contains(gunId)) {
             return !isInstalled(stack, AttachmentType.STOCK, "makeshift_stock");
         }
+        if (Reference.id("service_rifle").equals(gunId) && "light_hg_grip".equals(boneName)) {
+            return GunAttachments.has(stack, AttachmentType.STOCK) && !isInstalled(stack, AttachmentType.STOCK, "light_stock");
+        }
         if (Config.magazineFeedEnabled() && isMagazineBone(boneName)) {
             return magazineItemVisibility(stack, boneName);
         }

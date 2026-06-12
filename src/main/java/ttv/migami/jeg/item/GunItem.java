@@ -77,7 +77,7 @@ public class GunItem extends Item {
     private static final int ROCKET_LAUNCHER_HOLD_TICKS = 7;
     private static final float GRENADE_BASE_POWER = 4.0F;
     private static final float GRENADE_DAMAGE_FACTOR = 5.0F;
-    private static final int GRENADE_FUSE_TICKS = 600;
+    private static final int GRENADE_FUSE_TICKS = 40;
     private static final double LOW_DURABILITY_JAM_THRESHOLD = 1.75D;
     private static final double INCREASED_JAM_THRESHOLD = 2.25D;
     private static final float JAM_CHANCE = 0.025F;
