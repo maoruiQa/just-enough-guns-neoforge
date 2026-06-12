@@ -62,7 +62,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private static final int MEDAL_DISABLED_V = 183;
     private static final float GUN_PREVIEW_HALF_EXTENT = 1.35F;
     private static final float GUN_PREVIEW_SCALE = 3.0F;
-    private static final int GUN_PREVIEW_CENTER_Y = 42;
+    private static final int GUN_PREVIEW_CENTER_Y = 50;
     private static final int GUN_PREVIEW_SLOT_CENTER_OFFSET = 8;
     private static final Vector3fc[] GUN_PREVIEW_EXTENTS = new Vector3fc[] {
             new Vector3f(-GUN_PREVIEW_HALF_EXTENT, -GUN_PREVIEW_HALF_EXTENT, -GUN_PREVIEW_HALF_EXTENT),
