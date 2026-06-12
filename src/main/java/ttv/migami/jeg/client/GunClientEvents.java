@@ -74,7 +74,7 @@ import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 public final class GunClientEvents {
     private static final Gson GSON = new Gson();
     private static final float ADS_FOV_FACTOR = 0.35F;
-    private static final float SCOPE_VIEWPORT_FOV = 12.0F;
+    private static final float SCOPE_VIEWPORT_FOV = 20.0F;
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
     private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 1.35D;
     private static final Identifier OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
