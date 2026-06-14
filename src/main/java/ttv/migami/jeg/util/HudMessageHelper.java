@@ -8,14 +8,6 @@ public final class HudMessageHelper {
     private HudMessageHelper() {}
 
     public static void showActionBar(Player player, Component message) {
-        try {
-            player.getClass()
-                    .getMethod("displayClientMessage", Component.class, boolean.class)
-                    .invoke(player, message, true);
-            return;
-        } catch (ReflectiveOperationException ignored) {
-        }
-
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.sendSystemMessage(message, true);
             return;
