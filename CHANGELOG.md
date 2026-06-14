@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0-hotfix140620261037 - 2026-06-14
+
+### Fixed
+- Removed the reload action-bar reflection path that could inspect client-only player methods and load `net.minecraft.client.resources.sounds.SoundInstance`.
+- Kept reload gameplay, animation state, and client rendering behavior unchanged; only the server-safe action-bar feedback path was changed.
+
 ## 1.7.0 - 2026-06-12
 
 ### Added
