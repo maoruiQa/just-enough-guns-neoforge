@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0-hotfix150620261622 - 2026-06-15
+
+### Fixed
+- Soft-disabled the `repair_kit` recipe by renaming its JSON file so it is no longer loaded by Minecraft's recipe manager.
+
 ## 1.7.0-hotfix140620261037 - 2026-06-14
 
 ### Fixed
