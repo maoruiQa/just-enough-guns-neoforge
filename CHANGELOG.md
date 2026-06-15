@@ -3,7 +3,8 @@
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
 ### Fixed
-- Soft-disabled the `repair_kit` recipe by renaming its JSON file so it is no longer loaded by Minecraft's recipe manager.
+- Fixed recipe loading so joining players receive the full active `jeg` recipe set.
+- Fixed recipe distribution on player login so loaded recipes are consistently assigned instead of dropping entries on NeoForge 1.21.1.
 
 ## 1.7.0 - 2026-06-12
 
