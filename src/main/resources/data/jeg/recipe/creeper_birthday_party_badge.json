@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    { "item": "minecraft:paper" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:cake" },
+    { "item": "minecraft:gold_nugget" }
+  ],
+  "result": { "id": "jeg:creeper_birthday_party_badge", "count": 1 }
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " G ",
+    "GGG",
+    " I "
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "I": { "item": "minecraft:iron_ingot" }
+  },
+  "result": { "id": "jeg:trumpet", "count": 1 }
+}
