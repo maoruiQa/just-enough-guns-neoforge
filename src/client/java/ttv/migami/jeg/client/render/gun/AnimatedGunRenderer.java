@@ -467,7 +467,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static boolean isAttachmentScreenPreview(ItemDisplayContext ctx) {
         Minecraft minecraft = Minecraft.getInstance();
-        return ctx == ItemDisplayContext.FIXED && minecraft != null && minecraft.screen instanceof AttachmentScreen;
+        return ctx == ItemDisplayContext.FIXED && minecraft != null && minecraft.gui.screen() instanceof AttachmentScreen;
     }
 
     private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {

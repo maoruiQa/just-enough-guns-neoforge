@@ -11,7 +11,7 @@ public final class FabricCreativeTabs {
     public static void init() {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
             ModItems.GUNS.forEach((id, holder) -> {
-                if (!id.equals(Reference.id("phantom_smg"))) {
+                if (!id.equals(Reference.id("phantom_smg")) && !ModItems.isDisabledGunId(id)) {
                     entries.accept(holder.get());
                 }
             });

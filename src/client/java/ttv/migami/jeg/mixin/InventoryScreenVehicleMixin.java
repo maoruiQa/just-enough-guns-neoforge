@@ -33,7 +33,7 @@ public final class InventoryScreenVehicleMixin {
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event)) {
             VehicleInputHandler.syncMouseToCurrentCursor();
-            minecraft.setScreen(null);
+            minecraft.setScreenAndShow(null);
             VehicleInputHandler.clearPendingPlayerInventoryClicks();
             callback.setReturnValue(true);
         }

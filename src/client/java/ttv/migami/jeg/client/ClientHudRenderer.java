@@ -71,8 +71,7 @@ public final class ClientHudRenderer {
     }
 
     private static int rarityColor(ItemStack stack) {
-        Integer color = stack.getRarity().color().getColor();
-        return color != null ? 0xFF000000 | color : 0xFFFFFFFF;
+        return ClientColorUtil.argb(stack.getRarity().color());
     }
 
     private static String formatCurrent(int ammo) {

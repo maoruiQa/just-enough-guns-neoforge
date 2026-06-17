@@ -9,6 +9,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.monster.illager.Pillager;
@@ -145,7 +146,7 @@ public class EnemyVehicleSpawnItem extends Item {
     }
 
     private static Pillager createCrew(ServerLevel level, VehicleEntity vehicle) {
-        Pillager crew = EntityType.PILLAGER.create(level, EntitySpawnReason.SPAWN_ITEM_USE);
+        Pillager crew = EntityTypes.PILLAGER.create(level, EntitySpawnReason.SPAWN_ITEM_USE);
         if (crew == null) {
             return null;
         }

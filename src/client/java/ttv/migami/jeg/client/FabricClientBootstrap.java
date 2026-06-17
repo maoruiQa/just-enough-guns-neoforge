@@ -30,7 +30,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
@@ -316,14 +315,14 @@ public final class FabricClientBootstrap {
         registerMenuScreen(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), (menu, inventory, title) -> new VehicleChargingStationScreen((VehicleChargingStationMenu) menu, inventory, title));
 
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(context -> {
-            if (context.poseStack() == null || context.bufferSource() == null) {
+            if (context.poseStack() == null || context.submitNodeCollector() == null) {
                 return;
             }
             float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
             if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
-                BulletTrailRenderer.render(context.poseStack(), context.bufferSource(), partialTick);
+                BulletTrailRenderer.render(context.poseStack(), context.submitNodeCollector(), partialTick);
             }
-            renderMuzzleFlashes(context.poseStack(), context.bufferSource(), partialTick);
+            renderMuzzleFlashes(context.poseStack(), context.submitNodeCollector(), partialTick);
         });
 
         ClientTickEvents.START_CLIENT_TICK.register(FabricClientBootstrap::handleOffhandSwapOverride);
@@ -454,7 +453,7 @@ public final class FabricClientBootstrap {
                             }
                             AbstractContainerMenu menu = menuType.create((Integer) args[3], client.player.getInventory());
                             client.player.containerMenu = menu;
-                            client.setScreen(factory.create(menu, client.player.getInventory(), (Component) args[0]));
+                            client.setScreenAndShow(factory.create(menu, client.player.getInventory(), (Component) args[0]));
                             return null;
                         }
                         return null;
@@ -913,13 +912,13 @@ public final class FabricClientBootstrap {
         });
     }
 
-    private static void renderMuzzleFlashes(PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+    private static void renderMuzzleFlashes(PoseStack poseStack, SubmitNodeCollector collector, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || MUZZLE_FLASHES.isEmpty()) {
             return;
         }
 
-        var camera = minecraft.gameRenderer.getMainCamera();
+        var camera = minecraft.gameRenderer.mainCamera();
         var cameraPos = camera.position();
 
         for (var entry : MUZZLE_FLASHES.entrySet()) {
@@ -944,7 +943,11 @@ public final class FabricClientBootstrap {
             poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
 
-            renderMuzzleFlashQuad(poseStack, held, bufferSource.getBuffer(RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE)), flash);
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE),
+                    (pose, buffer) -> renderMuzzleFlashQuad(pose.pose(), held, buffer)
+            );
 
             poseStack.popPose();
         }
@@ -1076,7 +1079,7 @@ public final class FabricClientBootstrap {
             return null;
         }
 
-        var camera = minecraft.gameRenderer.getMainCamera();
+        var camera = minecraft.gameRenderer.mainCamera();
         Vec3 cameraPos = camera.position();
         Vector3f localAnchor = firstPersonMuzzleAnchor(held);
         if (localAnchor == null) {

@@ -23,7 +23,7 @@
     "jeg.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.18.4",
+    "fabricloader": ">=0.19.3",
     "minecraft": "${minecraft_version_range}",
     "java": ">=25",
     "fabric-api": "*",

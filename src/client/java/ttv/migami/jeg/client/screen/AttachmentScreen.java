@@ -29,6 +29,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.ClientColorUtil;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
@@ -118,7 +119,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         if (gunStack.isEmpty()) {
             guiGraphics.text(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFF404040, false);
         } else {
-            guiGraphics.centeredText(this.font, gunStack.getHoverName(), this.imageWidth / 2, -42, gunStack.getRarity().color().getColor());
+            guiGraphics.centeredText(this.font, gunStack.getHoverName(), this.imageWidth / 2, -42, ClientColorUtil.argb(gunStack.getRarity().color()));
             guiGraphics.centeredText(this.font, this.previewGunModName(gunStack), this.imageWidth / 2, -30, 0xFF686C71);
         }
         guiGraphics.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0xFF404040, false);

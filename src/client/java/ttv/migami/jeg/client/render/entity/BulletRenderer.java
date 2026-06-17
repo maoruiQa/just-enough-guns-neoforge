@@ -1,10 +1,11 @@
 package ttv.migami.jeg.client.render.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
@@ -22,7 +23,8 @@ public final class BulletRenderer extends EntityRenderer<BulletEntity, BulletRen
         super(context);
     }
 
-    public void submit(State state, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    @Override
+    public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState cameraRenderState) {
         if (state.isSlowBullet && state.position != null) {
             BulletTrailRenderer.updateDynamicTrail(
                     state.entityId,

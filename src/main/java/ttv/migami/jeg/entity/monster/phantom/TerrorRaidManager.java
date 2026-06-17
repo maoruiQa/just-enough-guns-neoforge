@@ -375,49 +375,49 @@ final class TerrorRaidManager {
         if (waveNumber == 0) {
             // Wave 1: zombies, zombie_villagers, husks with lower-tier guns
             if (roll < 40) {
-                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mob = new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
                 mobType = "Zombie";
             } else if (roll < 70) {
-                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
                 mobType = "ZombieVillager";
             } else if (roll < 85) {
-                mob = new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                mob = new Husk(net.minecraft.world.entity.EntityTypes.HUSK, level);
                 mobType = "Husk";
             } else {
-                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mob = new Skeleton(net.minecraft.world.entity.EntityTypes.SKELETON, level);
                 mobType = "Skeleton";
             }
         } else if (waveNumber == 1) {
             // Wave 2: mix of zombies, skeletons, strays with mid-tier guns
             if (roll < 35) {
-                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mob = new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
                 mobType = "Zombie";
             } else if (roll < 65) {
-                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mob = new Skeleton(net.minecraft.world.entity.EntityTypes.SKELETON, level);
                 mobType = "Skeleton";
             } else if (roll < 85) {
-                mob = new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                mob = new Stray(net.minecraft.world.entity.EntityTypes.STRAY, level);
                 mobType = "Stray";
             } else {
-                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
                 mobType = "ZombieVillager";
             }
         } else {
             // Wave 3: all types with higher-tier guns
             if (roll < 25) {
-                mob = new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                mob = new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
                 mobType = "Zombie";
             } else if (roll < 45) {
-                mob = new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                mob = new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
                 mobType = "ZombieVillager";
             } else if (roll < 60) {
-                mob = new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                mob = new Stray(net.minecraft.world.entity.EntityTypes.STRAY, level);
                 mobType = "Stray";
             } else if (roll < 80) {
-                mob = new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                mob = new Skeleton(net.minecraft.world.entity.EntityTypes.SKELETON, level);
                 mobType = "Skeleton";
             } else {
-                mob = new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                mob = new Husk(net.minecraft.world.entity.EntityTypes.HUSK, level);
                 mobType = "Husk";
             }
         }

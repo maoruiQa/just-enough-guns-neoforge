@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
@@ -105,7 +105,7 @@ public final class BulletTrailRenderer {
             return;
         }
 
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
         Iterator<TrailState> iterator = TRAILS.values().iterator();
         while (iterator.hasNext()) {
             TrailState trail = iterator.next();
@@ -127,7 +127,7 @@ public final class BulletTrailRenderer {
         }
     }
 
-    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+    public static void render(PoseStack poseStack, SubmitNodeCollector collector, float partialTick) {
         long currentFrame = Minecraft.getInstance().getFrameTimeNs();
         if (currentFrame == lastRenderFrame) {
             return;
@@ -139,43 +139,52 @@ public final class BulletTrailRenderer {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        Vec3 view = mc.gameRenderer.getMainCamera().position();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutout(TRAIL_TEXTURE));
+        Vec3 view = mc.gameRenderer.mainCamera().position();
 
         for (TrailState trail : TRAILS.values()) {
             if (!trail.trailVisible) {
                 continue;
             }
-            renderTrail(trail, poseStack, consumer, view, partialTick);
+            renderTrail(trail, poseStack, collector, view, partialTick);
         }
     }
 
-    private static void renderTrail(TrailState trail, PoseStack poseStack, VertexConsumer consumer, Vec3 view, float partialTick) {
+    private static void renderTrail(TrailState trail, PoseStack poseStack, SubmitNodeCollector collector, Vec3 view, float partialTick) {
         poseStack.pushPose();
+        try {
+            Vec3 position = trail.position;
+            Vec3 motion = trail.motion;
+            double bulletX = position.x + motion.x * partialTick;
+            double bulletY = position.y + motion.y * partialTick;
+            double bulletZ = position.z + motion.z * partialTick;
+            poseStack.translate(bulletX - view.x(), bulletY - view.y(), bulletZ - view.z());
 
-        Vec3 position = trail.position;
-        Vec3 motion = trail.motion;
-        double bulletX = position.x + motion.x * partialTick;
-        double bulletY = position.y + motion.y * partialTick;
-        double bulletZ = position.z + motion.z * partialTick;
-        poseStack.translate(bulletX - view.x(), bulletY - view.y(), bulletZ - view.z());
+            poseStack.mulPose(Axis.YP.rotationDegrees(trail.yaw - 90.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(trail.pitch));
+            poseStack.mulPose(Axis.XP.rotationDegrees(45.0F));
+            poseStack.scale(0.05625F, 0.05625F, 0.05625F);
+            poseStack.translate(-4.0F, 0.0F, 0.0F);
 
-        poseStack.mulPose(Axis.YP.rotationDegrees(trail.yaw - 90.0F));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(trail.pitch));
-        poseStack.mulPose(Axis.XP.rotationDegrees(45.0F));
-        poseStack.scale(0.05625F, 0.05625F, 0.05625F);
-        poseStack.translate(-4.0F, 0.0F, 0.0F);
+            float size = Math.min((trail.age + 1) * 30.0F, 200.0F);
+            int red = (trail.color >> 16) & 0xFF;
+            int green = (trail.color >> 8) & 0xFF;
+            int blue = trail.color & 0xFF;
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityCutout(TRAIL_TEXTURE),
+                    (pose, consumer) -> renderTrailGeometry(pose.pose(), consumer, size, red, green, blue)
+            );
+        } finally {
+            poseStack.popPose();
+        }
+    }
 
-        float size = Math.min((trail.age + 1) * 30.0F, 200.0F);
+    private static void renderTrailGeometry(Matrix4f matrix, VertexConsumer consumer, float size, int red, int green, int blue) {
         float tailX = -1.0F - size;
         float headX = 1.0F;
         float radius = 1.0F;
-        int red = (trail.color >> 16) & 0xFF;
-        int green = (trail.color >> 8) & 0xFF;
-        int blue = trail.color & 0xFF;
         int light = FULL_BRIGHT;
 
-        Matrix4f matrix = poseStack.last().pose();
         vertex(consumer, matrix, red, green, blue, tailX, -radius, -radius, 0.0F, 0.15625F, -1.0F, 0.0F, 0.0F, light);
         vertex(consumer, matrix, red, green, blue, tailX, -radius, radius, 0.15625F, 0.15625F, -1.0F, 0.0F, 0.0F, light);
         vertex(consumer, matrix, red, green, blue, tailX, radius, radius, 0.15625F, 0.3125F, -1.0F, 0.0F, 0.0F, light);
@@ -187,15 +196,12 @@ public final class BulletTrailRenderer {
         vertex(consumer, matrix, red, green, blue, headX, -radius, -radius, 0.0F, 0.3125F, 1.0F, 0.0F, 0.0F, light);
 
         for (int i = 0; i < 4; ++i) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
-            matrix = poseStack.last().pose();
-            vertex(consumer, matrix, red, green, blue, tailX, -radius, radius, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, headX, -radius, radius, 0.5F, 0.0F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, headX, radius, radius, 0.5F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
-            vertex(consumer, matrix, red, green, blue, tailX, radius, radius, 0.0F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
+            Matrix4f rotated = new Matrix4f(matrix).rotate(Axis.XP.rotationDegrees(90.0F * (i + 1)));
+            vertex(consumer, rotated, red, green, blue, tailX, -radius, radius, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, light);
+            vertex(consumer, rotated, red, green, blue, headX, -radius, radius, 0.5F, 0.0F, 0.0F, 1.0F, 0.0F, light);
+            vertex(consumer, rotated, red, green, blue, headX, radius, radius, 0.5F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
+            vertex(consumer, rotated, red, green, blue, tailX, radius, radius, 0.0F, 0.15625F, 0.0F, 1.0F, 0.0F, light);
         }
-
-        poseStack.popPose();
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f matrix, int red, int green, int blue,

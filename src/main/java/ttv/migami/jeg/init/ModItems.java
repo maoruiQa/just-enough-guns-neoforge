@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -356,7 +357,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_SKELETON_SPAWN_EGG = REGISTER.register(
             "gunner_skeleton_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.SKELETON,
+                    EntityTypes.SKELETON,
                     baseProperties(Reference.id("gunner_skeleton_spawn_egg")).stacksTo(64)
             )
     );
@@ -364,7 +365,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIE_SPAWN_EGG = REGISTER.register(
             "gunner_zombie_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.ZOMBIE,
+                    EntityTypes.ZOMBIE,
                     baseProperties(Reference.id("gunner_zombie_spawn_egg")).stacksTo(64)
             )
     );
@@ -372,7 +373,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG = REGISTER.register(
             "gunner_zombified_piglin_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.ZOMBIFIED_PIGLIN,
+                    EntityTypes.ZOMBIFIED_PIGLIN,
                     baseProperties(Reference.id("gunner_zombified_piglin_spawn_egg")).stacksTo(64)
             )
     );
@@ -380,7 +381,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PIGLIN_SPAWN_EGG = REGISTER.register(
             "gunner_piglin_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.PIGLIN,
+                    EntityTypes.PIGLIN,
                     baseProperties(Reference.id("gunner_piglin_spawn_egg")).stacksTo(64)
             )
     );
@@ -388,7 +389,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_HUSK_SPAWN_EGG = REGISTER.register(
             "gunner_husk_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.HUSK,
+                    EntityTypes.HUSK,
                     baseProperties(Reference.id("gunner_husk_spawn_egg")).stacksTo(64)
             )
     );
@@ -396,7 +397,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PARCHED_SPAWN_EGG = REGISTER.register(
             "gunner_parched_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.PARCHED,
+                    EntityTypes.PARCHED,
                     baseProperties(Reference.id("gunner_parched_spawn_egg")).stacksTo(64)
             )
     );
@@ -404,7 +405,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_WITHER_SKELETON_SPAWN_EGG = REGISTER.register(
             "gunner_wither_skeleton_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.WITHER_SKELETON,
+                    EntityTypes.WITHER_SKELETON,
                     baseProperties(Reference.id("gunner_wither_skeleton_spawn_egg")).stacksTo(64)
             )
     );
@@ -412,7 +413,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_DROWNED_SPAWN_EGG = REGISTER.register(
             "gunner_drowned_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.DROWNED,
+                    EntityTypes.DROWNED,
                     baseProperties(Reference.id("gunner_drowned_spawn_egg")).stacksTo(64)
             )
     );
@@ -420,7 +421,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_ZOMBIE_VILLAGER_SPAWN_EGG = REGISTER.register(
             "gunner_zombie_villager_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.ZOMBIE_VILLAGER,
+                    EntityTypes.ZOMBIE_VILLAGER,
                     baseProperties(Reference.id("gunner_zombie_villager_spawn_egg")).stacksTo(64)
             )
     );
@@ -428,7 +429,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_STRAY_SPAWN_EGG = REGISTER.register(
             "gunner_stray_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.STRAY,
+                    EntityTypes.STRAY,
                     baseProperties(Reference.id("gunner_stray_spawn_egg")).stacksTo(64)
             )
     );
@@ -436,7 +437,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PILLAGER_SPAWN_EGG = REGISTER.register(
             "gunner_pillager_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.PILLAGER,
+                    EntityTypes.PILLAGER,
                     baseProperties(Reference.id("gunner_pillager_spawn_egg")).stacksTo(64)
             )
     );
@@ -444,7 +445,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_VINDICATOR_SPAWN_EGG = REGISTER.register(
             "gunner_vindicator_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.VINDICATOR,
+                    EntityTypes.VINDICATOR,
                     baseProperties(Reference.id("gunner_vindicator_spawn_egg")).stacksTo(64)
             )
     );
@@ -452,7 +453,7 @@ public final class ModItems {
     public static final DeferredHolder<Item, GunnerSpawnEggItem> GUNNER_PIGLIN_BRUTE_SPAWN_EGG = REGISTER.register(
             "gunner_piglin_brute_spawn_egg",
             () -> new GunnerSpawnEggItem(
-                    EntityType.PIGLIN_BRUTE,
+                    EntityTypes.PIGLIN_BRUTE,
                     baseProperties(Reference.id("gunner_piglin_brute_spawn_egg")).stacksTo(64)
             )
     );
