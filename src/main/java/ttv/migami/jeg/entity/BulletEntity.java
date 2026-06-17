@@ -73,6 +73,7 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.BulletTrailPayload;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.particle.ColoredFlareOption;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public class BulletEntity extends Projectile {
     private static final EntityDataAccessor<String> DATA_GUN = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.STRING);
@@ -112,6 +113,8 @@ public class BulletEntity extends Projectile {
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
     private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
     private static final float ROCKET_SELF_DAMAGE_SCALE = 0.55F;
+    private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
+    private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
     private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.35F;
     private static final float VEHICLE_30MM_EXPLOSION_POWER = 0.75F;
     private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 14.0F;
@@ -1007,12 +1010,14 @@ public class BulletEntity extends Projectile {
                 }
 
                 Entity owner = this.getOwner();
+                boolean directHitVehicle = result instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof VehicleEntity;
+                float explosionPower = directHitVehicle ? power * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : power;
                 spawnCustomExplosionEffects((ServerLevel) this.level(), this.position(), id);
-                this.level().explode(this, this.getX(), this.getY(), this.getZ(), power, ExplosionInteraction.TNT);
+                this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionPower, ExplosionInteraction.TNT);
                 if (id.equals(ROCKET_LAUNCHER_ID)) {
-                    applyRocketBlastDamage(owner);
+                    applyRocketBlastDamage(owner, directHitVehicle);
                 } else if (isVehicleRocket(id)) {
-                    applyVehicleRocketBlastDamage(result.getLocation(), owner, id);
+                    applyVehicleRocketBlastDamage(result.getLocation(), owner, id, directHitVehicle);
                 }
 
                 if (result instanceof EntityHitResult entityHit) {
@@ -1128,7 +1133,7 @@ public class BulletEntity extends Projectile {
         }
     }
 
-    private void applyRocketBlastDamage(@Nullable Entity owner) {
+    private void applyRocketBlastDamage(@Nullable Entity owner, boolean directHitVehicle) {
         if (this.level().isClientSide()) {
             return;
         }
@@ -1139,8 +1144,8 @@ public class BulletEntity extends Projectile {
                 continue;
             }
 
-            double distance = target.distanceTo(this);
-            if (distance > ROCKET_BLAST_RADIUS) {
+            double effectiveDistance = target.distanceTo(this) * (directHitVehicle ? VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE : 1.0D);
+            if (effectiveDistance > ROCKET_BLAST_RADIUS) {
                 continue;
             }
 
@@ -1148,7 +1153,7 @@ public class BulletEntity extends Projectile {
                 continue;
             }
 
-            double t = 1.0D - (distance / ROCKET_BLAST_RADIUS);
+            double t = 1.0D - (effectiveDistance / ROCKET_BLAST_RADIUS);
             double curve = Math.pow(Math.max(0.0D, t), ROCKET_BLAST_FALLOFF_EXPONENT);
             float scale = (float) (ROCKET_BLAST_EDGE_FLOOR + (1.0F - ROCKET_BLAST_EDGE_FLOOR) * curve);
             float damage = ROCKET_BLAST_BASE_DAMAGE * scale;
@@ -1163,7 +1168,7 @@ public class BulletEntity extends Projectile {
         }
     }
 
-    private void applyVehicleRocketBlastDamage(Vec3 pos, @Nullable Entity owner, ResourceLocation id) {
+    private void applyVehicleRocketBlastDamage(Vec3 pos, @Nullable Entity owner, ResourceLocation id, boolean directHitVehicle) {
         double radius = vehicleRocketBlastRadius(id);
         AABB area = new AABB(
                 pos.x - radius,
@@ -1175,12 +1180,12 @@ public class BulletEntity extends Projectile {
         );
         DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
         for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
-            double distance = target.position().distanceTo(pos);
-            if (distance > radius) {
+            double effectiveDistance = target.position().distanceTo(pos) * (directHitVehicle ? VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE : 1.0D);
+            if (effectiveDistance > radius) {
                 continue;
             }
 
-            float scale = 1.0F - (float) (distance / radius);
+            float scale = 1.0F - (float) (effectiveDistance / radius);
             float damage = vehicleRocketBlastDamage(id) * scale;
             if (damage > 0.5F) {
                 target.hurt(source, damage);
