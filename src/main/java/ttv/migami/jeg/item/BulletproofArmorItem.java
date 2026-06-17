@@ -17,6 +17,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.gun.BallisticProtection;
+import ttv.migami.jeg.init.ModItems;
 
 /**
  * Bulletproof armor for 1.21.1 - Adapted from 1.21.8 version.
@@ -223,12 +224,17 @@ public class BulletproofArmorItem extends ArmorItem {
     }
 
     @Override
+    public boolean isValidRepairItem(@NotNull ItemStack stack, @NotNull ItemStack repairCandidate) {
+        return repairCandidate.is(ModItems.REPAIR_KIT.get());
+    }
+
+    @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, @NotNull java.util.List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_tier", tier.tierNumber()).withStyle(net.minecraft.ChatFormatting.GRAY));
         tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_ballistic_rating", String.format(java.util.Locale.US, "%.1f", BallisticProtection.effectiveArmorRating(tier, this.getType().getSlot()))).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
-        tooltipComponents.add(Component.literal("Undermatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.undermatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
-        tooltipComponents.add(Component.literal("Overmatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.overmatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_undermatch_multiplier", String.format(java.util.Locale.US, "%.2f", tier.undermatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipComponents.add(Component.translatable("tooltip.jeg.bulletproof_overmatch_multiplier", String.format(java.util.Locale.US, "%.2f", tier.overmatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
     }
 
     @Override

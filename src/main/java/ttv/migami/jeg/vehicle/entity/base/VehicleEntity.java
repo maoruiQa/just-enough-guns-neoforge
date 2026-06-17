@@ -4980,19 +4980,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 return InteractionResult.CONSUME;
             }
         }
-        if (stack.is(ModItems.REPAIR_KIT.get())) {
-            if (this.level().isClientSide) {
-                return InteractionResult.SUCCESS;
-            }
-            if (this.repairWithKit()) {
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
-                player.displayClientMessage(Component.translatable("message.jeg.vehicle.repaired"), true);
-                return InteractionResult.CONSUME;
-            }
-            return InteractionResult.PASS;
-        }
         if (!this.level().isClientSide && player.isShiftKeyDown() && stack.is(ModItems.CROWBAR.get()) && player instanceof ServerPlayer serverPlayer) {
             if (!this.getPassengers().isEmpty()) {
                 serverPlayer.displayClientMessage(Component.translatable("message.jeg.vehicle.occupied"), true);

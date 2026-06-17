@@ -37,6 +37,7 @@ import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import net.minecraft.ChatFormatting;
@@ -77,7 +78,7 @@ public class GunItem extends Item {
     }
 
     public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
-        return repair.is(net.minecraft.world.item.Items.IRON_INGOT);
+        return repair.is(ModItems.REPAIR_KIT.get());
     }
 
     public GunStats getStats() {

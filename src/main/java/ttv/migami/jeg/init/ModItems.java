@@ -43,6 +43,7 @@ import ttv.migami.jeg.item.MolotovCocktailItem;
 import ttv.migami.jeg.item.ModSpawnEggItem;
 import ttv.migami.jeg.item.ManualItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
+import ttv.migami.jeg.item.RepairKitItem;
 import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
@@ -77,7 +78,7 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, Item> REPAIR_KIT = REGISTER.register(
             "repair_kit",
-            () -> new Item(baseProperties(Reference.id("repair_kit")).stacksTo(16))
+            () -> new RepairKitItem(baseProperties(Reference.id("repair_kit")).stacksTo(16))
     );
     public static final DeferredHolder<Item, RepairToolItem> REPAIR_TOOL = REGISTER.register(
             "repair_tool",

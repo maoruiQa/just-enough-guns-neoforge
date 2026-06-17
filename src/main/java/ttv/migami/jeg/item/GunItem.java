@@ -314,7 +314,7 @@ public class GunItem extends Item {
     }
 
     public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
-        return repair.is(net.minecraft.world.item.Items.IRON_INGOT);
+        return repair.is(ModItems.REPAIR_KIT.get());
     }
 
     public GunStats getStats() {
@@ -866,7 +866,7 @@ public class GunItem extends Item {
 
         if (usesOverheatMechanic() && isOverheated(stack)) {
             if (level.isClientSide()) {
-                HudMessageHelper.showActionBar(player, Component.literal("Gun overheated"));
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.overheated"));
             }
             return false;
         }
@@ -2769,7 +2769,7 @@ public class GunItem extends Item {
         if (usesOverheatMechanic()) {
             int heat = getOverheatPercent(stack);
             ChatFormatting color = heat >= 100 ? ChatFormatting.RED : ChatFormatting.GOLD;
-            tooltip.add(Component.literal("Overheat: " + heat + "%").withStyle(color));
+            tooltip.add(Component.translatable("info.jeg.overheat", heat).withStyle(color));
         }
 
         // Add ammo type information
