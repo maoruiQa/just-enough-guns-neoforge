@@ -104,7 +104,6 @@ public final class FabricClientBootstrap {
     private static boolean registered;
     private static boolean attackHeldLastTick;
     private static boolean aimingStateLastSent;
-    private static boolean reloadHeldLastTick;
     private static boolean swapOffhandHeldLastTick;
     private static boolean meleeHeldLastTick;
     private static int offhandFullPromptTicks;
@@ -295,7 +294,6 @@ public final class FabricClientBootstrap {
             CrosshairHandler.reset();
             attackHeldLastTick = false;
             aimingStateLastSent = false;
-            reloadHeldLastTick = false;
             swapOffhandHeldLastTick = false;
             meleeHeldLastTick = false;
             offhandFullPromptTicks = 0;
@@ -343,7 +341,6 @@ public final class FabricClientBootstrap {
         if (player == null || client.level == null) {
             attackHeldLastTick = false;
             aimingStateLastSent = false;
-            reloadHeldLastTick = false;
             swapOffhandHeldLastTick = false;
             meleeHeldLastTick = false;
             offhandFullPromptTicks = 0;
@@ -428,8 +425,7 @@ public final class FabricClientBootstrap {
         }
         meleeHeldLastTick = meleeDown;
 
-        boolean reloadDown = InputConstants.isKeyDown(client.getWindow().getWindow(), GLFW.GLFW_KEY_R);
-        if (reloadDown && !reloadHeldLastTick) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
             } else if (heldOff.getItem() instanceof GunItem) {
@@ -438,7 +434,6 @@ public final class FabricClientBootstrap {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
             }
         }
-        reloadHeldLastTick = reloadDown;
 
         suppressSwingAnimation(player, heldMain, heldOff);
     }
