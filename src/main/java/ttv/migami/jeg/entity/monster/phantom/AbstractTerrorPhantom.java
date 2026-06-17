@@ -22,6 +22,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -647,7 +648,7 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
             origin.getX(), origin.getY(), origin.getZ(), new AABB(origin).inflate(64.0D));
 
         for (int i = 0; i < count; i++) {
-            Skeleton skeleton = new Skeleton(EntityType.SKELETON, level);
+            Skeleton skeleton = new Skeleton(EntityTypes.SKELETON, level);
             if (skeleton == null) {
                 continue;
             }

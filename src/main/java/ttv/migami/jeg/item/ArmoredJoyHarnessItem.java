@@ -82,7 +82,7 @@ public final class ArmoredJoyHarnessItem extends Item {
     public static Properties buildProperties(Properties base, @Nullable DyeColor color, HarnessTier tier) {
         var builder = Equippable.builder(EquipmentSlot.BODY)
                 .setEquipSound(SoundEvents.ARMOR_EQUIP_IRON)
-                .setAllowedEntities(net.minecraft.world.entity.EntityType.HAPPY_GHAST)
+                .setAllowedEntities(net.minecraft.world.entity.EntityTypes.HAPPY_GHAST)
                 .setEquipOnInteract(true)
                 .setDamageOnHurt(false);
 
@@ -176,7 +176,7 @@ public final class ArmoredJoyHarnessItem extends Item {
             Vec3 pos = ghast.position();
 
             if (!current.isEmpty()) {
-                ghast.setBodyArmorItem(equipped);
+                ghast.setItemSlot(EquipmentSlot.BODY, equipped);
                 HappyGhastArmorHelper.syncAbsorption(ghast);
                 HappyGhastArmorEvents.notifyPassengers(ghast);
                 level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.NEUTRAL, 1.0F, 1.15F);
@@ -194,7 +194,7 @@ public final class ArmoredJoyHarnessItem extends Item {
                 return InteractionResult.SUCCESS_SERVER;
             }
 
-            ghast.setBodyArmorItem(equipped);
+            ghast.setItemSlot(EquipmentSlot.BODY, equipped);
             HappyGhastArmorHelper.syncAbsorption(ghast);
             HappyGhastArmorEvents.notifyPassengers(ghast);
             level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.NEUTRAL, 1.0F, 1.15F);

@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -22,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -48,6 +46,7 @@ import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -84,7 +83,6 @@ public final class GunClientEvents {
     private static final int OFFHAND_FULL_PROMPT_TICKS = 30;
     private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
     private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
-    private static final ByteBufferBuilder WORLD_EFFECT_BUFFER = new ByteBufferBuilder(262_144);
     private static final float MODEL_FRONT_CLUSTER_DEPTH = 0.45F;
     private static final float MODEL_FRONT_FACE_EPSILON = 0.02F;
     private static final List<String> FIRST_PERSON_MUZZLE_BONE_PRIORITY = List.of("front", "barrel", "gun_body", "bow_body");
@@ -485,7 +483,7 @@ public final class GunClientEvents {
     }
 
     @SubscribeEvent
-    public static void onRenderLevelAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
+    public static void onSubmitCustomGeometry(SubmitCustomGeometryEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
@@ -498,18 +496,15 @@ public final class GunClientEvents {
         }
 
         PoseStack poseStack = event.getPoseStack();
-        // NeoForge 26.1 does not provide the pass-local buffer source here, so use a dedicated
-        // immediate buffer to mirror Fabric's world-render callback semantics.
-        MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(WORLD_EFFECT_BUFFER);
+        SubmitNodeCollector collector = event.getSubmitNodeCollector();
         float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         if (renderTrails) {
             // Render trails once per frame globally so instant/hitscan shots remain visible.
-            ttv.migami.jeg.client.render.BulletTrailRenderer.render(poseStack, bufferSource, partialTick);
+            ttv.migami.jeg.client.render.BulletTrailRenderer.submit(poseStack, collector, partialTick);
         }
         if (renderMuzzleFlashes) {
-            renderMuzzleFlashes(poseStack, bufferSource, partialTick);
+            submitMuzzleFlashes(poseStack, collector, partialTick);
         }
-        bufferSource.endBatch();
     }
 
     private static boolean shouldInterceptOffhandSwap(LocalPlayer player) {
@@ -740,13 +735,13 @@ public final class GunClientEvents {
         });
     }
 
-    private static void renderMuzzleFlashes(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
+    private static void submitMuzzleFlashes(PoseStack poseStack, SubmitNodeCollector collector, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || MUZZLE_FLASHES.isEmpty()) {
             return;
         }
 
-        var camera = minecraft.gameRenderer.getMainCamera();
+        var camera = minecraft.gameRenderer.mainCamera();
         var cameraPos = camera.position();
 
         for (var entry : MUZZLE_FLASHES.entrySet()) {
@@ -771,7 +766,11 @@ public final class GunClientEvents {
             poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
 
-            renderMuzzleFlashQuad(poseStack, held, bufferSource.getBuffer(RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE)), flash);
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE),
+                    (pose, buffer) -> renderMuzzleFlashQuad(poseStack, held, buffer, flash)
+            );
 
             poseStack.popPose();
         }
@@ -903,7 +902,7 @@ public final class GunClientEvents {
             return null;
         }
 
-        var camera = minecraft.gameRenderer.getMainCamera();
+        var camera = minecraft.gameRenderer.mainCamera();
         Vec3 cameraPos = camera.position();
         Vector3f localAnchor = firstPersonMuzzleAnchor(held);
         if (localAnchor == null) {

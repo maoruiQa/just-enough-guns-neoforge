@@ -48,10 +48,10 @@ public class MinecraftVehicleHotbarMixin {
         if (!VehicleInputHandler.shouldIgnorePlayerInventoryKey() && KeyBindings.VEHICLE_PLAYER_INVENTORY.consumeClick()) {
             VehicleInputHandler.syncMouseToCurrentCursor();
             Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
-                minecraft.setScreen(null);
-            } else if (minecraft.screen == null) {
-                minecraft.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(this.player));
+            if (minecraft.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
+                minecraft.gui.setScreen(null);
+            } else if (minecraft.gui.screen() == null) {
+                minecraft.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(this.player));
             }
             VehicleInputHandler.clearPendingPlayerInventoryClicks();
             callback.cancel();

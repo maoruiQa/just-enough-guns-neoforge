@@ -1,6 +1,7 @@
 package ttv.migami.jeg.vehicle.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -58,7 +59,8 @@ public final class VehicleInputHandler {
 
         double mouseX = minecraft.mouseHandler.xpos();
         double mouseY = minecraft.mouseHandler.ypos();
-        if (minecraft.screen != null) {
+        Screen screen = minecraft.gui.screen();
+        if (screen != null) {
             VehicleClientState.syncMousePosition(mouseX, mouseY);
         } else {
             VehicleClientState.setMousePosition(mouseX, mouseY);
@@ -66,7 +68,7 @@ public final class VehicleInputHandler {
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
         boolean aircraftControls = isAircraftDriver(player, vehicle);
-        if (aircraftControls && minecraft.screen == null) {
+        if (aircraftControls && screen == null) {
             VehicleClientState.updateAircraftMouse(0.1F, 0.5F, 0.35F, false, freeLook);
         }
         boolean reload = KeyBindings.RELOAD.consumeClick();
@@ -98,11 +100,11 @@ public final class VehicleInputHandler {
         }
         if (vehicleInventoryClick) {
             VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
-            if (minecraft.screen instanceof VehicleScreen) {
+            if (screen instanceof VehicleScreen) {
                 player.closeContainer();
-                minecraft.setScreen(null);
+                minecraft.gui.setScreen(null);
                 clearPendingVehicleInventoryClicks();
-            } else if (minecraft.screen == null) {
+            } else if (screen == null) {
                 NetworkHandler.sendVehicleOpenMenu(vehicle.getId());
                 clearPendingVehicleInventoryClicks();
             }
@@ -114,11 +116,11 @@ public final class VehicleInputHandler {
         }
         if (playerInventoryClick) {
             VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
-            if (minecraft.screen instanceof InventoryScreen) {
+            if (screen instanceof InventoryScreen) {
                 player.closeContainer();
-                minecraft.setScreen(null);
-            } else if (minecraft.screen == null) {
-                minecraft.setScreen(new InventoryScreen(player));
+                minecraft.gui.setScreen(null);
+            } else if (screen == null) {
+                minecraft.gui.setScreen(new InventoryScreen(player));
             }
         }
         VehicleInput input = new VehicleInput(
@@ -201,7 +203,7 @@ public final class VehicleInputHandler {
 
     public static boolean handleVehicleMouseTurn(Minecraft minecraft, double accumulatedDX, double accumulatedDY, double frameTime) {
         LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.screen != null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+        if (player == null || minecraft.gui.screen() != null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return false;
         }
         int seatIndex = vehicle.getSeatIndex(player);
@@ -284,7 +286,7 @@ public final class VehicleInputHandler {
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event.getKeyEvent())) {
             VehicleClientState.syncMousePosition(minecraft.mouseHandler.xpos(), minecraft.mouseHandler.ypos());
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
             clearPendingPlayerInventoryClicks();
             event.setCanceled(true);
         }

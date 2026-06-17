@@ -26,6 +26,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -271,7 +272,7 @@ public class SkyShipArmadaStructure extends Structure {
 
                 if (!(level.getBlockEntity(chestPos) instanceof ChestBlockEntity)) {
                     BlockState chestState = level.getBlockState(chestPos);
-                    var created = BlockEntityType.CHEST.create(chestPos, chestState);
+                    var created = BlockEntityTypes.CHEST.create(chestPos, chestState);
                     if (created != null) {
                         level.getLevel().setBlockEntity(created);
                     }
@@ -314,7 +315,7 @@ public class SkyShipArmadaStructure extends Structure {
             BlockState spawnerState = Blocks.SPAWNER.defaultBlockState();
             level.setBlock(pos, spawnerState, 18);
             if (!(level.getBlockEntity(pos) instanceof SpawnerBlockEntity)) {
-                var created = BlockEntityType.MOB_SPAWNER.create(pos, spawnerState);
+                var created = BlockEntityTypes.MOB_SPAWNER.create(pos, spawnerState);
                 if (created != null) {
                     level.getLevel().setBlockEntity(created);
                 }

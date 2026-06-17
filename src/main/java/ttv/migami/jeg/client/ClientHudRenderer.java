@@ -3,6 +3,8 @@ package ttv.migami.jeg.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.item.ItemStack;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.gun.GunStats;
@@ -73,8 +75,8 @@ public final class ClientHudRenderer {
     }
 
     private static int rarityColor(ItemStack stack) {
-        Integer color = stack.getRarity().color().getColor();
-        return color != null ? color | 0xFF000000 : 0xFFFFFFFF;
+        TextColor color = stack.getRarity().getStyleModifier().apply(Style.EMPTY).getColor();
+        return color != null ? color.getValue() | 0xFF000000 : 0xFFFFFFFF;
     }
 
     private static String formatCurrent(int ammo) {

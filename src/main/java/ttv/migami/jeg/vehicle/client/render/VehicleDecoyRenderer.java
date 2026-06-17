@@ -2,11 +2,12 @@ package ttv.migami.jeg.vehicle.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
@@ -18,7 +19,8 @@ public final class VehicleDecoyRenderer extends EntityRenderer<VehicleDecoyEntit
         super(context);
     }
 
-    public void submit(State state, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    @Override
+    public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState cameraState) {
         if (state.smokeDecoy) {
             return;
         }
@@ -26,7 +28,11 @@ public final class VehicleDecoyRenderer extends EntityRenderer<VehicleDecoyEntit
         poseStack.pushPose();
         poseStack.scale(0.35F, 0.35F, 0.35F);
         poseStack.translate(-0.5D, -0.5D, -0.5D);
-        renderUnitCube(poseStack, bufferSource.getBuffer(RenderTypes.entityTranslucent(TEXTURE)), packedLight);
+        collector.submitCustomGeometry(
+                poseStack,
+                RenderTypes.entityTranslucent(TEXTURE),
+                (pose, buffer) -> renderUnitCube(poseStack, buffer, state.lightCoords)
+        );
         poseStack.popPose();
     }
 

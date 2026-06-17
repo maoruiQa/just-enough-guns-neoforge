@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
@@ -109,7 +109,7 @@ public final class BulletTrailRenderer {
             return;
         }
 
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
         Iterator<TrailState> iterator = TRAILS.values().iterator();
         while (iterator.hasNext()) {
             TrailState trail = iterator.next();
@@ -131,7 +131,7 @@ public final class BulletTrailRenderer {
         }
     }
 
-    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, float partialTick) {
         long currentFrame = Minecraft.getInstance().getFrameTimeNs();
         if (currentFrame == lastRenderFrame) {
             return;
@@ -143,8 +143,7 @@ public final class BulletTrailRenderer {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        Vec3 view = mc.gameRenderer.getMainCamera().position();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.entityCutout(TRAIL_TEXTURE));
+        Vec3 view = mc.gameRenderer.mainCamera().position();
 
         for (TrailState trail : TRAILS.values()) {
             if (!trail.trailVisible) {
@@ -153,7 +152,11 @@ public final class BulletTrailRenderer {
             if (shouldSkipForLocalCameraFlash(mc, trail, view)) {
                 continue;
             }
-            renderTrail(trail, poseStack, consumer, view, partialTick);
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityCutout(TRAIL_TEXTURE),
+                    (pose, consumer) -> renderTrail(trail, poseStack, consumer, view, partialTick)
+            );
         }
     }
 

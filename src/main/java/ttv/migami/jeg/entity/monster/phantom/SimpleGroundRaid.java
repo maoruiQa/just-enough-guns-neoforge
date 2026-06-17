@@ -145,37 +145,37 @@ public class SimpleGroundRaid {
         if (waveNumber == 0) {
             // Wave 1: Mix of zombies and husks
             if (roll < 50) {
-                return new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                return new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
             } else if (roll < 85) {
-                return new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                return new Husk(net.minecraft.world.entity.EntityTypes.HUSK, level);
             } else {
-                return new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                return new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
             }
         } else if (waveNumber == 1) {
             // Wave 2: Mix with skeletons
             if (roll < 35) {
-                return new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                return new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
             } else if (roll < 70) {
-                return new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                return new Skeleton(net.minecraft.world.entity.EntityTypes.SKELETON, level);
             } else if (roll < 90) {
-                return new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                return new Stray(net.minecraft.world.entity.EntityTypes.STRAY, level);
             } else {
-                return new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                return new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
             }
         } else {
             // Wave 3: All types
             if (roll < 25) {
-                return new Zombie(net.minecraft.world.entity.EntityType.ZOMBIE, level);
+                return new Zombie(net.minecraft.world.entity.EntityTypes.ZOMBIE, level);
             } else if (roll < 45) {
-                return new Skeleton(net.minecraft.world.entity.EntityType.SKELETON, level);
+                return new Skeleton(net.minecraft.world.entity.EntityTypes.SKELETON, level);
             } else if (roll < 60) {
-                return new Stray(net.minecraft.world.entity.EntityType.STRAY, level);
+                return new Stray(net.minecraft.world.entity.EntityTypes.STRAY, level);
             } else if (roll < 80) {
-                return new ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, level);
+                return new ZombieVillager(net.minecraft.world.entity.EntityTypes.ZOMBIE_VILLAGER, level);
             } else if (roll < 92) {
-                return new Husk(net.minecraft.world.entity.EntityType.HUSK, level);
+                return new Husk(net.minecraft.world.entity.EntityTypes.HUSK, level);
             } else {
-                return new Drowned(net.minecraft.world.entity.EntityType.DROWNED, level);
+                return new Drowned(net.minecraft.world.entity.EntityTypes.DROWNED, level);
             }
         }
     }

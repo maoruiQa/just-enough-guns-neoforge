@@ -70,7 +70,7 @@ public final class AimingHandler {
 
     private boolean shouldAim(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.screen != null || player.isSpectator()) {
+        if (minecraft == null || minecraft.gui.screen() != null || player.isSpectator()) {
             return false;
         }
         if (suppressedUntilUseReleased) {

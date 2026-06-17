@@ -10,6 +10,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -82,7 +83,7 @@ public class Ghoul extends Zombie {
 
     @Override
     protected void doUnderWaterConversion(ServerLevel serverLevel) {
-        this.convertToZombieType(serverLevel, EntityType.ZOMBIE);
+        this.convertToZombieType(serverLevel, EntityTypes.ZOMBIE);
         if (!this.isSilent()) {
             this.level().levelEvent(null, 1041, this.blockPosition(), 0);
         }

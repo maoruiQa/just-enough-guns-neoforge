@@ -61,14 +61,14 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
             }
             VehicleInputHandler.syncMouseToCurrentCursor();
             this.minecraft.player.closeContainer();
-            this.minecraft.setScreen(null);
+            this.minecraft.gui.setScreen(null);
             VehicleInputHandler.clearPendingVehicleInventoryClicks();
             return true;
         }
         if (KeyBindings.VEHICLE_PLAYER_INVENTORY.matches(event)) {
             VehicleInputHandler.syncMouseToCurrentCursor();
             this.minecraft.player.closeContainer();
-            this.minecraft.setScreen(new InventoryScreen(this.minecraft.player));
+            this.minecraft.gui.setScreen(new InventoryScreen(this.minecraft.player));
             VehicleInputHandler.clearPendingPlayerInventoryClicks();
             return true;
         }
