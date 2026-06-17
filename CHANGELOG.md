@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 - 2026-06-17
+
+### Fixed
+- Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
+
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
 ### Fixed
