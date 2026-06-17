@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import ttv.migami.jeg.client.GunCameraSwayHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(GameRenderer.class)
@@ -24,6 +25,8 @@ public abstract class VehicleGameRendererMixin {
 
     @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobHurt(Lcom/mojang/blaze3d/vertex/PoseStack;F)V"))
     private void jeg$applyVehicleCameraView(GameRenderer instance, PoseStack poseStack, float partialTick, Operation<Void> original) {
+        GunCameraSwayHandler.apply(poseStack, partialTick);
+
         Entity entity = this.mainCamera.getEntity();
         if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || this.mainCamera.isDetached()) {
             original.call(instance, poseStack, partialTick);

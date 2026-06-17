@@ -229,7 +229,7 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
         if (this.minecraft == null || this.minecraft.player == null) {
             return;
         }
-        MutableComponent modName = Component.literal("Configured");
+        MutableComponent modName = Component.translatable("modmenu.nameTranslation.configured");
         modName.setStyle(modName.getStyle()
                 .withColor(ChatFormatting.YELLOW)
                 .withUnderlined(true)
@@ -338,8 +338,8 @@ public final class AttachmentScreen extends AbstractContainerScreen<AttachmentMe
     private Component previewGunModName(ItemStack gunStack) {
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(gunStack.getItem());
         if (Reference.id("abstract_gun").equals(itemId)) {
-            return Component.literal("JEG: Gun-Packs!");
+            return Component.translatable("itemGroup.jeg.data");
         }
-        return Component.literal(Reference.MOD_ID.equals(itemId.getNamespace()) ? "JEGN" : "JEG: Add-on");
+        return Reference.MOD_ID.equals(itemId.getNamespace()) ? Component.translatable("itemGroup.jeg") : Component.translatable("itemGroup.jeg.addon");
     }
 }

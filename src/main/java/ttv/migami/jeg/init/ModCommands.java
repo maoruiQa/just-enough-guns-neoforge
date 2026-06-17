@@ -340,43 +340,43 @@ public final class ModCommands {
 
     private static int executeUnlockGunRecipes(CommandSourceStack source) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
-            source.sendFailure(Component.literal("This command can only be used by a player"));
+            source.sendFailure(Component.translatable("commands.jeg.player_only"));
             return 0;
         }
 
         List<ResourceKey<Recipe<?>>> gunRecipeKeys = new ArrayList<>(ModItems.unlockGunRecipeKeys());
 
         if (gunRecipeKeys.isEmpty()) {
-            source.sendFailure(Component.literal("No JEG recipes were found"));
+            source.sendFailure(Component.translatable("commands.jeg.no_recipes"));
             return 0;
         }
 
         player.awardRecipesByKey(gunRecipeKeys.stream().map(ResourceKey::location).toList());
-        source.sendSuccess(() -> Component.literal("Unlocked " + gunRecipeKeys.size() + " JEG recipes."), false);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.recipes_unlocked", gunRecipeKeys.size()), false);
         return 1;
     }
 
     private static int executeGetBooleanConfig(CommandSourceStack source, String key, String displayName) {
         boolean enabled = (Boolean) Config.getConfigValue(key);
-        source.sendSuccess(() -> Component.literal(displayName + " = " + enabled), false);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_value", displayName, enabled), false);
         return 1;
     }
 
     private static int executeGetIntConfig(CommandSourceStack source, String key, String displayName) {
         int value = (Integer) Config.getConfigValue(key);
-        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_value", displayName, value), false);
         return 1;
     }
 
     private static int executeGetDoubleConfig(CommandSourceStack source, String key, String displayName) {
         double value = (Double) Config.getConfigValue(key);
-        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_value", displayName, value), false);
         return 1;
     }
 
     private static int executeGetStringConfig(CommandSourceStack source, String key, String displayName) {
         String value = (String) Config.getConfigValue(key);
-        source.sendSuccess(() -> Component.literal(displayName + " = " + value), false);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_value", displayName, value), false);
         return 1;
     }
 
@@ -384,7 +384,7 @@ public final class ModCommands {
         try {
             String key = Config.gunnerGrowthCommandKey(type, setting);
             double value = (Double) Config.getConfigValue(key);
-            source.sendSuccess(() -> Component.literal(key + " = " + value), false);
+            source.sendSuccess(() -> Component.translatable("commands.jeg.config_value", key, value), false);
             return 1;
         } catch (IllegalArgumentException ex) {
             source.sendFailure(Component.literal(ex.getMessage()));
@@ -394,7 +394,7 @@ public final class ModCommands {
 
     private static int executeSetBooleanConfig(CommandSourceStack source, String key, boolean value, String displayName) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
         boolean oldValue = (Boolean) Config.getConfigValue(key);
@@ -403,13 +403,13 @@ public final class ModCommands {
         if (key.startsWith("ui.")) {
             NetworkHandler.broadcastUiConfig(source.getServer());
         }
-        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
 
     private static int executeSetIntConfig(CommandSourceStack source, String key, int value, String displayName) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
         int oldValue = (Integer) Config.getConfigValue(key);
@@ -418,25 +418,25 @@ public final class ModCommands {
         if ("patrol.intervalDays".equals(key)) {
             FactionEventTicker.reschedulePatrolSpawner();
         }
-        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
 
     private static int executeSetDoubleConfig(CommandSourceStack source, String key, double value, String displayName) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
         double oldValue = (Double) Config.getConfigValue(key);
         Config.setConfigValue(key, value);
         Config.saveServerConfig();
-        source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + value), true);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
 
     private static int executeSetBlockIdConfig(CommandSourceStack source, String key, String value, String displayName) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
         try {
@@ -444,7 +444,7 @@ public final class ModCommands {
             String oldValue = (String) Config.getConfigValue(key);
             Config.setConfigValue(key, normalizedValue);
             Config.saveServerConfig();
-            source.sendSuccess(() -> Component.literal("Set " + displayName + " from " + oldValue + " to " + normalizedValue), true);
+            source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, normalizedValue), true);
             return 1;
         } catch (IllegalArgumentException ex) {
             source.sendFailure(Component.literal(ex.getMessage()));
@@ -454,7 +454,7 @@ public final class ModCommands {
 
     private static int executeSetGunnerGrowthConfig(CommandSourceStack source, String type, String setting, double value) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
         try {
@@ -462,7 +462,7 @@ public final class ModCommands {
             double oldValue = (Double) Config.getConfigValue(key);
             Config.setConfigValue(key, value);
             Config.saveServerConfig();
-            source.sendSuccess(() -> Component.literal("Set " + key + " from " + oldValue + " to " + value), true);
+            source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", key, oldValue, value), true);
             return 1;
         } catch (IllegalArgumentException ex) {
             source.sendFailure(Component.literal(ex.getMessage()));
@@ -472,19 +472,19 @@ public final class ModCommands {
 
     private static int executeSpawnPatrol(CommandSourceStack source, String factionName, int size, Vec3 pos, boolean forceGuns, int spread) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
 
         ServerLevel level = source.getLevel();
         if (level.getDifficulty() == Difficulty.PEACEFUL) {
-            source.sendFailure(Component.literal("Mobs can't spawn in Peaceful"));
+            source.sendFailure(Component.translatable("commands.jeg.peaceful"));
             return 0;
         }
 
         Faction faction = GunnerManager.getInstance().getFactionByName(factionName);
         if (faction == null) {
-            source.sendFailure(Component.literal("Faction '" + factionName + "' does not exist"));
+            source.sendFailure(Component.translatable("commands.jeg.faction_missing", factionName));
             return 0;
         }
 
@@ -494,31 +494,31 @@ public final class ModCommands {
         int spawned = spawnedMobs.size();
 
         if (spawned <= 0) {
-            source.sendFailure(Component.literal("No patrol members were spawned; debug=" + FactionSpawnHelper.getLastPatrolDebug()));
+            source.sendFailure(Component.translatable("commands.jeg.no_patrol_spawned", FactionSpawnHelper.getLastPatrolDebug()));
             return 0;
         }
 
         PatrolEncounterManager.startEncounter(level, faction, origin, spawnedMobs);
         final int spawnedCount = spawned;
-        source.sendSuccess(() -> Component.literal("Spawned patrol: faction=" + factionName + ", count=" + spawnedCount), true);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.spawned_patrol", factionName, spawnedCount), true);
         return 1;
     }
 
     private static int executeSimulatePatrol(CommandSourceStack source, String factionName, int size, Player player, boolean forceGuns) {
         if (!source.hasPermission(2)) {
-            source.sendFailure(Component.literal("You do not have permission to execute this command"));
+            source.sendFailure(Component.translatable("commands.jeg.no_permission"));
             return 0;
         }
 
         ServerLevel level = source.getLevel();
         if (level.getDifficulty() == Difficulty.PEACEFUL) {
-            source.sendFailure(Component.literal("Mobs can't spawn in Peaceful"));
+            source.sendFailure(Component.translatable("commands.jeg.peaceful"));
             return 0;
         }
 
         Faction faction = GunnerManager.getInstance().getFactionByName(factionName);
         if (faction == null) {
-            source.sendFailure(Component.literal("Faction '" + factionName + "' does not exist"));
+            source.sendFailure(Component.translatable("commands.jeg.faction_missing", factionName));
             return 0;
         }
 
@@ -535,13 +535,13 @@ public final class ModCommands {
         int spawned = spawnedMobs.size();
 
         if (spawned <= 0) {
-            source.sendFailure(Component.literal("No patrol members were spawned; debug=" + FactionSpawnHelper.getLastPatrolDebug()));
+            source.sendFailure(Component.translatable("commands.jeg.no_patrol_spawned", FactionSpawnHelper.getLastPatrolDebug()));
             return 0;
         }
 
         PatrolEncounterManager.startEncounter(level, faction, origin, spawnedMobs);
         final int spawnedCount = spawned;
-        source.sendSuccess(() -> Component.literal("Simulated patrol: faction=" + factionName + ", count=" + spawnedCount), true);
+        source.sendSuccess(() -> Component.translatable("commands.jeg.simulated_patrol", factionName, spawnedCount), true);
         return 1;
     }
 }
