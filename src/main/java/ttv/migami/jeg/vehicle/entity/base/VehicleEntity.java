@@ -5005,19 +5005,6 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
                 return InteractionResult.CONSUME;
             }
         }
-        if (stack.is(ModItems.REPAIR_KIT.get())) {
-            if (this.level().isClientSide()) {
-                return InteractionResult.SUCCESS;
-            }
-            if (this.repairWithKit()) {
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
-                player.sendSystemMessage(Component.translatable("message.jeg.vehicle.repaired"));
-                return InteractionResult.CONSUME;
-            }
-            return InteractionResult.PASS;
-        }
         if (!this.level().isClientSide() && player.isShiftKeyDown() && stack.is(ModItems.CROWBAR.get()) && player instanceof ServerPlayer serverPlayer) {
             if (!this.getPassengers().isEmpty()) {
                 serverPlayer.sendSystemMessage(Component.translatable("message.jeg.vehicle.occupied"));

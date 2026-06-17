@@ -30,7 +30,7 @@ import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
 
 public final class VehicleAssemblingScreen extends AbstractContainerScreen<VehicleAssemblingMenu> {
     private static final int RECIPES_PER_PAGE = 6;
-    private static final Component ALL_FILTER = Component.literal("All");
+    private static final Component ALL_FILTER = Component.translatable("gui.jeg.vehicle_assembling.filter.all");
     private static final Component PREVIOUS_PAGE = Component.literal("<");
     private static final Component NEXT_PAGE = Component.literal(">");
     private static final int PREVIEW_X = 176;
@@ -248,7 +248,7 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     }
 
     private static Component costText(VehicleAssemblyRecipe recipe) {
-        MutableComponent cost = Component.literal("Cost: ");
+        MutableComponent cost = Component.translatable("gui.jeg.vehicle_assembling.cost");
         for (int index = 0; index < recipe.ingredients().size(); index++) {
             VehicleAssemblyRecipe.Ingredient ingredient = recipe.ingredients().get(index);
             Item item = BuiltInRegistries.ITEM.getValue(ingredient.item());
@@ -288,11 +288,11 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
     }
 
     private enum FilterButton {
-        LAND(VehicleType.LAND, Component.literal("Land")),
-        HELICOPTER(VehicleType.HELICOPTER, Component.literal("Heli")),
-        AIRCRAFT(VehicleType.AIRCRAFT, Component.literal("Air")),
-        BOAT(VehicleType.BOAT, Component.literal("Boat")),
-        ARTILLERY(VehicleType.ARTILLERY, Component.literal("Art"));
+        LAND(VehicleType.LAND, Component.translatable("gui.jeg.vehicle_assembling.filter.land")),
+        HELICOPTER(VehicleType.HELICOPTER, Component.translatable("gui.jeg.vehicle_assembling.filter.helicopter")),
+        AIRCRAFT(VehicleType.AIRCRAFT, Component.translatable("gui.jeg.vehicle_assembling.filter.aircraft")),
+        BOAT(VehicleType.BOAT, Component.translatable("gui.jeg.vehicle_assembling.filter.boat")),
+        ARTILLERY(VehicleType.ARTILLERY, Component.translatable("gui.jeg.vehicle_assembling.filter.artillery"));
 
         private final VehicleType type;
         private final Component label;

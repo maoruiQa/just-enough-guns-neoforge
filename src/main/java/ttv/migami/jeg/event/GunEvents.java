@@ -220,7 +220,7 @@ public final class GunEvents {
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
                 .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
-                .append(Component.literal("Commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
+                .append(Component.translatable("commands.jeg.help.commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
         Component divider = Component.literal("------------------------------")
                 .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
         Component unlockLine = Component.empty()

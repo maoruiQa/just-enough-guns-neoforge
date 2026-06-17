@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ttv.migami.jeg.client.GunCameraSwayHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(GameRenderer.class)
@@ -28,6 +29,8 @@ public abstract class VehicleGameRendererMixin {
     private void jeg$applyVehicleCameraView(DeltaTracker deltaTracker, CallbackInfo callback,
                                             @Local(ordinal = 0) PoseStack poseStack) {
         float partialTick = this.mainCamera.getCameraEntityPartialTicks(deltaTracker);
+        GunCameraSwayHandler.apply(poseStack, partialTick);
+
         Entity entity = this.mainCamera.entity();
         if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || this.mainCamera.isDetached()) {
             return;

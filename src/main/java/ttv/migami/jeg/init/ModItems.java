@@ -44,6 +44,7 @@ import ttv.migami.jeg.item.ManualItem;
 import ttv.migami.jeg.item.ArmoredJoyHarnessItem;
 import ttv.migami.jeg.item.BulletproofArmorItem;
 import ttv.migami.jeg.item.MagazineItem;
+import ttv.migami.jeg.item.RepairKitItem;
 import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.item.SmokeGrenadeItem;
 import ttv.migami.jeg.item.StunGrenadeItem;
@@ -75,7 +76,7 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, Item> REPAIR_KIT = REGISTER.register(
             "repair_kit",
-            () -> new Item(baseProperties(Reference.id("repair_kit")).stacksTo(16))
+            () -> new RepairKitItem(baseProperties(Reference.id("repair_kit")).stacksTo(16))
     );
     public static final DeferredHolder<Item, RepairToolItem> REPAIR_TOOL = REGISTER.register(
             "repair_tool",
@@ -649,7 +650,7 @@ public final class ModItems {
             default -> 512;
         };
         int durability = Math.max(1, (int) Math.round(baseDurability * 3.75D));
-        return baseProperties(id).stacksTo(1).durability(durability).repairable(net.minecraft.world.item.Items.IRON_INGOT);
+        return baseProperties(id).stacksTo(1).durability(durability).repairable(REPAIR_KIT.get());
     }
 
     private static Item.Properties baseProperties(Identifier id) {

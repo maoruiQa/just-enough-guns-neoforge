@@ -279,7 +279,7 @@ public class GunItem extends Item {
     }
 
     public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
-        return repair.is(net.minecraft.world.item.Items.IRON_INGOT);
+        return repair.is(ModItems.REPAIR_KIT.get());
     }
 
     public GunStats getStats() {
@@ -821,7 +821,7 @@ public class GunItem extends Item {
 
         if (usesOverheatMechanic() && isOverheated(stack)) {
             if (level.isClientSide()) {
-                HudMessageHelper.showActionBar(player, Component.literal("Gun overheated"));
+                HudMessageHelper.showActionBar(player, Component.translatable("item.jeg.gun.overheated"));
             }
             return false;
         }
@@ -2655,7 +2655,7 @@ public class GunItem extends Item {
         if (usesOverheatMechanic()) {
             int heat = getOverheatPercent(stack);
             ChatFormatting color = heat >= 100 ? ChatFormatting.RED : ChatFormatting.GOLD;
-            tooltipAdder.accept(Component.literal("Overheat: " + heat + "%").withStyle(color));
+            tooltipAdder.accept(Component.translatable("info.jeg.overheat", heat).withStyle(color));
         }
 
         // Add ammo type information
@@ -2671,7 +2671,7 @@ public class GunItem extends Item {
                 BallisticProtection.isRocketDirectHit(this.stats),
                 modifiers.explosiveAmmo() ? 0.75F : 1.0F
         );
-        tooltipAdder.accept(Component.literal("Armor Piercing: " + String.format(Locale.US, "%.2f", armorPiercing)));
+        tooltipAdder.accept(Component.translatable("info.jeg.armor_piercing", String.format(Locale.US, "%.2f", armorPiercing)));
 
         double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
         if (effectiveRange > 0.0D) {
