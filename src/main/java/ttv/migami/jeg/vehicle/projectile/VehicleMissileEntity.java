@@ -27,10 +27,13 @@ import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
 public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
+    private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
+    private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
     private static final int BMP2_NO_DROP_TICKS = 5;
 
     private int ownerId = -1;
     private int targetId = -1;
+    private int directHitVehicleId = -1;
     private Identifier weaponId = Reference.id("vehicle_bmp2_missile");
 
     public VehicleMissileEntity(EntityType<? extends VehicleMissileEntity> type, Level level) {
@@ -105,6 +108,10 @@ public final class VehicleMissileEntity extends Entity {
             Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(profile.maxSpeed());
             this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
             if (this.distanceToSqr(target) < 1.4D) {
+                if (target instanceof VehicleEntity) {
+                    this.directHitVehicleId = target.getId();
+                    this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+                }
                 this.explode();
             }
         } else if (profile.usesWireGuidance() && owner instanceof LivingEntity livingOwner) {
@@ -143,6 +150,7 @@ public final class VehicleMissileEntity extends Entity {
         }
         if (closest != null) {
             this.setPos(closest.position().add(0.0D, closest.getBbHeight() * 0.5D, 0.0D));
+            this.directHitVehicleId = closest instanceof VehicleEntity ? closest.getId() : -1;
             this.explode();
             return true;
         }
@@ -167,16 +175,39 @@ public final class VehicleMissileEntity extends Entity {
             VehicleMissileProfile profile = this.profile();
             this.spawnMissileExplosionEffects(serverLevel);
             Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), profile.explosionPower(), ExplosionInteraction.MOB);
+            boolean directHitVehicle = this.directHitVehicleId >= 0;
+            float explosionPower = directHitVehicle ? profile.explosionPower() * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : profile.explosionPower();
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionPower, ExplosionInteraction.MOB);
             Entity ownerVehicle = owner == null ? null : owner.getVehicle();
+            Vec3 explosionPos = this.position();
             for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != ownerVehicle) {
-                    target.hurt(this.damageSources().explosion(this, owner), profile.vehicleDamage());
+                    float damage = profile.vehicleDamage();
+                    if (directHitVehicle && target.getId() != this.directHitVehicleId) {
+                        double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
+                        if (effectiveDistance > profile.blastRadius()) {
+                            continue;
+                        }
+                        damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
+                    }
+                    if (damage > 0.5F) {
+                        target.hurt(this.damageSources().explosion(this, owner), damage);
+                    }
                 }
             }
             for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != owner) {
-                    target.hurt(this.damageSources().explosion(this, owner), profile.livingDamage());
+                    float damage = profile.livingDamage();
+                    if (directHitVehicle) {
+                        double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
+                        if (effectiveDistance > profile.blastRadius()) {
+                            continue;
+                        }
+                        damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
+                    }
+                    if (damage > 0.5F) {
+                        target.hurt(this.damageSources().explosion(this, owner), damage);
+                    }
                 }
             }
         }
