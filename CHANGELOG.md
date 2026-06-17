@@ -4,6 +4,7 @@
 
 ### Fixed
 - Fixed Fabric 1.21.1 gun reload input so custom reload key bindings work instead of only the default R key.
+- Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
 
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
