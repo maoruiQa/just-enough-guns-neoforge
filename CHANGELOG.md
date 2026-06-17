@@ -13,6 +13,7 @@
 - Changed gun anvil repair material from iron ingots to `jeg:repair_kit`.
 - Made `jeg:repair_kit` the bulletproof armor anvil repair material.
 - Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
+- Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
 
 ### Fixed
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
@@ -24,6 +25,7 @@
 
 ### Verification
 - Passed `.\gradlew compileJava`.
+- Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
 - Confirmed `repair_kit.json` parses and outputs `jeg:repair_kit`.
 - Confirmed `zh_cn.json` has no missing keys relative to `en_us.json`.
 - Full `build` and in-game gameplay checks were not run.
