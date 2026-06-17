@@ -25,6 +25,7 @@ import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.gun.BallisticProtection;
+import ttv.migami.jeg.init.ModItems;
 
 public class BulletproofArmorItem extends Item {
     public enum Tier {
@@ -118,6 +119,7 @@ public class BulletproofArmorItem extends Item {
         return base
                 .stacksTo(1)
                 .durability(tier.durability(slot))
+                .repairable(ModItems.REPAIR_KIT.get())
                 .component(DataComponents.EQUIPPABLE, equippable)
                 .component(DataComponents.ATTRIBUTE_MODIFIERS, attributes);
     }
@@ -158,13 +160,17 @@ public class BulletproofArmorItem extends Item {
         return true;
     }
 
+    public boolean isValidRepairItem(@NotNull ItemStack stack, @NotNull ItemStack repairCandidate) {
+        return repairCandidate.is(ModItems.REPAIR_KIT.get());
+    }
+
     @Override
     public void appendHoverText(@NotNull ItemStack stack, Item.@NotNull TooltipContext context, @NotNull TooltipDisplay display, @NotNull Consumer<Component> tooltipAdder, @NotNull TooltipFlag flag) {
         super.appendHoverText(stack, context, display, tooltipAdder, flag);
         tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_tier", tier.tierNumber()).withStyle(net.minecraft.ChatFormatting.GRAY));
         tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_ballistic_rating", String.format(java.util.Locale.US, "%.1f", BallisticProtection.effectiveArmorRating(tier, this.slot))).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
-        tooltipAdder.accept(Component.literal("Undermatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.undermatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
-        tooltipAdder.accept(Component.literal("Overmatch Multiplier: " + String.format(java.util.Locale.US, "%.2f", tier.overmatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_undermatch_multiplier", String.format(java.util.Locale.US, "%.2f", tier.undermatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
+        tooltipAdder.accept(Component.translatable("tooltip.jeg.bulletproof_overmatch_multiplier", String.format(java.util.Locale.US, "%.2f", tier.overmatchMultiplier())).withStyle(net.minecraft.ChatFormatting.DARK_GREEN));
     }
 
     @Override

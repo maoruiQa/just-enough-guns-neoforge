@@ -587,7 +587,7 @@ final class TerrorRaidManager {
         raid.bossBar.setProgress(Mth.clamp(progress, 0.0F, 1.0F));
 
         int remaining = raid.activeMobIds.size();
-        raid.bossBar.setName(Component.literal("Terror Raid " + raid.wavesSpawned + "/" + raid.totalWaves + " - Remaining " + remaining));
+        raid.bossBar.setName(Component.translatable("bossbar.jeg.terror_raid", raid.wavesSpawned, raid.totalWaves, remaining));
 
         boolean allWavesDone = raid.wavesSpawned >= raid.totalWaves;
         if (allWavesDone && remaining <= 0) {
