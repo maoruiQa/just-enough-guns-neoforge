@@ -6,26 +6,35 @@
 - Restored the `jeg:repair_kit` recipe from the disabled recipe file while keeping the existing item ID.
 - Added a repair kit tooltip explaining anvil repair support for guns and bulletproof armor.
 - Added first-person held-gun left/right movement camera sway, separate from recoil handling.
+- Added the maintained NeoForge 26.2 branch, based on the 26.1 maintenance state.
 
 ### Changed
 - Set the module version to `1.7.1`.
+- Ported the module target from NeoForge 26.1 to NeoForge 26.2.
+- Updated the module dependency set to Minecraft `26.2`, NeoForge `26.2.0.1-beta`, and GeckoLib `geckolib-neoforge-26.2:5.5.1`.
+- Updated the published artifact suffix to `+neoforge26.2`.
 - Renamed the visible repair kit item to `Gun Repair Kit` / `枪械维修包` without changing the `jeg:repair_kit` registry ID.
 - Changed gun anvil repair material and item `repairable(...)` properties from iron ingots to `jeg:repair_kit`.
 - Made `jeg:repair_kit` the bulletproof armor anvil repair material and `repairable(...)` material.
 - Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
+- Migrated NeoForge 26.2 API changes for GUI screen access, camera access, vanilla entity and block-entity registry holders, rarity styling, Happy Ghast body equipment, entity renderer submission, and custom world geometry submission.
 
 ### Fixed
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
 - Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair-tool vehicle repair remains intact.
+- Fixed the NeoForge 26.2 client startup crash caused by `ItemInHandRendererMixin` targeting the removed `renderArmWithItem` method; the mixin now targets `submitArmWithItem`.
 
 ### Localization
 - Expanded `zh_cn.json` to cover every key present in this branch's `en_us.json`.
 
 ### Verification
 - Passed `.\gradlew compileJava`.
+- Passed `.\gradlew build`.
+- Passed `.\gradlew runClient` startup/world-load smoke verification on NeoForge 26.2; the client loaded an integrated world, logged in `Dev`, loaded `150 jeg recipes`, and shut down cleanly.
+- Confirmed the NeoForge 26.1 legacy branch still passes `.\gradlew compileJava`.
 - Confirmed `repair_kit.json` parses and outputs `jeg:repair_kit`.
 - Confirmed `zh_cn.json` has no missing keys relative to `en_us.json`.
-- Full `build` and in-game gameplay checks were not run.
+- Full manual gameplay checks for first-person gun rendering, attachment UI, HUDs, vehicle HUDs, bullet trails, missiles/decoys, and GeckoLib models remain required.
 
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
