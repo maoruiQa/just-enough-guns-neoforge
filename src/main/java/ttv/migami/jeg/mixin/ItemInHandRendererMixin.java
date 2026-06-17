@@ -57,7 +57,7 @@ public final class ItemInHandRendererMixin {
     @Unique
     private ItemStack jeg$preTickOffHandItem = ItemStack.EMPTY;
 
-    @Inject(method = "renderArmWithItem", at = @At("HEAD"))
+    @Inject(method = "submitArmWithItem", at = @At("HEAD"))
     private void jeg$captureArmRenderContext(
             AbstractClientPlayer player,
             float partialTick,
@@ -76,7 +76,7 @@ public final class ItemInHandRendererMixin {
         this.jeg$capturedSwingProcess = swingProgress;
     }
 
-    @Inject(method = "renderArmWithItem", at = @At("RETURN"))
+    @Inject(method = "submitArmWithItem", at = @At("RETURN"))
     private void jeg$clearArmRenderContext(
             AbstractClientPlayer player,
             float partialTick,
