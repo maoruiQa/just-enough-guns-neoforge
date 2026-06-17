@@ -18,6 +18,7 @@
 - Made `jeg:repair_kit` the bulletproof armor anvil repair material and `repairable(...)` material.
 - Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
 - Migrated NeoForge 26.2 API changes for GUI screen access, camera access, vanilla entity and block-entity registry holders, rarity styling, Happy Ghast body equipment, entity renderer submission, and custom world geometry submission.
+- Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
 
 ### Fixed
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
@@ -29,6 +30,7 @@
 
 ### Verification
 - Passed `.\gradlew compileJava`.
+- Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
 - Passed `.\gradlew build`.
 - Passed `.\gradlew runClient` startup/world-load smoke verification on NeoForge 26.2; the client loaded an integrated world, logged in `Dev`, loaded `150 jeg recipes`, and shut down cleanly.
 - Confirmed the NeoForge 26.1 legacy branch still passes `.\gradlew compileJava`.
