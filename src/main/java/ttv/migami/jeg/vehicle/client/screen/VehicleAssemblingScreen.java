@@ -206,6 +206,9 @@ public final class VehicleAssemblingScreen extends AbstractContainerScreen<Vehic
         Identifier entityTypeId = Identifier.parse(VehicleDataManager.get(vehicleId).defaults().entityType());
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(entityTypeId);
         Entity entity = type.create(this.minecraft.level, EntitySpawnReason.LOAD);
+        if (entity != null) {
+            entity.setId(vehicleId.hashCode() | Integer.MIN_VALUE);
+        }
         this.previewVehicleId = vehicleId;
         this.previewEntity = entity;
         return entity;
