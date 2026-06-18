@@ -46,6 +46,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String ANIM_SPRINT = "sprint";
     public static final String ANIM_MELEE = "melee";
     public static final String ANIM_BAYONET = "bayonet";
+    public static final String ANIM_INSPECT = "inspect";
     private static final int RELOAD_STAGE_NONE = 0;
     private static final int RELOAD_STAGE_START = 1;
     private static final int RELOAD_STAGE_LOOP = 2;
@@ -62,6 +63,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation SPRINT = RawAnimation.begin().then(ANIM_SPRINT, Animation.LoopType.HOLD_ON_LAST_FRAME);
     private static final RawAnimation MELEE = RawAnimation.begin().then(ANIM_MELEE, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final RawAnimation BAYONET = RawAnimation.begin().then(ANIM_BAYONET, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
+    private static final RawAnimation INSPECT = RawAnimation.begin().then(ANIM_INSPECT, Animation.LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
     private static final ResourceLocation GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
@@ -75,6 +77,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static ItemStack clientMeleeStack = ItemStack.EMPTY;
     private static boolean clientMeleeBayonet;
     private static long clientMeleeTriggerDeadlineNanos;
+    private static ItemStack clientInspectStack = ItemStack.EMPTY;
+    private static long clientInspectTriggerDeadlineNanos;
     private static ItemStack clientDrawTriggerStack = ItemStack.EMPTY;
     private static long clientDrawTriggerDeadlineNanos;
     private static ItemStack clientDrawStack = ItemStack.EMPTY;
@@ -117,7 +121,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 .triggerableAnim(ANIM_DRAW, DRAW)
                 .triggerableAnim(ANIM_SPRINT, SPRINT)
                 .triggerableAnim(ANIM_MELEE, MELEE)
-                .triggerableAnim(ANIM_BAYONET, BAYONET));
+                .triggerableAnim(ANIM_BAYONET, BAYONET)
+                .triggerableAnim(ANIM_INSPECT, INSPECT));
     }
 
     private PlayState animationPredicate(AnimationState<AnimatedGunItem> state) {
@@ -134,13 +139,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return PlayState.CONTINUE;
         }
 
-        if (triggerPendingClientMelee(state, stack)) {
-            return PlayState.CONTINUE;
-        }
-        if (shouldContinueMeleeAnimation(state.getController())) {
-            return PlayState.CONTINUE;
-        }
-
         RawAnimation shootAnimation = pendingClientShootAnimationFor(stack);
         if (shootAnimation != null) {
             state.getController().forceAnimationReset();
@@ -150,6 +148,31 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
         clearInterruptedReloadAnimation(state.getController(), stack);
         if (shouldContinueReloadAnimation(state.getController(), stack)) {
+            return PlayState.CONTINUE;
+        }
+
+        RawAnimation reloadAnimation = reloadAnimationFor(stack);
+        if (reloadAnimation != null) {
+            return state.setAndContinue(reloadAnimation);
+        }
+
+        if (shouldBayonetSprintInterruptInspect(state, stack)) {
+            clearPendingClientInspect();
+            state.getController().forceAnimationReset();
+            return setSprintOrBayonetSprintAnimation(state, stack);
+        }
+
+        if (triggerPendingClientInspect(state, stack)) {
+            return PlayState.CONTINUE;
+        }
+        if (shouldContinueInspectAnimation(state.getController())) {
+            return PlayState.CONTINUE;
+        }
+
+        if (triggerPendingClientMelee(state, stack)) {
+            return PlayState.CONTINUE;
+        }
+        if (shouldContinueMeleeAnimation(state.getController())) {
             return PlayState.CONTINUE;
         }
 
@@ -163,11 +186,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         drawAnimation = drawAnimationFor(stack);
         if (drawAnimation != null) {
             return state.setAndContinue(drawAnimation);
-        }
-
-        RawAnimation reloadAnimation = reloadAnimationFor(stack);
-        if (reloadAnimation != null) {
-            return state.setAndContinue(reloadAnimation);
         }
 
         stopFinishedDrawAnimation(state.getController(), stack);
@@ -633,6 +651,26 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         return triggered;
     }
 
+    private static boolean triggerPendingClientInspect(AnimationState<AnimatedGunItem> state, ItemStack renderStack) {
+        if (clientInspectStack.isEmpty()) {
+            return false;
+        }
+        if (System.nanoTime() > clientInspectTriggerDeadlineNanos) {
+            clearPendingClientInspect();
+            return false;
+        }
+        if (!matchesHeldStack(renderStack, clientInspectStack)) {
+            return false;
+        }
+
+        state.getController().forceAnimationReset();
+        boolean triggered = state.getController().tryTriggerAnimation(ANIM_INSPECT);
+        if (triggered) {
+            clearPendingClientInspect();
+        }
+        return triggered;
+    }
+
     private static void clearPendingClientShoot() {
         clientShootStack = ItemStack.EMPTY;
         clientShootAiming = false;
@@ -645,8 +683,25 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clientMeleeTriggerDeadlineNanos = 0L;
     }
 
+    private static void clearPendingClientInspect() {
+        clientInspectStack = ItemStack.EMPTY;
+        clientInspectTriggerDeadlineNanos = 0L;
+    }
+
     private static boolean shouldContinueMeleeAnimation(AnimationController<AnimatedGunItem> controller) {
         return isMeleeAnimation(controller.getCurrentRawAnimation()) && !controller.hasAnimationFinished();
+    }
+
+    private static boolean shouldContinueInspectAnimation(AnimationController<AnimatedGunItem> controller) {
+        return hasAnimation(controller.getCurrentRawAnimation(), ANIM_INSPECT) && !controller.hasAnimationFinished();
+    }
+
+    private static boolean shouldBayonetSprintInterruptInspect(AnimationState<AnimatedGunItem> state, ItemStack stack) {
+        if (!hasBayonet(stack) || !shouldContinueInspectAnimation(state.getController()) || !isFirstPersonRender(state, stack)) {
+            return false;
+        }
+        Player player = clientPlayer();
+        return player != null && player.isSprinting() && !isClientAiming();
     }
 
     private static boolean isNonFirstPersonPerspective(AnimationState<AnimatedGunItem> state) {
@@ -915,6 +970,31 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
     }
 
+    public static void triggerClientInspect(Entity entity) {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            if (minecraft == null) {
+                return;
+            }
+            Object player = minecraftClass.getField("player").get(minecraft);
+            if (player != entity) {
+                return;
+            }
+
+            ItemStack stack = mainHandItem(player);
+            if (!(stack.getItem() instanceof AnimatedGunItem)) {
+                clearPendingClientInspect();
+                return;
+            }
+
+            clientInspectStack = stack.copy();
+            clientInspectTriggerDeadlineNanos = System.nanoTime() + CLIENT_SHOOT_TRIGGER_WINDOW_NANOS;
+        } catch (Throwable ignored) {
+            clearPendingClientInspect();
+        }
+    }
+
     private void trigger(Level level, Entity triggerEntity, ItemStack stack, String animation) {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
@@ -946,6 +1026,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
 
     public void triggerMelee(Level level, Entity triggerEntity, ItemStack stack) {
         trigger(level, triggerEntity, stack, hasBayonet(stack) ? ANIM_BAYONET : ANIM_MELEE);
+    }
+
+    public void triggerInspect(Level level, Entity triggerEntity, ItemStack stack) {
+        trigger(level, triggerEntity, stack, ANIM_INSPECT);
     }
 
     private static boolean hasBayonet(ItemStack stack) {

@@ -63,6 +63,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.playC2S().register(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(MeleePayload.TYPE, MeleePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(InspectGunPayload.TYPE, InspectGunPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
@@ -105,6 +106,9 @@ public final class NetworkHandler {
         });
         ServerPlayNetworking.registerGlobalReceiver(MeleePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleMelee(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(InspectGunPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleInspectGun(context.player()));
         });
         ServerPlayNetworking.registerGlobalReceiver(ToggleFlashlightPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleToggleFlashlight(context.player()));
@@ -164,6 +168,16 @@ public final class NetworkHandler {
     private static void handleAssembleTestVehicle(AssembleTestVehiclePayload payload, ServerPlayer player) {
         if (player.containerMenu instanceof VehicleAssemblingMenu menu) {
             menu.assembleVehicle(player, payload.recipeId());
+        }
+    }
+
+    private static void handleInspectGun(ServerPlayer player) {
+        if (player.isSpectator()) {
+            return;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof AnimatedGunItem animated) {
+            animated.triggerInspect(player.level(), player, stack);
         }
     }
 

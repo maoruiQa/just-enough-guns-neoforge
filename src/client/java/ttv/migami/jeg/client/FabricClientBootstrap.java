@@ -425,6 +425,14 @@ public final class FabricClientBootstrap {
         }
         meleeHeldLastTick = meleeDown;
 
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.INSPECT.consumeClick()
+                && heldMain.getItem() instanceof GunItem) {
+            if (heldMain.getItem() instanceof AnimatedGunItem) {
+                AnimatedGunItem.triggerClientInspect(player);
+            }
+            ClientNetworkHandler.sendInspect();
+        }
+
         if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
             if (heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
