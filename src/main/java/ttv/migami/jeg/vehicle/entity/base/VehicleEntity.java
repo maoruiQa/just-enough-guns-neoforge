@@ -220,7 +220,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED = 0.35D;
     private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
     private static final double HELICOPTER_MAX_DESCENT_SPEED = 1.05D;
-    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.50D;
+    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 1.20D;
     private static final double HELICOPTER_FORCED_DESCENT_EXPONENT = 2.0D;
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;

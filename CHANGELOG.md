@@ -8,7 +8,7 @@
 ### Changed
 - Increased helicopter maximum descent speed to `1.05D/tick` and made unmanned, unpowered, and critically damaged helicopters descend smoothly toward that speed.
 - Slowed unmanned helicopter forced descent so falling from the old safe descent speed to max descent takes about 20 seconds.
-- Changed unmanned, unpowered, and low-health helicopter forced descent to an exponential fast-then-slow curve with 50% of the previous fast transition as the base step, and made low-health forced descent start at 25 health.
+- Changed unmanned, unpowered, and low-health helicopter forced descent to an exponential fast-then-slow curve with 120% of the previous fast transition as the base step, and made low-health forced descent start at 25 health.
 
 ### Fixed
 - Kept inspect playback from being interrupted by melee, draw, and normal sprint poses; shooting, reloading, and bayonet sprinting can interrupt it and replay starts from the beginning.
@@ -23,6 +23,7 @@
 - Passed `.\gradlew compileJava` after the helicopter descent, crash damage, and feedback tuning.
 - Passed `.\gradlew compileJava` after the helicopter rotor, descent, fatal impact, and warning updates.
 - Passed `.\gradlew compileJava` after the exponential helicopter forced-descent curve update.
+- Passed `.\gradlew compileJava` after increasing the helicopter forced-descent base step to 120%.
 
 ## 1.7.1 - 2026-06-17
 
