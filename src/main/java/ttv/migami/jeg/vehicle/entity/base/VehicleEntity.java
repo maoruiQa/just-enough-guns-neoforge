@@ -224,7 +224,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED = 0.35D;
     private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
     private static final double HELICOPTER_MAX_DESCENT_SPEED = 1.05D;
-    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.30D;
+    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.50D;
+    private static final double HELICOPTER_FORCED_DESCENT_EXPONENT = 2.0D;
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
     private static final int HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL = 20;
@@ -4294,7 +4295,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         Vec3 lift = this.helicopterLiftVector(liftRotorSpeed * liftSpeed * mobility * altitudeLimitFactor);
         velocity = velocity.add(0.0D, -0.06D, 0.0D).add(lift);
         if (forcedDescent) {
-            double descentTarget = Math.max(verticalSpeedBeforeGravity - HELICOPTER_FORCED_DESCENT_ACCELERATION, -HELICOPTER_MAX_DESCENT_SPEED);
+            double descentStep = helicopterForcedDescentStep(verticalSpeedBeforeGravity);
+            double descentTarget = Math.max(verticalSpeedBeforeGravity - descentStep, -HELICOPTER_MAX_DESCENT_SPEED);
             velocity = new Vec3(velocity.x, Math.max(velocity.y, descentTarget), velocity.z);
         }
         if (altitudeLimited && velocity.y > 0.0D) {
@@ -4318,6 +4320,18 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
         this.moveHelicopter(new Vec3(velocity.x, Mth.clamp(velocity.y, -HELICOPTER_MAX_DESCENT_SPEED, 0.45D), velocity.z));
         this.warnHelicopterDangerousDescent();
+    }
+
+    private static double helicopterForcedDescentStep(double verticalSpeed) {
+        double remainingSpeed = HELICOPTER_MAX_DESCENT_SPEED + verticalSpeed;
+        if (remainingSpeed <= 0.0D) {
+            return 0.0D;
+        }
+        double speedRange = HELICOPTER_MAX_DESCENT_SPEED - HELICOPTER_SAFE_DESCENT_SPEED;
+        double remainingRatio = speedRange <= 0.0D ? 1.0D : Mth.clamp(remainingSpeed / speedRange, 0.0D, 1.0D);
+        double exponentMax = Math.exp(HELICOPTER_FORCED_DESCENT_EXPONENT) - 1.0D;
+        double exponentRatio = exponentMax <= 0.0D ? 1.0D : (Math.exp(HELICOPTER_FORCED_DESCENT_EXPONENT * remainingRatio) - 1.0D) / exponentMax;
+        return HELICOPTER_FORCED_DESCENT_ACCELERATION * exponentRatio;
     }
 
     private void warnHelicopterDangerousDescent() {
