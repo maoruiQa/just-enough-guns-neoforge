@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -228,6 +229,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
     private static final int HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL = 20;
+    private static final float HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME = 6.0F;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
@@ -2064,7 +2066,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private void warnSeekTarget(Entity target) {
-        this.warnTarget(target, Component.translatable("message.jeg.vehicle.lock_warning"), VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
+        this.warnTarget(target, warningMessage("message.jeg.vehicle.lock_warning", this.tickCount), VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
     }
 
     public static boolean hasRadarWarningSystem(Entity target) {
@@ -2072,7 +2074,12 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     public static void warnIncomingMissileTarget(Entity target) {
-        warnTarget(target, Component.translatable("message.jeg.vehicle.missile_warning"), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+        warnTarget(target, warningMessage("message.jeg.vehicle.missile_warning", target.tickCount), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+    }
+
+    private static Component warningMessage(String key, int tickCount) {
+        ChatFormatting color = (tickCount / 10) % 2 == 0 ? ChatFormatting.RED : ChatFormatting.DARK_RED;
+        return Component.translatable(key).withStyle(style -> style.withColor(color).withBold(true));
     }
 
     private static void warnTarget(Entity target, Component message, SoundEvent sound, float volume, float pitch) {
@@ -3771,9 +3778,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.992D;
         }
 
-        if (consumeEnergy && engine.energyCostRate() > 0) {
-            int cost = (int) Math.ceil(engine.energyCostRate() * Math.abs(this.enginePower));
-            if (cost > 0 && !this.consumeEnergy(cost)) {
+        if (consumeEnergy) {
+            int cost = this.scaledEngineEnergyCost(engine, Math.abs(this.enginePower) > 1.0E-4D, Math.abs(this.enginePower));
+            if (cost > 0 && !this.consumeEngineEnergyCost(cost)) {
                 this.enginePower *= 0.9D;
             }
         }
@@ -3913,13 +3920,35 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private boolean hasEngineEnergy(EngineInfo engine, boolean active) {
-        int cost = engine.energyCostRate();
-        return !active || cost <= 0 || this.vehicleEnergy() >= cost;
+        int cost = this.scaledEngineEnergyCost(engine, active, 1.0D);
+        return cost <= 0 || this.vehicleEnergy() >= cost;
     }
 
     private boolean consumeEngineEnergy(EngineInfo engine, boolean active) {
-        int cost = engine.energyCostRate();
-        return !active || cost <= 0 || this.consumeEnergy(cost);
+        return this.consumeEngineEnergyCost(this.scaledEngineEnergyCost(engine, active, 1.0D));
+    }
+
+    private int scaledEngineEnergyCost(EngineInfo engine, boolean active, double scale) {
+        if (!active || engine.energyCostRate() <= 0 || this.maxVehicleEnergy() <= 0) {
+            return 0;
+        }
+        double scaledCost = engine.energyCostRate() * Math.max(0.0D, scale);
+        return Math.max(1, (int) Math.ceil(scaledCost));
+    }
+
+    private boolean consumeEngineEnergyCost(int cost) {
+        if (cost <= 0) {
+            return true;
+        }
+        int current = this.vehicleEnergy();
+        if (current <= 0) {
+            return false;
+        }
+        if (current < cost) {
+            this.consumeEnergy(current);
+            return false;
+        }
+        return this.consumeEnergy(cost);
     }
 
     private void tickServerSteeredLandMovement(EngineInfo engine, Vec3 velocity, int forwardAxis, int steeringAxis) {
@@ -3946,9 +3975,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.98D;
         }
 
-        if (engineSound && engine.energyCostRate() > 0) {
-            int cost = (int) (engine.energyCostRate() * Math.abs(this.enginePower));
-            if (cost > 0 && !this.consumeEnergy(cost)) {
+        if (engineSound) {
+            int cost = this.scaledEngineEnergyCost(engine, Math.abs(this.enginePower) > 1.0E-4D, Math.abs(this.enginePower));
+            if (cost > 0 && !this.consumeEngineEnergyCost(cost)) {
                 this.enginePower *= 0.95D;
             }
         }
@@ -4146,7 +4175,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         double yawSpeed = engine.yawSpeed();
         double rollSpeed = engine.rollSpeed();
         double liftSpeed = engine.liftSpeed();
-        boolean hasEnergy = !consumeEnergy || engine.energyCostRate() <= 0 || this.vehicleEnergy() > 0 || this.maxVehicleEnergy() <= 0;
+        boolean engineEnergyActive = up || down || back || this.engineStart || this.engineStartOver || Math.abs(this.enginePower) > 1.0E-4D;
+        double helicopterEnergyScale = Math.max(8.3333D * Math.abs(this.enginePower), engineEnergyActive ? 1.0E-4D : 0.0D);
+        boolean hasEnergy = !consumeEnergy || this.hasEngineEnergy(engine, engineEnergyActive);
         boolean hasPlayerPassenger = this.hasPlayerPassenger();
         double altitude = this.helicopterAltitudeFromGround();
         double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
@@ -4283,8 +4314,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.entityData.set(DATA_PROPELLER_ROT, this.propellerRot() + 30.0F * nextRotorSpeed);
 
         if (consumeEnergy && this.engineStart) {
-            int cost = (int) (engine.energyCostRate() * 8.3333D * Math.abs(this.enginePower));
-            if (!this.consumeEnergy(cost)) {
+            int cost = this.scaledEngineEnergyCost(engine, true, helicopterEnergyScale);
+            if (!this.consumeEngineEnergyCost(cost)) {
                 this.engineStart = false;
                 this.engineStartOver = false;
                 this.enginePower *= 0.995D;
@@ -4328,15 +4359,29 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return;
         }
         boolean warned = false;
+        Component message = warningMessage(this.helicopterDangerWarningKey(forcedDescent), this.tickCount);
         for (Entity passenger : this.getPassengers()) {
             if (passenger instanceof ServerPlayer player) {
-                warnPlayer(player, Component.translatable("message.jeg.vehicle.missile_warning"), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+                warnPlayer(player, message, VehicleSoundHelper.missileWarning(), HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME, 1.0F);
                 warned = true;
             }
         }
         if (warned) {
             this.lastHelicopterDangerousDescentWarningTick = this.tickCount;
         }
+    }
+
+    private String helicopterDangerWarningKey(boolean forcedDescent) {
+        if (this.vehicleHealth() <= LOW_HEALTH_DECAY_THRESHOLD) {
+            return "message.jeg.vehicle.helicopter_critical_damage_warning";
+        }
+        if (this.maxVehicleEnergy() > 0 && this.vehicleEnergy() <= 0) {
+            return "message.jeg.vehicle.helicopter_power_loss_warning";
+        }
+        if (forcedDescent && Math.abs(this.getDeltaMovement().y) <= HELICOPTER_SAFE_DESCENT_SPEED) {
+            return "message.jeg.vehicle.helicopter_low_speed_warning";
+        }
+        return "message.jeg.vehicle.missile_warning";
     }
 
     private void moveHelicopter(Vec3 velocity) {
