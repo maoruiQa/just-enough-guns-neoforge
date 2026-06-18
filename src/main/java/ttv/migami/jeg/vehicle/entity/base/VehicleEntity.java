@@ -228,6 +228,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.70D;
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
+    private static final double HELICOPTER_DANGEROUS_DESCENT_WARNING_MIN_ALTITUDE = 8.0D;
     private static final float HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME = 14.0F;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
@@ -4549,12 +4550,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
 
         this.moveHelicopter(new Vec3(velocity.x, Mth.clamp(velocity.y, -HELICOPTER_MAX_DESCENT_SPEED, 0.45D), velocity.z));
-        this.warnHelicopterDangerousDescent(forcedDescent);
+        this.warnHelicopterDangerousDescent(forcedDescent, altitude);
     }
 
-    private void warnHelicopterDangerousDescent(boolean forcedDescent) {
+    private void warnHelicopterDangerousDescent(boolean forcedDescent, double altitude) {
         if (this.level().isClientSide
-                || (!forcedDescent && this.getDeltaMovement().y >= -HELICOPTER_SAFE_DESCENT_SPEED)) {
+                || (!forcedDescent && (altitude <= HELICOPTER_DANGEROUS_DESCENT_WARNING_MIN_ALTITUDE
+                || this.getDeltaMovement().y >= -HELICOPTER_SAFE_DESCENT_SPEED))) {
             return;
         }
         String warningKey = this.helicopterDangerWarningKey(forcedDescent);
