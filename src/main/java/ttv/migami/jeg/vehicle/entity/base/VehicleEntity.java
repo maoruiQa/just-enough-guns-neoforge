@@ -198,7 +198,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final float PART_MAX_HEALTH = 10.0F;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
-    private static final float LOW_HEALTH_DECAY_THRESHOLD = 0.15F;
+    private static final float LOW_HEALTH_DECAY_THRESHOLD = 25.0F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.25D;
@@ -226,10 +226,9 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final double AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED = 0.35D;
     private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
     private static final double HELICOPTER_MAX_DESCENT_SPEED = 1.05D;
-    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = (HELICOPTER_MAX_DESCENT_SPEED - HELICOPTER_SAFE_DESCENT_SPEED) / (20.0D * 20.0D);
+    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.30D;
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
-    private static final float HELICOPTER_UNMANNED_ROTOR_SPEED = 0.02F;
     private static final int HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL = 20;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
@@ -3741,7 +3740,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     }
 
     private boolean tickLowHealthDecay() {
-        if (this.vehicleHealth() <= 0.0F || this.vehicleHealth() >= this.maxVehicleHealth() * LOW_HEALTH_DECAY_THRESHOLD) {
+        if (this.vehicleHealth() <= 0.0F || this.vehicleHealth() >= LOW_HEALTH_DECAY_THRESHOLD) {
             return false;
         }
         if (this.tickCount % LOW_HEALTH_DECAY_INTERVAL == 0) {
@@ -4251,7 +4250,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         double altitude = this.helicopterAltitudeFromGround();
         double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
-        boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || this.vehicleHealth() <= 0.1F * this.maxVehicleHealth());
+        boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || this.vehicleHealth() <= LOW_HEALTH_DECAY_THRESHOLD);
         if (!hasEnergy) {
             up = false;
             down = false;
@@ -4378,9 +4377,6 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         float liftRotorSpeed = nextRotorSpeed;
         if (!this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
             nextRotorSpeed = Math.max(nextRotorSpeed, HELICOPTER_DESCENT_ROTOR_SPEED);
-        }
-        if (pilot == null && currentRotorSpeed > 0.0F) {
-            nextRotorSpeed = Math.max(nextRotorSpeed, Math.min(currentRotorSpeed, HELICOPTER_UNMANNED_ROTOR_SPEED));
         }
         this.entityData.set(DATA_PROPELLER_SPEED, nextRotorSpeed * 0.9995F);
         this.entityData.set(DATA_PROPELLER_ROT, this.propellerRot() + 30.0F * nextRotorSpeed);
