@@ -19,11 +19,14 @@
 - Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
 - Migrated NeoForge 26.2 API changes for GUI screen access, camera access, vanilla entity and block-entity registry holders, rarity styling, Happy Ghast body equipment, entity renderer submission, and custom world geometry submission.
 - Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
+- Increased aircraft no-input descent acceleration so powerless aircraft descend at roughly three times the previous terminal speed.
 
 ### Fixed
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
 - Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair-tool vehicle repair remains intact.
 - Fixed the NeoForge 26.2 client startup crash caused by `ItemInHandRendererMixin` targeting the removed `renderArmWithItem` method; the mixin now targets `submitArmWithItem`.
+- Fixed helicopter and aircraft impact damage so controlled slow landings no longer explode from accumulated height alone, while uncontrolled high falls still deal crash damage.
+- Restored helicopter rotor block-contact damage while airborne.
 
 ### Localization
 - Expanded `zh_cn.json` to cover every key present in this branch's `en_us.json`.
@@ -31,6 +34,7 @@
 ### Verification
 - Passed `.\gradlew compileJava`.
 - Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
+- Passed `.\gradlew compileJava` after the air vehicle impact/descent tuning.
 - Passed `.\gradlew build`.
 - Passed `.\gradlew runClient` startup/world-load smoke verification on NeoForge 26.2; the client loaded an integrated world, logged in `Dev`, loaded `150 jeg recipes`, and shut down cleanly.
 - Confirmed the NeoForge 26.1 legacy branch still passes `.\gradlew compileJava`.
