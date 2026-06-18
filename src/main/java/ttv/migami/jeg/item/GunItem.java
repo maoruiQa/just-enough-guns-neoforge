@@ -2683,5 +2683,6 @@ public class GunItem extends Item {
             tooltipAdder.accept(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
         }
         tooltipAdder.accept(Component.translatable("info.jeg.open_attachments_z").withStyle(ChatFormatting.YELLOW));
+        tooltipAdder.accept(Component.translatable("info.jeg.inspect_help", Component.translatable("key.jeg.inspect")).withStyle(ChatFormatting.YELLOW));
     }
 }

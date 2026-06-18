@@ -64,6 +64,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MeleePayload.TYPE, MeleePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(InspectGunPayload.TYPE, InspectGunPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
@@ -106,6 +107,9 @@ public final class NetworkHandler {
         });
         ServerPlayNetworking.registerGlobalReceiver(MeleePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleMelee(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(InspectGunPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleInspectGun(context.player()));
         });
         ServerPlayNetworking.registerGlobalReceiver(ToggleFlashlightPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleToggleFlashlight(context.player()));
@@ -165,6 +169,16 @@ public final class NetworkHandler {
     private static void handleVehicleOpenMenu(VehicleOpenMenuPayload payload, ServerPlayer player) {
         if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.getId() == payload.vehicleId()) {
             player.openMenu(vehicle);
+        }
+    }
+
+    private static void handleInspectGun(ServerPlayer player) {
+        if (player.isSpectator()) {
+            return;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof AnimatedGunItem animated) {
+            animated.triggerInspect(player.level(), player, stack);
         }
     }
 

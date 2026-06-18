@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased - 2026-06-18
+
+### Added
+- Added Y-key gun inspect animations for held animated guns, including tooltip guidance.
+
+### Fixed
+- Kept inspect playback from being interrupted by melee, draw, and normal sprint poses; shooting, reloading, and bayonet sprinting can interrupt it and replay starts from the beginning.
+
+### Verification
+- Passed `.\gradlew compileJava compileClientJava`.
+
 ## 1.7.1 - 2026-06-17
 
 ### Added
