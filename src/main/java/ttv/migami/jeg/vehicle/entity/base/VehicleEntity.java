@@ -145,6 +145,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final EntityDataAccessor<Integer> DATA_DECOY_COOLDOWN = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_MISSILE_LOCK_TARGET = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<String> DATA_WARNING_MESSAGE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> DATA_WARNING_UNTIL_TICK = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RIGHT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_ENGINE_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -166,6 +168,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
+    private static final int VEHICLE_WARNING_DISPLAY_TICKS = 30;
     private static final int RAM_DAMAGE_COOLDOWN_TICKS = 10;
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
@@ -245,6 +248,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
     private static final double AIRCRAFT_IDLE_DESCENT_ACCELERATION = 0.03D;
+    private static final double AIRCRAFT_FORCED_DESCENT_ACCELERATION = HELICOPTER_FORCED_DESCENT_ACCELERATION;
+    private static final double AIRCRAFT_MAX_DESCENT_SPEED = HELICOPTER_MAX_DESCENT_SPEED;
     private static final float HELICOPTER_ROTOR_GROUND_DAMAGE = 1.0F;
     private static final float HELICOPTER_ROTOR_DAMAGE_MIN_SPEED = 0.02F;
     private static final double HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS = 0.55D;
@@ -490,6 +495,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         builder.define(DATA_DECOY_COOLDOWN, 0);
         builder.define(DATA_MISSILE_LOCKED, false);
         builder.define(DATA_MISSILE_LOCK_TARGET, -1);
+        builder.define(DATA_WARNING_MESSAGE, "");
+        builder.define(DATA_WARNING_UNTIL_TICK, 0);
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
         builder.define(DATA_RIGHT_WHEEL_DAMAGED, false);
         builder.define(DATA_ENGINE_DAMAGED, false);
@@ -542,6 +549,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         if (repaired) {
             this.repairCooldown = 0;
+            this.resetRecoveredLowHealthState();
             this.hurtMarked = true;
         }
         return repaired;
@@ -833,6 +841,14 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     public boolean hasMissileLock() {
         return this.entityData.get(DATA_MISSILE_LOCKED);
+    }
+
+    public String activeWarningMessageKey() {
+        String key = this.entityData.get(DATA_WARNING_MESSAGE);
+        if (key.isEmpty() || this.tickCount > this.entityData.get(DATA_WARNING_UNTIL_TICK)) {
+            return "";
+        }
+        return key;
     }
 
     public boolean isLeftWheelDamaged() {
@@ -2066,7 +2082,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private void warnSeekTarget(Entity target) {
-        this.warnTarget(target, warningMessage("message.jeg.vehicle.lock_warning", this.tickCount), VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
+        this.warnTarget(target, "message.jeg.vehicle.lock_warning", VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
     }
 
     public static boolean hasRadarWarningSystem(Entity target) {
@@ -2074,7 +2090,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     public static void warnIncomingMissileTarget(Entity target) {
-        warnTarget(target, warningMessage("message.jeg.vehicle.missile_warning", target.tickCount), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+        warnTarget(target, "message.jeg.vehicle.missile_warning", VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
     }
 
     private static Component warningMessage(String key, int tickCount) {
@@ -2082,18 +2098,16 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         return Component.translatable(key).withStyle(style -> style.withColor(color).withBold(true));
     }
 
-    private static void warnTarget(Entity target, Component message, SoundEvent sound, float volume, float pitch) {
+    private static void warnTarget(Entity target, String messageKey, SoundEvent sound, float volume, float pitch) {
         if (target instanceof ServerPlayer player) {
-            warnPlayer(player, message, sound, volume, pitch);
+            warnPlayer(player, warningMessage(messageKey, target.tickCount), sound, volume, pitch);
             return;
         }
         if (!hasRadarWarningSystem(target)) {
             return;
         }
-        for (Entity passenger : target.getPassengers()) {
-            if (passenger instanceof ServerPlayer player) {
-                player.displayClientMessage(message, true);
-            }
+        if (target instanceof VehicleEntity vehicle) {
+            vehicle.showVehicleWarning(messageKey);
         }
         target.level().playSound(
                 null,
@@ -2107,8 +2121,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         );
     }
 
+    private void showVehicleWarning(String messageKey) {
+        this.entityData.set(DATA_WARNING_MESSAGE, messageKey);
+        this.entityData.set(DATA_WARNING_UNTIL_TICK, this.tickCount + VEHICLE_WARNING_DISPLAY_TICKS);
+    }
+
     private static void warnPlayer(ServerPlayer player, Component message, SoundEvent sound, float volume, float pitch) {
         player.displayClientMessage(message, true);
+        playWarningSound(player, sound, volume, pitch);
+    }
+
+    private static void playWarningSound(ServerPlayer player, SoundEvent sound, float volume, float pitch) {
         player.level().playSound(
                 null,
                 player.getX(),
@@ -3610,6 +3633,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         repaired |= this.autoRepairParts(repair);
         if (repaired) {
+            this.resetRecoveredLowHealthState();
             this.hurtMarked = true;
         }
     }
@@ -3647,7 +3671,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private boolean tickLowHealthDecay() {
-        if (this.vehicleHealth() <= 0.0F || this.vehicleHealth() >= LOW_HEALTH_DECAY_THRESHOLD) {
+        if (!this.isLowHealthDecayActive()) {
+            this.resetRecoveredLowHealthState();
             return false;
         }
         if (this.tickCount % LOW_HEALTH_DECAY_INTERVAL == 0) {
@@ -3659,6 +3684,22 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             }
         }
         return true;
+    }
+
+    private float lowHealthDecayThreshold() {
+        return Math.min(LOW_HEALTH_DECAY_THRESHOLD, this.maxVehicleHealth());
+    }
+
+    private boolean isLowHealthDecayActive() {
+        float health = this.vehicleHealth();
+        return health > 0.0F && health < this.lowHealthDecayThreshold();
+    }
+
+    private void resetRecoveredLowHealthState() {
+        if (this.isLowHealthDecayActive()) {
+            return;
+        }
+        this.destroyRot = 0.0F;
     }
 
     private void tickServerMovement() {
@@ -4102,8 +4143,10 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return;
         }
         VehicleType type = this.vehicleData().defaults().vehicleType();
+        EngineInfo engine = this.vehicleData().defaults().engine();
         Vec3 movement = this.getDeltaMovement();
-        boolean active = this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0;
+        boolean inputActive = this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0;
+        boolean active = inputActive && this.hasEngineEnergy(engine, true);
         if (!active) {
             active = switch (type) {
                 case LAND, BOAT -> movement.x * movement.x + movement.z * movement.z > 0.0025D;
@@ -4127,8 +4170,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         int forwardAxis = this.input.forwardAxis();
         int strafeAxis = this.input.strafeAxis();
         int verticalAxis = this.input.verticalAxis();
-        boolean hasThrottle = this.consumeEngineEnergy(engine, forwardAxis != 0 || strafeAxis != 0 || verticalAxis != 0);
+        boolean inputActive = forwardAxis != 0 || strafeAxis != 0 || verticalAxis != 0;
+        boolean energyEmpty = this.maxVehicleEnergy() > 0 && this.vehicleEnergy() <= 0;
+        boolean forcedDescent = !this.onGround() && (this.getControllingPassenger() == null || energyEmpty || this.isLowHealthDecayActive());
+        boolean hasThrottle = !forcedDescent && this.consumeEngineEnergy(engine, inputActive);
+        if (forcedDescent) {
+            forwardAxis = 0;
+            strafeAxis = 0;
+            verticalAxis = 0;
+        }
         double mobility = this.mobilityMultiplier();
+        double verticalSpeedBeforeForces = velocity.y;
 
         float yaw = this.getYRot();
         double yawRadians = Math.toRadians(yaw);
@@ -4140,13 +4192,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
 
         double maxSpeed = engine.maxForwardSpeed() * mobility;
-        if (velocity.length() > maxSpeed) {
+        if (!forcedDescent && velocity.length() > maxSpeed) {
             velocity = velocity.normalize().scale(maxSpeed);
         }
         double drag = this.input.brake() ? 0.82D : 0.94D;
         velocity = velocity.multiply(drag, 0.90D, drag);
         if (verticalAxis == 0) {
             velocity = velocity.add(0.0D, -AIRCRAFT_IDLE_DESCENT_ACCELERATION, 0.0D);
+        }
+        if (forcedDescent) {
+            double descentTarget = Math.max(verticalSpeedBeforeForces - AIRCRAFT_FORCED_DESCENT_ACCELERATION, -AIRCRAFT_MAX_DESCENT_SPEED);
+            velocity = new Vec3(velocity.x, Math.min(velocity.y, descentTarget), velocity.z);
         }
 
         this.setDeltaMovement(velocity);
@@ -4182,11 +4238,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         double altitude = this.helicopterAltitudeFromGround();
         double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
-        boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || this.vehicleHealth() <= LOW_HEALTH_DECAY_THRESHOLD);
+        boolean lowHealthDescent = this.isLowHealthDecayActive();
+        boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || lowHealthDescent);
         if (!hasEnergy) {
             up = false;
             down = false;
             back = false;
+            if (this.onGround()) {
+                this.enginePower = 0.0D;
+                this.engineStart = false;
+                this.engineStartOver = false;
+            }
         }
         if (altitudeLimited) {
             up = false;
@@ -4205,7 +4267,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             velocity = velocity.multiply(0.6D, 0.6D, 0.6D);
         }
 
-        if (this.vehicleHealth() > 0.1F * this.maxVehicleHealth()) {
+        if (!lowHealthDescent && this.vehicleHealth() > 0.1F * this.maxVehicleHealth()) {
             if (pilot == null) {
                 this.holdTick = 0;
                 this.holdPowerTick = 0;
@@ -4304,6 +4366,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.98D;
         }
         this.wheelSteering *= 0.9D;
+        if (this.onGround() && pilot == null && !hasPlayerPassenger && currentRotorSpeed <= 1.0E-4F) {
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+        }
 
         float nextRotorSpeed = (float) Mth.lerp(0.18F, currentRotorSpeed, (float) this.enginePower);
         float liftRotorSpeed = nextRotorSpeed;
@@ -4359,10 +4426,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return;
         }
         boolean warned = false;
-        Component message = warningMessage(this.helicopterDangerWarningKey(forcedDescent), this.tickCount);
+        String warningKey = this.helicopterDangerWarningKey(forcedDescent);
+        this.showVehicleWarning(warningKey);
         for (Entity passenger : this.getPassengers()) {
             if (passenger instanceof ServerPlayer player) {
-                warnPlayer(player, message, VehicleSoundHelper.missileWarning(), HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME, 1.0F);
+                playWarningSound(player, VehicleSoundHelper.missileWarning(), HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME, 1.0F);
                 warned = true;
             }
         }
@@ -4372,7 +4440,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private String helicopterDangerWarningKey(boolean forcedDescent) {
-        if (this.vehicleHealth() <= LOW_HEALTH_DECAY_THRESHOLD) {
+        if (this.isLowHealthDecayActive()) {
             return "message.jeg.vehicle.helicopter_critical_damage_warning";
         }
         if (this.maxVehicleEnergy() > 0 && this.vehicleEnergy() <= 0) {
@@ -5063,6 +5131,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (repaired) {
             this.repairCooldown = 0;
             this.syncPartDamageFlags();
+            this.resetRecoveredLowHealthState();
             this.hurtMarked = true;
         }
         return repaired;

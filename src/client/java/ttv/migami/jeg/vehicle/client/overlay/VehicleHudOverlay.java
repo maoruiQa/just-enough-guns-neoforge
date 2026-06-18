@@ -101,7 +101,7 @@ public final class VehicleHudOverlay {
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
         renderSpeedIndicator(guiGraphics, minecraft, vehicle);
-        renderHelicopterWarning(guiGraphics, minecraft, vehicle);
+        renderVehicleWarning(guiGraphics, minecraft, vehicle);
         boolean showCompactVehicleInfo = !focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT;
         if (!showCompactVehicleInfo) {
             return;
@@ -315,23 +315,26 @@ public final class VehicleHudOverlay {
         guiGraphics.drawString(minecraft.font, speed, x, y, 0xFF66FF00);
     }
 
-    private static void renderHelicopterWarning(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
-        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER || minecraft.player == null) {
+    private static void renderVehicleWarning(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (minecraft.player == null) {
             return;
         }
-        String warningKey = helicopterWarningKey(vehicle);
-        if (warningKey == null) {
+        String warningKey = vehicle.activeWarningMessageKey();
+        if (warningKey.isEmpty() && vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
+            warningKey = helicopterWarningKey(vehicle);
+        }
+        if (warningKey == null || warningKey.isEmpty()) {
             return;
         }
         Component warning = Component.translatable(warningKey);
         int color = (vehicle.tickCount / 10) % 2 == 0 ? 0xFFFF2222 : 0xFF7F0000;
         int x = (guiGraphics.guiWidth() - minecraft.font.width(warning)) / 2;
-        int y = guiGraphics.guiHeight() / 2 + 42;
+        int y = guiGraphics.guiHeight() / 2 + 9;
         guiGraphics.drawString(minecraft.font, warning, x, y, color);
     }
 
     private static String helicopterWarningKey(VehicleEntity vehicle) {
-        if (vehicle.vehicleHealth() <= HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH) {
+        if (vehicle.vehicleHealth() < Math.min(HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH, vehicle.maxVehicleHealth())) {
             return "message.jeg.vehicle.helicopter_critical_damage_warning";
         }
         if (vehicle.maxVehicleEnergy() > 0 && vehicle.vehicleEnergy() <= 0) {
