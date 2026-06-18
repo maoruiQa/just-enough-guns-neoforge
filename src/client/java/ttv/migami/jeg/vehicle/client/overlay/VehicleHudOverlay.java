@@ -56,7 +56,7 @@ public final class VehicleHudOverlay {
     private static final int WEAPON_ICON_HEIGHT = 16;
     private static final int WEAPON_ICON_TEXTURE_WIDTH = 300;
     private static final int WEAPON_ICON_TEXTURE_HEIGHT = 64;
-    private static final float HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH = 25.0F;
+    private static final float HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH = 20.0F;
     private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
     private static final ResourceLocation[] WEAPON_FRAMES = {
             Reference.id("textures/overlay/vehicle/weapon/frame/frame_1.png"),
@@ -343,9 +343,6 @@ public final class VehicleHudOverlay {
         boolean forcedDescent = !vehicle.onGround() && vehicle.getControllingPassenger() == null;
         if (forcedDescent && Math.abs(vehicle.getDeltaMovement().y) <= HELICOPTER_SAFE_DESCENT_SPEED) {
             return "message.jeg.vehicle.helicopter_low_speed_warning";
-        }
-        if (!vehicle.onGround() && vehicle.getDeltaMovement().y < -HELICOPTER_SAFE_DESCENT_SPEED) {
-            return "message.jeg.vehicle.missile_warning";
         }
         return null;
     }

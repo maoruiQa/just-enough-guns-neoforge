@@ -200,7 +200,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final float PART_MAX_HEALTH = 10.0F;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
-    private static final float LOW_HEALTH_DECAY_THRESHOLD = 25.0F;
+    private static final float LOW_HEALTH_DECAY_THRESHOLD = 20.0F;
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.25D;
@@ -4240,6 +4240,15 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
         boolean lowHealthDescent = this.isLowHealthDecayActive();
         boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || lowHealthDescent);
+        boolean rotorIdleLocked = this.onGround() && pilot == null && currentRotorSpeed <= 1.0E-4F;
+        if (rotorIdleLocked) {
+            up = false;
+            down = false;
+            back = false;
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+        }
         if (!hasEnergy) {
             up = false;
             down = false;
@@ -4366,7 +4375,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.98D;
         }
         this.wheelSteering *= 0.9D;
-        if (this.onGround() && pilot == null && !hasPlayerPassenger && currentRotorSpeed <= 1.0E-4F) {
+        if (rotorIdleLocked) {
             this.enginePower = 0.0D;
             this.engineStart = false;
             this.engineStartOver = false;
@@ -4374,6 +4383,10 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
         float nextRotorSpeed = (float) Mth.lerp(0.18F, currentRotorSpeed, (float) this.enginePower);
         float liftRotorSpeed = nextRotorSpeed;
+        if (rotorIdleLocked) {
+            nextRotorSpeed = 0.0F;
+            liftRotorSpeed = 0.0F;
+        }
         if (!this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
             nextRotorSpeed = Math.max(nextRotorSpeed, HELICOPTER_DESCENT_ROTOR_SPEED);
         }
@@ -4446,7 +4459,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (this.maxVehicleEnergy() > 0 && this.vehicleEnergy() <= 0) {
             return "message.jeg.vehicle.helicopter_power_loss_warning";
         }
-        if (forcedDescent && Math.abs(this.getDeltaMovement().y) <= HELICOPTER_SAFE_DESCENT_SPEED) {
+        if (forcedDescent) {
             return "message.jeg.vehicle.helicopter_low_speed_warning";
         }
         return "message.jeg.vehicle.missile_warning";
