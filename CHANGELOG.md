@@ -14,10 +14,13 @@
 - Made `jeg:repair_kit` the bulletproof armor anvil repair material and `repairable(...)` material.
 - Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
 - Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
+- Increased aircraft no-input descent acceleration so powerless aircraft descend at roughly three times the previous terminal speed.
 
 ### Fixed
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
 - Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair-tool vehicle repair remains intact.
+- Fixed helicopter and aircraft impact damage so controlled slow landings no longer explode from accumulated height alone, while uncontrolled high falls still deal crash damage.
+- Restored helicopter rotor block-contact damage while airborne.
 
 ### Localization
 - Expanded `zh_cn.json` to cover every key present in this branch's `en_us.json`.
@@ -25,6 +28,7 @@
 ### Verification
 - Passed `.\gradlew compileJava`.
 - Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
+- Passed `.\gradlew compileJava` after the air vehicle impact/descent tuning.
 - Confirmed `repair_kit.json` parses and outputs `jeg:repair_kit`.
 - Confirmed `zh_cn.json` has no missing keys relative to `en_us.json`.
 - Full `build` and in-game gameplay checks were not run.
