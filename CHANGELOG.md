@@ -8,12 +8,13 @@
 ### Changed
 - Increased helicopter maximum descent speed to `1.05D/tick` and made unmanned, unpowered, and critically damaged helicopters descend smoothly toward that speed.
 - Slowed unmanned helicopter forced descent so falling from the old safe descent speed to max descent takes about 20 seconds.
+- Set helicopter forced-descent acceleration to 30% of the previous fast transition and made low-health forced descent start at 25 health.
 
 ### Fixed
 - Kept inspect playback from being interrupted by melee, draw, and normal sprint poses; shooting, reloading, and bayonet sprinting can interrupt it and replay starts from the beginning.
 - Changed helicopter vertical crash damage to scale only with descent speed, keeping `0.35D/tick` landings safe and capping full-speed vertical impact damage near 70% of max health.
 - Kept helicopter rotor motion and engine sound active while helicopters are descending in unmanned, unpowered, or low-health states.
-- Kept helicopter rotor speed from dropping directly to zero when players leave, including grounded helicopters.
+- Let helicopter rotor speed wind down gradually after players leave, matching normal landed shutdown behavior.
 - Restored fatal high-speed helicopter impact damage for block and vehicle collisions while leaving non-vehicle entity collisions unchanged.
 - Played the missile warning alert for helicopter passengers during unsafe descent.
 
