@@ -168,7 +168,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
     private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
-    private static final int VEHICLE_WARNING_DISPLAY_TICKS = 30;
+    private static final int VEHICLE_WARNING_DISPLAY_TICKS = 60;
+    private static final int VEHICLE_WARNING_SOUND_INTERVAL_TICKS = 10;
     private static final int RAM_DAMAGE_COOLDOWN_TICKS = 10;
     private static final String TAG_VEHICLE_ID = "VehicleDataId";
     private static final String TAG_HEALTH = "Health";
@@ -231,8 +232,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = 0.035D * 0.70D;
     private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
     private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
-    private static final int HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL = 20;
-    private static final float HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME = 6.0F;
+    private static final float HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME = 14.0F;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
@@ -289,7 +289,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private double lastTickSpeed;
     private double lastTickHorizontalSpeed;
     private double lastTickVerticalSpeed;
-    private int lastHelicopterDangerousDescentWarningTick = Integer.MIN_VALUE;
+    private String lastVehicleWarningSoundKey = "";
+    private int lastVehicleWarningSoundTick = Integer.MIN_VALUE;
     private int boatWaterborneTicks;
     private float turretYawO;
     private float turretPitchO;
@@ -1338,6 +1339,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.hasImpulse = true;
 
         DamageSource source = this.vehicleStrikeDamageSource();
+        this.playVehicleStrikeSound();
         if (vehicleType == VehicleType.HELICOPTER && this.lastTickSpeed >= HELICOPTER_FATAL_IMPACT_SPEED) {
             this.hurtVehicleIgnoringArmor(source, Math.max(damageAmount, this.maxVehicleHealth() + 1.0F));
             return;
@@ -2076,13 +2078,13 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         this.entityData.set(DATA_MISSILE_LOCKED, target != null);
         this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
-        if (this.shouldWarnSeekTarget() && target != null && this.tickCount % 20 == 0) {
+        if (this.shouldWarnSeekTarget() && target != null && this.tickCount % VEHICLE_WARNING_SOUND_INTERVAL_TICKS == 0) {
             this.warnSeekTarget(target);
         }
     }
 
     private void warnSeekTarget(Entity target) {
-        this.warnTarget(target, "message.jeg.vehicle.lock_warning", VehicleSoundHelper.lockedWarning(), 0.8F, 1.7F);
+        this.warnTarget(target, "message.jeg.vehicle.lock_warning", VehicleSoundHelper.lockedWarning(), 14.0F, 1.7F);
     }
 
     public static boolean hasRadarWarningSystem(Entity target) {
@@ -2090,7 +2092,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     public static void warnIncomingMissileTarget(Entity target) {
-        warnTarget(target, "message.jeg.vehicle.missile_warning", VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+        warnTarget(target, "message.jeg.vehicle.missile_warning", VehicleSoundHelper.missileWarning(), 14.0F, 1.0F);
     }
 
     private static Component warningMessage(String key, int tickCount) {
@@ -2108,6 +2110,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         if (target instanceof VehicleEntity vehicle) {
             vehicle.showVehicleWarning(messageKey);
+            vehicle.playVehicleWarningSound(messageKey, sound, volume, pitch);
+            return;
         }
         target.level().playSound(
                 null,
@@ -2124,6 +2128,25 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private void showVehicleWarning(String messageKey) {
         this.entityData.set(DATA_WARNING_MESSAGE, messageKey);
         this.entityData.set(DATA_WARNING_UNTIL_TICK, this.tickCount + VEHICLE_WARNING_DISPLAY_TICKS);
+    }
+
+    private void playVehicleWarningSound(String messageKey, SoundEvent sound, float volume, float pitch) {
+        if (messageKey.equals(this.lastVehicleWarningSoundKey)
+                && this.tickCount - this.lastVehicleWarningSoundTick < VEHICLE_WARNING_SOUND_INTERVAL_TICKS) {
+            return;
+        }
+        this.lastVehicleWarningSoundKey = messageKey;
+        this.lastVehicleWarningSoundTick = this.tickCount;
+        this.level().playSound(
+                null,
+                this.getX(),
+                this.getY(),
+                this.getZ(),
+                sound,
+                SoundSource.PLAYERS,
+                volume,
+                pitch
+        );
     }
 
     private static void warnPlayer(ServerPlayer player, Component message, SoundEvent sound, float volume, float pitch) {
@@ -4240,7 +4263,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
         boolean lowHealthDescent = this.isLowHealthDecayActive();
         boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || lowHealthDescent);
-        boolean rotorIdleLocked = this.onGround() && pilot == null && currentRotorSpeed <= 1.0E-4F;
+        boolean rotorIdleLocked = this.onGround() && pilot == null && currentRotorSpeed <= 0.005F;
         if (rotorIdleLocked) {
             up = false;
             down = false;
@@ -4248,6 +4271,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower = 0.0D;
             this.engineStart = false;
             this.engineStartOver = false;
+            this.holdTick = 0;
+            this.holdPowerTick = 0;
         }
         if (!hasEnergy) {
             up = false;
@@ -4281,7 +4306,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 this.holdTick = 0;
                 this.holdPowerTick = 0;
                 if (this.engineStartOver) {
-                    this.enginePower *= hasPlayerPassenger ? 0.99D : 0.9D;
+                    this.enginePower *= 0.99D;
                 }
                 if (!hasPlayerPassenger) {
                     this.engineStart = false;
@@ -4379,6 +4404,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower = 0.0D;
             this.engineStart = false;
             this.engineStartOver = false;
+            this.holdTick = 0;
+            this.holdPowerTick = 0;
         }
 
         float nextRotorSpeed = (float) Mth.lerp(0.18F, currentRotorSpeed, (float) this.enginePower);
@@ -4387,11 +4414,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             nextRotorSpeed = 0.0F;
             liftRotorSpeed = 0.0F;
         }
-        if (!this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
+        if (!rotorIdleLocked && !this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
             nextRotorSpeed = Math.max(nextRotorSpeed, HELICOPTER_DESCENT_ROTOR_SPEED);
         }
-        this.entityData.set(DATA_PROPELLER_SPEED, nextRotorSpeed * 0.9995F);
-        this.entityData.set(DATA_PROPELLER_ROT, this.propellerRot() + 30.0F * nextRotorSpeed);
+        this.entityData.set(DATA_PROPELLER_SPEED, rotorIdleLocked ? 0.0F : nextRotorSpeed * 0.9995F);
+        this.entityData.set(DATA_PROPELLER_ROT, rotorIdleLocked ? this.propellerRot() : this.propellerRot() + 30.0F * nextRotorSpeed);
 
         if (consumeEnergy && this.engineStart) {
             int cost = this.scaledEngineEnergyCost(engine, true, helicopterEnergyScale);
@@ -4434,35 +4461,29 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     private void warnHelicopterDangerousDescent(boolean forcedDescent) {
         if (this.level().isClientSide
-                || (!forcedDescent && this.getDeltaMovement().y >= -HELICOPTER_SAFE_DESCENT_SPEED)
-                || this.tickCount - this.lastHelicopterDangerousDescentWarningTick < HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL) {
+                || (!forcedDescent && this.getDeltaMovement().y >= -HELICOPTER_SAFE_DESCENT_SPEED)) {
             return;
         }
-        boolean warned = false;
         String warningKey = this.helicopterDangerWarningKey(forcedDescent);
         this.showVehicleWarning(warningKey);
         for (Entity passenger : this.getPassengers()) {
             if (passenger instanceof ServerPlayer player) {
-                playWarningSound(player, VehicleSoundHelper.missileWarning(), HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME, 1.0F);
-                warned = true;
+                this.playVehicleWarningSound(warningKey, VehicleSoundHelper.missileWarning(), HELICOPTER_DANGEROUS_DESCENT_WARNING_VOLUME, 1.0F);
             }
-        }
-        if (warned) {
-            this.lastHelicopterDangerousDescentWarningTick = this.tickCount;
         }
     }
 
     private String helicopterDangerWarningKey(boolean forcedDescent) {
+        if (forcedDescent) {
+            return "message.jeg.vehicle.helicopter_low_speed_warning";
+        }
         if (this.isLowHealthDecayActive()) {
             return "message.jeg.vehicle.helicopter_critical_damage_warning";
         }
         if (this.maxVehicleEnergy() > 0 && this.vehicleEnergy() <= 0) {
             return "message.jeg.vehicle.helicopter_power_loss_warning";
         }
-        if (forcedDescent) {
-            return "message.jeg.vehicle.helicopter_low_speed_warning";
-        }
-        return "message.jeg.vehicle.missile_warning";
+        return "message.jeg.vehicle.helicopter_low_speed_warning";
     }
 
     private void moveHelicopter(Vec3 velocity) {
