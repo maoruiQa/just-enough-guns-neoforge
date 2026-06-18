@@ -19,6 +19,7 @@
 - Played the missile warning alert for helicopter passengers during unsafe descent.
 - Played the helicopter warning alert during forced descent even while the current descent speed is still within the safe-speed range.
 - Prevented helicopter lift from holding forced-descent states above their target descent speed.
+- Made helicopter forced descent accumulate from the tick-start vertical speed so air drag cannot cap the fall around a low terminal speed.
 
 ### Verification
 - Passed `.\gradlew compileJava compileClientJava`.
@@ -28,6 +29,7 @@
 - Passed `.\gradlew compileJava compileClientJava` after increasing the helicopter forced-descent base step to 120%.
 - Passed `.\gradlew compileJava compileClientJava` after restoring linear forced descent and widening forced-descent warnings.
 - Passed `.\gradlew compileJava compileClientJava` after preventing forced-descent lift from limiting descent speed.
+- Passed `.\gradlew compileJava compileClientJava` after making forced descent accumulate before air drag.
 
 ## 1.7.1 - 2026-06-17
 
