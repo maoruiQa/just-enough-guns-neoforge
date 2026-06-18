@@ -219,9 +219,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final double VEHICLE_FALL_IMPACT_HEAVY_LINEAR_SCALE = 1.25D;
     private static final double VEHICLE_FALL_IMPACT_HEAVY_CURVE_SCALE = 0.5D;
     private static final double VEHICLE_FALL_IMPACT_SPEED_DAMAGE_SCALE = 7.5D;
+    private static final double AIR_VEHICLE_CONTROLLED_FULL_DROP_SPEED = 1.2D;
     private static final double HELICOPTER_FATAL_IMPACT_SPEED = 1.2D;
     private static final double AIR_VEHICLE_UNCONTROLLED_IMPACT_DAMAGE_THRESHOLD = LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
     private static final double AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED = 0.35D;
+    private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
+    private static final double HELICOPTER_MAX_DESCENT_SPEED = 1.05D;
+    private static final double HELICOPTER_FORCED_DESCENT_ACCELERATION = (HELICOPTER_MAX_DESCENT_SPEED - HELICOPTER_SAFE_DESCENT_SPEED) / (20.0D * 20.0D);
+    private static final double HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO = 0.70D;
+    private static final float HELICOPTER_DESCENT_ROTOR_SPEED = 0.035F;
+    private static final float HELICOPTER_UNMANNED_ROTOR_SPEED = 0.02F;
+    private static final int HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL = 20;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
@@ -276,6 +284,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private double lastTickSpeed;
     private double lastTickHorizontalSpeed;
     private double lastTickVerticalSpeed;
+    private int lastHelicopterDangerousDescentWarningTick = Integer.MIN_VALUE;
     private int boatWaterborneTicks;
     private float turretYawO;
     private float turretPitchO;
@@ -1324,8 +1333,21 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private float airVehicleImpactDamage(VehicleType vehicleType) {
         double horizontalImpactSpeed = this.horizontalCollision ? this.lastTickHorizontalSpeed : 0.0D;
         double verticalImpactSpeed = this.verticalCollision ? Math.abs(this.lastTickVerticalSpeed) : 0.0D;
+        if (vehicleType == VehicleType.HELICOPTER) {
+            return (float) (this.vehicleImpactDamage(horizontalImpactSpeed, 0.0D, 0.0D)
+                    + this.helicopterVerticalImpactDamage(verticalImpactSpeed));
+        }
         double fallDistance = this.verticalCollision ? this.airVehicleEffectiveFallDistance(verticalImpactSpeed) : 0.0D;
         return this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, fallDistance);
+    }
+
+    private double helicopterVerticalImpactDamage(double verticalImpactSpeed) {
+        if (verticalImpactSpeed <= HELICOPTER_SAFE_DESCENT_SPEED) {
+            return 0.0D;
+        }
+        double speedRange = HELICOPTER_MAX_DESCENT_SPEED - HELICOPTER_SAFE_DESCENT_SPEED;
+        double t = speedRange <= 0.0D ? 1.0D : Mth.clamp((verticalImpactSpeed - HELICOPTER_SAFE_DESCENT_SPEED) / speedRange, 0.0D, 1.0D);
+        return this.maxVehicleHealth() * HELICOPTER_VERTICAL_IMPACT_MAX_DAMAGE_RATIO * t * t;
     }
 
     private double airVehicleEffectiveFallDistance(double verticalImpactSpeed) {
@@ -1338,7 +1360,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (trackedFallDistance <= VEHICLE_FALL_IMPACT_SAFE_DROP) {
             return trackedFallDistance;
         }
-        double fullDropSpeed = uncontrolled ? AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED : HELICOPTER_FATAL_IMPACT_SPEED;
+        double fullDropSpeed = uncontrolled ? AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED : AIR_VEHICLE_CONTROLLED_FULL_DROP_SPEED;
         double speedRange = fullDropSpeed - damageThreshold;
         double speedFactor = speedRange <= 0.0D ? 1.0D : Mth.clamp((verticalImpactSpeed - damageThreshold) / speedRange, 0.0D, 1.0D);
         return VEHICLE_FALL_IMPACT_SAFE_DROP + (trackedFallDistance - VEHICLE_FALL_IMPACT_SAFE_DROP) * speedFactor;
@@ -1641,9 +1663,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.engineStart = false;
         this.engineStartOver = false;
         this.destroyRot = 0.0F;
-        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
-            this.entityData.set(DATA_PROPELLER_SPEED, 0.0F);
-        }
         this.cancelWeaponReload();
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
@@ -1661,9 +1680,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.engineStart = false;
         this.engineStartOver = false;
         this.destroyRot = 0.0F;
-        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) {
-            this.entityData.set(DATA_PROPELLER_SPEED, 0.0F);
-        }
         if (stopHorizontalMotion) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
@@ -2331,6 +2347,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (relativeSpeed < VEHICLE_COLLISION_MIN_RELATIVE_SPEED) {
             return false;
         }
+        if (this.applyFatalHelicopterVehicleEntityImpact(target)) {
+            return true;
+        }
         float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
         float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
         boolean targetDamaged = targetDamage > 0.0F && target.hurtVehicleStrikeWithArmor(this.vehicleStrikeDamageSource(), targetDamage);
@@ -2341,6 +2360,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return true;
         }
         return false;
+    }
+
+    private boolean applyFatalHelicopterVehicleEntityImpact(VehicleEntity target) {
+        boolean damaged = false;
+        if (this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                && this.lastTickSpeed >= HELICOPTER_FATAL_IMPACT_SPEED) {
+            damaged |= this.hurtVehicleIgnoringArmor(target.vehicleStrikeDamageSource(), this.maxVehicleHealth() + 1.0F);
+        }
+        if (target.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                && target.lastTickSpeed >= HELICOPTER_FATAL_IMPACT_SPEED) {
+            damaged |= target.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), target.maxVehicleHealth() + 1.0F);
+        }
+        if (damaged) {
+            target.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+            this.ramDamageCooldown = RAM_DAMAGE_COOLDOWN_TICKS;
+        }
+        return damaged;
     }
 
     private void tickVehicleEntityCollisionResolution() {
@@ -4140,7 +4176,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!active) {
             active = switch (type) {
                 case LAND, BOAT -> movement.x * movement.x + movement.z * movement.z > 0.0025D;
-                case HELICOPTER, AIRCRAFT -> movement.lengthSqr() > 0.0025D;
+                case HELICOPTER -> movement.lengthSqr() > 0.0025D || (!this.onGround() && movement.y < -1.0E-4D);
+                case AIRCRAFT -> movement.lengthSqr() > 0.0025D;
                 case ARTILLERY -> false;
             };
         }
@@ -4211,6 +4248,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         double altitude = this.helicopterAltitudeFromGround();
         double altitudeLimitFactor = Mth.clamp((HELICOPTER_ALTITUDE_LIMIT + HELICOPTER_ALTITUDE_SOFT_ZONE - altitude) / HELICOPTER_ALTITUDE_SOFT_ZONE, 0.0D, 1.0D);
         boolean altitudeLimited = altitudeLimitFactor <= 0.0D;
+        boolean forcedDescent = !this.onGround() && (pilot == null || !hasEnergy || this.vehicleHealth() <= 0.1F * this.maxVehicleHealth());
+        if (!hasEnergy) {
+            up = false;
+            down = false;
+            back = false;
+        }
         if (altitudeLimited) {
             up = false;
         }
@@ -4329,6 +4372,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.wheelSteering *= 0.9D;
 
         float nextRotorSpeed = (float) Mth.lerp(0.18F, currentRotorSpeed, (float) this.enginePower);
+        float liftRotorSpeed = nextRotorSpeed;
+        if (!this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
+            nextRotorSpeed = Math.max(nextRotorSpeed, HELICOPTER_DESCENT_ROTOR_SPEED);
+        }
+        if (pilot == null && currentRotorSpeed > 0.0F) {
+            nextRotorSpeed = Math.max(nextRotorSpeed, Math.min(currentRotorSpeed, HELICOPTER_UNMANNED_ROTOR_SPEED));
+        }
         this.entityData.set(DATA_PROPELLER_SPEED, nextRotorSpeed * 0.9995F);
         this.entityData.set(DATA_PROPELLER_ROT, this.propellerRot() + 30.0F * nextRotorSpeed);
 
@@ -4341,8 +4391,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
 
-        Vec3 lift = this.helicopterLiftVector(nextRotorSpeed * liftSpeed * mobility * altitudeLimitFactor);
+        double verticalSpeedBeforeGravity = velocity.y;
+        Vec3 lift = this.helicopterLiftVector(liftRotorSpeed * liftSpeed * mobility * altitudeLimitFactor);
         velocity = velocity.add(0.0D, -0.06D, 0.0D).add(lift);
+        if (forcedDescent) {
+            double descentTarget = Math.max(verticalSpeedBeforeGravity - HELICOPTER_FORCED_DESCENT_ACCELERATION, -HELICOPTER_MAX_DESCENT_SPEED);
+            velocity = new Vec3(velocity.x, Math.max(velocity.y, descentTarget), velocity.z);
+        }
         if (altitudeLimited && velocity.y > 0.0D) {
             velocity = new Vec3(velocity.x, velocity.y * 0.25D, velocity.z);
         }
@@ -4362,7 +4417,26 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             velocity = new Vec3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
         }
 
-        this.moveHelicopter(new Vec3(velocity.x, Mth.clamp(velocity.y, -0.35D, 0.45D), velocity.z));
+        this.moveHelicopter(new Vec3(velocity.x, Mth.clamp(velocity.y, -HELICOPTER_MAX_DESCENT_SPEED, 0.45D), velocity.z));
+        this.warnHelicopterDangerousDescent();
+    }
+
+    private void warnHelicopterDangerousDescent() {
+        if (this.level().isClientSide()
+                || this.getDeltaMovement().y >= -HELICOPTER_SAFE_DESCENT_SPEED
+                || this.tickCount - this.lastHelicopterDangerousDescentWarningTick < HELICOPTER_DANGEROUS_DESCENT_WARNING_INTERVAL) {
+            return;
+        }
+        boolean warned = false;
+        for (Entity passenger : this.getPassengers()) {
+            if (passenger instanceof ServerPlayer player) {
+                warnPlayer(player, Component.translatable("message.jeg.vehicle.missile_warning"), VehicleSoundHelper.missileWarning(), 2.0F, 1.0F);
+                warned = true;
+            }
+        }
+        if (warned) {
+            this.lastHelicopterDangerousDescentWarningTick = this.tickCount;
+        }
     }
 
     private void moveHelicopter(Vec3 velocity) {
