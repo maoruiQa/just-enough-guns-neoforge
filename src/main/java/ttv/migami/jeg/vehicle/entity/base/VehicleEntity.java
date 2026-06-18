@@ -4230,6 +4230,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
 
     private void tickHelicopterMovement(EngineInfo engine, boolean consumeEnergy) {
         Vec3 velocity = this.getDeltaMovement();
+        double verticalSpeedBeforeDrag = velocity.y;
         int forwardAxis = this.input.forwardAxis();
         int verticalAxis = this.input.verticalAxis();
         int steeringAxis = this.steeringAxis();
@@ -4394,7 +4395,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         Vec3 lift = this.helicopterLiftVector(liftRotorSpeed * liftSpeed * mobility * altitudeLimitFactor);
         velocity = velocity.add(0.0D, -0.06D, 0.0D).add(lift);
         if (forcedDescent) {
-            double descentTarget = Math.max(verticalSpeedBeforeGravity - HELICOPTER_FORCED_DESCENT_ACCELERATION, -HELICOPTER_MAX_DESCENT_SPEED);
+            double descentTarget = Math.max(verticalSpeedBeforeDrag - HELICOPTER_FORCED_DESCENT_ACCELERATION, -HELICOPTER_MAX_DESCENT_SPEED);
             velocity = new Vec3(velocity.x, Math.min(velocity.y, descentTarget), velocity.z);
         }
         if (altitudeLimited && velocity.y > 0.0D) {
