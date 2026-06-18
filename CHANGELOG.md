@@ -8,7 +8,7 @@
 ### Changed
 - Increased helicopter maximum descent speed to `1.05D/tick` and made unmanned, unpowered, and critically damaged helicopters descend smoothly toward that speed.
 - Slowed unmanned helicopter forced descent so falling from the old safe descent speed to max descent takes about 20 seconds.
-- Changed unmanned, unpowered, and low-health helicopter forced descent back to a linear curve with 70% of the previous fast transition as the base step, and made low-health forced descent start at 25 health.
+- Changed unmanned, unpowered, and low-health helicopter forced descent back to a linear curve with 70% of the previous fast transition as the base step, and made low-health forced descent start at 20 health.
 
 ### Fixed
 - Kept inspect playback from being interrupted by melee, draw, and normal sprint poses; shooting, reloading, and bayonet sprinting can interrupt it and replay starts from the beginning.
@@ -27,6 +27,9 @@
 - Prevented no-energy helicopters from spinning rotors or playing engine sound from pilot input alone.
 - Prevented stopped helicopters from briefly twitching their rotors when the pilot exits.
 - Smoothed fixed-wing no-pilot, no-energy, and critical-damage forced descent from the current vertical speed instead of snapping to maximum descent.
+- Lowered the helicopter low-health self-destruct threshold to 20 health.
+- Kept stopped helicopter rotors at zero when the pilot exits instead of spinning up briefly before winding down.
+- Kept helicopter low-speed warnings from switching into the missile incoming warning while forced descent continues.
 
 ### Verification
 - Passed `.\gradlew compileJava compileClientJava`.
@@ -39,6 +42,7 @@
 - Passed `.\gradlew compileJava compileClientJava` after making forced descent accumulate before air drag.
 - Passed `.\gradlew compileJava compileClientJava` after the low-energy engine and helicopter warning updates.
 - Passed `.\gradlew compileJava compileClientJava` after crosshair warnings, repair recovery, no-energy rotor gating, rotor-exit stability, and fixed-wing forced-descent smoothing.
+- Passed `.\gradlew compileJava compileClientJava` after the stopped-rotor exit, low-speed warning, and 20-health self-destruct threshold fixes.
 
 ## 1.7.1 - 2026-06-17
 
