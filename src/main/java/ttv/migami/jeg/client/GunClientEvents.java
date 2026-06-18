@@ -410,6 +410,14 @@ public final class GunClientEvents {
                 NetworkHandler.sendMelee();
             }
         }
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.INSPECT.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem) {
+                if (heldMain.getItem() instanceof AnimatedGunItem) {
+                    AnimatedGunItem.triggerClientInspect(minecraft.player);
+                }
+                NetworkHandler.sendInspect();
+            }
+        }
     }
 
     private static void tickImmediateGunSwitch(LocalPlayer player) {

@@ -2797,6 +2797,7 @@ public class GunItem extends Item {
             tooltip.add(Component.translatable("info.jeg.projectiles", stats.projectileAmount()));
         }
         tooltip.add(Component.translatable("info.jeg.open_attachments_z").withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("info.jeg.inspect_help", Component.translatable("key.jeg.inspect")).withStyle(ChatFormatting.YELLOW));
     }
 
     private static void addClientDryFireRecoil(float recoilAmount) {

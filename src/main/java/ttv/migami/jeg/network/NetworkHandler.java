@@ -59,6 +59,7 @@ public final class NetworkHandler {
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(MeleePayload.TYPE, MeleePayload.STREAM_CODEC, NetworkHandler::handleMelee)
+                .playToServer(InspectGunPayload.TYPE, InspectGunPayload.STREAM_CODEC, NetworkHandler::handleInspectGun)
                 .playToServer(ToggleFlashlightPayload.TYPE, ToggleFlashlightPayload.STREAM_CODEC, NetworkHandler::handleToggleFlashlight)
                 .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
                 .playToServer(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC, NetworkHandler::handleToggleMedals)
@@ -137,6 +138,18 @@ public final class NetworkHandler {
             toggleGunFlashlight(player, stack);
             GunAttachments.toggleLaserPointer(stack);
             AttachmentRuntimeEvents.handleBayonetMelee(player);
+        });
+    }
+
+    private static void handleInspectGun(InspectGunPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player) || player.isSpectator()) {
+                return;
+            }
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof AnimatedGunItem animated) {
+                animated.triggerInspect(player.level(), player, stack);
+            }
         });
     }
 
@@ -574,6 +587,10 @@ public final class NetworkHandler {
 
     public static void sendMelee() {
         sendToServer(MeleePayload.INSTANCE);
+    }
+
+    public static void sendInspect() {
+        sendToServer(InspectGunPayload.INSTANCE);
     }
 
     public static void sendToggleFlashlight() {
