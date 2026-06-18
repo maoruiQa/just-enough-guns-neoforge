@@ -218,6 +218,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final double VEHICLE_FALL_IMPACT_HEAVY_LINEAR_SCALE = 1.25D;
     private static final double VEHICLE_FALL_IMPACT_HEAVY_CURVE_SCALE = 0.5D;
     private static final double VEHICLE_FALL_IMPACT_SPEED_DAMAGE_SCALE = 7.5D;
+    private static final double HELICOPTER_FATAL_IMPACT_SPEED = 1.2D;
+    private static final double AIR_VEHICLE_UNCONTROLLED_IMPACT_DAMAGE_THRESHOLD = LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
+    private static final double AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED = 0.35D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MIN_SPEED = 0.22D;
     private static final double LAND_VEHICLE_BODY_IMPACT_MAX_MOVED_RATIO = 0.75D;
     private static final double LAND_VEHICLE_BODY_IMPACT_PROBE_DISTANCE = 0.65D;
@@ -232,6 +235,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final float VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER = 0.65F;
     private static final double HELICOPTER_ALTITUDE_LIMIT = 160.0D;
     private static final double HELICOPTER_ALTITUDE_SOFT_ZONE = 12.0D;
+    private static final double AIRCRAFT_IDLE_DESCENT_ACCELERATION = 0.03D;
     private static final float HELICOPTER_ROTOR_GROUND_DAMAGE = 1.0F;
     private static final float HELICOPTER_ROTOR_DAMAGE_MIN_SPEED = 0.02F;
     private static final double HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS = 0.55D;
@@ -269,6 +273,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private double wheelSteering;
     private double enginePower;
     private double lastTickSpeed;
+    private double lastTickHorizontalSpeed;
+    private double lastTickVerticalSpeed;
     private int boatWaterborneTicks;
     private float turretYawO;
     private float turretPitchO;
@@ -1211,9 +1217,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.updateVehicleSupportTicks();
     }
 
+    private void resetAirborneImpactTracking() {
+        this.unsupportedVehicleTicks = 0;
+        this.airborneStartY = Double.NaN;
+        this.airborneMaxY = Double.NaN;
+    }
+
     private void updateLastTickMovementSpeed() {
         Vec3 movement = this.getDeltaMovement();
-        this.lastTickSpeed = new Vec3(movement.x, movement.y + 0.06D, movement.z).length();
+        this.lastTickHorizontalSpeed = new Vec3(movement.x, 0.0D, movement.z).length();
+        this.lastTickVerticalSpeed = movement.y + 0.06D;
+        this.lastTickSpeed = new Vec3(movement.x, this.lastTickVerticalSpeed, movement.z).length();
     }
 
     private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported, int unsupportedTicksBeforeMove) {
@@ -1223,8 +1237,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return;
         }
         VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
+        if (vehicleType == VehicleType.HELICOPTER || vehicleType == VehicleType.AIRCRAFT) {
+            this.applyAirVehicleImpactDamage(vehicleType, requestedMovement);
+            return;
+        }
         boolean landVehicle = vehicleType == VehicleType.LAND;
-        boolean helicopterVehicle = vehicleType == VehicleType.HELICOPTER;
         boolean supportedAfterMove = this.onGround() || this.verticalCollisionBelow;
         int fallAirborneTicks = landVehicle ? LAND_VEHICLE_FALL_DAMAGE_AIRBORNE_TICKS : 8;
         double trackedFallDistance = this.currentAirborneDropDistance();
@@ -1247,9 +1264,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             horizontalImpactSpeed = 0.0D;
         }
         double verticalImpactSpeed = this.verticalCollision && !wasVerticallySupported ? Math.abs(requestedMovement.y() - actualMovement.y()) : 0.0D;
-        if (helicopterVehicle) {
-            verticalImpactSpeed = 0.0D;
-        } else if (landedAfterFall) {
+        if (landedAfterFall) {
             double fallDurationBonus = Math.max(0, unsupportedTicksBeforeMove - fallAirborneTicks) * 0.015D;
             verticalImpactSpeed = Math.max(verticalImpactSpeed, Math.abs(requestedMovement.y) + fallDurationBonus);
         }
@@ -1271,9 +1286,60 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         if (this.horizontalCollision) {
             this.bounceHorizontal(bounceDirection);
+        }
+        this.enginePower *= 0.8D;
+        this.hasImpulse = true;
+    }
+
+    private void applyAirVehicleImpactDamage(VehicleType vehicleType, Vec3 requestedMovement) {
+        if (!this.verticalCollision && !this.horizontalCollision) {
+            return;
+        }
+        float damageAmount = this.airVehicleImpactDamage(vehicleType);
+        if (damageAmount <= 0.0F) {
+            return;
+        }
+        this.resetAirborneImpactTracking();
+        this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
+        Direction bounceDirection = this.impactBounceDirection(requestedMovement);
+        if (this.verticalCollision) {
+            this.bounceVertical(bounceDirection);
+        }
+        if (this.horizontalCollision) {
+            this.bounceHorizontal(bounceDirection);
             this.enginePower *= 0.8D;
         }
         this.hasImpulse = true;
+
+        DamageSource source = this.vehicleStrikeDamageSource();
+        if (vehicleType == VehicleType.HELICOPTER && this.lastTickSpeed >= HELICOPTER_FATAL_IMPACT_SPEED) {
+            this.hurtVehicleIgnoringArmor(source, Math.max(damageAmount, this.maxVehicleHealth() + 1.0F));
+            return;
+        }
+        this.hurtVehicleStrikeWithArmor(source, damageAmount);
+    }
+
+    private float airVehicleImpactDamage(VehicleType vehicleType) {
+        double horizontalImpactSpeed = this.horizontalCollision ? this.lastTickHorizontalSpeed : 0.0D;
+        double verticalImpactSpeed = this.verticalCollision ? Math.abs(this.lastTickVerticalSpeed) : 0.0D;
+        double fallDistance = this.verticalCollision ? this.airVehicleEffectiveFallDistance(verticalImpactSpeed) : 0.0D;
+        return this.vehicleImpactDamage(horizontalImpactSpeed, verticalImpactSpeed, fallDistance);
+    }
+
+    private double airVehicleEffectiveFallDistance(double verticalImpactSpeed) {
+        boolean uncontrolled = this.getControllingPassenger() == null;
+        double damageThreshold = uncontrolled ? AIR_VEHICLE_UNCONTROLLED_IMPACT_DAMAGE_THRESHOLD : VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD;
+        if (verticalImpactSpeed <= damageThreshold) {
+            return 0.0D;
+        }
+        double trackedFallDistance = this.currentAirborneDropDistance();
+        if (trackedFallDistance <= VEHICLE_FALL_IMPACT_SAFE_DROP) {
+            return trackedFallDistance;
+        }
+        double fullDropSpeed = uncontrolled ? AIR_VEHICLE_UNCONTROLLED_FULL_DROP_SPEED : HELICOPTER_FATAL_IMPACT_SPEED;
+        double speedRange = fullDropSpeed - damageThreshold;
+        double speedFactor = speedRange <= 0.0D ? 1.0D : Mth.clamp((verticalImpactSpeed - damageThreshold) / speedRange, 0.0D, 1.0D);
+        return VEHICLE_FALL_IMPACT_SAFE_DROP + (trackedFallDistance - VEHICLE_FALL_IMPACT_SAFE_DROP) * speedFactor;
     }
 
     private Vec3 stopAtVehicleEntityImpact(Vec3 before, Vec3 requestedMovement, Vec3 actualMovement, Vec3 velocityBeforeMove) {
@@ -1334,9 +1400,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     private void updateVehicleSupportTicks() {
         if (this.onGround() || this.verticalCollisionBelow) {
-            this.unsupportedVehicleTicks = 0;
-            this.airborneStartY = Double.NaN;
-            this.airborneMaxY = Double.NaN;
+            this.resetAirborneImpactTracking();
         } else {
             if (Double.isNaN(this.airborneStartY)) {
                 this.airborneStartY = this.getY();
@@ -4017,7 +4081,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         double drag = this.input.brake() ? 0.82D : 0.94D;
         velocity = velocity.multiply(drag, 0.90D, drag);
         if (verticalAxis == 0) {
-            velocity = velocity.add(0.0D, -0.01D, 0.0D);
+            velocity = velocity.add(0.0D, -AIRCRAFT_IDLE_DESCENT_ACCELERATION, 0.0D);
         }
 
         this.setDeltaMovement(velocity);
