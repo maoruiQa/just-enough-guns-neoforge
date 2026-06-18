@@ -22,6 +22,11 @@
 - Made helicopter forced descent accumulate from the tick-start vertical speed so air drag cannot cap the fall around a low terminal speed.
 - Prevented active vehicle engines from continuing to move at very low energy without draining the remaining energy.
 - Made missile and helicopter danger warnings flash red, increased helicopter warning volume, and added helicopter HUD warnings for low speed, power loss, and critical damage.
+- Moved vehicle warning prompts to a flashing crosshair HUD message instead of the old passenger actionbar position.
+- Stopped recovered helicopters from continuing low-health self-destruct decay after being repaired above the critical threshold.
+- Prevented no-energy helicopters from spinning rotors or playing engine sound from pilot input alone.
+- Prevented stopped helicopters from briefly twitching their rotors when the pilot exits.
+- Smoothed fixed-wing no-pilot, no-energy, and critical-damage forced descent from the current vertical speed instead of snapping to maximum descent.
 
 ### Verification
 - Passed `.\gradlew compileJava compileClientJava`.
@@ -33,6 +38,7 @@
 - Passed `.\gradlew compileJava compileClientJava` after preventing forced-descent lift from limiting descent speed.
 - Passed `.\gradlew compileJava compileClientJava` after making forced descent accumulate before air drag.
 - Passed `.\gradlew compileJava compileClientJava` after the low-energy engine and helicopter warning updates.
+- Passed `.\gradlew compileJava compileClientJava` after crosshair warnings, repair recovery, no-energy rotor gating, rotor-exit stability, and fixed-wing forced-descent smoothing.
 
 ## 1.7.1 - 2026-06-17
 
