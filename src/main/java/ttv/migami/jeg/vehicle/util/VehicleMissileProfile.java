@@ -43,7 +43,7 @@ public record VehicleMissileProfile(
                     0.16D,
                     3.0F,
                     6.0D,
-                    60.0F,
+                    180.0F,
                     12.0F
             ),
             Reference.id("vehicle_9m120_driver_missile"), new VehicleMissileProfile(
@@ -54,7 +54,7 @@ public record VehicleMissileProfile(
                     0.14D,
                     3.5F,
                     7.0D,
-                    80.0F,
+                    180.0F,
                     18.0F
             ),
             Reference.id("vehicle_9m120_passenger_missile"), new VehicleMissileProfile(
@@ -65,7 +65,7 @@ public record VehicleMissileProfile(
                     0.14D,
                     3.5F,
                     7.0D,
-                    80.0F,
+                    180.0F,
                     18.0F
             ),
             Reference.id("vehicle_kh39_missile"), new VehicleMissileProfile(
@@ -76,7 +76,7 @@ public record VehicleMissileProfile(
                     0.12D,
                     5.5F,
                     12.0D,
-                    180.0F,
+                    300.0F,
                     32.0F
             ),
             Reference.id("vehicle_9m336_missile"), new VehicleMissileProfile(
@@ -87,7 +87,7 @@ public record VehicleMissileProfile(
                     0.18D,
                     3.2F,
                     6.0D,
-                    90.0F,
+                    70.0F,
                     20.0F
             )
     );
