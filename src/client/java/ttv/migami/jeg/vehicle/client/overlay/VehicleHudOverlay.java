@@ -48,6 +48,8 @@ public final class VehicleHudOverlay {
     private static final int WEAPON_ICON_HEIGHT = 16;
     private static final int WEAPON_ICON_TEXTURE_WIDTH = 300;
     private static final int WEAPON_ICON_TEXTURE_HEIGHT = 64;
+    private static final float HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH = 25.0F;
+    private static final double HELICOPTER_SAFE_DESCENT_SPEED = 0.35D;
     private static final Identifier[] WEAPON_FRAMES = {
             Reference.id("textures/overlay/vehicle/weapon/frame/frame_1.png"),
             Reference.id("textures/overlay/vehicle/weapon/frame/frame_2.png"),
@@ -98,6 +100,7 @@ public final class VehicleHudOverlay {
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
         renderSpeedIndicator(guiGraphics, minecraft, vehicle);
+        renderHelicopterWarning(guiGraphics, minecraft, vehicle);
         boolean showCompactVehicleInfo = !focusedSight || vehicle.vehicleData().defaults().vehicleType() == VehicleType.BOAT;
         if (!showCompactVehicleInfo) {
             return;
@@ -311,6 +314,38 @@ public final class VehicleHudOverlay {
         int x = guiGraphics.guiWidth() - minecraft.font.width(speed) - 16;
         int y = 16;
         guiGraphics.text(minecraft.font, speed, x, y, 0xFF66FF00);
+    }
+
+    private static void renderHelicopterWarning(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (vehicle.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER || minecraft.player == null) {
+            return;
+        }
+        String warningKey = helicopterWarningKey(vehicle);
+        if (warningKey == null) {
+            return;
+        }
+        Component warning = Component.translatable(warningKey);
+        int color = (vehicle.tickCount / 10) % 2 == 0 ? 0xFFFF2222 : 0xFF7F0000;
+        int x = (guiGraphics.guiWidth() - minecraft.font.width(warning)) / 2;
+        int y = guiGraphics.guiHeight() / 2 + 42;
+        guiGraphics.text(minecraft.font, warning, x, y, color);
+    }
+
+    private static String helicopterWarningKey(VehicleEntity vehicle) {
+        if (vehicle.vehicleHealth() <= HELICOPTER_CRITICAL_DAMAGE_WARNING_HEALTH) {
+            return "message.jeg.vehicle.helicopter_critical_damage_warning";
+        }
+        if (vehicle.maxVehicleEnergy() > 0 && vehicle.vehicleEnergy() <= 0) {
+            return "message.jeg.vehicle.helicopter_power_loss_warning";
+        }
+        boolean forcedDescent = !vehicle.onGround() && vehicle.getControllingPassenger() == null;
+        if (forcedDescent && Math.abs(vehicle.getDeltaMovement().y) <= HELICOPTER_SAFE_DESCENT_SPEED) {
+            return "message.jeg.vehicle.helicopter_low_speed_warning";
+        }
+        if (!vehicle.onGround() && vehicle.getDeltaMovement().y < -HELICOPTER_SAFE_DESCENT_SPEED) {
+            return "message.jeg.vehicle.missile_warning";
+        }
+        return null;
     }
 
     private static void blitWeaponIcon(GuiGraphicsExtractor guiGraphics, Identifier icon, int x, int y) {

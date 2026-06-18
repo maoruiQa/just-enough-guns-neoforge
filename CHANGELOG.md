@@ -20,6 +20,8 @@
 - Played the helicopter warning alert during forced descent even while the current descent speed is still within the safe-speed range.
 - Prevented helicopter lift from holding forced-descent states above their target descent speed.
 - Made helicopter forced descent accumulate from the tick-start vertical speed so air drag cannot cap the fall around a low terminal speed.
+- Prevented active vehicle engines from continuing to move at very low energy without draining the remaining energy.
+- Made missile and helicopter danger warnings flash red, increased helicopter warning volume, and added helicopter HUD warnings for low speed, power loss, and critical damage.
 
 ### Verification
 - Passed `.\gradlew compileJava compileClientJava`.
@@ -30,6 +32,7 @@
 - Passed `.\gradlew compileJava compileClientJava` after restoring linear forced descent and widening forced-descent warnings.
 - Passed `.\gradlew compileJava compileClientJava` after preventing forced-descent lift from limiting descent speed.
 - Passed `.\gradlew compileJava compileClientJava` after making forced descent accumulate before air drag.
+- Passed `.\gradlew compileJava compileClientJava` after the low-energy engine and helicopter warning updates.
 
 ## 1.7.1 - 2026-06-17
 
