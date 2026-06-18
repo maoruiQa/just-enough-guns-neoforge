@@ -33,6 +33,13 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping INSPECT = new KeyMapping(
+            "key.jeg.inspect",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Y,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
             InputConstants.Type.KEYSYM,
@@ -104,6 +111,7 @@ public final class KeyBindings {
         KeyMappingHelper.registerKeyMapping(RELOAD);
         KeyMappingHelper.registerKeyMapping(ATTACHMENTS);
         KeyMappingHelper.registerKeyMapping(MELEE);
+        KeyMappingHelper.registerKeyMapping(INSPECT);
         KeyMappingHelper.registerKeyMapping(VEHICLE_FREE_LOOK);
         KeyMappingHelper.registerKeyMapping(VEHICLE_SWITCH_WEAPON);
         KeyMappingHelper.registerKeyMapping(VEHICLE_PREVIOUS_WEAPON);

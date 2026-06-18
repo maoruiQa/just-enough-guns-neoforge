@@ -136,6 +136,10 @@ public final class ClientNetworkHandler {
         ClientPlayNetworking.send(MeleePayload.INSTANCE);
     }
 
+    public static void sendInspect() {
+        ClientPlayNetworking.send(InspectGunPayload.INSTANCE);
+    }
+
     public static void sendToggleFlashlight() {
         ClientPlayNetworking.send(ToggleFlashlightPayload.INSTANCE);
     }
