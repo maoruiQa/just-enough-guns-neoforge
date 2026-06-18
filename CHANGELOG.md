@@ -18,6 +18,7 @@
 - Restored fatal high-speed helicopter impact damage for block and vehicle collisions while leaving non-vehicle entity collisions unchanged.
 - Played the missile warning alert for helicopter passengers during unsafe descent.
 - Played the helicopter warning alert during forced descent even while the current descent speed is still within the safe-speed range.
+- Prevented helicopter lift from holding forced-descent states above their target descent speed.
 
 ### Verification
 - Passed `.\gradlew compileJava`.
@@ -26,6 +27,7 @@
 - Passed `.\gradlew compileJava` after the exponential helicopter forced-descent curve update.
 - Passed `.\gradlew compileJava` after increasing the helicopter forced-descent base step to 120%.
 - Passed `.\gradlew compileJava` after restoring linear forced descent and widening forced-descent warnings.
+- Passed `.\gradlew compileJava` after preventing forced-descent lift from limiting descent speed.
 
 ## 1.7.1 - 2026-06-17
 
