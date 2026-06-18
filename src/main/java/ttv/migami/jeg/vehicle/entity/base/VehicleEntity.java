@@ -4295,7 +4295,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         velocity = velocity.add(0.0D, -0.06D, 0.0D).add(lift);
         if (forcedDescent) {
             double descentTarget = Math.max(verticalSpeedBeforeGravity - HELICOPTER_FORCED_DESCENT_ACCELERATION, -HELICOPTER_MAX_DESCENT_SPEED);
-            velocity = new Vec3(velocity.x, Math.max(velocity.y, descentTarget), velocity.z);
+            velocity = new Vec3(velocity.x, Math.min(velocity.y, descentTarget), velocity.z);
         }
         if (altitudeLimited && velocity.y > 0.0D) {
             velocity = new Vec3(velocity.x, velocity.y * 0.25D, velocity.z);
