@@ -463,6 +463,14 @@ public final class GunClientEvents {
                 NetworkHandler.sendMelee();
             }
         }
+        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.INSPECT.consumeClick()) {
+            if (heldMain.getItem() instanceof GunItem) {
+                if (heldMain.getItem() instanceof AnimatedGunItem) {
+                    AnimatedGunItem.triggerClientInspect(minecraft.player);
+                }
+                NetworkHandler.sendInspect();
+            }
+        }
 
     }
 
