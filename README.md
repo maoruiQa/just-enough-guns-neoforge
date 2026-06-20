@@ -1,10 +1,10 @@
 # Just Enough Guns New
 
-A modern fork and port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, and late-game aerial threats to newer Minecraft versions.
+A modern fork and port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
 ![Walkürenritt vehicle assault](screenshots/Walkürenritt.png)
 
-Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current 1.6.x line expands the battlefield with the Walkürenritt vehicle update, adding craftable and deployable combat vehicles alongside the gunner, raid, and Terror Phantom systems.
+Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current 1.7.1 builds move the maintained Java 25 line to Minecraft 26.2 while carrying forward repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
 
 ## Screenshots
 
@@ -17,35 +17,40 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 - Broad firearm lineup: pistols, revolvers, rifles, SMGs, shotguns, machine guns, launchers, bows, flamethrower-style weapons, and special late-game guns.
 - Survival progression: workbenches, ammo, magazines, attachments, skins, and repair items.
 - Modern gun handling: left-click shooting, right-click aiming, magazine reloads, recoil, movement spread, dynamic crosshair expansion, hit markers, muzzle effects, and bullet trails.
-- Heavy weapon behavior: overheating support, cooling feedback, and hold-to-fire rocket launcher timing.
+- Extended magazine system: base, extended, and drum magazines for supported rifle, SMG, and shotgun reloads.
+- Forge-style melee support: V-key gun melee, flashlight toggles, sword bayonet damage, and first-person melee or bayonet animations for animated guns.
+- Animated gun inspection on the Y key for held animated guns.
 - Walkürenritt vehicle warfare: assembled land vehicles, boats, aircraft, helicopters, fixed weapon platforms, vehicle inventories, repair tools, charging support, missiles, decoys, and dedicated vehicle HUDs.
 - Hostile gunner mobs: zombie-family, skeleton-family, piglin-family, pillager/vindicator, phantom, ghoul, and parched gunner variants.
 - Faction encounters: patrols, faction omen flow, home-triggered raids, raid flares, boss bars, configurable raid waves, and faction-specific blueprint rewards.
 - Terror Phantom content: rare sky threat, Bound Terror Phantom guardian variant, phantom gunner summons, configurable death explosions, and End Ship Armada structure encounters.
 - Defensive gear: bulletproof helmets and vests, plus armored Joy Harness upgrades.
-- Server configuration: tune gunners, raids, UI visibility, dynamic crosshair, hit feedback, Terror Phantom behavior, spread, explosions, and other combat systems.
+- Server configuration: tune gunners, raids, UI visibility, dynamic crosshair, hit feedback, Terror Phantom behavior, spread, explosions, vehicles, and other combat systems.
 
 ## Latest Release Notes
 
-Version `1.6.x` is **Walkürenritt**, the vehicle update. This release moves Just Enough Guns beyond infantry combat and turns the mod into a combined-arms sandbox, with assembled vehicles, mounted weapons, vehicle HUDs, missiles, defensive tools, repairs, and charging support built into normal survival progression.
+Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed weapon and Walkürenritt vehicle work, then adds maintenance fixes and the maintained 26.2 ports.
 
-The update is centered on battlefield mobility and vehicle combat:
-
-- Added the configured vehicle system with data-driven vehicle definitions, vehicle inventories, assembling recipes, charging station support, repair tools, vehicle HUDs, vehicle controls, and dedicated renderers.
-- Added the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower vehicle lineup.
-- Added vehicle weapons, missiles, decoys, sounds, icons, models, textures, recipes, and assembly data aligned with the SuperbWarfare-style vehicle sandbox.
-- Tuned land, boat, helicopter, aircraft, and fixed-platform handling, including camera behavior, seat positions, passenger visibility, weapon stations, reverse speeds, collision boxes, armor profiles, and damage behavior.
-- Improved vehicle support systems, including charging station throughput, repair-tool support, smoke-screen behavior, ammo display names, reload HUD behavior, missile lock, target warnings, dismount handling, and blocked-wall checks.
-- Reduced vehicle debug logging noise and documented the vehicle alignment mapping for future porting work.
+- Added maintained Fabric 26.2 and NeoForge 26.2 branches; Fabric 26.1 and NeoForge 26.1 are now legacy maintenance/reference lines.
+- Restored the `jeg:repair_kit` recipe and made the repair kit the anvil repair material for guns and bulletproof armor.
+- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair tools still repair vehicles.
+- Added first-person held-gun left/right movement camera sway.
+- Fixed Fabric 1.21.1 custom reload key handling and Flamethrower reload timing.
+- Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
+- Fixed MI-28 gunner pitch limits and 26.2 vehicle assembly preview entity IDs.
+- Added Y-key gun inspect animations and updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
+- Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
 
 ## Supported Versions
 
 | Loader | Minecraft | Java | Mod Version | Required Dependencies |
 | --- | --- | --- | --- | --- |
-| Fabric | 1.21.1 | Java 21 | 1.6.x | Fabric API, GeckoLib 4.8.3 |
-| NeoForge | 1.21.1-1.21.4 | Java 21 | 1.6.x | NeoForge 21.1.x, GeckoLib 4.8.3 |
-| Fabric | 26.1 | Java 25 | 1.6.x | Fabric API, GeckoLib 5.5+ |
-| NeoForge | 26.1 | Java 25 | 1.6.x | NeoForge 26.1.x, GeckoLib 5.5 |
+| Fabric | 1.21.1 | Java 21 | 1.7.1 | Fabric API, GeckoLib 4.8.3 |
+| NeoForge | 1.21.1-1.21.4 | Java 21 | 1.7.1 | NeoForge 21.1.x, GeckoLib 4.8.3 |
+| Fabric | 26.2 | Java 25 | 1.7.1 | Fabric API, GeckoLib 5.5+ |
+| NeoForge | 26.2 | Java 25 | 1.7.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+
+The older Fabric 26.1 and NeoForge 26.1 branches are legacy lines after the 26.2 port. Use 26.2 for the maintained Java 25 release line unless you specifically need a 26.1 legacy build.
 
 Install the Just Enough Guns New file that matches your loader and Minecraft version. Do not mix Fabric and NeoForge builds.
 
@@ -58,6 +63,8 @@ For version `1.3.0` and newer, gun controls use the modern input layout:
 | Shoot | Left Click |
 | Aim down sights | Right Click |
 | Reload | R |
+| Inspect animated gun | Y |
+| Gun melee / flashlight toggle, where supported | V |
 | Sneak behavior, where supported | Shift |
 
 Older builds before `1.3.0` used right-click shooting, `F` reload, and `Shift` aiming. If you are updating from an old version, check your keybinds after launch.
@@ -131,6 +138,7 @@ The mod exposes in-game configuration commands for common server tuning. Availab
 - UI: ammo HUD, timer HUD, crosshair, dynamic crosshair, and hit markers.
 - Mobs: gunner conversion chances, Parched gunner conversion, Phantom Gunner death explosions, and Terror Phantom behavior.
 - Raids: faction patrols, raid wave timing, raid counts, and gunner accuracy scaling.
+- Vehicles: vehicle assembly, enemy vehicle spawning, vehicle combat behavior, and vehicle support systems.
 
 Config changes should be tested on a copy of the world before using them on a long-running server.
 
