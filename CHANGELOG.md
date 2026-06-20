@@ -9,6 +9,7 @@
 - Added Y-key gun inspect animations for held animated guns, including tooltip guidance.
 
 ### Changed
+- Increased Terror Phantom and drivable vehicle entity tracking range to 14 chunks so they can stay synced and visible out to roughly 224 blocks.
 - Set the module version to `1.7.1`.
 - Renamed the visible repair kit item to `Gun Repair Kit` / `枪械维修包` without changing the `jeg:repair_kit` registry ID.
 - Changed gun anvil repair material and item `repairable(...)` properties from iron ingots to `jeg:repair_kit`.
