@@ -601,6 +601,9 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
                 && renderStack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
             return false;
         }
+        if (isClientAiming()) {
+            return false;
+        }
 
         state.getController().forceAnimationReset();
         boolean triggered = state.getController().tryTriggerAnimation(ANIM_DRAW);
@@ -608,7 +611,8 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         if (triggered) {
             clearPendingClientDraw();
         }
-        return triggered;
+        state.setAndContinue(DRAW);
+        return true;
     }
 
     private static void clearPendingClientDraw() {
