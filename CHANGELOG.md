@@ -1,16 +1,34 @@
 # Changelog
 
-## Unreleased - 2026-06-18
+## 1.7.1 - 2026-06-17
 
 ### Added
+- Restored the `jeg:repair_kit` recipe from the disabled recipe file while keeping the existing item ID.
+- Added a repair kit tooltip explaining anvil repair support for guns and bulletproof armor.
+- Added first-person held-gun left/right movement camera sway, separate from recoil handling.
 - Added Y-key gun inspect animations for held animated guns, including tooltip guidance.
 
 ### Changed
+- Set the module version to `1.7.1`.
+- Renamed the visible repair kit item to `Gun Repair Kit` / `枪械维修包` without changing the `jeg:repair_kit` registry ID.
+- Changed gun anvil repair material from iron ingots to `jeg:repair_kit`.
+- Made `jeg:repair_kit` the bulletproof armor anvil repair material.
+- Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
+- Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
+- Increased aircraft no-input descent acceleration so powerless aircraft descend at roughly three times the previous terminal speed.
+- Updated vehicle missile profiles, increasing ground-attack missile turn limits and retuning the 9M336 air-target missile turn limit.
 - Increased helicopter maximum descent speed to `1.05D/tick` and made unmanned, unpowered, and critically damaged helicopters descend smoothly toward that speed.
 - Slowed unmanned helicopter forced descent so falling from the old safe descent speed to max descent takes about 20 seconds.
 - Changed unmanned, unpowered, and low-health helicopter forced descent back to a linear curve with 70% of the previous fast transition as the base step, and made low-health forced descent start at 20 health.
 
 ### Fixed
+- Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
+- Fixed first-person gun draw startup during hotbar switches so pending draw playback becomes authoritative immediately after switch-in.
+- Fixed Grenade Launcher reload animation so it uses the authored single reload clip instead of missing segmented reload loop/stop clips.
+- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair-tool vehicle repair remains intact.
+- Fixed helicopter and aircraft impact damage so controlled slow landings no longer explode from accumulated height alone, while uncontrolled high falls still deal crash damage.
+- Restored helicopter rotor block-contact damage while airborne.
+- Kept tracked backup copies of `GunItem.java` consistent with the repair-kit material change.
 - Kept inspect playback from being interrupted by melee, draw, and normal sprint poses; shooting, reloading, and bayonet sprinting can interrupt it and replay starts from the beginning.
 - Changed helicopter vertical crash damage to scale only with descent speed, keeping `0.35D/tick` landings safe and capping full-speed vertical impact damage near 70% of max health.
 - Kept helicopter rotor motion and engine sound active while helicopters are descending in unmanned, unpowered, or low-health states.
@@ -31,7 +49,17 @@
 - Kept stopped helicopter rotors at zero when the pilot exits instead of spinning up briefly before winding down.
 - Kept helicopter low-speed warnings from switching into the missile incoming warning while forced descent continues.
 
+### Localization
+- Expanded `zh_cn.json` to cover every key present in this branch's `en_us.json`.
+
 ### Verification
+- Passed `.\gradlew compileJava`.
+- Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
+- Passed `.\gradlew compileJava` after the air vehicle impact/descent tuning.
+- Passed `.\gradlew compileJava` after the gun animation fixes.
+- Confirmed `repair_kit.json` parses and outputs `jeg:repair_kit`.
+- Confirmed `zh_cn.json` has no missing keys relative to `en_us.json`.
+- Full `build` and in-game gameplay checks were not run.
 - Passed `.\gradlew compileJava`.
 - Passed `.\gradlew compileJava` after the helicopter descent, crash damage, and feedback tuning.
 - Passed `.\gradlew compileJava` after the helicopter rotor, descent, fatal impact, and warning updates.
@@ -43,40 +71,6 @@
 - Passed `.\gradlew compileJava` after the low-energy engine and helicopter warning updates.
 - Passed `.\gradlew compileJava` after crosshair warnings, repair recovery, no-energy rotor gating, rotor-exit stability, and fixed-wing forced-descent smoothing.
 - Passed `.\gradlew compileJava` after the stopped-rotor exit, low-speed warning, and 20-health self-destruct threshold fixes.
-
-## 1.7.1 - 2026-06-17
-
-### Added
-- Restored the `jeg:repair_kit` recipe from the disabled recipe file while keeping the existing item ID.
-- Added a repair kit tooltip explaining anvil repair support for guns and bulletproof armor.
-- Added first-person held-gun left/right movement camera sway, separate from recoil handling.
-
-### Changed
-- Set the module version to `1.7.1`.
-- Renamed the visible repair kit item to `Gun Repair Kit` / `枪械维修包` without changing the `jeg:repair_kit` registry ID.
-- Changed gun anvil repair material from iron ingots to `jeg:repair_kit`.
-- Made `jeg:repair_kit` the bulletproof armor anvil repair material.
-- Converted targeted player-visible hardcoded strings to translation keys in vehicle assembly UI, attachment UI, gun overheating tooltip/message, Terror Raid bossbar, and command feedback.
-- Reduced rocket and missile block damage and splash reach when directly hitting vehicles, while keeping direct vehicle hit damage intact.
-- Increased aircraft no-input descent acceleration so powerless aircraft descend at roughly three times the previous terminal speed.
-
-### Fixed
-- Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
-- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair-tool vehicle repair remains intact.
-- Fixed helicopter and aircraft impact damage so controlled slow landings no longer explode from accumulated height alone, while uncontrolled high falls still deal crash damage.
-- Restored helicopter rotor block-contact damage while airborne.
-- Kept tracked backup copies of `GunItem.java` consistent with the repair-kit material change.
-
-### Localization
-- Expanded `zh_cn.json` to cover every key present in this branch's `en_us.json`.
-
-### Verification
-- Passed `.\gradlew compileJava`.
-- Passed `.\gradlew compileJava` after the vehicle direct-hit explosion tuning.
-- Passed `.\gradlew compileJava` after the air vehicle impact/descent tuning.
-- Confirmed `repair_kit.json` parses and outputs `jeg:repair_kit`.
-- Confirmed `zh_cn.json` has no missing keys relative to `en_us.json`.
-- Full `build` and in-game gameplay checks were not run.
 
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
