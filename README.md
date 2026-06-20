@@ -1,28 +1,42 @@
 
-Installation information
-=======
+# Just Enough Guns New - NeoForge 26.2
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+A modern NeoForge 26.2 port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+## Overview
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+This module is the maintained Java 25 NeoForge branch for Just Enough Guns New 1.7.1. It carries the magazine-fed weapon work, Walkurenritt vehicle system, repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+## Latest Release Notes
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+Version `1.7.1` is the current release line.
+
+- Ported the maintained NeoForge line to Minecraft 26.2 with NeoForge `26.2.0.1-beta` and GeckoLib `5.5.1`.
+- Restored the `jeg:repair_kit` recipe and made the repair kit the anvil repair material for guns and bulletproof armor.
+- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair tools still repair vehicles.
+- Added first-person held-gun left/right movement camera sway and Y-key gun inspect animations.
+- Fixed Flamethrower reload timing and first-person inspect animation interruption behavior.
+- Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
+- Fixed MI-28 gunner pitch limits, vehicle assembly preview entity IDs, and NeoForge 26.2 renderer/mixin API changes.
+- Updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
+- Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
+
+## Supported Version
+
+| Loader | Minecraft | Java | Mod Version | Required Dependencies |
+| --- | --- | --- | --- | --- |
+| NeoForge | 26.2 | Java 25 | 1.7.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+
+## Controls
+
+| Action | Default Input |
+| --- | --- |
+| Shoot | Left Click |
+| Aim down sights | Right Click |
+| Reload | R |
+| Inspect animated gun | Y |
+| Gun melee / flashlight toggle, where supported | V |
+| Dismount vehicle | Shift |
 
 Ballistic Armor Interception
 ==========
