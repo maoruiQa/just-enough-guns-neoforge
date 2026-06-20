@@ -10,6 +10,7 @@
 - Added Y-key gun inspect animations for held animated guns, including tooltip guidance.
 
 ### Changed
+- Increased Terror Phantom and drivable vehicle entity tracking range to 14 chunks so they can stay synced and visible out to roughly 224 blocks.
 - Set the module version to `1.7.1`.
 - Ported the module target from NeoForge 26.1 to NeoForge 26.2.
 - Updated the module dependency set to Minecraft `26.2`, NeoForge `26.2.0.1-beta`, and GeckoLib `geckolib-neoforge-26.2:5.5.1`.
