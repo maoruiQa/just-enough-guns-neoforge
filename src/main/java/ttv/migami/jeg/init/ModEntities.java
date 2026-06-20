@@ -147,7 +147,7 @@ public final class ModEntities {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom"));
                 return EntityType.Builder.of(TerrorPhantom::new, MobCategory.MONSTER)
                         .sized(40.19531F, 1.5F)
-                        .clientTrackingRange(8)
+                        .clientTrackingRange(14)
                         .updateInterval(2)
                         .fireImmune()
                         .build(key);
@@ -160,7 +160,7 @@ public final class ModEntities {
                 ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("terror_phantom_guardian"));
                 return EntityType.Builder.of(TerrorPhantomGuardian::new, MobCategory.MONSTER)
                         .sized(45.21973F, 1.8F)
-                        .clientTrackingRange(8)
+                        .clientTrackingRange(14)
                         .updateInterval(2)
                         .fireImmune()
                         .build(key);
@@ -184,7 +184,7 @@ public final class ModEntities {
             "test_wheel_vehicle",
             () -> EntityType.Builder.<TestWheelVehicleEntity>of(TestWheelVehicleEntity::new, MobCategory.MISC)
                     .sized(1.4F, 1.1F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("test_wheel_vehicle"))
     );
@@ -193,7 +193,7 @@ public final class ModEntities {
             "light_combat_vehicle",
             () -> EntityType.Builder.<LightCombatVehicleEntity>of(LightCombatVehicleEntity::new, MobCategory.MISC)
                     .sized(1.8F, 1.35F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("light_combat_vehicle"))
     );
@@ -202,7 +202,7 @@ public final class ModEntities {
             "test_helicopter",
             () -> EntityType.Builder.<TestHelicopterEntity>of(TestHelicopterEntity::new, MobCategory.MISC)
                     .sized(2.0F, 1.25F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("test_helicopter"))
     );
@@ -211,7 +211,7 @@ public final class ModEntities {
             "test_boat",
             () -> EntityType.Builder.<TestBoatEntity>of(TestBoatEntity::new, MobCategory.MISC)
                     .sized(1.7F, 0.75F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("test_boat"))
     );
@@ -220,7 +220,7 @@ public final class ModEntities {
             "test_artillery",
             () -> EntityType.Builder.<TestArtilleryEntity>of(TestArtilleryEntity::new, MobCategory.MISC)
                     .sized(1.3F, 1.45F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("test_artillery"))
     );
@@ -229,7 +229,7 @@ public final class ModEntities {
             "test_aircraft",
             () -> EntityType.Builder.<TestAircraftEntity>of(TestAircraftEntity::new, MobCategory.MISC)
                     .sized(2.4F, 0.9F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(14)
                     .updateInterval(1)
                     .build(entityKey("test_aircraft"))
     );
@@ -269,7 +269,7 @@ public final class ModEntities {
                 path,
                 () -> EntityType.Builder.<ConfiguredVehicleEntity>of((type, level) -> new ConfiguredVehicleEntity(type, level, Reference.id(path)), MobCategory.MISC)
                         .sized(width, height)
-                        .clientTrackingRange(10)
+                        .clientTrackingRange(14)
                         .updateInterval(1)
                         .build(entityKey(path))
         );
