@@ -100,7 +100,9 @@ public final class NetworkHandler {
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            if (player.getMainHandItem().getItem() instanceof GunItem) {
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(stack)) {
+                GunItem.cancelReloadForImmediateAction(player, stack);
                 player.openMenu(AttachmentMenu.provider());
             }
         });
@@ -112,9 +114,10 @@ public final class NetworkHandler {
                 return;
             }
             ItemStack stack = player.getMainHandItem();
-            if (!(stack.getItem() instanceof GunItem)) {
+            if (!(stack.getItem() instanceof GunItem) || GunItem.isDrawOperationLocked(stack)) {
                 return;
             }
+            GunItem.cancelReloadForImmediateAction(player, stack);
             toggleGunFlashlight(player, stack);
         });
     }
@@ -128,7 +131,7 @@ public final class NetworkHandler {
             if (!(stack.getItem() instanceof GunItem)) {
                 return;
             }
-            if (isMeleeBlockedGun(stack) || GunItem.isDrawing(stack) || player.getCooldowns().isOnCooldown(stack.getItem())) {
+            if (isMeleeBlockedGun(stack) || GunItem.isDrawOperationLocked(stack) || player.getCooldowns().isOnCooldown(stack.getItem())) {
                 return;
             }
             GunItem.cancelReloadForImmediateAction(player, stack);
@@ -147,6 +150,10 @@ public final class NetworkHandler {
                 return;
             }
             ItemStack stack = player.getMainHandItem();
+            if (GunItem.isDrawOperationLocked(stack)) {
+                return;
+            }
+            GunItem.cancelReloadForImmediateAction(player, stack);
             if (stack.getItem() instanceof AnimatedGunItem animated) {
                 animated.triggerInspect(player.level(), player, stack);
             }
@@ -273,6 +280,12 @@ public final class NetworkHandler {
     private static void handleAimingState(AimingStatePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
+                if (payload.aiming() && GunItem.isDrawOperationLocked(player.getMainHandItem())) {
+                    return;
+                }
+                if (payload.aiming()) {
+                    GunItem.cancelReloadForImmediateAction(player, player.getMainHandItem());
+                }
                 player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
             }
         });
@@ -448,6 +461,9 @@ public final class NetworkHandler {
                 HOLD_FIRE_START_TICKS.remove(player.getUUID());
                 return;
             }
+            if (GunItem.isDrawOperationLocked(stack)) {
+                return;
+            }
             HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
         });
     }
@@ -459,6 +475,9 @@ public final class NetworkHandler {
             }
             ItemStack stack = player.getItemInHand(payload.hand());
             if (!(stack.getItem() instanceof GunItem gun)) {
+                return;
+            }
+            if (GunItem.isDrawOperationLocked(stack)) {
                 return;
             }
             player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
@@ -506,8 +525,10 @@ public final class NetworkHandler {
             ItemStack mainHand = player.getMainHandItem();
             if (payload.hand() == InteractionHand.MAIN_HAND
                     && mainHand.getItem() instanceof GunItem
+                    && !GunItem.isDrawOperationLocked(mainHand)
                     && isCoolant(offhand)
                     && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
+                GunItem.cancelReloadForImmediateAction(player, mainHand);
                 player.startUsingItem(InteractionHand.OFF_HAND);
                 return;
             }

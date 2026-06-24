@@ -347,7 +347,12 @@ public final class GunClientEvents {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = minecraft.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            if (GunItem.isHoldToFireWeapon(heldMain)) {
+            boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+            if (drawLocked) {
+                resetRocketHold(true);
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
+            } else if (GunItem.isHoldToFireWeapon(heldMain)) {
                 tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
             } else if (attackDown) {
                 resetRocketHold(true);
@@ -383,21 +388,22 @@ public final class GunClientEvents {
         }
 
         // R key reload (server-authoritative). Keep swap-hands reload as fallback/compat.
-        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+        boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && consumeUnlockedClick(KeyBindings.RELOAD, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem) {
+            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldOff)) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 NetworkHandler.sendReload(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
         }
-        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && consumeUnlockedClick(KeyBindings.ATTACHMENTS, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 NetworkHandler.sendOpenAttachments();
             }
         }
-        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && consumeUnlockedClick(KeyBindings.MELEE, drawLocked)) {
             if (heldMain.getItem() instanceof GunItem && canUseGunMelee(player, heldMain)) {
                 GunItem.cancelReloadForImmediateAction(player, heldMain);
                 if (heldMain.getItem() instanceof AnimatedGunItem) {
@@ -406,8 +412,8 @@ public final class GunClientEvents {
                 NetworkHandler.sendMelee();
             }
         }
-        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && KeyBindings.INSPECT.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+        if (!(player.getVehicle() instanceof ttv.migami.jeg.vehicle.entity.base.VehicleEntity) && consumeUnlockedClick(KeyBindings.INSPECT, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 if (heldMain.getItem() instanceof AnimatedGunItem) {
                     AnimatedGunItem.triggerClientInspect(minecraft.player);
                 }
@@ -449,8 +455,23 @@ public final class GunClientEvents {
 
     private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
         return !isMeleeBlockedGun(stack)
-                && !GunItem.isDrawing(stack)
+                && !GunItem.isDrawOperationLocked(stack)
                 && !player.getCooldowns().isOnCooldown(stack.getItem());
+    }
+
+    private static boolean consumeUnlockedClick(net.minecraft.client.KeyMapping key, boolean locked) {
+        if (!locked) {
+            return key.consumeClick();
+        }
+        if (!key.isDown()) {
+            drainClicks(key);
+        }
+        return false;
+    }
+
+    private static void drainClicks(net.minecraft.client.KeyMapping key) {
+        while (key.consumeClick()) {
+        }
     }
 
     private static boolean isMeleeBlockedGun(ItemStack stack) {
@@ -568,6 +589,12 @@ public final class GunClientEvents {
         }
 
         if (rocketShotSent) {
+            return;
+        }
+        if (GunItem.isDrawOperationLocked(stack)) {
+            resetRocketHold(true);
+            nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
             return;
         }
 

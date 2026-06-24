@@ -76,7 +76,7 @@ public final class AimingHandler {
             suppressedUntilUseReleased = false;
         }
         ItemStack mainHand = player.getMainHandItem();
-        if (!(mainHand.getItem() instanceof GunItem)) {
+        if (!(mainHand.getItem() instanceof GunItem) || GunItem.isDrawOperationLocked(mainHand)) {
             return false;
         }
 
