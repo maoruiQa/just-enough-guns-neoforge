@@ -323,7 +323,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
         return GunScopeSupport.hasTelescopicSight(stack)
-                && AimingHandler.get().getNormalisedAdsProgress() > 0.5F;
+                && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {
