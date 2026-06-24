@@ -195,7 +195,7 @@ public final class GunClientEvents {
             return;
         }
 
-        float ads = AimingHandler.get().getNormalisedAdsProgress();
+        float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
             return;
         }

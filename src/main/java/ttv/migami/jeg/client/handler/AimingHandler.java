@@ -64,6 +64,12 @@ public final class AimingHandler {
         return Mth.clamp(progress, 0.0F, 1.0F);
     }
 
+    public float getRenderAdsProgress() {
+        Minecraft minecraft = Minecraft.getInstance();
+        float partialTick = minecraft == null ? 1.0F : minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        return getNormalisedAdsProgress(partialTick);
+    }
+
     public float getNormalisedAdsProgress() {
         return getNormalisedAdsProgress(1.0F);
     }

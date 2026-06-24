@@ -19,6 +19,7 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.common.NeoForgeVersion;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.handler.AimingHandler;
+import ttv.migami.jeg.client.render.gun.GunAttachmentTransforms;
 import ttv.migami.jeg.client.render.gun.GunPoseProfile;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.gun.GunStats;
@@ -36,6 +37,16 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final double FIRST_PERSON_TRANSLATE_Y = 0.0D;
     private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
     private static final double FORGE_MODEL_CENTER_OFFSET = 0.5D;
+    private static final double FORGE_UNIT = 1.0D / 16.0D;
+    private static final double FORGE_GUN_ORIGIN_X = 8.0D;
+    private static final double FORGE_GUN_ORIGIN_Y = 0.0D;
+    private static final double FORGE_GUN_ORIGIN_Z = 8.0D;
+    private static final double OPEN_SIGHT_SCOPE_CAMERA_X = 0.0D;
+    private static final double REFLEX_SCOPE_CAMERA_Y = 1.05D;
+    private static final double MONOCLE_SCOPE_CAMERA_Y = 0.85D;
+    private static final double OPEN_SIGHT_SCOPE_CAMERA_Z = 12.0D;
+    private static final double FORGE_SCOPE_Y_OFFSET = 0.54D;
+    private static final double FORGE_SCOPE_Z_OFFSET = -0.16D;
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
@@ -46,16 +57,10 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     private static final Identifier SPYGLASS = Identifier.withDefaultNamespace("spyglass");
     private static final Map<Identifier, Map<Identifier, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
             Reference.id("combat_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
             ),
             Reference.id("service_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
             )
@@ -133,7 +138,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         int direction = arm == HumanoidArm.RIGHT ? 1 : -1;
         String gunPath = stats.id().getPath();
         boolean isBow = gunPath.contains("bow");
-        float ads = AimingHandler.get().getNormalisedAdsProgress(partialTick);
+        float ads = AimingHandler.get().getRenderAdsProgress();
         GunPoseProfile profile = GunPoseProfile.forGun(stats.id());
 
         float xOffset = Mth.lerp(ads, profile.hipX(), profile.adsX());
@@ -268,14 +273,6 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     }
 
     private static AdsSightOffset adsSightOffset(ItemStack stack, Identifier gunId, double firstPersonScale) {
-        boolean telescopicSight = GunScopeSupport.hasTelescopicSight(stack);
-        ForgeZoomOffset zoom = telescopicSight
-                ? zoom(0.0D, 5.0D, -4.4D)
-                : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
-        if (!telescopicSight) {
-            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
-        }
-        zoom = withRifleScopeAdsCorrection(stack, gunId, zoom);
         double translateX = FIRST_PERSON_TRANSLATE_X;
         double translateY = FIRST_PERSON_TRANSLATE_Y;
         double translateZ = FIRST_PERSON_TRANSLATE_Z;
@@ -283,22 +280,62 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         double scaleY = 1.0D;
         double scaleZ = 1.0D;
 
+        Double openSightCameraY = openSightScopeCameraY(stack);
+        ForgeZoomOffset adsOffset = openSightCameraY != null
+                ? openSightScopeAdsOffset(gunId, openSightCameraY, translateX, translateY, translateZ, scaleX, scaleY, scaleZ)
+                : null;
+        if (adsOffset == null) {
+            boolean telescopicSight = GunScopeSupport.hasTelescopicSight(stack);
+            ForgeZoomOffset zoom = telescopicSight
+                    ? zoom(0.0D, 5.0D, -4.4D)
+                    : FORGE_ZOOM_OFFSETS.getOrDefault(gunId, FORGE_ZOOM_OFFSETS.get(Reference.id("abstract_gun")));
+            if (!telescopicSight) {
+                zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
+            }
+            zoom = withRifleScopeAdsCorrection(stack, gunId, zoom);
+            adsOffset = ironSightAdsOffset(zoom, translateX, translateY, translateZ, scaleX, scaleY, scaleZ);
+        }
+
+        return new AdsSightOffset(
+                -0.56D - adsOffset.xOffset() * firstPersonScale,
+                0.52D - adsOffset.yOffset() * firstPersonScale,
+                0.72D - adsOffset.zOffset() * firstPersonScale
+        );
+    }
+
+    private static ForgeZoomOffset ironSightAdsOffset(ForgeZoomOffset zoom, double translateX, double translateY, double translateZ, double scaleX, double scaleY, double scaleZ) {
         double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
                 + FORGE_MODEL_CENTER_OFFSET * scaleX
-                - zoom.xOffset() * 0.0625D * scaleX;
+                - zoom.xOffset() * FORGE_UNIT * scaleX;
         double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
-                + zoom.yOffset() * 0.0625D * scaleY
+                + zoom.yOffset() * FORGE_UNIT * scaleY
                 + FORGE_IRON_SIGHT_Y_OFFSET;
         double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
                 + FORGE_MODEL_CENTER_OFFSET * scaleZ
-                - zoom.zOffset() * 0.0625D * scaleZ
+                - zoom.zOffset() * FORGE_UNIT * scaleZ
                 + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
+        return zoom(xOffset, yOffset, zOffset);
+    }
 
-        return new AdsSightOffset(
-                -0.56D - xOffset * firstPersonScale,
-                0.52D - yOffset * firstPersonScale,
-                0.72D - zOffset * firstPersonScale
-        );
+    private static ForgeZoomOffset openSightScopeAdsOffset(Identifier gunId, double scopeCameraY, double translateX, double translateY, double translateZ, double scaleX, double scaleY, double scaleZ) {
+        GunAttachmentTransforms.Transform scopeTransform = GunAttachmentTransforms.transform(gunId, AttachmentType.SCOPE).orElse(null);
+        if (scopeTransform == null || !scopeTransform.isVisible()) {
+            return null;
+        }
+        double scopeScale = scopeTransform.scale();
+        double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
+                + FORGE_GUN_ORIGIN_X * FORGE_UNIT * scaleX
+                + scopeTransform.x() * FORGE_UNIT * scaleX
+                + OPEN_SIGHT_SCOPE_CAMERA_X * FORGE_UNIT * scaleX * scopeScale;
+        double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
+                + FORGE_GUN_ORIGIN_Y * FORGE_UNIT * scaleY
+                + scopeTransform.y() * FORGE_UNIT * scaleY
+                + ((scopeCameraY * FORGE_UNIT * scaleY) + FORGE_SCOPE_Y_OFFSET) * scopeScale;
+        double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
+                + FORGE_GUN_ORIGIN_Z * FORGE_UNIT * scaleZ
+                + scopeTransform.z() * FORGE_UNIT * scaleZ
+                + ((OPEN_SIGHT_SCOPE_CAMERA_Z * FORGE_UNIT * scaleZ) + FORGE_SCOPE_Z_OFFSET) * scopeScale;
+        return zoom(xOffset, yOffset, zOffset);
     }
 
     private record AdsSightOffset(double x, double y, double z) {}
@@ -339,6 +376,17 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
                 zoom.yOffset() + correction.yOffset(),
                 zoom.zOffset() + correction.zOffset()
         );
+    }
+
+    private static Double openSightScopeCameraY(ItemStack stack) {
+        Identifier scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
+        if (REFLEX_SIGHT.equals(scopeId)) {
+            return REFLEX_SCOPE_CAMERA_Y;
+        }
+        if (MONOCLE_SIGHT.equals(scopeId) || HOLOGRAPHIC_SIGHT.equals(scopeId)) {
+            return MONOCLE_SCOPE_CAMERA_Y;
+        }
+        return null;
     }
 
     private static boolean neoforgeVersionAtLeast(int targetMajor, int targetMinor, int targetPatch) {
