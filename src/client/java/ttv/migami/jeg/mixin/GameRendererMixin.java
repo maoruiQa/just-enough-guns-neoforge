@@ -33,7 +33,7 @@ public final class GameRendererMixin {
             return;
         }
 
-        float ads = AimingHandler.get().getNormalisedAdsProgress(partialTick);
+        float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
             return;
         }

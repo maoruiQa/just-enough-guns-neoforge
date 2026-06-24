@@ -48,6 +48,16 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final double FIRST_PERSON_TRANSLATE_Z = -3.0D / 16.0D;
     private static final double THIRD_PERSON_ANIMATED_Y_CORRECTION = -8.75D / 16.0D;
     private static final double FORGE_MODEL_CENTER_OFFSET = 0.5D;
+    private static final double FORGE_UNIT = 1.0D / 16.0D;
+    private static final double FORGE_GUN_ORIGIN_X = 8.0D;
+    private static final double FORGE_GUN_ORIGIN_Y = 0.0D;
+    private static final double FORGE_GUN_ORIGIN_Z = 8.0D;
+    private static final double OPEN_SIGHT_SCOPE_CAMERA_X = 0.0D;
+    private static final double REFLEX_SCOPE_CAMERA_Y = 1.05D;
+    private static final double MONOCLE_SCOPE_CAMERA_Y = 0.85D;
+    private static final double OPEN_SIGHT_SCOPE_CAMERA_Z = 12.0D;
+    private static final double FORGE_SCOPE_Y_OFFSET = 0.54D;
+    private static final double FORGE_SCOPE_Z_OFFSET = -0.16D;
     private static final double FORGE_IRON_SIGHT_Y_OFFSET = 0.6059D;
     private static final double FORGE_IRON_SIGHT_Z_OFFSET = -0.16D;
     private static final double FORGE_LEGACY_IRON_SIGHT_Z_OFFSET = 0.72D;
@@ -58,16 +68,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final ResourceLocation SPYGLASS = ResourceLocation.withDefaultNamespace("spyglass");
     private static final Map<ResourceLocation, Map<ResourceLocation, ForgeZoomOffset>> RIFLE_SCOPE_ADS_CORRECTIONS = Map.of(
             Reference.id("combat_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, -0.48D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, -0.67D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.77D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 1.13D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.68D, 0.0D)
             ),
             Reference.id("service_rifle"), Map.of(
-                    REFLEX_SIGHT, zoom(0.0D, -0.55D, 0.0D),
-                    MONOCLE_SIGHT, zoom(0.0D, -0.75D, 0.0D),
-                    HOLOGRAPHIC_SIGHT, zoom(0.0D, -0.85D, 0.0D),
                     TELESCOPIC_SIGHT, zoom(0.0D, 0.55D, 0.0D),
                     SPYGLASS, zoom(0.0D, -0.75D, 0.0D)
             )
@@ -312,18 +316,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        boolean telescopicSight = hasTelescopicSight(stack);
-        ForgeZoomOffset zoom = telescopicSight
-                ? zoom(0.0D, 5.0D, -4.4D)
-                : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
-        if (zoom == null) {
-            return;
-        }
-        if (!telescopicSight) {
-            zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
-        }
-        zoom = withRifleScopeAdsCorrection(stack, gun.getStats().id(), zoom);
-
         ItemTransform transform = staticItemFirstPersonTransform(gun.getStats().id(), displayContext);
         double translateX = transform.translation.x();
         double translateY = transform.translation.y();
@@ -333,19 +325,62 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         double scaleZ = transform.scale.z();
 
         double transition = easeOutQuad(ads);
+        Double openSightCameraY = openSightScopeCameraY(stack);
+        ForgeZoomOffset adsOffset = openSightCameraY != null
+                ? openSightScopeAdsOffset(gun.getStats().id(), openSightCameraY, translateX, translateY, translateZ, scaleX, scaleY, scaleZ)
+                : null;
+        if (adsOffset == null) {
+            boolean telescopicSight = hasTelescopicSight(stack);
+            ForgeZoomOffset zoom = telescopicSight
+                    ? zoom(0.0D, 5.0D, -4.4D)
+                    : FORGE_ZOOM_OFFSETS.get(gun.getStats().id());
+            if (zoom == null) {
+                return;
+            }
+            if (!telescopicSight) {
+                zoom = withAttachmentAdsOffset(zoom, GunAttachments.modifiers(stack));
+            }
+            zoom = withRifleScopeAdsCorrection(stack, gun.getStats().id(), zoom);
+            adsOffset = ironSightAdsOffset(zoom, translateX, translateY, translateZ, scaleX, scaleY, scaleZ);
+        }
+
+        poseStack.translate(-0.56D * transition, 0.52D * transition, 0.72D * transition);
+        poseStack.translate(-adsOffset.xOffset() * transition, -adsOffset.yOffset() * transition, -adsOffset.zOffset() * transition);
+    }
+
+    private static ForgeZoomOffset ironSightAdsOffset(ForgeZoomOffset zoom, double translateX, double translateY, double translateZ, double scaleX, double scaleY, double scaleZ) {
         double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
                 + FORGE_MODEL_CENTER_OFFSET * scaleX
-                - zoom.xOffset() * 0.0625D * scaleX;
+                - zoom.xOffset() * FORGE_UNIT * scaleX;
         double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
-                + zoom.yOffset() * 0.0625D * scaleY
+                + zoom.yOffset() * FORGE_UNIT * scaleY
                 + FORGE_IRON_SIGHT_Y_OFFSET;
         double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
                 + FORGE_MODEL_CENTER_OFFSET * scaleZ
-                - zoom.zOffset() * 0.0625D * scaleZ
+                - zoom.zOffset() * FORGE_UNIT * scaleZ
                 + FORGE_IRON_SIGHT_Z_OFFSET + FORGE_LEGACY_IRON_SIGHT_Z_OFFSET;
+        return zoom(xOffset, yOffset, zOffset);
+    }
 
-        poseStack.translate(-0.56D * transition, 0.52D * transition, 0.72D * transition);
-        poseStack.translate(-xOffset * transition, -yOffset * transition, -zOffset * transition);
+    private static ForgeZoomOffset openSightScopeAdsOffset(ResourceLocation gunId, double scopeCameraY, double translateX, double translateY, double translateZ, double scaleX, double scaleY, double scaleZ) {
+        GunAttachmentTransforms.Transform scopeTransform = GunAttachmentTransforms.transform(gunId, AttachmentType.SCOPE).orElse(null);
+        if (scopeTransform == null || !scopeTransform.isVisible()) {
+            return null;
+        }
+        double scopeScale = scopeTransform.scale();
+        double xOffset = translateX - FORGE_MODEL_CENTER_OFFSET * scaleX
+                + FORGE_GUN_ORIGIN_X * FORGE_UNIT * scaleX
+                + scopeTransform.x() * FORGE_UNIT * scaleX
+                + OPEN_SIGHT_SCOPE_CAMERA_X * FORGE_UNIT * scaleX * scopeScale;
+        double yOffset = translateY - FORGE_MODEL_CENTER_OFFSET * scaleY
+                + FORGE_GUN_ORIGIN_Y * FORGE_UNIT * scaleY
+                + scopeTransform.y() * FORGE_UNIT * scaleY
+                + ((scopeCameraY * FORGE_UNIT * scaleY) + FORGE_SCOPE_Y_OFFSET) * scopeScale;
+        double zOffset = translateZ - FORGE_MODEL_CENTER_OFFSET * scaleZ
+                + FORGE_GUN_ORIGIN_Z * FORGE_UNIT * scaleZ
+                + scopeTransform.z() * FORGE_UNIT * scaleZ
+                + ((OPEN_SIGHT_SCOPE_CAMERA_Z * FORGE_UNIT * scaleZ) + FORGE_SCOPE_Z_OFFSET) * scopeScale;
+        return zoom(xOffset, yOffset, zOffset);
     }
 
     private static ItemTransform staticItemFirstPersonTransform(ResourceLocation itemId, ItemDisplayContext displayContext) {
@@ -449,6 +484,17 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static boolean hasTelescopicSight(ItemStack stack) {
         return GunScopeSupport.hasTelescopicSight(stack);
+    }
+
+    private static Double openSightScopeCameraY(ItemStack stack) {
+        ResourceLocation scopeId = GunAttachments.id(stack, AttachmentType.SCOPE).orElse(null);
+        if (REFLEX_SIGHT.equals(scopeId)) {
+            return REFLEX_SCOPE_CAMERA_Y;
+        }
+        if (MONOCLE_SIGHT.equals(scopeId) || HOLOGRAPHIC_SIGHT.equals(scopeId)) {
+            return MONOCLE_SCOPE_CAMERA_Y;
+        }
+        return null;
     }
 
     private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {

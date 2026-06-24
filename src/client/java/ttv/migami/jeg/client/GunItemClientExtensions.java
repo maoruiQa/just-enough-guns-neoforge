@@ -75,7 +75,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         int direction = arm == HumanoidArm.RIGHT ? 1 : -1;
         String gunPath = stats.id().getPath();
         boolean isBow = gunPath.contains("bow");
-        float ads = AimingHandler.get().getNormalisedAdsProgress(partialTick);
+        float ads = AimingHandler.get().getRenderAdsProgress();
         GunPoseProfile profile = GunPoseProfile.forGun(stats.id());
         float adsTransition = (float) easeOutQuad(ads);
 
