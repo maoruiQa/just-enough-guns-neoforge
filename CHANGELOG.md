@@ -12,7 +12,7 @@
 - Preserved held fire and held action-key input through the draw unlock point while preventing released keys from firing late.
 
 ### Verification
-- Passed `.\gradlew compileJava compileClientJava`.
+- Passed `.\gradlew build`.
 
 ## 1.7.1 - 2026-06-17
 
