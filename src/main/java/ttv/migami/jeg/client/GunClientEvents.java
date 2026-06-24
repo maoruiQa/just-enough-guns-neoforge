@@ -45,7 +45,6 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
-import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
@@ -160,10 +159,7 @@ public final class GunClientEvents {
             return;
         }
 
-        AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
-        float fovFactor = modifiers.aimFovModifier() > 0.0F
-                ? Mth.clamp(modifiers.aimFovModifier(), 0.0F, 0.9F)
-                : ADS_FOV_FACTOR;
+        float fovFactor = ADS_FOV_FACTOR;
         float factor = 1.0F - fovFactor * ads;
         event.setNewFovModifier(Math.max(0.1F, event.getNewFovModifier() * factor));
     }

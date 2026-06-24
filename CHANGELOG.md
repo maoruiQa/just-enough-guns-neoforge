@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.2 - 2026-06-24
+
+### Changed
+- Set the module version to `1.7.2`.
+
+### Fixed
+- Reworked ADS alignment for reflex, monocle, and holographic sights so their open-sight reticles use the Forge 1.20.1-derived scope camera position and each gun's scope mount transform.
+- Kept telescopic sight and spyglass ADS corrections on their existing per-rifle path.
+
+### Verification
+- Passed `.\gradlew compileJava`.
+
 ## 1.7.1 - 2026-06-17
 
 ### Added
