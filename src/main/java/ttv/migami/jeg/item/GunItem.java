@@ -121,7 +121,45 @@ public class GunItem extends Item {
     static final int RELOAD_STAGE_START = 1;
     static final int RELOAD_STAGE_LOOP = 2;
     static final int RELOAD_STAGE_STOP = 3;
-    private static final int DRAW_TICKS = 14;
+    private static final int DEFAULT_DRAW_TICKS = 30;
+    private static final double DRAW_OPERATION_LOCK_FRACTION = 0.85D;
+    private static final Map<String, Integer> DRAW_ANIMATION_TICKS = Map.ofEntries(
+            Map.entry("abstract_gun", 30),
+            Map.entry("assault_rifle", 30),
+            Map.entry("blossom_rifle", 32),
+            Map.entry("bolt_action_rifle", 30),
+            Map.entry("burst_rifle", 25),
+            Map.entry("combat_pistol", 14),
+            Map.entry("combat_rifle", 25),
+            Map.entry("compound_bow", 16),
+            Map.entry("custom_smg", 30),
+            Map.entry("double_barrel_shotgun", 22),
+            Map.entry("finger_gun", 26),
+            Map.entry("flamethrower", 24),
+            Map.entry("flare_gun", 20),
+            Map.entry("grenade_launcher", 35),
+            Map.entry("hollenfire_mk2", 30),
+            Map.entry("holy_shotgun", 25),
+            Map.entry("hypersonic_cannon", 17),
+            Map.entry("infantry_rifle", 30),
+            Map.entry("light_machine_gun", 54),
+            Map.entry("minigun", 30),
+            Map.entry("phantom_smg", 30),
+            Map.entry("primitive_bow", 16),
+            Map.entry("pump_shotgun", 25),
+            Map.entry("python", 26),
+            Map.entry("repeating_shotgun", 34),
+            Map.entry("revolver", 26),
+            Map.entry("rocket_launcher", 41),
+            Map.entry("semi_auto_pistol", 14),
+            Map.entry("semi_auto_rifle", 30),
+            Map.entry("service_rifle", 30),
+            Map.entry("soulhunter_mk2", 30),
+            Map.entry("subsonic_rifle", 32),
+            Map.entry("supersonic_shotgun", 25),
+            Map.entry("typhoonee", 41),
+            Map.entry("waterpipe_shotgun", 35)
+    );
     private static final int ROCKET_RELOAD_START_TICKS = 46;
     private static final int ROCKET_RELOAD_LOOP_TICKS = 29;
     private static final int ROCKET_RELOAD_STOP_TICKS = 38;
@@ -566,10 +604,11 @@ public class GunItem extends Item {
         if (!coolantMatch) {
             return false;
         }
-        if (!canCool || alreadyCooling || isDrawing(gunStack)) {
+        if (!canCool || alreadyCooling || isDrawOperationLocked(gunStack)) {
             return false;
         }
 
+        clearDrawState(gunStack);
         startWaterCooling(gunStack);
         return true;
     }
@@ -834,9 +873,10 @@ public class GunItem extends Item {
 
     public boolean tryShoot(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (isDrawing(stack)) {
+        if (isDrawOperationLocked(stack)) {
             return false;
         }
+        clearDrawState(stack);
         ensureAmmoInitialized(stack);
         boolean automatic = isAutomatic();
 
@@ -1788,9 +1828,10 @@ public class GunItem extends Item {
         if (!usesLoadedAmmo()) {
             return false;
         }
-        if (isDrawing(stack)) {
+        if (isDrawOperationLocked(stack)) {
             return false;
         }
+        clearDrawState(stack);
         if (isReloading(stack) || PENDING_RELOADS.containsKey(player.getUUID())) {
             return false;
         }
@@ -2294,12 +2335,37 @@ public class GunItem extends Item {
         return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0;
     }
 
+    private static void clearDrawState(ItemStack stack) {
+        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+    }
+
+    public static boolean isDrawOperationLocked(ItemStack stack) {
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            return false;
+        }
+        int totalTicks = getDrawAnimationTicks(stack);
+        int elapsedTicks = Math.max(0, totalTicks - remainingTicks);
+        return elapsedTicks < getDrawOperationLockTicks(totalTicks);
+    }
+
+    static int getDrawAnimationTicks(ItemStack stack) {
+        if (stack.getItem() instanceof GunItem gun) {
+            return DRAW_ANIMATION_TICKS.getOrDefault(gun.getStats().id().getPath(), DEFAULT_DRAW_TICKS);
+        }
+        return DEFAULT_DRAW_TICKS;
+    }
+
+    private static int getDrawOperationLockTicks(int totalTicks) {
+        return Math.max(1, (int) Math.ceil(totalTicks * DRAW_OPERATION_LOCK_FRACTION));
+    }
+
     public static boolean isReloading(ItemStack stack) {
         return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0;
     }
 
     public static void cancelReloadForImmediateAction(Player player, ItemStack stack) {
-        if (isDrawing(stack)) {
+        if (isDrawOperationLocked(stack)) {
             return;
         }
         UUID playerId = player.getUUID();
@@ -2394,7 +2460,7 @@ public class GunItem extends Item {
         if (consumeQueuedReloadCancelDraw(queuedStates, playerId, stack, slot)) {
             heldStates.put(playerId, currentState);
             clearReloadVisualState(stack);
-            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+            stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), getDrawAnimationTicks(stack));
             return;
         }
         heldStates.put(playerId, currentState);
@@ -2408,7 +2474,7 @@ public class GunItem extends Item {
     }
 
     private static void queueDrawAfterReloadCancel(Player player, ItemStack stack, int slot, boolean preserveUntilHeld) {
-        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), getDrawAnimationTicks(stack));
         HELD_DRAW_STATES.remove(player.getUUID());
         CLIENT_HELD_DRAW_STATES.remove(player.getUUID());
         if (preserveUntilHeld) {
@@ -2576,7 +2642,7 @@ public class GunItem extends Item {
         UUID playerId = player.getUUID();
         int slot = player.getInventory().getSelectedSlot();
         clearReloadVisualState(stack);
-        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), DRAW_TICKS);
+        stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), getDrawAnimationTicks(stack));
 
         HeldGunState currentState = heldGunState(player, stack);
         if (currentState != null) {

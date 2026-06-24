@@ -28,7 +28,7 @@ public final class AimingHandler {
     }
 
     public void tick(LocalPlayer player) {
-        if (GunItem.isDrawing(player.getMainHandItem())) {
+        if (GunItem.isDrawOperationLocked(player.getMainHandItem())) {
             currentAim = 0.0F;
             previousAim = 0.0F;
             return;
@@ -87,7 +87,7 @@ public final class AimingHandler {
         }
 
         ItemStack mainHand = player.getMainHandItem();
-        if (!(mainHand.getItem() instanceof GunItem) || GunItem.isDrawing(mainHand)) {
+        if (!(mainHand.getItem() instanceof GunItem) || GunItem.isDrawOperationLocked(mainHand)) {
             return false;
         }
 
