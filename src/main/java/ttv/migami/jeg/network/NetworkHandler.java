@@ -176,6 +176,10 @@ public final class NetworkHandler {
             return;
         }
         ItemStack stack = player.getMainHandItem();
+        if (GunItem.isDrawOperationLocked(stack)) {
+            return;
+        }
+        GunItem.cancelReloadForImmediateAction(player, stack);
         if (stack.getItem() instanceof AnimatedGunItem animated) {
             animated.triggerInspect(player.level(), player, stack);
         }
@@ -184,6 +188,9 @@ public final class NetworkHandler {
     private static void handleShootRequest(ShootRequestPayload payload, ServerPlayer player) {
         ItemStack stack = player.getItemInHand(payload.hand());
         if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+        if (GunItem.isDrawOperationLocked(stack)) {
             return;
         }
         if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
@@ -210,6 +217,9 @@ public final class NetworkHandler {
             HOLD_FIRE_START_TICKS.remove(player.getUUID());
             return;
         }
+        if (GunItem.isDrawOperationLocked(stack)) {
+            return;
+        }
         HOLD_FIRE_START_TICKS.put(player.getUUID(), player.level().getGameTime() - 1L);
     }
 
@@ -231,8 +241,10 @@ public final class NetworkHandler {
         ItemStack mainHand = player.getMainHandItem();
         if (payload.hand() == InteractionHand.MAIN_HAND
                 && mainHand.getItem() instanceof GunItem
+                && !GunItem.isDrawOperationLocked(mainHand)
                 && isCoolant(offhand)
                 && GunItem.tryStartWaterCooling(player.level(), player, InteractionHand.OFF_HAND)) {
+            GunItem.cancelReloadForImmediateAction(player, mainHand);
             player.startUsingItem(InteractionHand.OFF_HAND);
             return;
         }
@@ -248,6 +260,9 @@ public final class NetworkHandler {
         }
 
         if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+        if (GunItem.isDrawOperationLocked(stack)) {
             return;
         }
         boolean reloaded = gun.tryReload(player.level(), player, stack, true);
@@ -272,7 +287,9 @@ public final class NetworkHandler {
     }
 
     private static void handleOpenAttachments(ServerPlayer player) {
-        if (player.getMainHandItem().getItem() instanceof GunItem) {
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(stack)) {
+            GunItem.cancelReloadForImmediateAction(player, stack);
             player.openMenu(AttachmentMenu.provider());
         }
     }
@@ -299,7 +316,7 @@ public final class NetworkHandler {
         if (!(stack.getItem() instanceof GunItem)) {
             return;
         }
-        if (isMeleeBlockedGun(stack) || GunItem.isDrawing(stack) || player.getCooldowns().isOnCooldown(stack.getItem())) {
+        if (isMeleeBlockedGun(stack) || GunItem.isDrawOperationLocked(stack) || player.getCooldowns().isOnCooldown(stack.getItem())) {
             return;
         }
         GunItem.cancelReloadForImmediateAction(player, stack);
@@ -373,7 +390,12 @@ public final class NetworkHandler {
     }
 
     private static void handleAimingState(AimingStatePayload payload, ServerPlayer player) {
+        ItemStack stack = player.getMainHandItem();
+        if (payload.aiming() && GunItem.isDrawOperationLocked(stack)) {
+            return;
+        }
         if (payload.aiming()) {
+            GunItem.cancelReloadForImmediateAction(player, stack);
             AIMING_PLAYERS.add(player.getUUID());
         } else {
             AIMING_PLAYERS.remove(player.getUUID());

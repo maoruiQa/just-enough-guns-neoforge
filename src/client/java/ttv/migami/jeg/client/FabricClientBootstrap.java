@@ -369,7 +369,8 @@ public final class FabricClientBootstrap {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
 
-        while (KeyBindings.ATTACHMENTS.consumeClick()) {
+        boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+        while (consumeUnlockedClick(KeyBindings.ATTACHMENTS, drawLocked)) {
             if (!(player.getVehicle() instanceof VehicleEntity) && heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendOpenAttachments();
             }
@@ -379,7 +380,11 @@ public final class FabricClientBootstrap {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
 
-            if (GunItem.isHoldToFireWeapon(heldMain)) {
+            if (drawLocked) {
+                resetRocketHold(true);
+                nextVisualShotTickMain = 0L;
+                GunRecoilHandler.stopImmediate();
+            } else if (GunItem.isHoldToFireWeapon(heldMain)) {
                 tickHoldToFire(player, heldMain, gun, attackDown, nowTick);
             } else if (attackDown) {
                 resetRocketHold(true);
@@ -423,20 +428,23 @@ public final class FabricClientBootstrap {
             AnimatedGunItem.triggerClientMelee(player);
             ClientNetworkHandler.sendMelee();
         }
+        if (drawLocked && !meleeDown) {
+            drainClicks(KeyBindings.MELEE);
+        }
         meleeHeldLastTick = meleeDown;
 
-        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.INSPECT.consumeClick()
-                && heldMain.getItem() instanceof GunItem) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.INSPECT, drawLocked)
+                && heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
             if (heldMain.getItem() instanceof AnimatedGunItem) {
                 AnimatedGunItem.triggerClientInspect(player);
             }
             ClientNetworkHandler.sendInspect();
         }
 
-        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.RELOAD, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem) {
+            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldOff)) {
                 ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
@@ -448,8 +456,23 @@ public final class FabricClientBootstrap {
 
     private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
         return !isMeleeBlockedGun(stack)
-                && !GunItem.isDrawing(stack)
+                && !GunItem.isDrawOperationLocked(stack)
                 && !player.getCooldowns().isOnCooldown(stack.getItem());
+    }
+
+    private static boolean consumeUnlockedClick(net.minecraft.client.KeyMapping key, boolean locked) {
+        if (!locked) {
+            return key.consumeClick();
+        }
+        if (!key.isDown()) {
+            drainClicks(key);
+        }
+        return false;
+    }
+
+    private static void drainClicks(net.minecraft.client.KeyMapping key) {
+        while (key.consumeClick()) {
+        }
     }
 
     private static boolean isMeleeBlockedGun(ItemStack stack) {
@@ -773,6 +796,12 @@ public final class FabricClientBootstrap {
         }
 
         if (rocketShotSent) {
+            return;
+        }
+        if (GunItem.isDrawOperationLocked(stack)) {
+            resetRocketHold(true);
+            nextVisualShotTickMain = 0L;
+            GunRecoilHandler.stopImmediate();
             return;
         }
 
