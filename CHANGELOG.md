@@ -8,6 +8,8 @@
 ### Fixed
 - Reworked ADS alignment for reflex, monocle, and holographic sights so their open-sight reticles use the Forge 1.20.1-derived scope camera position and each gun's scope mount transform.
 - Kept telescopic sight and spyglass ADS corrections on their existing per-rifle path.
+- Matched gun draw operation locks to each weapon's authored draw animation length, unlocking shoot, reload, inspect, melee, attachments, and ADS after 85% of the draw animation instead of a fixed delay.
+- Preserved held fire and held action-key input through the draw unlock point while preventing released keys from firing late.
 
 ### Verification
 - Passed `.\gradlew compileJava compileClientJava`.
