@@ -66,7 +66,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static final RawAnimation INSPECT = RawAnimation.begin().then(ANIM_INSPECT, LoopType.PLAY_ONCE).thenLoop("idle");
     private static final long CLIENT_SHOOT_TRIGGER_WINDOW_NANOS = 250_000_000L;
     private static final long CLIENT_SPRINT_AFTER_SHOOT_SUPPRESSION_NANOS = 250_000_000L;
-    private static final long CLIENT_DRAW_VISUAL_NANOS = 1_700_000_000L;
+    private static final long CLIENT_DRAW_VISUAL_NANOS = 3_000_000_000L;
     private static final Identifier GUN_RUSTLE_SOUND = Reference.id("item.gun_rustle");
     private static final Identifier GUN_SCREW_SOUND = Reference.id("item.gun_screw");
 
@@ -129,9 +129,20 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         clearStaleRenderReloadVisualState(renderStack, stack);
         resetControllerOnGunChange(test.controller(), stack);
 
+        RawAnimation drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null && resetDrawAnimationIfRequested(test.controller(), stack)) {
+            return test.setAndContinue(drawAnimation);
+        }
+        if (shouldContinueDrawAnimation(test.controller(), stack)) {
+            return PlayState.CONTINUE;
+        }
         RawAnimation pendingDrawAnimation = pendingClientDrawAnimationFor(test, stack);
         if (pendingDrawAnimation != null) {
             return test.setAndContinue(pendingDrawAnimation);
+        }
+        drawAnimation = drawAnimationFor(stack);
+        if (drawAnimation != null) {
+            return test.setAndContinue(drawAnimation);
         }
 
         if (triggerPendingClientShoot(test, stack)) {
@@ -167,18 +178,6 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         if (shouldContinueMeleeAnimation(test.controller())) {
             return PlayState.CONTINUE;
-        }
-
-        RawAnimation drawAnimation = drawAnimationFor(stack);
-        if (drawAnimation != null && resetDrawAnimationIfRequested(test.controller(), stack)) {
-            return test.setAndContinue(drawAnimation);
-        }
-        if (shouldContinueDrawAnimation(test.controller(), stack)) {
-            return PlayState.CONTINUE;
-        }
-        drawAnimation = drawAnimationFor(stack);
-        if (drawAnimation != null) {
-            return test.setAndContinue(drawAnimation);
         }
 
         if (finishTriggeredShootAnimation(test.controller())) {
@@ -609,7 +608,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
         }
         boolean drawActive = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
                 || hasRecentDrawAnimation(stack);
-        if (drawActive && !controller.hasAnimationFinished() && !isClientAiming()) {
+        if (drawActive && !controller.hasAnimationFinished()) {
             return true;
         }
         clearRecentDrawAnimation();

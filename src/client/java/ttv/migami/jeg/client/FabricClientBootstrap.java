@@ -490,8 +490,9 @@ public final class FabricClientBootstrap {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
 
-        while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.ATTACHMENTS.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
+        boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+        while (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.ATTACHMENTS, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendOpenAttachments();
             }
         }
@@ -499,9 +500,9 @@ public final class FabricClientBootstrap {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            boolean drawing = GunItem.isDrawing(heldMain);
+            boolean drawLockedMain = GunItem.isDrawOperationLocked(heldMain);
 
-            if (drawing) {
+            if (drawLockedMain) {
                 resetRocketHold(true);
                 nextVisualShotTickMain = 0L;
                 GunRecoilHandler.stopImmediate();
@@ -540,25 +541,25 @@ public final class FabricClientBootstrap {
             client.options.keyAttack.setDown(false);
         }
 
-        while (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.MELEE.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain) && canUseGunMelee(player, heldMain)) {
+        while (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.MELEE, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain) && canUseGunMelee(player, heldMain)) {
                 GunItem.cancelReloadForImmediateAction(player, heldMain);
                 ClientNetworkHandler.sendMelee();
             }
         }
 
-        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.INSPECT.consumeClick()
-                && heldMain.getItem() instanceof GunItem) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.INSPECT, drawLocked)
+                && heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
             if (heldMain.getItem() instanceof AnimatedGunItem) {
                 AnimatedGunItem.triggerClientInspect(player);
             }
             ClientNetworkHandler.sendInspect();
         }
 
-        if (!(player.getVehicle() instanceof VehicleEntity) && KeyBindings.RELOAD.consumeClick()) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawing(heldMain)) {
+        if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.RELOAD, drawLocked)) {
+            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawing(heldOff)) {
+            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldOff)) {
                 ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
@@ -568,8 +569,23 @@ public final class FabricClientBootstrap {
 
     private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
         return !isMeleeBlockedGun(stack)
-                && !GunItem.isDrawing(stack)
+                && !GunItem.isDrawOperationLocked(stack)
                 && !player.getCooldowns().isOnCooldown(stack);
+    }
+
+    private static boolean consumeUnlockedClick(net.minecraft.client.KeyMapping key, boolean locked) {
+        if (!locked) {
+            return key.consumeClick();
+        }
+        if (!key.isDown()) {
+            drainClicks(key);
+        }
+        return false;
+    }
+
+    private static void drainClicks(net.minecraft.client.KeyMapping key) {
+        while (key.consumeClick()) {
+        }
     }
 
     private static boolean isMeleeBlockedGun(ItemStack stack) {
