@@ -24,7 +24,7 @@ public final class AbstractClientPlayerMixin {
             return;
         }
 
-        float ads = AimingHandler.get().getNormalisedAdsProgress(tickProgress);
+        float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
             return;
         }
