@@ -34,7 +34,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -105,7 +104,6 @@ public final class FabricClientBootstrap {
     private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
     private static boolean registered;
     private static boolean attackHeldLastTick;
-    private static boolean useKeyDownLastTick;
     private static boolean aimingStateLastSent;
     private static boolean swapOffhandHeldLastTick;
     private static boolean meleeHeldLastTick;
@@ -207,13 +205,6 @@ public final class FabricClientBootstrap {
         });
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (player.getMainHandItem().getItem() instanceof GunItem) {
-                if (entity instanceof ItemFrame) {
-                    if (useKeyDownLastTick) {
-                        return net.minecraft.world.InteractionResult.FAIL;
-                    }
-                    AimingHandler.get().suppressUntilUseReleased();
-                    return net.minecraft.world.InteractionResult.SUCCESS;
-                }
                 return net.minecraft.world.InteractionResult.FAIL;
             }
             return net.minecraft.world.InteractionResult.PASS;
@@ -304,7 +295,6 @@ public final class FabricClientBootstrap {
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             attackHeldLastTick = false;
-            useKeyDownLastTick = false;
             aimingStateLastSent = false;
             swapOffhandHeldLastTick = false;
             meleeHeldLastTick = false;
@@ -352,7 +342,6 @@ public final class FabricClientBootstrap {
         LocalPlayer player = client.player;
         if (player == null || client.level == null) {
             attackHeldLastTick = false;
-            useKeyDownLastTick = false;
             aimingStateLastSent = false;
             swapOffhandHeldLastTick = false;
             meleeHeldLastTick = false;
@@ -426,7 +415,6 @@ public final class FabricClientBootstrap {
             resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
-        useKeyDownLastTick = client.options.keyUse.isDown();
 
         if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && client.options.keyAttack.isDown()) {
             ClientNetworkHandler.sendChargeFlashlight();
