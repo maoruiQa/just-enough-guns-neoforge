@@ -1,7 +1,7 @@
 
 # Just Enough Guns New - NeoForge 26.2
 
-A modern NeoForge 26.2 port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
+A modern NeoForge 26.2 unofficial port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
 ## Overview
 
@@ -18,6 +18,7 @@ Version `1.7.1` is the current release line.
 - Fixed Flamethrower reload timing and first-person inspect animation interruption behavior.
 - Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
 - Fixed MI-28 gunner pitch limits, vehicle assembly preview entity IDs, and NeoForge 26.2 renderer/mixin API changes.
+- Fixed Magazine Loader placement orientation, block textures, and container drops when broken.
 - Updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
 - Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
 
@@ -79,9 +80,9 @@ The result is then scaled by the armor slot and armor tier durability multiplier
 Credits And License
 ==========
 
-This module is a NeoForge 26.2.x port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
+This module is a NeoForge 26.2.x unofficial port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
 
 - Original Just Enough Guns code, design, and assets are by MigaMi and are licensed under GPL-3.0.
 - The current SBW-derived Walkurenritt vehicle set covers the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus their vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data. These materials are derived from Superb Warfare (SBW) by the SBW development team and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
 - The SBW-derived Walkurenritt vehicle materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future vehicle content may have different source projects and license terms.
-- This port is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
+- This unofficial port is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
