@@ -25,4 +25,11 @@ public final class MagazineLoaderScreen extends AbstractContainerScreen<Magazine
             guiGraphics.fill(x + 79, y + 39, x + 79 + progress, y + 45, 0xFFE0B15A);
         }
     }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
 }

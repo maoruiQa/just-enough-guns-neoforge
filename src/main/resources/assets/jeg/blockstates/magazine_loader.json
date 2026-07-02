@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
+    "facing=north": {
       "model": "jeg:block/magazine_loader"
+    },
+    "facing=east": {
+      "model": "jeg:block/magazine_loader",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "jeg:block/magazine_loader",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "jeg:block/magazine_loader",
+      "y": 270
     }
   }
 }
