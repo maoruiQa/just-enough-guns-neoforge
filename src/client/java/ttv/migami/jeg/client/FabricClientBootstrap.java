@@ -64,6 +64,7 @@ import ttv.migami.jeg.client.render.entity.PhantomGunnerGeoRenderer;
 import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
+import ttv.migami.jeg.client.screen.MagazineLoaderScreen;
 import ttv.migami.jeg.compat.ClientHooks;
 import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -77,6 +78,7 @@ import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.menu.AttachmentMenu;
+import ttv.migami.jeg.menu.MagazineLoaderMenu;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
@@ -313,6 +315,7 @@ public final class FabricClientBootstrap {
         registerMenuScreen(ModMenuTypes.VEHICLE_MENU.get(), (menu, inventory, title) -> new VehicleScreen((VehicleMenu) menu, inventory, title));
         registerMenuScreen(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), (menu, inventory, title) -> new VehicleAssemblingScreen((VehicleAssemblingMenu) menu, inventory, title));
         registerMenuScreen(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), (menu, inventory, title) -> new VehicleChargingStationScreen((VehicleChargingStationMenu) menu, inventory, title));
+        registerMenuScreen(ModMenuTypes.MAGAZINE_LOADER_MENU.get(), (menu, inventory, title) -> new MagazineLoaderScreen((MagazineLoaderMenu) menu, inventory, title));
 
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(context -> {
             if (context.poseStack() == null || context.submitNodeCollector() == null) {

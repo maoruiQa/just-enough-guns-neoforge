@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.menu.MagazineLoaderMenu;
 import ttv.migami.jeg.menu.AttachmentMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleAssemblingMenu;
 import ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu;
@@ -48,6 +49,17 @@ public final class ModMenuTypes {
                     windowId,
                     inventory,
                     new net.minecraft.world.inventory.SimpleContainerData(VehicleChargingStationMenu.DATA_COUNT),
+                    ContainerLevelAccess.create(inventory.player.level(), pos)
+            ), BlockPos.STREAM_CODEC)
+    );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<MagazineLoaderMenu>> MAGAZINE_LOADER_MENU = REGISTER.register(
+            "magazine_loader_menu",
+            () -> new ExtendedMenuType<>((windowId, inventory, pos) -> new MagazineLoaderMenu(
+                    windowId,
+                    inventory,
+                    new net.minecraft.world.SimpleContainer(MagazineLoaderMenu.SLOT_COUNT),
+                    new net.minecraft.world.inventory.SimpleContainerData(MagazineLoaderMenu.DATA_COUNT),
                     ContainerLevelAccess.create(inventory.player.level(), pos)
             ), BlockPos.STREAM_CODEC)
     );

@@ -61,6 +61,7 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.ENHANCED_COOLANT.get());
             entries.accept(ModItems.VEHICLE_ASSEMBLING_TABLE.get());
             entries.accept(ModItems.VEHICLE_CHARGING_STATION.get());
+            entries.accept(ModItems.MAGAZINE_LOADER.get());
             entries.accept(ModItems.VEHICLE_CONTAINER.get());
             entries.accept(ModItems.CROWBAR.get());
             entries.accept(ModItems.REPAIR_KIT.get());
