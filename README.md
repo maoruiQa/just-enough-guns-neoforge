@@ -1,10 +1,10 @@
 # Just Enough Guns New
 
-A modern fork and port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
+A modern fork and unofficial port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
 ![Walkürenritt vehicle assault](screenshots/Walkürenritt.png)
 
-Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current 1.7.1 builds move the maintained Java 25 line to Minecraft 26.2 while carrying forward repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
+Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork unofficially ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current 1.7.1 builds move the maintained Java 25 line to Minecraft 26.2 while carrying forward repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
 
 ## Screenshots
 
@@ -29,7 +29,7 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 
 ## Latest Release Notes
 
-Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed weapon and Walkürenritt vehicle work, then adds maintenance fixes and the maintained 26.2 ports.
+Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed weapon and Walkürenritt vehicle work, then adds maintenance fixes and the maintained 26.2 unofficial ports.
 
 - Added maintained Fabric 26.2 and NeoForge 26.2 branches; Fabric 26.1 and NeoForge 26.1 are now legacy maintenance/reference lines.
 - Restored the `jeg:repair_kit` recipe and made the repair kit the anvil repair material for guns and bulletproof armor.
@@ -38,6 +38,7 @@ Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed wea
 - Fixed Fabric 1.21.1 custom reload key handling and Flamethrower reload timing.
 - Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
 - Fixed MI-28 gunner pitch limits and 26.2 vehicle assembly preview entity IDs.
+- Fixed Magazine Loader placement orientation, inventory tooltip rendering, block textures, and container drops when broken.
 - Added Y-key gun inspect animations and updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
 - Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
 
@@ -50,7 +51,7 @@ Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed wea
 | Fabric | 26.2 | Java 25 | 1.7.1 | Fabric API, GeckoLib 5.5+ |
 | NeoForge | 26.2 | Java 25 | 1.7.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
 
-The older Fabric 26.1 and NeoForge 26.1 branches are legacy lines after the 26.2 port. Use 26.2 for the maintained Java 25 release line unless you specifically need a 26.1 legacy build.
+The older Fabric 26.1 and NeoForge 26.1 branches are legacy lines after the 26.2 unofficial port. Use 26.2 for the maintained Java 25 release line unless you specifically need a 26.1 legacy build.
 
 Install the Just Enough Guns New file that matches your loader and Minecraft version. Do not mix Fabric and NeoForge builds.
 
@@ -144,13 +145,13 @@ Config changes should be tested on a copy of the world before using them on a lo
 
 ## Credits And License
 
-Just Enough Guns New is a fork and modern Fabric/NeoForge port of the original Just Enough Guns project by MigaMi, which targets Forge 1.20.1: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
+Just Enough Guns New is a fork and modern Fabric/NeoForge unofficial port of the original Just Enough Guns project by MigaMi, which targets Forge 1.20.1: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
 
 - Original Just Enough Guns code, design, and assets are by MigaMi and are licensed under GPL-3.0.
 - The current SBW-derived Walkurenritt vehicle set covers the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus their vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data. These materials are derived from Superb Warfare (SBW) by the SBW development team and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
 - The SBW-derived Walkurenritt vehicle materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future vehicle content may have different source projects and license terms.
-- Just Enough Guns New is an independent port project and is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
-- Just Enough Guns New porting and maintenance is handled by Rui Mao.
+- Just Enough Guns New is an independent unofficial port project and is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
+- Just Enough Guns New unofficial porting and maintenance is handled by Rui Mao.
 - Project code based on Just Enough Guns is licensed under GPL-3.0, except the listed SBW-derived Walkurenritt vehicle materials as noted above.
 
 Suggestions and bug reports are welcome. Clear reproduction steps, Minecraft version, loader, mod version, dependency versions, and crash logs help much more than vague reports.
