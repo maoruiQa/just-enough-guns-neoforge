@@ -204,6 +204,7 @@
   "info.jeg.ammo": "Ammo: %s",
   "info.jeg.ammo_type": "Ammo Type: %s",
   "info.jeg.armor_piercing": "Armor Piercing: %s",
+  "info.jeg.headshot_multiplier": "Headshot: %s",
   "info.jeg.range": "Range: %s blocks",
   "info.jeg.projectiles": "Projectiles: %s",
   "info.jeg.open_attachments_z": "Press Z to open the attachment screen",
