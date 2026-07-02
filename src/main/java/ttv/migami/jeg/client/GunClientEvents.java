@@ -15,13 +15,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -66,7 +64,6 @@ public final class GunClientEvents {
     private static final Component MAGAZINE_UNLOAD_PROMPT = Component.translatable("jeg.magazine.unload.prompt");
     private static final Component OFFHAND_FULL_PROMPT = Component.translatable("jeg.magazine.offhand_full.prompt");
     private static boolean attackHeldLastTick;
-    private static boolean useKeyDownLastTick;
     private static boolean aimingStateLastSent;
     private static boolean swapOffhandHeldLastTick;
     private static int offhandFullPromptTicks;
@@ -202,16 +199,6 @@ public final class GunClientEvents {
         }
 
         if (event.isUseItem()) {
-            if (Minecraft.getInstance().hitResult instanceof EntityHitResult entityHit
-                    && entityHit.getEntity() instanceof ItemFrame) {
-                if (useKeyDownLastTick) {
-                    event.setCanceled(true);
-                    event.setSwingHand(false);
-                    return;
-                }
-                AimingHandler.get().suppressUntilUseReleased();
-                return;
-            }
             // Right click is reserved for aiming (ADS), not firing.
             if (!held.is(Items.POTION)) {
                 event.setCanceled(true);
@@ -327,7 +314,6 @@ public final class GunClientEvents {
         LocalPlayer player = minecraft.player;
         if (player == null) {
             attackHeldLastTick = false;
-            useKeyDownLastTick = false;
             aimingStateLastSent = false;
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
@@ -395,7 +381,6 @@ public final class GunClientEvents {
             resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
-        useKeyDownLastTick = minecraft.options.keyUse.isDown();
 
         if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && minecraft.options.keyAttack.isDown()) {
             NetworkHandler.sendChargeFlashlight();
@@ -537,7 +522,6 @@ public final class GunClientEvents {
         ttv.migami.jeg.client.render.BulletTrailRenderer.clear();
         MUZZLE_FLASHES.clear();
         attackHeldLastTick = false;
-        useKeyDownLastTick = false;
         aimingStateLastSent = false;
         swapOffhandHeldLastTick = false;
         offhandFullPromptTicks = 0;
