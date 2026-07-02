@@ -291,6 +291,7 @@ public final class ModItems {
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
             "rifle_ammo",
+            "sniper_ammo",
             "small_shell",
             "autocannon_shell",
             "shotgun_shell",

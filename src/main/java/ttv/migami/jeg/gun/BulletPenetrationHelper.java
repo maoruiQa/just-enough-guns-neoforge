@@ -46,6 +46,7 @@ public class BulletPenetrationHelper {
     private static final float PISTOL_POWER = 0.5F;
     private static final float SHOTGUN_POWER = 1.0F;
     private static final float RIFLE_POWER = 1.5F;
+    private static final float SNIPER_POWER = 5.4F;
     private static final float DEFAULT_POWER = 0.8F;
 
     /**
@@ -89,6 +90,10 @@ public class BulletPenetrationHelper {
         }
 
         String ammoPath = stats.ammoItem().getPath();
+
+        if ("sniper_ammo".equals(ammoPath)) {
+            return SNIPER_POWER;
+        }
 
         // Pistol ammo
         if (ammoPath.contains("pistol")) {
