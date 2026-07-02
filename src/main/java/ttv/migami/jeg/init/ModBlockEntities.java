@@ -10,6 +10,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.block.entity.DynamicLightBlockEntity;
+import ttv.migami.jeg.block.entity.MagazineLoaderBlockEntity;
 import ttv.migami.jeg.vehicle.block.entity.VehicleAssemblingTableBlockEntity;
 import ttv.migami.jeg.vehicle.block.entity.VehicleChargingStationBlockEntity;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
@@ -42,6 +43,11 @@ public final class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VehicleChargingStationBlockEntity>> VEHICLE_CHARGING_STATION = REGISTER.register(
             "vehicle_charging_station",
             () -> createBlockEntityType(VehicleChargingStationBlockEntity::new, ModBlocks.VEHICLE_CHARGING_STATION.get())
+    );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagazineLoaderBlockEntity>> MAGAZINE_LOADER = REGISTER.register(
+            "magazine_loader",
+            () -> createBlockEntityType(MagazineLoaderBlockEntity::new, ModBlocks.MAGAZINE_LOADER.get())
     );
 
     @SuppressWarnings("unchecked")

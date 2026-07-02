@@ -73,6 +73,10 @@ public final class ModItems {
             "vehicle_charging_station",
             () -> new BlockItem(ModBlocks.VEHICLE_CHARGING_STATION.get(), baseProperties(Reference.id("vehicle_charging_station")).stacksTo(64))
     );
+    public static final DeferredHolder<Item, BlockItem> MAGAZINE_LOADER = REGISTER.register(
+            "magazine_loader",
+            () -> new BlockItem(ModBlocks.MAGAZINE_LOADER.get(), baseProperties(Reference.id("magazine_loader")).stacksTo(64))
+    );
     public static final DeferredHolder<Item, Item> CROWBAR = REGISTER.register(
             "crowbar",
             () -> new Item(baseProperties(Reference.id("crowbar")).stacksTo(1).durability(128))
@@ -576,6 +580,7 @@ public final class ModItems {
         addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("magazine_loader")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
@@ -626,6 +631,7 @@ public final class ModItems {
         addCosmeticAttachmentRecipes(keys);
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_assembling_table")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("vehicle_charging_station")));
+        keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("magazine_loader")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("crowbar")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_kit")));
         keys.add(ResourceKey.create(Registries.RECIPE, Reference.id("repair_tool")));
@@ -729,6 +735,7 @@ public final class ModItems {
             event.accept(GUNSMITH_MANUAL.get());
             event.accept(VEHICLE_ASSEMBLING_TABLE.get());
             event.accept(VEHICLE_CHARGING_STATION.get());
+            event.accept(MAGAZINE_LOADER.get());
             event.accept(VEHICLE_CONTAINER.get());
             VehicleDataManager.all().keySet().stream()
                     .sorted()

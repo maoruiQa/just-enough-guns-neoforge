@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IRI",
+    "GPG",
+    "IHI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "G": "minecraft:copper_ingot",
+    "P": "minecraft:piston",
+    "H": "minecraft:hopper"
+  },
+  "result": {
+    "id": "jeg:magazine_loader",
+    "count": 1
+  }
+}

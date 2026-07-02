@@ -10,6 +10,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.block.DynamicLightBlock;
+import ttv.migami.jeg.block.MagazineLoaderBlock;
 import ttv.migami.jeg.vehicle.block.VehicleAssemblingTableBlock;
 import ttv.migami.jeg.vehicle.block.VehicleChargingStationBlock;
 import ttv.migami.jeg.vehicle.block.VehicleContainerBlock;
@@ -37,6 +38,11 @@ public final class ModBlocks {
     public static final DeferredHolder<Block, VehicleChargingStationBlock> VEHICLE_CHARGING_STATION = REGISTER.register(
             "vehicle_charging_station",
             id -> new VehicleChargingStationBlock(blockProperties(id).strength(3.5F).sound(SoundType.METAL))
+    );
+
+    public static final DeferredHolder<Block, MagazineLoaderBlock> MAGAZINE_LOADER = REGISTER.register(
+            "magazine_loader",
+            id -> new MagazineLoaderBlock(blockProperties(id).strength(3.5F).requiresCorrectToolForDrops().sound(SoundType.METAL))
     );
 
     private static BlockBehaviour.Properties blockProperties(Identifier id) {

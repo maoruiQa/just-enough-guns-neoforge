@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "jeg:block/magazine_loader_side_feed",
+    "down": "jeg:block/magazine_loader_bottom",
+    "up": "jeg:block/magazine_loader_top",
+    "north": "jeg:block/magazine_loader_back",
+    "east": "jeg:block/magazine_loader_side_redstone",
+    "south": "jeg:block/magazine_loader_front",
+    "west": "jeg:block/magazine_loader_side_feed"
+  }
+}
