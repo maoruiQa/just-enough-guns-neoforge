@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:iron_nugget",
+    "minecraft:gunpowder"
+  ],
+  "result": {
+    "id": "jeg:sniper_ammo",
+    "count": 12
+  }
+}
