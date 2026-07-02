@@ -87,6 +87,7 @@ import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
 import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
 import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEntityRenderer;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
+import ttv.migami.jeg.client.screen.MagazineLoaderScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleAssemblingScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleChargingStationScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
@@ -270,6 +271,7 @@ public final class FabricClientBootstrap {
         MenuScreens.register(ModMenuTypes.VEHICLE_MENU.get(), VehicleScreen::new);
         MenuScreens.register(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), VehicleAssemblingScreen::new);
         MenuScreens.register(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), VehicleChargingStationScreen::new);
+        MenuScreens.register(ModMenuTypes.MAGAZINE_LOADER_MENU.get(), MagazineLoaderScreen::new);
 
         ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
                 player != null && player.getMainHandItem().getItem() instanceof GunItem);

@@ -62,6 +62,7 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.VEHICLE_CONTAINER.get());
             entries.accept(ModItems.VEHICLE_ASSEMBLING_TABLE.get());
             entries.accept(ModItems.VEHICLE_CHARGING_STATION.get());
+            entries.accept(ModItems.MAGAZINE_LOADER.get());
             VehicleDataManager.all().keySet().stream()
                     .sorted()
                     .map(VehicleContainerBlockEntity::createItemForVehicle)
