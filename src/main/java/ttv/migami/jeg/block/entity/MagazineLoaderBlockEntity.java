@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -227,6 +228,15 @@ public final class MagazineLoaderBlockEntity extends BlockEntity implements Worl
     @Override
     public void clearContent() {
         this.clearItems();
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (this.level != null && !this.level.isClientSide()) {
+            Containers.dropContents(this.level, pos, this);
+            this.clearItems();
+        }
+        super.preRemoveSideEffects(pos, state);
     }
 
     @Override
