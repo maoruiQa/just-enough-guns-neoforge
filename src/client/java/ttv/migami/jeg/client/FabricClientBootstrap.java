@@ -147,6 +147,7 @@ public final class FabricClientBootstrap {
     private static boolean registered;
     private static String lastContextualPromptText = "";
     private static boolean attackHeldLastTick;
+    private static boolean useKeyDownLastTick;
     private static boolean aimingStateLastSent;
     private static boolean swapOffhandHeldLastTick;
     private static int offhandFullPromptTicks;
@@ -255,8 +256,11 @@ public final class FabricClientBootstrap {
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (player.getMainHandItem().getItem() instanceof GunItem) {
                 if (entity instanceof ItemFrame) {
+                    if (useKeyDownLastTick) {
+                        return net.minecraft.world.InteractionResult.FAIL;
+                    }
                     AimingHandler.get().suppressUntilUseReleased();
-                    return net.minecraft.world.InteractionResult.PASS;
+                    return net.minecraft.world.InteractionResult.SUCCESS;
                 }
                 return net.minecraft.world.InteractionResult.FAIL;
             }
@@ -367,6 +371,7 @@ public final class FabricClientBootstrap {
             firstPersonGunPose = null;
             CrosshairHandler.reset();
             attackHeldLastTick = false;
+            useKeyDownLastTick = false;
             aimingStateLastSent = false;
             swapOffhandHeldLastTick = false;
             offhandFullPromptTicks = 0;
@@ -479,6 +484,7 @@ public final class FabricClientBootstrap {
         LocalPlayer player = client.player;
         if (player == null || client.level == null) {
             attackHeldLastTick = false;
+            useKeyDownLastTick = false;
             aimingStateLastSent = false;
             nextVisualShotTickMain = 0L;
             resetRocketHold(false);
@@ -542,6 +548,7 @@ public final class FabricClientBootstrap {
             resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
+        useKeyDownLastTick = client.options.keyUse.isDown();
 
         if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && client.options.keyAttack.isDown()) {
             ClientNetworkHandler.sendChargeFlashlight();
