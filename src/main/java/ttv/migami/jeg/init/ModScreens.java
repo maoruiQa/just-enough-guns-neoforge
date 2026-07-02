@@ -7,6 +7,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
+import ttv.migami.jeg.client.screen.MagazineLoaderScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleAssemblingScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleChargingStationScreen;
 import ttv.migami.jeg.vehicle.client.screen.VehicleScreen;
@@ -21,5 +22,6 @@ public final class ModScreens {
         event.register(ModMenuTypes.VEHICLE_MENU.get(), VehicleScreen::new);
         event.register(ModMenuTypes.VEHICLE_ASSEMBLING_MENU.get(), VehicleAssemblingScreen::new);
         event.register(ModMenuTypes.VEHICLE_CHARGING_STATION_MENU.get(), VehicleChargingStationScreen::new);
+        event.register(ModMenuTypes.MAGAZINE_LOADER_MENU.get(), MagazineLoaderScreen::new);
     }
 }

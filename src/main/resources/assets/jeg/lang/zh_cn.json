@@ -376,6 +376,7 @@
   "key.jeg.vehicle_player_inventory": "Vehicle Player Inventory",
   "container.jeg.vehicle": "载具物品栏",
   "container.jeg.vehicle_charging_station": "载具充能站",
+  "container.jeg.magazine_loader": "弹匣装填机",
   "gui.jeg.vehicle_charging_station.charging": "充能中",
   "gui.jeg.vehicle_charging_station.energy": "载具能量：%s / %s",
   "gui.jeg.vehicle_charging_station.idle": "范围内有载具",
@@ -399,6 +400,7 @@
   "container.jeg.vehicle_assembling_table": "载具装配台",
   "block.jeg.vehicle_assembling_table": "载具装配台",
   "block.jeg.vehicle_charging_station": "载具充能站",
+  "block.jeg.magazine_loader": "弹匣装填机",
   "block.jeg.vehicle_container": "载具容器",
   "item.jeg.vehicle_container.named": "%s容器",
   "item.jeg.crowbar": "Crowbar",
@@ -726,5 +728,6 @@
   "commands.jeg.gave_vehicle_container": "已将 %s 容器给予 %s",
   "item.jeg.vehicle_assembling_table": "载具装配台",
   "item.jeg.vehicle_charging_station": "载具充能站",
+  "item.jeg.magazine_loader": "弹匣装填机",
   "item.jeg.vehicle_container": "载具容器"
 }
