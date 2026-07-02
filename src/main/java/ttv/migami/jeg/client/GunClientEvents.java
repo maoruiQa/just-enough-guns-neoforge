@@ -30,11 +30,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -240,6 +242,11 @@ public final class GunClientEvents {
         }
 
         if (event.isUseItem()) {
+            if (Minecraft.getInstance().hitResult instanceof EntityHitResult entityHit
+                    && entityHit.getEntity() instanceof ItemFrame) {
+                AimingHandler.get().suppressUntilUseReleased();
+                return;
+            }
             // Right click is reserved for aiming (ADS), not firing or coolant use.
             event.setCanceled(true);
             event.setSwingHand(false);
