@@ -299,7 +299,7 @@ final class TerrorRaidManager {
 
                 Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom());
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
-                boolean elite = (mob.getRandom().nextFloat() < GunMobValues.eliteChance && GunMobValues.elitesEnabled);
+                boolean elite = GunMobValues.rollElite(mob.level(), mob.getRandom());
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
                 if (elite) {

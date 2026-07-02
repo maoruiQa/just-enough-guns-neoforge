@@ -233,7 +233,7 @@ public final class FactionSpawnHelper {
             GunnerMobSpawner.normalizeGunnerMob(mob);
         }
 
-        if (canBeElite && GunMobValues.elitesEnabled && random.nextFloat() < GunMobValues.eliteChance) {
+        if (canBeElite && GunMobValues.rollElite(level, random)) {
             mob.addTag("EliteGunner");
         }
 
