@@ -222,6 +222,7 @@
   "info.jeg.ammo": "弹药：%s",
   "info.jeg.ammo_type": "弹药类型：%s",
   "info.jeg.armor_piercing": "穿甲：%s",
+  "info.jeg.headshot_multiplier": "爆头倍率：%s",
   "info.jeg.range": "射程：%s格",
   "info.jeg.projectiles": "弹丸数：%s",
   "info.jeg.open_attachments_z": "按 Z 打开配件界面",

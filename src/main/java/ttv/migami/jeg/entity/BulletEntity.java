@@ -58,6 +58,7 @@ import ttv.migami.jeg.faction.GunnerFactionRelations;
 import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.gun.GunDefinitions;
+import ttv.migami.jeg.gun.GunHeadshotHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.init.ModEntities;
@@ -462,6 +463,9 @@ public class BulletEntity extends Projectile {
             }
 
             if (entity instanceof LivingEntity living) {
+                if (GunHeadshotHelper.isHeadshotHit(result, living)) {
+                    damage *= GunHeadshotHelper.headshotMultiplier(stats);
+                }
                 damage = applyBallisticArmor(living, result, damage, stats, false);
 
                 boolean hurt = living.hurt(source, damage);
@@ -513,7 +517,7 @@ public class BulletEntity extends Projectile {
     }
 
     private static boolean isCriticalHit(EntityHitResult result, LivingEntity living) {
-        return result.getLocation().y >= living.getEyeY() - 0.20D;
+        return GunHeadshotHelper.isHeadshotHit(result, living);
     }
 
     private void applyKillEffect(LivingEntity target, EntityHitResult result) {

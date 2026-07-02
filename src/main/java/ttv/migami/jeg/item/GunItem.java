@@ -50,6 +50,7 @@ import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.gun.BallisticProtection;
 import ttv.migami.jeg.gun.GunDefinitions;
 import ttv.migami.jeg.gun.GunCategory;
+import ttv.migami.jeg.gun.GunHeadshotHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
@@ -2856,6 +2857,7 @@ public class GunItem extends Item {
                 modifiers.explosiveAmmo() ? 0.75F : 1.0F
         );
         tooltip.add(Component.translatable("info.jeg.armor_piercing", String.format(Locale.US, "%.2f", armorPiercing)));
+        tooltip.add(Component.translatable("info.jeg.headshot_multiplier", String.format(Locale.US, "%.2fx", GunHeadshotHelper.headshotMultiplier(this.stats))));
 
         double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
         if (effectiveRange > 0.0D) {
