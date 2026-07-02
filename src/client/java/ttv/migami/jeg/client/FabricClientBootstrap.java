@@ -34,6 +34,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -204,6 +205,10 @@ public final class FabricClientBootstrap {
         });
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (player.getMainHandItem().getItem() instanceof GunItem) {
+                if (entity instanceof ItemFrame) {
+                    AimingHandler.get().suppressUntilUseReleased();
+                    return net.minecraft.world.InteractionResult.PASS;
+                }
                 return net.minecraft.world.InteractionResult.FAIL;
             }
             return net.minecraft.world.InteractionResult.PASS;
