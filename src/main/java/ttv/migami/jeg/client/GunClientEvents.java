@@ -242,8 +242,14 @@ public final class GunClientEvents {
         }
 
         if (event.isUseItem()) {
-            if (Minecraft.getInstance().hitResult instanceof EntityHitResult entityHit
+            if (event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                    && Minecraft.getInstance().hitResult instanceof EntityHitResult entityHit
                     && entityHit.getEntity() instanceof ItemFrame) {
+                if (AimingHandler.get().isAiming()) {
+                    event.setCanceled(true);
+                    event.setSwingHand(false);
+                    return;
+                }
                 AimingHandler.get().suppressUntilUseReleased();
                 return;
             }
@@ -437,7 +443,6 @@ public final class GunClientEvents {
             resetRocketHold(true);
             GunRecoilHandler.stopImmediate();
         }
-
         if (!(heldMain.getItem() instanceof GunItem) && heldMain.getItem() instanceof FlashlightAttachmentItem && minecraft.options.keyAttack.isDown()) {
             NetworkHandler.sendChargeFlashlight();
             minecraft.options.keyAttack.setDown(false);
