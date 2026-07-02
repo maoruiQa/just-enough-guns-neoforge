@@ -110,7 +110,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 public final class FabricClientBootstrap {
     private static final Gson GSON = new Gson();
     private static final Identifier MUZZLE_FLASH_TEXTURE = Reference.id("textures/effect/muzzle_flash.png");
-    private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 1.35D;
+    private static final double THIRD_PERSON_MUZZLE_FORWARD_OFFSET = 0.45D;
     private static final Identifier OVERHEAT_TEXTURE = Reference.id("textures/gui/timer/overheat.png");
     private static final Identifier HOLD_TEXTURE = Reference.id("textures/gui/timer/hold.png");
     private static final int FULL_BRIGHT = 0x00F000F0;
@@ -969,11 +969,14 @@ public final class FabricClientBootstrap {
             poseStack.mulPose(camera.rotation());
             poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
+            poseStack.scale((float) flash.size(), (float) flash.size(), 1.0F);
+            poseStack.translate(-0.5F, -0.5F, 0.0F);
+            Matrix4f flashPose = new Matrix4f(poseStack.last().pose());
 
             collector.submitCustomGeometry(
                     poseStack,
                     RenderTypes.entityCutout(MUZZLE_FLASH_TEXTURE),
-                    (pose, buffer) -> renderMuzzleFlashQuad(pose.pose(), held, buffer)
+                    (pose, buffer) -> renderMuzzleFlashQuad(flashPose, held, buffer)
             );
 
             poseStack.popPose();
@@ -1061,32 +1064,26 @@ public final class FabricClientBootstrap {
     }
 
     private static Vec3 computeMuzzlePosition(LivingEntity shooter, ItemStack held, float partialTick) {
-        Vec3 eye = shooter.getEyePosition(partialTick);
-        Vec3 look = shooter.getViewVector(partialTick);
-        if (look.lengthSqr() < 1.0E-6D) {
-            look = Vec3.ZERO;
-        } else {
-            look = look.normalize();
-        }
+        double x = Mth.lerp(partialTick, shooter.xo, shooter.getX());
+        double y = Mth.lerp(partialTick, shooter.yo, shooter.getY());
+        double z = Mth.lerp(partialTick, shooter.zo, shooter.getZ());
+        Vec3 body = new Vec3(x, y + shooter.getBbHeight() * 0.72D, z);
 
-        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
-        Vec3 side = look.cross(up);
-        if (side.lengthSqr() < 1.0E-6D) {
-            side = new Vec3(1.0D, 0.0D, 0.0D);
-        } else {
-            side = side.normalize();
-        }
+        float yaw = Mth.rotLerp(partialTick, shooter.yBodyRotO, shooter.yBodyRot);
+        float yawRadians = yaw * Mth.DEG_TO_RAD;
+        Vec3 forward = new Vec3(-Mth.sin(yawRadians), 0.0D, Mth.cos(yawRadians));
+        Vec3 side = forward.cross(new Vec3(0.0D, 1.0D, 0.0D));
 
         MuzzleFlashProfile flash = muzzleFlashProfile(held);
-        double forwardMul = 0.36D - flash.zOffset() * 0.0625D;
-        double sideMul = flash.xOffset() * 0.0625D;
-        double heightMul = (flash.yOffset() - 4.75D) * 0.0625D;
+        double forwardMul = THIRD_PERSON_MUZZLE_FORWARD_OFFSET + Mth.clamp(-flash.zOffset() * 0.035D, -0.2D, 0.65D);
+        double sideMul = Mth.clamp(flash.xOffset() * 0.0625D, -0.18D, 0.18D);
+        double heightMul = Mth.clamp((flash.yOffset() - 4.75D) * 0.035D, -0.18D, 0.18D);
 
         if (shooter instanceof Player player && player.getMainArm() == HumanoidArm.LEFT) {
             sideMul *= -1.0D;
         }
 
-        return eye.add(look.scale(forwardMul + THIRD_PERSON_MUZZLE_FORWARD_OFFSET)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
+        return body.add(forward.scale(forwardMul)).add(side.scale(sideMul)).add(0.0D, heightMul, 0.0D);
     }
 
     private static MuzzleFlashProfile muzzleFlashProfile(ItemStack held) {
