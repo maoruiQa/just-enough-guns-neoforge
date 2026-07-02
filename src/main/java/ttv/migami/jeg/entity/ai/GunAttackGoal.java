@@ -3125,6 +3125,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         if (!(shooter instanceof Player)) {
             if (GunItem.isShotgun(stats.id())) {
                 gunSpread = stats.spread() * 0.60F;
+            } else if ("bolt_action_rifle".equals(stats.id().getPath())) {
+                gunSpread = stats.spread() * 2.75F;
             } else {
                 float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
                 float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);

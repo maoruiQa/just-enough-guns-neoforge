@@ -432,8 +432,9 @@ public final class GunEvents {
             return;
         }
 
-        // Reduced ammo drop chance to 60% (was 100%)
-        if (random.nextFloat() < 0.60F) {
+        boolean sniperAmmo = stats.ammoItem() != null && "sniper_ammo".equals(stats.ammoItem().getPath());
+        float ammoDropChance = sniperAmmo ? 0.25F : 0.60F;
+        if (random.nextFloat() < ammoDropChance) {
             ItemStack ammo = buildAmmoDrop(stats, random);
             if (!ammo.isEmpty()) {
                 addDrop(event, entity, ammo);
@@ -482,6 +483,9 @@ public final class GunEvents {
             var ammoHolder = ModItems.AMMO.get(ammoId);
             Item ammo = ammoHolder != null ? ammoHolder.get() : BuiltInRegistries.ITEM.getOptional(ammoId).orElse(null);
             if (ammo != null) {
+                if ("sniper_ammo".equals(ammoId.getPath())) {
+                    return new ItemStack(ammo, Mth.nextInt(random, 1, 3));
+                }
                 int lower = Math.max(6, stats.usesMagazine() ? stats.magazineSize() / 2 : 8);
                 int upper = Math.max(lower, stats.usesMagazine() ? stats.magazineSize() : lower + 8);
                 int amount = Mth.nextInt(random, lower, upper);
