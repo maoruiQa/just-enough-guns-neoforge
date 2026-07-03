@@ -2361,6 +2361,10 @@ public class GunItem extends Item {
         return Math.max(1, (int) Math.ceil(totalTicks * DRAW_OPERATION_LOCK_FRACTION));
     }
 
+    static int getDrawOperationLockTicks(ItemStack stack) {
+        return getDrawOperationLockTicks(getDrawAnimationTicks(stack));
+    }
+
     public static boolean isReloading(ItemStack stack) {
         return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0;
     }
@@ -2633,6 +2637,7 @@ public class GunItem extends Item {
     private static void clearHeldGunMatchState(ItemStack stack) {
         clearReloadVisualState(stack);
         stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_HEAT.get());
     }
 
     public static void startClientDrawAnimationForSwitch(Player player, ItemStack stack) {
@@ -2644,6 +2649,7 @@ public class GunItem extends Item {
         int slot = player.getInventory().getSelectedSlot();
         clearReloadVisualState(stack);
         stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), getDrawAnimationTicks(stack));
+        AnimatedGunItem.restartDrawAnimation(stack);
 
         HeldGunState currentState = heldGunState(player, stack);
         if (currentState != null) {
