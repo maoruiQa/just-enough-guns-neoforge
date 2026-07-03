@@ -492,9 +492,9 @@ public final class FabricClientBootstrap {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
 
-        boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+        boolean drawLocked = isDrawOperationLocked(heldMain);
         while (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.ATTACHMENTS, drawLocked)) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendOpenAttachments();
             }
         }
@@ -502,7 +502,7 @@ public final class FabricClientBootstrap {
         if (heldMain.getItem() instanceof GunItem gun) {
             boolean attackDown = client.options.keyAttack.isDown();
             long nowTick = player.level().getGameTime();
-            boolean drawLockedMain = GunItem.isDrawOperationLocked(heldMain);
+            boolean drawLockedMain = isDrawOperationLocked(heldMain);
 
             if (drawLockedMain) {
                 resetRocketHold(true);
@@ -544,14 +544,14 @@ public final class FabricClientBootstrap {
         }
 
         while (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.MELEE, drawLocked)) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain) && canUseGunMelee(player, heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain) && canUseGunMelee(player, heldMain)) {
                 GunItem.cancelReloadForImmediateAction(player, heldMain);
                 ClientNetworkHandler.sendMelee();
             }
         }
 
         if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.INSPECT, drawLocked)
-                && heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
+                && heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain)) {
             if (heldMain.getItem() instanceof AnimatedGunItem) {
                 AnimatedGunItem.triggerClientInspect(player);
             }
@@ -559,9 +559,9 @@ public final class FabricClientBootstrap {
         }
 
         if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.RELOAD, drawLocked)) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldOff)) {
+            } else if (heldOff.getItem() instanceof GunItem && !isDrawOperationLocked(heldOff)) {
                 ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
@@ -571,8 +571,15 @@ public final class FabricClientBootstrap {
 
     private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
         return !isMeleeBlockedGun(stack)
-                && !GunItem.isDrawOperationLocked(stack)
+                && !isDrawOperationLocked(stack)
                 && !player.getCooldowns().isOnCooldown(stack);
+    }
+
+    private static boolean isDrawOperationLocked(ItemStack stack) {
+        if (stack.getItem() instanceof AnimatedGunItem) {
+            return AnimatedGunItem.isClientDrawOperationLocked(stack);
+        }
+        return GunItem.isDrawOperationLocked(stack);
     }
 
     private static boolean consumeUnlockedClick(net.minecraft.client.KeyMapping key, boolean locked) {
