@@ -463,7 +463,7 @@ public class BulletEntity extends Projectile {
 
             if (entity instanceof LivingEntity living) {
                 if (GunHeadshotHelper.isHeadshotHit(result, living)) {
-                    damage *= GunHeadshotHelper.headshotMultiplier(stats);
+                    damage *= GunHeadshotHelper.headshotMultiplier(stats, owner);
                 }
                 damage = applyBallisticArmor(living, result, damage, stats, false);
 

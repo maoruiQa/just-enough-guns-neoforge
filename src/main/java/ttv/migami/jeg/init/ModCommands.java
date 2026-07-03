@@ -221,6 +221,7 @@ public final class ModCommands {
         return Commands.literal("combat")
                 .then(configBulletBlockDestructionCommand())
                 .then(configMagazineFeedCommand())
+                .then(configBooleanConfigCommand("headshotMultiplier", "combat.headshotMultiplier"))
                 .then(configGunnerTerrainPlacementCommand())
                 .then(configGunnerTerrainBreakCommand());
     }

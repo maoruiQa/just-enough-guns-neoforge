@@ -16,6 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -424,7 +425,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
                 if (canShoot && --this.attackTime <= 0 && this.seeTime >= -20 && this.seeTime >= 10) {
                     shoot(target, gunItem, stats);
-                    this.attackTime = gunnerFireDelay(stats);
+                    this.attackTime = gunnerFireDelay(this.shooter, stats);
                 }
             }
 
@@ -3066,7 +3067,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             }
 
             for (int i = 0; i < pellets; i++) {
-                Vec3 direction = computeDirection(this.shooter, origin, target, random, stats);
+                GunStats shotStats = skeletonSniperStats(this.shooter, stats);
+                Vec3 direction = computeDirection(this.shooter, origin, target, random, shotStats);
                 Vec3 muzzle = origin.add(direction.scale(0.35F));
 
                 if (grenadeLauncher) {
@@ -3076,16 +3078,16 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                     grenade.setDeltaMovement(launchVelocity);
                     this.shooter.level().addFreshEntity(grenade);
                 } else {
-                    Vec3 velocity = direction.scale(stats.projectileSpeed());
-                    BulletEntity bullet = GunItem.createBullet(this.shooter.level(), this.shooter, heldItem, stats, velocity);
+                    Vec3 velocity = direction.scale(shotStats.projectileSpeed());
+                    BulletEntity bullet = GunItem.createBullet(this.shooter.level(), this.shooter, heldItem, shotStats, velocity);
                     bullet.initialisePosition(muzzle);
                     this.shooter.level().addFreshEntity(bullet);
-                    if (this.shooter.level() instanceof ServerLevel serverLevel && GunItem.isBulletClassWeapon(stats.id())) {
+                    if (this.shooter.level() instanceof ServerLevel serverLevel && GunItem.isBulletClassWeapon(shotStats.id())) {
                         bullet.sendTrailToClients(serverLevel);
                     }
 
-                    if (!stats.flameTrail() && this.shooter.level() instanceof ServerLevel serverLevel) {
-                        spawnBulletTrailParticles(serverLevel, muzzle, direction, stats);
+                    if (!shotStats.flameTrail() && this.shooter.level() instanceof ServerLevel serverLevel) {
+                        spawnBulletTrailParticles(serverLevel, muzzle, direction, shotStats);
                     }
                 }
                 FactionRaidManager.notifyRaidMobFired(this.shooter);
@@ -3095,7 +3097,10 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         }
     }
 
-    private static int gunnerFireDelay(GunStats stats) {
+    private static int gunnerFireDelay(LivingEntity shooter, GunStats stats) {
+        if (isSkeletonSniper(shooter, stats)) {
+            return 48;
+        }
         String path = stats.id().getPath();
         if ("minigun".equals(path)) {
             return Math.max(2, stats.fireDelay());
@@ -3106,9 +3111,46 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         return Math.max(6, stats.fireDelay());
     }
 
+    private static GunStats skeletonSniperStats(LivingEntity shooter, GunStats stats) {
+        if (!isSkeletonSniper(shooter, stats)) {
+            return stats;
+        }
+        return new GunStats(
+                stats.id(),
+                stats.ammoItem(),
+                stats.reloadType(),
+                stats.magazineSize(),
+                stats.reloadTime(),
+                stats.additionalReloadTime(),
+                stats.fireDelay(),
+                6.0F,
+                stats.projectileSpeed(),
+                stats.projectileLife(),
+                stats.gravity(),
+                stats.flameTrail(),
+                stats.spread(),
+                stats.projectileAmount(),
+                stats.fireSound(),
+                stats.silencedFireSound(),
+                stats.enchantedFireSound(),
+                stats.reloadStartSound(),
+                stats.reloadLoadSound(),
+                stats.reloadEndSound(),
+                stats.ejectorPullSound(),
+                stats.ejectorReleaseSound(),
+                stats.projectileSize(),
+                stats.trailColor(),
+                stats.trailLengthMultiplier()
+        );
+    }
+
     private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, LivingEntity target, RandomSource random, GunStats stats) {
         Vec3 base = target.getEyePosition().subtract(origin);
         return applyLegacySpread(shooter, base, stats, random);
+    }
+
+    private static boolean isSkeletonSniper(LivingEntity shooter, GunStats stats) {
+        return shooter instanceof Skeleton && "bolt_action_rifle".equals(stats.id().getPath());
     }
 
     private static Vec3 applyLegacySpread(LivingEntity shooter, Vec3 baseDirection, GunStats stats, RandomSource random) {
@@ -3125,6 +3167,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         if (!(shooter instanceof Player)) {
             if (GunItem.isShotgunWeapon(stats.id())) {
                 gunSpread = stats.spread() * 0.60F;
+            } else if (isSkeletonSniper(shooter, stats)) {
+                gunSpread = stats.spread() * 6.0F;
             } else if ("bolt_action_rifle".equals(stats.id().getPath())) {
                 gunSpread = stats.spread() * 2.75F;
             } else {

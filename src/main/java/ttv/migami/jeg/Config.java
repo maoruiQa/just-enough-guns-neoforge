@@ -47,6 +47,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue GUN_JAMMING_ENABLED;
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
+    public static final ModConfigSpec.BooleanValue HEADSHOT_MULTIPLIER_ENABLED;
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
     public static final ModConfigSpec.ConfigValue<String> GUNNER_TERRAIN_SUPPORT_BLOCK;
     public static final ModConfigSpec.IntValue GUNNER_TERRAIN_BREAK_MAX_TIER;
@@ -244,6 +245,9 @@ public final class Config {
         MAGAZINE_FEED_ENABLED = serverBuilder
                 .comment("If true, guns that support magazine swaps will reload from compatible magazines instead of using the legacy loose-ammo reload path.")
                 .define("magazineFeedEnabled", true);
+        HEADSHOT_MULTIPLIER_ENABLED = serverBuilder
+                .comment("If true, gun headshots apply weapon-specific damage multipliers.")
+                .define("headshotMultiplier", true);
         GUNNER_TERRAIN_PLACEMENT_ENABLED = serverBuilder
                 .comment("If true, ground gunners can place support blocks to get around simple terrain obstacles.")
                 .define("gunnerTerrainPlacementEnabled", true);
@@ -376,6 +380,7 @@ public final class Config {
         registerCommandConfig("combat.gunJamming", GUN_JAMMING_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
+        registerCommandConfig("combat.headshotMultiplier", HEADSHOT_MULTIPLIER_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.block", GUNNER_TERRAIN_SUPPORT_BLOCK);
         registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
@@ -629,6 +634,10 @@ public final class Config {
     public static void setBulletBlockDestructionEnabled(boolean enabled) {
         setConfigValue("combat.bulletBlockDestruction", enabled);
         saveServerConfig();
+    }
+
+    public static boolean headshotMultiplierEnabled() {
+        return HEADSHOT_MULTIPLIER_ENABLED.get();
     }
 
     public static int gunnerAccuracyStartDay() {

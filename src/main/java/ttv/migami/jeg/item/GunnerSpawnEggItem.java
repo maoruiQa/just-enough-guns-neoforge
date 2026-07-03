@@ -8,15 +8,18 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.stats.Stats;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.Faction;
+import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.faction.GunnerType;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -28,6 +31,14 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
 
     public GunnerSpawnEggItem(EntityType<? extends Mob> type, Properties properties) {
         super(type, properties);
+    }
+
+    public GunnerSpawnEggItem(EntityType<? extends Mob> type, SpawnEggItem baseEgg, Properties properties) {
+        super(type, baseEgg.getColor(0), baseEgg.getColor(1), properties);
+    }
+
+    public GunnerSpawnEggItem(EntityType<? extends Mob> type, EntityType<? extends Mob> registryType, SpawnEggItem baseEgg, Properties properties) {
+        super(type, registryType, baseEgg.getColor(0), baseEgg.getColor(1), properties);
     }
 
     @Override
@@ -58,8 +69,12 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
             return;
         }
 
+        String gunnerType = GunnerType.keyFor(pathfinderMob);
+        boolean elite = GunMobValues.rollElite(mob.level(), mob.getRandom());
         boolean closeRange = mob.getRandom().nextBoolean();
-        var gunItem = faction.getRandomGun(closeRange, mob.level(), mob.getRandom());
+        var gunItem = elite
+                ? faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType)
+                : faction.getRandomGun(closeRange, mob.level(), mob.getRandom(), gunnerType);
         if (gunItem == null) {
             return;
         }
@@ -73,8 +88,14 @@ public class GunnerSpawnEggItem extends ModSpawnEggItem {
         }
 
         mob.setItemSlot(EquipmentSlot.MAINHAND, gunStack);
+        if (elite) {
+            GunnerMobSpawner.applyEliteAttributes(pathfinderMob);
+        }
         GunnerProgression.prepareDroppedWeapon(mob, gunStack);
-        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.normal(pathfinderMob));
+        GunnerMobSpawner.suppressSkeletonSniperDrop(pathfinderMob, gunItem);
+        GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), elite
+                ? GunnerArmorEquiper.GunnerArmorContext.elite(pathfinderMob)
+                : GunnerArmorEquiper.GunnerArmorContext.normal(pathfinderMob));
         pathfinderMob.setCanPickUpLoot(false);
         GunnerMobSpawner.reassessWeaponGoal(pathfinderMob);
         GunnerMobSpawner.extendFollowRange(pathfinderMob);
