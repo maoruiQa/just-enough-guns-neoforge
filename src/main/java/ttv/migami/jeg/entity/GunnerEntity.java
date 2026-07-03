@@ -34,7 +34,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.ai.GunCombatHelper;

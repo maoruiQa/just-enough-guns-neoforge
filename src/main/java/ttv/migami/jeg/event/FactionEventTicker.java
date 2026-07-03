@@ -1,8 +1,8 @@
 package ttv.migami.jeg.event;
 
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.tick.ServerTickEvent;
 import ttv.migami.jeg.faction.patrol.GunnerPatrolSpawner;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.faction.raid.FactionRaidManager;

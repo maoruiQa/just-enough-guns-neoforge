@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.7.3 - 2026-07-03
+
+### Changed
+- Set the module version to `1.7.3`.
+- Rebalanced sniper rifle ammo economy by retiring standalone sniper ammo and moving sniper rifle progression onto the rifle ammo path.
+- Scaled elite gunner chance by in-game day so advanced gunner pressure ramps later instead of appearing at a flat rate.
+- Tuned skeleton sniper gunners for the updated sniper rifle ammo and encounter balance.
+
+### Added
+- Added a gun headshot damage multiplier path for gun damage resolution.
+
+### Fixed
+- Fixed gunner spawn egg item colors so each gunner spawn egg better matches its vanilla mob family.
+- Fixed animated gun draw lock handling so held actions are released consistently after the authored draw timing.
+
+### Verification
+- Passed `.\gradlew build`.
+
 ## 1.7.2 - 2026-06-24
 
 ### Changed

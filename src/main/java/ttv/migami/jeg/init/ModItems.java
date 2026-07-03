@@ -19,9 +19,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.Recipe;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.BuildCreativeModeTabContentsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.AttachmentItem;
 import ttv.migami.jeg.gun.GunDefinitions;
@@ -291,7 +291,6 @@ public final class ModItems {
     private static final Set<String> AMMO_IDS = Set.of(
             "pistol_ammo",
             "rifle_ammo",
-            "sniper_ammo",
             "small_shell",
             "autocannon_shell",
             "shotgun_shell",

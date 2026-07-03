@@ -2,8 +2,8 @@ package ttv.migami.jeg.init;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.block.entity.DynamicLightBlockEntity;
 import ttv.migami.jeg.block.entity.MagazineLoaderBlockEntity;

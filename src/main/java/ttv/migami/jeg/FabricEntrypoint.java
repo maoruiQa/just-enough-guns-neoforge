@@ -9,12 +9,12 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.EntityJoinLevelEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.player.PlayerEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.server.ServerStartedEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.tick.EntityTickEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.tick.ServerTickEvent;
 import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.FactionEventTicker;
 import ttv.migami.jeg.event.GunEvents;
@@ -40,7 +40,7 @@ import ttv.migami.jeg.vehicle.data.VehicleDataManager;
 import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.event.VehiclePassengerDamageEvents;
 import ttv.migami.jeg.vehicle.recipe.VehicleAssemblyRecipeManager;
-import net.neoforged.neoforge.common.NeoForge;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.common.NeoForge;
 
 public final class FabricEntrypoint implements ModInitializer {
     @Override

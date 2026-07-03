@@ -8,9 +8,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.EventBusSubscriber;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.player.PlayerEvent;
 import ttv.migami.jeg.Reference;
 
 /**

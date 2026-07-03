@@ -4,9 +4,9 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.EventBusSubscriber;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 

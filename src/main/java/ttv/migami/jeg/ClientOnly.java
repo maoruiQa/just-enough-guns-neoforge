@@ -1,6 +1,6 @@
 package ttv.migami.jeg;
 
-import net.neoforged.fml.loading.FMLEnvironment;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.loading.FMLEnvironment;
 
 /**
  * Bridge class to safely invoke client-only code from common code

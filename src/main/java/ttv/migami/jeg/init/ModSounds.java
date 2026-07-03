@@ -11,8 +11,8 @@ import java.util.Map;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 
 public final class ModSounds {

@@ -7,7 +7,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModParticleTypes;

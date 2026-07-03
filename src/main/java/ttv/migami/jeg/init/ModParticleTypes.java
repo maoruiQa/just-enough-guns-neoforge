@@ -8,8 +8,8 @@ import net.minecraft.core.registries.Registries;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 
 import ttv.migami.jeg.Reference;

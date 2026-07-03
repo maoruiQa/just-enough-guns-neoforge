@@ -4,7 +4,7 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModSounds;

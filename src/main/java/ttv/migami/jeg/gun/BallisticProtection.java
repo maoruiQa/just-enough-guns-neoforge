@@ -93,6 +93,7 @@ public final class BallisticProtection {
             return -1.0F;
         }
         return switch (stats.id().getPath()) {
+            case "bolt_action_rifle" -> 5.80F;
             case "minigun" -> 3.00F;
             case "vehicle_20mm_cannon" -> 5.20F;
             case "vehicle_30mm_cannon" -> 9.80F;
