@@ -37,13 +37,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.Config;
@@ -370,6 +370,7 @@ public final class FabricClientBootstrap {
     private static int getSpawnEggColor(EntityType<?> type, int tintIndex) {
         return FastColor.ARGB32.opaque(SpawnEggItem.byId(type).getColor(tintIndex));
     }
+
     private static void onClientTick(Minecraft client) {
         GunRecoilHandler.tick();
         MedalManager.tick();
@@ -412,7 +413,7 @@ public final class FabricClientBootstrap {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
 
-        boolean drawLocked = GunItem.isDrawOperationLocked(heldMain);
+        boolean drawLocked = isDrawOperationLocked(heldMain);
         while (consumeUnlockedClick(KeyBindings.ATTACHMENTS, drawLocked)) {
             if (!(player.getVehicle() instanceof VehicleEntity) && heldMain.getItem() instanceof GunItem) {
                 ClientNetworkHandler.sendOpenAttachments();
@@ -477,7 +478,7 @@ public final class FabricClientBootstrap {
         meleeHeldLastTick = meleeDown;
 
         if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.INSPECT, drawLocked)
-                && heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
+                && heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain)) {
             if (heldMain.getItem() instanceof AnimatedGunItem) {
                 AnimatedGunItem.triggerClientInspect(player);
             }
@@ -485,9 +486,9 @@ public final class FabricClientBootstrap {
         }
 
         if (!(player.getVehicle() instanceof VehicleEntity) && consumeUnlockedClick(KeyBindings.RELOAD, drawLocked)) {
-            if (heldMain.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldMain)) {
+            if (heldMain.getItem() instanceof GunItem && !isDrawOperationLocked(heldMain)) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
-            } else if (heldOff.getItem() instanceof GunItem && !GunItem.isDrawOperationLocked(heldOff)) {
+            } else if (heldOff.getItem() instanceof GunItem && !isDrawOperationLocked(heldOff)) {
                 ClientNetworkHandler.sendReload(InteractionHand.OFF_HAND);
             } else if (heldMain.getItem() instanceof MagazineItem) {
                 ClientNetworkHandler.sendReload(InteractionHand.MAIN_HAND);
@@ -499,8 +500,15 @@ public final class FabricClientBootstrap {
 
     private static boolean canUseGunMelee(LocalPlayer player, ItemStack stack) {
         return !isMeleeBlockedGun(stack)
-                && !GunItem.isDrawOperationLocked(stack)
+                && !isDrawOperationLocked(stack)
                 && !player.getCooldowns().isOnCooldown(stack.getItem());
+    }
+
+    private static boolean isDrawOperationLocked(ItemStack stack) {
+        if (stack.getItem() instanceof AnimatedGunItem) {
+            return AnimatedGunItem.isClientDrawOperationLocked(stack);
+        }
+        return GunItem.isDrawOperationLocked(stack);
     }
 
     private static boolean consumeUnlockedClick(net.minecraft.client.KeyMapping key, boolean locked) {
@@ -841,7 +849,7 @@ public final class FabricClientBootstrap {
         if (rocketShotSent) {
             return;
         }
-        if (GunItem.isDrawOperationLocked(stack)) {
+        if (isDrawOperationLocked(stack)) {
             resetRocketHold(true);
             nextVisualShotTickMain = 0L;
             GunRecoilHandler.stopImmediate();

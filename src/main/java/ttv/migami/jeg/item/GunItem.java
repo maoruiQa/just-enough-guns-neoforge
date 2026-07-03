@@ -539,6 +539,10 @@ public class GunItem extends Item {
         return Math.max(1, (int) Math.ceil(totalTicks * DRAW_OPERATION_LOCK_FRACTION));
     }
 
+    static int getDrawOperationLockTicks(ItemStack stack) {
+        return getDrawOperationLockTicks(getDrawAnimationTicks(stack));
+    }
+
     public static void tickPendingReloads(Player player) {
         PendingReload pending = PENDING_RELOADS.get(player.getUUID());
         if (pending == null) {
@@ -2681,7 +2685,6 @@ public class GunItem extends Item {
         UUID playerId = player.getUUID();
         int slot = player.getInventory().selected;
         boolean hadReloadVisual = isReloading(stack);
-        int drawTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
         clearReloadVisualState(stack);
 
         HeldGunState currentState = heldGunState(player, stack, slot, true);
@@ -2691,10 +2694,6 @@ public class GunItem extends Item {
             CLIENT_HELD_DRAW_STATES.remove(playerId);
         }
         CLIENT_RELOAD_VISUAL_STATES.remove(playerId);
-
-        if (!hadReloadVisual && drawTicks >= getDrawAnimationTicks(stack)) {
-            return;
-        }
 
         stack.set(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), getDrawAnimationTicks(stack));
         if (hadReloadVisual) {
