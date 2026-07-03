@@ -539,6 +539,10 @@ public class GunItem extends Item {
         return Math.max(1, (int) Math.ceil(totalTicks * DRAW_OPERATION_LOCK_FRACTION));
     }
 
+    static int getDrawOperationLockTicks(ItemStack stack) {
+        return getDrawOperationLockTicks(getDrawAnimationTicks(stack));
+    }
+
     public static void tickPendingReloads(Player player) {
         PendingReload pending = PENDING_RELOADS.get(player.getUUID());
         if (pending == null) {
