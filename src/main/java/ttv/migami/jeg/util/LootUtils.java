@@ -563,11 +563,7 @@ public final class LootUtils {
             return ItemStack.EMPTY;
         }
         List<Item> ammoItems = new ArrayList<>();
-        ModItems.AMMO.forEach((id, holder) -> {
-            if (!"sniper_ammo".equals(id.getPath())) {
-                ammoItems.add(holder.get());
-            }
-        });
+        ModItems.AMMO.forEach((id, holder) -> ammoItems.add(holder.get()));
         if (ammoItems.isEmpty()) {
             return ItemStack.EMPTY;
         }
@@ -599,7 +595,6 @@ public final class LootUtils {
             case "medium_anti_air_missile", "medium_anti_ground_missile", "large_anti_ground_missile" -> Mth.nextInt(random, 1, 3);
             case "small_rocket", "rocket" -> Mth.nextInt(random, 3, 10);
             case "small_shell", "autocannon_shell", "shotgun_shell", "handmade_shell" -> Mth.nextInt(random, 3, 12);
-            case "sniper_ammo" -> Mth.nextInt(random, 2, 6);
             case "pistol_ammo", "rifle_ammo" -> Mth.nextInt(random, 12, 40);
             default -> Mth.nextInt(random, 8, 20);
         };

@@ -76,6 +76,7 @@ public final class ClientModSetup {
     private static int getSpawnEggColor(EntityType<?> type, int tintIndex) {
         return FastColor.ARGB32.opaque(SpawnEggItem.byId(type).getColor(tintIndex));
     }
+
     @SubscribeEvent
     public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
         GunDefinitions.ALL.keySet().forEach(id -> {
