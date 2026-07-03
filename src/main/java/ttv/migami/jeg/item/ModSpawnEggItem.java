@@ -31,7 +31,15 @@ public class ModSpawnEggItem extends SpawnEggItem {
     private final Supplier<EntityType<? extends Mob>> typeSupplier;
 
     public ModSpawnEggItem(EntityType<? extends Mob> type, Properties properties) {
-        super(type, 0xFFFFFF, 0x000000, properties); // Default colors - can be overridden
+        this(type, 0xFFFFFF, 0x000000, properties);
+    }
+
+    public ModSpawnEggItem(EntityType<? extends Mob> type, int backgroundColor, int highlightColor, Properties properties) {
+        this(type, type, backgroundColor, highlightColor, properties);
+    }
+
+    public ModSpawnEggItem(EntityType<? extends Mob> type, EntityType<? extends Mob> registryType, int backgroundColor, int highlightColor, Properties properties) {
+        super(registryType, backgroundColor, highlightColor, properties);
         this.typeSupplier = () -> type;
     }
 

@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -31,13 +32,16 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import org.joml.Matrix4f;
@@ -188,6 +192,7 @@ public final class FabricClientBootstrap {
 
         ModelLoadingPlugin.register(new FabricModelRegistration());
         KeyBindings.init();
+        registerGunnerSpawnEggColors();
 
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack held = player.getItemInHand(hand);
@@ -329,6 +334,42 @@ public final class FabricClientBootstrap {
         }
     }
 
+    private static void registerGunnerSpawnEggColors() {
+        ColorProviderRegistry.ITEM.register(
+                FabricClientBootstrap::getSpawnEggColor,
+                ModItems.GUNNER_SKELETON_SPAWN_EGG.get(),
+                ModItems.GUNNER_ZOMBIE_SPAWN_EGG.get(),
+                ModItems.GUNNER_GHOUL_SPAWN_EGG.get(),
+                ModItems.GUNNER_ZOMBIFIED_PIGLIN_SPAWN_EGG.get(),
+                ModItems.GUNNER_PIGLIN_SPAWN_EGG.get(),
+                ModItems.GUNNER_HUSK_SPAWN_EGG.get(),
+                ModItems.GUNNER_WITHER_SKELETON_SPAWN_EGG.get(),
+                ModItems.GUNNER_DROWNED_SPAWN_EGG.get(),
+                ModItems.GUNNER_ZOMBIE_VILLAGER_SPAWN_EGG.get(),
+                ModItems.GUNNER_STRAY_SPAWN_EGG.get(),
+                ModItems.GUNNER_PILLAGER_SPAWN_EGG.get(),
+                ModItems.GUNNER_VINDICATOR_SPAWN_EGG.get(),
+                ModItems.GUNNER_PIGLIN_BRUTE_SPAWN_EGG.get()
+        );
+        ColorProviderRegistry.ITEM.register(
+                (stack, tintIndex) -> getSpawnEggColor(EntityType.PILLAGER, tintIndex),
+                ModItems.ENEMY_LAV150_SPAWN_EGG.get(),
+                ModItems.ENEMY_BMP2_SPAWN_EGG.get()
+        );
+        ColorProviderRegistry.ITEM.register(
+                (stack, tintIndex) -> getSpawnEggColor(EntityType.PHANTOM, tintIndex),
+                ModItems.ENEMY_AH6_SPAWN_EGG.get(),
+                ModItems.ENEMY_MI28_SPAWN_EGG.get()
+        );
+    }
+
+    private static int getSpawnEggColor(ItemStack stack, int tintIndex) {
+        return FastColor.ARGB32.opaque(((SpawnEggItem) stack.getItem()).getColor(tintIndex));
+    }
+
+    private static int getSpawnEggColor(EntityType<?> type, int tintIndex) {
+        return FastColor.ARGB32.opaque(SpawnEggItem.byId(type).getColor(tintIndex));
+    }
     private static void onClientTick(Minecraft client) {
         GunRecoilHandler.tick();
         MedalManager.tick();

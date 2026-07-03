@@ -15,6 +15,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.Recipe;
@@ -342,6 +343,8 @@ public final class ModItems {
             "gunner_skeleton_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.SKELETON,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.SKELETON_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_skeleton_spawn_egg")).stacksTo(64)
             )
     );
@@ -350,6 +353,8 @@ public final class ModItems {
             "gunner_zombie_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.ZOMBIE,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.ZOMBIE_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_zombie_spawn_egg")).stacksTo(64)
             )
     );
@@ -358,6 +363,8 @@ public final class ModItems {
             "gunner_ghoul_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     ModEntities.GHOUL.get(),
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.ZOMBIE_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_ghoul_spawn_egg")).stacksTo(64)
             )
     );
@@ -366,6 +373,8 @@ public final class ModItems {
             "gunner_zombified_piglin_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.ZOMBIFIED_PIGLIN,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.ZOMBIFIED_PIGLIN_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_zombified_piglin_spawn_egg")).stacksTo(64)
             )
     );
@@ -374,6 +383,8 @@ public final class ModItems {
             "gunner_piglin_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.PIGLIN,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.PIGLIN_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_piglin_spawn_egg")).stacksTo(64)
             )
     );
@@ -382,6 +393,8 @@ public final class ModItems {
             "gunner_husk_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.HUSK,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.HUSK_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_husk_spawn_egg")).stacksTo(64)
             )
     );
@@ -390,6 +403,8 @@ public final class ModItems {
             "gunner_wither_skeleton_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.WITHER_SKELETON,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.WITHER_SKELETON_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_wither_skeleton_spawn_egg")).stacksTo(64)
             )
     );
@@ -398,6 +413,8 @@ public final class ModItems {
             "gunner_drowned_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.DROWNED,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.DROWNED_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_drowned_spawn_egg")).stacksTo(64)
             )
     );
@@ -406,6 +423,8 @@ public final class ModItems {
             "gunner_zombie_villager_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.ZOMBIE_VILLAGER,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.ZOMBIE_VILLAGER_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_zombie_villager_spawn_egg")).stacksTo(64)
             )
     );
@@ -414,6 +433,8 @@ public final class ModItems {
             "gunner_stray_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.STRAY,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.STRAY_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_stray_spawn_egg")).stacksTo(64)
             )
     );
@@ -422,6 +443,8 @@ public final class ModItems {
             "gunner_pillager_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.PILLAGER,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.PILLAGER_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_pillager_spawn_egg")).stacksTo(64)
             )
     );
@@ -430,6 +453,8 @@ public final class ModItems {
             "gunner_vindicator_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.VINDICATOR,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.VINDICATOR_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_vindicator_spawn_egg")).stacksTo(64)
             )
     );
@@ -438,6 +463,8 @@ public final class ModItems {
             "gunner_piglin_brute_spawn_egg",
             () -> new GunnerSpawnEggItem(
                     EntityType.PIGLIN_BRUTE,
+                    ModEntities.GHOUL.get(),
+                    vanillaSpawnEgg(Items.PIGLIN_BRUTE_SPAWN_EGG),
                     baseProperties(Reference.id("gunner_piglin_brute_spawn_egg")).stacksTo(64)
             )
     );
@@ -461,6 +488,10 @@ public final class ModItems {
             "enemy_mi28_spawn_egg",
             () -> new EnemyVehicleSpawnItem(ModEntities.MI28::get, Reference.id("mi28"), baseProperties(Reference.id("enemy_mi28_spawn_egg")).stacksTo(64))
     );
+
+    private static SpawnEggItem vanillaSpawnEgg(Item item) {
+        return (SpawnEggItem) item;
+    }
 
     private static void registerAmmoItems() {
         for (String path : AMMO_IDS) {
