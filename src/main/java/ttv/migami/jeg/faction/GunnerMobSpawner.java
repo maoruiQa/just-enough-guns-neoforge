@@ -148,6 +148,7 @@ public class GunnerMobSpawner {
 
                 ItemStack modifiedGun = createModifiedGun(mob, gun);
                 mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
+                suppressSkeletonSniperDrop(mob, gun);
                 enforceGunnerMainHandLock(mob);
 
                 // Equip armor for all gunners (normal and elite)
@@ -334,7 +335,13 @@ public class GunnerMobSpawner {
         }
     }
 
-    private static void applyEliteAttributes(PathfinderMob mob) {
+    public static void suppressSkeletonSniperDrop(PathfinderMob mob, Item gun) {
+        if (mob instanceof Skeleton && "bolt_action_rifle".equals(BuiltInRegistries.ITEM.getKey(gun).getPath())) {
+            mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+    }
+
+    public static void applyEliteAttributes(PathfinderMob mob) {
         mob.addTag("EliteGunner");
         mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         // Replace turtle helmet with bulletproof armor using GunnerArmorEquiper

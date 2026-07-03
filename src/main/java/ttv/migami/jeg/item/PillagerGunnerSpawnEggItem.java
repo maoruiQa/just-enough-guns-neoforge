@@ -1,9 +1,11 @@
 package ttv.migami.jeg.item;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.player.Player;
@@ -15,8 +17,15 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.faction.Faction;
+import ttv.migami.jeg.faction.GunMobValues;
+import ttv.migami.jeg.faction.GunnerArmorEquiper;
+import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.faction.GunnerMobSpawner;
+import ttv.migami.jeg.faction.GunnerType;
+import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 
 /**
@@ -56,32 +65,36 @@ public class PillagerGunnerSpawnEggItem extends ModSpawnEggItem {
      * Equips a pillager gunner with a random gun from the enhanced pillager weapon pool
      */
     private void equipPillagerWithGun(Pillager pillager, RandomSource random) {
-        // Use the same enhanced weapon pool as regular pillager gunners
-        Identifier[] guns = new Identifier[] {
-                ttv.migami.jeg.Reference.id("assault_rifle"),
-                ttv.migami.jeg.Reference.id("burst_rifle"),
-                ttv.migami.jeg.Reference.id("service_rifle"),
-                ttv.migami.jeg.Reference.id("light_machine_gun"),
-                ttv.migami.jeg.Reference.id("semi_auto_rifle"),
-                ttv.migami.jeg.Reference.id("combat_rifle"),
-                ttv.migami.jeg.Reference.id("infantry_rifle"),
-                ttv.migami.jeg.Reference.id("pump_shotgun"),
-                ttv.migami.jeg.Reference.id("repeating_shotgun"),
-                ttv.migami.jeg.Reference.id("minigun")
-        };
-
-        java.util.List<net.minecraft.world.item.Item> pool = new java.util.ArrayList<>();
-        for (Identifier gunId : guns) {
-            var holder = ModItems.GUNS.get(gunId);
-            if (holder != null) {
-                pool.add(holder.get());
+        PathfinderMob pathfinderMob = pillager;
+        Faction faction = GunnerManager.getInstance().getFactionForMob(BuiltInRegistries.ENTITY_TYPE.getKey(pillager.getType()));
+        if (faction == null) {
+            return;
+        }
+        String gunnerType = GunnerType.keyFor(pillager);
+        boolean elite = GunMobValues.rollElite(pillager.level(), random);
+        var gunItem = elite
+                ? faction.getEliteGun(pillager.level(), random, gunnerType)
+                : faction.getRandomGun(random.nextBoolean(), pillager.level(), random, gunnerType);
+        if (gunItem == null) {
+            return;
+        }
+        ItemStack gunStack = new ItemStack(gunItem);
+        if (gunItem instanceof GunItem gun) {
+            GunStats stats = gun.getStats();
+            if (gun.usesLoadedAmmo()) {
+                gunStack.set(ModDataComponents.GUN_AMMO.get(), Math.max(1, stats.magazineSize()));
             }
         }
-        if (!pool.isEmpty()) {
-            ItemStack gunStack = new ItemStack(GunnerProgression.selectGun(pool, pillager.level(), random));
-            pillager.setItemInHand(InteractionHand.MAIN_HAND, gunStack);
-            GunnerProgression.prepareDroppedWeapon(pillager, gunStack);
-            pillager.setCanPickUpLoot(false);
+        pillager.setItemInHand(InteractionHand.MAIN_HAND, gunStack);
+        if (elite) {
+            GunnerMobSpawner.applyEliteAttributes(pathfinderMob);
         }
+        GunnerProgression.prepareDroppedWeapon(pillager, gunStack);
+        GunnerArmorEquiper.equipGunnerArmor(random, elite
+                ? GunnerArmorEquiper.GunnerArmorContext.elite(pathfinderMob)
+                : GunnerArmorEquiper.GunnerArmorContext.normal(pathfinderMob));
+        GunnerMobSpawner.reassessWeaponGoal(pathfinderMob);
+        GunnerMobSpawner.extendFollowRange(pathfinderMob);
+        pillager.setCanPickUpLoot(false);
     }
 }
