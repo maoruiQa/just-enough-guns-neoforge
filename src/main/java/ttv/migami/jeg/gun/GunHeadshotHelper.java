@@ -3,7 +3,9 @@ package ttv.migami.jeg.gun;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.phys.EntityHitResult;
+import ttv.migami.jeg.Config;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 public final class GunHeadshotHelper {
@@ -19,11 +21,21 @@ public final class GunHeadshotHelper {
     }
 
     public static float headshotMultiplier(GunStats stats) {
+        return headshotMultiplier(stats, null);
+    }
+
+    public static float headshotMultiplier(GunStats stats, Entity shooter) {
         if (stats == null) {
+            return 1.0F;
+        }
+        if (!Config.headshotMultiplierEnabled()) {
             return 1.0F;
         }
 
         String path = stats.id().getPath();
+        if (shooter instanceof Skeleton && "bolt_action_rifle".equals(path)) {
+            return 1.60F;
+        }
         return switch (path) {
             case "bolt_action_rifle" -> 2.00F;
             case "combat_rifle" -> 1.60F;

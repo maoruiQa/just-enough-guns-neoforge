@@ -67,6 +67,7 @@ import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.GunMobValues;
 import ttv.migami.jeg.faction.GunnerArmorEquiper;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.faction.GunnerType;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
@@ -316,16 +317,17 @@ final class TerrorRaidManager {
             Faction faction = manager.getFactionForMob(entityTypeLocation);
 
             if (faction != null) {
+                String gunnerType = GunnerType.keyFor(pathfinderMob);
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
 
-                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom());
+                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType);
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
                 boolean elite = GunMobValues.rollElite(mob.level(), mob.getRandom());
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
                 if (elite) {
-                    gun = faction.getEliteGun(mob.level(), mob.getRandom());
+                    gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType);
                     applyEliteAttributes(pathfinderMob);
                 }
 

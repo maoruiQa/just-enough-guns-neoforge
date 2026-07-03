@@ -36,11 +36,11 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.Mod;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.EntityJoinLevelEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.tick.EntityTickEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.ai.AIType;
@@ -170,6 +170,7 @@ public class GunnerMobSpawner {
 
                 ItemStack modifiedGun = createModifiedGun(mob, gun);
                 mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
+                suppressSkeletonSniperDrop(mob, gun);
                 enforceGunnerMainHandLock(mob);
 
                 // Equip armor for all gunners (normal and elite)
@@ -360,7 +361,13 @@ public class GunnerMobSpawner {
         }
     }
 
-    private static void applyEliteAttributes(PathfinderMob mob) {
+    public static void suppressSkeletonSniperDrop(PathfinderMob mob, Item gun) {
+        if (mob instanceof Skeleton && "bolt_action_rifle".equals(BuiltInRegistries.ITEM.getKey(gun).getPath())) {
+            mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+    }
+
+    public static void applyEliteAttributes(PathfinderMob mob) {
         mob.addTag("EliteGunner");
         mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         // Elite armor is now handled by GunnerArmorEquiper with helmet priority

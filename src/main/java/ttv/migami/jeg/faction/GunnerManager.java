@@ -2,7 +2,7 @@ package ttv.migami.jeg.faction;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModItems;
 
@@ -19,7 +19,7 @@ public class GunnerManager {
             // Factions configuration matching 1.20.1 reference
             gunnerMobsList = Arrays.asList(
                 "night_of_the_undead|1|minecraft:zombie,minecraft:husk,minecraft:zombie_villager,minecraft:drowned|jeg:custom_smg,jeg:waterpipe_shotgun,jeg:double_barrel_shotgun,jeg:pump_shotgun,jeg:repeating_shotgun,jeg:light_machine_gun|jeg:revolver,jeg:semi_auto_rifle,jeg:combat_rifle,jeg:assault_rifle,jeg:service_rifle,jeg:light_machine_gun,jeg:minigun|jeg:double_barrel_shotgun,jeg:repeating_shotgun,jeg:light_machine_gun,jeg:minigun",
-                "the_rattlers|2|minecraft:skeleton,minecraft:stray|jeg:custom_smg|jeg:semi_auto_rifle,jeg:combat_rifle,jeg:infantry_rifle|jeg:bolt_action_rifle,jeg:combat_rifle,jeg:infantry_rifle",
+                "the_rattlers|2|minecraft:skeleton,minecraft:stray|jeg:custom_smg|jeg:semi_auto_rifle|jeg:bolt_action_rifle,jeg:combat_rifle,jeg:infantry_rifle",
                 "nosy_business|3|minecraft:pillager,minecraft:vindicator|jeg:pump_shotgun|jeg:semi_auto_rifle,jeg:assault_rifle|jeg:repeating_shotgun,jeg:service_rifle",
                 "bad_piggies|2|minecraft:piglin,minecraft:piglin_brute|jeg:double_barrel_shotgun,jeg:waterpipe_shotgun|jeg:assault_rifle,jeg:semi_auto_rifle|jeg:hollenfire_mk2",
                 "hell_hogs|3|minecraft:zombified_piglin,minecraft:wither_skeleton|jeg:custom_smg,jeg:waterpipe_shotgun,jeg:double_barrel_shotgun|jeg:assault_rifle,jeg:semi_auto_rifle|jeg:soulhunter_mk2",

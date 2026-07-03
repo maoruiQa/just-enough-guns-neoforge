@@ -50,7 +50,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import org.joml.Vector3f;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
@@ -464,7 +464,7 @@ public class BulletEntity extends Projectile {
 
             if (entity instanceof LivingEntity living) {
                 if (GunHeadshotHelper.isHeadshotHit(result, living)) {
-                    damage *= GunHeadshotHelper.headshotMultiplier(stats);
+                    damage *= GunHeadshotHelper.headshotMultiplier(stats, owner);
                 }
                 damage = applyBallisticArmor(living, result, damage, stats, false);
 
