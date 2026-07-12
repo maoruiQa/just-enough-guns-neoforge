@@ -144,6 +144,10 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             return state.setAndContinue(shootAnimation);
         }
 
+        if (prioritizeReloadOverDraw(state.getController(), stack)) {
+            return PlayState.CONTINUE;
+        }
+
         RawAnimation drawAnimation = drawAnimationFor(stack);
         if (drawAnimation != null && resetDrawAnimationIfRequested(state.getController(), stack)) {
             return state.setAndContinue(drawAnimation);
@@ -270,6 +274,30 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
             case RELOAD_STAGE_STOP -> RELOAD_STOP;
             default -> RELOAD;
         };
+    }
+
+    private static boolean prioritizeReloadOverDraw(AnimationController<AnimatedGunItem> controller, ItemStack stack) {
+        boolean reloadTriggered = controller.isPlayingTriggeredAnimation()
+                && isReloadAnimation(controller.getTriggeredAnimation());
+        boolean reloadActive = reloadAnimationFor(stack) != null;
+        boolean drawActive = hasAnimation(controller.getCurrentRawAnimation(), ANIM_DRAW)
+                || (stack != null && !stack.isEmpty()
+                && (stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0
+                || hasRecentDrawAnimation(stack)));
+        if ((!reloadTriggered && !reloadActive) || !drawActive) {
+            return false;
+        }
+
+        clearClientDrawAnimationState(stack);
+        if (reloadTriggered) {
+            return true;
+        }
+        if (controller instanceof GunAnimationController gunController) {
+            gunController.stopTriggeredAnimationIfActive();
+        }
+        controller.forceAnimationReset();
+        controller.stop();
+        return false;
     }
 
     private static RawAnimation drawAnimationFor(ItemStack stack) {
@@ -934,6 +962,7 @@ public final class AnimatedGunItem extends GunItem implements GeoItem {
     private static void clearAnimationMatchState(ItemStack stack) {
         clearReloadVisualState(stack);
         stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_AMMO.get());
         stack.remove(ModDataComponents.GUN_HEAT.get());
         stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
         stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
