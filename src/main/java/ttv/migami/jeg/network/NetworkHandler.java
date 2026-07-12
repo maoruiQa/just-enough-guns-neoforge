@@ -1,6 +1,7 @@
 package ttv.migami.jeg.network;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -10,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.config.ServerConfigEditor;
 import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -74,6 +77,8 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(OpenServerConfigPayload.TYPE, OpenServerConfigPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ApplyServerConfigPayload.TYPE, ApplyServerConfigPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
@@ -86,6 +91,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(VehicleAssemblyRecipeSyncPayload.TYPE, VehicleAssemblyRecipeSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ServerConfigStatePayload.TYPE, ServerConfigStatePayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -138,6 +144,41 @@ public final class NetworkHandler {
         ServerPlayNetworking.registerGlobalReceiver(AssembleTestVehiclePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleAssembleTestVehicle(payload, context.player()));
         });
+        ServerPlayNetworking.registerGlobalReceiver(OpenServerConfigPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleOpenServerConfig(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ApplyServerConfigPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleApplyServerConfig(payload, context.player()));
+        });
+    }
+
+    private static void handleOpenServerConfig(ServerPlayer player) {
+        if (!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
+            return;
+        }
+        ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+    }
+
+    private static void handleApplyServerConfig(ApplyServerConfigPayload payload, ServerPlayer player) {
+        if (!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
+            return;
+        }
+        try {
+            ServerConfigEditor.ApplyResult result = ServerConfigEditor.apply(player.level().getServer(), payload.changes());
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.APPLIED, result.values(), List.of(), result.changedCount()));
+        } catch (ServerConfigEditor.ValidationException ex) {
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.INVALID, Map.of(), List.of(ex.key()), 0));
+        } catch (IllegalArgumentException ex) {
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.INVALID, Map.of(), List.copyOf(payload.changes().keySet()), 0));
+        }
     }
 
     private static void handleVehicleInput(VehicleInputPayload payload, ServerPlayer player) {

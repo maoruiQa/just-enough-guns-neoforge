@@ -6,6 +6,7 @@ import net.minecraft.world.InteractionHand;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.ServerConfigClient;
 import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -69,6 +70,10 @@ public final class ClientNetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(UiConfigPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback(), payload.hideMedals()));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(ServerConfigStatePayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> ServerConfigClient.handle(payload));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(VehicleDataSyncPayload.TYPE, (payload, context) -> {
@@ -150,6 +155,14 @@ public final class ClientNetworkHandler {
 
     public static void sendAiming(boolean aiming) {
         ClientPlayNetworking.send(new AimingStatePayload(aiming));
+    }
+
+    public static void sendOpenServerConfig() {
+        ClientPlayNetworking.send(OpenServerConfigPayload.INSTANCE);
+    }
+
+    public static void sendServerConfigChanges(ApplyServerConfigPayload payload) {
+        ClientPlayNetworking.send(payload);
     }
 
     public static void sendVehicleInput(int vehicleId, VehicleInput input) {
