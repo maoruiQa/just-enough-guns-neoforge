@@ -368,6 +368,7 @@ public final class ServerConfigScreen extends Screen {
         this.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fill(this.panelLeft, 10, this.panelRight, this.height - 34, PANEL);
         guiGraphics.fill(this.workspaceLeft - 6, this.contentTop - 6, this.workspaceRight + 6, this.contentBottom + 2, PANEL_DARK);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.centeredText(this.font, this.title, this.width / 2, 20, GOLD);
 
         for (VisibleRow row : this.visibleRows) {
@@ -385,7 +386,6 @@ public final class ServerConfigScreen extends Screen {
         if (!this.statusMessage.getString().isEmpty()) {
             guiGraphics.centeredText(this.font, this.statusMessage, this.width / 2, this.height - 39, 0xFFFFFFFF);
         }
-        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
