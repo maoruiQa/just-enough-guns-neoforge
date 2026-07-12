@@ -220,7 +220,7 @@ public class BulletproofArmorItem extends ArmorItem {
 
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
-        return true;
+        return false;
     }
 
     @Override
