@@ -70,6 +70,7 @@ public final class SmokeGrenadeEntity extends TimedThrowableItemProjectile {
             cloud.setDuration(CLOUD_DURATION);
             cloud.setWaitTime(0);
             cloud.setRadiusPerTick(0.0F);
+            cloud.setParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE);
             cloud.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()), 40, 0, false, false, true));
             serverLevel.addFreshEntity(cloud);
         }
