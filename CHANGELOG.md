@@ -15,6 +15,7 @@
 - Added dense campfire smoke to smoke grenades.
 
 ### Fixed
+- Removed the enchantment glint from bulletproof armor.
 - Fixed third-person rocket launcher missile visibility.
 - Fixed light machine gun reload interruption.
 - Fixed duplicate config screen background rendering.
