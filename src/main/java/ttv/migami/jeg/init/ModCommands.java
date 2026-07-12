@@ -203,7 +203,9 @@ public final class ModCommands {
                 .then(Commands.literal("enemySpawning")
                         .then(configBooleanConfigCommand("enabled", "vehicle.enemySpawning.enabled"))
                         .then(configIntConfigCommand("startDay", "vehicle.enemySpawning.startDay", 0, 5000))
-                        .then(configDoubleConfigCommand("conversionChance", "vehicle.enemySpawning.conversionChance")));
+                        .then(configDoubleConfigCommand("conversionChance", "vehicle.enemySpawning.conversionChance"))
+                        .then(configDoubleConfigCommand("maxConversionChance", "vehicle.enemySpawning.maxConversionChance"))
+                        .then(configDoubleConfigCommand("conversionChancePerDay", "vehicle.enemySpawning.conversionChancePerDay")));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configScaledMobChanceCommand(String name, String chanceKey, String maxChanceKey) {
