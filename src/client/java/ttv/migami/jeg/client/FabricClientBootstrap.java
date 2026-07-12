@@ -16,12 +16,15 @@ import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -294,6 +297,19 @@ public final class FabricClientBootstrap {
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) ->
                 ScreenKeyboardEvents.allowKeyPress(screen).register((ignoredScreen, key, scancode, modifiers) ->
                         VehicleInputHandler.onScreenKeyPressed(key, scancode)));
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (!(screen instanceof PauseScreen pauseScreen) || !pauseScreen.showsPauseMenu() || client.player == null) {
+                return;
+            }
+            Screens.getButtons(screen).add(Button.builder(
+                    Component.translatable("gui.jegn.config.menu_button"),
+                    button -> {
+                        button.active = false;
+                        button.setMessage(Component.translatable("gui.jegn.config.status.loading"));
+                        ServerConfigClient.requestOpen(screen);
+                    }
+            ).bounds(scaledWidth / 2 - 102, 8, 204, 20).build());
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             BulletTrailRenderer.clear();
             MUZZLE_FLASHES.clear();

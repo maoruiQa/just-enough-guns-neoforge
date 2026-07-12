@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -27,13 +28,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Config;
-import ttv.migami.jeg.event.FactionEventTicker;
+import ttv.migami.jeg.config.ServerConfigEditor;
 import ttv.migami.jeg.faction.Faction;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.faction.GunnerManager;
 import ttv.migami.jeg.faction.patrol.PatrolEncounterManager;
 import ttv.migami.jeg.gun.GunDefinitions;
-import ttv.migami.jeg.network.NetworkHandler;
 
 public final class ModCommands {
     private static final SuggestionProvider<CommandSourceStack> FACTION_SUGGESTIONS = (context, builder) -> {
@@ -399,11 +399,7 @@ public final class ModCommands {
             return 0;
         }
         boolean oldValue = (Boolean) Config.getConfigValue(key);
-        Config.setConfigValue(key, value);
-        Config.saveServerConfig();
-        if (key.startsWith("ui.")) {
-            NetworkHandler.broadcastUiConfig(source.getServer());
-        }
+        ServerConfigEditor.apply(source.getServer(), Map.of(key, Boolean.toString(value)));
         source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
@@ -414,11 +410,7 @@ public final class ModCommands {
             return 0;
         }
         int oldValue = (Integer) Config.getConfigValue(key);
-        Config.setConfigValue(key, value);
-        Config.saveServerConfig();
-        if ("patrol.intervalDays".equals(key)) {
-            FactionEventTicker.reschedulePatrolSpawner();
-        }
+        ServerConfigEditor.apply(source.getServer(), Map.of(key, Integer.toString(value)));
         source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
@@ -429,8 +421,7 @@ public final class ModCommands {
             return 0;
         }
         double oldValue = (Double) Config.getConfigValue(key);
-        Config.setConfigValue(key, value);
-        Config.saveServerConfig();
+        ServerConfigEditor.apply(source.getServer(), Map.of(key, Double.toString(value)));
         source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, value), true);
         return 1;
     }
@@ -441,10 +432,9 @@ public final class ModCommands {
             return 0;
         }
         try {
-            String normalizedValue = Config.normalizeGunnerTerrainSupportBlockId(value);
             String oldValue = (String) Config.getConfigValue(key);
-            Config.setConfigValue(key, normalizedValue);
-            Config.saveServerConfig();
+            ServerConfigEditor.apply(source.getServer(), Map.of(key, value));
+            String normalizedValue = (String) Config.getConfigValue(key);
             source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", displayName, oldValue, normalizedValue), true);
             return 1;
         } catch (IllegalArgumentException ex) {
@@ -461,8 +451,7 @@ public final class ModCommands {
         try {
             String key = Config.gunnerGrowthCommandKey(type, setting);
             double oldValue = (Double) Config.getConfigValue(key);
-            Config.setConfigValue(key, value);
-            Config.saveServerConfig();
+            ServerConfigEditor.apply(source.getServer(), Map.of(key, Double.toString(value)));
             source.sendSuccess(() -> Component.translatable("commands.jeg.config_set", key, oldValue, value), true);
             return 1;
         } catch (IllegalArgumentException ex) {
