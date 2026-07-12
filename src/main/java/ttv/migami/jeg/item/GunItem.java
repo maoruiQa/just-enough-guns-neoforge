@@ -844,8 +844,11 @@ public class GunItem extends Item {
 
     public boolean tryShoot(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (isDrawOperationLocked(stack)) {
+        if (isDrawOperationLocked(stack) || isReloadOperationLocked(stack)) {
             return false;
+        }
+        if (isReloading(stack) && "light_machine_gun".equals(stats.id().getPath())) {
+            cancelReloadForImmediateAction(player, stack);
         }
         clearDrawState(stack);
         ensureAmmoInitialized(stack);
@@ -2185,8 +2188,11 @@ public class GunItem extends Item {
         }
 
         remainingTicks--;
+        completeLightMachineGunReloadIfReady(level, player, stack, remainingTicks);
         if (remainingTicks <= 0) {
-            completePendingReload(level, player, stack);
+            if (PENDING_RELOADS.containsKey(player.getUUID())) {
+                completePendingReload(level, player, stack);
+            }
             clearReloadVisualState(stack);
             return;
         }
@@ -2199,6 +2205,17 @@ public class GunItem extends Item {
             if (newStage != oldStage && stack.getItem() instanceof AnimatedGunItem animated) {
                 triggerSegmentedReloadStage(animated, level, player, stack, newStage);
             }
+        }
+    }
+
+    private void completeLightMachineGunReloadIfReady(Level level, Player player, ItemStack stack, int remainingTicks) {
+        if (!"light_machine_gun".equals(stats.id().getPath()) || !PENDING_RELOADS.containsKey(player.getUUID())) {
+            return;
+        }
+        int totalTicks = Math.max(1, stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), stats.totalReloadTime()));
+        int commitRemainingTicks = Math.max(0, totalTicks - Math.max(1, stats.reloadTime()));
+        if (remainingTicks <= commitRemainingTicks) {
+            completePendingReload(level, player, stack);
         }
     }
 
@@ -2326,6 +2343,16 @@ public class GunItem extends Item {
 
     public static boolean isReloading(ItemStack stack) {
         return stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    private static boolean isReloadOperationLocked(ItemStack stack) {
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0 || !(stack.getItem() instanceof GunItem gun)
+                || !"light_machine_gun".equals(gun.stats.id().getPath())) {
+            return false;
+        }
+        int totalTicks = Math.max(1, stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get(), gun.stats.totalReloadTime()));
+        return totalTicks - remainingTicks < Math.max(1, gun.stats.reloadTime());
     }
 
     public static void cancelReloadForImmediateAction(Player player, ItemStack stack) {
@@ -2596,6 +2623,7 @@ public class GunItem extends Item {
     private static void clearHeldGunMatchState(ItemStack stack) {
         clearReloadVisualState(stack);
         stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
+        stack.remove(ModDataComponents.GUN_AMMO.get());
         stack.remove(ModDataComponents.GUN_HEAT.get());
     }
 
