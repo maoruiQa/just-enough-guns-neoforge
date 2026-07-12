@@ -122,9 +122,11 @@ public final class ServerConfigOptions {
         addBoolean(options, "vehicle.enemySpawning.enabled", Category.VEHICLE, "gui.jegn.config.option.enemy_vehicle_spawning");
         addInteger(options, "vehicle.enemySpawning.startDay", Category.VEHICLE, 0, 5000, "gui.jegn.config.option.enemy_vehicle_start_day");
         addDouble(options, "vehicle.enemySpawning.conversionChance", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_conversion_chance");
+        addDouble(options, "vehicle.enemySpawning.maxConversionChance", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_max_conversion_chance");
+        addDouble(options, "vehicle.enemySpawning.conversionChancePerDay", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_conversion_chance_per_day");
 
-        if (options.size() != 200) {
-            throw new IllegalStateException("Expected 200 editable config options, found " + options.size());
+        if (options.size() != 232) {
+            throw new IllegalStateException("Expected 232 editable config options, found " + options.size());
         }
         return List.copyOf(options);
     }
