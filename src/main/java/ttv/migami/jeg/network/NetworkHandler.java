@@ -2,6 +2,7 @@ package ttv.migami.jeg.network;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
@@ -10,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
@@ -19,6 +21,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.config.ServerConfigEditor;
 import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.gun.GunScopeSupport;
@@ -68,6 +71,8 @@ public final class NetworkHandler {
                 .playToServer(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC, NetworkHandler::handleVehicleDismount)
                 .playToServer(VehicleOpenMenuPayload.TYPE, VehicleOpenMenuPayload.STREAM_CODEC, NetworkHandler::handleVehicleOpenMenu)
                 .playToServer(AssembleTestVehiclePayload.TYPE, AssembleTestVehiclePayload.STREAM_CODEC, NetworkHandler::handleAssembleTestVehicle)
+                .playToServer(OpenServerConfigPayload.TYPE, OpenServerConfigPayload.STREAM_CODEC, NetworkHandler::handleOpenServerConfig)
+                .playToServer(ApplyServerConfigPayload.TYPE, ApplyServerConfigPayload.STREAM_CODEC, NetworkHandler::handleApplyServerConfig)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
@@ -79,7 +84,47 @@ public final class NetworkHandler {
                 .playToClient(MedalPayload.TYPE, MedalPayload.STREAM_CODEC, NetworkHandler::handleMedal)
                 .playToClient(KillMedalPayload.TYPE, KillMedalPayload.STREAM_CODEC, NetworkHandler::handleKillMedal)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
-                .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments);
+                .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments)
+                .playToClient(ServerConfigStatePayload.TYPE, ServerConfigStatePayload.STREAM_CODEC, NetworkHandler::handleServerConfigState);
+    }
+
+    private static void handleOpenServerConfig(OpenServerConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
+                return;
+            }
+            player.connection.send(new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+        });
+    }
+
+    private static void handleApplyServerConfig(ApplyServerConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
+                return;
+            }
+            try {
+                ServerConfigEditor.ApplyResult result = ServerConfigEditor.apply(player.level().getServer(), payload.changes());
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.APPLIED, result.values(), List.of(), result.changedCount()));
+            } catch (ServerConfigEditor.ValidationException ex) {
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.INVALID, Map.of(), List.of(ex.key()), 0));
+            } catch (IllegalArgumentException ex) {
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.INVALID, Map.of(), List.copyOf(payload.changes().keySet()), 0));
+            }
+        });
     }
 
     private static void handleOpenAttachments(OpenAttachmentsPayload payload, IPayloadContext context) {
@@ -337,6 +382,14 @@ public final class NetworkHandler {
                 payload.showCrosshair(),
                 payload.showHitFeedback(),
                 payload.hideMedals()));
+    }
+
+    private static void handleServerConfigState(ServerConfigStatePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.ServerConfigClient",
+                "handle",
+                new Class<?>[] { ServerConfigStatePayload.class },
+                payload));
     }
 
     private static void handleVehicleDataSync(VehicleDataSyncPayload payload, IPayloadContext context) {
@@ -616,6 +669,14 @@ public final class NetworkHandler {
 
     public static void sendToggleMedals() {
         sendToServer(ToggleMedalsPayload.INSTANCE);
+    }
+
+    public static void sendOpenServerConfig() {
+        sendToServer(OpenServerConfigPayload.INSTANCE);
+    }
+
+    public static void sendServerConfigChanges(ApplyServerConfigPayload payload) {
+        sendToServer(payload);
     }
 
     public static void sendAssembleVehicle(Identifier recipeId) {
