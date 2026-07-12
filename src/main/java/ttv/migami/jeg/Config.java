@@ -357,10 +357,10 @@ public final class Config {
                 .defineInRange("enemyVehicleConversionChance", 0.005D, 0.0D, 1.0D);
         ENEMY_VEHICLE_MAX_CONVERSION_CHANCE = serverBuilder
                 .comment("Maximum late-game probability (0-1) for natural gunner conversion into an enemy vehicle.")
-                .defineInRange("enemyVehicleMaxConversionChance", 0.03D, 0.0D, 1.0D);
+                .defineInRange("enemyVehicleMaxConversionChance", 0.045D, 0.0D, 1.0D);
         ENEMY_VEHICLE_CONVERSION_CHANCE_PER_DAY = serverBuilder
                 .comment("Conversion probability added per in-game day after enemyVehicleStartDay.")
-                .defineInRange("enemyVehicleConversionChancePerDay", 0.00025D, 0.0D, 1.0D);
+                .defineInRange("enemyVehicleConversionChancePerDay", 0.0004D, 0.0D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("combat");
