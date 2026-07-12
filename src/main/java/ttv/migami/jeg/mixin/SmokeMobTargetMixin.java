@@ -26,9 +26,11 @@ public abstract class SmokeMobTargetMixin {
             mob.getNavigation().stop();
         }
 
-        mob.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-            .filter(SmokeMobTargetMixin::jeg$isSmokedPlayer)
-            .ifPresent(target -> mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET));
+        if (mob.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
+            mob.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
+                .filter(SmokeMobTargetMixin::jeg$isSmokedPlayer)
+                .ifPresent(target -> mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET));
+        }
     }
 
     private static boolean jeg$isSmokedPlayer(LivingEntity target) {
