@@ -3,6 +3,8 @@
   "package": "ttv.migami.jeg.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "SmokeMobTargetMixin",
+    "SmokeTargetingConditionsMixin",
     "MobAccessor",
     "PhantomFinalizeSpawnMixin",
     "PillagerFinalizeSpawnMixin",

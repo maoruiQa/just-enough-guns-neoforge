@@ -140,9 +140,6 @@ public class GunnerMobSpawner {
                 }
 
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
-                    // Remove Drowned water-seeking restrictions to allow land combat
-                    enableDrownedGunnerCombat(mob);
-
                     // Add target-finding goal first (priority 1)
                     if (!hasTargetGoal(mob)) {
                         getTargetSelector(mob).addGoal(1, new NearestAttackableTargetGoal<>(mob, Player.class, true));
@@ -286,20 +283,6 @@ public class GunnerMobSpawner {
     public static boolean hasTargetGoal(PathfinderMob mob) {
         return getTargetSelector(mob).getAvailableGoals().stream()
                 .anyMatch(goal -> goal.getGoal() instanceof NearestAttackableTargetGoal<?>);
-    }
-
-    /**
-     * Allows Drowned gunners to attack players while in water or under shade.
-     * Keeps original water-seeking and sun-avoiding behaviors intact, but allows combat
-     * when environmental conditions are favorable (in water or shade).
-     */
-    public static void enableDrownedGunnerCombat(PathfinderMob mob) {
-        if (!(mob instanceof net.minecraft.world.entity.monster.zombie.Drowned)) {
-            return;
-        }
-
-        // Mark this drowned as a gunner so it will attack in favorable conditions
-        mob.addTag("DrownedGunner");
     }
 
     public static void reassessWeaponGoal(PathfinderMob mob) {

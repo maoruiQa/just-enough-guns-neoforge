@@ -42,6 +42,7 @@ import ttv.migami.jeg.faction.raid.FactionRaidManager;
 import ttv.migami.jeg.gun.BulletPenetrationHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.NetworkHandler;
 
@@ -213,29 +214,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
     @Override
     public boolean canUse() {
-        if (this.shooter.getTarget() == null || !this.isHoldingGun() || this.shooter.getTarget().isDeadOrDying()) {
-            return false;
-        }
-
-        if (this.shooter instanceof net.minecraft.world.entity.monster.zombie.Drowned && this.shooter.entityTags().contains("DrownedGunner")) {
-            return isInWaterOrShade();
-        }
-
-        return true;
-    }
-
-    private boolean isInWaterOrShade() {
-        if (this.shooter.isInWater()) {
-            return true;
-        }
-
-        BlockPos pos = this.shooter.blockPosition();
-        boolean isRaining = this.shooter.level().isRaining();
-        boolean isNight = !this.shooter.level().canSeeSky(pos);
-        long dayTime = this.shooter.level().getOverworldClockTime() % 24000L;
-        boolean isDarkTime = dayTime > 12500L && dayTime < 23500L;
-
-        return isRaining || isNight || !isDarkTime;
+        return this.shooter.getTarget() != null && this.isHoldingGun() && !this.shooter.getTarget().isDeadOrDying();
     }
 
     protected boolean isHoldingGun() {
@@ -311,7 +290,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             GunStats stats = gunItem.getStats();
 
             double distanceToTarget = this.shooter.distanceToSqr(target.getX(), target.getY(), target.getZ());
-            boolean canSeeTarget = this.shooter.getSensing().hasLineOfSight(target) || BulletPenetrationHelper.hasLineOfSightThroughPenetrable(this.shooter, target);
+            boolean canSeeTarget = this.shooter.getSensing().hasLineOfSight(target);
             boolean sawTargetPreviously = this.seeTime > 0;
 
             if (canSeeTarget != sawTargetPreviously) {
@@ -324,11 +303,20 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 this.lastKnownPosition = new Vec3(target.getX(), target.getY(), target.getZ());
                 ++this.seeTime;
             } else {
+                if (this.aiType == AIType.TACTICAL && this.lastKnownPosition != null) {
+                    Vec3 flankingPosition = findFlankingPosition(this.lastKnownPosition, target);
+                    if (flankingPosition != null) {
+                        this.shooter.getNavigation().moveTo(flankingPosition.x, flankingPosition.y, flankingPosition.z, this.speedModifier);
+                    }
+                }
                 --this.seeTime;
             }
 
-            if (this.aiType == AIType.COWARD &&
-                (this.shooter.getHealth() < (this.shooter.getMaxHealth() / 3) || this.shooter.invulnerableTime != 0)) {
+            boolean isDisoriented = this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.BLINDED.get()))
+                || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.DEAFENED.get()))
+                || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()));
+            if (isDisoriented || (this.aiType == AIType.COWARD &&
+                (this.shooter.getHealth() < (this.shooter.getMaxHealth() / 3) || this.shooter.invulnerableTime != 0))) {
                 this.isPanicked = true;
                 this.panickTimer = 20;
             }
@@ -369,10 +357,10 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             }
 
             if (!this.isReloading && !this.isPanicked) {
-                boolean shouldUseBuildPursuit = !canSeeTarget || this.shouldUseZbbBreakAndBuild((ServerLevel) this.shooter.level(), target);
-                if (!shouldUseBuildPursuit) {
-                    this.resetTerrainStateForVisibleTarget();
-                } else {
+                ServerLevel serverLevel = (ServerLevel) this.shooter.level();
+                boolean needsTerrainWork = this.shouldUseZbbBreakAndBuild(serverLevel, target);
+                boolean shouldUseBuildPursuit = needsTerrainWork && (!canSeeTarget || distanceToTarget > this.attackRadiusSqr);
+                if (shouldUseBuildPursuit) {
                     this.shooter.getNavigation().moveTo(target, this.speedModifier);
                     this.tickZbbUnseenRuntime(target);
                     double targetEyeY = target.getEyeY();
@@ -380,9 +368,12 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                     this.shooter.lookAt(EntityAnchorArgument.Anchor.FEET, target.getBoundingBox().getCenter());
                     return;
                 }
+                if (canSeeTarget) {
+                    this.resetTerrainStateForVisibleTarget();
+                }
             }
 
-            if (canSeeTarget && this.shooter.level().getRandom().nextFloat() < 0.1F && this.aiType == AIType.TACTICAL) {
+            if (this.shooter.level().getRandom().nextFloat() < 0.1F && this.aiType == AIType.TACTICAL) {
                 Vec3 flankingPosition = findFlankingPosition(this.lastKnownPosition, target);
                 if (flankingPosition != null) {
                     this.shooter.getNavigation().moveTo(flankingPosition.x, flankingPosition.y, flankingPosition.z, this.speedModifier);
