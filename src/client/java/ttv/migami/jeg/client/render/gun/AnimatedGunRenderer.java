@@ -519,6 +519,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         ItemStack stack = currentRenderStack();
         if (!isReRender && stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
+            if ("missile".equals(boneName) && Reference.id("rocket_launcher").equals(gun.getStats().id())) {
+                bone.setHidden(isThirdPersonDisplay(this.renderPerspective));
+            }
             debugFirstPersonBones(stack, boneName);
             if ("attachment_bone".equals(boneName)) {
                 renderFirstPersonMuzzleFlashForBone(poseStack, bone, stack, bufferSource);
