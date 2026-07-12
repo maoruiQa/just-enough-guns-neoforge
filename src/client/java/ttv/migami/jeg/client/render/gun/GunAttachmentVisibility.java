@@ -81,6 +81,13 @@ public final class GunAttachmentVisibility {
             applyBoltActionRifle(stack, bone, boneName);
             return;
         }
+        if (Reference.id("light_machine_gun").equals(gunId)) {
+            Boolean bulletVisibility = lightMachineGunBulletVisibility(stack, boneName);
+            if (bulletVisibility != null) {
+                bone.setHidden(bulletVisibility);
+                return;
+            }
+        }
 
         if (Config.magazineFeedEnabled()) {
             Boolean magazineVisibility = magazineItemVisibility(stack, boneName);
@@ -116,6 +123,19 @@ public final class GunAttachmentVisibility {
 
         if (DEFAULT_HIDDEN_ATTACHMENT_BONES.contains(boneName)) {
             bone.setHidden(true);
+        }
+    }
+
+    private static Boolean lightMachineGunBulletVisibility(ItemStack stack, String boneName) {
+        if (!boneName.startsWith("bullet_")) {
+            return null;
+        }
+        try {
+            int threshold = Integer.parseInt(boneName.substring("bullet_".length()));
+            int ammo = Math.max(0, stack.getOrDefault(ModDataComponents.GUN_AMMO.get(), 0));
+            return ammo < threshold;
+        } catch (NumberFormatException exception) {
+            return null;
         }
     }
 
