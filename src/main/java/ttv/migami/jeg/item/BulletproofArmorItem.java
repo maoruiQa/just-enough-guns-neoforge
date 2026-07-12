@@ -157,7 +157,7 @@ public class BulletproofArmorItem extends Item {
 
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
-        return true;
+        return false;
     }
 
     public boolean isValidRepairItem(@NotNull ItemStack stack, @NotNull ItemStack repairCandidate) {
