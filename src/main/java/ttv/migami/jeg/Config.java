@@ -81,6 +81,8 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue ENEMY_VEHICLE_SPAWNING_ENABLED;
     public static final ModConfigSpec.IntValue ENEMY_VEHICLE_START_DAY;
     public static final ModConfigSpec.DoubleValue ENEMY_VEHICLE_CONVERSION_CHANCE;
+    public static final ModConfigSpec.DoubleValue ENEMY_VEHICLE_MAX_CONVERSION_CHANCE;
+    public static final ModConfigSpec.DoubleValue ENEMY_VEHICLE_CONVERSION_CHANCE_PER_DAY;
     public static final ModConfigSpec.IntValue BULLET_LIFETIME_SECONDS;
     public static final ModConfigSpec.BooleanValue UI_SHOW_CROSSHAIR;
     public static final ModConfigSpec.BooleanValue UI_SHOW_HIT_FEEDBACK;
@@ -101,7 +103,8 @@ public final class Config {
             "minSpawnChance", "maxSpawnChance", "spawnChancePerDay",
             "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay",
             "armorInitialTier", "armorMaxTier", "armorTierPerDay",
-            "rocketLauncherStartDay", "rocketLauncherChance", "weaponAggression"
+            "rocketLauncherStartDay", "rocketLauncherChance", "rocketLauncherMaxChance",
+            "rocketLauncherChancePerDay", "weaponAggression"
     };
 
     static {
@@ -355,8 +358,14 @@ public final class Config {
                 .comment("In-game day when enemy gunner vehicles can start spawning.")
                 .defineInRange("enemyVehicleStartDay", 80, 0, 5000);
         ENEMY_VEHICLE_CONVERSION_CHANCE = serverBuilder
-                .comment("Probability (0-1) that a newly created open-sky natural gunner converts into an enemy vehicle.")
-                .defineInRange("enemyVehicleConversionChance", 0.05D, 0.0D, 1.0D);
+                .comment("Initial probability (0-1) that a newly created open-sky natural gunner converts into an enemy vehicle.")
+                .defineInRange("enemyVehicleConversionChance", 0.005D, 0.0D, 1.0D);
+        ENEMY_VEHICLE_MAX_CONVERSION_CHANCE = serverBuilder
+                .comment("Maximum late-game probability (0-1) for natural gunner conversion into an enemy vehicle.")
+                .defineInRange("enemyVehicleMaxConversionChance", 0.03D, 0.0D, 1.0D);
+        ENEMY_VEHICLE_CONVERSION_CHANCE_PER_DAY = serverBuilder
+                .comment("Conversion probability added per in-game day after enemyVehicleStartDay.")
+                .defineInRange("enemyVehicleConversionChancePerDay", 0.00025D, 0.0D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("combat");
@@ -391,6 +400,8 @@ public final class Config {
         registerCommandConfig("vehicle.enemySpawning.enabled", ENEMY_VEHICLE_SPAWNING_ENABLED);
         registerCommandConfig("vehicle.enemySpawning.startDay", ENEMY_VEHICLE_START_DAY);
         registerCommandConfig("vehicle.enemySpawning.conversionChance", ENEMY_VEHICLE_CONVERSION_CHANCE);
+        registerCommandConfig("vehicle.enemySpawning.maxConversionChance", ENEMY_VEHICLE_MAX_CONVERSION_CHANCE);
+        registerCommandConfig("vehicle.enemySpawning.conversionChancePerDay", ENEMY_VEHICLE_CONVERSION_CHANCE_PER_DAY);
     }
 
     private static void defineGunnerGrowthConfig(ModConfigSpec.Builder serverBuilder) {
@@ -421,7 +432,9 @@ public final class Config {
             case "armorMaxTier" -> 5.0D;
             case "armorTierPerDay" -> 0.05D;
             case "rocketLauncherStartDay" -> 80.0D;
-            case "rocketLauncherChance" -> 0.015D;
+            case "rocketLauncherChance" -> 0.005D;
+            case "rocketLauncherMaxChance" -> 0.03D;
+            case "rocketLauncherChancePerDay" -> 0.00025D;
             case "weaponAggression" -> 0.55D;
             default -> -1.0D;
         };
@@ -709,7 +722,11 @@ public final class Config {
         if (currentGunnerDay(level) < startDay) {
             return false;
         }
-        double chance = Mth.clamp(resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.015D), 0.0D, 1.0D);
+        double initial = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.005D);
+        double max = resolveGunnerGrowthValue(gunnerType, "rocketLauncherMaxChance", 0.03D);
+        double growth = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChancePerDay", 0.00025D);
+        double daysSinceStart = Math.max(0L, currentGunnerDay(level) - startDay);
+        double chance = Mth.clamp(Math.min(max, initial + daysSinceStart * Math.max(0.0D, growth)), 0.0D, 1.0D);
         return chance > 0.0D && random.nextDouble() < chance;
     }
 
@@ -850,8 +867,12 @@ public final class Config {
         return Math.max(0, ENEMY_VEHICLE_START_DAY.get());
     }
 
-    public static double enemyVehicleConversionChance() {
-        return clamp01(ENEMY_VEHICLE_CONVERSION_CHANCE.get());
+    public static double enemyVehicleConversionChance(Level level) {
+        long daysSinceStart = Math.max(0L, currentGunnerDay(level) - enemyVehicleStartDay());
+        double initial = clamp01(ENEMY_VEHICLE_CONVERSION_CHANCE.get());
+        double max = clamp01(ENEMY_VEHICLE_MAX_CONVERSION_CHANCE.get());
+        double growth = Math.max(0.0D, ENEMY_VEHICLE_CONVERSION_CHANCE_PER_DAY.get());
+        return clamp01(Math.min(max, initial + daysSinceStart * growth));
     }
 
     public static int factionRaidIntervalDays() {
