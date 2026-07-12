@@ -33,14 +33,14 @@ public final class EnemyVehicleSpawner {
     public static boolean canSpawnNaturally(ServerLevel level) {
         return Config.enemyVehicleSpawningEnabled()
                 && Config.currentGunnerDay(level) >= Config.enemyVehicleStartDay()
-                && Config.enemyVehicleConversionChance() > 0.0D;
+                && Config.enemyVehicleConversionChance(level) > 0.0D;
     }
 
     public static boolean tryReplaceNaturalGunner(ServerLevel level, PathfinderMob mob) {
         if (!canSpawnNaturally(level)
                 || mob.isPassenger()
                 || !isOpenSky(level, mob.blockPosition())
-                || mob.getRandom().nextDouble() >= Config.enemyVehicleConversionChance()) {
+                || mob.getRandom().nextDouble() >= Config.enemyVehicleConversionChance(level)) {
             return false;
         }
 
