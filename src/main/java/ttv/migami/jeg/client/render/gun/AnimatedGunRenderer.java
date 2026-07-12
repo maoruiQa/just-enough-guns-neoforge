@@ -278,6 +278,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         ItemStack gunStack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
         ItemDisplayContext ctx = resolveStableContext(renderState);
         passInfo.addBoneUpdater((info, snapshots) -> GunAttachmentVisibility.apply(finalGunId, gunStack, snapshots));
+        if (isThirdPerson(ctx) && Reference.id("rocket_launcher").equals(finalGunId)) {
+            passInfo.addBoneUpdater((info, snapshots) ->
+                    snapshots.ifPresent("missile", snapshot -> snapshot.skipRender(true))
+            );
+        }
         if (isFirstPerson(ctx)) {
             passInfo.addBoneUpdater((info, snapshots) ->
                     FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {
