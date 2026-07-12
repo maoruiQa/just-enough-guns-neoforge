@@ -432,8 +432,8 @@ public final class Config {
             case "armorMaxTier" -> 5.0D;
             case "armorTierPerDay" -> 0.05D;
             case "rocketLauncherStartDay" -> 80.0D;
-            case "rocketLauncherChance" -> 0.005D;
-            case "rocketLauncherMaxChance" -> 0.03D;
+            case "rocketLauncherChance" -> 0.02D;
+            case "rocketLauncherMaxChance" -> 0.06D;
             case "rocketLauncherChancePerDay" -> 0.00025D;
             case "weaponAggression" -> 0.55D;
             default -> -1.0D;
@@ -722,8 +722,8 @@ public final class Config {
         if (currentGunnerDay(level) < startDay) {
             return false;
         }
-        double initial = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.005D);
-        double max = resolveGunnerGrowthValue(gunnerType, "rocketLauncherMaxChance", 0.03D);
+        double initial = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.02D);
+        double max = resolveGunnerGrowthValue(gunnerType, "rocketLauncherMaxChance", 0.06D);
         double growth = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChancePerDay", 0.00025D);
         double daysSinceStart = Math.max(0L, currentGunnerDay(level) - startDay);
         double chance = Mth.clamp(Math.min(max, initial + daysSinceStart * Math.max(0.0D, growth)), 0.0D, 1.0D);
