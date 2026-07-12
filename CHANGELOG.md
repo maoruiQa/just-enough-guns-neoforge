@@ -1,17 +1,26 @@
 # Changelog
 
-## 1.7.3 - 2026-07-03
+## 1.7.4 - 2026-07-12
 
 ### Changed
-- Set the module version to `1.7.3`.
-- Rebalanced sniper rifle ammo economy by retiring standalone sniper ammo and moving sniper rifle progression onto the rifle ammo path.
+- Set the module version to `1.7.4`.
 - Scaled elite gunner chance by in-game day so advanced gunner pressure ramps later instead of appearing at a flat rate.
-- Tuned skeleton sniper gunners for the updated sniper rifle ammo and encounter balance.
+- Tuned gunner tactics and smoke concealment.
+- Scaled late-game rocket launcher and vehicle spawn chances by in-game day, reaching maximum rocket chance by day 150 and the vehicle conversion cap by day 180.
 
 ### Added
+- Added the Magazine Loader block for filling compatible magazines from loose ammo.
 - Added a gun headshot damage multiplier path for gun damage resolution.
+- Added the in-game JEGN server configuration UI.
+- Added dense campfire smoke to smoke grenades.
 
 ### Fixed
+- Fixed machine gun belt visibility in third person.
+- Fixed third-person rocket launcher missile visibility.
+- Fixed light machine gun reload interruption.
+- Fixed duplicate config screen background rendering.
+- Fixed blurred server config labels.
+- Guarded unregistered attack target memory.
 - Fixed gunner spawn egg item colors so each gunner spawn egg better matches its vanilla mob family.
 - Fixed animated gun draw lock handling so held actions are released consistently after the authored draw timing.
 
