@@ -4,6 +4,7 @@
 
 ### Changed
 - Set the module version to `1.7.4`.
+- Updated bulletproof helmet IV-VI textures and normalized the IV/V armor-layer UV framing.
 - Scaled elite gunner chance by in-game day so advanced gunner pressure ramps later instead of appearing at a flat rate.
 - Tuned gunner tactics and smoke concealment.
 - Scaled late-game rocket launcher and vehicle spawn chances by in-game day, reaching maximum rocket chance by day 150 and the vehicle conversion cap by day 180.
@@ -16,6 +17,7 @@
 
 ### Fixed
 - Removed the enchantment glint from bulletproof armor.
+- Restored bulletproof vest shoulder UV textures so shoulder armor renders in-game.
 - Fixed third-person rocket launcher missile visibility.
 - Fixed light machine gun reload interruption.
 - Fixed duplicate config screen background rendering.
