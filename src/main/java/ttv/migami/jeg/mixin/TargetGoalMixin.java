@@ -24,6 +24,9 @@ public abstract class TargetGoalMixin {
         if (target instanceof Player player && player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()))) {
             return false;
         }
+        if (this.mob.getTags().contains("MobGunner") && target instanceof Player player && player.isInvisible()) {
+            return false;
+        }
         if (this.mob.getTags().contains("MobGunner") && target instanceof LivingEntity) {
             return true;
         }

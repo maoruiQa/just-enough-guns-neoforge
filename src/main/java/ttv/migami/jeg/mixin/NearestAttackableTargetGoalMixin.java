@@ -6,6 +6,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -31,7 +32,8 @@ public abstract class NearestAttackableTargetGoalMixin extends TargetGoal {
         cir.setReturnValue(
             original.copy()
                 .ignoreLineOfSight()
-                .selector(candidate -> jeg$canNoticeTargetThroughSolidBlocks(this.mob, candidate, 3))
+                .selector(candidate -> !(candidate instanceof Player player && player.isInvisible())
+                    && jeg$canNoticeTargetThroughSolidBlocks(this.mob, candidate, 3))
         );
     }
 

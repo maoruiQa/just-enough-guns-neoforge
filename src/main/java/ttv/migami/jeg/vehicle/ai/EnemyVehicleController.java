@@ -284,7 +284,7 @@ public final class EnemyVehicleController {
         Player nearest = null;
         double nearestDistance = range * range;
         for (Player player : level.players()) {
-            if (player.isCreative() || player.isSpectator() || !player.isAlive()) {
+            if (player.isCreative() || player.isSpectator() || !player.isAlive() || player.isInvisible()) {
                 continue;
             }
             double distance = player.distanceToSqr(vehicle);
@@ -302,7 +302,7 @@ public final class EnemyVehicleController {
         }
         if (brain.targetId != null && brain.targetMemory-- > 0) {
             Entity remembered = level.getEntity(brain.targetId);
-            if (remembered instanceof Player player && player.isAlive() && !player.isCreative() && !player.isSpectator() && player.distanceTo(vehicle) <= targetRetentionRange(kind)) {
+            if (remembered instanceof Player player && player.isAlive() && !player.isCreative() && !player.isSpectator() && !player.isInvisible() && player.distanceTo(vehicle) <= targetRetentionRange(kind)) {
                 vehicle.getPersistentData().putInt(TARGET_MEMORY_TAG, brain.targetMemory);
                 return player;
             }
