@@ -2,7 +2,7 @@ package ttv.migami.jeg.faction;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModItems;
 

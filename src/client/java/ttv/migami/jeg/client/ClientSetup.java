@@ -2,12 +2,12 @@ package ttv.migami.jeg.client;
 
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.api.distmarker.Dist;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.EventBusSubscriber;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.event.EntityRenderersEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.event.RegisterColorHandlersEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ttv.migami.jeg.Reference;

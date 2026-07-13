@@ -50,6 +50,26 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
 
+tasks.register("verifyNoNeoForgePackageDeclarations") {
+    group = "verification"
+    description = "Rejects source files that redeclare classes in NeoForge-owned packages."
+    inputs.files(fileTree("src") { include "**/*.java" })
+
+    doLast {
+        def offenders = inputs.files.files.findAll {
+            it.getText("UTF-8") =~ /(?m)^\s*package\s+net\.neoforged(?:\.|;)/
+        }
+        if (!offenders.isEmpty()) {
+            throw new GradleException("NeoForge package declarations are not allowed: " +
+                    offenders.collect { project.relativePath(it) }.sort().join(", "))
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("verifyNoNeoForgePackageDeclarations"))
+}
+
 processResources {
     inputs.property "version", project.mod_version
     inputs.property "minecraft_version_range", project.minecraft_version_range

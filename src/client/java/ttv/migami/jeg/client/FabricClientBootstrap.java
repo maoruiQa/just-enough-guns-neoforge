@@ -53,7 +53,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import ttv.migami.jeg.Config;

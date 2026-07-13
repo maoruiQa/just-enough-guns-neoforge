@@ -38,12 +38,12 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.EntityJoinLevelEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.FinalizeSpawnEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.LivingDropsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.player.PlayerEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.event.MainThreadLevelActionScheduler;
 import ttv.migami.jeg.Reference;
@@ -219,14 +219,14 @@ public final class GunEvents {
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
-                .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
+                .append(Component.translatable("message.jeg.intro.prefix").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
                 .append(Component.translatable("commands.jeg.help.commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
-        Component divider = Component.literal("------------------------------")
+        Component divider = Component.translatable("message.jeg.intro.divider")
                 .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
         Component unlockLine = Component.empty()
-                .append(Component.literal("/justEnoughGuns unlockGunRecipes")
+                .append(Component.translatable("message.jeg.intro.unlock_recipes.command")
                         .withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(true)))
-                .append(Component.literal(" - Unlock all JEG recipes")
+                .append(Component.translatable("message.jeg.intro.unlock_recipes.description")
                         .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
 
         player.sendSystemMessage(header);
@@ -235,16 +235,16 @@ public final class GunEvents {
 
         if (player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             Component configLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns config")
+                    .append(Component.translatable("message.jeg.intro.config.command")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Configure patrol, mob spawn rates, and combat")
+                    .append(Component.translatable("message.jeg.intro.config.description")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
             player.sendSystemMessage(configLine);
 
             Component enemyVehicleLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns config vehicle enemySpawning enabled false")
+                    .append(Component.translatable("message.jeg.intro.disable_enemy_vehicles.command")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Disable enemy vehicle spawning")
+                    .append(Component.translatable("message.jeg.intro.disable_enemy_vehicles.description")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
             player.sendSystemMessage(enemyVehicleLine);
         }

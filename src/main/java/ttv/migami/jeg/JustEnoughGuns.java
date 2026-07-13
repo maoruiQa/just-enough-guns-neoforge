@@ -1,13 +1,13 @@
 package ttv.migami.jeg;
 
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.IEventBus;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.ModContainer;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.Mod;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.config.ModConfig;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.common.NeoForge;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.BuildCreativeModeTabContentsEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.server.ServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ttv.migami.jeg.event.GunEvents;

@@ -1,9 +1,9 @@
 package ttv.migami.jeg.item;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.AnvilUpdateEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
+import ttv.migami.jeg.fabric.compat.neoforge.fml.common.EventBusSubscriber;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.AnvilUpdateEvent;
 import ttv.migami.jeg.Reference;
 
 @EventBusSubscriber(modid = Reference.MOD_ID)
