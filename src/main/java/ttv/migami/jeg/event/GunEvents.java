@@ -280,14 +280,14 @@ public final class GunEvents {
 
     private static void sendAvailableCommands(ServerPlayer player) {
         Component header = Component.empty()
-                .append(Component.literal("[JEG] ").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
+                .append(Component.translatable("message.jeg.intro.prefix").withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true)))
                 .append(Component.translatable("commands.jeg.help.commands").withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(true)));
-        Component divider = Component.literal("------------------------------")
+        Component divider = Component.translatable("message.jeg.intro.divider")
                 .withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY));
         Component unlockLine = Component.empty()
-                .append(Component.literal("/justEnoughGuns unlockGunRecipes")
+                .append(Component.translatable("message.jeg.intro.unlock_recipes.command")
                         .withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(true)))
-                .append(Component.literal(" - Unlock all gun recipes")
+                .append(Component.translatable("message.jeg.intro.unlock_recipes.description")
                         .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
 
         player.sendSystemMessage(header);
@@ -296,16 +296,16 @@ public final class GunEvents {
 
         if (player.hasPermissions(2)) {
             Component configLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns config")
+                    .append(Component.translatable("message.jeg.intro.config.command")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Configure patrol, mob spawn rates, and combat")
+                    .append(Component.translatable("message.jeg.intro.config.description")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
             player.sendSystemMessage(configLine);
 
             Component enemyVehicleLine = Component.empty()
-                    .append(Component.literal("/justEnoughGuns config vehicle enemySpawning enabled false")
+                    .append(Component.translatable("message.jeg.intro.disable_enemy_vehicles.command")
                             .withStyle(style -> style.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)))
-                    .append(Component.literal(" - Disable enemy vehicle spawning")
+                    .append(Component.translatable("message.jeg.intro.disable_enemy_vehicles.description")
                             .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(true)));
             player.sendSystemMessage(enemyVehicleLine);
         }
