@@ -800,6 +800,8 @@
   "gui.jegn.config.tooltip.key": "\u547D\u4EE4\u952E\uFF1A%s",
   "gui.jegn.config.tooltip.range": "\u5141\u8BB8\u8303\u56F4\uFF1A%s \u81F3 %s",
   "gui.jegn.config.tooltip.inherit": "-1 \u8868\u793A\u7EE7\u627F\u5E73\u8861\u9ED8\u8BA4\u503C\u6216\u5168\u90E8\u67AA\u624B\u8986\u76D6\u503C\u3002",
+  "gui.jegn.config.reset": "\u6062\u590D\u9ED8\u8BA4\u503C",
+  "gui.jegn.config.reset.tooltip": "\u5C06\u5F53\u524D\u5206\u7C7B\u7684\u5168\u90E8\u8BBE\u7F6E\u6062\u590D\u4E3A\u9ED8\u8BA4\u503C\u3002",
   "gui.jegn.config.apply": "\u5E94\u7528",
   "gui.jegn.config.status.loading": "\u6B63\u5728\u52A0\u8F7D...",
   "gui.jegn.config.status.applying": "\u6B63\u5728\u5E94\u7528...",

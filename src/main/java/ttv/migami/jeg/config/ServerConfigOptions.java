@@ -90,12 +90,21 @@ public final class ServerConfigOptions {
         addBoolean(options, "mob.mechanism.phantomGunner.deathExplosion", Category.MOB, "gui.jegn.config.option.phantom_gunner_death_explosion");
         for (String type : Config.gunnerGrowthTypes()) {
             for (String setting : Config.gunnerGrowthSettings()) {
+                double max = switch (setting) {
+                    case "minSpawnChance", "maxSpawnChance", "spawnChancePerDay",
+                            "rocketLauncherChance", "rocketLauncherMaxChance", "rocketLauncherChancePerDay",
+                            "weaponAggression" -> 1.0D;
+                    case "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay" -> 3.0D;
+                    case "armorInitialTier", "armorMaxTier", "armorTierPerDay" -> 6.0D;
+                    case "rocketLauncherStartDay" -> 5000.0D;
+                    default -> throw new IllegalArgumentException("Unknown gunner growth setting: " + setting);
+                };
                 options.add(new Option(
                         Config.gunnerGrowthCommandKey(type, setting),
                         Category.MOB,
                         ValueType.DOUBLE,
                         -1.0D,
-                        5000.0D,
+                        max,
                         "gui.jegn.config.growth.setting." + setting,
                         type
                 ));
