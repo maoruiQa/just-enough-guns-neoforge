@@ -798,6 +798,8 @@
   "gui.jegn.config.tooltip.key": "Command key: %s",
   "gui.jegn.config.tooltip.range": "Allowed range: %s to %s",
   "gui.jegn.config.tooltip.inherit": "-1 inherits the balanced default or the all-gunners override.",
+  "gui.jegn.config.reset": "Reset",
+  "gui.jegn.config.reset.tooltip": "Restore every setting in the current category to its default value.",
   "gui.jegn.config.apply": "Apply",
   "gui.jegn.config.status.loading": "Loading...",
   "gui.jegn.config.status.applying": "Applying...",
