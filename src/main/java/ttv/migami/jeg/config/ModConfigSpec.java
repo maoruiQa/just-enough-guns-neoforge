@@ -131,6 +131,10 @@ public class ModConfigSpec {
             return value;
         }
 
+        public T getDefault() {
+            return defaultValue;
+        }
+
         public void set(T value) {
             this.value = normalize(Objects.requireNonNull(value));
         }
