@@ -1,9 +1,19 @@
 # Changelog
 
+## 1.7.5 - 2026-07-22
+
+### Added
+- Added category-level configuration reset controls that restore all settings in the selected category to their defaults before applying.
+
+### Changed
+- Fixed gunner spawn chance scaling so a configured `maxSpawnChance` below `minSpawnChance` is respected.
+- Corrected configuration-menu ranges for gunner probabilities, weapon tiers, armor tiers, rocket launcher timing, and weapon aggression.
+
 ## 1.7.4 - 2026-07-12
 
 ### Changed
 - Set the module version to `1.7.4`.
+- Made login intro messages configurable.
 - Updated bulletproof helmet IV-VI textures and normalized the IV/V armor-layer UV framing.
 - Scaled elite gunner chance by in-game day so advanced gunner pressure ramps later instead of appearing at a flat rate.
 - Tuned gunner tactics and smoke concealment.
@@ -16,6 +26,9 @@
 - Added dense campfire smoke to smoke grenades.
 
 ### Fixed
+- Fixed gunners and vehicles targeting invisible players.
+- Fixed bulletproof vest hand UV texture rendering.
+- Fixed Fabric package redeclarations that could break compilation.
 - Removed the enchantment glint from bulletproof armor.
 - Restored bulletproof vest shoulder UV textures so shoulder armor renders in-game.
 - Fixed third-person rocket launcher missile visibility.

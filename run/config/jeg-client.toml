@@ -1,7 +1,9 @@
 [rendering]
 	crosshair = "jeg:dynamic"
 	legacyBulletTrailEnabled = true
+	hideAttachmentConfigButton = false
 	showTimersHud = true
+	attachmentButtonAlignment = "right"
 	showHitmarker = true
 	dynamicCrosshairDotThreshold = 0.8
 	showAmmoHud = true

@@ -89,16 +89,13 @@
     "subtitle": "subtitles.block.generic.break",
     "sounds": [
       {
-        "name": "jeg:block/hit/metal1",
-        "stream": true
+        "name": "jeg:block/hit/metal1"
       },
       {
-        "name": "jeg:block/hit/metal2",
-        "stream": true
+        "name": "jeg:block/hit/metal2"
       },
       {
-        "name": "jeg:block/hit/metal3",
-        "stream": true
+        "name": "jeg:block/hit/metal3"
       }
     ]
   },
@@ -230,38 +227,6 @@
     "sounds": [
       {
         "name": "jeg:item/cooldown_with_water"
-      }
-    ]
-  },
-  "item.magazine.load1": {
-    "subtitle": "subtitle.jeg.reload",
-    "sounds": [
-      {
-        "name": "jeg:item/magazine/load1"
-      }
-    ]
-  },
-  "item.magazine.load2": {
-    "subtitle": "subtitle.jeg.reload",
-    "sounds": [
-      {
-        "name": "jeg:item/magazine/load2"
-      }
-    ]
-  },
-  "item.magazine.load3": {
-    "subtitle": "subtitle.jeg.reload",
-    "sounds": [
-      {
-        "name": "jeg:item/magazine/load3"
-      }
-    ]
-  },
-  "item.magazine.unload": {
-    "subtitle": "subtitle.jeg.reload",
-    "sounds": [
-      {
-        "name": "jeg:item/magazine/unload_all_the_ammos"
       }
     ]
   },
@@ -951,6 +916,38 @@
       }
     ]
   },
+  "item.magazine.load1": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load1"
+      }
+    ]
+  },
+  "item.magazine.load2": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load2"
+      }
+    ]
+  },
+  "item.magazine.load3": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/load3"
+      }
+    ]
+  },
+  "item.magazine.unload": {
+    "subtitle": "subtitle.jeg.reload",
+    "sounds": [
+      {
+        "name": "jeg:item/magazine/unload_all_the_ammos"
+      }
+    ]
+  },
   "item.gun_generic.enchanted_fire": {
     "subtitle": "subtitle.jeg.fire.enchanted",
     "sounds": [
@@ -1190,6 +1187,43 @@
       }
     ]
   },
+  "item.gun_draw": {
+    "subtitle": "subtitle.jeg.gun_draw",
+    "sounds": [
+      {
+        "name": "jeg:item/gun_rustle/rustle1",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle2",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle3",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle4",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle5",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle6",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle7",
+        "stream": true
+      },
+      {
+        "name": "jeg:item/gun_rustle/rustle8",
+        "stream": true
+      }
+    ]
+  },
   "item.gun_screw": {
     "subtitle": "subtitle.jeg.gun_rustle",
     "sounds": [
@@ -1348,6 +1382,187 @@
     "sounds": [
       {
         "name": "jeg:event/phantom/distant"
+      }
+    ]
+  },
+  "vehicle.locking_warning": {
+    "subtitle": "subtitle.jeg.vehicle.locking_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/locking",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.locked_warning": {
+    "subtitle": "subtitle.jeg.vehicle.locked_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/locked",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.missile_warning": {
+    "subtitle": "subtitle.jeg.vehicle.missile_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/missile",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.lock_warning": {
+    "subtitle": "subtitle.jeg.vehicle.lock_warning",
+    "sounds": [
+      {
+        "name": "jeg:warning/locked",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.a10.fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/a10/fire"
+      }
+    ]
+  },
+  "vehicle.a10.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/a10/engine"
+      }
+    ]
+  },
+  "vehicle.ah6.cannon_fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/ah6/cannon_fire"
+      }
+    ]
+  },
+  "vehicle.ah6.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/ah6/engine"
+      }
+    ]
+  },
+  "vehicle.bmp2.cannon_fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/bmp2/cannon_fire"
+      }
+    ]
+  },
+  "vehicle.bmp2.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/bmp2/engine"
+      }
+    ]
+  },
+  "vehicle.bmp2.missile_fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/bmp2/missile_fire"
+      }
+    ]
+  },
+  "vehicle.hpj11.fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/hpj11/fire"
+      }
+    ]
+  },
+  "vehicle.laser_tower.fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/laser_tower/fire"
+      }
+    ]
+  },
+  "vehicle.lav150.cannon_fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/lav150/cannon_fire"
+      }
+    ]
+  },
+  "vehicle.lav150.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/lav150/engine"
+      }
+    ]
+  },
+  "vehicle.mi28.cannon_fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/mi28/cannon_fire"
+      }
+    ]
+  },
+  "vehicle.mi28.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/mi28/engine"
+      }
+    ]
+  },
+  "vehicle.speedboat.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/speedboat/engine"
+      }
+    ]
+  },
+  "vehicle.tom6.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/tom6/engine"
+      }
+    ]
+  },
+  "vehicle.truck.engine": {
+    "subtitle": "subtitle.jeg.vehicle.engine",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/truck/engine"
+      }
+    ]
+  },
+  "vehicle.waveforce_tower.fire": {
+    "subtitle": "subtitle.jeg.vehicle.fire",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/waveforce_tower/fire_1"
+      },
+      {
+        "name": "jeg:vehicle/waveforce_tower/fire_2"
+      },
+      {
+        "name": "jeg:vehicle/waveforce_tower/fire_3"
+      },
+      {
+        "name": "jeg:vehicle/waveforce_tower/fire_4"
       }
     ]
   }

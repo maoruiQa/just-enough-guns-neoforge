@@ -26,7 +26,7 @@ dependencies {
     implementation "com.electronwill.night-config:core:3.8.1"
     include "com.electronwill.night-config:toml:3.8.1"
     include "com.electronwill.night-config:core:3.8.1"
-    compileOnly files("C:/Users/user/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-clientonly-deobf/${project.minecraft_version}/minecraft-clientonly-deobf-${project.minecraft_version}.jar")
+    compileOnly files("${gradle.gradleUserHomeDir}/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-clientonly-deobf/${project.minecraft_version}/minecraft-clientonly-deobf-${project.minecraft_version}.jar")
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 

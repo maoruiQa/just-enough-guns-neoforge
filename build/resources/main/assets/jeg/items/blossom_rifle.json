@@ -10,6 +10,31 @@
         ],
         "model": {
           "type": "minecraft:special",
+          "base": "jeg:item/first_person/blossom_rifle",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      },
+      {
+        "when": [
+          "thirdperson_righthand",
+          "thirdperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/blossom_rifle",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
+      },
+      {
+        "when": [
+          "fixed"
+        ],
+        "model": {
+          "type": "minecraft:special",
           "base": "jeg:item/blossom_rifle",
           "model": {
             "type": "geckolib:geckolib"

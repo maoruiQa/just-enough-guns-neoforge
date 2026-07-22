@@ -1,4 +1,4 @@
-version:4786
+version:4903
 ao:true
 biomeBlendRadius:2
 chunkSectionFadeInTime:0.75
@@ -13,6 +13,7 @@ fovEffectScale:1.0
 darknessEffectScale:1.0
 glintSpeed:0.5
 glintStrength:0.75
+preferredGraphicsBackend:"default"
 graphicsPreset:"fancy"
 prioritizeChunkUpdates:1
 fullscreen:false
@@ -49,7 +50,6 @@ invertYMouse:false
 realmsNotifications:true
 showSubtitles:false
 directionalAudio:false
-touchscreen:false
 bobView:true
 toggleCrouch:false
 toggleSprint:false
@@ -98,6 +98,8 @@ joinedFirstServer:false
 syncChunkWrites:true
 showAutosaveIndicator:true
 allowServerListing:true
+inGameNotification:false
+sharePresence:"all"
 onlyShowSecureChat:false
 saveChatDrafts:false
 panoramaScrollSpeed:1.0
@@ -122,6 +124,7 @@ key_key.chat:key.keyboard.t
 key_key.playerlist:key.keyboard.tab
 key_key.pickItem:key.mouse.middle
 key_key.command:key.keyboard.slash
+key_key.friends:key.keyboard.o
 key_key.socialInteractions:key.keyboard.p
 key_key.toggleGui:key.keyboard.f1
 key_key.toggleSpectatorShaderEffects:key.keyboard.f4
@@ -168,6 +171,18 @@ key_key.debug.fpsCharts:key.keyboard.2
 key_key.debug.networkCharts:key.keyboard.3
 key_key.debug.lightmapTexture:key.keyboard.4
 key_key.jeg.reload:key.keyboard.r
+key_key.jeg.attachments:key.keyboard.z
+key_key.jeg.melee:key.keyboard.v
+key_key.jeg.inspect:key.keyboard.y
+key_key.jeg.vehicle_free_look:key.keyboard.c
+key_key.jeg.vehicle_switch_weapon:key.keyboard.x
+key_key.jeg.vehicle_previous_weapon:key.keyboard.z
+key_key.jeg.vehicle_deploy_decoy:key.keyboard.g
+key_key.jeg.vehicle_seek:key.keyboard.v
+key_key.jeg.vehicle_brake_descend:key.keyboard.left.control
+key_key.jeg.vehicle_change_seat:key.keyboard.b
+key_key.jeg.vehicle_dismount:key.keyboard.left.alt
+key_key.jeg.vehicle_player_inventory:key.keyboard.h
 soundCategory_master:1.0
 soundCategory_music:1.0
 soundCategory_record:1.0

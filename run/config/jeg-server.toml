@@ -1,3 +1,8 @@
+[attachments]
+	glowingLaserPointers = true
+	allowFlashlights = true
+	flashlightDistance = 32
+
 [terrorRaid]
 	waveIntervalSeconds = 18
 	groundWaveCount = 4
@@ -5,6 +10,7 @@
 
 [ui]
 	showHitFeedback = true
+	hideMedals = false
 	showCrosshair = true
 
 [factionPatrol]
@@ -15,6 +21,246 @@
 	bossBarRange = 64
 	enabled = true
 	spawnChance = 0.5
+
+	[gunnerGrowth.all]
+		armorMaxTier = 5.0
+		armorInitialTier = 0.0
+		weaponAggression = 0.55
+		rocketLauncherMaxChance = 0.06
+		weaponInitialTier = 0.0
+		weaponTierPerDay = 0.04
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = 3.0
+		rocketLauncherChancePerDay = 5.714286E-4
+		rocketLauncherChance = 0.015
+		rocketLauncherStartDay = 80.0
+		armorTierPerDay = 0.05
+
+	[gunnerGrowth.stray]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.zombieVillager]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.piglinBrute]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.witherSkeleton]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.zombifiedPiglin]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.generic]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.parched]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.pillager]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.vindicator]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.skeleton]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.husk]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.piglin]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.zombie]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
+
+	[gunnerGrowth.drowned]
+		armorMaxTier = -1.0
+		armorInitialTier = -1.0
+		weaponAggression = -1.0
+		rocketLauncherMaxChance = -1.0
+		weaponInitialTier = -1.0
+		weaponTierPerDay = -1.0
+		maxSpawnChance = -1.0
+		minSpawnChance = -1.0
+		spawnChancePerDay = -1.0
+		weaponMaxTier = -1.0
+		rocketLauncherChancePerDay = -1.0
+		rocketLauncherChance = -1.0
+		rocketLauncherStartDay = -1.0
+		armorTierPerDay = -1.0
 
 [factionRaid]
 	homeTriggerRadius = 48
@@ -31,12 +277,23 @@
 	bulletBlockDestructionEnabled = true
 	gunnerAccuracyDaysToMax = 40
 	recoilBackstepEnabled = true
+	terrorPhantomRapidFireResistanceResetTicks = 25
+	terrorPhantomLightMachineGunRapidFireDamageMultiplier = 0.35
+	gunnerAccuracyMaxPercent = 0.7
 	magazineFeedEnabled = true
+	gunnerTerrainSupportBlock = "minecraft:dirt"
+	gunnerProgressionMaxDay = 60
 	recoilBackstepScale = 0.5
 	gunnerShotgunSpreadMultiplier = 0.82
+	gunnerTerrainPlacementEnabled = true
+	gunnerAccuracyMaxDay = 60
+	terrorPhantomMinigunRapidFireDamageMultiplier = 0.18
 	gunnerTerrainInteractionEnabled = true
+	terrorPhantomRapidFireResistanceWarmupHits = 10
+	headshotMultiplier = true
 	blockHitAnimationEnabled = true
 	gunnerTerrainInteractionMaxTier = 2
+	gunnerTerrainBreakMaxTier = 2
 	gunnerAccuracyMaxSpreadMultiplier = 2.5
 
 [spawns]
@@ -56,3 +313,11 @@
 	zombifiedPiglinGunnerChance = 0.1
 	zombieGunnerChance = 0.08333333333333333
 	parchedGunnerChance = 1.0
+
+[vehicle]
+	enemyVehicleConversionChancePerDay = 4.0E-4
+	enemyVehicleSpawningEnabled = true
+	enemyVehicleMaxConversionChance = 0.045
+	enemyVehicleConversionChance = 0.05
+	enemyVehicleStartDay = 80
+	enabled = true

@@ -95,14 +95,22 @@ public final class ServerConfigScreen extends Screen {
         this.addScrollButtons(rowsTop);
 
         int footerY = this.height - 28;
+        int buttonWidth = Math.min(100, (this.width - 28) / 3);
+        int footerLeft = (this.width - buttonWidth * 3 - 8) / 2;
+        Button resetButton = Button.builder(
+                Component.translatable("gui.jegn.config.reset"),
+                button -> this.resetCategory()
+        ).bounds(footerLeft, footerY, buttonWidth, 20).build();
+        resetButton.setTooltip(Tooltip.create(Component.translatable("gui.jegn.config.reset.tooltip")));
+        this.addRenderableWidget(resetButton);
         this.applyButton = this.addRenderableWidget(Button.builder(
                 Component.translatable("gui.jegn.config.apply"),
                 button -> this.applyChanges()
-        ).bounds(this.width / 2 - 104, footerY, 100, 20).build());
+        ).bounds(footerLeft + buttonWidth + 4, footerY, buttonWidth, 20).build());
         this.addRenderableWidget(Button.builder(
                 Component.translatable("gui.done"),
                 button -> this.onClose()
-        ).bounds(this.width / 2 + 4, footerY, 100, 20).build());
+        ).bounds(footerLeft + (buttonWidth + 4) * 2, footerY, buttonWidth, 20).build());
         this.updateApplyButton();
     }
 
@@ -282,6 +290,17 @@ public final class ServerConfigScreen extends Screen {
         this.statusMessage = Component.translatable("gui.jegn.config.status.applying").withStyle(ChatFormatting.YELLOW);
         this.updateApplyButton();
         ServerConfigClient.apply(changes);
+    }
+
+    private void resetCategory() {
+        for (ServerConfigOptions.Option option : ServerConfigOptions.all()) {
+            if (option.category() == this.category) {
+                this.drafts.put(option.key(), String.valueOf(Config.getDefaultConfigValue(option.key())));
+                this.invalidKeys.remove(option.key());
+            }
+        }
+        this.statusMessage = Component.empty();
+        this.rebuildWidgets();
     }
 
     public void applyAuthoritativeValues(Map<String, String> values, int changedCount) {

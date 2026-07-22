@@ -3,11 +3,12 @@
   "category": "equipment",
   "pattern": [
     "BBR",
-    " RF",
+    "DDF",
     "  B"
   ],
   "key": {
     "B": "minecraft:iron_block",
+    "D": "minecraft:diamond",
     "R": "minecraft:redstone",
     "F": "minecraft:flint"
   },

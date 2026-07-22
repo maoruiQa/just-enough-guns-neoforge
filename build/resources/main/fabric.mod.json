@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "jeg",
-  "version": "1.4.2",
-  "name": "Just Enough Guns",
-  "description": "Port of Just Enough Guns to Fabric.",
+  "version": "1.7.4",
+  "name": "jegn",
+  "description": "Fabric port of MigaMi's GPL-3.0 Just Enough Guns. SBW-derived Walkurenritt vehicles (LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, waveforce tower) and their workbenches/repair tools are by the SBW development team under CC BY-NC-SA 3.0.",
   "authors": [
     "Rui Mao",
     "MigaMi",
@@ -23,8 +23,8 @@
     "jeg.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.18.4",
-    "minecraft": ">=26.1 <26.2",
+    "fabricloader": ">=0.19.3",
+    "minecraft": ">=26.2 <26.3",
     "java": ">=25",
     "fabric-api": "*",
     "geckolib": ">=5.5"

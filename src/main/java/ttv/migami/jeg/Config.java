@@ -467,6 +467,14 @@ public final class Config {
         return value.get();
     }
 
+    public static Object getDefaultConfigValue(String key) {
+        ModConfigSpec.Value<?> value = COMMAND_CONFIGS.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Unknown config key: " + key);
+        }
+        return value.getDefault();
+    }
+
     public static void setConfigValue(String key, Object rawValue) {
         ModConfigSpec.Value<?> value = COMMAND_CONFIGS.get(key);
         if (value == null) {
@@ -695,9 +703,6 @@ public final class Config {
         // Treat the old mob.*GunnerChance value as the default minimum, then grow toward the new cap.
         double min = resolveGunnerGrowthValue(gunnerType, "minSpawnChance", clamp01(legacyBaseChance));
         double max = resolveGunnerGrowthValue(gunnerType, "maxSpawnChance", defaultGunnerMaxSpawnChance(gunnerType, min));
-        if (max < min) {
-            max = min;
-        }
         double defaultGrowth = Math.max(0.0D, (max - min) / 60.0D);
         double growth = resolveGunnerGrowthValue(gunnerType, "spawnChancePerDay", defaultGrowth);
         long day = Math.max(0L, currentGunnerDay(level) - Math.max(0, SPAWN_SCALING_START_DAY.get()));

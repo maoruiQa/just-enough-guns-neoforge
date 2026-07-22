@@ -2,13 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BRR",
-    " RL",
+    "IIF",
+    "RGL",
     "  L"
   ],
   "key": {
-    "B": "minecraft:iron_block",
+    "I": "minecraft:iron_ingot",
     "R": "minecraft:redstone",
+    "G": "minecraft:gunpowder",
+    "F": "minecraft:flint",
     "L": "#minecraft:logs"
   },
   "result": {
