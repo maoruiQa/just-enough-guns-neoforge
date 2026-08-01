@@ -12,6 +12,8 @@ import ttv.migami.jeg.entity.MolotovCocktailEntity;
 import ttv.migami.jeg.entity.SmokeGrenadeEntity;
 import ttv.migami.jeg.entity.StunGrenadeEntity;
 import ttv.migami.jeg.entity.WaterBombEntity;
+import ttv.migami.jeg.entity.DroneEntity;
+import ttv.migami.jeg.entity.PlacedExplosiveEntity;
 import ttv.migami.jeg.entity.monster.Ghoul;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantomGuardian;
@@ -92,6 +94,24 @@ public final class ModEntities {
                     .clientTrackingRange(6)
                     .updateInterval(2)
                     .build("water_bomb")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PlacedExplosiveEntity>> PLACED_EXPLOSIVE = REGISTER.register(
+            "placed_explosive",
+            () -> EntityType.Builder.<PlacedExplosiveEntity>of(PlacedExplosiveEntity::new, MobCategory.MISC)
+                    .sized(0.8F, 0.35F)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .build("placed_explosive")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<DroneEntity>> DRONE = REGISTER.register(
+            "drone",
+            () -> EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
+                    .sized(0.9F, 0.35F)
+                    .clientTrackingRange(12)
+                    .updateInterval(1)
+                    .build("drone")
     );
 
     public static final DeferredHolder<EntityType<?>, EntityType<PhantomGunner>> PHANTOM_GUNNER = REGISTER.register(

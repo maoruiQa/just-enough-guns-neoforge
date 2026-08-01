@@ -36,6 +36,7 @@ import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.gametest.GameTestHooks;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
@@ -86,8 +87,10 @@ public final class GunEvents {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
-            NetworkHandler.sendUiConfig(serverPlayer);
-            NetworkHandler.sendVehicleData(serverPlayer);
+            if (!GameTestHooks.isGametestServer()) {
+                NetworkHandler.sendUiConfig(serverPlayer);
+                NetworkHandler.sendVehicleData(serverPlayer);
+            }
             restoreVehicleSeat(serverPlayer);
         }
     }

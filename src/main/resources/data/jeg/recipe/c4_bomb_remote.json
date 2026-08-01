@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "pattern": ["TTT", "TCT", "TTT"],
+  "key": {"T": {"item": "minecraft:tnt"}, "C": {"item": "minecraft:comparator"}},
+  "result": {"id": "jeg:c4_bomb", "count": 2, "components": {"jeg:c4_remote": true}}
+}

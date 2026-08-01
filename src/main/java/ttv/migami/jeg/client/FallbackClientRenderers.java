@@ -19,6 +19,7 @@ import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.render.entity.BulletRenderer;
 import ttv.migami.jeg.client.render.entity.PhantomGunnerGeoRenderer;
 import ttv.migami.jeg.client.render.entity.TerrorPhantomGeoRenderer;
+import ttv.migami.jeg.client.render.entity.SpecialEquipmentRenderer;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.entity.MolotovCocktailEntity;
 import ttv.migami.jeg.entity.SmokeGrenadeEntity;
@@ -57,6 +58,8 @@ public final class FallbackClientRenderers {
         event.registerEntityRenderer(ModEntities.SMOKE_GRENADE.get(), context -> new ThrownItemRenderer<SmokeGrenadeEntity>(context, 1.0F, true));
         event.registerEntityRenderer(ModEntities.MOLOTOV_COCKTAIL.get(), context -> new ThrownItemRenderer<MolotovCocktailEntity>(context, 1.0F, true));
         event.registerEntityRenderer(ModEntities.WATER_BOMB.get(), context -> new ThrownItemRenderer<WaterBombEntity>(context, 1.0F, true));
+        event.registerEntityRenderer(ModEntities.PLACED_EXPLOSIVE.get(), context -> new SpecialEquipmentRenderer<>(context, entity -> entity.pickupStack(), 0.85F));
+        event.registerEntityRenderer(ModEntities.DRONE.get(), context -> new SpecialEquipmentRenderer<>(context, entity -> new net.minecraft.world.item.ItemStack(ttv.migami.jeg.init.ModItems.DRONE.get()), 1.25F));
         event.registerEntityRenderer(ModEntities.PHANTOM_GUNNER.get(), PhantomGunnerGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerGeoRenderer::new);
         event.registerEntityRenderer(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);

@@ -20,7 +20,8 @@ public record VehicleMissileProfile(
         float explosionPower,
         double blastRadius,
         float vehicleDamage,
-        float livingDamage
+        float livingDamage,
+        float directHitDamage
 ) {
     private static final VehicleMissileProfile DEFAULT = new VehicleMissileProfile(
             GuidanceMode.LOCK_ON,
@@ -31,7 +32,8 @@ public record VehicleMissileProfile(
             2.4F,
             3.0D,
             18.0F,
-            12.0F
+            12.0F,
+            18.0F
     );
 
     private static final Map<ResourceLocation, VehicleMissileProfile> PROFILES = Map.of(
@@ -44,7 +46,8 @@ public record VehicleMissileProfile(
                     3.0F,
                     6.0D,
                     180.0F,
-                    12.0F
+                    12.0F,
+                    180.0F
             ),
             Reference.id("vehicle_9m120_driver_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
@@ -55,7 +58,8 @@ public record VehicleMissileProfile(
                     3.5F,
                     7.0D,
                     180.0F,
-                    18.0F
+                    18.0F,
+                    180.0F
             ),
             Reference.id("vehicle_9m120_passenger_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
@@ -66,7 +70,8 @@ public record VehicleMissileProfile(
                     3.5F,
                     7.0D,
                     180.0F,
-                    18.0F
+                    18.0F,
+                    180.0F
             ),
             Reference.id("vehicle_kh39_missile"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
@@ -77,7 +82,8 @@ public record VehicleMissileProfile(
                     5.5F,
                     12.0D,
                     300.0F,
-                    32.0F
+                    32.0F,
+                    300.0F
             ),
             Reference.id("vehicle_9m336_missile"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
@@ -88,7 +94,32 @@ public record VehicleMissileProfile(
                     3.2F,
                     6.0D,
                     70.0F,
-                    20.0F
+                    20.0F,
+                    70.0F
+            ),
+            Reference.id("javelin"), new VehicleMissileProfile(
+                    GuidanceMode.LOCK_ON,
+                    TargetMode.GROUND_ENTITY,
+                    240,
+                    1.35D,
+                    0.16D,
+                    4.2F,
+                    9.0D,
+                    120.0F,
+                    120.0F,
+                    500.0F
+            ),
+            Reference.id("igla_9k38"), new VehicleMissileProfile(
+                    GuidanceMode.LOCK_ON,
+                    TargetMode.AIR_ENTITY,
+                    220,
+                    1.55D,
+                    0.20D,
+                    3.4F,
+                    6.0D,
+                    90.0F,
+                    90.0F,
+                    260.0F
             )
     );
 
@@ -105,14 +136,16 @@ public record VehicleMissileProfile(
     }
 
     public boolean canLock(Entity candidate, LivingEntity shooter, VehicleEntity shooterVehicle) {
-        if (!candidate.isAlive() || candidate == shooter || candidate == shooterVehicle || candidate.getVehicle() == shooterVehicle) {
+        if (!candidate.isAlive() || candidate == shooter || candidate == shooterVehicle
+                || shooterVehicle != null && candidate.getVehicle() == shooterVehicle) {
             return false;
         }
         return this.targetMode.canLock(candidate);
     }
 
     public boolean canContinueTracking(Entity target, Entity owner, Entity ownerVehicle) {
-        if (!target.isAlive() || target == owner || target == ownerVehicle || target.getVehicle() == ownerVehicle) {
+        if (!target.isAlive() || target == owner || target == ownerVehicle
+                || ownerVehicle != null && target.getVehicle() == ownerVehicle) {
             return false;
         }
         return this.targetMode.canLock(target);

@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.gametest.GameTestHooks;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.config.ServerConfigEditor;
@@ -29,6 +30,8 @@ import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.GuidedLauncherItem;
+import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.menu.AttachmentMenu;
@@ -66,6 +69,9 @@ public final class NetworkHandler {
                 .playToServer(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC, NetworkHandler::handleChargeFlashlight)
                 .playToServer(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC, NetworkHandler::handleToggleMedals)
                 .playToServer(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC, NetworkHandler::handleAimingState)
+                .playToServer(GuidedLockPayload.TYPE, GuidedLockPayload.STREAM_CODEC, NetworkHandler::handleGuidedLock)
+                .playToServer(ToggleLauncherModePayload.TYPE, ToggleLauncherModePayload.STREAM_CODEC, NetworkHandler::handleToggleLauncherMode)
+                .playToServer(DroneInputPayload.TYPE, DroneInputPayload.STREAM_CODEC, NetworkHandler::handleDroneInput)
                 .playToServer(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC, NetworkHandler::handleVehicleInput)
                 .playToServer(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC, NetworkHandler::handleVehicleChangeSeat)
                 .playToServer(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC, NetworkHandler::handleVehicleDismount)
@@ -85,7 +91,8 @@ public final class NetworkHandler {
                 .playToClient(KillMedalPayload.TYPE, KillMedalPayload.STREAM_CODEC, NetworkHandler::handleKillMedal)
                 .playToClient(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC, NetworkHandler::handleVehicleState)
                 .playToClient(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC, NetworkHandler::handleVehicleSeatAssignments)
-                .playToClient(ServerConfigStatePayload.TYPE, ServerConfigStatePayload.STREAM_CODEC, NetworkHandler::handleServerConfigState);
+                .playToClient(ServerConfigStatePayload.TYPE, ServerConfigStatePayload.STREAM_CODEC, NetworkHandler::handleServerConfigState)
+                .playToClient(DroneControlPayload.TYPE, DroneControlPayload.STREAM_CODEC, NetworkHandler::handleDroneControl);
     }
 
     private static void handleOpenServerConfig(OpenServerConfigPayload payload, IPayloadContext context) {
@@ -331,8 +338,46 @@ public final class NetworkHandler {
                     GunItem.cancelReloadForImmediateAction(player, player.getMainHandItem());
                 }
                 player.getPersistentData().putBoolean(AIMING_TAG, payload.aiming());
+                if (!payload.aiming()) {
+                    GuidedLauncherItem.clearLock(player);
+                }
             }
         });
+    }
+
+    private static void handleGuidedLock(GuidedLockPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                GuidedLauncherItem.updateLock(player, payload.hand(), payload.targetId());
+            }
+        });
+    }
+
+    private static void handleToggleLauncherMode(ToggleLauncherModePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                GuidedLauncherItem.toggleMode(player, player.getMainHandItem());
+            }
+        });
+    }
+
+    private static void handleDroneInput(DroneInputPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.level().getEntity(payload.entityId()) instanceof DroneEntity drone) {
+                drone.processInput(player, payload.inputs(), payload.yawDelta(), payload.pitchDelta());
+            }
+        });
+    }
+
+    private static void handleDroneControl(DroneControlPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> invokeClientStatic(
+                "ttv.migami.jeg.client.SpecialEquipmentClientEvents",
+                "setDroneControl",
+                new Class<?>[] { int.class, boolean.class, int.class },
+                payload.entityId(), payload.active(), payload.maxRange()));
     }
 
     private static void handleGunFireFx(GunFireFxPayload payload, IPayloadContext context) {
@@ -676,6 +721,24 @@ public final class NetworkHandler {
 
     public static void sendToggleMedals() {
         sendToServer(ToggleMedalsPayload.INSTANCE);
+    }
+
+    public static void sendGuidedLock(InteractionHand hand, int targetId) {
+        sendToServer(new GuidedLockPayload(hand, targetId));
+    }
+
+    public static void sendToggleLauncherMode() {
+        sendToServer(ToggleLauncherModePayload.INSTANCE);
+    }
+
+    public static void sendDroneInput(int entityId, int inputs, float yawDelta, float pitchDelta) {
+        sendToServer(new DroneInputPayload(entityId, inputs, yawDelta, pitchDelta));
+    }
+
+    public static void sendDroneControl(ServerPlayer player, int entityId, boolean active, int maxRange) {
+        if (!GameTestHooks.isGametestServer()) {
+            player.connection.send(new DroneControlPayload(entityId, active, maxRange));
+        }
     }
 
     public static void sendOpenServerConfig() {

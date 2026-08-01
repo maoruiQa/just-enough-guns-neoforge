@@ -1,0 +1,6 @@
+{
+  "parent": "jeg:displaysettings/tm_62.item",
+  "textures": {
+    "layer0": "jeg:entity/tm_62"
+  }
+}

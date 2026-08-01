@@ -45,6 +45,37 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build()
     );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> LAUNCHER_MODE = REGISTER.register(
+            "launcher_mode",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> C4_REMOTE = REGISTER.register(
+            "c4_remote",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> DRONE_LINK = REGISTER.register(
+            "drone_link",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> DRONE_CONTROLLING = REGISTER.register(
+            "drone_controlling",
+            () -> DataComponentType.<Boolean>builder()
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build()
+    );
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_MEDALS_ENABLED = REGISTER.register(
             "gun_medals_enabled",
             () -> DataComponentType.<Boolean>builder()

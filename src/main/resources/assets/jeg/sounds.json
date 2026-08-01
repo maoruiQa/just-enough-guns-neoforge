@@ -1510,5 +1510,17 @@
         "name": "jeg:event/phantom/distant"
       }
     ]
-  }
+  },
+  "item.javelin.fire": {"sounds": [{"name": "jeg:gun/javelin/javelin_fire_1p"}]},
+  "item.javelin.reload": {"sounds": [{"name": "jeg:gun/javelin/javelin_reload"}]},
+  "item.javelin.locking": {"sounds": [{"name": "jeg:gun/javelin/javelin_locking"}]},
+  "item.javelin.locked": {"sounds": [{"name": "jeg:gun/javelin/javelin_locked"}]},
+  "item.igla_9k38.fire": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_fire_1p"}]},
+  "item.igla_9k38.reload": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_reload"}]},
+  "item.igla_9k38.locking": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_locking"}]},
+  "item.igla_9k38.locked": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_locked"}]},
+  "item.c4.beep": {"sounds": [{"name": "jeg:c4/c4_beep"}]},
+  "item.c4.final": {"sounds": [{"name": "jeg:c4/c4_final"}]},
+  "item.c4.detonator": {"sounds": [{"name": "jeg:c4/c4_detonator_click"}]},
+  "entity.drone.engine": {"sounds": [{"name": "jeg:vehicle/drone/drone_engine", "attenuation_distance": 48}]}
 }
