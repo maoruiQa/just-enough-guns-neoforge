@@ -498,6 +498,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {
+        // SW Javelin/Igla: hide whole first-person model once ADS > 0.8 so only scope HUD remains.
+        ResourceLocation id = gun.getStats().id();
+        if (Reference.id("javelin").equals(id) || Reference.id("igla_9k38").equals(id)) {
+            return AimingHandler.get().getRenderAdsProgress() > 0.8F;
+        }
         return hasTelescopicSight(stack) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
     }
 

@@ -79,8 +79,6 @@ import ttv.migami.jeg.item.RepairToolItem;
 import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
-import ttv.migami.jeg.vehicle.client.VehicleClientHooks;
-import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.DefaultVehicleData;
 import ttv.migami.jeg.vehicle.data.VehiclePartArmorProfile;
 import ttv.migami.jeg.vehicle.data.VehicleData;
@@ -1115,7 +1113,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 || !(passenger instanceof LivingEntity living)
                 || passenger.getVehicle() != this
                 || !this.hasVehicleWeapons()
-                || VehicleClientState.freeLookDown()) {
+                || clientFreeLookDown()) {
             return;
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(living);
@@ -1157,8 +1155,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         living.yBodyRotO = yaw;
         living.setXRot(pitch);
         living.xRotO = pitch;
-        if (this.level().isClientSide && VehicleClientHooks.isLocalPlayer(living)) {
-            VehicleClientHooks.syncMousePosition();
+        if (this.level().isClientSide && living == localClientPlayer()) {
+            syncClientMousePosition();
         }
     }
 
@@ -1651,8 +1649,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private boolean shouldRunClientPrediction() {
         return this.dismountLerpSuppressionTicks <= 0
                 && this.isControlledByLocalInstance()
-                && VehicleClientState.isRidingVehicle()
-                && VehicleClientState.vehicleId() == this.getId();
+                && clientVehicleStateMatches(this.getId());
     }
 
     private void clearStaleDriverInput() {
@@ -1719,8 +1716,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 this.seatAssignments.put(assignment.getKey(), seatIndex);
             }
         }
-        if (this.level().isClientSide && VehicleClientHooks.localPlayer() != null && VehicleClientHooks.localPlayer().getVehicle() == this) {
-            Entity localPlayer = VehicleClientHooks.localPlayer();
+        Entity localPlayer = this.level().isClientSide ? localClientPlayer() : null;
+        if (localPlayer != null && localPlayer.getVehicle() == this) {
             int fallbackIndex = this.getPassengers().indexOf(localPlayer);
             int seatIndex = this.seatIndexForPassenger(localPlayer, fallbackIndex);
             this.alignPassengerViewToVehicle(localPlayer, seatIndex);
@@ -1780,8 +1777,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.hasImpulse = true;
         if (forceApply && this.level().isClientSide) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
-            if (VehicleClientState.vehicleId() == this.getId() && !this.isControlledByLocalInstance()) {
-                VehicleClientState.clear();
+            if (clientVehicleId() == this.getId() && !this.isControlledByLocalInstance()) {
+                clearClientVehicleState();
                 this.clearControlState(false);
             }
         }
@@ -2204,9 +2201,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     @Nullable
     private Vec3 weaponZoomAimDirection(LivingEntity shooter) {
         if (!this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()
-                || !VehicleClientState.zoomDown()) {
+                || !clientVehicleStateMatches(this.getId())
+                || !clientZoomDown()) {
             return null;
         }
         VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
@@ -2570,7 +2566,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 || this.isRemoved()) {
             return;
         }
-        Entity localPlayer = this.level().isClientSide ? VehicleClientHooks.localPlayer() : null;
+        Entity localPlayer = this.level().isClientSide ? localClientPlayer() : null;
         for (Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.35D), this::canSupportWithObbCollision)) {
             if (this.level().isClientSide && entity != localPlayer) {
                 continue;
@@ -3454,7 +3450,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             if (zoomCamera.useSimulatedThirdPerson()) {
                 return this.simulatedThirdPersonCameraPosition(passenger, zoomCamera, partialTick);
             }
-            if (VehicleClientState.zoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
+            if (clientZoomDown() && (zoomCamera.x() != 0.0D || zoomCamera.y() != 0.0D || zoomCamera.z() != 0.0D)) {
                 Vec3 firstPersonOffset = this.firstPersonSeatCameraOffset(zoomCamera.x(), zoomCamera.y(), zoomCamera.z(), partialTick);
                 return this.interpolatedVehiclePosition(partialTick).add(firstPersonOffset);
             }
@@ -3467,13 +3463,12 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private Vec3 articulatedZoomCameraPosition(SeatInfo seat, float partialTick) {
         if (!this.usesArticulatedSeatTransform(seat)
                 || !this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()) {
+                || !clientVehicleStateMatches(this.getId())) {
             return null;
         }
         var zoomCamera = seat.zoomCamera();
         boolean hasDedicatedZoomOffset = zoomCamera.zoomX() != 0.0D || zoomCamera.zoomY() != 0.0D || zoomCamera.zoomZ() != 0.0D;
-        if (!VehicleClientState.zoomDown() || !hasDedicatedZoomOffset) {
+        if (!clientZoomDown() || !hasDedicatedZoomOffset) {
             return null;
         }
         double x = zoomCamera.zoomX();
@@ -3518,7 +3513,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private Vec3 helicopterZoomCameraRotation(Entity passenger, float partialTick) {
         if (this.vehicleData().defaults().vehicleType() != VehicleType.HELICOPTER
                 || !this.usesFirstPersonSeatCamera(passenger)
-                || !VehicleClientState.zoomDown()
+                || !clientZoomDown()
                 || !this.usesAircraftCamera(passenger)) {
             return null;
         }
@@ -3584,8 +3579,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     @Nullable
     private Vec3 fixedSeatCameraRotation(Entity passenger, SeatInfo seat, float partialTick) {
         if (!this.usesFirstPersonSeatCamera(passenger)
-                || VehicleClientState.freeLookDown()
-                || VehicleClientState.zoomDown()
+                || clientFreeLookDown()
+                || clientZoomDown()
                 || !seat.zoomCamera().useFixedCameraPos()) {
             return null;
         }
@@ -3603,9 +3598,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private Vec3 weaponCameraRotation(Entity passenger, float partialTick) {
         if (!(passenger instanceof LivingEntity shooter)
                 || !this.level().isClientSide
-                || !VehicleClientState.isRidingVehicle()
-                || VehicleClientState.vehicleId() != this.getId()
-                || !VehicleClientState.zoomDown()) {
+                || !clientVehicleStateMatches(this.getId())
+                || !clientZoomDown()) {
             return null;
         }
         Vec3 direction = this.weaponZoomAimDirection(shooter);
@@ -3626,7 +3620,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
 
     private boolean usesFirstPersonSeatCamera(Entity passenger) {
         return this.level().isClientSide
-                && VehicleClientHooks.isFirstPersonCamera()
+                && clientFirstPersonCamera()
                 && this.hasPassenger(passenger);
     }
 
@@ -3636,6 +3630,107 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                 && camera.useFixedCameraPos()
                 && !camera.useSimulatedThirdPerson()
                 && (camera.x() != 0.0D || camera.y() != 0.0D || camera.z() != 0.0D);
+    }
+
+    @Nullable
+    private static Entity localClientPlayer() {
+        Object minecraft = minecraftInstance();
+        Object player = readField(minecraft, "player");
+        return player instanceof Entity entity ? entity : null;
+    }
+
+    private static void syncClientMousePosition() {
+        Object minecraft = minecraftInstance();
+        Object mouseHandler = readField(minecraft, "mouseHandler");
+        if (mouseHandler == null) {
+            return;
+        }
+        try {
+            double x = ((Number) mouseHandler.getClass().getMethod("xpos").invoke(mouseHandler)).doubleValue();
+            double y = ((Number) mouseHandler.getClass().getMethod("ypos").invoke(mouseHandler)).doubleValue();
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            state.getMethod("syncMousePosition", double.class, double.class).invoke(null, x, y);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+        }
+    }
+
+    private static boolean clientVehicleStateMatches(int entityId) {
+        return clientStateBoolean("isRidingVehicle") && clientVehicleId() == entityId;
+    }
+
+    private static int clientVehicleId() {
+        try {
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            return ((Number) state.getMethod("vehicleId").invoke(null)).intValue();
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return -1;
+        }
+    }
+
+    private static boolean clientZoomDown() {
+        return clientStateBoolean("zoomDown");
+    }
+
+    private static boolean clientFreeLookDown() {
+        return clientStateBoolean("freeLookDown");
+    }
+
+    private static void clearClientVehicleState() {
+        try {
+            Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState").getMethod("clear").invoke(null);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+        }
+    }
+
+    private static boolean clientFirstPersonCamera() {
+        Object minecraft = minecraftInstance();
+        Object options = readField(minecraft, "options");
+        if (options == null) {
+            return false;
+        }
+        try {
+            Object cameraType = options.getClass().getMethod("getCameraType").invoke(options);
+            return Boolean.TRUE.equals(cameraType.getClass().getMethod("isFirstPerson").invoke(cameraType));
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean clientStateBoolean(String methodName) {
+        try {
+            Class<?> state = Class.forName("ttv.migami.jeg.vehicle.client.VehicleClientState");
+            return Boolean.TRUE.equals(state.getMethod(methodName).invoke(null));
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    @Nullable
+    private static Object minecraftInstance() {
+        try {
+            return Class.forName("net.minecraft.client.Minecraft").getMethod("getInstance").invoke(null);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private static Object readField(@Nullable Object target, String name) {
+        if (target == null) {
+            return null;
+        }
+        try {
+            var field = target.getClass().getField(name);
+            return field.get(target);
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            try {
+                var field = target.getClass().getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(target);
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                return null;
+            }
+        }
     }
 
     private void tickAutoRepair() {
@@ -4158,31 +4253,44 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         return new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
     }
 
+    /**
+     * Server no longer spams one-shot engine sounds (hard cut-off / silence until close).
+     * Engine loops are client {@link ttv.migami.jeg.vehicle.client.audio.VehicleEngineSoundInstance}.
+     */
     private void tickEngineSound() {
-        if (this.tickCount % 20 != 0) {
-            return;
-        }
-        SoundEvent sound = VehicleSoundHelper.engineSound(this);
-        if (sound == null) {
-            return;
+        // intentionally empty — kept as call-site compatibility
+    }
+
+    /**
+     * Client engine loop gate.
+     * Occupied vehicles always hum. Unoccupied only when clearly active.
+     */
+    public boolean shouldPlayEngineSound() {
+        if (!this.isAlive() || this.isRemoved()) {
+            return false;
         }
         VehicleType type = this.vehicleData().defaults().vehicleType();
-        EngineInfo engine = this.vehicleData().defaults().engine();
+        if (type == VehicleType.ARTILLERY) {
+            return false;
+        }
+        if (this.getControllingPassenger() != null) {
+            return true;
+        }
         Vec3 movement = this.getDeltaMovement();
-        boolean inputActive = this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0;
-        boolean active = inputActive && this.hasEngineEnergy(engine, true);
-        if (!active) {
-            active = switch (type) {
-                case LAND, BOAT -> movement.x * movement.x + movement.z * movement.z > 0.0025D;
-                case HELICOPTER -> movement.lengthSqr() > 0.0025D || (!this.onGround() && movement.y < -1.0E-4D);
-                case AIRCRAFT -> movement.lengthSqr() > 0.0025D;
-                case ARTILLERY -> false;
-            };
-        }
-        if (!active) {
-            return;
-        }
-        this.level().playSound(null, this, sound, SoundSource.AMBIENT, Math.max(0.1F, this.vehicleData().defaults().engine().engineSoundVolume()), 1.0F);
+        return switch (type) {
+            case LAND, BOAT -> movement.horizontalDistanceSqr() > 0.0025D;
+            case HELICOPTER -> this.propellerSpeed() > 0.02F
+                    || movement.lengthSqr() > 0.001D
+                    || !this.onGround();
+            case AIRCRAFT -> this.propellerSpeed() > 0.02F
+                    || movement.lengthSqr() > 0.001D
+                    || Math.abs(this.enginePower) > 0.02D;
+            case ARTILLERY -> false;
+        };
+    }
+
+    public SoundEvent clientEngineSound() {
+        return VehicleSoundHelper.engineSound(this);
     }
 
     private void tickServerAirMovement(EngineInfo engine) {
@@ -4352,7 +4460,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
                     if (!this.level().isClientSide) {
                         SoundEvent sound = VehicleSoundHelper.engineStartSound(this);
                         if (sound != null) {
-                            this.level().playSound(null, this, sound, this.getSoundSource(), Math.max(0.1F, engine.engineSoundVolume()), 1.0F);
+                            // Short start cue only (loop is client-side)
+                            this.level().playSound(null, this, sound, this.getSoundSource(), 1.2F, 1.0F);
                         }
                     }
                 }

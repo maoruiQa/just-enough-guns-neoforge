@@ -78,6 +78,7 @@ import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
+import ttv.migami.jeg.vehicle.client.audio.VehicleEngineSoundInstance;
 import ttv.migami.jeg.vehicle.client.audio.VehicleFireSoundInstance;
 import ttv.migami.jeg.vehicle.client.render.A10Renderer;
 import ttv.migami.jeg.vehicle.client.render.Ah6Renderer;
@@ -126,6 +127,9 @@ public final class FabricClientBootstrap {
     private static int lastMainHandSlot = -1;
     private static final Map<Integer, MuzzleFlashState> MUZZLE_FLASHES = new ConcurrentHashMap<>();
     private static final Map<Integer, VehicleFireSoundInstance> VEHICLE_FIRE_SOUNDS = new HashMap<>();
+    private static final Map<Integer, VehicleEngineSoundInstance> VEHICLE_ENGINE_SOUNDS = new HashMap<>();
+    private static final Map<Integer, Integer> VEHICLE_ENGINE_START_STREAK = new HashMap<>();
+    private static final int UNOCCUPIED_ENGINE_START_CONFIRM_TICKS = 4;
     private static final Set<String> ALT_MUZZLE_FLASH_IDS = Set.of(
             "subsonic_rifle",
             "flamethrower",
@@ -199,6 +203,15 @@ public final class FabricClientBootstrap {
         KeyBindings.init();
         SpecialEquipmentClientEvents.init();
         registerGunnerSpawnEggColors();
+        // Monitor linked texture swap (legacy item property overrides)
+        net.minecraft.client.renderer.item.ItemProperties.register(
+                ModItems.MONITOR.get(),
+                Reference.id("linked"),
+                (stack, level, entity, seed) -> {
+                    String link = stack.get(ttv.migami.jeg.init.ModDataComponents.DRONE_LINK.get());
+                    return link != null && !link.isEmpty() ? 1.0F : 0.0F;
+                }
+        );
 
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack held = player.getItemInHand(hand);
@@ -415,6 +428,8 @@ public final class FabricClientBootstrap {
             stunRingingSound = null;
             MUZZLE_FLASHES.clear();
             VEHICLE_FIRE_SOUNDS.clear();
+            VEHICLE_ENGINE_SOUNDS.clear();
+            VEHICLE_ENGINE_START_STREAK.clear();
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             GunRecoilHandler.stopImmediate();
@@ -425,6 +440,7 @@ public final class FabricClientBootstrap {
         AimingHandler.get().tick(player);
         tickThrowableEffectAudio(player);
         tickVehicleFireAudio(player);
+        tickVehicleEngineAudio(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
@@ -836,6 +852,87 @@ public final class FabricClientBootstrap {
             VehicleFireSoundInstance instance = new VehicleFireSoundInstance(vehicle, sound);
             VEHICLE_FIRE_SOUNDS.put(vehicle.getId(), instance);
             minecraft.getSoundManager().play(instance);
+        }
+    }
+
+    private static void tickVehicleEngineAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            VEHICLE_ENGINE_SOUNDS.clear();
+            VEHICLE_ENGINE_START_STREAK.clear();
+            return;
+        }
+
+        VEHICLE_ENGINE_SOUNDS.entrySet().removeIf(entry -> {
+            Entity entity = minecraft.level.getEntity(entry.getKey());
+            VehicleEngineSoundInstance instance = entry.getValue();
+            if (!(entity instanceof VehicleEntity vehicle) || vehicle != instance.vehicle()) {
+                minecraft.getSoundManager().stop(instance);
+                return true;
+            }
+            if (!minecraft.getSoundManager().isActive(instance)) {
+                return true;
+            }
+            var sound = vehicle.clientEngineSound();
+            if (sound == null || !instance.matches(sound)) {
+                minecraft.getSoundManager().stop(instance);
+                return true;
+            }
+            return false;
+        });
+
+        java.util.Set<Integer> seenThisTick = new java.util.HashSet<>();
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof VehicleEntity vehicle)) {
+                continue;
+            }
+            int id = vehicle.getId();
+            if (VEHICLE_ENGINE_SOUNDS.containsKey(id)) {
+                VEHICLE_ENGINE_START_STREAK.remove(id);
+                continue;
+            }
+            if (!vehicle.shouldPlayEngineSound()) {
+                VEHICLE_ENGINE_START_STREAK.remove(id);
+                continue;
+            }
+            double hearRange = VehicleEngineSoundInstance.hearDistanceBlocks(vehicle);
+            if (vehicle.distanceToSqr(player) > hearRange * hearRange) {
+                VEHICLE_ENGINE_START_STREAK.remove(id);
+                continue;
+            }
+            var sound = vehicle.clientEngineSound();
+            if (sound == null) {
+                VEHICLE_ENGINE_START_STREAK.remove(id);
+                continue;
+            }
+
+            boolean occupied = vehicle.getControllingPassenger() != null || player.getVehicle() == vehicle;
+            if (!occupied) {
+                seenThisTick.add(id);
+                int streak = VEHICLE_ENGINE_START_STREAK.getOrDefault(id, 0) + 1;
+                VEHICLE_ENGINE_START_STREAK.put(id, streak);
+                if (streak < UNOCCUPIED_ENGINE_START_CONFIRM_TICKS) {
+                    continue;
+                }
+            }
+
+            VehicleEngineSoundInstance instance = new VehicleEngineSoundInstance(vehicle, sound);
+            VEHICLE_ENGINE_SOUNDS.put(id, instance);
+            VEHICLE_ENGINE_START_STREAK.remove(id);
+            minecraft.getSoundManager().play(instance);
+        }
+        VEHICLE_ENGINE_START_STREAK.keySet().removeIf(id -> !seenThisTick.contains(id));
+
+        if (player.getVehicle() instanceof VehicleEntity ridden
+                && !VEHICLE_ENGINE_SOUNDS.containsKey(ridden.getId())
+                && ridden.shouldPlayEngineSound()) {
+            var sound = ridden.clientEngineSound();
+            if (sound != null) {
+                VehicleEngineSoundInstance instance = new VehicleEngineSoundInstance(ridden, sound);
+                VEHICLE_ENGINE_SOUNDS.put(ridden.getId(), instance);
+                VEHICLE_ENGINE_START_STREAK.remove(ridden.getId());
+                minecraft.getSoundManager().play(instance);
+            }
         }
     }
 
