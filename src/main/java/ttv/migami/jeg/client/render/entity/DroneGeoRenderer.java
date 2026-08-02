@@ -14,14 +14,16 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.constant.dataticket.DataTicket;
 import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.entity.DroneEntity;
 
 /**
- * 3D geo drone with Superb Warfare style yaw/pitch body orientation.
+ * 3D geo drone with Superb Warfare style yaw/pitch body orientation + spinning rotors.
  */
 public final class DroneGeoRenderer extends GeoEntityRenderer<DroneEntity, DroneGeoRenderer.RenderState> {
+    private static final String[] ROTOR_BONES = {"wingFL", "wingFR", "wingBL", "wingBR", "propeller", "prop"};
     public static final class RenderState extends EntityRenderState implements GeoRenderState {
         float bodyYaw;
         float bodyPitch;
@@ -86,6 +88,20 @@ public final class DroneGeoRenderer extends GeoEntityRenderer<DroneEntity, Drone
         RenderState state = passInfo.renderState();
         poseStack.mulPose(Axis.YP.rotationDegrees(-state.bodyYaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch));
+    }
+
+    /**
+     * GeckoLib v5 replacement for v4 {@code preRender} bone spin.
+     * Manually rotate SW rotor bones (wingFL/FR/BL/BR) every frame.
+     */
+    @Override
+    public void adjustModelBonesForRender(RenderPassInfo<RenderState> passInfo, BoneSnapshots snapshots) {
+        // Same continuous spin formula as NeoForge-1.21.1 DroneGeoRenderer.
+        float spin = (System.currentTimeMillis() % 36000000L) / 12.0F;
+        for (String name : ROTOR_BONES) {
+            snapshots.ifPresent(name, snap -> snap.setRotY(spin));
+        }
+        super.adjustModelBonesForRender(passInfo, snapshots);
     }
 
     private void ensureAnimatableManager(DroneEntity animatable, Void context, RenderState renderState) {
