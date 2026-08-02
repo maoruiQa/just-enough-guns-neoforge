@@ -104,7 +104,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             Map.entry(Reference.id("subsonic_rifle"), zoom(0.0D, 3.95D, -0.75D)),
             Map.entry(Reference.id("supersonic_shotgun"), zoom(0.0D, 4.2D, -3.75D)),
             Map.entry(Reference.id("typhoonee"), zoom(0.0D, 4.45D, -1.25D)),
-            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D))
+            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D)),
+            // SW guided launchers: raise into shoulder aim before scope HUD takes over at ads>0.8
+            Map.entry(Reference.id("javelin"), zoom(0.0D, 4.5D, -2.5D)),
+            Map.entry(Reference.id("igla_9k38"), zoom(0.0D, 4.5D, -2.5D))
     );
     private static final Set<String> DEBUG_BONES = ConcurrentHashMap.newKeySet();
     private static Method renderModelListsMethod;
@@ -562,7 +565,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
         GunPoseProfile profile = GunPoseProfile.forGun(gun.getStats().id());
         HumanoidArm activeArm = resolveRenderedHand();
-        boolean leftBone = boneName.contains("left");
+        boolean leftBone = isLeftArmBone(boneName);
         if (profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED) {
             if (leftBone && activeArm != HumanoidArm.LEFT) {
                 return;
@@ -703,8 +706,18 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static boolean isArmBone(String boneName) {
+        // Standard JEG bones + SW guided-launcher bones (Lefthand/Righthand).
         return "left_arm".equals(boneName) || "right_arm".equals(boneName)
-                || "fake_left_arm".equals(boneName) || "fake_right_arm".equals(boneName);
+                || "fake_left_arm".equals(boneName) || "fake_right_arm".equals(boneName)
+                || "Lefthand".equals(boneName) || "Righthand".equals(boneName);
+    }
+
+    private static boolean isLeftArmBone(String boneName) {
+        if (boneName == null) {
+            return false;
+        }
+        // Case-insensitive: "left_arm", "fake_left_arm", SW "Lefthand"
+        return boneName.toLowerCase(java.util.Locale.ROOT).contains("left");
     }
 
     private static int dyeColor(ItemStack stack) {
