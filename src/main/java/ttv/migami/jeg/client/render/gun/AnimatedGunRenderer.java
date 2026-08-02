@@ -48,7 +48,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final DataTicket<Boolean> USING_VANILLA_NON_FIRST_PERSON =
             DataTicket.create("jeg:using_vanilla_non_first_person", Boolean.class);
     private static final Set<String> FIRST_PERSON_ARM_BONES =
-            Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm");
+            Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm", "Lefthand", "Righthand");
 
     private static final class VanillaStateAccess {
         private static final Field LAYERS;

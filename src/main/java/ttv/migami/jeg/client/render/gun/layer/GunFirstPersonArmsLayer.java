@@ -33,7 +33,11 @@ import java.util.Set;
  * Third-person: does not render any arms.
  */
 public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
-    private static final Set<String> ARM_BONES = Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm");
+    private static final Set<String> ARM_BONES = Set.of(
+            "left_arm", "right_arm", "fake_left_arm", "fake_right_arm",
+            // SW guided-launcher hand anchors (Igla etc.)
+            "Lefthand", "Righthand"
+    );
     private static final float ARM_WIDTH_SCALE = 0.75F;
     private static final float ARM_HEIGHT_SCALE = 10.0F / 12.0F;
     private static final float ARM_DEPTH_SCALE = 0.75F;
@@ -86,10 +90,15 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
     private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side) {
         String fake = side == ArmSide.LEFT ? "fake_left_arm" : "fake_right_arm";
         String normal = side == ArmSide.LEFT ? "left_arm" : "right_arm";
-        // Prefer normal arm bones; fake_* are often emergency anchors that can drift into camera.
+        // SW guided launchers (Igla) use Lefthand/Righthand instead of left_arm/right_arm.
+        String sw = side == ArmSide.LEFT ? "Lefthand" : "Righthand";
+        // Prefer normal arm bones; then SW names; fake_* last (can drift into camera).
         passInfo.model().getBone(normal).ifPresentOrElse(
                 bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)),
-                () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)))
+                () -> passInfo.model().getBone(sw).ifPresentOrElse(
+                        bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)),
+                        () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)))
+                )
         );
     }
 
