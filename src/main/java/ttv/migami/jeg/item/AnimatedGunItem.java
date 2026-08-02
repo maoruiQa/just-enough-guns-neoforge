@@ -34,7 +34,7 @@ import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.network.NetworkHandler;
 
-public final class AnimatedGunItem extends GunItem implements GeoItem {
+public class AnimatedGunItem extends GunItem implements GeoItem {
     public static final String CONTROLLER = "controller";
     public static final String ANIM_SHOOT = "shoot";
     public static final String ANIM_RELOAD = "reload";

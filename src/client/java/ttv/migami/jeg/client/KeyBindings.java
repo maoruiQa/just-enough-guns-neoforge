@@ -37,6 +37,20 @@ public final class KeyBindings {
             CATEGORY
     );
 
+    public static final KeyMapping LAUNCHER_MODE = new KeyMapping(
+            "key.jeg.launcher_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_N,
+            CATEGORY
+    );
+
+    public static final KeyMapping DRONE_INTERACT = new KeyMapping(
+            "key.jeg.drone_interact",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
+            CATEGORY
+    );
+
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
             InputConstants.Type.KEYSYM,
@@ -113,6 +127,8 @@ public final class KeyBindings {
         KeyBindingHelper.registerKeyBinding(ATTACHMENTS);
         KeyBindingHelper.registerKeyBinding(MELEE);
         KeyBindingHelper.registerKeyBinding(INSPECT);
+        KeyBindingHelper.registerKeyBinding(LAUNCHER_MODE);
+        KeyBindingHelper.registerKeyBinding(DRONE_INTERACT);
         KeyBindingHelper.registerKeyBinding(VEHICLE_FREE_LOOK);
         KeyBindingHelper.registerKeyBinding(VEHICLE_SWITCH_WEAPON);
         KeyBindingHelper.registerKeyBinding(VEHICLE_PREVIOUS_WEAPON);

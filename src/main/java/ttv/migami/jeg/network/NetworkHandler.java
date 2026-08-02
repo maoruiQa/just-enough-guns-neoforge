@@ -27,6 +27,8 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
+import ttv.migami.jeg.entity.DroneEntity;
+import ttv.migami.jeg.item.GuidedLauncherItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.MagazineItem;
 import ttv.migami.jeg.item.attachment.GunAttachments;
@@ -70,6 +72,9 @@ public final class NetworkHandler {
         PayloadTypeRegistry.playC2S().register(ChargeFlashlightPayload.TYPE, ChargeFlashlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(AimingStatePayload.TYPE, AimingStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(GuidedLockPayload.TYPE, GuidedLockPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(ToggleLauncherModePayload.TYPE, ToggleLauncherModePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(DroneInputPayload.TYPE, DroneInputPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(VehicleInputPayload.TYPE, VehicleInputPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(VehicleChangeSeatPayload.TYPE, VehicleChangeSeatPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(VehicleDismountPayload.TYPE, VehicleDismountPayload.STREAM_CODEC);
@@ -90,6 +95,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.playS2C().register(VehicleStatePayload.TYPE, VehicleStatePayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(VehicleSeatAssignmentsPayload.TYPE, VehicleSeatAssignmentsPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(ServerConfigStatePayload.TYPE, ServerConfigStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(DroneControlPayload.TYPE, DroneControlPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ShootRequestPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleShootRequest(payload, context.player()));
@@ -126,6 +132,15 @@ public final class NetworkHandler {
         });
         ServerPlayNetworking.registerGlobalReceiver(AimingStatePayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleAimingState(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(GuidedLockPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleGuidedLock(payload, context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ToggleLauncherModePayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleToggleLauncherMode(context.player()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(DroneInputPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> handleDroneInput(payload, context.player()));
         });
         ServerPlayNetworking.registerGlobalReceiver(VehicleInputPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> handleVehicleInput(payload, context.player()));
@@ -451,6 +466,24 @@ public final class NetworkHandler {
             return;
         }
         GunItem.clearTriggerLock(stack);
+    }
+
+    private static void handleGuidedLock(GuidedLockPayload payload, ServerPlayer player) {
+        GuidedLauncherItem.updateLock(player, payload.hand(), payload.targetId());
+    }
+
+    private static void handleToggleLauncherMode(ServerPlayer player) {
+        GuidedLauncherItem.toggleMode(player, player.getMainHandItem());
+    }
+
+    private static void handleDroneInput(DroneInputPayload payload, ServerPlayer player) {
+        if (player.level().getEntity(payload.entityId()) instanceof DroneEntity drone) {
+            drone.processInput(player, payload.inputs(), payload.yawDelta(), payload.pitchDelta());
+        }
+    }
+
+    public static void sendDroneControl(ServerPlayer player, int entityId, boolean active, int maxRange) {
+        ServerPlayNetworking.send(player, new DroneControlPayload(entityId, active, maxRange));
     }
 
     private static void handleAimingState(AimingStatePayload payload, ServerPlayer player) {

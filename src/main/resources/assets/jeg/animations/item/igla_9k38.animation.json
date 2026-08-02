@@ -1,0 +1,38 @@
+{
+    "format_version":  "1.8.0",
+    "animations":  {
+                       "idle":  null,
+                       "reload":  null,
+                       "shoot":  {
+                                     "animation_length":  0.05
+                                 },
+                       "aim_shoot":  {
+                                         "animation_length":  0.05
+                                     },
+                       "draw":  {
+                                    "animation_length":  0.05
+                                },
+                       "melee":  {
+                                     "animation_length":  0.05
+                                 },
+                       "bayonet":  {
+                                       "animation_length":  0.05
+                                   },
+                       "reload_start":  {
+                                            "animation_length":  0.05
+                                        },
+                       "reload_loop":  {
+                                           "animation_length":  0.05
+                                       },
+                       "reload_stop":  {
+                                           "animation_length":  0.05
+                                       },
+                       "sprint":  {
+                                      "animation_length":  0.05
+                                  },
+                       "inspect":  {
+                                       "animation_length":  0.05
+                                   }
+                   },
+    "geckolib_format_version":  2
+}

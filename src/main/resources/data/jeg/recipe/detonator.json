@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [" R", "IB"],
+  "key": {
+    "R": {"item": "minecraft:redstone_torch"},
+    "I": {"item": "minecraft:iron_ingot"},
+    "B": {"item": "minecraft:stone_button"}
+  },
+  "result": {"id": "jeg:detonator", "count": 1}
+}

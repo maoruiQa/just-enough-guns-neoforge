@@ -1,0 +1,14 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "jeg:item/monitor"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "jeg:linked": 1
+      },
+      "model": "jeg:item/monitor_linked"
+    }
+  ]
+}

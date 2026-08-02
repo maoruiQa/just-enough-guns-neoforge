@@ -1,0 +1,7 @@
+{
+  "parent": "jeg:custom/claymore",
+  "textures": {
+    "1": "jeg:item/claymore",
+    "particle": "jeg:item/claymore"
+  }
+}

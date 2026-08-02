@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "pattern": ["GPG", "TTT", "TTT"],
+  "key": {
+    "G": {"item": "minecraft:green_concrete"},
+    "P": {"item": "minecraft:stone_pressure_plate"},
+    "T": {"item": "minecraft:tnt"}
+  },
+  "result": {"id": "jeg:tm_62", "count": 2}
+}

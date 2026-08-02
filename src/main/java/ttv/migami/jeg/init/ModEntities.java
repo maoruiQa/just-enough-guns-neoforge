@@ -7,6 +7,8 @@ import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.entity.DroneEntity;
+import ttv.migami.jeg.entity.PlacedExplosiveEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
 import ttv.migami.jeg.entity.MolotovCocktailEntity;
 import ttv.migami.jeg.entity.SmokeGrenadeEntity;
@@ -94,6 +96,24 @@ public final class ModEntities {
                     .build("water_bomb")
     );
 
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PlacedExplosiveEntity>> PLACED_EXPLOSIVE = REGISTER.register(
+            "placed_explosive",
+            () -> EntityType.Builder.<PlacedExplosiveEntity>of(PlacedExplosiveEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .build("placed_explosive")
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<DroneEntity>> DRONE = REGISTER.register(
+            "drone",
+            () -> EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 0.3F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("drone")
+    );
     public static final DeferredHolder<EntityType<?>, EntityType<PhantomGunner>> PHANTOM_GUNNER = REGISTER.register(
             "phantom_gunner",
             () -> EntityType.Builder.of(PhantomGunner::new, MobCategory.MONSTER)

@@ -17,6 +17,16 @@ public final class FabricCreativeTabs {
                 }
             });
             ModItems.AMMO.values().forEach(holder -> entries.accept(holder.get()));
+            entries.accept(ModItems.DRONE.get());
+            entries.accept(ModItems.MONITOR.get());
+            entries.accept(ModItems.C4_BOMB.get());
+            net.minecraft.world.item.ItemStack remoteC4 = new net.minecraft.world.item.ItemStack(ModItems.C4_BOMB.get());
+            remoteC4.set(ttv.migami.jeg.init.ModDataComponents.C4_REMOTE.get(), true);
+            entries.accept(remoteC4);
+            entries.accept(ModItems.DETONATOR.get());
+            entries.accept(ModItems.C4_VEST.get());
+            entries.accept(ModItems.CLAYMORE_MINE.get());
+            entries.accept(ModItems.TM_62.get());
             entries.accept(ModItems.MISSILE_ENGINE.get());
             entries.accept(ModItems.PISTOL_MAGAZINE.get());
             entries.accept(ModItems.SMG_MAGAZINE.get());
