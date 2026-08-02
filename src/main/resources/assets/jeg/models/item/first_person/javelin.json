@@ -1,35 +1,15 @@
 {
   "parent": "builtin/entity",
-  "credit": "SW displaysettings retuned for JEG GeckoLib v5 first-person",
-  "texture_size": [
-    128,
-    128
-  ],
+  "credit": "SW displaysettings matching Fabric-1.21.1 (known-good)",
+  "texture_size": [128, 128],
   "gui_light": "front",
   "display": {
     "firstperson_righthand": {
-      "rotation": [
-        0,
-        0,
-        4.75
-      ],
-      "translation": [
-        -3.5,
-        -1.75,
-        -2.25
-      ],
-      "scale": [
-        0.88,
-        0.88,
-        0.88
-      ]
+      "rotation": [0, 0, 4.75],
+      "translation": [-3.75, -4.75, 0.75]
     },
     "firstperson_lefthand": {
-      "scale": [
-        0,
-        0,
-        0
-      ]
+      "scale": [0, 0, 0]
     }
   }
 }

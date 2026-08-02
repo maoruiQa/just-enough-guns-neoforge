@@ -508,7 +508,12 @@ public class AnimatedGunItem extends GunItem implements GeoItem {
 
     private static boolean isNonFirstPersonPerspective(AnimationTest<AnimatedGunItem> test) {
         ItemDisplayContext perspective = test.getData(DataTickets.ITEM_RENDER_PERSPECTIVE);
-        return perspective != null && !perspective.firstPerson();
+        // GeckoLib v5 sometimes supplies NONE / omits the ticket during held FP renders.
+        // Only hard-stop for known non-first-person contexts so reload/draw still play.
+        if (perspective == null || perspective == ItemDisplayContext.NONE) {
+            return false;
+        }
+        return !perspective.firstPerson();
     }
 
     public static void suppressSprintAnimationBriefly() {
