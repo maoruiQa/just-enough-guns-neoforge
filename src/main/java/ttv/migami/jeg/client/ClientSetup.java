@@ -30,6 +30,8 @@ import ttv.migami.jeg.vehicle.client.render.Tom6Renderer;
 import ttv.migami.jeg.vehicle.client.render.TruckRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleDecoyRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleGeoRenderer;
+import ttv.migami.jeg.client.render.entity.DroneGeoRenderer;
+import ttv.migami.jeg.client.render.entity.SpecialExplosiveGeoRenderer;
 import ttv.migami.jeg.vehicle.client.render.VehicleMissileRenderer;
 import ttv.migami.jeg.vehicle.client.render.WaveforceTowerRenderer;
 import ttv.migami.jeg.vehicle.client.render.block.VehicleAssemblingTableBlockEntityRenderer;
@@ -77,6 +79,8 @@ public final class ClientSetup {
             event.registerEntityRenderer(ModEntities.WAVEFORCE_TOWER.get(), WaveforceTowerRenderer::new);
             event.registerEntityRenderer(ModEntities.VEHICLE_DECOY.get(), VehicleDecoyRenderer::new);
             event.registerEntityRenderer(ModEntities.VEHICLE_MISSILE.get(), VehicleMissileRenderer::new);
+            event.registerEntityRenderer(ModEntities.PLACED_EXPLOSIVE.get(), SpecialExplosiveGeoRenderer::new);
+            event.registerEntityRenderer(ModEntities.DRONE.get(), DroneGeoRenderer::new);
 
             LOGGER.debug("Successfully registered vehicle and gun entity renderers");
         } catch (Exception e) {

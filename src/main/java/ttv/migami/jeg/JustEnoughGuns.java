@@ -97,6 +97,7 @@ public final class JustEnoughGuns {
         try {
             // Initialize game values
             GunMobValues.init();
+            event.enqueueWork(ttv.migami.jeg.init.SpecialEquipmentDispenseBehaviors::register);
 
             LOGGER.info("JEG common setup completed successfully");
 
