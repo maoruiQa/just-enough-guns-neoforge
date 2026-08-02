@@ -1,8 +1,8 @@
-{
+﻿{
     "format_version":  "1.8.0",
     "animations":  {
-                       "idle":  null,
-                       "reload":  null,
+                       "idle": {"loop": true, "animation_length": 0.05, "bones": {}},
+                       "reload": {"animation_length": 0.05, "bones": {}},
                        "shoot":  {
                                      "animation_length":  0.05
                                  },

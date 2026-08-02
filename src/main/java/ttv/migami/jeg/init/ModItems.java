@@ -337,6 +337,7 @@ public final class ModItems {
             "medium_anti_air_missile",
             "medium_anti_ground_missile",
             "large_anti_ground_missile",
+            "javelin_missile",
             "grenade",
             "stun_grenade",
             "smoke_grenade",
