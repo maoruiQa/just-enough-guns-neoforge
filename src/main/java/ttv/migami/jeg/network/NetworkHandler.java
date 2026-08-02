@@ -1,6 +1,7 @@
 package ttv.migami.jeg.network;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -49,6 +50,9 @@ import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
+
+    /** Fallback distance for vehicle state when not already tracking the entity (256 blocks). */
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR = 256.0D * 256.0D;
 
     private static boolean commonRegistered;
     private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
@@ -504,13 +508,18 @@ public final class NetworkHandler {
         if (!(vehicle.level() instanceof ServerLevel level)) {
             return;
         }
+        // Tracking full + 256-block fallback (deduped).
+        HashSet<ServerPlayer> recipients = new HashSet<>();
         for (ServerPlayer player : PlayerLookup.tracking(vehicle)) {
-            syncVehicleState(player, vehicle, forceApply);
+            recipients.add(player);
         }
         for (ServerPlayer player : PlayerLookup.level(level)) {
-            if (player.distanceToSqr(vehicle) <= 4096.0D) {
-                syncVehicleState(player, vehicle, forceApply);
+            if (player.distanceToSqr(vehicle) <= VEHICLE_STATE_FALLBACK_DISTANCE_SQR) {
+                recipients.add(player);
             }
+        }
+        for (ServerPlayer player : recipients) {
+            syncVehicleState(player, vehicle, forceApply);
         }
     }
 
