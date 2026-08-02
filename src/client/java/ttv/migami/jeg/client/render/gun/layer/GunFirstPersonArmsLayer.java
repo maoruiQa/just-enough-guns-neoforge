@@ -60,7 +60,8 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
         String boneName = bone.getName();
         if (!"left_arm".equals(boneName) && !"right_arm".equals(boneName)
-                && !"fake_left_arm".equals(boneName) && !"fake_right_arm".equals(boneName)) {
+                && !"fake_left_arm".equals(boneName) && !"fake_right_arm".equals(boneName)
+                && !"Lefthand".equals(boneName) && !"Righthand".equals(boneName)) {
             return;
         }
         bone.setHidden(true);
@@ -79,7 +80,7 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
         GunPoseProfile profile = GunPoseProfile.forGun(gun.getStats().id());
         HumanoidArm activeArm = renderer.resolveRenderedHand();
-        boolean isLeftBone = boneName.contains("left");
+        boolean isLeftBone = boneName != null && boneName.toLowerCase(java.util.Locale.ROOT).contains("left");
         if (profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED) {
             if (isLeftBone && activeArm != HumanoidArm.LEFT) {
                 return;
