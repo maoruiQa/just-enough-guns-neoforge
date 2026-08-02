@@ -385,8 +385,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static ItemTransform staticItemFirstPersonTransform(ResourceLocation itemId, ItemDisplayContext displayContext) {
         Minecraft mc = Minecraft.getInstance();
-        ModelResourceLocation modelId = new ModelResourceLocation(Reference.id("item/" + itemId.getPath()), "standalone");
-        BakedModel model = mc.getModelManager().getModel(modelId);
+        // Prefer the inventory item model (models/item/<id>.json), which carries Blockbench/SW display transforms.
+        BakedModel model = mc.getModelManager().getModel(new ModelResourceLocation(itemId, "inventory"));
+        if (model == mc.getModelManager().getMissingModel()) {
+            // Fallback used by some legacy/standalone model paths
+            model = mc.getModelManager().getModel(new ModelResourceLocation(Reference.id("item/" + itemId.getPath()), "standalone"));
+        }
         if (model == mc.getModelManager().getMissingModel()) {
             return new ItemTransform(
                     new org.joml.Vector3f(),
@@ -498,12 +502,25 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     private static boolean shouldHideScopedFirstPersonGun(ItemStack stack, AnimatedGunItem gun) {
-        // SW Javelin/Igla: hide whole first-person model once ADS > 0.8 so only scope HUD remains.
+        // SW Javelin/Igla: hide mesh once ADS is deep so only scope HUD remains.
+        // Keep visible while reloading/drawing so those animations can still play under partial ADS.
         ResourceLocation id = gun.getStats().id();
         if (Reference.id("javelin").equals(id) || Reference.id("igla_9k38").equals(id)) {
+            if (isLauncherBusyAnimating(stack)) {
+                return false;
+            }
             return AimingHandler.get().getRenderAdsProgress() > 0.8F;
         }
         return hasTelescopicSight(stack) && AimingHandler.get().getRenderAdsProgress() > 0.5F;
+    }
+
+    private static boolean isLauncherBusyAnimating(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        int reload = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        int draw = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        return reload > 0 || draw > 0;
     }
 
     @Override
