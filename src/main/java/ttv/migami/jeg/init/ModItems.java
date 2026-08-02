@@ -41,6 +41,7 @@ import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.GuidedLauncherItem;
 import ttv.migami.jeg.item.SpecialExplosiveItem;
+import ttv.migami.jeg.item.C4VestItem;
 import ttv.migami.jeg.item.DetonatorItem;
 import ttv.migami.jeg.item.DroneItem;
 import ttv.migami.jeg.item.MonitorItem;
@@ -302,6 +303,10 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, DetonatorItem> DETONATOR = REGISTER.register(
             "detonator", () -> new DetonatorItem(baseProperties(Reference.id("detonator")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, C4VestItem> C4_VEST = REGISTER.register(
+            "c4_vest",
+            () -> new C4VestItem(baseProperties(Reference.id("c4_vest")))
     );
     public static final DeferredHolder<Item, SpecialExplosiveItem> CLAYMORE_MINE = REGISTER.register(
             "claymore_mine", () -> new SpecialExplosiveItem(SpecialExplosiveItem.Kind.CLAYMORE, baseProperties(Reference.id("claymore_mine")).stacksTo(16))
@@ -681,7 +686,10 @@ public final class ModItems {
     }
 
     private static void addSpecialEquipmentRecipes(java.util.List<ResourceKey<Recipe<?>>> keys) {
-        for (String path : List.of("drone", "monitor", "c4_bomb", "c4_bomb_remote", "detonator", "claymore_mine", "tm_62")) {
+        for (String path : List.of(
+                "drone", "monitor", "c4_bomb", "c4_bomb_remote", "detonator",
+                "c4_vest", "claymore_mine", "tm_62"
+        )) {
             keys.add(ResourceKey.create(Registries.RECIPE, Reference.id(path)));
         }
     }
@@ -755,6 +763,7 @@ public final class ModItems {
             remoteC4.set(ModDataComponents.C4_REMOTE.get(), true);
             event.accept(remoteC4);
             event.accept(DETONATOR.get());
+            event.accept(C4_VEST.get());
             event.accept(CLAYMORE_MINE.get());
             event.accept(TM_62.get());
             event.accept(MISSILE_ENGINE.get());

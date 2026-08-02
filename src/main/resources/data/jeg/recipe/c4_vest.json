@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "pattern": [
+    "CLC"
+  ],
+  "key": {
+    "C": {
+      "item": "jeg:c4_bomb"
+    },
+    "L": {
+      "item": "minecraft:leather_chestplate"
+    }
+  },
+  "result": {
+    "id": "jeg:c4_vest",
+    "count": 1
+  }
+}

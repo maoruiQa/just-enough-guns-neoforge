@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,6 +27,7 @@ import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.client.audio.DroneEngineSoundInstance;
 import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.util.ScreenProjection;
 import ttv.migami.jeg.entity.DroneEntity;
@@ -75,17 +77,23 @@ public final class SpecialEquipmentClientEvents {
     private static float playerPitch;
     private static boolean payloadHeld;
     private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static int engineSoundCooldown;
+    /** All active drone engine loops (FPV + airborne world drones). */
+    private static final java.util.Map<Integer, DroneEngineSoundInstance> DRONE_ENGINE_SOUNDS = new java.util.HashMap<>();
 
     private SpecialEquipmentClientEvents() {}
 
     public static void setDroneControl(int entityId, boolean active, int maxRange) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!active) {
+            int previous = droneId;
             droneId = -1;
             droneRange = 0;
             droneZoom = 1.0F;
-            engineSoundCooldown = 0;
+            // Drop FPV mode; world loop may keep running if still airborne
+            DroneEngineSoundInstance existing = DRONE_ENGINE_SOUNDS.get(previous);
+            if (existing != null) {
+                existing.setFpvMode(false);
+            }
             if (minecraft.player != null) {
                 minecraft.setCameraEntity(minecraft.player);
                 minecraft.options.setCameraType(previousCameraType);
@@ -106,12 +114,78 @@ public final class SpecialEquipmentClientEvents {
         return droneId >= 0;
     }
 
+    /**
+     * Engine should hum while FPV-controlling (including hands-off hover) or while airborne in the world.
+     */
+    private static boolean shouldPlayDroneEngine(DroneEntity drone) {
+        if (!drone.isAlive() || drone.isRemoved()) {
+            return false;
+        }
+        if (drone.getId() == droneId) {
+            return true; // FPV: always, including pure hover
+        }
+        // Uncontrolled / not in FPV: still hum while in the air (hover / flight)
+        return !drone.onGround();
+    }
+
+    private static void tickDroneEngineAudio(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            DRONE_ENGINE_SOUNDS.values().forEach(DroneEngineSoundInstance::beginStop);
+            DRONE_ENGINE_SOUNDS.clear();
+            return;
+        }
+
+        SoundEvent engine = BuiltInRegistries.SOUND_EVENT.get(Reference.id("entity.drone.engine"));
+        java.util.Set<Integer> keep = new java.util.HashSet<>();
+
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof DroneEntity drone)) {
+                continue;
+            }
+            int id = drone.getId();
+            if (!shouldPlayDroneEngine(drone)) {
+                continue;
+            }
+            keep.add(id);
+            boolean fpv = id == droneId;
+            DroneEngineSoundInstance existing = DRONE_ENGINE_SOUNDS.get(id);
+            if (existing != null && minecraft.getSoundManager().isActive(existing)) {
+                existing.setFpvMode(fpv);
+                existing.keepAlive();
+                continue;
+            }
+            if (engine == null) {
+                continue;
+            }
+            if (existing != null) {
+                minecraft.getSoundManager().stop(existing);
+            }
+            DroneEngineSoundInstance instance = new DroneEngineSoundInstance(engine, id, fpv);
+            DRONE_ENGINE_SOUNDS.put(id, instance);
+            minecraft.getSoundManager().play(instance);
+        }
+
+        DRONE_ENGINE_SOUNDS.entrySet().removeIf(entry -> {
+            if (keep.contains(entry.getKey()) && minecraft.getSoundManager().isActive(entry.getValue())) {
+                return false;
+            }
+            entry.getValue().beginStop();
+            if (!minecraft.getSoundManager().isActive(entry.getValue())) {
+                minecraft.getSoundManager().stop(entry.getValue());
+            }
+            return true;
+        });
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null) {
             resetLock();
+            DRONE_ENGINE_SOUNDS.values().forEach(DroneEngineSoundInstance::beginStop);
+            DRONE_ENGINE_SOUNDS.clear();
             return;
         }
 
@@ -121,6 +195,9 @@ public final class SpecialEquipmentClientEvents {
                 NetworkHandler.sendToggleLauncherMode();
             }
         }
+
+        // Always maintain world/FPV engine loops (including hands-off hover)
+        tickDroneEngineAudio(player);
 
         if (droneId < 0) {
             return;
@@ -138,12 +215,11 @@ public final class SpecialEquipmentClientEvents {
 
         minecraft.setCameraEntity(drone);
 
+        // Capture mouse delta then lock player look (SW free-look on drone)
         float yawDelta = Mth.wrapDegrees(player.getYRot() - playerYaw);
         float pitchDelta = player.getXRot() - playerPitch;
         player.setYRot(playerYaw);
         player.setXRot(playerPitch);
-        drone.setYRot(drone.getYRot() + yawDelta);
-        drone.setXRot(Mth.clamp(drone.getXRot() + pitchDelta, -80.0F, 80.0F));
 
         int inputs = 0;
         if (minecraft.options.keyUp.isDown()) inputs |= DroneEntity.FORWARD;
@@ -157,19 +233,13 @@ public final class SpecialEquipmentClientEvents {
         payloadHeld = payload;
         while (KeyBindings.DRONE_INTERACT.consumeClick()) inputs |= DroneEntity.ACTION_INTERACT;
 
+        // Client prediction: SW travel (do not double-apply mouse here; travel uses 0.5 * mouse)
+        drone.clientPredictInput(inputs, yawDelta, pitchDelta);
         NetworkHandler.sendDroneInput(droneId, inputs, yawDelta, pitchDelta);
         player.input.leftImpulse = 0.0F;
         player.input.forwardImpulse = 0.0F;
         player.input.jumping = false;
         player.input.shiftKeyDown = false;
-
-        if (engineSoundCooldown-- <= 0) {
-            var engine = BuiltInRegistries.SOUND_EVENT.get(Reference.id("entity.drone.engine"));
-            if (engine != null) {
-                player.playSound(engine, 0.35F, 1.0F);
-            }
-            engineSoundCooldown = 18;
-        }
     }
 
     private static void tickLauncher(LocalPlayer player) {

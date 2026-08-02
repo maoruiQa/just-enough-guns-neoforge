@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -81,6 +83,11 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
     private boolean settled;
     /** Prevents recursive explosion: hurt → detonate → explode → hurt → … */
     private boolean detonating;
+    /** Block this explosive stuck to (SW lastState / support). Null if free-falling. */
+    @Nullable
+    private BlockPos stuckBlockPos;
+    @Nullable
+    private BlockState stuckBlockState;
 
     public PlacedExplosiveEntity(EntityType<? extends PlacedExplosiveEntity> type, Level level) {
         super(type, level);
@@ -214,9 +221,20 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         this.entityData.set(ATTACHED, Optional.of(entity.getUUID()));
         this.entityData.set(IN_GROUND, false);
         this.settled = true;
+        this.clearStuckBlock();
         this.setDeltaMovement(Vec3.ZERO);
         this.setXRot(-90.0F);
         this.xRotO = -90.0F;
+    }
+
+    private void clearStuckBlock() {
+        this.stuckBlockPos = null;
+        this.stuckBlockState = null;
+    }
+
+    private void rememberStuckBlock(BlockPos pos) {
+        this.stuckBlockPos = pos.immutable();
+        this.stuckBlockState = this.level().getBlockState(pos);
     }
 
     @Override
@@ -243,21 +261,23 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
             if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
                 Entity attached = serverLevel.getEntity(attachedId.get());
                 if (attached == null || !attached.isAlive()) {
+                    // SW: host entity gone → drop free (start falling)
                     this.entityData.set(ATTACHED, Optional.empty());
-                    this.entityData.set(IN_GROUND, false);
-                    this.settled = false;
+                    this.startFalling();
                 } else {
                     this.setPos(attached.getX(), attached.getY() + attached.getBbHeight(), attached.getZ());
                     this.setDeltaMovement(Vec3.ZERO);
                 }
             }
-        } else if (!this.entityData.get(IN_GROUND)) {
+        } else if (this.entityData.get(IN_GROUND) || this.settled) {
+            // SW: stuck block destroyed / no support → startFalling
+            if (!this.level().isClientSide && this.hasLostBlockSupport()) {
+                this.startFalling();
+            } else {
+                this.setDeltaMovement(Vec3.ZERO);
+            }
+        } else {
             this.tickProjectileMotion(true);
-        } else if (!this.level().isClientSide && this.shouldFall()) {
-            this.entityData.set(IN_GROUND, false);
-            this.settled = false;
-            Vec3 motion = this.getDeltaMovement();
-            this.setDeltaMovement(motion.multiply(this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F));
         }
 
         if (!this.level().isClientSide && !this.entityData.get(REMOTE)) {
@@ -279,6 +299,10 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
 
     private void tickClaymore() {
         if (!this.entityData.get(IN_GROUND) && !this.settled) {
+            this.tickMinePhysics();
+        } else if (!this.level().isClientSide && this.hasLostBlockSupport()) {
+            // Support block broken → resume gravity (SW mine physics while airborne)
+            this.startFalling();
             this.tickMinePhysics();
         } else if (!this.level().isClientSide) {
             this.setDeltaMovement(Vec3.ZERO);
@@ -342,6 +366,9 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
     private void tickTm62() {
         if (!this.entityData.get(IN_GROUND) && !this.settled) {
             this.tickMinePhysics();
+        } else if (!this.level().isClientSide && this.hasLostBlockSupport()) {
+            this.startFalling();
+            this.tickMinePhysics();
         } else if (!this.level().isClientSide) {
             this.setDeltaMovement(Vec3.ZERO);
         }
@@ -404,6 +431,7 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
             friction = this.level().getBlockState(pos).getFriction(this.level(), pos, this) * 0.98F;
             this.entityData.set(IN_GROUND, true);
             this.settled = true;
+            this.rememberStuckBlock(pos);
             if (this.kind() == SpecialExplosiveItem.Kind.CLAYMORE || this.kind() == SpecialExplosiveItem.Kind.TM_62) {
                 this.setXRot(0.0F);
                 this.xRotO = 0.0F;
@@ -482,6 +510,7 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         this.setDeltaMovement(Vec3.ZERO);
         this.entityData.set(IN_GROUND, true);
         this.settled = true;
+        this.rememberStuckBlock(hit.getBlockPos());
 
         // Floor: lay flat (xRot=0). Wall/ceiling: face outward like SW stick pose.
         switch (hit.getDirection()) {
@@ -511,8 +540,75 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         this.yRotO = this.getYRot();
     }
 
+    /**
+     * SW C4: {@code shouldFall} — in ground and no solid collision near the entity.
+     */
     private boolean shouldFall() {
-        return this.entityData.get(IN_GROUND) && this.level().noCollision(new AABB(this.position(), this.position()).inflate(0.06D));
+        return this.level().noCollision(new AABB(this.position(), this.position()).inflate(0.06D));
+    }
+
+    /**
+     * True when the stuck block was broken/changed, or the entity is floating with no support
+     * (SW: lastState != current && shouldFall, plus entity-host death handled separately).
+     */
+    private boolean hasLostBlockSupport() {
+        if (this.entityData.get(ATTACHED).isPresent()) {
+            return false;
+        }
+        if (!this.entityData.get(IN_GROUND) && !this.settled) {
+            return false;
+        }
+
+        // Stuck block destroyed or replaced
+        if (this.stuckBlockPos != null) {
+            BlockState now = this.level().getBlockState(this.stuckBlockPos);
+            if (now.isAir() || now.getCollisionShape(this.level(), this.stuckBlockPos).isEmpty()) {
+                return true;
+            }
+            if (this.stuckBlockState != null && now.getBlock() != this.stuckBlockState.getBlock()) {
+                return true;
+            }
+        }
+
+        // No nearby collision (wall/floor gone under the entity)
+        if (this.shouldFall()) {
+            return true;
+        }
+
+        // Floor mines: block that affects movement gone
+        if (this.kind() != SpecialExplosiveItem.Kind.C4) {
+            BlockPos below = this.getBlockPosBelowThatAffectsMyMovement();
+            BlockState belowState = this.level().getBlockState(below);
+            if (belowState.isAir() || belowState.getCollisionShape(this.level(), below).isEmpty()) {
+                return !this.onGround();
+            }
+        }
+        return false;
+    }
+
+    /** SW C4 {@code startFalling}: detach and get a small random impulse. */
+    private void startFalling() {
+        this.entityData.set(IN_GROUND, false);
+        this.settled = false;
+        this.clearStuckBlock();
+        this.setDeltaMovement(
+                this.random.nextFloat() * 0.2F,
+                this.random.nextFloat() * 0.2F,
+                this.random.nextFloat() * 0.2F
+        );
+    }
+
+    @Override
+    public void move(MoverType type, Vec3 pos) {
+        super.move(type, pos);
+        // SW C4: external move (piston/shove) can also unstick
+        if (type != MoverType.SELF
+                && !this.level().isClientSide
+                && (this.entityData.get(IN_GROUND) || this.settled)
+                && this.entityData.get(ATTACHED).isEmpty()
+                && this.hasLostBlockSupport()) {
+            this.startFalling();
+        }
     }
 
     public void detonate() {
@@ -611,6 +707,10 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
                     player.drop(stack, false);
                 }
             }
+            player.displayClientMessage(
+                    Component.translatable("message.jeg.explosive.recovered", stack.getHoverName()),
+                    true
+            );
             this.discard();
         }
         return InteractionResult.sidedSuccess(this.level().isClientSide);
@@ -685,6 +785,12 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         if (tag.hasUUID("Attached")) {
             this.entityData.set(ATTACHED, Optional.of(tag.getUUID("Attached")));
         }
+        if (tag.contains("StuckX")) {
+            this.stuckBlockPos = new BlockPos(tag.getInt("StuckX"), tag.getInt("StuckY"), tag.getInt("StuckZ"));
+            if (this.stuckBlockPos != null) {
+                this.stuckBlockState = this.level().getBlockState(this.stuckBlockPos);
+            }
+        }
     }
 
     @Override
@@ -698,6 +804,11 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         tag.putBoolean("Settled", this.settled);
         this.entityData.get(OWNER).ifPresent(id -> tag.putUUID("Owner", id));
         this.entityData.get(ATTACHED).ifPresent(id -> tag.putUUID("Attached", id));
+        if (this.stuckBlockPos != null) {
+            tag.putInt("StuckX", this.stuckBlockPos.getX());
+            tag.putInt("StuckY", this.stuckBlockPos.getY());
+            tag.putInt("StuckZ", this.stuckBlockPos.getZ());
+        }
     }
 
     @Override

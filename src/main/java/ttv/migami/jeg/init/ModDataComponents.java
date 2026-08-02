@@ -62,6 +62,24 @@ public final class ModDataComponents {
                     .build()
     );
 
+    /** Owner UUID for craft-bound items (e.g. C4 leather chestplate). Stored as string for simple codecs. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> ITEM_OWNER = REGISTER.register(
+            "item_owner",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
+    /** Display name of the owner at craft time (tooltip). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> ITEM_OWNER_NAME = REGISTER.register(
+            "item_owner_name",
+            () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build()
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> DRONE_LINK = REGISTER.register(
             "drone_link",
             () -> DataComponentType.<String>builder()

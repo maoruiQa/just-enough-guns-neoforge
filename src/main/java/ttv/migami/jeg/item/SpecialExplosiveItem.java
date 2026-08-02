@@ -70,11 +70,9 @@ public final class SpecialExplosiveItem extends Item {
         if (this.kind == Kind.C4) {
             if (stack.getOrDefault(ModDataComponents.C4_REMOTE.get(), false)) {
                 tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.control").withStyle(ChatFormatting.GREEN));
-                tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.control.stats").withStyle(ChatFormatting.DARK_GREEN));
                 tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.control.howto").withStyle(ChatFormatting.DARK_GRAY));
             } else {
                 tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.time").withStyle(ChatFormatting.GRAY));
-                tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.time.stats").withStyle(ChatFormatting.DARK_GRAY));
                 tooltipComponents.add(Component.translatable("des.jeg.c4_bomb.time.howto").withStyle(ChatFormatting.DARK_GRAY));
             }
         } else if (this.kind == Kind.TM_62) {

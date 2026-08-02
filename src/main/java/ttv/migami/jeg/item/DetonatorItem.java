@@ -42,6 +42,9 @@ public final class DetonatorItem extends Item {
                     detonated++;
                 }
             }
+            // Worn C4 vests owned by this player only
+            detonated += C4VestItem.detonateOwnedWornVests(serverLevel, serverPlayer);
+
             if (detonated > 0) {
                 player.awardStat(Stats.ITEM_USED.get(this));
                 player.displayClientMessage(Component.translatable("message.jeg.detonator.detonated", detonated), true);
@@ -56,5 +59,6 @@ public final class DetonatorItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.translatable("des.jeg.detonator").withStyle(ChatFormatting.GRAY));
         tooltipComponents.add(Component.translatable("des.jeg.detonator.howto").withStyle(ChatFormatting.DARK_GRAY));
+        tooltipComponents.add(Component.translatable("des.jeg.detonator.vest").withStyle(ChatFormatting.DARK_GRAY));
     }
 }
