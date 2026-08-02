@@ -51,7 +51,10 @@ import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
-    private static final double VEHICLE_STATE_SYNC_DISTANCE_SQR = 65536.0D;
+    /** Minimum vehicle-state broadcast radius in blocks (tracking range may raise this further). */
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE = 256.0D;
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR =
+            VEHICLE_STATE_FALLBACK_DISTANCE * VEHICLE_STATE_FALLBACK_DISTANCE;
     private static final String AIMING_TAG = "jeg_aiming";
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
@@ -471,8 +474,11 @@ public final class NetworkHandler {
         if (!(vehicle.level() instanceof ServerLevel level)) {
             return;
         }
+        // Cover full entity client-tracking range, with at least a 256-block fallback.
+        double trackingBlocks = vehicle.getType().clientTrackingRange() * 16.0D;
+        double limitSqr = Math.max(trackingBlocks * trackingBlocks, VEHICLE_STATE_FALLBACK_DISTANCE_SQR);
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            if (player.level() == level && player.distanceToSqr(vehicle) <= VEHICLE_STATE_SYNC_DISTANCE_SQR) {
+            if (player.level() == level && player.distanceToSqr(vehicle) <= limitSqr) {
                 syncVehicleState(player, vehicle, forceApply);
             }
         }
