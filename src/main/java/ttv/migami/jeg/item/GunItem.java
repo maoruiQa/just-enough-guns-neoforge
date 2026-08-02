@@ -454,10 +454,15 @@ public class GunItem extends Item {
     }
 
     public static boolean isHoldToFireWeapon(ItemStack stack) {
-        return isRocketLauncher(stack);
+        return isRocketLauncher(stack)
+                || stack.getItem() instanceof GuidedLauncherItem launcher && launcher.holdToFire();
     }
 
     public static int holdToFireTicks(ItemStack stack) {
+        if (stack.getItem() instanceof GuidedLauncherItem launcher) {
+            // Javelin charges for full lock duration; Igla is click-to-fire (holdToFire=false).
+            return launcher.lockTicks();
+        }
         return isHoldToFireWeapon(stack) ? ROCKET_LAUNCHER_HOLD_TICKS : 0;
     }
 

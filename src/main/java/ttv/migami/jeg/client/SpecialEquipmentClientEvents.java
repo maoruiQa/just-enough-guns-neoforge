@@ -418,7 +418,7 @@ public final class SpecialEquipmentClientEvents {
             Identifier frame = locked ? FRAME_LOCK : nearest ? FRAME_TARGET : FRAME;
             int x = Mth.floor(screen.x) - 12;
             int y = Mth.floor(screen.y) - 12;
-            g.blit(RenderPipelines.GUI_TEXTURED, frame, x, y, 0.0F, 0.0F, 24, 24, 24, 24);
+            g.blit(RenderPipelines.GUI_TEXTURED, frame, x, y, 0.0F, 0.0F, 24, 24, 24, 24, 24, 24);
         }
     }
 
@@ -429,14 +429,14 @@ public final class SpecialEquipmentClientEvents {
         int y = h / 2;
         int distance = Mth.floor(player.distanceTo(drone));
 
-        // SW TV frame + center crosshair
-        g.blit(RenderPipelines.GUI_TEXTURED, TV_FRAME, 0, 0, 0.0F, 0.0F, w, h, 256, 256);
-        g.blit(RenderPipelines.GUI_TEXTURED, DRONE_CROSSHAIR, x - 16, y - 16, 0.0F, 0.0F, 32, 32, 32, 32);
+        // SW TV frame + center crosshair (stretch 256 texture to full GUI)
+        g.blit(RenderPipelines.GUI_TEXTURED, TV_FRAME, 0, 0, 0.0F, 0.0F, w, h, 256, 256, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, DRONE_CROSSHAIR, x - 16, y - 16, 0.0F, 0.0F, 32, 32, 32, 32, 32, 32);
 
         // FOV scale bar
         int barX = x + 100;
         int barY = y - 64;
-        g.blit(RenderPipelines.GUI_TEXTURED, DRONE_FOV, barX, barY, 0.0F, 0.0F, 64, 129, 64, 129);
+        g.blit(RenderPipelines.GUI_TEXTURED, DRONE_FOV, barX, barY, 0.0F, 0.0F, 64, 129, 64, 129, 64, 129);
         float zoomT = (droneZoom - 1.0F) / 5.0F;
         int moveY = barY + Mth.floor((1.0F - zoomT) * 110.0F);
         g.blit(RenderPipelines.GUI_TEXTURED, DRONE_FOV_MOVE, barX, moveY, 0.0F, 0.0F, 64, 16, 64, 16, 64, 129);
@@ -484,20 +484,24 @@ public final class SpecialEquipmentClientEvents {
             Vec3 screen = ScreenProjection.worldToScreen(center);
             if (screen == null) screen = ScreenProjection.approximateWorldToScreen(center);
             if (screen == null) continue;
-            g.blit(RenderPipelines.GUI_TEXTURED, FRAME, Mth.floor(screen.x) - 12, Mth.floor(screen.y) - 12, 0, 0, 24, 24, 24, 24);
+            g.blit(RenderPipelines.GUI_TEXTURED, FRAME, Mth.floor(screen.x) - 12, Mth.floor(screen.y) - 12, 0.0F, 0.0F, 24, 24, 24, 24, 24, 24);
         }
     }
 
+    /**
+     * Stretch a full {@code sourceSize}x{@code sourceSize} texture into dest rect (w,h).
+     * 26.x 11-arg blit: dest size + source region + texture size (same pattern as vehicle reticle).
+     */
     private static void blit(GuiGraphicsExtractor g, Identifier texture, float x, float y, float w, float h, int sourceSize) {
         int ix = Mth.floor(x);
         int iy = Mth.floor(y);
-        int iw = Mth.floor(w);
-        int ih = Mth.floor(h);
-        g.blit(RenderPipelines.GUI_TEXTURED, texture, ix, iy, 0.0F, 0.0F, iw, ih, sourceSize, sourceSize);
+        int iw = Math.max(1, Mth.floor(w));
+        int ih = Math.max(1, Mth.floor(h));
+        g.blit(RenderPipelines.GUI_TEXTURED, texture, ix, iy, 0.0F, 0.0F, iw, ih, sourceSize, sourceSize, sourceSize, sourceSize);
     }
 
     private static void blitCentered(GuiGraphicsExtractor g, Identifier texture, int cx, int cy, int w, int h) {
-        g.blit(RenderPipelines.GUI_TEXTURED, texture, cx - w / 2, cy - h / 2, 0.0F, 0.0F, w, h, w, h);
+        g.blit(RenderPipelines.GUI_TEXTURED, texture, cx - w / 2, cy - h / 2, 0.0F, 0.0F, w, h, w, h, w, h);
     }
 
     @SubscribeEvent
