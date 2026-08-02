@@ -3,10 +3,10 @@
   "category": "equipment",
   "pattern": [" E ", "IRI", " B "],
   "key": {
-    "E": {"item": "minecraft:ender_eye"},
-    "I": {"item": "minecraft:iron_ingot"},
-    "R": {"item": "jeg:rocket_launcher"},
-    "B": {"item": "minecraft:iron_block"}
+    "E": "minecraft:ender_eye",
+    "I": "minecraft:iron_ingot",
+    "R": "jeg:rocket_launcher",
+    "B": "minecraft:iron_block"
   },
   "result": {"id": "jeg:igla_9k38", "count": 1}
 }

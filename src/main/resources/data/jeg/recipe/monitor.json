@@ -3,11 +3,11 @@
   "category": "equipment",
   "pattern": ["L L", "VIV", "AGA"],
   "key": {
-    "L": {"item": "minecraft:lightning_rod"},
-    "V": {"item": "minecraft:lever"},
-    "I": {"item": "minecraft:iron_ingot"},
-    "A": {"item": "minecraft:amethyst_shard"},
-    "G": {"item": "minecraft:glass_pane"}
+    "L": "minecraft:lightning_rod",
+    "V": "minecraft:lever",
+    "I": "minecraft:iron_ingot",
+    "A": "minecraft:amethyst_shard",
+    "G": "minecraft:glass_pane"
   },
   "result": {"id": "jeg:monitor", "count": 1}
 }

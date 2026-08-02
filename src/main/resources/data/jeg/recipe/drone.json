@@ -3,9 +3,9 @@
   "category": "equipment",
   "pattern": ["I I", "CRC", "I I"],
   "key": {
-    "I": {"item": "minecraft:iron_ingot"},
-    "C": {"item": "minecraft:compass"},
-    "R": {"item": "minecraft:redstone_block"}
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:compass",
+    "R": "minecraft:redstone_block"
   },
   "result": {"id": "jeg:drone", "count": 2}
 }

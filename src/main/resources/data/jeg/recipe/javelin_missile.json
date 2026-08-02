@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": ["BEB", "IRI", " M "],
   "key": {
-    "B": {"item": "minecraft:iron_bars"},
-    "E": {"item": "minecraft:ender_eye"},
-    "I": {"item": "minecraft:iron_ingot"},
-    "R": {"item": "jeg:rocket"},
-    "M": {"item": "jeg:missile_engine"}
+    "B": "minecraft:iron_bars",
+    "E": "minecraft:ender_eye",
+    "I": "minecraft:iron_ingot",
+    "R": "jeg:rocket",
+    "M": "jeg:missile_engine"
   },
   "result": {"id": "jeg:javelin_missile", "count": 1}
 }

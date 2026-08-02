@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "combat",
+  "category": "equipment",
   "pattern": ["TTT", "TCT", "TTT"],
-  "key": {"T": {"item": "minecraft:tnt"}, "C": {"item": "minecraft:clock"}},
+  "key": {"T": "minecraft:tnt", "C": "minecraft:clock"},
   "result": {"id": "jeg:c4_bomb", "count": 2}
 }

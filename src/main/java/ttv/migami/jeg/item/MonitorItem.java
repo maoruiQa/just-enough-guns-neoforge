@@ -19,8 +19,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -100,7 +98,6 @@ public final class MonitorItem extends Item {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag tooltipFlag) {
         tooltipAdder.accept(Component.translatable("des.jeg.monitor.howto").withStyle(ChatFormatting.GRAY));
@@ -116,10 +113,13 @@ public final class MonitorItem extends Item {
         if (x == null || y == null || z == null) {
             return;
         }
-        Player player = Minecraft.getInstance().player;
-        if (player != null) {
-            double dist = player.position().distanceTo(new Vec3(x, y, z));
-            tooltipAdder.accept(Component.translatable("des.jeg.monitor.distance", String.format("%.1fm", dist)).withStyle(ChatFormatting.GRAY));
+        // Client-only distance readout; keep tooltip safe on dedicated server.
+        if (context.level() != null && context.level().isClientSide()) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                double dist = player.position().distanceTo(new Vec3(x, y, z));
+                tooltipAdder.accept(Component.translatable("des.jeg.monitor.distance", String.format("%.1fm", dist)).withStyle(ChatFormatting.GRAY));
+            }
         }
         tooltipAdder.accept(Component.literal(String.format("X: %.1f Y: %.1f Z: %.1f", x, y, z)).withStyle(ChatFormatting.DARK_GRAY));
     }

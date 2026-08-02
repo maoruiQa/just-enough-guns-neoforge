@@ -1,1 +1,4 @@
-{"parent":"builtin/entity"}
+﻿{
+  "parent": "item/generated",
+  "textures": { "layer0": "jeg:item/javelin_icon" }
+}
