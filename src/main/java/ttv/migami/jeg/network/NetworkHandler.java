@@ -1,6 +1,7 @@
 package ttv.migami.jeg.network;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -49,6 +50,9 @@ import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
     private NetworkHandler() {}
+
+    /** Fallback distance for vehicle state when not already tracking the entity (256 blocks). */
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR = 256.0D * 256.0D;
 
     private static boolean commonRegistered;
     private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
@@ -589,10 +593,19 @@ public final class NetworkHandler {
                 vehicle.getXRot(),
                 forceApply
         );
+        // Tracking full + 256-block fallback (deduped). Avoids freeze when vanilla lerp is disabled
+        // for LAND/BOAT/HELICOPTER but the entity is still tracked beyond a short distance radius.
+        HashSet<ServerPlayer> recipients = new HashSet<>();
+        for (ServerPlayer player : PlayerLookup.tracking(vehicle)) {
+            recipients.add(player);
+        }
         for (ServerPlayer player : PlayerLookup.world(level)) {
-            if (player.distanceToSqr(vehicle) <= 4096.0D) {
-                ServerPlayNetworking.send(player, payload);
+            if (player.distanceToSqr(vehicle) <= VEHICLE_STATE_FALLBACK_DISTANCE_SQR) {
+                recipients.add(player);
             }
+        }
+        for (ServerPlayer player : recipients) {
+            ServerPlayNetworking.send(player, payload);
         }
     }
 
