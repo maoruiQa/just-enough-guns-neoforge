@@ -1,4 +1,4 @@
-﻿{
+{
   "model": {
     "type": "minecraft:select",
     "property": "minecraft:display_context",
@@ -30,7 +30,7 @@
     ],
     "fallback": {
       "type": "minecraft:model",
-      "model": "jeg:item/javelin"
+      "model": "jeg:item/gui/javelin"
     }
   }
 }
