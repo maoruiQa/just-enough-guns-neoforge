@@ -89,6 +89,29 @@ public record VehicleMissileProfile(
                     6.0D,
                     70.0F,
                     20.0F
+            ),
+            // SW SeekTool.baseFilter: ground living + ground/surface vehicles (not air).
+            Reference.id("javelin"), new VehicleMissileProfile(
+                    GuidanceMode.LOCK_ON,
+                    TargetMode.GROUND_ENTITY,
+                    240,
+                    1.35D,
+                    0.16D,
+                    4.2F,
+                    9.0D,
+                    120.0F,
+                    120.0F
+            ),
+            Reference.id("igla_9k38"), new VehicleMissileProfile(
+                    GuidanceMode.LOCK_ON,
+                    TargetMode.AIR_ENTITY,
+                    220,
+                    1.55D,
+                    0.20D,
+                    3.4F,
+                    6.0D,
+                    90.0F,
+                    90.0F
             )
     );
 
@@ -105,14 +128,16 @@ public record VehicleMissileProfile(
     }
 
     public boolean canLock(Entity candidate, LivingEntity shooter, VehicleEntity shooterVehicle) {
-        if (!candidate.isAlive() || candidate == shooter || candidate == shooterVehicle || candidate.getVehicle() == shooterVehicle) {
+        if (!candidate.isAlive() || candidate == shooter || candidate == shooterVehicle
+                || shooterVehicle != null && candidate.getVehicle() == shooterVehicle) {
             return false;
         }
         return this.targetMode.canLock(candidate);
     }
 
     public boolean canContinueTracking(Entity target, Entity owner, Entity ownerVehicle) {
-        if (!target.isAlive() || target == owner || target == ownerVehicle || target.getVehicle() == ownerVehicle) {
+        if (!target.isAlive() || target == owner || target == ownerVehicle
+                || ownerVehicle != null && target.getVehicle() == ownerVehicle) {
             return false;
         }
         return this.targetMode.canLock(target);

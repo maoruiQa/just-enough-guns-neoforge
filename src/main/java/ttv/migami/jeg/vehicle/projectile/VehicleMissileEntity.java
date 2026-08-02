@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
@@ -31,7 +32,11 @@ public final class VehicleMissileEntity extends Entity {
     private int ownerId = -1;
     private int targetId = -1;
     private int directHitVehicleId = -1;
+    private int directHitEntityId = -1;
     private ResourceLocation weaponId = Reference.id("vehicle_bmp2_missile");
+    @Nullable
+    private Vec3 targetPosition;
+    private boolean topAttack;
 
     public VehicleMissileEntity(EntityType<? extends VehicleMissileEntity> type, Level level) {
         super(type, level);
@@ -39,10 +44,25 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     public VehicleMissileEntity(Level level, Entity owner, @Nullable Entity target, Vec3 position, Vec3 velocity, ResourceLocation weaponId) {
+        this(level, owner, target, null, position, velocity, weaponId, false);
+    }
+
+    public VehicleMissileEntity(
+            Level level,
+            Entity owner,
+            @Nullable Entity target,
+            @Nullable Vec3 targetPosition,
+            Vec3 position,
+            Vec3 velocity,
+            ResourceLocation weaponId,
+            boolean topAttack
+    ) {
         this(ModEntities.VEHICLE_MISSILE.get(), level);
         this.ownerId = owner.getId();
         this.targetId = target == null ? -1 : target.getId();
         this.weaponId = weaponId;
+        this.targetPosition = targetPosition;
+        this.topAttack = topAttack;
         this.setPos(position);
         this.setDeltaMovement(velocity);
     }
@@ -88,20 +108,91 @@ public final class VehicleMissileEntity extends Entity {
         Entity ownerVehicle = owner == null ? null : owner.getVehicle();
         boolean validTarget = target instanceof VehicleDecoyEntity
                 || (target != null && profile.canContinueTracking(target, owner, ownerVehicle) && !VehicleDecoyEntity.isSmokeBlockingTarget(target));
-        if (profile.usesLockOn() && target != null && validTarget) {
-            this.warnTrackedTarget(target);
-            Vec3 desired = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position()).normalize().scale(profile.maxSpeed());
-            this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
-            if (this.distanceToSqr(target) < 1.4D) {
-                if (target instanceof VehicleEntity) {
-                    this.directHitVehicleId = target.getId();
-                    this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+        Vec3 aimPoint = target != null
+                ? target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D)
+                : this.targetPosition;
+        // SW Igla: lose active guidance if owner stops zooming / loses LOS
+        if (Reference.id("igla_9k38").equals(this.weaponId) && owner instanceof ServerPlayer player) {
+            boolean stillAiming = NetworkHandler.isAiming(player);
+            boolean los = target == null || player.hasLineOfSight(target);
+            if (!stillAiming || !los) {
+                validTarget = false;
+                this.targetId = -1;
+                aimPoint = this.targetPosition;
+            }
+        }
+
+        if (profile.usesLockOn() && aimPoint != null && (target == null || validTarget)) {
+            if (target != null && this.targetId >= 0) {
+                this.warnTrackedTarget(target);
+            }
+            boolean javelinStyle = Reference.id("javelin").equals(this.weaponId)
+                    || Reference.id("igla_9k38").equals(this.weaponId);
+            if (javelinStyle) {
+                this.steerJavelinStyle(profile, this.targetId >= 0 ? target : null, aimPoint);
+            } else {
+                if (this.topAttack && this.tickCount < 30) {
+                    aimPoint = aimPoint.add(0.0D, 20.0D, 0.0D);
                 }
-                this.explode();
+                Vec3 desired = aimPoint.subtract(this.position()).normalize().scale(profile.maxSpeed());
+                this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
+                if (target != null && this.distanceToSqr(target) < 1.4D) {
+                    this.directHitEntityId = target.getId();
+                    if (target instanceof VehicleEntity) {
+                        this.directHitVehicleId = target.getId();
+                        this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+                    }
+                    this.explode();
+                } else if (target == null && (!this.topAttack || this.tickCount >= 30) && this.position().distanceToSqr(aimPoint) < 1.4D) {
+                    this.explode();
+                }
             }
         } else if (profile.usesWireGuidance() && owner instanceof LivingEntity livingOwner) {
             Vec3 desired = livingOwner.getViewVector(1.0F).normalize().scale(profile.maxSpeed());
             this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
+        }
+    }
+
+    /** Superb Warfare Javelin/Igla style: lofted top-attack, progressive turn, then dive. */
+    private void steerJavelinStyle(VehicleMissileProfile profile, @Nullable Entity target, Vec3 aimPoint) {
+        if (this.tickCount <= 3) {
+            return;
+        }
+        double horizontalSqr = this.position().vectorTo(aimPoint).horizontalDistanceSqr();
+        boolean close = horizontalSqr < 900.0D;
+        Vec3 desiredPoint = aimPoint;
+        if (this.topAttack) {
+            if (!close) {
+                double loft = Math.min(90.0D, 6.0D * this.tickCount);
+                desiredPoint = new Vec3(aimPoint.x, aimPoint.y + loft, aimPoint.z);
+            } else if (this.getY() < aimPoint.y) {
+                this.setDeltaMovement(this.getDeltaMovement().scale(0.8D));
+                return;
+            }
+        } else {
+            double dis = this.position().vectorTo(aimPoint).horizontalDistance();
+            double height = dis > 30.0D ? 0.2D * (dis - 30.0D) : 0.0D;
+            desiredPoint = aimPoint.add(0.0D, height, 0.0D);
+        }
+
+        Vec3 toVec = desiredPoint.subtract(this.position()).normalize();
+        double turn = this.topAttack && close ? 0.55D : profile.turnRate();
+        Vec3 desired = toVec.scale(profile.maxSpeed());
+        this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - turn).add(desired.scale(turn)));
+        if (this.topAttack && close) {
+            this.setDeltaMovement(this.getDeltaMovement().scale(0.15D).add(toVec.scale(profile.maxSpeed() * 0.95D)));
+        }
+        this.setDeltaMovement(this.getDeltaMovement().scale(0.92D).add(toVec.scale(0.08D * profile.maxSpeed())));
+
+        if (target != null && this.distanceToSqr(target) < 1.4D) {
+            this.directHitEntityId = target.getId();
+            if (target instanceof VehicleEntity) {
+                this.directHitVehicleId = target.getId();
+                this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+            }
+            this.explode();
+        } else if (target == null && this.position().distanceToSqr(aimPoint) < 1.4D) {
+            this.explode();
         }
     }
 
@@ -136,6 +227,7 @@ public final class VehicleMissileEntity extends Entity {
         if (closest != null) {
             this.setPos(closest.position().add(0.0D, closest.getBbHeight() * 0.5D, 0.0D));
             this.directHitVehicleId = closest instanceof VehicleEntity ? closest.getId() : -1;
+            this.directHitEntityId = closest.getId();
             this.explode();
             return true;
         }
@@ -146,7 +238,7 @@ public final class VehicleMissileEntity extends Entity {
         return target.isAlive()
                 && target != owner
                 && target != ownerVehicle
-                && target.getVehicle() != ownerVehicle
+                && (ownerVehicle == null || target.getVehicle() != ownerVehicle)
                 && (target instanceof LivingEntity || target instanceof VehicleEntity);
     }
 
@@ -167,7 +259,9 @@ public final class VehicleMissileEntity extends Entity {
             Vec3 explosionPos = this.position();
             for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != ownerVehicle) {
-                    float damage = profile.vehicleDamage();
+                    float damage = target.getId() == this.directHitEntityId
+                            ? profile.vehicleDamage() * (this.topAttack ? 1.25F : 1.0F)
+                            : profile.vehicleDamage();
                     if (directHitVehicle && target.getId() != this.directHitVehicleId) {
                         double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
                         if (effectiveDistance > profile.blastRadius()) {
@@ -182,7 +276,9 @@ public final class VehicleMissileEntity extends Entity {
             }
             for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
                 if (target != owner) {
-                    float damage = profile.livingDamage();
+                    float damage = target.getId() == this.directHitEntityId
+                            ? profile.livingDamage() * (this.topAttack ? 1.25F : 1.0F)
+                            : profile.livingDamage();
                     if (directHitVehicle) {
                         double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
                         if (effectiveDistance > profile.blastRadius()) {
@@ -232,6 +328,10 @@ public final class VehicleMissileEntity extends Entity {
         if (tag.contains("WeaponId")) {
             this.weaponId = ResourceLocation.parse(tag.getString("WeaponId"));
         }
+        if (tag.contains("TargetX")) {
+            this.targetPosition = new Vec3(tag.getDouble("TargetX"), tag.getDouble("TargetY"), tag.getDouble("TargetZ"));
+        }
+        this.topAttack = tag.getBoolean("TopAttack");
     }
 
     @Override
@@ -239,5 +339,11 @@ public final class VehicleMissileEntity extends Entity {
         tag.putInt("OwnerId", this.ownerId);
         tag.putInt("TargetId", this.targetId);
         tag.putString("WeaponId", this.weaponId.toString());
+        if (this.targetPosition != null) {
+            tag.putDouble("TargetX", this.targetPosition.x);
+            tag.putDouble("TargetY", this.targetPosition.y);
+            tag.putDouble("TargetZ", this.targetPosition.z);
+        }
+        tag.putBoolean("TopAttack", this.topAttack);
     }
 }

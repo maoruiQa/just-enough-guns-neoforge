@@ -161,8 +161,10 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
         // SW muzzle offset style: slight forward/down from eye, initial velocity 3 with +0.3 Y bias
         Vec3 muzzle = shooter.getEyePosition().add(look.scale(0.15D)).add(0.0D, -0.2D, 0.0D);
         Vec3 velocity = new Vec3(look.x, look.y + 0.3D, look.z).normalize().scale(3.0D);
-        // top-attack mode stored on stack; profile selected by weapon id
-        level.addFreshEntity(new VehicleMissileEntity(level, shooter, target, muzzle, velocity, this.getStats().id()));
+        boolean topAttack = !this.airOnly && launcherMode(stack) == 1;
+        level.addFreshEntity(new VehicleMissileEntity(
+                level, shooter, target, locked.position, muzzle, velocity, this.getStats().id(), topAttack
+        ));
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(
