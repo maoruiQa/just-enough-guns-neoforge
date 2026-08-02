@@ -27,8 +27,21 @@ public final class ModSounds {
         }
     }
 
+    /** Fixed hear distance (blocks) for sounds that must not scale as "variable range". */
+    private static final Map<String, Float> FIXED_RANGE_BLOCKS = Map.of(
+            // Gun fire volume 7.5 ≈ 120-block effective; C4 beep/final at 50%
+            "item.c4.beep", 60.0F,
+            "item.c4.final", 60.0F
+    );
+
     private static void register(ResourceLocation id) {
-        ALL.computeIfAbsent(id, key -> REGISTER.register(key.getPath(), () -> SoundEvent.createVariableRangeEvent(key)));
+        ALL.computeIfAbsent(id, key -> REGISTER.register(key.getPath(), () -> {
+            Float fixed = FIXED_RANGE_BLOCKS.get(key.getPath());
+            if (fixed != null) {
+                return SoundEvent.createFixedRangeEvent(key, fixed);
+            }
+            return SoundEvent.createVariableRangeEvent(key);
+        }));
     }
 
     private static List<ResourceLocation> loadSoundKeys() {

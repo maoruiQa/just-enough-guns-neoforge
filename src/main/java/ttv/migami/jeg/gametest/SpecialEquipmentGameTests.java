@@ -35,7 +35,7 @@ public final class SpecialEquipmentGameTests {
 
         VehicleMissileProfile javelin = VehicleMissileProfile.get(Reference.id("javelin"));
         VehicleMissileProfile igla = VehicleMissileProfile.get(Reference.id("igla_9k38"));
-        helper.assertTrue(javelin.canLock(ground, shooter, null), "Javelin must lock ground living targets");
+        helper.assertTrue(javelin.canLock(ground, shooter, null), "Javelin matches SW: can lock ground living targets");
         helper.assertFalse(javelin.canLock(air, shooter, null), "Javelin must reject airborne targets");
         helper.assertTrue(igla.canLock(air, shooter, null), "Igla must lock airborne targets");
         helper.assertFalse(igla.canLock(ground, shooter, null), "Igla must reject ground targets");
@@ -51,10 +51,9 @@ public final class SpecialEquipmentGameTests {
     public static void c4TimerAndOwnership(GameTestHelper helper) {
         ServerPlayer first = helper.makeMockServerPlayerInLevel();
         ServerPlayer second = helper.makeMockServerPlayerInLevel();
-        PlacedExplosiveEntity remote = explosive(helper, SpecialExplosiveItem.Kind.C4, first, new Vec3(1.0D, 2.0D, 1.0D));
-        remote.setRemote(true);
-        PlacedExplosiveEntity timed = explosive(helper, SpecialExplosiveItem.Kind.C4, second, new Vec3(4.0D, 2.0D, 1.0D));
-        timed.tickCount = 513;
+        PlacedExplosiveEntity remote = explosive(helper, SpecialExplosiveItem.Kind.C4, first, new Vec3(1.0D, 2.0D, 1.0D), true);
+        PlacedExplosiveEntity timed = explosive(helper, SpecialExplosiveItem.Kind.C4, second, new Vec3(4.0D, 2.0D, 1.0D), false);
+        timed.setBombTick(513);
 
         helper.assertTrue(remote.isRemoteC4OwnedBy(first.getUUID()), "Owner must match its remote C4");
         helper.assertFalse(remote.isRemoteC4OwnedBy(second.getUUID()), "Other players must not control remote C4");
@@ -70,10 +69,10 @@ public final class SpecialEquipmentGameTests {
         ServerPlayer owner = helper.makeMockServerPlayerInLevel();
         Cow target = helper.spawn(EntityType.COW, new Vec3(1.0D, 2.0D, 3.0D));
         target.setShiftKeyDown(true);
-        PlacedExplosiveEntity mine = explosive(helper, SpecialExplosiveItem.Kind.CLAYMORE, owner, new Vec3(1.0D, 2.0D, 1.0D));
+        PlacedExplosiveEntity mine = explosive(helper, SpecialExplosiveItem.Kind.CLAYMORE, owner, new Vec3(1.0D, 2.0D, 1.0D), false);
         mine.setYRot(0.0F);
         mine.tickCount = 39;
-        PlacedExplosiveEntity expired = explosive(helper, SpecialExplosiveItem.Kind.CLAYMORE, owner, new Vec3(4.0D, 2.0D, 1.0D));
+        PlacedExplosiveEntity expired = explosive(helper, SpecialExplosiveItem.Kind.CLAYMORE, owner, new Vec3(4.0D, 2.0D, 1.0D), false);
         expired.tickCount = 11999;
 
         helper.runAfterDelay(2, () -> {
@@ -90,11 +89,10 @@ public final class SpecialEquipmentGameTests {
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void tm62PressureAndTimer(GameTestHelper helper) {
         ServerPlayer owner = helper.makeMockServerPlayerInLevel();
-        PlacedExplosiveEntity pressure = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(1.0D, 2.0D, 1.0D));
+        PlacedExplosiveEntity pressure = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(1.0D, 2.0D, 1.0D), false);
         pressure.tickCount = 19;
         helper.spawn(EntityType.COW, new Vec3(1.0D, 2.0D, 1.0D));
-        PlacedExplosiveEntity timed = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(4.0D, 2.0D, 1.0D));
-        timed.setTimed(true);
+        PlacedExplosiveEntity timed = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(4.0D, 2.0D, 1.0D), true);
         timed.tickCount = 99;
         helper.runAfterDelay(2, () -> {
             helper.assertTrue(pressure.isRemoved(), "Large entities must trigger armed TM-62");
@@ -134,8 +132,12 @@ public final class SpecialEquipmentGameTests {
         });
     }
 
-    private static PlacedExplosiveEntity explosive(GameTestHelper helper, SpecialExplosiveItem.Kind kind, ServerPlayer owner, Vec3 relativePos) {
-        PlacedExplosiveEntity entity = new PlacedExplosiveEntity(helper.getLevel(), kind, owner, helper.absoluteVec(relativePos), 0.0F);
+    private static PlacedExplosiveEntity explosive(
+            GameTestHelper helper, SpecialExplosiveItem.Kind kind, ServerPlayer owner, Vec3 relativePos, boolean remoteOrFuse
+    ) {
+        PlacedExplosiveEntity entity = PlacedExplosiveEntity.placeSettled(
+                helper.getLevel(), kind, owner, helper.absoluteVec(relativePos), 0.0F, remoteOrFuse
+        );
         helper.getLevel().addFreshEntity(entity);
         return entity;
     }

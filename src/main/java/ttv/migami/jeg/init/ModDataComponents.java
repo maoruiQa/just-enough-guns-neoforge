@@ -76,6 +76,28 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build()
     );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> DRONE_POS_X = REGISTER.register(
+            "drone_pos_x",
+            () -> DataComponentType.<Float>builder()
+                    .persistent(Codec.FLOAT)
+                    .networkSynchronized(ByteBufCodecs.FLOAT)
+                    .build()
+    );
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> DRONE_POS_Y = REGISTER.register(
+            "drone_pos_y",
+            () -> DataComponentType.<Float>builder()
+                    .persistent(Codec.FLOAT)
+                    .networkSynchronized(ByteBufCodecs.FLOAT)
+                    .build()
+    );
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> DRONE_POS_Z = REGISTER.register(
+            "drone_pos_z",
+            () -> DataComponentType.<Float>builder()
+                    .persistent(Codec.FLOAT)
+                    .networkSynchronized(ByteBufCodecs.FLOAT)
+                    .build()
+    );
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> GUN_MEDALS_ENABLED = REGISTER.register(
             "gun_medals_enabled",
             () -> DataComponentType.<Boolean>builder()

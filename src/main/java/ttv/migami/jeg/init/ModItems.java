@@ -15,6 +15,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
@@ -750,6 +751,9 @@ public final class ModItems {
             event.accept(DRONE.get());
             event.accept(MONITOR.get());
             event.accept(C4_BOMB.get());
+            ItemStack remoteC4 = new ItemStack(C4_BOMB.get());
+            remoteC4.set(ModDataComponents.C4_REMOTE.get(), true);
+            event.accept(remoteC4);
             event.accept(DETONATOR.get());
             event.accept(CLAYMORE_MINE.get());
             event.accept(TM_62.get());

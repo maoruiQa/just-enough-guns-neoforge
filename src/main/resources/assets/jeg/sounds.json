@@ -1371,7 +1371,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/a10/engine"
+        "name": "jeg:vehicle/a10/engine",
+        "attenuation_distance": 150
       }
     ]
   },
@@ -1387,7 +1388,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/ah6/engine"
+        "name": "jeg:vehicle/ah6/engine",
+        "attenuation_distance": 150
       }
     ]
   },
@@ -1403,7 +1405,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/bmp2/engine"
+        "name": "jeg:vehicle/bmp2/engine",
+        "attenuation_distance": 60
       }
     ]
   },
@@ -1443,7 +1446,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/lav150/engine"
+        "name": "jeg:vehicle/lav150/engine",
+        "attenuation_distance": 60
       }
     ]
   },
@@ -1459,7 +1463,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/mi28/engine"
+        "name": "jeg:vehicle/mi28/engine",
+        "attenuation_distance": 150
       }
     ]
   },
@@ -1467,7 +1472,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/speedboat/engine"
+        "name": "jeg:vehicle/speedboat/engine",
+        "attenuation_distance": 60
       }
     ]
   },
@@ -1475,7 +1481,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/tom6/engine"
+        "name": "jeg:vehicle/tom6/engine",
+        "attenuation_distance": 150
       }
     ]
   },
@@ -1483,7 +1490,8 @@
     "subtitle": "subtitle.jeg.vehicle.engine",
     "sounds": [
       {
-        "name": "jeg:vehicle/truck/engine"
+        "name": "jeg:vehicle/truck/engine",
+        "attenuation_distance": 60
       }
     ]
   },
@@ -1511,16 +1519,126 @@
       }
     ]
   },
-  "item.javelin.fire": {"sounds": [{"name": "jeg:gun/javelin/javelin_fire_1p"}]},
-  "item.javelin.reload": {"sounds": [{"name": "jeg:gun/javelin/javelin_reload"}]},
-  "item.javelin.locking": {"sounds": [{"name": "jeg:gun/javelin/javelin_locking"}]},
-  "item.javelin.locked": {"sounds": [{"name": "jeg:gun/javelin/javelin_locked"}]},
-  "item.igla_9k38.fire": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_fire_1p"}]},
-  "item.igla_9k38.reload": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_reload"}]},
-  "item.igla_9k38.locking": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_locking"}]},
-  "item.igla_9k38.locked": {"sounds": [{"name": "jeg:gun/igla_9k38/igla_9k38_locked"}]},
-  "item.c4.beep": {"sounds": [{"name": "jeg:c4/c4_beep"}]},
-  "item.c4.final": {"sounds": [{"name": "jeg:c4/c4_final"}]},
-  "item.c4.detonator": {"sounds": [{"name": "jeg:c4/c4_detonator_click"}]},
-  "entity.drone.engine": {"sounds": [{"name": "jeg:vehicle/drone/drone_engine", "attenuation_distance": 48}]}
+  "item.javelin.fire": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_fire_1p"
+      }
+    ]
+  },
+  "item.javelin.fire_3p": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_fire_3p"
+      }
+    ]
+  },
+  "item.javelin.far": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_far"
+      }
+    ]
+  },
+  "item.javelin.reload": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_reload"
+      }
+    ]
+  },
+  "item.javelin.locking": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_locking"
+      }
+    ]
+  },
+  "item.javelin.locked": {
+    "sounds": [
+      {
+        "name": "jeg:gun/javelin/javelin_locked"
+      }
+    ]
+  },
+  "item.igla_9k38.fire": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_fire_1p"
+      }
+    ]
+  },
+  "item.igla_9k38.fire_3p": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_fire_3p"
+      }
+    ]
+  },
+  "item.igla_9k38.far": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_far"
+      }
+    ]
+  },
+  "item.igla_9k38.reload": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_reload"
+      }
+    ]
+  },
+  "item.igla_9k38.locking": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_locking"
+      }
+    ]
+  },
+  "item.igla_9k38.locked": {
+    "sounds": [
+      {
+        "name": "jeg:gun/igla_9k38/igla_9k38_locked"
+      }
+    ]
+  },
+  "item.c4.beep": {
+    "sounds": [
+      {
+        "name": "jeg:c4/c4_beep",
+        "attenuation_distance": 60
+      }
+    ]
+  },
+  "item.c4.final": {
+    "sounds": [
+      {
+        "name": "jeg:c4/c4_final",
+        "attenuation_distance": 60
+      }
+    ]
+  },
+  "item.c4.detonator": {
+    "sounds": [
+      {
+        "name": "jeg:c4/c4_detonator_click"
+      }
+    ]
+  },
+  "item.c4.throw": {
+    "sounds": [
+      {
+        "name": "jeg:c4/c4_throw"
+      }
+    ]
+  },
+  "entity.drone.engine": {
+    "sounds": [
+      {
+        "name": "jeg:vehicle/drone/drone_engine",
+        "attenuation_distance": 48
+      }
+    ]
+  }
 }

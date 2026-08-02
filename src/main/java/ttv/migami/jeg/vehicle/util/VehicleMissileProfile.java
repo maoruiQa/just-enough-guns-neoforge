@@ -97,6 +97,7 @@ public record VehicleMissileProfile(
                     20.0F,
                     70.0F
             ),
+            // SW SeekTool.baseFilter: ground living + ground/surface vehicles (not air).
             Reference.id("javelin"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
                     TargetMode.GROUND_ENTITY,

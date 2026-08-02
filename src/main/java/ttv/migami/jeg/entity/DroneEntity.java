@@ -24,6 +24,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
@@ -31,7 +35,8 @@ import ttv.migami.jeg.item.SpecialExplosiveItem;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.util.SpecialExplosion;
 
-public final class DroneEntity extends Entity {
+public final class DroneEntity extends Entity implements GeoEntity {
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     public static final int FORWARD = 1;
     public static final int BACK = 1 << 1;
     public static final int LEFT = 1 << 2;
@@ -47,6 +52,10 @@ public final class DroneEntity extends Entity {
     @Nullable private UUID ownerId;
     @Nullable private UUID controllerId;
     private int actionCooldown;
+    private int holdTickX;
+    private int holdTickY;
+    private int holdTickZ;
+    private double lastTickSpeed;
 
     public DroneEntity(EntityType<? extends DroneEntity> type, Level level) {
         super(type, level);
@@ -78,22 +87,44 @@ public final class DroneEntity extends Entity {
         };
     }
 
+    /** Required for right-click link / projectile hits (Entity default is false). */
+    @Override
+    public boolean isPickable() {
+        return !this.isRemoved();
+    }
+
+    @Override
+    public boolean isAttackable() {
+        return true;
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return true;
+    }
+
     @Override
     public void tick() {
         super.tick();
         if (this.actionCooldown > 0) this.actionCooldown--;
+        this.lastTickSpeed = this.getDeltaMovement().length();
         if (!this.level().isClientSide) {
             this.validateController();
-            if (this.isInWater() && this.tickCount % 20 == 0) {
-                this.damage(1.0F, this.damageSources().drown());
+            if (this.isInWater() && this.tickCount % 4 == 0) {
+                this.damage(0.25F + (float) (2.0D * this.lastTickSpeed), this.damageSources().drown());
             }
         }
         Vec3 before = this.getDeltaMovement();
         this.move(MoverType.SELF, before);
-        if (!this.level().isClientSide && (this.horizontalCollision || this.verticalCollision) && before.lengthSqr() > 0.36D) {
-            this.damage((float) (before.length() * 2.0D), this.damageSources().flyIntoWall());
+        if (!this.level().isClientSide && (this.horizontalCollision || this.verticalCollision) && before.lengthSqr() > 0.05D) {
+            this.damage((float) (before.length() * 8.0D), this.damageSources().flyIntoWall());
         }
-        this.setDeltaMovement(this.getDeltaMovement().scale(0.86D));
+        // Air drag closer to SW (0.965 horizontal, stronger vertical damping)
+        if (!this.onGround()) {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.965D, 0.86D, 0.965D));
+        } else {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.8D, 1.0D, 0.8D));
+        }
     }
 
     @Override
@@ -101,8 +132,28 @@ public final class DroneEntity extends Entity {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.is(ModItems.MONITOR.get())) {
             if (!this.level().isClientSide) {
-                stack.set(ModDataComponents.DRONE_LINK.get(), this.getUUID().toString());
-                player.displayClientMessage(Component.translatable("message.jeg.drone.linked"), true);
+                if (player.isShiftKeyDown()) {
+                    // Unlink
+                    if (this.getUUID().toString().equals(stack.get(ModDataComponents.DRONE_LINK.get()))) {
+                        stack.remove(ModDataComponents.DRONE_LINK.get());
+                        stack.remove(ModDataComponents.DRONE_CONTROLLING.get());
+                        if (player instanceof ServerPlayer serverPlayer) {
+                            this.stopControl(serverPlayer);
+                        }
+                        player.displayClientMessage(Component.translatable("message.jeg.drone.unlinked"), true);
+                    } else {
+                        player.displayClientMessage(Component.translatable("message.jeg.drone.already_linked"), true);
+                    }
+                } else {
+                    String existing = stack.get(ModDataComponents.DRONE_LINK.get());
+                    if (existing != null && !existing.equals(this.getUUID().toString())) {
+                        player.displayClientMessage(Component.translatable("message.jeg.monitor.already_linked"), true);
+                    } else {
+                        stack.set(ModDataComponents.DRONE_LINK.get(), this.getUUID().toString());
+                        this.ownerId = player.getUUID();
+                        player.displayClientMessage(Component.translatable("message.jeg.drone.linked"), true);
+                    }
+                }
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
@@ -162,22 +213,53 @@ public final class DroneEntity extends Entity {
         if (!player.getUUID().equals(this.controllerId) || linkedMonitor(player).isEmpty()) {
             return;
         }
-        this.setYRot(this.getYRot() + Mth.clamp(yawDelta, -30.0F, 30.0F));
-        this.setXRot(Mth.clamp(this.getXRot() + Mth.clamp(pitchDelta, -20.0F, 20.0F), -80.0F, 80.0F));
+        // SW: mouse contributes half-speed yaw/pitch while controlling
+        this.setYRot(this.getYRot() + 0.5F * Mth.clamp(yawDelta, -30.0F, 30.0F));
+        this.setXRot(Mth.clamp(this.getXRot() + 0.5F * Mth.clamp(pitchDelta, -20.0F, 20.0F), -10.0F, 90.0F));
 
-        Vec3 forward = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
-        Vec3 right = forward.cross(new Vec3(0.0D, 1.0D, 0.0D)).normalize();
-        Vec3 desired = Vec3.ZERO;
-        if ((inputs & FORWARD) != 0) desired = desired.add(forward);
-        if ((inputs & BACK) != 0) desired = desired.subtract(forward);
-        if ((inputs & RIGHT) != 0) desired = desired.add(right);
-        if ((inputs & LEFT) != 0) desired = desired.subtract(right);
-        if ((inputs & UP) != 0) desired = desired.add(0.0D, 1.0D, 0.0D);
-        if ((inputs & DOWN) != 0) desired = desired.add(0.0D, -1.0D, 0.0D);
-        if (desired.lengthSqr() > 0.0D) {
-            desired = desired.normalize().scale(0.42D);
+        boolean forward = (inputs & FORWARD) != 0;
+        boolean back = (inputs & BACK) != 0;
+        boolean left = (inputs & LEFT) != 0;
+        boolean right = (inputs & RIGHT) != 0;
+        boolean up = (inputs & UP) != 0;
+        boolean down = (inputs & DOWN) != 0;
+
+        float power = 0.08F;
+        if (right || left) {
+            this.holdTickX = Math.min(this.holdTickX + 1, 5);
+            float yawNudge = 0.3F * this.holdTickX * (right ? -1.0F : 1.0F);
+            this.setYRot(this.getYRot() + yawNudge * 0.35F);
+            Vec3 side = Vec3.directionFromRotation(0.0F, this.getYRot() + 90.0F).scale(0.017D * yawNudge);
+            this.setDeltaMovement(this.getDeltaMovement().add(side));
+        } else {
+            this.holdTickX = 0;
         }
-        this.setDeltaMovement(this.getDeltaMovement().scale(0.35D).add(desired.scale(0.65D)));
+
+        if (forward || back) {
+            this.holdTickZ = Math.min(this.holdTickZ + 1, 5);
+            float pitchNudge = 0.3F * this.holdTickZ * (forward ? -1.0F : 1.0F);
+            this.setXRot(Mth.clamp(this.getXRot() + pitchNudge * 0.25F, -10.0F, 90.0F));
+            Vec3 thrust = Vec3.directionFromRotation(this.getXRot(), this.getYRot()).scale(0.017D * -pitchNudge * 4.0D);
+            this.setDeltaMovement(this.getDeltaMovement().add(thrust));
+        } else {
+            this.holdTickZ = 0;
+        }
+
+        if (up) {
+            this.holdTickY = Math.min(this.holdTickY + 1, 5);
+            power = Math.min(power + 0.01F * this.holdTickY, 0.2F);
+            this.setDeltaMovement(new Vec3(this.getDeltaMovement().x, 0.05D * this.holdTickY, this.getDeltaMovement().z));
+        } else if (down) {
+            this.holdTickY = Math.min(this.holdTickY + 1, 5);
+            power = Math.max(power - 0.02F * this.holdTickY, this.onGround() ? 0.0F : 0.06F);
+            this.setDeltaMovement(new Vec3(this.getDeltaMovement().x, -0.05D * this.holdTickY, this.getDeltaMovement().z));
+        } else {
+            this.holdTickY = 0;
+            power = this.getDeltaMovement().y < 0.0D
+                    ? Math.min(power + 0.005F, 0.2F)
+                    : Math.max(power - (this.onGround() ? 0.0005F : 0.005F), 0.02F);
+        }
+        this.setDeltaMovement(this.getDeltaMovement().add(0.0D, power * 0.6D, 0.0D));
 
         if (this.actionCooldown == 0 && (inputs & ACTION_INTERACT) != 0) {
             this.remoteInteract(player);
@@ -207,11 +289,18 @@ public final class DroneEntity extends Entity {
     private void activatePayload() {
         int payload = this.entityData.get(PAYLOAD);
         if (payload == 1 && this.level() instanceof ServerLevel serverLevel) {
-            SpecialExplosion.explode(serverLevel, this, this.ownerEntity(), 300.0F, 10.0D);
+            // C4 kamikaze: explode and destroy drone (SW IS_KAMIKAZE path)
+            ServerPlayer controller = this.controller();
+            if (controller != null) {
+                this.stopControl(controller);
+            }
+            // Kamikaze uses remote-style reduced C4 blast
+            SpecialExplosion.explode(serverLevel, this, this.ownerEntity(), PlacedExplosiveEntity.C4_REMOTE_DAMAGE, PlacedExplosiveEntity.C4_REMOTE_RADIUS, SpecialExplosion.Tier.HUGE);
             this.discard();
         } else if (payload == 2 && this.level() instanceof ServerLevel serverLevel) {
-            PlacedExplosiveEntity mine = new PlacedExplosiveEntity(serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot());
-            serverLevel.addFreshEntity(mine);
+            serverLevel.addFreshEntity(PlacedExplosiveEntity.placeSettled(
+                    serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot(), false
+            ));
             this.entityData.set(PAYLOAD, 0);
         }
     }
@@ -280,7 +369,9 @@ public final class DroneEntity extends Entity {
 
     private void dropPayload() {
         if (this.entityData.get(PAYLOAD) == 2 && this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.addFreshEntity(new PlacedExplosiveEntity(serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot()));
+            serverLevel.addFreshEntity(PlacedExplosiveEntity.placeSettled(
+                    serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot(), false
+            ));
         } else if (this.entityData.get(PAYLOAD) == 1) {
             this.spawnAtLocation(ModItems.C4_BOMB.get());
         }
@@ -299,5 +390,14 @@ public final class DroneEntity extends Entity {
         tag.putFloat("Health", this.health());
         tag.putInt("Payload", this.entityData.get(PAYLOAD));
         if (this.ownerId != null) tag.putUUID("Owner", this.ownerId);
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.geoCache;
     }
 }

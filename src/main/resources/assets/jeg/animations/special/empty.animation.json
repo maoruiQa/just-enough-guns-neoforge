@@ -1,0 +1,10 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.empty.idle": {
+      "loop": true,
+      "animation_length": 0.05,
+      "bones": {}
+    }
+  }
+}

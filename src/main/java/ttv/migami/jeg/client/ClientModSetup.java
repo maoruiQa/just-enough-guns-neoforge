@@ -1,8 +1,10 @@
 package ttv.migami.jeg.client;
 
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.EntityType;
@@ -13,11 +15,24 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.gun.GunDefinitions;
+import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModSetup {
     private ClientModSetup() {}
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> ItemProperties.register(
+                ModItems.MONITOR.get(),
+                Reference.id("linked"),
+                (stack, level, entity, seed) -> {
+                    String link = stack.get(ModDataComponents.DRONE_LINK.get());
+                    return link != null && !link.isEmpty() ? 1.0F : 0.0F;
+                }
+        ));
+    }
 
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
@@ -83,6 +98,9 @@ public final class ClientModSetup {
             event.register(new ModelResourceLocation(Reference.id("item/first_person/" + id.getPath()), "standalone"));
             event.register(new ModelResourceLocation(Reference.id("item/gui/" + id.getPath()), "standalone"));
         });
+        // Guided launchers registered outside GunDefinitions.ALL still need inventory icons
+        event.register(new ModelResourceLocation(Reference.id("item/gui/javelin"), "standalone"));
+        event.register(new ModelResourceLocation(Reference.id("item/gui/igla_9k38"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("item/repair_tool_base"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("item/vehicle_assembling_table"), "standalone"));
         event.register(new ModelResourceLocation(Reference.id("special/holy_shotgun/main"), "standalone"));

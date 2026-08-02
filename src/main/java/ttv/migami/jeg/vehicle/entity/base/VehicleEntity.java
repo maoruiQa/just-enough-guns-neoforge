@@ -4251,31 +4251,47 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
     }
 
+    /**
+     * Server no longer spams one-shot engine sounds (caused hard cut-off / silence until ~10m).
+     * Engine loops are client {@link ttv.migami.jeg.vehicle.client.audio.VehicleEngineSoundInstance}.
+     */
     private void tickEngineSound() {
-        if (this.tickCount % 20 != 0) {
-            return;
-        }
-        SoundEvent sound = VehicleSoundHelper.engineSound(this);
-        if (sound == null) {
-            return;
+        // intentionally empty — kept as call-site compatibility
+    }
+
+    /**
+     * Client engine loop gate.
+     * Occupied vehicles always hum (expected idle). Unoccupied only when clearly active,
+     * so parked cars / physics jitter do not produce phantom distant chirps.
+     */
+    public boolean shouldPlayEngineSound() {
+        if (!this.isAlive() || this.isRemoved()) {
+            return false;
         }
         VehicleType type = this.vehicleData().defaults().vehicleType();
-        EngineInfo engine = this.vehicleData().defaults().engine();
+        if (type == VehicleType.ARTILLERY) {
+            return false;
+        }
+        // Driver present → always play (local input is not visible on other clients)
+        if (this.getControllingPassenger() != null) {
+            return true;
+        }
         Vec3 movement = this.getDeltaMovement();
-        boolean inputActive = this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0;
-        boolean active = inputActive && this.hasEngineEnergy(engine, true);
-        if (!active) {
-            active = switch (type) {
-                case LAND, BOAT -> movement.x * movement.x + movement.z * movement.z > 0.0025D;
-                case HELICOPTER -> movement.lengthSqr() > 0.0025D || (!this.onGround() && movement.y < -1.0E-4D);
-                case AIRCRAFT -> movement.lengthSqr() > 0.0025D;
-                case ARTILLERY -> false;
-            };
-        }
-        if (!active) {
-            return;
-        }
-        this.level().playSound(null, this, sound, SoundSource.AMBIENT, Math.max(0.1F, this.vehicleData().defaults().engine().engineSoundVolume()), 1.0F);
+        // Unoccupied thresholds: ignore settle/jitter, keep real motion/AI audible
+        return switch (type) {
+            case LAND, BOAT -> movement.horizontalDistanceSqr() > 0.0025D; // ~0.05 b/t
+            case HELICOPTER -> this.propellerSpeed() > 0.02F
+                    || movement.lengthSqr() > 0.001D
+                    || !this.onGround();
+            case AIRCRAFT -> this.propellerSpeed() > 0.02F
+                    || movement.lengthSqr() > 0.001D
+                    || Math.abs(this.enginePower) > 0.02D;
+            case ARTILLERY -> false;
+        };
+    }
+
+    public SoundEvent clientEngineSound() {
+        return VehicleSoundHelper.engineSound(this);
     }
 
     private void tickServerAirMovement(EngineInfo engine) {
@@ -4445,7 +4461,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                     if (!this.level().isClientSide) {
                         SoundEvent sound = VehicleSoundHelper.engineStartSound(this);
                         if (sound != null) {
-                            this.level().playSound(null, this, sound, this.getSoundSource(), Math.max(0.1F, engine.engineSoundVolume()), 1.0F);
+                            // Short start cue only (loop is client-side)
+                            this.level().playSound(null, this, sound, this.getSoundSource(), 1.2F, 1.0F);
                         }
                     }
                 }

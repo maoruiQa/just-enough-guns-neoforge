@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
+import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
@@ -109,28 +110,92 @@ public final class VehicleMissileEntity extends Entity {
         Vec3 aimPoint = target != null
                 ? target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D)
                 : this.targetPosition;
+        // SW Igla: lose active guidance if owner stops zooming / loses LOS
+        if (Reference.id("igla_9k38").equals(this.weaponId) && owner instanceof ServerPlayer player) {
+            boolean stillAiming = NetworkHandler.isAiming(player);
+            boolean los = target == null || player.hasLineOfSight(target);
+            if (!stillAiming || !los) {
+                validTarget = false;
+                this.targetId = -1;
+                aimPoint = this.targetPosition;
+            }
+        }
+
         if (profile.usesLockOn() && aimPoint != null && (target == null || validTarget)) {
-            if (target != null) {
+            if (target != null && this.targetId >= 0) {
                 this.warnTrackedTarget(target);
             }
-            if (this.topAttack && this.tickCount < 30) {
-                aimPoint = aimPoint.add(0.0D, 20.0D, 0.0D);
-            }
-            Vec3 desired = aimPoint.subtract(this.position()).normalize().scale(profile.maxSpeed());
-            this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
-            if (target != null && this.distanceToSqr(target) < 1.4D) {
-                this.directHitEntityId = target.getId();
-                if (target instanceof VehicleEntity) {
-                    this.directHitVehicleId = target.getId();
-                    this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+            boolean javelinStyle = Reference.id("javelin").equals(this.weaponId)
+                    || Reference.id("igla_9k38").equals(this.weaponId);
+            if (javelinStyle) {
+                this.steerJavelinStyle(profile, this.targetId >= 0 ? target : null, aimPoint);
+            } else {
+                if (this.topAttack && this.tickCount < 30) {
+                    aimPoint = aimPoint.add(0.0D, 20.0D, 0.0D);
                 }
-                this.explode();
-            } else if (target == null && (!this.topAttack || this.tickCount >= 30) && this.position().distanceToSqr(aimPoint) < 1.4D) {
-                this.explode();
+                Vec3 desired = aimPoint.subtract(this.position()).normalize().scale(profile.maxSpeed());
+                this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
+                if (target != null && this.distanceToSqr(target) < 1.4D) {
+                    this.directHitEntityId = target.getId();
+                    if (target instanceof VehicleEntity) {
+                        this.directHitVehicleId = target.getId();
+                        this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+                    }
+                    this.explode();
+                } else if (target == null && (!this.topAttack || this.tickCount >= 30) && this.position().distanceToSqr(aimPoint) < 1.4D) {
+                    this.explode();
+                }
             }
         } else if (profile.usesWireGuidance() && owner instanceof LivingEntity livingOwner) {
             Vec3 desired = livingOwner.getViewVector(1.0F).normalize().scale(profile.maxSpeed());
             this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
+        }
+    }
+
+    /**
+     * Superb Warfare Javelin/Igla style: lofted top-attack, progressive turn, then dive.
+     */
+    private void steerJavelinStyle(VehicleMissileProfile profile, @Nullable Entity target, Vec3 aimPoint) {
+        if (this.tickCount <= 3) {
+            return;
+        }
+        double horizontalSqr = this.position().vectorTo(aimPoint).horizontalDistanceSqr();
+        boolean close = horizontalSqr < 900.0D;
+        Vec3 desiredPoint = aimPoint;
+        if (this.topAttack) {
+            if (!close) {
+                double loft = Math.min(90.0D, 6.0D * this.tickCount);
+                desiredPoint = new Vec3(aimPoint.x, aimPoint.y + loft, aimPoint.z);
+            } else if (this.getY() < aimPoint.y) {
+                // Lost terminal dive window; coast
+                this.setDeltaMovement(this.getDeltaMovement().scale(0.8D));
+                return;
+            }
+        } else {
+            double dis = this.position().vectorTo(aimPoint).horizontalDistance();
+            double height = dis > 30.0D ? 0.2D * (dis - 30.0D) : 0.0D;
+            desiredPoint = aimPoint.add(0.0D, height, 0.0D);
+        }
+
+        Vec3 toVec = desiredPoint.subtract(this.position()).normalize();
+        double turn = this.topAttack && close ? 0.55D : profile.turnRate();
+        Vec3 desired = toVec.scale(profile.maxSpeed());
+        this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - turn).add(desired.scale(turn)));
+        if (this.topAttack && close) {
+            this.setDeltaMovement(this.getDeltaMovement().scale(0.15D).add(toVec.scale(profile.maxSpeed() * 0.95D)));
+        }
+        // SW multiplies motion after steering
+        this.setDeltaMovement(this.getDeltaMovement().scale(0.92D).add(toVec.scale(0.08D * profile.maxSpeed())));
+
+        if (target != null && this.distanceToSqr(target) < 1.4D) {
+            this.directHitEntityId = target.getId();
+            if (target instanceof VehicleEntity) {
+                this.directHitVehicleId = target.getId();
+                this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
+            }
+            this.explode();
+        } else if (target == null && this.position().distanceToSqr(aimPoint) < 1.4D) {
+            this.explode();
         }
     }
 
