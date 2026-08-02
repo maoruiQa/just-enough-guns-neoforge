@@ -95,10 +95,7 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             Map.entry(Reference.id("subsonic_rifle"), zoom(0.0D, 3.95D, -0.75D)),
             Map.entry(Reference.id("supersonic_shotgun"), zoom(0.0D, 4.2D, -3.75D)),
             Map.entry(Reference.id("typhoonee"), zoom(0.0D, 4.45D, -1.25D)),
-            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D)),
-            // SW guided launchers: raise into shoulder aim before scope HUD takes over at ads>0.8
-            Map.entry(Reference.id("javelin"), zoom(0.0D, 4.5D, -2.5D)),
-            Map.entry(Reference.id("igla_9k38"), zoom(0.0D, 4.5D, -2.5D))
+            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D))
     );
     private final GunStats stats;
 

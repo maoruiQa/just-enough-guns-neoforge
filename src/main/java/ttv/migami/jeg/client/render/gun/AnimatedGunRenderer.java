@@ -248,6 +248,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         super.adjustRenderPose(passInfo);
 
         if (isFirstPerson(ctx)) {
+            // GeckoLib v5 first_person base uses JEG-standard [-3,0,-3]; re-apply SW hip deltas + SW aim bone motion.
+            if (isSwGuidedLauncher(gunPath)) {
+                applySwGuidedLauncherHipPose(gunPath, passInfo.poseStack());
+                float ads = AimingHandler.get().getRenderAdsProgress();
+                if (ads > 0.0F) {
+                    applySwGuidedLauncherAimPose(gunPath, ads, passInfo.poseStack());
+                }
+            }
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
@@ -349,6 +357,59 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         int reload = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
         int draw = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
         return reload > 0 || draw > 0;
+    }
+
+    private static boolean isSwGuidedLauncher(String path) {
+        return "javelin".equals(path) || "igla_9k38".equals(path);
+    }
+
+    /**
+     * first_person JSON uses JEG-standard [-3,0,-3]. Add SW displaysettings delta so hip pose matches SW.
+     */
+    private static void applySwGuidedLauncherHipPose(String path, com.mojang.blaze3d.vertex.PoseStack poseStack) {
+        float unit = 1.0F / 16.0F;
+        if ("javelin".equals(path)) {
+            // SW [-3.75,-4.75,0.75] - JEG [-3,0,-3]
+            poseStack.translate(-0.75F * unit, -4.75F * unit, 3.75F * unit);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(4.75F));
+        } else {
+            // SW [-5.75,-3.25,7.75] - JEG [-3,0,-3]
+            poseStack.translate(-2.75F * unit, -3.25F * unit, 10.75F * unit);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(8.0F));
+        }
+    }
+
+    /**
+     * Mirrors SuperbWarfare {@code JavelinItemModel}/{@code IglaItemModel} zoom bone motion.
+     */
+    private static void applySwGuidedLauncherAimPose(String path, float ads, com.mojang.blaze3d.vertex.PoseStack poseStack) {
+        float t = ads;
+        // easeOutQuad
+        float inv = 1.0F - Math.max(0.0F, Math.min(1.0F, t));
+        t = 1.0F - inv * inv;
+        float zpz = 4.0F * t * (1.0F - t);
+        float px;
+        float py;
+        float pz;
+        float rotZDeg;
+        float scaleZ;
+        if ("javelin".equals(path)) {
+            px = 1.66F * t + 0.2F * zpz;
+            py = 5.5F * t + 0.8F * zpz;
+            pz = 15.9F * t;
+            rotZDeg = -4.75F * t + 0.02F * zpz;
+            scaleZ = 1.0F - 0.8F * t;
+        } else {
+            px = 1.66F * t + 0.2F * zpz;
+            py = 3.485F * t - 0.4F * zpz;
+            pz = 8.10F * t;
+            rotZDeg = -8.0F * t + 0.05F * zpz;
+            scaleZ = 1.0F - 0.7F * t;
+        }
+        float unit = 1.0F / 16.0F;
+        poseStack.translate(px * unit, py * unit, pz * unit);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(rotZDeg));
+        poseStack.scale(1.0F, 1.0F, Math.max(0.15F, scaleZ));
     }
 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {

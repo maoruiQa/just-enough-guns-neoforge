@@ -1,14 +1,12 @@
 {
   "parent": "builtin/entity",
-  "credit": "SW displaysettings matching Fabric-1.21.1 (known-good)",
-  "texture_size": [128, 128],
+  "credit": "JEG-standard first_person base; SW hip/aim applied in AnimatedGunRenderer",
   "display": {
     "firstperson_righthand": {
-      "rotation": [0, 0, 8],
-      "translation": [-5.75, -3.25, 7.75]
+      "translation": [-3, 0, -3]
     },
     "firstperson_lefthand": {
-      "scale": [0, 0, 0]
+      "translation": [-3, 0, -3]
     }
   }
 }
