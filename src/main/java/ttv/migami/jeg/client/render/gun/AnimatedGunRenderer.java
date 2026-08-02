@@ -104,10 +104,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             Map.entry(Reference.id("subsonic_rifle"), zoom(0.0D, 3.95D, -0.75D)),
             Map.entry(Reference.id("supersonic_shotgun"), zoom(0.0D, 4.2D, -3.75D)),
             Map.entry(Reference.id("typhoonee"), zoom(0.0D, 4.45D, -1.25D)),
-            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D)),
-            // SW guided launchers: raise into shoulder aim before scope HUD takes over at ads>0.8
-            Map.entry(Reference.id("javelin"), zoom(0.0D, 4.5D, -2.5D)),
-            Map.entry(Reference.id("igla_9k38"), zoom(0.0D, 4.5D, -2.5D))
+            Map.entry(Reference.id("waterpipe_shotgun"), zoom(0.0D, 3.65D, 0.75D))
     );
     private static final Set<String> DEBUG_BONES = ConcurrentHashMap.newKeySet();
     private static Method renderModelListsMethod;
@@ -278,6 +275,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static void applyFirstPersonAdsTransform(ItemStack stack, AnimatedGunItem gun, ItemDisplayContext displayContext, PoseStack poseStack) {
         float ads = AimingHandler.get().getRenderAdsProgress();
         if (ads <= 0.0F) {
+            return;
+        }
+
+        // SuperbWarfare guided launchers animate the "bone" node for ADS, not iron-sight offsets.
+        String path = gun.getStats().id().getPath();
+        if (isSwGuidedLauncher(path)) {
+            applySwGuidedLauncherAimPose(path, ads, poseStack);
             return;
         }
 
@@ -703,6 +707,42 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         //         modelId,
         //         rendered
         // );
+    }
+
+    private static boolean isSwGuidedLauncher(String path) {
+        return "javelin".equals(path) || "igla_9k38".equals(path);
+    }
+
+    /**
+     * Mirrors SuperbWarfare {@code JavelinItemModel}/{@code IglaItemModel} zoom bone motion.
+     * Units are Blockbench/GeckoLib model units (1/16 block).
+     */
+    private static void applySwGuidedLauncherAimPose(String path, float ads, PoseStack poseStack) {
+        float t = (float) easeOutQuad(ads);
+        // SW zoomPosZ uses a parabola over zoomTime; approximate mid-zoom bump.
+        float zpz = 4.0F * t * (1.0F - t);
+        float px;
+        float py;
+        float pz;
+        float rotZDeg;
+        float scaleZ;
+        if ("javelin".equals(path)) {
+            px = 1.66F * t + 0.2F * zpz;
+            py = 5.5F * t + 0.8F * zpz;
+            pz = 15.9F * t;
+            rotZDeg = -4.75F * t + 0.02F * zpz;
+            scaleZ = 1.0F - 0.8F * t;
+        } else {
+            px = 1.66F * t + 0.2F * zpz;
+            py = 3.485F * t - 0.4F * zpz;
+            pz = 8.10F * t;
+            rotZDeg = -8.0F * t + 0.05F * zpz;
+            scaleZ = 1.0F - 0.7F * t;
+        }
+        float unit = 1.0F / 16.0F;
+        poseStack.translate(px * unit, py * unit, pz * unit);
+        poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotZDeg));
+        poseStack.scale(1.0F, 1.0F, Math.max(0.15F, scaleZ));
     }
 
     private static boolean isArmBone(String boneName) {
