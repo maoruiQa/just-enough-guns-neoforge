@@ -246,15 +246,11 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         // Always apply GeckoLib centering as the base transform (0.5, 0.51, 0.5).
+        // Hip pose for guided launchers comes solely from the special model's base displaysettings
+        // (same data as 1.21.1 models/item/*.json). Do not invent extra pose deltas here.
         super.adjustRenderPose(passInfo);
 
         if (isFirstPerson(ctx)) {
-            // GeckoLib v5 special+base applies display from first_person JSON. Other JEG guns use
-            // translation [-3,0,-3]; SW displaysettings values do not land correctly under v5 centering.
-            // Keep first_person base at the JEG standard and re-apply SW hip as an extra pose delta.
-            if (isSwGuidedLauncher(gunPath)) {
-                applySwGuidedLauncherHipPoseV5(gunPath, passInfo.poseStack());
-            }
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
@@ -366,25 +362,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static boolean isSwGuidedLauncher(String path) {
         return "javelin".equals(path) || "igla_9k38".equals(path);
-    }
-
-    /**
-     * first_person base is JEG-standard [-3,0,-3] (same as other animated guns on 26.2).
-     * Add SuperbWarfare displaysettings hip as a delta so pose matches 1.21.1 / SW.
-     * Display units are 1/16 block (vanilla ItemTransform convention).
-     */
-    private static void applySwGuidedLauncherHipPoseV5(String path, com.mojang.blaze3d.vertex.PoseStack poseStack) {
-        final float unit = 1.0F / 16.0F;
-        if ("javelin".equals(path)) {
-            // SW firstperson_righthand: translation [-3.75, -4.75, 0.75], rotation Z 4.75
-            // minus JEG base [-3, 0, -3]
-            poseStack.translate(-0.75F * unit, -4.75F * unit, 3.75F * unit);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(4.75F));
-        } else {
-            // SW firstperson_righthand: translation [-5.75, -3.25, 7.75], rotation Z 8
-            poseStack.translate(-2.75F * unit, -3.25F * unit, 10.75F * unit);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(8.0F));
-        }
     }
 
     /**

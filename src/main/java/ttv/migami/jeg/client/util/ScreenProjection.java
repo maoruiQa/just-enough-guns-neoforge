@@ -30,11 +30,13 @@ public final class ScreenProjection {
         projection = new Matrix4f(projectionMatrix);
     }
 
+    public static double getFov() {
+        return fov;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFov(ViewportEvent.ComputeFov event) {
-        if (true) { // FOV event always updates cache
-            fov = event.getFOV();
-        }
+        fov = event.getFOV();
     }
 
     @Nullable
@@ -97,6 +99,9 @@ public final class ScreenProjection {
         Camera camera = mc.gameRenderer.mainCamera();
         Vec3 to = worldPos.subtract(camera.position()).normalize();
         Vec3 look = new Vec3(camera.forwardVector());
-        return look.dot(to) > 0.0D;
+        // Match NeoForge-1.21.1 / SW-style FOV cone (not just hemisphere).
+        double dot = Mth.clamp(to.dot(look), -1.0D, 1.0D);
+        double angle = Math.toDegrees(Math.acos(dot));
+        return angle < fov + 12.0D;
     }
 }

@@ -524,6 +524,28 @@ public final class GunClientEvents {
     }
 
     @SubscribeEvent
+    public static void onRenderLevelAfterLevel(RenderLevelStageEvent.AfterLevel event) {
+        // Capture model/projection for special-equipment world→screen HUD frames (SW VectorUtil style).
+        // 26.2 RenderSystem no longer exposes getProjectionMatrix(); rebuild a perspective matrix from FOV.
+        try {
+            Minecraft minecraft = Minecraft.getInstance();
+            org.joml.Matrix4f modelView = new org.joml.Matrix4f(event.getModelViewMatrix());
+            float aspect = 1.0F;
+            if (minecraft.getWindow() != null) {
+                int w = Math.max(1, minecraft.getWindow().getWidth());
+                int h = Math.max(1, minecraft.getWindow().getHeight());
+                aspect = (float) w / (float) h;
+            }
+            // FOV is kept in degrees by ScreenProjection / ViewportEvent.ComputeFov
+            float fovDeg = (float) ttv.migami.jeg.client.util.ScreenProjection.getFov();
+            float fovy = (float) Math.toRadians(Math.max(1.0D, fovDeg));
+            org.joml.Matrix4f projection = new org.joml.Matrix4f().perspective(fovy, aspect, 0.05F, 1000.0F);
+            ttv.migami.jeg.client.util.ScreenProjection.captureMatrices(modelView, projection);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @SubscribeEvent
     public static void onSubmitCustomGeometry(SubmitCustomGeometryEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
