@@ -202,17 +202,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int packedOverlay
     ) {
         this.gunModel.setCurrentStack(stack);
-        if (displayContext == ItemDisplayContext.GUI) {
-            // SW igla inventory uses a sparse flat icon that looks broken under JEG static GUI quads.
-            // Prefer geo + SW displaysettings "gui" transform (present for igla, not javelin).
-            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-            if (itemId != null && "igla_9k38".equals(itemId.getPath())) {
-                renderSwIglaGuiGeo(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
-                return;
-            }
-            if (renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
-                return;
-            }
+        // SW inventory icons: item/generated layer0 textures/item/*_icon (separate_transforms gui perspective).
+        if (displayContext == ItemDisplayContext.GUI && renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
+            return;
         }
 
         long now = System.nanoTime();
@@ -719,34 +711,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         //         modelId,
         //         rendered
         // );
-    }
-
-    /**
-     * SuperbWarfare igla_9k38.item.json gui display applied to the animated geo model.
-     */
-    private void renderSwIglaGuiGeo(
-            ItemStack stack,
-            ItemDisplayContext displayContext,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay
-    ) {
-        poseStack.pushPose();
-        try {
-            // Slot center (matches typical GeoItem GUI centering before display).
-            poseStack.translate(0.5D, 0.5D, 0.0D);
-            final float unit = 1.0F / 16.0F;
-            // SW displaysettings gui: translation [2.75, -1.75, 0], rotation [165.69, -39.63, 178.66], scale 0.41
-            poseStack.translate(2.75F * unit, -1.75F * unit, 0.0F);
-            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(178.66F));
-            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-39.63F));
-            poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(165.69F));
-            poseStack.scale(0.41F, 0.41F, 0.41F);
-            super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
-        } finally {
-            poseStack.popPose();
-        }
     }
 
     private static boolean isSwGuidedLauncher(String path) {
