@@ -533,6 +533,22 @@ public class GunItem extends Item {
         return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0;
     }
 
+    /**
+     * SuperbWarfare-style drawTime in {@code [0, 1]}: 1 when draw starts, 0 when finished.
+     * Used for procedural first-person raise (javelin/igla have no GeckoLib draw animation).
+     */
+    public static float getClientDrawTime(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 0.0F;
+        }
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            return 0.0F;
+        }
+        int totalTicks = Math.max(1, getDrawAnimationTicks(stack));
+        return Mth.clamp(remainingTicks / (float) totalTicks, 0.0F, 1.0F);
+    }
+
     public static boolean isDrawOperationLocked(ItemStack stack) {
         int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
         if (remainingTicks <= 0) {
