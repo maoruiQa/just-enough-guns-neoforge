@@ -28,6 +28,7 @@ import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.GunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID + ".AnimatedGunRenderer");
@@ -248,14 +249,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         super.adjustRenderPose(passInfo);
 
         if (isFirstPerson(ctx)) {
-            // GeckoLib v5 first_person base uses JEG-standard [-3,0,-3]; re-apply SW hip deltas + SW aim bone motion.
-            if (isSwGuidedLauncher(gunPath)) {
-                applySwGuidedLauncherHipPose(gunPath, passInfo.poseStack());
-                float ads = AimingHandler.get().getRenderAdsProgress();
-                if (ads > 0.0F) {
-                    applySwGuidedLauncherAimPose(gunPath, ads, passInfo.poseStack());
-                }
-            }
+            // SW javelin/igla hip pose comes from displaysettings base model; aim/draw are bone snapshots in preRenderPass.
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
@@ -298,6 +292,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                         snapshot.skipChildrenRender(false);
                     }))
             );
+            // SW javelin/igla: procedural aim on "bone" + draw on "root" (no GeckoLib draw keys in SW).
+            if (isSwGuidedLauncher(finalGunId.getPath())) {
+                ItemStack guidedStack = gunStack;
+                String guidedPath = finalGunId.getPath();
+                passInfo.addBoneUpdater((info, snapshots) -> applySwGuidedLauncherSnapshots(guidedPath, guidedStack, snapshots));
+            }
         } else if (shouldUseAnimatedThirdPerson(ctx, finalGunId.getPath()) || isAttachmentScreenPreview(ctx)) {
             passInfo.addBoneUpdater((info, snapshots) ->
                     FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {
@@ -364,52 +364,64 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     /**
-     * first_person JSON uses JEG-standard [-3,0,-3]. Add SW displaysettings delta so hip pose matches SW.
+     * SuperbWarfare JavelinItemModel / IglaItemModel + gunRootMove draw via GeckoLib v5 bone snapshots.
      */
-    private static void applySwGuidedLauncherHipPose(String path, com.mojang.blaze3d.vertex.PoseStack poseStack) {
-        float unit = 1.0F / 16.0F;
+    private static void applySwGuidedLauncherSnapshots(
+            String path,
+            ItemStack stack,
+            com.geckolib.renderer.base.BoneSnapshots snapshots
+    ) {
+        float zoomTime = AimingHandler.get().getRenderAdsProgress();
+        float zoomPos = (float) swEaseInOutQuint(zoomTime);
+        float zoomPosZ = (float) swParabola(zoomTime);
+        float drawTime = GunItem.getClientDrawTime(stack);
+
+        snapshots.ifPresent("bone", snap -> applySwAimSnapshot(path, snap, zoomPos, zoomPosZ));
+        snapshots.ifPresent("root", snap -> applySwDrawRootSnapshot(snap, drawTime, zoomTime));
+    }
+
+    private static void applySwAimSnapshot(
+            String path,
+            com.geckolib.animation.state.BoneSnapshot snap,
+            float zp,
+            float zpz
+    ) {
         if ("javelin".equals(path)) {
-            // SW [-3.75,-4.75,0.75] - JEG [-3,0,-3]
-            poseStack.translate(-0.75F * unit, -4.75F * unit, 3.75F * unit);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(4.75F));
+            snap.setTranslation(1.66F * zp + 0.2F * zpz, 5.5F * zp + 0.8F * zpz, 15.9F * zp);
+            snap.setScale(1.0F, 1.0F, 1.0F - 0.8F * zp);
+            snap.setRotation(0.0F, 0.0F, -4.75F * ((float) Math.PI / 180.0F) * zp + 0.02F * zpz);
         } else {
-            // SW [-5.75,-3.25,7.75] - JEG [-3,0,-3]
-            poseStack.translate(-2.75F * unit, -3.25F * unit, 10.75F * unit);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(8.0F));
+            snap.setTranslation(1.66F * zp + 0.2F * zpz, 3.485F * zp - 0.4F * zpz, 8.10F * zp);
+            snap.setScale(1.0F, 1.0F, 1.0F - 0.7F * zp);
+            snap.setRotation(0.0F, 0.0F, -8.0F * ((float) Math.PI / 180.0F) * zp + 0.05F * zpz);
         }
     }
 
-    /**
-     * Mirrors SuperbWarfare {@code JavelinItemModel}/{@code IglaItemModel} zoom bone motion.
-     */
-    private static void applySwGuidedLauncherAimPose(String path, float ads, com.mojang.blaze3d.vertex.PoseStack poseStack) {
-        float t = ads;
-        // easeOutQuad
-        float inv = 1.0F - Math.max(0.0F, Math.min(1.0F, t));
-        t = 1.0F - inv * inv;
-        float zpz = 4.0F * t * (1.0F - t);
-        float px;
-        float py;
-        float pz;
-        float rotZDeg;
-        float scaleZ;
-        if ("javelin".equals(path)) {
-            px = 1.66F * t + 0.2F * zpz;
-            py = 5.5F * t + 0.8F * zpz;
-            pz = 15.9F * t;
-            rotZDeg = -4.75F * t + 0.02F * zpz;
-            scaleZ = 1.0F - 0.8F * t;
-        } else {
-            px = 1.66F * t + 0.2F * zpz;
-            py = 3.485F * t - 0.4F * zpz;
-            pz = 8.10F * t;
-            rotZDeg = -8.0F * t + 0.05F * zpz;
-            scaleZ = 1.0F - 0.7F * t;
-        }
-        float unit = 1.0F / 16.0F;
-        poseStack.translate(px * unit, py * unit, pz * unit);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(rotZDeg));
-        poseStack.scale(1.0F, 1.0F, Math.max(0.15F, scaleZ));
+    private static void applySwDrawRootSnapshot(
+            com.geckolib.animation.state.BoneSnapshot snap,
+            float drawTime,
+            float zoomTime
+    ) {
+        float fade = 1.0F - zoomTime;
+        float deg = (float) Math.PI / 180.0F;
+        snap.setTranslation(20.0F * drawTime * fade, -40.0F * drawTime * fade, 0.0F);
+        snap.setRotation(
+                -60.0F * deg * drawTime * fade,
+                300.0F * deg * drawTime * fade,
+                90.0F * deg * drawTime * fade
+        );
+    }
+
+    /** SW AnimationCurves.EASE_IN_OUT_QUINT (implemented as cubic in SW). */
+    private static double swEaseInOutQuint(double x) {
+        x = Math.max(0.0D, Math.min(1.0D, x));
+        return x < 0.5D ? 4.0D * x * x * x : 1.0D - Math.pow(-2.0D * x + 2.0D, 3.0D) / 2.0D;
+    }
+
+    /** SW AnimationCurves.PARABOLA: peaks at 1 when x=0.5. */
+    private static double swParabola(double x) {
+        x = Math.max(0.0D, Math.min(1.0D, x));
+        return -Math.pow(2.0D * x - 1.0D, 2.0D) + 1.0D;
     }
 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {
