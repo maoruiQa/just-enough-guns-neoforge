@@ -1,12 +1,13 @@
 {
   "parent": "builtin/entity",
-  "credit": "Same first_person base as all other JEG GeckoLib guns on 1.21.1 and 26.2: [-3,0,-3]. SW displaysettings hip is applied as ItemTransform delta in AnimatedGunRenderer.adjustRenderPose.",
+  "credit": "Same firstperson_righthand as NeoForge-1.21.1 / SW (raw v4). Do not apply v4→v5 pad compensation here until hip Y matches 1.21.1; converted ty=+5.79 left the launcher too high (see screenshots/26.2-2.png vs 1.21.1.png).",
   "display": {
     "firstperson_righthand": {
-      "translation": [-3, 0, -3]
+      "rotation": [0, 0, 8],
+      "translation": [-5.75, -3.25, 7.75]
     },
     "firstperson_lefthand": {
-      "translation": [-3, 0, -3]
+      "scale": [0, 0, 0]
     }
   }
 }

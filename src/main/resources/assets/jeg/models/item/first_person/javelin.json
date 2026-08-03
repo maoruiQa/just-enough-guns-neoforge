@@ -1,12 +1,13 @@
 {
   "parent": "builtin/entity",
-  "credit": "Same first_person base as all other JEG GeckoLib guns on 1.21.1 and 26.2: [-3,0,-3]. SW displaysettings hip is applied as ItemTransform delta in AnimatedGunRenderer.adjustRenderPose.",
+  "credit": "Same firstperson_righthand as NeoForge-1.21.1 / SW (raw v4). Paired with igla_9k38; keep both on the same conversion policy.",
   "display": {
     "firstperson_righthand": {
-      "translation": [-3, 0, -3]
+      "rotation": [0, 0, 4.75],
+      "translation": [-3.75, -4.75, 0.75]
     },
     "firstperson_lefthand": {
-      "translation": [-3, 0, -3]
+      "scale": [0, 0, 0]
     }
   }
 }

@@ -167,6 +167,14 @@ public final class ItemInHandRendererMixin {
             return;
         }
 
+        // Match NeoForge-1.21.1: applyForgeHandTransform is a no-op for all guns except holy_shotgun.
+        // SW guided launchers (javelin/igla) use models/item first_person display + GeckoLib center only;
+        // GunPoseProfile DEFAULT (assault-style hip/scale) must not run on top of SW ItemTransform.
+        String gunPath = gun.getStats().id().getPath();
+        if ("javelin".equals(gunPath) || "igla_9k38".equals(gunPath)) {
+            return;
+        }
+
         HumanoidArm arm;
         if (displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
             arm = HumanoidArm.RIGHT;
