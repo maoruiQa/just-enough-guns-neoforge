@@ -535,8 +535,13 @@ public class GunItem extends Item {
     /**
      * SuperbWarfare-style drawTime in {@code [0, 1]}: 1 when draw starts, 0 when finished.
      * Used for procedural first-person raise (javelin/igla have no GeckoLib draw animation).
+     * {@code partialTick} interpolates within the current game tick so motion is not 20 FPS stepped.
      */
     public static float getClientDrawTime(ItemStack stack) {
+        return getClientDrawTime(stack, 1.0F);
+    }
+
+    public static float getClientDrawTime(ItemStack stack, float partialTick) {
         if (stack == null || stack.isEmpty()) {
             return 0.0F;
         }
@@ -545,7 +550,9 @@ public class GunItem extends Item {
             return 0.0F;
         }
         int totalTicks = Math.max(1, getDrawAnimationTicks(stack));
-        return Mth.clamp(remainingTicks / (float) totalTicks, 0.0F, 1.0F);
+        // remaining is whole ticks left after the last tick; subtract partial for smooth decay.
+        float visualRemaining = Math.max(0.0F, remainingTicks - Mth.clamp(partialTick, 0.0F, 1.0F));
+        return Mth.clamp(visualRemaining / (float) totalTicks, 0.0F, 1.0F);
     }
 
     public static boolean isDrawOperationLocked(ItemStack stack) {
