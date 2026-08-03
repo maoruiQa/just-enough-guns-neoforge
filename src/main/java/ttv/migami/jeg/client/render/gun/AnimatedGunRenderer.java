@@ -245,12 +245,23 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        // Always apply GeckoLib centering as the base transform (0.5, 0.51, 0.5).
-        // Hip pose for guided launchers comes solely from the special model's base displaysettings
-        // (same data as 1.21.1 models/item/*.json). Do not invent extra pose deltas here.
+        // Always apply GeckoLib centering as the base transform (0.5, 0.51, 0.5) — same as GeckoLib v4.
         super.adjustRenderPose(passInfo);
 
         if (isFirstPerson(ctx)) {
+            // Empirical JEG rule (assault_rifle, rocket_launcher, … on BOTH 1.21.1 and 26.2):
+            //   first_person base display = translation [-3, 0, -3]
+            // Hip pose for those guns lives in the geo rest pose, not in display JSON.
+            //
+            // SW javelin/igla geo expects SW displaysettings instead. On 1.21.1, ItemRenderer
+            // applies models/item display before GeoItemRenderer (SW values work there).
+            // On 26.2, special-model base display is applied by the item pipeline the same way
+            // only when the base matches the JEG GeckoLib convention; non-standard SW offsets
+            // do not land equivalently. So we keep the proven [-3,0,-3] base (like every other
+            // gun) and apply SW−JEG as an ItemTransform delta (JSON units × 1/16).
+            if (isSwGuidedLauncher(gunPath)) {
+                applySwHipAsItemTransformDelta(gunPath, passInfo.poseStack());
+            }
             HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
             GunClientEvents.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
@@ -362,6 +373,32 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
 
     private static boolean isSwGuidedLauncher(String path) {
         return "javelin".equals(path) || "igla_9k38".equals(path);
+    }
+
+    /**
+     * Convert SW displaysettings firstperson_righthand into a pose delta relative to the JEG
+     * GeckoLib first_person standard {@code [-3, 0, -3]} used by all other guns on 1.21.1 and 26.2.
+     *
+     * <p>Minecraft bakes item model display translation by {@code × 0.0625} (1/16) when building
+     * {@link net.minecraft.client.renderer.block.model.ItemTransform}. We apply the same scale so
+     * the net hip pose equals SW displaysettings after the special base has applied [-3,0,-3].
+     *
+     * <pre>
+     * javelin SW: (-3.75, -4.75, 0.75) rotZ=4.75  → delta (-0.75, -4.75, 3.75)
+     * igla    SW: (-5.75, -3.25, 7.75) rotZ=8     → delta (-2.75, -3.25, 10.75)
+     * </pre>
+     */
+    private static void applySwHipAsItemTransformDelta(String path, com.mojang.blaze3d.vertex.PoseStack poseStack) {
+        final float unit = 1.0F / 16.0F;
+        if ("javelin".equals(path)) {
+            poseStack.translate(-0.75F * unit, -4.75F * unit, 3.75F * unit);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(4.75F));
+            return;
+        }
+        if ("igla_9k38".equals(path)) {
+            poseStack.translate(-2.75F * unit, -3.25F * unit, 10.75F * unit);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(8.0F));
+        }
     }
 
     /**
