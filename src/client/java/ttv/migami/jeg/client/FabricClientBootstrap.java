@@ -303,6 +303,20 @@ public final class FabricClientBootstrap {
             if (matrixStack == null) {
                 return;
             }
+            // Capture pose/projection for special-equipment world→screen HUD frames (SW VectorUtil style).
+            // Without this, drawSeekFrames / drone entity frames never get valid matrices.
+            try {
+                org.joml.Matrix4f modelView = new org.joml.Matrix4f(matrixStack.last().pose());
+                org.joml.Matrix4f projection = new org.joml.Matrix4f(
+                        com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix()
+                );
+                ttv.migami.jeg.client.util.ScreenProjection.captureMatrices(modelView, projection);
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.options != null) {
+                    ttv.migami.jeg.client.util.ScreenProjection.setFov(mc.options.fov().get());
+                }
+            } catch (Throwable ignored) {
+            }
             if (NetworkHandler.shouldRenderLegacyBulletTrail()) {
                 BulletTrailRenderer.render(matrixStack, context.consumers(), partialTick);
             }

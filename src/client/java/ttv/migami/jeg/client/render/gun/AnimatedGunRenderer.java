@@ -188,14 +188,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int packedLight,
             int packedOverlay
     ) {
-        // GUI/inventory should use the baked static model; keep the animated path as a fallback.
+        // SW inventory icons: item/generated layer0 textures/item/*_icon (same as SW separate_transforms gui).
         if (displayContext == ItemDisplayContext.GUI) {
-            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-            // SW igla inventory flat icon is a sparse atlas strip; use geo + SW gui display instead.
-            if (itemId != null && "igla_9k38".equals(itemId.getPath())) {
-                renderSwIglaGuiGeo(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
-                return;
-            }
             if (renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
                 return;
             }
@@ -796,32 +790,6 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 modelId,
                 rendered
         );
-    }
-
-    /**
-     * SuperbWarfare igla_9k38.item.json gui display applied to the animated geo model.
-     */
-    private void renderSwIglaGuiGeo(
-            ItemStack stack,
-            ItemDisplayContext displayContext,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay
-    ) {
-        poseStack.pushPose();
-        try {
-            poseStack.translate(0.5D, 0.5D, 0.0D);
-            final float unit = 1.0F / 16.0F;
-            poseStack.translate(2.75F * unit, -1.75F * unit, 0.0F);
-            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(178.66F));
-            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-39.63F));
-            poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(165.69F));
-            poseStack.scale(0.41F, 0.41F, 0.41F);
-            renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
-        } finally {
-            poseStack.popPose();
-        }
     }
 
     private static boolean isSwGuidedLauncher(String path) {
