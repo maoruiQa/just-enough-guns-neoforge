@@ -28,6 +28,7 @@ import ttv.migami.jeg.client.render.gun.layer.GunFirstPersonArmsLayer;
 import ttv.migami.jeg.client.screen.AttachmentScreen;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.GunItem;
 
 public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> {
     private static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID + ".AnimatedGunRenderer");
@@ -48,7 +49,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static final DataTicket<Boolean> USING_VANILLA_NON_FIRST_PERSON =
             DataTicket.create("jeg:using_vanilla_non_first_person", Boolean.class);
     private static final Set<String> FIRST_PERSON_ARM_BONES =
-            Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm");
+            Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm", "Lefthand", "Righthand");
 
     private static final class VanillaStateAccess {
         private static final Field LAYERS;
@@ -244,11 +245,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        // Always apply GeckoLib centering as the base transform.
+        // Vanilla first_person ItemTransform is already on the stack. Guided launchers use the same
+        // SW/1.21.1 first_person display JSON (raw v4 values); GeckoLib only centers.
+        // SW javelin/igla must NOT get GunPoseProfile hand transforms (see ItemInHandRendererMixin).
         super.adjustRenderPose(passInfo);
 
-        if (isFirstPerson(ctx)) {
-            HumanoidArm arm = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
+        if (isFirstPerson(ctx) || (isSwGuidedLauncher(gunPath) && isClientFirstPersonCamera())) {
+            HumanoidArm arm = resolveFirstPersonArm(ctx);
             FabricClientBootstrap.captureFirstPersonGunPose(arm, new Matrix4f(passInfo.poseStack().last().pose()));
             return;
         }
@@ -290,6 +293,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                         snapshot.skipChildrenRender(false);
                     }))
             );
+            // SW javelin/igla: aim on "bone" + draw on "root" (1.21.1 / SW JavelinItemModel data).
+            String guidedPath = finalGunId.getPath();
+            if (isSwGuidedLauncher(guidedPath)) {
+                ItemStack guidedStack = gunStack;
+                passInfo.addBoneUpdater((info, snapshots) -> applySwGuidedLauncherSnapshots(guidedPath, guidedStack, snapshots));
+            }
         } else if (shouldUseAnimatedThirdPerson(ctx, finalGunId.getPath()) || isAttachmentScreenPreview(ctx)) {
             passInfo.addBoneUpdater((info, snapshots) ->
                     FIRST_PERSON_ARM_BONES.forEach(name -> snapshots.ifPresent(name, snapshot -> {
@@ -313,6 +322,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 return gun.getStats().id().getPath();
             }
         }
+        ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
+        if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
+            return gun.getStats().id().getPath();
+        }
         return "abstract_gun";
     }
 
@@ -327,8 +340,118 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
 
         ItemStack stack = renderState.getOrDefaultGeckolibData(ITEM_STACK, ItemStack.EMPTY);
+
+        // SW Javelin/Igla: hide mesh once ADS is deep so only scope HUD remains.
+        // Keep visible while reloading/drawing so those animations can still play under partial ADS.
+        Identifier id = gun.getStats().id();
+        if (Reference.id("javelin").equals(id) || Reference.id("igla_9k38").equals(id)) {
+            if (isLauncherBusyAnimating(stack)) {
+                return false;
+            }
+            return AimingHandler.get().getRenderAdsProgress() > 0.8F;
+        }
+
         return GunScopeSupport.hasTelescopicSight(stack)
                 && AimingHandler.get().getRenderAdsProgress() > 0.5F;
+    }
+
+    private static boolean isLauncherBusyAnimating(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        int reload = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0);
+        int draw = stack.getOrDefault(ttv.migami.jeg.init.ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        return reload > 0 || draw > 0;
+    }
+
+    private static boolean isSwGuidedLauncher(String path) {
+        return "javelin".equals(path) || "igla_9k38".equals(path);
+    }
+
+    private static HumanoidArm resolveFirstPersonArm(ItemDisplayContext ctx) {
+        if (ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
+            return HumanoidArm.LEFT;
+        }
+        if (ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            return HumanoidArm.RIGHT;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.player != null && mc.player.getMainArm() == HumanoidArm.LEFT) {
+            return HumanoidArm.LEFT;
+        }
+        return HumanoidArm.RIGHT;
+    }
+
+    private static boolean isClientFirstPersonCamera() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc != null && mc.options != null && mc.options.getCameraType().isFirstPerson();
+    }
+
+    /**
+     * SuperbWarfare JavelinItemModel / IglaItemModel aim + gunRootMove draw (v4 data on v5 snapshots).
+     */
+    private static void applySwGuidedLauncherSnapshots(
+            String path,
+            ItemStack stack,
+            com.geckolib.renderer.base.BoneSnapshots snapshots
+    ) {
+        float zoomTime = AimingHandler.get().getRenderAdsProgress();
+        float zoomPos = (float) swEaseInOutQuint(zoomTime);
+        float zoomPosZ = (float) swParabola(zoomTime);
+        float partialTick = 1.0F;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null) {
+            partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        }
+        float drawTime = GunItem.getClientDrawTime(stack, partialTick);
+
+        snapshots.ifPresent("bone", snap -> applySwAimSnapshot(path, snap, zoomPos, zoomPosZ));
+        snapshots.ifPresent("root", snap -> applySwDrawRootSnapshot(snap, drawTime, zoomTime));
+    }
+
+    private static void applySwAimSnapshot(
+            String path,
+            com.geckolib.animation.state.BoneSnapshot snap,
+            float zp,
+            float zpz
+    ) {
+        if ("javelin".equals(path)) {
+            snap.setTranslation(1.66F * zp + 0.2F * zpz, 5.5F * zp + 0.8F * zpz, 15.9F * zp);
+            snap.setScale(1.0F, 1.0F, 1.0F - 0.8F * zp);
+            snap.setRotation(0.0F, 0.0F, -4.75F * ((float) Math.PI / 180.0F) * zp + 0.02F * zpz);
+        } else {
+            snap.setTranslation(1.66F * zp + 0.2F * zpz, 3.485F * zp - 0.4F * zpz, 8.10F * zp);
+            snap.setScale(1.0F, 1.0F, 1.0F - 0.7F * zp);
+            snap.setRotation(0.0F, 0.0F, -8.0F * ((float) Math.PI / 180.0F) * zp + 0.05F * zpz);
+        }
+    }
+
+    /** SW gunRootMove draw component only (same as 1.21.1). */
+    private static void applySwDrawRootSnapshot(
+            com.geckolib.animation.state.BoneSnapshot snap,
+            float drawTime,
+            float zoomTime
+    ) {
+        float fade = 1.0F - zoomTime;
+        float deg = (float) Math.PI / 180.0F;
+        snap.setTranslation(20.0F * drawTime * fade, -40.0F * drawTime * fade, 0.0F);
+        snap.setRotation(
+                -60.0F * deg * drawTime * fade,
+                300.0F * deg * drawTime * fade,
+                90.0F * deg * drawTime * fade
+        );
+    }
+
+    /** SW AnimationCurves.EASE_IN_OUT_QUINT (implemented as cubic in SW). */
+    private static double swEaseInOutQuint(double x) {
+        x = Math.max(0.0D, Math.min(1.0D, x));
+        return x < 0.5D ? 4.0D * x * x * x : 1.0D - Math.pow(-2.0D * x + 2.0D, 3.0D) / 2.0D;
+    }
+
+    /** SW AnimationCurves.PARABOLA: peaks at 1 when x=0.5. */
+    private static double swParabola(double x) {
+        x = Math.max(0.0D, Math.min(1.0D, x));
+        return -Math.pow(2.0D * x - 1.0D, 2.0D) + 1.0D;
     }
 
     private static ItemDisplayContext resolveStableContext(GeoRenderState renderState) {

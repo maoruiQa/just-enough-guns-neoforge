@@ -35,6 +35,16 @@ public final class FabricCreativeTabs {
             entries.accept(ModItems.CREEPER_BIRTHDAY_PARTY_BADGE.get());
             entries.accept(ModItems.HEADPOPPER_BADGE.get());
             entries.accept(ModItems.TRICKSHOT_BADGE.get());
+            entries.accept(ModItems.DRONE.get());
+            entries.accept(ModItems.MONITOR.get());
+            entries.accept(ModItems.C4_BOMB.get());
+            net.minecraft.world.item.ItemStack remoteC4 = new net.minecraft.world.item.ItemStack(ModItems.C4_BOMB.get());
+            remoteC4.set(ttv.migami.jeg.init.ModDataComponents.C4_REMOTE.get(), true);
+            entries.accept(remoteC4);
+            entries.accept(ModItems.DETONATOR.get());
+            entries.accept(ModItems.C4_VEST.get());
+            entries.accept(ModItems.CLAYMORE_MINE.get());
+            entries.accept(ModItems.TM_62.get());
             entries.accept(ModItems.MISSILE_ENGINE.get());
             ModItems.BULLETPROOF_HELMETS.values().forEach(holder -> entries.accept(holder.get()));
             ModItems.BULLETPROOF_VESTS.values().forEach(holder -> entries.accept(holder.get()));

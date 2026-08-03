@@ -33,7 +33,11 @@ import java.util.Set;
  * Third-person: does not render any arms.
  */
 public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunItem, GeoItemRenderer.RenderData, GeoRenderState> {
-    private static final Set<String> ARM_BONES = Set.of("left_arm", "right_arm", "fake_left_arm", "fake_right_arm");
+    private static final Set<String> ARM_BONES = Set.of(
+            "left_arm", "right_arm", "fake_left_arm", "fake_right_arm",
+            // SW guided-launcher hand anchors (Igla etc.)
+            "Lefthand", "Righthand"
+    );
     private static final float ARM_WIDTH_SCALE = 0.75F;
     private static final float ARM_HEIGHT_SCALE = 10.0F / 12.0F;
     private static final float ARM_DEPTH_SCALE = 0.75F;
@@ -86,10 +90,15 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
     private static void registerArmBone(RenderPassInfo<GeoRenderState> passInfo, ArmSide side) {
         String fake = side == ArmSide.LEFT ? "fake_left_arm" : "fake_right_arm";
         String normal = side == ArmSide.LEFT ? "left_arm" : "right_arm";
-        // Prefer normal arm bones; fake_* are often emergency anchors that can drift into camera.
+        // SW guided launchers (Igla) use Lefthand/Righthand instead of left_arm/right_arm.
+        String sw = side == ArmSide.LEFT ? "Lefthand" : "Righthand";
+        // Prefer normal arm bones; then SW names; fake_* last (can drift into camera).
         passInfo.model().getBone(normal).ifPresentOrElse(
-                bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)),
-                () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side)))
+                bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side, false)),
+                () -> passInfo.model().getBone(sw).ifPresentOrElse(
+                        bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side, true)),
+                        () -> passInfo.model().getBone(fake).ifPresent(bone -> passInfo.addPerBoneRender(bone, new ArmRenderTask(side, false)))
+                )
         );
     }
 
@@ -99,9 +108,11 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
 
     private static final class ArmRenderTask implements PerBoneRender<GeoRenderState> {
         private final ArmSide side;
+        private final boolean swStyle;
 
-        private ArmRenderTask(ArmSide side) {
+        private ArmRenderTask(ArmSide side, boolean swStyle) {
             this.side = side;
+            this.swStyle = swStyle;
         }
 
         @Override
@@ -127,9 +138,18 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
                     (pose, buffer) -> {
                         PoseStack armPose = new PoseStack();
                         armPose.last().set(pose);
-                        renderPreparedArmPart(armPart, armPose, buffer, light, side);
+                        if (swStyle) {
+                            // SW AnimationHelper micro-offset (1/16).
+                            float s = 1.0F / 16.0F;
+                            if (side == ArmSide.LEFT) {
+                                armPose.translate(-s, 2.0F * s, 0.0F);
+                            } else {
+                                armPose.translate(s, 2.0F * s, 0.0F);
+                            }
+                        }
+                        renderPreparedArmPart(armPart, armPose, buffer, light, side, swStyle);
                         if (sleeveVisible) {
-                            renderPreparedArmPart(sleevePart, armPose, buffer, light, side);
+                            renderPreparedArmPart(sleevePart, armPose, buffer, light, side, swStyle);
                         }
                     }
             );
@@ -140,20 +160,41 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
                 PoseStack poseStack,
                 com.mojang.blaze3d.vertex.VertexConsumer buffer,
                 int light,
-                ArmSide side
+                ArmSide side,
+                boolean swStyle
         ) {
             PartState state = PartState.capture(part);
             try {
-                prepareArmPart(part, side);
+                prepareArmPart(part, side, swStyle);
                 part.render(poseStack, buffer, light, OverlayTexture.NO_OVERLAY);
             } finally {
                 state.restore(part);
             }
         }
 
-        private static void prepareArmPart(ModelPart part, ArmSide side) {
+        private static void prepareArmPart(ModelPart part, ArmSide side, boolean swStyle) {
             part.resetPose();
             part.visible = true;
+            if (swStyle) {
+                // SW setupModelFromBone2 / setupModelFromBone2R — fix front/back flip on Lefthand/Righthand.
+                // GeckoLib v5 bone pose is already applied via PerBoneRender pose stack; only fix ModelPart orientation.
+                float xOffset = side == ArmSide.LEFT ? -ARM_X_OFFSET_PIXELS : ARM_X_OFFSET_PIXELS;
+                float yOffset = side == ArmSide.LEFT ? LEFT_ARM_Y_OFFSET_PIXELS : RIGHT_ARM_Y_OFFSET_PIXELS;
+                part.setPos(xOffset, yOffset + 7.0F, 0.0F);
+                if (side == ArmSide.LEFT) {
+                    part.xRot = 0.0F;
+                    part.yRot = (float) Math.PI;
+                    part.zRot = (float) Math.PI;
+                } else {
+                    part.xRot = (float) Math.PI;
+                    part.yRot = (float) Math.PI;
+                    part.zRot = 0.0F;
+                }
+                part.xScale = ARM_WIDTH_SCALE;
+                part.yScale = ARM_HEIGHT_SCALE;
+                part.zScale = ARM_DEPTH_SCALE;
+                return;
+            }
             float xOffset = side == ArmSide.LEFT ? -ARM_X_OFFSET_PIXELS : ARM_X_OFFSET_PIXELS;
             float yOffset = side == ArmSide.LEFT ? LEFT_ARM_Y_OFFSET_PIXELS : RIGHT_ARM_Y_OFFSET_PIXELS;
             part.setPos(xOffset, yOffset, 0.0F);

@@ -39,6 +39,7 @@ import ttv.migami.jeg.init.ModMenuTypes;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.init.ModStructures;
 import ttv.migami.jeg.init.ModSounds;
+import ttv.migami.jeg.init.SpecialEquipmentDispenseBehaviors;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.data.VehicleDataManager;
@@ -67,6 +68,7 @@ public final class FabricEntrypoint implements ModInitializer {
 
         // Fabric-specific hooks.
         NetworkHandler.initCommon();
+        SpecialEquipmentDispenseBehaviors.register();
         FabricCreativeTabs.init();
         FabricRecipeUnlock.init();
         FabricEntityInit.init();

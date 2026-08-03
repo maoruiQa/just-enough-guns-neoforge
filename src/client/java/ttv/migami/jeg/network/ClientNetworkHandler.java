@@ -107,6 +107,10 @@ public final class ClientNetworkHandler {
                 }
             });
         });
+        ClientPlayNetworking.registerGlobalReceiver(DroneControlPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> ttv.migami.jeg.client.SpecialEquipmentClientEvents.setDroneControl(
+                    payload.entityId(), payload.active(), payload.maxRange()));
+        });
     }
 
     public static void sendTriggerRelease(InteractionHand hand) {
@@ -202,5 +206,17 @@ public final class ClientNetworkHandler {
 
     public static void sendVehicleDismount(int vehicleId) {
         ClientPlayNetworking.send(new VehicleDismountPayload(vehicleId));
+    }
+
+    public static void sendGuidedLock(InteractionHand hand, int targetId) {
+        ClientPlayNetworking.send(new GuidedLockPayload(hand, targetId));
+    }
+
+    public static void sendToggleLauncherMode() {
+        ClientPlayNetworking.send(ToggleLauncherModePayload.INSTANCE);
+    }
+
+    public static void sendDroneInput(int entityId, int inputs, float yawDelta, float pitchDelta) {
+        ClientPlayNetworking.send(new DroneInputPayload(entityId, inputs, yawDelta, pitchDelta));
     }
 }

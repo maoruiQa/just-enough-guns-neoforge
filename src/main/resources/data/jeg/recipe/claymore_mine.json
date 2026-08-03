@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [" H ", "ITI", "S S"],
+  "key": {
+    "H": "minecraft:tripwire_hook",
+    "I": "minecraft:iron_ingot",
+    "T": "minecraft:tnt",
+    "S": "minecraft:stick"
+  },
+  "result": {"id": "jeg:claymore_mine", "count": 2}
+}

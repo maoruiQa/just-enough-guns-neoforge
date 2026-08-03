@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": ["GPG", "TTT", "TTT"],
+  "key": {
+    "G": "minecraft:green_concrete",
+    "P": "minecraft:stone_pressure_plate",
+    "T": "minecraft:tnt"
+  },
+  "result": {"id": "jeg:tm_62", "count": 2}
+}

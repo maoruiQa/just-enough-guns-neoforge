@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ttv.migami.jeg.client.CrosshairHandler;
 import ttv.migami.jeg.client.ClientHudRenderer;
+import ttv.migami.jeg.client.SpecialEquipmentClientEvents;
 import ttv.migami.jeg.client.FabricClientBootstrap;
 import ttv.migami.jeg.client.HappyGhastArmorHud;
 import ttv.migami.jeg.client.ScopeOverlayRenderer;
@@ -32,6 +33,7 @@ public final class HudMixin {
             FabricClientBootstrap.renderOverheatBar(guiGraphics);
             MedalManager.render(guiGraphics);
             ClientHudRenderer.render(guiGraphics);
+            SpecialEquipmentClientEvents.onRenderHud(guiGraphics);
             HappyGhastArmorHud.render(guiGraphics);
         }
     }

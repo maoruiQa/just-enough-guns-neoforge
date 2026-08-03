@@ -138,7 +138,13 @@ public final class ItemInHandRendererMixin {
         if (!(entity instanceof LocalPlayer player)) {
             return;
         }
-        if (!(stack.getItem() instanceof GunItem)) {
+        if (!(stack.getItem() instanceof GunItem gun)) {
+            return;
+        }
+
+        // SW guided launchers: first_person display + GeckoLib center only; skip GunPoseProfile.
+        String gunPath = gun.getStats().id().getPath();
+        if ("javelin".equals(gunPath) || "igla_9k38".equals(gunPath)) {
             return;
         }
 
@@ -168,7 +174,7 @@ public final class ItemInHandRendererMixin {
                     poseStack,
                     player,
                     arm,
-                    ((GunItem) stack.getItem()).getStats(),
+                    gun.getStats(),
                     partialTick
             );
         }

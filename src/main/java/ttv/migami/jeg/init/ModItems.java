@@ -38,6 +38,12 @@ import ttv.migami.jeg.item.GrenadeItem;
 import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.DescribedAmmoItem;
 import ttv.migami.jeg.item.GunItem;
+import ttv.migami.jeg.item.C4VestItem;
+import ttv.migami.jeg.item.DetonatorItem;
+import ttv.migami.jeg.item.DroneItem;
+import ttv.migami.jeg.item.GuidedLauncherItem;
+import ttv.migami.jeg.item.MonitorItem;
+import ttv.migami.jeg.item.SpecialExplosiveItem;
 import ttv.migami.jeg.item.GunnerSpawnEggItem;
 import ttv.migami.jeg.item.MolotovCocktailItem;
 import ttv.migami.jeg.item.ModSpawnEggItem;
@@ -277,6 +283,34 @@ public final class ModItems {
             () -> new KillEffectItem(baseProperties(Reference.id("trickshot_badge")).stacksTo(1).rarity(Rarity.EPIC))
     );
     public static final Map<Identifier, DeferredHolder<Item, GunItem>> GUNS = new LinkedHashMap<>();
+    public static final DeferredHolder<Item, GunItem> JAVELIN = registerGuidedLauncher(
+            "javelin", "javelin_missile", 78, 20, 10.0D, false
+    );
+    public static final DeferredHolder<Item, GunItem> IGLA_9K38 = registerGuidedLauncher(
+            "igla_9k38", "medium_anti_air_missile", 88, 30, 20.0D, true
+    );
+    public static final DeferredHolder<Item, DroneItem> DRONE = REGISTER.register(
+            "drone", () -> new DroneItem(baseProperties(Reference.id("drone")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, MonitorItem> MONITOR = REGISTER.register(
+            "monitor", () -> new MonitorItem(baseProperties(Reference.id("monitor")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, SpecialExplosiveItem> C4_BOMB = REGISTER.register(
+            "c4_bomb", () -> new SpecialExplosiveItem(SpecialExplosiveItem.Kind.C4, baseProperties(Reference.id("c4_bomb")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, DetonatorItem> DETONATOR = REGISTER.register(
+            "detonator", () -> new DetonatorItem(baseProperties(Reference.id("detonator")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, C4VestItem> C4_VEST = REGISTER.register(
+            "c4_vest",
+            () -> new C4VestItem(baseProperties(Reference.id("c4_vest")))
+    );
+    public static final DeferredHolder<Item, SpecialExplosiveItem> CLAYMORE_MINE = REGISTER.register(
+            "claymore_mine", () -> new SpecialExplosiveItem(SpecialExplosiveItem.Kind.CLAYMORE, baseProperties(Reference.id("claymore_mine")).stacksTo(16))
+    );
+    public static final DeferredHolder<Item, SpecialExplosiveItem> TM_62 = REGISTER.register(
+            "tm_62", () -> new SpecialExplosiveItem(SpecialExplosiveItem.Kind.TM_62, baseProperties(Reference.id("tm_62")).stacksTo(16))
+    );
     public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES = new LinkedHashMap<>();
     public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_DIAMOND = new LinkedHashMap<>();
     public static final Map<DyeColor, DeferredHolder<Item, ArmoredJoyHarnessItem>> ARMORED_JOY_HARNESSES_NETHERITE = new LinkedHashMap<>();
@@ -490,6 +524,30 @@ public final class ModItems {
             DeferredHolder<Item, GunItem> holder = REGISTER.register(id.getPath(), () -> new AnimatedGunItem(defaultGunProperties(id, stats), stats));
             GUNS.put(id, holder);
         }
+    }
+
+    private static DeferredHolder<Item, GunItem> registerGuidedLauncher(
+            String path,
+            String ammo,
+            int reloadTicks,
+            int lockTicks,
+            double lockAngle,
+            boolean airOnly
+    ) {
+        Identifier id = Reference.id(path);
+        GunStats stats = new GunStats(
+                id, Reference.id(ammo), "jeg:manual", 1, reloadTicks, 0, 20,
+                0.0F, 1.25F, 240, false, true, 0.0F, 1,
+                Reference.id("item." + path + ".fire"), null, null,
+                Reference.id("item." + path + ".reload"), null, null, null, null,
+                GunStats.STANDARD_BULLET_PROJECTILE_SIZE, -1, 2.0F
+        );
+        DeferredHolder<Item, GunItem> holder = REGISTER.register(
+                path,
+                () -> new GuidedLauncherItem(defaultGunProperties(id, stats), stats, lockTicks, lockAngle, airOnly)
+        );
+        GUNS.put(id, holder);
+        return holder;
     }
 
     private static void registerArmoredHarnessItems() {
@@ -710,6 +768,13 @@ public final class ModItems {
             event.accept(CREEPER_BIRTHDAY_PARTY_BADGE.get());
             event.accept(HEADPOPPER_BADGE.get());
             event.accept(TRICKSHOT_BADGE.get());
+            event.accept(DRONE.get());
+            event.accept(MONITOR.get());
+            event.accept(C4_BOMB.get());
+            event.accept(DETONATOR.get());
+            event.accept(C4_VEST.get());
+            event.accept(CLAYMORE_MINE.get());
+            event.accept(TM_62.get());
             event.accept(MISSILE_ENGINE.get());
             BULLETPROOF_HELMETS.values().forEach(holder -> event.accept(holder.get()));
             BULLETPROOF_VESTS.values().forEach(holder -> event.accept(holder.get()));

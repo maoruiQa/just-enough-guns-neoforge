@@ -1,0 +1,13 @@
+{
+  "parent": "builtin/entity",
+  "credit": "Same firstperson_righthand as NeoForge-1.21.1 / SW (raw v4). Paired with igla_9k38; keep both on the same conversion policy.",
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [0, 0, 4.75],
+      "translation": [-3.75, -4.75, 0.75]
+    },
+    "firstperson_lefthand": {
+      "scale": [0, 0, 0]
+    }
+  }
+}

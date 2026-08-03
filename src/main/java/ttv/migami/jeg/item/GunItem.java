@@ -425,10 +425,15 @@ public class GunItem extends Item {
     }
 
     public static boolean isHoldToFireWeapon(ItemStack stack) {
-        return isRocketLauncher(stack);
+        return isRocketLauncher(stack)
+                || stack.getItem() instanceof GuidedLauncherItem launcher && launcher.holdToFire();
     }
 
     public static int holdToFireTicks(ItemStack stack) {
+        if (stack.getItem() instanceof GuidedLauncherItem launcher) {
+            // Javelin charges for full lock duration; Igla is click-to-fire (holdToFire=false).
+            return launcher.lockTicks();
+        }
         return isHoldToFireWeapon(stack) ? ROCKET_LAUNCHER_HOLD_TICKS : 0;
     }
 
@@ -2310,6 +2315,28 @@ public class GunItem extends Item {
 
     public static boolean isDrawing(ItemStack stack) {
         return stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0) > 0;
+    }
+
+    /**
+     * SuperbWarfare-style drawTime in {@code [0, 1]}: 1 when draw starts, 0 when finished.
+     * Used for procedural first-person raise (javelin/igla have no GeckoLib draw animation).
+     * {@code partialTick} interpolates within the current game tick so motion is not 20 FPS stepped.
+     */
+    public static float getClientDrawTime(ItemStack stack) {
+        return getClientDrawTime(stack, 1.0F);
+    }
+
+    public static float getClientDrawTime(ItemStack stack, float partialTick) {
+        if (stack == null || stack.isEmpty()) {
+            return 0.0F;
+        }
+        int remainingTicks = stack.getOrDefault(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get(), 0);
+        if (remainingTicks <= 0) {
+            return 0.0F;
+        }
+        int totalTicks = Math.max(1, getDrawAnimationTicks(stack));
+        float visualRemaining = Math.max(0.0F, remainingTicks - Mth.clamp(partialTick, 0.0F, 1.0F));
+        return Mth.clamp(visualRemaining / (float) totalTicks, 0.0F, 1.0F);
     }
 
     private static void clearDrawState(ItemStack stack) {

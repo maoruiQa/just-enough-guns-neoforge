@@ -9,7 +9,9 @@ import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredHolder;
 import ttv.migami.jeg.fabric.compat.neoforge.neoforge.registries.DeferredRegister;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
+import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
+import ttv.migami.jeg.entity.PlacedExplosiveEntity;
 import ttv.migami.jeg.entity.MolotovCocktailEntity;
 import ttv.migami.jeg.entity.SmokeGrenadeEntity;
 import ttv.migami.jeg.entity.StunGrenadeEntity;
@@ -113,6 +115,31 @@ public final class ModEntities {
                         .sized(0.25F, 0.25F)
                         .clientTrackingRange(6)
                         .updateInterval(2)
+                        .build(key);
+            }
+    );
+
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PlacedExplosiveEntity>> PLACED_EXPLOSIVE = REGISTER.register(
+            "placed_explosive",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("placed_explosive"));
+                return EntityType.Builder.<PlacedExplosiveEntity>of(PlacedExplosiveEntity::new, MobCategory.MISC)
+                        .sized(0.5F, 0.25F)
+                        .clientTrackingRange(64)
+                        .updateInterval(1)
+                        .build(key);
+            }
+    );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<DroneEntity>> DRONE = REGISTER.register(
+            "drone",
+            () -> {
+                ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Reference.id("drone"));
+                return EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
+                        .sized(0.6F, 0.35F)
+                        .clientTrackingRange(64)
+                        .updateInterval(1)
                         .build(key);
             }
     );

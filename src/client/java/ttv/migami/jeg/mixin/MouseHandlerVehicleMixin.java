@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.GunMouseSensitivityHandler;
+import ttv.migami.jeg.client.SpecialEquipmentClientEvents;
 import ttv.migami.jeg.vehicle.client.VehicleInputHandler;
 
 @Mixin(MouseHandler.class)
@@ -31,6 +32,13 @@ public final class MouseHandlerVehicleMixin {
         if (VehicleInputHandler.handleVehicleMouseTurn(this.minecraft, this.accumulatedDX, this.accumulatedDY, frameTime)) {
             this.accumulatedDX = 0.0D;
             this.accumulatedDY = 0.0D;
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
+    private void jeg$droneZoomScroll(long window, double xOffset, double yOffset, CallbackInfo callback) {
+        if (SpecialEquipmentClientEvents.handleMouseScroll(yOffset)) {
             callback.cancel();
         }
     }

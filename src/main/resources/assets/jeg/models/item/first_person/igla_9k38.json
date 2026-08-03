@@ -1,0 +1,13 @@
+{
+  "parent": "builtin/entity",
+  "credit": "Same firstperson_righthand as NeoForge-1.21.1 / SW (raw v4). Do not apply v4→v5 pad compensation here until hip Y matches 1.21.1; converted ty=+5.79 left the launcher too high (see screenshots/26.2-2.png vs 1.21.1.png).",
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [0, 0, 8],
+      "translation": [-5.75, -3.25, 7.75]
+    },
+    "firstperson_lefthand": {
+      "scale": [0, 0, 0]
+    }
+  }
+}

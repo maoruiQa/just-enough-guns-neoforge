@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": ["ESE", "BRB", " N "],
+  "key": {
+    "E": "minecraft:ender_eye",
+    "S": "minecraft:spyglass",
+    "B": "minecraft:iron_block",
+    "R": "jeg:rocket_launcher",
+    "N": "minecraft:netherite_ingot"
+  },
+  "result": {"id": "jeg:javelin", "count": 1}
+}

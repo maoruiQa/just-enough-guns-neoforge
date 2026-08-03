@@ -63,6 +63,8 @@ import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
 import ttv.migami.jeg.client.render.entity.BulletRenderer;
+import ttv.migami.jeg.client.render.entity.DroneGeoRenderer;
+import ttv.migami.jeg.client.render.entity.SpecialExplosiveGeoRenderer;
 import ttv.migami.jeg.client.render.entity.GhoulRenderer;
 import ttv.migami.jeg.client.render.entity.PhantomGunnerGeoRenderer;
 import ttv.migami.jeg.client.render.entity.RaidEntityRenderer;
@@ -243,6 +245,12 @@ public final class FabricClientBootstrap {
         registered = true;
 
         KeyBindings.init();
+        SpecialEquipmentClientEvents.init();
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.options != null) {
+                ttv.migami.jeg.client.util.ScreenProjection.setFov(client.options.fov().get());
+            }
+        });
         ParticleFactoryRegistry.init();
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack held = player.getItemInHand(hand);
@@ -289,6 +297,8 @@ public final class FabricClientBootstrap {
         EntityRendererRegistry.register(ModEntities.SMOKE_GRENADE.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
         EntityRendererRegistry.register(ModEntities.MOLOTOV_COCKTAIL.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
         EntityRendererRegistry.register(ModEntities.WATER_BOMB.get(), context -> new ThrownItemRenderer<>(context, 1.0F, true));
+        EntityRendererRegistry.register(ModEntities.PLACED_EXPLOSIVE.get(), SpecialExplosiveGeoRenderer::new);
+        EntityRendererRegistry.register(ModEntities.DRONE.get(), DroneGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.PHANTOM_GUNNER.get(), PhantomGunnerGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.PHANTOM_GUNNER_MINION.get(), PhantomGunnerGeoRenderer::new);
         EntityRendererRegistry.register(ModEntities.TERROR_PHANTOM.get(), TerrorPhantomGeoRenderer::new);
