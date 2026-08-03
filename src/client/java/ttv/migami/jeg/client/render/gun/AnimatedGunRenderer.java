@@ -190,6 +190,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     ) {
         // GUI/inventory should use the baked static model; keep the animated path as a fallback.
         if (displayContext == ItemDisplayContext.GUI) {
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+            // SW igla inventory flat icon is a sparse atlas strip; use geo + SW gui display instead.
+            if (itemId != null && "igla_9k38".equals(itemId.getPath())) {
+                renderSwIglaGuiGeo(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+                return;
+            }
             if (renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
                 return;
             }
@@ -552,7 +558,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             }
             // SW javelin/igla: procedural aim (bone) + draw (root). No GeckoLib draw keys in SW.
             if (isSwGuidedLauncher(gun.getStats().id().getPath())) {
-                applySwGuidedLauncherBonePose(this, gun.getStats().id().getPath(), stack, bone, boneName);
+                applySwGuidedLauncherBonePose(this, gun.getStats().id().getPath(), stack, bone, boneName, partialTick);
             }
             debugFirstPersonBones(stack, boneName);
             if ("attachment_bone".equals(boneName)) {
@@ -792,6 +798,32 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         );
     }
 
+    /**
+     * SuperbWarfare igla_9k38.item.json gui display applied to the animated geo model.
+     */
+    private void renderSwIglaGuiGeo(
+            ItemStack stack,
+            ItemDisplayContext displayContext,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay
+    ) {
+        poseStack.pushPose();
+        try {
+            poseStack.translate(0.5D, 0.5D, 0.0D);
+            final float unit = 1.0F / 16.0F;
+            poseStack.translate(2.75F * unit, -1.75F * unit, 0.0F);
+            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(178.66F));
+            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-39.63F));
+            poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(165.69F));
+            poseStack.scale(0.41F, 0.41F, 0.41F);
+            renderAnimatedItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
     private static boolean isSwGuidedLauncher(String path) {
         return "javelin".equals(path) || "igla_9k38".equals(path);
     }
@@ -805,13 +837,14 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             String path,
             ItemStack stack,
             GeoBone bone,
-            String boneName
+            String boneName,
+            float partialTick
     ) {
         boolean firstPerson = renderer != null && renderer.isFirstPersonContext();
         float zoomTime = firstPerson ? AimingHandler.get().getRenderAdsProgress() : 0.0F;
         float zoomPos = (float) swEaseInOutQuint(zoomTime);
         float zoomPosZ = (float) swParabola(zoomTime);
-        float drawTime = firstPerson ? GunItem.getClientDrawTime(stack) : 0.0F;
+        float drawTime = firstPerson ? GunItem.getClientDrawTime(stack, partialTick) : 0.0F;
 
         if ("bone".equals(boneName)) {
             applySwAimBone(path, bone, zoomPos, zoomPosZ);
