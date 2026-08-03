@@ -35,6 +35,7 @@ import ttv.migami.jeg.client.render.gun.layer.GunPositionedAttachmentLayer;
 import ttv.migami.jeg.client.render.gun.layer.GunScopeAttachmentLayer;
 import ttv.migami.jeg.gun.GunScopeSupport;
 import ttv.migami.jeg.item.AnimatedGunItem;
+import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.attachment.AttachmentType;
 import ttv.migami.jeg.item.attachment.AttachmentModifiers;
 import ttv.migami.jeg.item.attachment.GunAttachments;
@@ -278,10 +279,8 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             return;
         }
 
-        // SuperbWarfare guided launchers animate the "bone" node for ADS, not iron-sight offsets.
-        String path = gun.getStats().id().getPath();
-        if (isSwGuidedLauncher(path)) {
-            applySwGuidedLauncherAimPose(path, ads, poseStack);
+        // SuperbWarfare guided launchers apply ADS on GeckoLib bone "bone" (see renderRecursively).
+        if (isSwGuidedLauncher(gun.getStats().id().getPath())) {
             return;
         }
 
@@ -496,6 +495,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
                 if ("missile".equals(boneName) && Reference.id("rocket_launcher").equals(gun.getStats().id())) {
                     bone.setHidden(isThirdPersonDisplay(this.renderPerspective));
+                }
+                // SW javelin/igla: procedural aim (bone) + draw (root). No GeckoLib draw keys in SW.
+                if (isSwGuidedLauncher(gun.getStats().id().getPath())) {
+                    applySwGuidedLauncherBonePose(this, gun.getStats().id().getPath(), stack, bone, boneName);
                 }
                 debugFirstPersonBones(stack, boneName);
                 if ("attachment_bone".equals(boneName)) {
@@ -714,35 +717,72 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     /**
-     * Mirrors SuperbWarfare {@code JavelinItemModel}/{@code IglaItemModel} zoom bone motion.
-     * Units are Blockbench/GeckoLib model units (1/16 block).
+     * SuperbWarfare JavelinItemModel / IglaItemModel + gunRootMove draw.
+     * Bone positions are GeckoLib/Blockbench units (not world blocks).
      */
-    private static void applySwGuidedLauncherAimPose(String path, float ads, PoseStack poseStack) {
-        float t = (float) easeOutQuad(ads);
-        // SW zoomPosZ uses a parabola over zoomTime; approximate mid-zoom bump.
-        float zpz = 4.0F * t * (1.0F - t);
-        float px;
-        float py;
-        float pz;
-        float rotZDeg;
-        float scaleZ;
-        if ("javelin".equals(path)) {
-            px = 1.66F * t + 0.2F * zpz;
-            py = 5.5F * t + 0.8F * zpz;
-            pz = 15.9F * t;
-            rotZDeg = -4.75F * t + 0.02F * zpz;
-            scaleZ = 1.0F - 0.8F * t;
-        } else {
-            px = 1.66F * t + 0.2F * zpz;
-            py = 3.485F * t - 0.4F * zpz;
-            pz = 8.10F * t;
-            rotZDeg = -8.0F * t + 0.05F * zpz;
-            scaleZ = 1.0F - 0.7F * t;
+    private static void applySwGuidedLauncherBonePose(
+            AnimatedGunRenderer renderer,
+            String path,
+            ItemStack stack,
+            GeoBone bone,
+            String boneName
+    ) {
+        boolean firstPerson = renderer != null && renderer.isFirstPersonContext();
+        float zoomTime = firstPerson ? AimingHandler.get().getRenderAdsProgress() : 0.0F;
+        float zoomPos = (float) swEaseInOutQuint(zoomTime);
+        float zoomPosZ = (float) swParabola(zoomTime);
+        float drawTime = firstPerson ? GunItem.getClientDrawTime(stack) : 0.0F;
+
+        if ("bone".equals(boneName)) {
+            applySwAimBone(path, bone, zoomPos, zoomPosZ);
+            return;
         }
-        float unit = 1.0F / 16.0F;
-        poseStack.translate(px * unit, py * unit, pz * unit);
-        poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotZDeg));
-        poseStack.scale(1.0F, 1.0F, Math.max(0.15F, scaleZ));
+        if ("root".equals(boneName)) {
+            applySwDrawRoot(bone, drawTime, zoomTime);
+        }
+    }
+
+    private static void applySwAimBone(String path, GeoBone bone, float zp, float zpz) {
+        if ("javelin".equals(path)) {
+            bone.setPosX(1.66F * zp + 0.2F * zpz);
+            bone.setPosY(5.5F * zp + 0.8F * zpz);
+            bone.setPosZ(15.9F * zp);
+            bone.setScaleZ(1.0F - 0.8F * zp);
+            bone.setRotZ(-4.75F * Mth.DEG_TO_RAD * zp + 0.02F * zpz);
+        } else {
+            bone.setPosX(1.66F * zp + 0.2F * zpz);
+            bone.setPosY(3.485F * zp - 0.4F * zpz);
+            bone.setPosZ(8.10F * zp);
+            bone.setScaleZ(1.0F - 0.7F * zp);
+            bone.setRotZ(-8.0F * Mth.DEG_TO_RAD * zp + 0.05F * zpz);
+        }
+        bone.setScaleX(1.0F);
+        bone.setScaleY(1.0F);
+        bone.setRotX(0.0F);
+        bone.setRotY(0.0F);
+    }
+
+    /** SW gunRootMove draw component only (raise from below). */
+    private static void applySwDrawRoot(GeoBone bone, float drawTime, float zoomTime) {
+        float fade = 1.0F - zoomTime;
+        bone.setPosX(20.0F * drawTime * fade);
+        bone.setPosY(-40.0F * drawTime * fade);
+        bone.setPosZ(0.0F);
+        bone.setRotX(-60.0F * Mth.DEG_TO_RAD * drawTime * fade);
+        bone.setRotY(300.0F * Mth.DEG_TO_RAD * drawTime * fade);
+        bone.setRotZ(90.0F * Mth.DEG_TO_RAD * drawTime * fade);
+    }
+
+    /** SW AnimationCurves.EASE_IN_OUT_QUINT (implemented as cubic in SW). */
+    private static double swEaseInOutQuint(double x) {
+        x = Mth.clamp(x, 0.0D, 1.0D);
+        return x < 0.5D ? 4.0D * x * x * x : 1.0D - Math.pow(-2.0D * x + 2.0D, 3.0D) / 2.0D;
+    }
+
+    /** SW AnimationCurves.PARABOLA: peaks at 1 when x=0.5. */
+    private static double swParabola(double x) {
+        x = Mth.clamp(x, 0.0D, 1.0D);
+        return -Math.pow(2.0D * x - 1.0D, 2.0D) + 1.0D;
     }
 
     private static boolean isArmBone(String boneName) {
