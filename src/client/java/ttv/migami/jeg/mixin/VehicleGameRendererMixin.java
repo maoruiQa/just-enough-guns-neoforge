@@ -5,9 +5,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Final;
@@ -17,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ttv.migami.jeg.client.GunCameraSwayHandler;
+import ttv.migami.jeg.client.util.ScreenProjection;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
 @Mixin(GameRenderer.class)
@@ -26,10 +30,32 @@ public abstract class VehicleGameRendererMixin {
     private Camera mainCamera;
 
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobHurt(Lnet/minecraft/client/renderer/state/level/CameraRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;)V"))
-    private void jeg$applyVehicleCameraView(DeltaTracker deltaTracker, CallbackInfo callback,
-                                            @Local(ordinal = 0) PoseStack poseStack) {
+    private void jeg$applyVehicleCameraView(
+            DeltaTracker deltaTracker,
+            CallbackInfo callback,
+            @Local CameraRenderState cameraRenderState,
+            @Local PoseStack poseStack
+    ) {
         float partialTick = this.mainCamera.getCameraEntityPartialTicks(deltaTracker);
         GunCameraSwayHandler.apply(poseStack, partialTick);
+
+        // Capture world→screen matrices for guided-launcher / drone seek frames.
+        // Without this, ScreenProjection.worldToScreen uses identity matrices and frames never land on entities.
+        try {
+            Matrix4f modelView = new Matrix4f(poseStack.last().pose());
+            Matrix4f projection = cameraRenderState.projectionMatrix != null
+                    ? new Matrix4f(cameraRenderState.projectionMatrix)
+                    : new Matrix4f();
+            ScreenProjection.captureMatrices(modelView, projection);
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.options != null) {
+                double fov = cameraRenderState.hudFov > 0.0F
+                        ? cameraRenderState.hudFov
+                        : mc.options.fov().get();
+                ScreenProjection.setFov(fov);
+            }
+        } catch (Throwable ignored) {
+        }
 
         Entity entity = this.mainCamera.entity();
         if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || this.mainCamera.isDetached()) {

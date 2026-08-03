@@ -16,12 +16,18 @@ public final class ScreenProjection {
     private static Matrix4f modelView = new Matrix4f();
     private static Matrix4f projection = new Matrix4f();
     private static double fov = 70.0D;
+    private static boolean matricesValid;
 
     private ScreenProjection() {}
 
     public static void captureMatrices(Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
         modelView = new Matrix4f(modelViewMatrix);
         projection = new Matrix4f(projectionMatrix);
+        matricesValid = true;
+    }
+
+    public static boolean hasMatrices() {
+        return matricesValid;
     }
 
     public static double getFov() {
@@ -35,7 +41,7 @@ public final class ScreenProjection {
     @Nullable
     public static Vec3 worldToScreen(Vec3 worldPos) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gameRenderer == null) {
+        if (mc.gameRenderer == null || !matricesValid) {
             return null;
         }
         Camera camera = mc.gameRenderer.mainCamera();

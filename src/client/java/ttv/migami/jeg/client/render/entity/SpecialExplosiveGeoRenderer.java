@@ -17,12 +17,15 @@ import com.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import ttv.migami.jeg.entity.PlacedExplosiveEntity;
+import ttv.migami.jeg.item.SpecialExplosiveItem;
 
 public final class SpecialExplosiveGeoRenderer extends GeoEntityRenderer<PlacedExplosiveEntity, SpecialExplosiveGeoRenderer.RenderState> {
     public static final class RenderState extends EntityRenderState implements GeoRenderState {
         float bodyYaw;
         float bodyPitch;
         boolean settled;
+        /** C4 / claymore / tm_62 for SW-style scale and claymore facing. */
+        SpecialExplosiveItem.Kind kind;
 
         @Override
         @SuppressWarnings("unchecked")
@@ -76,14 +79,35 @@ public final class SpecialExplosiveGeoRenderer extends GeoEntityRenderer<PlacedE
         super.extractRenderState(entity, renderState, partialTick);
         renderState.bodyYaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
         renderState.bodyPitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
+        renderState.kind = entity.kind();
+        renderState.settled = entity.isInGround();
     }
 
     @Override
     public void adjustRenderPose(RenderPassInfo<RenderState> passInfo) {
         PoseStack poseStack = passInfo.poseStack();
         RenderState state = passInfo.renderState();
-        poseStack.mulPose(Axis.YP.rotationDegrees(-state.bodyYaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch));
+        // SW C4/Claymore renderers use scaleHeight/scaleWidth = 0.5; TM-62 stays native geo size.
+        SpecialExplosiveItem.Kind kind = state.kind == null ? SpecialExplosiveItem.Kind.C4 : state.kind;
+        float scale = switch (kind) {
+            case C4, CLAYMORE -> 0.5F;
+            case TM_62 -> 1.0F;
+        };
+        poseStack.scale(scale, scale, scale);
+
+        float yaw = state.bodyYaw;
+        // Claymore geo faces opposite of entity look (kill zone); flip so front matches thrower facing.
+        if (kind == SpecialExplosiveItem.Kind.CLAYMORE) {
+            yaw += 180.0F;
+        }
+        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
+
+        // C4 in flight pitches like SW (tip along velocity); settled / claymore / tm62 stay flatter.
+        if (kind == SpecialExplosiveItem.Kind.C4 && !state.settled) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch + 90.0F));
+        } else if (Math.abs(state.bodyPitch) > 1.0F) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch));
+        }
     }
 
     private void ensureAnimatableManager(PlacedExplosiveEntity animatable, Void context, RenderState renderState) {

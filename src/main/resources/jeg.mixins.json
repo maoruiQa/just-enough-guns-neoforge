@@ -27,6 +27,7 @@
     "GuiMixin",
     "MinecraftMixin",
     "KeyMappingVehicleMixin",
+    "LevelExtractorDroneMixin",
     "LivingEntityRendererVehicleMixin",
     "MinecraftVehicleHotbarMixin",
     "MouseHandlerVehicleMixin",
