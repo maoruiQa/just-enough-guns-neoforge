@@ -446,11 +446,13 @@ public final class FabricClientBootstrap {
             AimingHandler.get().reset();
             CrosshairHandler.reset();
             GunRecoilHandler.stopImmediate();
+            ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.reset();
             return;
         }
 
         tickImmediateGunSwitch(player);
         AimingHandler.get().tick(player);
+        ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.tick(player);
         tickThrowableEffectAudio(player);
         tickVehicleFireAudio(player);
         tickVehicleEngineAudio(player);

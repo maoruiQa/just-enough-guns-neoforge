@@ -797,7 +797,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     /**
-     * SuperbWarfare JavelinItemModel / IglaItemModel + gunRootMove draw.
+     * SuperbWarfare JavelinItemModel / IglaItemModel + full gunRootMove (walk/sprint/draw).
      * Bone positions are GeckoLib/Blockbench units (not world blocks).
      */
     private static void applySwGuidedLauncherBonePose(
@@ -812,14 +812,22 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         float zoomTime = firstPerson ? AimingHandler.get().getRenderAdsProgress() : 0.0F;
         float zoomPos = (float) swEaseInOutQuint(zoomTime);
         float zoomPosZ = (float) swParabola(zoomTime);
-        float drawTime = firstPerson ? GunItem.getClientDrawTime(stack, partialTick) : 0.0F;
 
         if ("bone".equals(boneName)) {
             applySwAimBone(path, bone, zoomPos, zoomPosZ);
             return;
         }
         if ("root".equals(boneName)) {
-            applySwDrawRoot(bone, drawTime, zoomTime);
+            if (firstPerson) {
+                applySwGunRoot(path, stack, bone, partialTick, zoomTime);
+            } else {
+                bone.setPosX(0.0F);
+                bone.setPosY(0.0F);
+                bone.setPosZ(0.0F);
+                bone.setRotX(0.0F);
+                bone.setRotY(0.0F);
+                bone.setRotZ(0.0F);
+            }
         }
     }
 
@@ -843,15 +851,22 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         bone.setRotY(0.0F);
     }
 
-    /** SW gunRootMove draw component only (raise from below). */
-    private static void applySwDrawRoot(GeoBone bone, float drawTime, float zoomTime) {
-        float fade = 1.0F - zoomTime;
-        bone.setPosX(20.0F * drawTime * fade);
-        bone.setPosY(-40.0F * drawTime * fade);
-        bone.setPosZ(0.0F);
-        bone.setRotX(-60.0F * Mth.DEG_TO_RAD * drawTime * fade);
-        bone.setRotY(300.0F * Mth.DEG_TO_RAD * drawTime * fade);
-        bone.setRotZ(90.0F * Mth.DEG_TO_RAD * drawTime * fade);
+    /** SW gunRootMove: walk bob + sprint pose/bob + draw raise (useCustomAnim=false). */
+    private static void applySwGunRoot(
+            String path,
+            ItemStack stack,
+            GeoBone bone,
+            float partialTick,
+            float zoomTime
+    ) {
+        SwGuidedLauncherMotion.RootTransform root =
+                SwGuidedLauncherMotion.computeRoot(path, stack, partialTick, zoomTime);
+        bone.setPosX(root.posX());
+        bone.setPosY(root.posY());
+        bone.setPosZ(root.posZ());
+        bone.setRotX(root.rotX());
+        bone.setRotY(root.rotY());
+        bone.setRotZ(root.rotZ());
     }
 
     /** SW AnimationCurves.EASE_IN_OUT_QUINT (implemented as cubic in SW). */
