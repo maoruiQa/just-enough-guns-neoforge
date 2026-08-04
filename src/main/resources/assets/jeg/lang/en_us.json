@@ -885,6 +885,7 @@
   "des.jeg.drone.health": "HP: %s",
   "des.jeg.drone.ammo": "Payload: %s",
   "des.jeg.drone.ammo_release": "Payload: %s (release: Left click)",
+  "des.jeg.drone.kamikaze_payload": "Payload: %s (Detonate: Left click)",
   "des.jeg.drone.kamikaze": "KAMIKAZE",
   "des.jeg.drone.range": "Range: %s"
 }
