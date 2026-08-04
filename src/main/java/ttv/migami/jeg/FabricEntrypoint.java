@@ -98,6 +98,12 @@ public final class FabricEntrypoint implements ModInitializer {
             VehiclePassengerDamageEvents.onPassengerDamage(event);
             return !event.isCanceled();
         });
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
+            if (ttv.migami.jeg.faction.BomberGunnerHelper.isArmed(entity)
+                    && !ttv.migami.jeg.faction.BomberGunnerHelper.hasDetonated(entity)) {
+                ttv.migami.jeg.faction.BomberGunnerHelper.explodeVest(entity);
+            }
+        });
         ServerEntityEvents.EQUIPMENT_CHANGE.register((entity, slot, from, to) -> {
             LivingEquipmentChangeEvent event = new LivingEquipmentChangeEvent(entity, slot, from, to);
             GunnerMobSpawner.onLivingEquipmentChange(event);

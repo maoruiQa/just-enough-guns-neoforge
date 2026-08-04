@@ -23,13 +23,31 @@ public final class GunnerProgression {
     }
 
     public static Item selectGun(List<Item> pool, Level level, RandomSource random, String gunnerType) {
+        return selectGun(pool, level, random, gunnerType, true);
+    }
+
+    public static Item selectGun(List<Item> pool, Level level, RandomSource random, String gunnerType, boolean allowRocket) {
         if (pool.isEmpty()) {
             return null;
         }
 
         Item rocketLauncher = resolveRocketLauncher();
-        if (rocketLauncher != null && Config.shouldGunnerUseRocketLauncher(level, gunnerType, random)) {
+        if (allowRocket && rocketLauncher != null && Config.shouldGunnerUseRocketLauncher(level, gunnerType, random)) {
             return rocketLauncher;
+        }
+
+        return selectNormalGun(pool, level, random, gunnerType, rocketLauncher);
+    }
+
+    private static Item selectNormalGun(
+            List<Item> pool,
+            Level level,
+            RandomSource random,
+            String gunnerType,
+            Item rocketLauncher
+    ) {
+        if (pool.isEmpty()) {
+            return null;
         }
 
         int allowedTier = Config.gunnerWeaponMaxTier(level, gunnerType);

@@ -53,6 +53,7 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
 import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -411,6 +412,11 @@ public final class GunEvents {
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
+        }
+
+        if (BomberGunnerHelper.isBomber(entity)) {
+            drops.removeIf(drop -> drop.getItem().getItem() instanceof ttv.migami.jeg.item.C4VestItem);
+            addDrop(drops, entity, BomberGunnerHelper.rollGunpowderDrop(entity));
         }
 
         ItemStack held = entity.getMainHandItem();
