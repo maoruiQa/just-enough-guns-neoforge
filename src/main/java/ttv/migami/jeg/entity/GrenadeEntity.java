@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModParticleTypes;
@@ -115,7 +116,9 @@ public class GrenadeEntity extends TimedThrowableItemProjectile {
             }
 
             if (damage > 0.5F) {
-                target.hurt(this.damageSources().explosion(this, owner), damage);
+                if (target.hurt(this.damageSources().explosion(this, owner), damage)) {
+                    ModDamageTypes.attributePlayerKillCredit(target, owner);
+                }
             }
         }
     }
