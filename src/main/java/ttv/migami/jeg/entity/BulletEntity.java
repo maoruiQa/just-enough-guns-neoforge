@@ -351,6 +351,12 @@ public class BulletEntity extends Projectile {
             // Move bullet to final position (if not stopped by solid block)
             this.setPos(nextPos.x, nextPos.y, nextPos.z);
 
+            // Server-side rocket trail (campfire smoke) so long-range shots remain visible
+            // even when the projectile is outside tight client tracking (e.g. Terror Phantom).
+            if (gunId.equals(ROCKET_LAUNCHER_ID) || isVehicleRocket(gunId)) {
+                spawnRocketTrailParticlesServer((ServerLevel) this.level());
+            }
+
             this.setDeltaMovement(applyGravity(motion, gunStats));
         }
         // CLIENT SIDE: Handle particle effects and movement
@@ -1362,6 +1368,39 @@ public class BulletEntity extends Projectile {
             this.getY(),
             this.getZ(),
             0, 0, 0);
+    }
+
+    /**
+     * Server-authoritative rocket trail matching original JEG {@code RocketEntity}:
+     * dense {@link ParticleTypes#CAMPFIRE_COSY_SMOKE} behind the projectile, plus occasional flame/lava.
+     * Broadcast with force so distant viewers (Terror Phantom engagements) still see the trail.
+     */
+    private void spawnRocketTrailParticlesServer(ServerLevel serverLevel) {
+        int ticksLived = this.entityData.get(DATA_TICKS_LIVED);
+        int life = this.entityData.get(DATA_LIFE);
+        if (ticksLived <= 1 || ticksLived >= life) {
+            return;
+        }
+
+        Vec3 motion = this.getDeltaMovement();
+        double x = this.getX() - motion.x;
+        double y = this.getY() - motion.y;
+        double z = this.getZ() - motion.z;
+
+        // Original RocketEntity: five campfire smoke puffs per tick.
+        sendLongDistanceParticles(
+                serverLevel,
+                ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                x, y, z,
+                5,
+                0.05D, 0.05D, 0.05D,
+                0.0D
+        );
+
+        if (this.random.nextInt(2) == 0) {
+            sendLongDistanceParticles(serverLevel, ParticleTypes.FLAME, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            sendLongDistanceParticles(serverLevel, ParticleTypes.LAVA, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        }
     }
 
     private void spawnTyphooneeTrailParticles() {

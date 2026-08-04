@@ -55,7 +55,6 @@ import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
-import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.GrenadeEntity;
@@ -71,6 +70,10 @@ import ttv.migami.jeg.item.GunItem;
  */
 public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity {
     private static final float MIN_DAMAGE_TO_HURT = 2.0F;
+    private static final int RAPID_FIRE_RESISTANCE_RESET_TICKS = 25;
+    private static final int RAPID_FIRE_RESISTANCE_WARMUP_HITS = 10;
+    private static final float RAPID_FIRE_MINIGUN_DAMAGE_MULTIPLIER = 0.18F;
+    private static final float RAPID_FIRE_LMG_DAMAGE_MULTIPLIER = 0.35F;
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTerrorPhantom.class);
     private static final int SUMMON_INTERVAL_TICKS = 200;
     private static final int MAX_ACTIVE_GUNNERS = 6; // Increased from 3 to 6 for more intense battles
@@ -526,22 +529,22 @@ public abstract class AbstractTerrorPhantom extends Phantom implements GeoEntity
         String gunPath = bullet.getGunStats().id().getPath();
         float multiplier;
         if ("minigun".equals(gunPath)) {
-            multiplier = (float) Config.terrorPhantomMinigunRapidFireDamageMultiplier();
+            multiplier = RAPID_FIRE_MINIGUN_DAMAGE_MULTIPLIER;
         } else if ("light_machine_gun".equals(gunPath)) {
-            multiplier = (float) Config.terrorPhantomLightMachineGunRapidFireDamageMultiplier();
+            multiplier = RAPID_FIRE_LMG_DAMAGE_MULTIPLIER;
         } else {
             return amount;
         }
 
         long gameTime = level.getGameTime();
         if (this.lastRapidFireResistanceHitTick == Long.MIN_VALUE
-                || gameTime - this.lastRapidFireResistanceHitTick > Config.terrorPhantomRapidFireResistanceResetTicks()) {
+                || gameTime - this.lastRapidFireResistanceHitTick > RAPID_FIRE_RESISTANCE_RESET_TICKS) {
             this.rapidFireResistanceHitCount = 0;
         }
         this.lastRapidFireResistanceHitTick = gameTime;
         this.rapidFireResistanceHitCount++;
 
-        if (this.rapidFireResistanceHitCount <= Config.terrorPhantomRapidFireResistanceWarmupHits()) {
+        if (this.rapidFireResistanceHitCount <= RAPID_FIRE_RESISTANCE_WARMUP_HITS) {
             return amount;
         }
         return amount * multiplier;
