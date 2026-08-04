@@ -278,6 +278,7 @@ public final class SpecialEquipmentClientEvents {
         for (Entity target : player.level().getEntities(player, area, entity -> entity instanceof LivingEntity || entity instanceof VehicleEntity)) {
             if (!target.isAlive() || player.distanceToSqr(target) > LOCK_RANGE * LOCK_RANGE) continue;
             if (target.getVehicle() != null) continue; // SW noVehicle(): not riding something
+            if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(player, target)) continue;
             double heightDelta = target.getY() - player.getY();
             if (launcher.airOnly()) {
                 boolean airVehicle = target instanceof VehicleEntity vehicle

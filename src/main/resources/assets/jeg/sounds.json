@@ -1248,6 +1248,24 @@
       }
     ]
   },
+  "entity.smoke_grenade.release": {
+    "subtitle": "subtitle.jeg.smoke_grenade.release",
+    "sounds": [
+      {
+        "name": "jeg:entity/smoke_grenade/release",
+        "volume": 1.0
+      }
+    ]
+  },
+  "entity.smoke_grenade.smoke_fire": {
+    "subtitle": "subtitle.jeg.smoke_grenade.smoke_fire",
+    "sounds": [
+      {
+        "name": "jeg:entity/smoke_grenade/smoke_fire",
+        "volume": 1.0
+      }
+    ]
+  },
   "entity.ghoul.death": {
     "subtitle": "subtitle.jeg.ghoul.death",
     "sounds": [

@@ -224,6 +224,9 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
         if (target == null || !target.isAlive() || target == player || player.distanceToSqr(target) > RANGE * RANGE) {
             return null;
         }
+        if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(player, target)) {
+            return null;
+        }
         VehicleMissileProfile profile = VehicleMissileProfile.get(this.getStats().id());
         if (!profile.canLock(target, player, player.getVehicle() instanceof VehicleEntity vehicle ? vehicle : null)) {
             return null;

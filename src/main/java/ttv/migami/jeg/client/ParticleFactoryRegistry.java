@@ -12,6 +12,7 @@ import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
 import ttv.migami.jeg.client.particle.CasingParticle;
 import ttv.migami.jeg.client.particle.ColoredFlareSmokeParticle;
 import ttv.migami.jeg.client.particle.ConfettiParticle;
+import ttv.migami.jeg.client.particle.CustomSmokeParticle;
 import ttv.migami.jeg.client.particle.EntityLaserParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
@@ -40,6 +41,7 @@ public final class ParticleFactoryRegistry {
         event.registerSpriteSet(ModParticleTypes.FLARE.get(), FlareSmokeParticle.RedProvider::new);
         event.registerSpriteSet(ModParticleTypes.BLUE_FLARE.get(), FlareSmokeParticle.BlueProvider::new);
         event.registerSpriteSet(ModParticleTypes.COLORED_FLARE_SMOKE.get(), ColoredFlareSmokeParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.CUSTOM_SMOKE.get(), CustomSmokeParticle.Provider::new);
 
         event.registerSpriteSet(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);

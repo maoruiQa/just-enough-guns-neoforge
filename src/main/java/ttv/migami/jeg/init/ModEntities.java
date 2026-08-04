@@ -322,7 +322,7 @@ public final class ModEntities {
             "vehicle_decoy",
             () -> EntityType.Builder.<VehicleDecoyEntity>of(VehicleDecoyEntity::new, MobCategory.MISC)
                     .sized(0.35F, 0.35F)
-                    .clientTrackingRange(8)
+                    .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("vehicle_decoy")
     );

@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.particle.CannonMuzzleFlareOption;
 import ttv.migami.jeg.particle.ColoredFlareOption;
+import ttv.migami.jeg.particle.CustomSmokeOption;
 import ttv.migami.jeg.particle.LaserOption;
 
 public class ModParticleTypes {
@@ -62,6 +63,8 @@ public class ModParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColoredFlareOption>> COLORED_FLARE_SMOKE =
             REGISTER.register("colored_flare_smoke", () -> createOptions(ColoredFlareOption.CODEC, true, ColoredFlareOption.STREAM_CODEC));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CustomSmokeOption>> CUSTOM_SMOKE =
+            REGISTER.register("custom_smoke", () -> createOptions(CustomSmokeOption.CODEC, true, CustomSmokeOption.STREAM_CODEC));
     public static final DeferredHolder<ParticleType<?>, ParticleType<LaserOption>> LASER =
             REGISTER.register("laser", () -> createOptions(LaserOption.CODEC, false, LaserOption.STREAM_CODEC));
     public static final DeferredHolder<ParticleType<?>, ParticleType<CannonMuzzleFlareOption>> CANNON_MUZZLE_FLARE =
