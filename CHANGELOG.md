@@ -1,19 +1,5 @@
 # Changelog
 
-## 1.8.1 - 2026-08-05
-
-### Fixed
-- Fixed gun/grenade/molotov kills not counting for vanilla advancements, boss kill credit, `killed_by_player` loot, and modpack kill tracking ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
-- Player-fired bullets now use a dedicated `jeg:bullet` damage type with the shooter as the causing entity, and explicitly set `lastHurtByPlayer` after successful hits.
-- Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
-
-### Changed
-- Set the module version to `1.8.1`.
-
-### Verification
-- Passed `.\gradlew compileJava`.
-- Passed `.\gradlew build`.
-
 ## 1.8.0 - 2026-08-04
 
 ### Added
@@ -44,9 +30,13 @@
 - Fixed C4/claymore entity scale and claymore facing on NeoForge 26.2.
 - Fixed missile/decoy deferred render pose so projectiles keep correct scale.
 - Fixed GeckoLib v5 first-person guided launcher hip pose, ScreenProjection capture for HUD frames, and drone rotor bone spin on NeoForge 26.2.
+- Fixed gun/missile/grenade kills not awarding Free the End (`player_killed_entity`), `MOB_KILLS`, and related advancement credit on Minecraft 26.2 ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
+- 26.x no longer sets `lastHurtByPlayer` in the normal hurt path; credit is now applied from the damage source on incoming damage and death, and weapon code attributes **before** `hurtServer`.
+- Guided missiles use a player-attributed blast source, pre-credit nearby targets, and explicitly credit lock/direct-hit bosses (e.g. Ender Dragon) that can sit outside a tight blast AABB.
+- Fixed rifles not damaging the Ender Dragon: bullet damage no longer strips the player causing entity in creative, multipart parts resolve to the parent dragon for credit, and `jeg:bullet` is tagged `always_hurts_ender_dragons`.
 
 ### Verification
-- Passed `.\gradlew build`.
+- Passed `.\gradlew compileJava`.
 
 ## 1.7.5 - 2026-07-22
 

@@ -66,9 +66,7 @@ public final class MolotovCocktailEntity extends TimedThrowableItemProjectile {
                 continue;
             }
             var source = this.damageSources().explosion(this, owner);
-            if (target.hurtServer(serverLevel, source, 6.0F)) {
-                ModDamageTypes.attributePlayerKillCredit(target, owner);
-            }
+            ModDamageTypes.hurtWithPlayerKillCredit(target, serverLevel, source, 6.0F, owner);
             target.igniteForSeconds(8.0F);
         }
 

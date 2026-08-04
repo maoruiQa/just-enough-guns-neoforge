@@ -20,6 +20,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -289,9 +290,27 @@ public final class VehicleMissileEntity extends Entity {
             VehicleMissileProfile profile = this.profile();
             this.spawnMissileExplosionEffects(serverLevel);
             Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+            LivingEntity livingOwner = owner instanceof LivingEntity living ? living : null;
             boolean directHitVehicle = this.directHitVehicleId >= 0;
             float explosionPower = directHitVehicle ? profile.explosionPower() * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : profile.explosionPower();
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionPower, ExplosionInteraction.MOB);
+            // VehicleMissileEntity is not a Projectile, so default explode() has no player causing entity.
+            // Attribute nearby + lock/direct-hit targets first, then pass a player-attributed blast source.
+            // Required for Free the End (player_killed_entity) and MOB_KILLS on one-shot / boss kills.
+            double creditRadius = Math.max(profile.blastRadius(), explosionPower) + 8.0D;
+            ModDamageTypes.attributePlayerKillCreditInRadius(serverLevel, this.position(), creditRadius, owner);
+            // Large bosses (Ender Dragon) can sit outside a tight AABB around the blast center.
+            this.attributeExplicitTargetCredit(owner);
+            DamageSource blastSource = this.damageSources().explosion(this, livingOwner);
+            this.level().explode(
+                    this,
+                    blastSource,
+                    null,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    explosionPower,
+                    false,
+                    ExplosionInteraction.MOB);
             Entity ownerVehicle = owner == null ? null : owner.getVehicle();
             Vec3 explosionPos = this.position();
             for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
@@ -307,29 +326,49 @@ public final class VehicleMissileEntity extends Entity {
                         damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
                     }
                     if (damage > 0.5F) {
-                        target.hurt(this.damageSources().explosion(this, owner), damage);
+                        target.hurt(blastSource, damage);
                     }
                 }
             }
-            for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
-                if (target != owner) {
+            for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius() + 8.0D))) {
+                if (target != owner && target.isAlive()) {
                     float damage = target.getId() == this.directHitEntityId
                             ? profile.livingDamage() * (this.topAttack ? 1.25F : 1.0F)
                             : profile.livingDamage();
+                    double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos);
                     if (directHitVehicle) {
-                        double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
-                        if (effectiveDistance > profile.blastRadius()) {
-                            continue;
-                        }
+                        effectiveDistance *= VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
+                    }
+                    // Always apply full profile damage to the locked / direct-hit living target (dragon, etc.).
+                    boolean explicitTarget = target.getId() == this.directHitEntityId || target.getId() == this.targetId;
+                    if (!explicitTarget && effectiveDistance > profile.blastRadius()) {
+                        continue;
+                    }
+                    if (!explicitTarget && effectiveDistance <= profile.blastRadius()) {
                         damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
                     }
                     if (damage > 0.5F) {
-                        target.hurt(this.damageSources().explosion(this, owner), damage);
+                        ModDamageTypes.hurtWithPlayerKillCredit(target, serverLevel, blastSource, damage, owner);
                     }
                 }
             }
         }
         this.discard();
+    }
+
+    private void attributeExplicitTargetCredit(@Nullable Entity owner) {
+        if (this.directHitEntityId >= 0) {
+            Entity hit = this.level().getEntity(this.directHitEntityId);
+            if (hit instanceof LivingEntity living) {
+                ModDamageTypes.attributePlayerKillCredit(living, owner);
+            }
+        }
+        if (this.targetId >= 0 && this.targetId != this.directHitEntityId) {
+            Entity locked = this.level().getEntity(this.targetId);
+            if (locked instanceof LivingEntity living) {
+                ModDamageTypes.attributePlayerKillCredit(living, owner);
+            }
+        }
     }
 
     private void spawnMissileExplosionEffects(ServerLevel serverLevel) {

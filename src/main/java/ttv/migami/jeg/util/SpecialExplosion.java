@@ -2,12 +2,14 @@ package ttv.migami.jeg.util;
 
 import javax.annotation.Nullable;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.entity.PlacedExplosiveEntity;
+import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -53,8 +55,12 @@ public final class SpecialExplosion {
             level.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), center.x, center.y, center.z, 14, 0.9D, 0.9D, 0.9D, 0.1D);
         }
         float blockPower = Math.max(2.0F, (float) radius * (tier == Tier.HUGE ? 0.55F : 0.4F));
+        // Attribute before block/entity blast damage so one-shot kills count for stats/advancements.
+        ModDamageTypes.attributePlayerKillCreditInRadius(level, center, radius, owner);
         // Use null exploder so discarded sources do not re-enter entity hurt loops as the blast origin.
-        level.explode(null, center.x, center.y, center.z, blockPower, ExplosionInteraction.MOB);
+        // Pass a player-attributed DamageSource so vanilla blast entity damage also credits the owner.
+        DamageSource blastSource = level.damageSources().explosion(null, owner instanceof LivingEntity living ? living : null);
+        level.explode(null, blastSource, null, center.x, center.y, center.z, blockPower, false, ExplosionInteraction.MOB);
 
         AABB area = new AABB(center, center).inflate(radius);
         for (Entity target : level.getEntities(source, area, candidate ->
@@ -76,8 +82,10 @@ public final class SpecialExplosion {
             }
             if (target instanceof PlacedExplosiveEntity explosive) {
                 explosive.hurtFromBlast(scaled, owner);
+            } else if (target instanceof LivingEntity living) {
+                ModDamageTypes.hurtWithPlayerKillCredit(living, level, blastSource, scaled, owner);
             } else {
-                target.hurt(level.damageSources().explosion(null, owner), scaled);
+                target.hurt(blastSource, scaled);
             }
         }
     }
