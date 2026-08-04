@@ -90,6 +90,9 @@ public final class FabricEntrypoint implements ModInitializer {
             VehiclePassengerDamageEvents.onPassengerDamage(event);
             if (amount > 0.0F && !event.isCanceled()) {
                 ttv.migami.jeg.item.DefuserItem.interruptIfDefusing(entity);
+                if (source != null && source.getEntity() instanceof net.minecraft.world.entity.player.Player player) {
+                    ttv.migami.jeg.init.ModDamageTypes.attributePlayerKillCredit(entity, player);
+                }
             }
             return !event.isCanceled();
         });
