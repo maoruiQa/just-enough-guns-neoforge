@@ -26,14 +26,18 @@ public final class VehicleDecoyRenderer extends EntityRenderer<VehicleDecoyEntit
         }
 
         poseStack.pushPose();
-        poseStack.scale(0.35F, 0.35F, 0.35F);
-        poseStack.translate(-0.5D, -0.5D, -0.5D);
-        collector.submitCustomGeometry(
-                poseStack,
-                RenderTypes.entityTranslucent(TEXTURE),
-                (pose, buffer) -> renderUnitCube(poseStack, buffer, state.lightCoords)
-        );
-        poseStack.popPose();
+        try {
+            poseStack.scale(0.35F, 0.35F, 0.35F);
+            poseStack.translate(-0.5D, -0.5D, -0.5D);
+            // Use the deferred pose snapshot, not poseStack after popPose().
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.entityTranslucent(TEXTURE),
+                    (pose, buffer) -> renderUnitCube(pose, buffer, state.lightCoords)
+            );
+        } finally {
+            poseStack.popPose();
+        }
     }
 
     @Override
@@ -55,8 +59,7 @@ public final class VehicleDecoyRenderer extends EntityRenderer<VehicleDecoyEntit
         boolean smokeDecoy;
     }
 
-    private static void renderUnitCube(PoseStack poseStack, VertexConsumer buffer, int packedLight) {
-        PoseStack.Pose pose = poseStack.last();
+    private static void renderUnitCube(PoseStack.Pose pose, VertexConsumer buffer, int packedLight) {
         face(pose, buffer, packedLight, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1);
         face(pose, buffer, packedLight, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, -1);
         face(pose, buffer, packedLight, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, -1, 0, 0);
