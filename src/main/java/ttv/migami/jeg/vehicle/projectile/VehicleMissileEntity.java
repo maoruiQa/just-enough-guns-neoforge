@@ -30,6 +30,8 @@ public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
     private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
     private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
+    /** Matches rocket launcher trail gravity ({@code BulletEntity} when gravity+trail). */
+    private static final double ROCKET_LIKE_GRAVITY = 0.040D;
 
     private int ownerId = -1;
     private int targetId = -1;
@@ -39,6 +41,8 @@ public final class VehicleMissileEntity extends Entity {
     @Nullable
     private Vec3 targetPosition;
     private boolean topAttack;
+    /** Unguided javelin dump: straight rocket-like ballistic (gravity, no steer). */
+    private boolean ballisticUnguided;
     private static final EntityDataAccessor<String> DATA_WEAPON_ID = SynchedEntityData.defineId(VehicleMissileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> DATA_TOP_ATTACK = SynchedEntityData.defineId(VehicleMissileEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -58,6 +62,9 @@ public final class VehicleMissileEntity extends Entity {
         this.weaponId = weaponId;
         this.targetPosition = targetPosition;
         this.topAttack = topAttack;
+        this.ballisticUnguided = target == null
+                && targetPosition == null
+                && Reference.id("javelin").equals(weaponId);
         this.entityData.set(DATA_WEAPON_ID, weaponId.toString());
         this.entityData.set(DATA_TOP_ATTACK, topAttack);
         this.setPos(position);
@@ -97,6 +104,11 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     private void steerServer() {
+        if (this.ballisticUnguided) {
+            // Rocket-launcher-like: gravity only, no homing/decoy seek.
+            this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -ROCKET_LIKE_GRAVITY, 0.0D));
+            return;
+        }
         VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
         if (profile.usesLockOn()) {
@@ -353,6 +365,7 @@ public final class VehicleMissileEntity extends Entity {
         }
         this.topAttack = tag.getBoolean("TopAttack");
         this.entityData.set(DATA_TOP_ATTACK, this.topAttack);
+        this.ballisticUnguided = tag.getBoolean("BallisticUnguided");
     }
 
     @Override
@@ -366,5 +379,6 @@ public final class VehicleMissileEntity extends Entity {
             tag.putDouble("TargetZ", this.targetPosition.z);
         }
         tag.putBoolean("TopAttack", this.topAttack);
+        tag.putBoolean("BallisticUnguided", this.ballisticUnguided);
     }
 }

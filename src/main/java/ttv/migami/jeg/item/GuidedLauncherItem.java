@@ -34,6 +34,13 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
     private static final double JAVELIN_MAX_TARGET_HEIGHT = 64.0D;
     /** SW igla MinTargetHeight */
     private static final double IGLA_MIN_TARGET_HEIGHT = 16.0D;
+    /**
+     * Rocket-launcher ballistic match for unguided javelin dumps:
+     * {@code rocket_launcher} projectileSpeed 5.0 and trail gravity 0.04.
+     */
+    private static final double UNGUIDED_ROCKET_SPEED = 5.0D;
+    /** Sentinel: fire straight without lock (javelin only). entityId &lt; -1. */
+    private static final LockTarget UNGUIDED_SHOT = new LockTarget(-2, null);
     private static final Map<UUID, LockState> LOCKS = new HashMap<>();
     private static final Map<UUID, LockTarget> PENDING_SHOTS = new HashMap<>();
 
@@ -130,15 +137,25 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
             }
             LockState lock = LOCKS.get(player.getUUID());
             long now = level.getGameTime();
-            if (lock == null || now - lock.lastTick > 3L || now - lock.startedTick < this.lockTicks) {
+            boolean fullyLocked = lock != null
+                    && now - lock.lastTick <= 3L
+                    && now - lock.startedTick >= this.lockTicks;
+            if (fullyLocked) {
+                LockTarget current = this.validateTarget(serverPlayer, lock.target.entityId);
+                if (current != null && current.sameAs(lock.target)) {
+                    PENDING_SHOTS.put(player.getUUID(), current);
+                } else if (!this.airOnly) {
+                    clearLock(serverPlayer);
+                    PENDING_SHOTS.put(player.getUUID(), UNGUIDED_SHOT);
+                } else {
+                    clearLock(serverPlayer);
+                    return false;
+                }
+            } else if (!this.airOnly) {
+                PENDING_SHOTS.put(player.getUUID(), UNGUIDED_SHOT);
+            } else {
                 return false;
             }
-            LockTarget current = this.validateTarget(serverPlayer, lock.target.entityId);
-            if (current == null || !current.sameAs(lock.target)) {
-                clearLock(serverPlayer);
-                return false;
-            }
-            PENDING_SHOTS.put(player.getUUID(), current);
         }
         boolean fired = super.tryShoot(level, player, hand);
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
@@ -156,15 +173,23 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
         if (locked == null) {
             return;
         }
-        Entity target = locked.entityId < 0 ? null : level.getEntity(locked.entityId);
         Vec3 look = shooter.getLookAngle();
-        // SW muzzle offset style: slight forward/down from eye, initial velocity 3 with +0.3 Y bias
-        Vec3 muzzle = shooter.getEyePosition().add(look.scale(0.15D)).add(0.0D, -0.2D, 0.0D);
-        Vec3 velocity = new Vec3(look.x, look.y + 0.3D, look.z).normalize().scale(3.0D);
-        boolean topAttack = !this.airOnly && launcherMode(stack) == 1;
-        level.addFreshEntity(new VehicleMissileEntity(
-                level, shooter, target, locked.position, muzzle, velocity, this.getStats().id(), topAttack
-        ));
+        if (locked.entityId == UNGUIDED_SHOT.entityId) {
+            Vec3 dir = look.normalize();
+            Vec3 muzzle = shooter.getEyePosition().add(dir.scale(0.35D));
+            Vec3 velocity = dir.scale(UNGUIDED_ROCKET_SPEED);
+            level.addFreshEntity(new VehicleMissileEntity(
+                    level, shooter, null, null, muzzle, velocity, this.getStats().id(), false
+            ));
+        } else {
+            Entity target = locked.entityId < 0 ? null : level.getEntity(locked.entityId);
+            Vec3 muzzle = shooter.getEyePosition().add(look.scale(0.15D)).add(0.0D, -0.2D, 0.0D);
+            Vec3 velocity = new Vec3(look.x, look.y + 0.3D, look.z).normalize().scale(3.0D);
+            boolean topAttack = !this.airOnly && launcherMode(stack) == 1;
+            level.addFreshEntity(new VehicleMissileEntity(
+                    level, shooter, target, locked.position, muzzle, velocity, this.getStats().id(), topAttack
+            ));
+        }
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(
@@ -263,9 +288,18 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
 
     private record LockState(LockTarget target, long startedTick, long lastTick) {}
 
-    private record LockTarget(int entityId, Vec3 position) {
+    private record LockTarget(int entityId, @Nullable Vec3 position) {
         private boolean sameAs(LockTarget other) {
-            return this.entityId == other.entityId && (this.entityId >= 0 || this.position.distanceToSqr(other.position) < 4.0D);
+            if (this.entityId != other.entityId) {
+                return false;
+            }
+            if (this.entityId >= 0) {
+                return true;
+            }
+            if (this.position == null || other.position == null) {
+                return this.position == other.position;
+            }
+            return this.position.distanceToSqr(other.position) < 4.0D;
         }
     }
 }

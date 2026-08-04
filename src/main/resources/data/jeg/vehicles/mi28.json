@@ -1,7 +1,7 @@
 {
   "entity_type": "jeg:mi28",
   "vehicle_type": "helicopter",
-  "max_health": 110.0,
+  "max_health": 135.0,
   "auto_repair_per_tick": 0.01,
   "auto_repair_cooldown_ticks": 160,
   "max_energy": 10000000,

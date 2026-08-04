@@ -23,6 +23,9 @@ public record VehicleMissileProfile(
         float livingDamage,
         float directHitDamage
 ) {
+    /** Ground missiles may only lock living entities at or above this max health. Air missiles ignore this. */
+    private static final float MIN_GROUND_MISSILE_LIVING_MAX_HEALTH = 55.0F;
+
     private static final VehicleMissileProfile DEFAULT = new VehicleMissileProfile(
             GuidanceMode.LOCK_ON,
             TargetMode.ANY_LIVING,
@@ -39,7 +42,7 @@ public record VehicleMissileProfile(
     private static final Map<ResourceLocation, VehicleMissileProfile> PROFILES = Map.of(
             Reference.id("vehicle_bmp2_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
-                    TargetMode.SURFACE_VEHICLE,
+                    TargetMode.GROUND_ENTITY,
                     120,
                     0.95D,
                     0.16D,
@@ -93,9 +96,9 @@ public record VehicleMissileProfile(
                     0.18D,
                     3.2F,
                     6.0D,
-                    70.0F,
+                    120.0F,
                     20.0F,
-                    70.0F
+                    120.0F
             ),
             // SW SeekTool.baseFilter: ground living + ground/surface vehicles (not air).
             Reference.id("javelin"), new VehicleMissileProfile(
@@ -177,7 +180,9 @@ public record VehicleMissileProfile(
                 if (target instanceof VehicleEntity vehicle) {
                     return isGroundVehicle(vehicle);
                 }
-                return target instanceof LivingEntity && isGroundedEntity(target);
+                return target instanceof LivingEntity living
+                        && isGroundedEntity(target)
+                        && living.getMaxHealth() >= MIN_GROUND_MISSILE_LIVING_MAX_HEALTH;
             }
         },
         AIR_ENTITY {
