@@ -5,6 +5,7 @@ import net.minecraft.client.particle.SmokeParticle;
 import ttv.migami.jeg.client.particle.BigExplosionParticle;
 import ttv.migami.jeg.client.particle.CannonMuzzleFlareParticle;
 import ttv.migami.jeg.client.particle.CasingParticle;
+import ttv.migami.jeg.client.particle.CustomSmokeParticle;
 import ttv.migami.jeg.client.particle.EntityLaserParticle;
 import ttv.migami.jeg.client.particle.FlareSmokeParticle;
 import ttv.migami.jeg.client.particle.GunMuzzleFlashParticle;
@@ -27,6 +28,7 @@ public final class ParticleFactoryRegistry {
         registry.register(ModParticleTypes.FLARE_SMOKE.get(), FlareSmokeParticle.SmokeProvider::new);
         registry.register(ModParticleTypes.FLARE.get(), FlareSmokeParticle.RedProvider::new);
         registry.register(ModParticleTypes.BLUE_FLARE.get(), FlareSmokeParticle.BlueProvider::new);
+        registry.register(ModParticleTypes.CUSTOM_SMOKE.get(), CustomSmokeParticle.Provider::new);
 
         registry.register(ModParticleTypes.FLAME.get(), FlameParticle.Provider::new);
         registry.register(ModParticleTypes.BLUE_FLAME.get(), FlameParticle.Provider::new);

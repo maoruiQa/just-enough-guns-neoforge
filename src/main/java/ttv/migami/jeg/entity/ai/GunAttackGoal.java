@@ -314,7 +314,8 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
 
             boolean isDisoriented = this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.BLINDED.get()))
                 || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.DEAFENED.get()))
-                || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()));
+                || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()))
+                || ttv.migami.jeg.util.SmokeUtil.isInSmoke(this.shooter);
             if (isDisoriented || (this.aiType == AIType.COWARD &&
                 (this.shooter.getHealth() < (this.shooter.getMaxHealth() / 3) || this.shooter.invulnerableTime != 0))) {
                 this.isPanicked = true;

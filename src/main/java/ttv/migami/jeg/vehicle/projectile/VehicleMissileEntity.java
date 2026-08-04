@@ -101,16 +101,24 @@ public final class VehicleMissileEntity extends Entity {
         VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
         if (profile.usesLockOn()) {
-            VehicleDecoyEntity.findNearest(this.level(), this.position(), DECOY_SEEK_RANGE).ifPresent(decoy -> this.targetId = decoy.getId());
+            VehicleDecoyEntity.findNearestFlare(this.level(), this.position(), DECOY_SEEK_RANGE)
+                    .ifPresent(decoy -> this.targetId = decoy.getId());
             target = this.currentTarget();
         }
         Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
         Entity ownerVehicle = owner == null ? null : owner.getVehicle();
-        boolean validTarget = target instanceof VehicleDecoyEntity
-                || (target != null && profile.canContinueTracking(target, owner, ownerVehicle) && !VehicleDecoyEntity.isSmokeBlockingTarget(target));
+        boolean flareTarget = target instanceof VehicleDecoyEntity decoy && !decoy.isSmokeDecoy();
+        boolean validTarget = flareTarget
+                || (target != null && profile.canContinueTracking(target, owner, ownerVehicle)
+                && !ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(this, target));
         Vec3 aimPoint = target != null
                 ? target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D)
                 : this.targetPosition;
+        if (validTarget && target != null && !flareTarget
+                && ttv.migami.jeg.util.SmokeUtil.isLineOccludedBySmoke(this.level(), this.position(), aimPoint)) {
+            validTarget = false;
+            this.targetId = -1;
+        }
         // SW Igla: lose active guidance if owner stops zooming / loses LOS
         if (Reference.id("igla_9k38").equals(this.weaponId) && owner instanceof ServerPlayer player) {
             boolean stillAiming = NetworkHandler.isAiming(player);
