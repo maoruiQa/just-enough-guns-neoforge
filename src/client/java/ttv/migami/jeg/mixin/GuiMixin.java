@@ -64,6 +64,13 @@ public final class GuiMixin {
         }
     }
 
+    @Inject(method = "extractArmor", at = @At("HEAD"), cancellable = true)
+    private static void jeg$hidePlayerArmorInVehicle(GuiGraphicsExtractor guiGraphics, Player player, int y, int heartRows, int height, int x, CallbackInfo ci) {
+        if (jeg$isVehicleHudActive()) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "extractFood", at = @At("HEAD"), cancellable = true)
     private void jeg$hidePlayerFoodInVehicle(GuiGraphicsExtractor guiGraphics, Player player, int y, int rightX, CallbackInfo ci) {
         if (jeg$isVehicleHudActive()) {
