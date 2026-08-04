@@ -3,7 +3,7 @@
   "id": "jeg",
   "version": "${version}",
   "name": "jegn",
-  "description": "Fabric port of MigaMi's GPL-3.0 Just Enough Guns. SBW-derived Walkurenritt vehicles (LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, waveforce tower) and their workbenches/repair tools are by the SBW development team under CC BY-NC-SA 3.0.",
+  "description": "Unofficial Fabric port of MigaMi's Just Enough Guns. JEG code is GPL-3.0; original JEG assets are ARR and used with author authorization. SBW/SW-derived vehicles and special-equipment assets (Javelin, Igla, drone, C4, Claymore, smoke/lock UI, etc.) require attribution to the SBW development team under CC BY-NC-SA 3.0.",
   "authors": [
     "Rui Mao",
     "MigaMi",
