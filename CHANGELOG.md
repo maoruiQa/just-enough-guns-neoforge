@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.1 - 2026-08-05
+
+### Fixed
+- Fixed gun/grenade/molotov kills not counting for vanilla advancements, boss kill credit, `killed_by_player` loot, and modpack kill tracking ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
+- Player-fired bullets now use a dedicated `jeg:bullet` damage type with the shooter as the causing entity, and explicitly set `lastHurtByPlayer` after successful hits.
+- Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
+
+### Changed
+- Set the module version to `1.8.1`.
+
+### Verification
+- Passed `.\gradlew compileJava`.
+- Passed `.\gradlew build`.
+
 ## 1.8.0 - 2026-08-04
 
 ### Added
