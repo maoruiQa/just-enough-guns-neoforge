@@ -79,7 +79,8 @@ public final class DroneGeoRenderer extends GeoEntityRenderer<DroneEntity, Drone
         ensureAnimatableManager(entity, null, renderState);
         super.extractRenderState(entity, renderState, partialTick);
         renderState.bodyYaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
-        renderState.bodyPitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
+        // SW: model uses body pitch (W/S tilt), not camera/entity xRot
+        renderState.bodyPitch = entity.getBodyPitch(partialTick);
     }
 
     @Override
