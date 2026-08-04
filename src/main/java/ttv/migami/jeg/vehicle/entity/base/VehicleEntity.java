@@ -292,12 +292,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private int boatWaterborneTicks;
     private float turretYawO;
     private float turretPitchO;
+    /** Local visual rotor angle (not entity-data). Advanced every tick from synced propeller speed. */
+    private float propellerRot;
     private float propellerRotO;
     private float rollO;
     private int holdTick;
     private int holdPowerTick;
     private boolean engineStart;
     private boolean engineStartOver;
+    /** Client: after unmanned coast, remount must adopt residual rotor once before predicting. */
+    private boolean clientHeliResidualResync;
     private Vec3 preExplosionKnockbackVelocity;
     private int preExplosionKnockbackTick = -1;
     private float destroyRot;
@@ -937,11 +941,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public float propellerRot() {
-        return this.entityData.get(DATA_PROPELLER_ROT);
+        return this.propellerRot;
     }
 
     public float propellerRot(float partialTick) {
-        return Mth.lerp(partialTick, this.propellerRotO, this.propellerRot());
+        return Mth.lerp(partialTick, this.propellerRotO, this.propellerRot);
     }
 
     public float propellerSpeed() {
@@ -1235,7 +1239,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     public void tick() {
         this.turretYawO = this.turretYaw();
         this.turretPitchO = this.turretPitch();
-        this.propellerRotO = this.propellerRot();
+        this.propellerRotO = this.propellerRot;
         this.rollO = this.roll();
         this.updateLastTickMovementSpeed();
         super.tick();
@@ -1263,6 +1267,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         } else if (this.shouldRunClientPrediction()) {
+            // One-shot: adopt residual rotor on remount, then let local input drive power again.
+            if (this.clientHeliResidualResync) {
+                this.syncClientEngineResidualFromRotor();
+                this.clientHeliResidualResync = false;
+            }
             VehicleType type = this.vehicleData().defaults().vehicleType();
             if (type == VehicleType.BOAT) {
                 this.tickClientPredictedBoatMovement();
@@ -1271,7 +1280,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             } else {
                 this.tickClientPredictedLandMovement();
             }
+        } else if (this.level().isClientSide && this.getControllingPassenger() == null) {
+            // No pilot: keep local engine residual glued to synced propeller speed.
+            this.syncClientEngineResidualFromRotor();
+            this.clientHeliResidualResync = true;
         }
+        // Always advance visual rotor from synced speed so unmanned / remote clients still spin down.
+        this.tickPropellerVisual();
         this.tickObbEntityCollisionSupport();
     }
 
@@ -1714,6 +1729,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
     }
 
+    /**
+     * Helicopters/aircraft keep residual engine power and rotor state after the pilot leaves
+     * so blades and sound can coast down (SuperbWarfare-aligned). Land/boat still hard-stop.
+     */
+    private boolean shouldPreserveEngineStateOnControlClear() {
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        return type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT;
+    }
+
     private void clearControlState(boolean stopHorizontalMotion) {
         this.input = VehicleInput.EMPTY;
         this.weaponFireInput = false;
@@ -1722,15 +1746,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.seekControllerId = -1;
         this.entityData.set(DATA_WEAPON_FIRING, false);
         this.entityData.set(DATA_ACTIVE_FIRE_WEAPON, -1);
-        this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
         this.holdTick = 0;
         this.holdPowerTick = 0;
-        this.engineStart = false;
-        this.engineStartOver = false;
-        this.destroyRot = 0.0F;
+        if (!this.shouldPreserveEngineStateOnControlClear()) {
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+            this.destroyRot = 0.0F;
+        }
         this.cancelWeaponReload();
-        if (stopHorizontalMotion) {
+        if (stopHorizontalMotion && !this.shouldPreserveEngineStateOnControlClear()) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
             this.hasImpulse = true;
@@ -1739,14 +1765,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void clearDriverControlState(boolean stopHorizontalMotion) {
         this.input = VehicleInput.EMPTY;
-        this.enginePower = 0.0D;
         this.wheelSteering = 0.0D;
         this.holdTick = 0;
         this.holdPowerTick = 0;
-        this.engineStart = false;
-        this.engineStartOver = false;
-        this.destroyRot = 0.0F;
-        if (stopHorizontalMotion) {
+        if (!this.shouldPreserveEngineStateOnControlClear()) {
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+            this.destroyRot = 0.0F;
+        }
+        if (stopHorizontalMotion && !this.shouldPreserveEngineStateOnControlClear()) {
             Vec3 motion = this.getDeltaMovement();
             this.setDeltaMovement(0.0D, motion.y, 0.0D);
             this.hasImpulse = true;
@@ -1755,6 +1783,51 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public void clearClientControlState() {
         this.clearControlState(true);
+        // Leave-time local power is not networked; snap to current residual rotor so remount is clean.
+        this.syncClientEngineResidualFromRotor();
+        this.clientHeliResidualResync = true;
+    }
+
+    /**
+     * enginePower / engineStart* are local (not entity-data). After dismount the client stops
+     * predicting, so a preserved leave-time power would freeze until remount and then re-spool
+     * the rotors. Keep the local residual aligned with the synced propeller speed instead.
+     */
+    private void syncClientEngineResidualFromRotor() {
+        if (!this.level().isClientSide || !this.shouldPreserveEngineStateOnControlClear()) {
+            return;
+        }
+        float speed = this.propellerSpeed();
+        if (speed <= 0.005F) {
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+            this.holdPowerTick = 0;
+            this.holdTick = 0;
+            return;
+        }
+        // Authoritative residual is the synced rotor speed (server coasts this after leave).
+        this.enginePower = speed;
+        // Match server spool threshold so idle hold does not re-arm on remount.
+        if (this.enginePower < 0.04D) {
+            this.engineStartOver = false;
+        }
+        if (this.enginePower < 0.0004D) {
+            this.engineStart = false;
+            this.engineStartOver = false;
+        }
+    }
+
+    /**
+     * Advances local visual rotor angle from the (synced) propeller speed.
+     * Runs on every side every tick so unmanned vehicles and remote viewers still show spin-down.
+     */
+    private void tickPropellerVisual() {
+        float speed = this.propellerSpeed();
+        // Ignore micro residuals so a fully shut-down heli does not "twitch" a few turns.
+        if (Math.abs(speed) > 0.005F) {
+            this.propellerRot += 30.0F * speed;
+        }
     }
 
     public void applySeatAssignments(Map<UUID, Integer> assignments) {
@@ -4362,12 +4435,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         // Unoccupied thresholds: ignore settle/jitter, keep real motion/AI audible
         return switch (type) {
             case LAND, BOAT -> movement.horizontalDistanceSqr() > 0.0025D; // ~0.05 b/t
-            case HELICOPTER -> this.propellerSpeed() > 0.02F
-                    || movement.lengthSqr() > 0.001D
-                    || !this.onGround();
-            case AIRCRAFT -> this.propellerSpeed() > 0.02F
-                    || movement.lengthSqr() > 0.001D
-                    || Math.abs(this.enginePower) > 0.02D;
+            // Empty heli/aircraft: residual rotor speed only (synced). Bare !onGround()
+            // kept the loop humming forever after leave while still slightly airborne.
+            case HELICOPTER, AIRCRAFT -> this.propellerSpeed() > 0.02F;
             case ARTILLERY -> false;
         };
     }
@@ -4497,13 +4567,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (pilot == null) {
                 this.holdTick = 0;
                 this.holdPowerTick = 0;
-                if (this.engineStartOver) {
-                    this.enginePower *= 0.99D;
-                }
-                if (!hasPlayerPassenger) {
-                    this.engineStart = false;
-                    this.engineStartOver = false;
-                }
                 this.setRoll(this.roll() * 0.98F);
                 this.xRotO = this.getXRot();
                 this.setXRot(this.getXRot() * 0.98F);
@@ -4537,6 +4600,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.enginePower *= 0.995D;
                 this.engineStart = false;
                 this.engineStartOver = false;
+            } else if (pilot == null) {
+                // Unmanned: coast residual power so blades/sound spin down after leave.
+                // Do not run piloted idle logic (which can hold or even increase power).
+                if (!hasPlayerPassenger) {
+                    if (this.onGround()) {
+                        this.enginePower = Math.max(0.0D, this.enginePower * 0.94D - 0.0005D);
+                        // Snap dead power so residual rotor does not linger for many seconds.
+                        if (this.enginePower < 0.001D) {
+                            this.enginePower = 0.0D;
+                            this.engineStart = false;
+                            this.engineStartOver = false;
+                        }
+                    } else {
+                        this.enginePower = Math.max(this.engineStartOver ? 0.01D : 0.0D, this.enginePower * 0.997D);
+                    }
+                } else if (this.engineStartOver) {
+                    this.enginePower *= 0.99D;
+                }
             } else {
                 if (!this.engineStart && up) {
                     this.engineStart = true;
@@ -4607,11 +4688,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             nextRotorSpeed = 0.0F;
             liftRotorSpeed = 0.0F;
         }
-        if (!rotorIdleLocked && !this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
+        // Ground + no pilot + engine dead: hard-stop residual rotor (avoids long asymptotic tail
+        // that looks like "a few more spins" after a no-power dismount).
+        if (pilot == null && this.onGround() && this.enginePower <= 1.0E-4D && nextRotorSpeed < 0.02F) {
+            nextRotorSpeed = 0.0F;
+            liftRotorSpeed = 0.0F;
+            this.enginePower = 0.0D;
+            this.engineStart = false;
+            this.engineStartOver = false;
+        }
+        if (!rotorIdleLocked && nextRotorSpeed > 0.0F && !this.onGround() && (velocity.y < -1.0E-4D || forcedDescent)) {
             nextRotorSpeed = Math.max(nextRotorSpeed, HELICOPTER_DESCENT_ROTOR_SPEED);
         }
-        this.entityData.set(DATA_PROPELLER_SPEED, rotorIdleLocked ? 0.0F : nextRotorSpeed * 0.9995F);
-        this.entityData.set(DATA_PROPELLER_ROT, rotorIdleLocked ? this.propellerRot() : this.propellerRot() + 30.0F * nextRotorSpeed);
+        // Speed is synced; visual angle is advanced every tick in tickPropellerVisual().
+        this.entityData.set(DATA_PROPELLER_SPEED, nextRotorSpeed <= 0.0F ? 0.0F : nextRotorSpeed * 0.9995F);
 
         if (consumeEnergy && this.engineStart) {
             int cost = this.scaledEngineEnergyCost(engine, true, helicopterEnergyScale);
