@@ -559,7 +559,8 @@ public final class DroneEntity extends Entity implements GeoEntity {
             this.power = Math.max(this.power - 0.03F * this.holdTickY, this.onGround() ? 0.0F : 0.03F);
             this.setDeltaMovement(new Vec3(
                     this.getDeltaMovement().x,
-                    -0.05D * this.holdTickY,
+                    // 1.33x prior max descent (-0.05 * holdTickY)
+                    -0.0665D * this.holdTickY,
                     this.getDeltaMovement().z
             ));
         } else {
