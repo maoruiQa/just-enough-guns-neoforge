@@ -3,11 +3,15 @@ package ttv.migami.jeg.init;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
 
@@ -33,14 +37,57 @@ public final class ModDamageTypes {
     }
 
     /**
-     * Ensures vanilla achievements, boss progress, loot {@code killed_by_player}, and modpack
-     * kill tracking attribute the kill to a survival/adventure player shooter.
+     * Marks a player as responsible for upcoming damage. Must run before hurt/die for Free the End / MOB_KILLS.
+     * Creative included; spectators skipped.
      */
     public static void attributePlayerKillCredit(LivingEntity target, @Nullable Entity attacker) {
-        if (!(attacker instanceof Player player) || player.isCreative() || player.isSpectator()) {
+        if (!(attacker instanceof Player player) || player.isSpectator()) {
             return;
         }
         target.setLastHurtByMob(player);
         target.setLastHurtByPlayer(player);
+    }
+
+    public static boolean hurtWithPlayerKillCredit(
+            LivingEntity target,
+            DamageSource source,
+            float damage,
+            @Nullable Entity attacker
+    ) {
+        attributePlayerKillCredit(target, attacker);
+        return target.hurt(source, damage);
+    }
+
+    public static void attributePlayerKillCreditInRadius(
+            ServerLevel level,
+            Vec3 center,
+            double radius,
+            @Nullable Entity attacker
+    ) {
+        if (!(attacker instanceof Player player) || player.isSpectator()) {
+            return;
+        }
+        AABB area = new AABB(center, center).inflate(radius);
+        for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAlive)) {
+            if (target != player) {
+                attributePlayerKillCredit(target, player);
+            }
+        }
+    }
+
+    public static @Nullable LivingEntity resolveLivingTarget(@Nullable Entity entity) {
+        if (entity instanceof LivingEntity living) {
+            return living;
+        }
+        if (entity instanceof EnderDragonPart part) {
+            return part.parentMob;
+        }
+        if (entity instanceof net.neoforged.neoforge.entity.PartEntity<?> part) {
+            Entity parent = part.getParent();
+            if (parent instanceof LivingEntity living) {
+                return living;
+            }
+        }
+        return null;
     }
 }

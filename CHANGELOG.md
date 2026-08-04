@@ -1,19 +1,5 @@
 # Changelog
 
-## 1.8.1 - 2026-08-05
-
-### Fixed
-- Fixed gun/grenade/molotov kills not counting for vanilla advancements, boss kill credit, `killed_by_player` loot, and modpack kill tracking ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
-- Player-fired bullets now use a dedicated `jeg:bullet` damage type with the shooter as the causing entity, and explicitly set `lastHurtByPlayer` after successful hits.
-- Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
-
-### Changed
-- Set the module version to `1.8.1`.
-
-### Verification
-- Passed `.\gradlew compileJava`.
-- Passed `.\gradlew build`.
-
 ## 1.8.0 - 2026-08-04
 
 ### Added
@@ -36,12 +22,16 @@
 - Improved vehicle state sync with broader tracking coverage and a 256-block fallback for distant vehicles.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed drone FPV rubber-banding and missing pilot render during monitor control.
 - Fixed missile/drone seek frames missing when targets were due north.
 - Fixed helicopter rotor spin-down and engine sound continuing after dismount.
 - Fixed guided launcher fire/lock handling, ADS raise, hand orientation, and inventory GUI presentation (including flat Igla icons that fill the item slot).
 - Fixed special equipment audio, monitor link behavior, and payload HUD tip text; repaired related language JSON.
 - Fixed vehicle missile and special-equipment presentation issues carried over from the special equipment port.
+- Fixed gun/grenade/molotov kills not counting for vanilla advancements, boss kill credit, `killed_by_player` loot, and modpack kill tracking ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
+- Player-fired bullets now use a dedicated `jeg:bullet` damage type with the shooter as the causing entity, and explicitly set `lastHurtByPlayer` after successful hits.
+- Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
 
 ### Verification
 - Passed `.\gradlew build`.
@@ -72,6 +62,7 @@
 - Added dense campfire smoke to smoke grenades.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed gunners and vehicles targeting invisible players.
 - Fixed bulletproof vest hand UV texture rendering.
 - Removed the enchantment glint from bulletproof armor.
@@ -93,6 +84,7 @@
 - Set the module version to `1.7.2`.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Reworked ADS alignment for reflex, monocle, and holographic sights so their open-sight reticles use the Forge 1.20.1-derived scope camera position and each gun's scope mount transform.
 - Kept telescopic sight and spyglass ADS corrections on their existing per-rifle path.
 - Matched gun draw operation locks to each weapon's authored draw animation length, unlocking shoot, reload, inspect, melee, attachments, and ADS after 85% of the draw animation instead of a fixed delay.
@@ -124,6 +116,7 @@
 - Changed unmanned, unpowered, and low-health helicopter forced descent back to a linear curve with 70% of the previous fast transition as the base step, and made low-health forced descent start at 20 health.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed Flamethrower reload timing so gameplay reload completion matches the authored 10.25 second first-person reload animation.
 - Fixed first-person gun draw startup during hotbar switches so pending draw playback becomes authoritative immediately after switch-in.
 - Fixed Grenade Launcher reload animation so it uses the authored single reload clip instead of missing segmented reload loop/stop clips.
@@ -177,6 +170,7 @@
 ## 1.7.0-hotfix150620261622 - 2026-06-15
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed recipe loading so joining players receive the full active `jeg` recipe set.
 - Fixed recipe distribution on player login so loaded recipes are consistently assigned instead of dropping entries on NeoForge 1.21.1.
 
@@ -189,6 +183,7 @@
 - Added yellow tooltip hints for gun attachment-screen access and attachment items, including the magazine-feed incompatibility warning on the drum-mag attachment.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed magazine-fed servers so extended-mag and drum-mag attachments can no longer be installed on guns or used from old gun data to bypass magazine-fed reload behavior.
 - Fixed magazine-fed reload swaps so full guns can replace the current magazine with a different valid magazine type, and reload completion validates the exact magazine selected when the reload began instead of re-scanning inventory.
 - Fixed magazine-fed reload visuals so animated gun models show the old magazine type during the first half of reload and the new magazine type during the second half.
@@ -216,6 +211,7 @@
 - Tuned vehicle fall impact damage to scale more noticeably with drop height.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed high vehicle falls sometimes landing without impact damage.
 - Fixed vehicle impact sounds playing inconsistently and stopped vehicle sounds from consuming streaming sound handles.
 - Fixed vehicle machine gun and coaxial machine gun fire sounds so sustained fire plays reliably.
@@ -230,6 +226,7 @@
 - Added an admin login tip showing `/justEnoughGuns config vehicle enemySpawning enabled false` so server admins can disable enemy vehicle spawning.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed enemy BMP2 recovery after server restarts and improved unstuck behavior when enemy vehicles block each other.
 - Fixed truck model collision coverage while keeping large AABB collision and ram damage disabled.
 
@@ -247,6 +244,7 @@
 - Added configurable gunner terrain placement controls.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed vehicle entity collision opt-in and aligned vehicle collision bounds with OBB data.
 - Fixed OBB vehicle entity collision, including speedboat collision behavior.
 - Moved and tuned the MI-28 dismount position to keep players clear of missile pods.
@@ -274,6 +272,7 @@
 - Increased speedboat, LAV-150, and BMP-2 smoke-screen height, thickness, and density.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed vehicle sync, dismount, ghosting, menu validation, hotbar selection, reload HUD, missile lock, target-warning, and blocked-wall handling issues.
 - Fixed MI-28 co-pilot weapon state, MI-28 turret pitch limits, speedboat turret control, BMP-2 target road speed, vehicle ammo display names, and duplicate vehicle reload timer display.
 - Reduced vehicle debug logging noise.
@@ -319,6 +318,7 @@
 - Reduced `minigun` overheat gain from `8/6` heat per shot to `6/6`.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed dynamic crosshair not reflecting movement spread before the first shot.
 - Fixed hit markers triggering on block impacts by only sending them after successful living-entity damage.
 - Fixed magazine-fed guns showing "No ammo" instead of "No compatible magazine" when no suitable loaded magazine is available for reload.
@@ -434,6 +434,7 @@
 ## 1.3.0 - 2026-02-19 (1.21.1 First-Person Arm Visibility Root-Cause Fix)
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed NeoForge 1.21.1 first-person hand invisibility caused by brittle reflective hand-render invocation:
   - Added a shared hand-render invoker (`HandRenderInvoker`) that supports both 5-parameter and 6-parameter `renderLeftHand/renderRightHand` signatures.
   - Removed duplicated reflection paths between arm-bone layer and event fallback, so both use one compatibility implementation.
@@ -465,6 +466,7 @@
   - category-group compensation (`RIFLE/SHOTGUN/SNIPER/LMG/HEAVY/default`) via `GunCategory`.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed first-person guns appearing significantly too low in NeoForge 1.21.1 after profile-system migration by introducing explicit legacy baseline compensation in the hand-transform stage.
 - Fixed first-person arm/gun reference-frame drift by prioritizing bone-driven arm rendering and demoting event overlay rendering to compatibility fallback only.
 
@@ -484,6 +486,7 @@
 - Increased `terror_phantom` health to `180` and `bound_terror_phantom` health to `200`.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed missing `gunner_spawn_egg` texture issues across synced branches.
 - Removed `abstract_gun` from Terror Phantom reward/supply barrel outputs, including loot-table and fallback fill paths.
 - Fixed raid scheduler `ConcurrentModificationException` crash during post-death terror raid wave execution.
@@ -505,6 +508,7 @@
 - Added a dev smoke-test run config (`runClientJoinLocal`) for quickly joining a local server instance.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed client crash on world join caused by incorrect GeckoLib v5 animation resource identifiers (using `.animation` in the id caused GeckoLib to look for `*.animation.animation.json`).
 - Fixed NeoForge datapack recipe parse error for `typhoonee` due to invalid shaped-recipe key ingredient format.
 
@@ -517,6 +521,7 @@
 - Unified multiple weapon groups to shared first-person tuning profiles (rifle family, selected heavy/launcher variants, selected shotgun/bow variants during tuning pass).
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed first-person arm visibility/placement regressions introduced during 1.21.11 migration (arms occluding camera, detached offhand, and weapon framing drift).
 - Added first-person arm rendering controls so per-weapon arm visibility can be configured through profile data (including launcher-specific behavior).
 - Integrated client shoot request networking and `GunItem` shoot entrypoint normalization for stable client/server fire flow in 1.21.11.
@@ -535,6 +540,7 @@
 - Restored bullet launch speed to direct `stats.projectileSpeed()` for both player and AI paths after temporary slowdown tuning.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed multiple bullet trail visibility regressions encountered during 1.21.11 parity iteration (invisible/over-transparent/over-dark trail states depending on render path).
 
 ## 1.3.0 - 2026-02-16 (Spawn And Recoil Follow-up)
@@ -546,6 +552,7 @@
 - Re-tuned NeoForge 1.21.11 shooter backstep recoil repeatedly toward lower force and restored vertical recoil contribution (using full look vector), with global server config scaling support.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Set summoned `phantom_gunner` max health to `19` HP when created by `terror_phantom` summon flow.
 - Added block-hit impact animation playback for bullet-vs-block hits (vanilla block impact particle event), controlled by server config.
 
@@ -559,12 +566,14 @@
 - Aligned bullet-class gravity handling to 1.20.1 baseline behavior while keeping special projectile weapon behavior intact.
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed shotgun multi-pellet damage collapsing to single effective hits by restoring 1.20.1-style post-hit invulnerability reset (`invulnerableTime = 0`) for player-fired bullet impacts.
 - Fixed pellet cross-interference in legacy entity ray checks by ignoring bullet-on-bullet collisions in closest-hit resolution.
 
 ## 1.3.0 - 2026-02-16 (Gunner Spawn Egg Icon Fix)
 
 ### Fixed
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed NeoForge 1.21.11 gunner spawn egg item icons incorrectly sharing the zombie gunner base egg appearance.
 - Updated gunner spawn egg item model `layer0` textures to match each corresponding vanilla mob egg base (skeleton/stray/pillager/vindicator/piglin family/drowned/etc.), while preserving the JEG helmet overlay layer.
 

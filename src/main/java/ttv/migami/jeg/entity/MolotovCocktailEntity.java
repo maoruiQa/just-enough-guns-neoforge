@@ -66,9 +66,8 @@ public final class MolotovCocktailEntity extends TimedThrowableItemProjectile {
             if (!target.isAlive() || target.distanceToSqr(this) > FIRE_RADIUS * FIRE_RADIUS) {
                 continue;
             }
-            if (target.hurt(this.damageSources().explosion(this, owner), 6.0F)) {
-                ModDamageTypes.attributePlayerKillCredit(target, owner);
-            }
+            ModDamageTypes.hurtWithPlayerKillCredit(
+                    target, this.damageSources().explosion(this, owner), 6.0F, owner);
             target.igniteForSeconds(8.0F);
         }
 
