@@ -35,7 +35,7 @@ public record ServerConfigStatePayload(Status status, Map<String, String> values
                 }
                 Map<String, String> values = ApplyServerConfigPayload.readMap(buf);
                 int invalidCount = buf.readVarInt();
-                if (invalidCount < 0 || invalidCount > 256) {
+                if (invalidCount < 0 || invalidCount > ApplyServerConfigPayload.MAX_CONFIG_ENTRIES) {
                     throw new IllegalArgumentException("Invalid config error count: " + invalidCount);
                 }
                 List<String> invalidKeys = new ArrayList<>();

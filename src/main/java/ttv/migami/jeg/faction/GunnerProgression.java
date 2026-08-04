@@ -23,13 +23,39 @@ public final class GunnerProgression {
     }
 
     public static Item selectGun(List<Item> pool, Level level, RandomSource random, String gunnerType) {
+        return selectGun(pool, level, random, gunnerType, true);
+    }
+
+    /**
+     * @param allowRocket when false, skip the independent rocket-launcher roll (used for bomber gunners).
+     */
+    public static Item selectGun(List<Item> pool, Level level, RandomSource random, String gunnerType, boolean allowRocket) {
         if (pool.isEmpty()) {
             return null;
         }
 
         Item rocketLauncher = resolveRocketLauncher();
-        if (rocketLauncher != null && Config.shouldGunnerUseRocketLauncher(level, gunnerType, random)) {
+        if (allowRocket && rocketLauncher != null && Config.shouldGunnerUseRocketLauncher(level, gunnerType, random)) {
             return rocketLauncher;
+        }
+
+        return selectNormalGun(pool, level, random, gunnerType, rocketLauncher);
+    }
+
+    /** Tier-weighted gun pick that never returns a rocket launcher. */
+    public static Item selectNormalGun(List<Item> pool, Level level, RandomSource random, String gunnerType) {
+        return selectNormalGun(pool, level, random, gunnerType, resolveRocketLauncher());
+    }
+
+    private static Item selectNormalGun(
+            List<Item> pool,
+            Level level,
+            RandomSource random,
+            String gunnerType,
+            Item rocketLauncher
+    ) {
+        if (pool.isEmpty()) {
+            return null;
         }
 
         int allowedTier = Config.gunnerWeaponMaxTier(level, gunnerType);

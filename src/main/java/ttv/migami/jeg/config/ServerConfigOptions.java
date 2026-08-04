@@ -94,10 +94,11 @@ public final class ServerConfigOptions {
                 double max = switch (setting) {
                     case "minSpawnChance", "maxSpawnChance", "spawnChancePerDay",
                             "rocketLauncherChance", "rocketLauncherMaxChance", "rocketLauncherChancePerDay",
+                            "bomberChance", "bomberMaxChance", "bomberChancePerDay",
                             "weaponAggression" -> 1.0D;
                     case "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay" -> 3.0D;
                     case "armorInitialTier", "armorMaxTier", "armorTierPerDay" -> 6.0D;
-                    case "rocketLauncherStartDay" -> 5000.0D;
+                    case "rocketLauncherStartDay", "bomberStartDay" -> 5000.0D;
                     default -> throw new IllegalArgumentException("Unknown gunner growth setting: " + setting);
                 };
                 options.add(new Option(
@@ -134,8 +135,9 @@ public final class ServerConfigOptions {
         addDouble(options, "vehicle.enemySpawning.maxConversionChance", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_max_conversion_chance");
         addDouble(options, "vehicle.enemySpawning.conversionChancePerDay", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_conversion_chance_per_day");
 
-        if (options.size() != 232) {
-            throw new IllegalStateException("Expected 232 editable config options, found " + options.size());
+        // 15 gunner growth types × 18 settings = 270, plus 22 non-growth options = 292
+        if (options.size() != 292) {
+            throw new IllegalStateException("Expected 292 editable config options, found " + options.size());
         }
         return List.copyOf(options);
     }

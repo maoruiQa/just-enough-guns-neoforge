@@ -48,7 +48,9 @@ import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.attachment.GunAttachments;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.item.C4VestItem;
 import ttv.migami.jeg.network.MedalType;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -387,12 +389,27 @@ public final class GunEvents {
     }
 
     @SubscribeEvent
+    public static void onBomberDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        // Armed bombers still detonate if killed mid-fuse.
+        if (BomberGunnerHelper.isArmed(entity) && !BomberGunnerHelper.hasDetonated(entity)) {
+            BomberGunnerHelper.explodeVest(entity);
+        }
+    }
+
+    @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {
         net.minecraft.world.entity.LivingEntity entity = event.getEntity();
 
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
+        }
+
+        if (BomberGunnerHelper.isBomber(entity)) {
+            // Never drop an intact C4 vest; always grant extra gunpowder beyond vanilla drops.
+            event.getDrops().removeIf(drop -> drop.getItem().getItem() instanceof C4VestItem);
+            addDrop(event, entity, BomberGunnerHelper.rollGunpowderDrop(entity));
         }
 
         ItemStack held = entity.getMainHandItem();
