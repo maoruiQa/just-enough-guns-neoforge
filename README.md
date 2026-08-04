@@ -69,9 +69,11 @@ The result is then scaled by the armor slot and armor tier durability multiplier
 
 This module is a NeoForge 1.21.1-1.21.4 unofficial port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
 
-- Original Just Enough Guns code, design, and assets are by MigaMi and are licensed under GPL-3.0.
-- The current SBW-derived Walkurenritt vehicle set covers the LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus their vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data. These materials are derived from Superb Warfare (SBW) by the SBW development team and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
-- The SBW-derived special-equipment pilot includes the FGM-148 Javelin and missile, 9K38 Igla, drone and monitor, C4 and detonator, Claymore, and TM-62 models, textures, sounds, HUD art, and animations. These assets are credited to the Superb Warfare development team and remain under CC BY-NC-SA 3.0.
-- The SBW-derived Walkurenritt vehicle materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future vehicle content may have different source projects and license terms.
-- All listed SBW-derived special-equipment materials likewise require attribution, non-commercial use, and redistribution of adaptations under the same CC BY-NC-SA 3.0 terms. JEG implementation code remains GPL-3.0.
+- Original Just Enough Guns **code** is by MigaMi and is licensed under GPL-3.0.
+- Original Just Enough Guns **assets** (models, textures, sounds, animations, icons, and other art) are by MigaMi and are **All Rights Reserved (ARR)**. This project redistributes and uses those assets with **explicit authorization from the original author (MigaMi)**.
+- Recent updates include substantial materials derived from **Superb Warfare (SBW / SW)** by the SBW development team. **SBW-derived assets require attribution** and are licensed under CC BY-NC-SA 3.0: https://www.curseforge.com/minecraft/mc-mods/superb-warfare
+  - **Walkürenritt vehicle set:** LAV-150, BMP-2, speedboat, truck, AH-6, MI-28, A-10, TOM-6, HPJ-11, laser tower, and waveforce tower, plus vehicle workbenches, repair tools, models, textures, sounds, icons, recipes, and related data.
+  - **Special equipment and related assets:** FGM-148 Javelin and missile, 9K38 Igla, FPV drone and monitor, C4 and detonator, Claymore, TM-62, smoke-screen / missile-lock UI and audio materials, and related models, textures, sounds, HUD art, and animations.
+- SBW-derived materials require attribution to the SBW development team, are for non-commercial use, and must be shared under the same CC BY-NC-SA 3.0 terms when redistributed or adapted. Future content may have different source projects and license terms.
+- Project **code** based on Just Enough Guns is licensed under GPL-3.0. Original JEG assets remain ARR under authorized use as noted above. SBW-derived assets remain under the SBW terms noted above.
 - This unofficial port is not affiliated with, endorsed by, or an official addon for Just Enough Guns or Superb Warfare.
