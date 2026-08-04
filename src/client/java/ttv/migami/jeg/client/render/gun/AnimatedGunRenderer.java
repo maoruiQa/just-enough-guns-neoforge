@@ -388,7 +388,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     }
 
     /**
-     * SuperbWarfare JavelinItemModel / IglaItemModel aim + gunRootMove draw (v4 data on v5 snapshots).
+     * SuperbWarfare JavelinItemModel / IglaItemModel aim + full gunRootMove (walk/sprint/draw).
      */
     private static void applySwGuidedLauncherSnapshots(
             String path,
@@ -398,15 +398,13 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         float zoomTime = AimingHandler.get().getRenderAdsProgress();
         float zoomPos = (float) swEaseInOutQuint(zoomTime);
         float zoomPosZ = (float) swParabola(zoomTime);
-        float partialTick = 1.0F;
         Minecraft mc = Minecraft.getInstance();
-        if (mc != null) {
-            partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        }
-        float drawTime = GunItem.getClientDrawTime(stack, partialTick);
+        final float partialTick = mc != null
+                ? mc.getDeltaTracker().getGameTimeDeltaPartialTick(false)
+                : 1.0F;
 
         snapshots.ifPresent("bone", snap -> applySwAimSnapshot(path, snap, zoomPos, zoomPosZ));
-        snapshots.ifPresent("root", snap -> applySwDrawRootSnapshot(snap, drawTime, zoomTime));
+        snapshots.ifPresent("root", snap -> applySwGunRootSnapshot(path, stack, snap, partialTick, zoomTime));
     }
 
     private static void applySwAimSnapshot(
@@ -426,20 +424,18 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         }
     }
 
-    /** SW gunRootMove draw component only (same as 1.21.1). */
-    private static void applySwDrawRootSnapshot(
+    /** SW gunRootMove: walk bob + sprint pose/bob + draw raise (useCustomAnim=false). */
+    private static void applySwGunRootSnapshot(
+            String path,
+            ItemStack stack,
             com.geckolib.animation.state.BoneSnapshot snap,
-            float drawTime,
+            float partialTick,
             float zoomTime
     ) {
-        float fade = 1.0F - zoomTime;
-        float deg = (float) Math.PI / 180.0F;
-        snap.setTranslation(20.0F * drawTime * fade, -40.0F * drawTime * fade, 0.0F);
-        snap.setRotation(
-                -60.0F * deg * drawTime * fade,
-                300.0F * deg * drawTime * fade,
-                90.0F * deg * drawTime * fade
-        );
+        SwGuidedLauncherMotion.RootTransform root =
+                SwGuidedLauncherMotion.computeRoot(path, stack, partialTick, zoomTime);
+        snap.setTranslation(root.posX(), root.posY(), root.posZ());
+        snap.setRotation(root.rotX(), root.rotY(), root.rotZ());
     }
 
     /** SW AnimationCurves.EASE_IN_OUT_QUINT (implemented as cubic in SW). */

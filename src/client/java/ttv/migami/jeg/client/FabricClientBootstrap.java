@@ -356,8 +356,10 @@ public final class FabricClientBootstrap {
             if (client.player != null) {
                 tickImmediateGunSwitch(client.player);
                 GunItem.tickClientVisualState(client.player);
+                ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.tick(client.player);
             } else {
                 clearImmediateGunSwitchState();
+                ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.reset();
             }
             handleCombatInput(client);
             if (client.player != null) {
