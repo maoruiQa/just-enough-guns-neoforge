@@ -68,9 +68,10 @@ public final class DroneGeoRenderer extends GeoEntityRenderer<DroneEntity> {
     ) {
         poseStack.pushPose();
         float yRot = Mth.lerp(partialTick, animatable.yRotO, animatable.getYRot());
-        float xRot = Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot());
+        // SW: model uses body pitch (W/S tilt), not camera/entity xRot
+        float bodyPitch = animatable.getBodyPitch(partialTick);
         poseStack.mulPose(Axis.YP.rotationDegrees(-yRot));
-        poseStack.mulPose(Axis.XP.rotationDegrees(xRot));
+        poseStack.mulPose(Axis.XP.rotationDegrees(bodyPitch));
         super.defaultRender(poseStack, animatable, bufferSource, renderType, buffer, yaw, partialTick, packedLight);
         poseStack.popPose();
     }

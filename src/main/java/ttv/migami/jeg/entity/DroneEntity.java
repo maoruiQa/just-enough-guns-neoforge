@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -61,6 +62,9 @@ public final class DroneEntity extends Entity implements GeoEntity {
     private float power = 0.02F;
     private float deltaRot;
     private float deltaXRot;
+    /** SW body pitch (W/S tilt), separate from camera {@link #getXRot()}. */
+    private float bodyPitch;
+    private float bodyPitchO;
     private int pendingInputs;
     private float pendingMouseYaw;
     private float pendingMousePitch;
@@ -92,6 +96,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
         return switch (this.entityData.get(PAYLOAD)) {
             case 1 -> "C4";
             case 2 -> "TM-62";
+            case 3 -> "Grenade";
             default -> "EMPTY";
         };
     }
@@ -121,6 +126,10 @@ public final class DroneEntity extends Entity implements GeoEntity {
         this.lastTickSpeed = this.getDeltaMovement().length();
         this.lastTickVerticalSpeed = this.getDeltaMovement().y;
 
+        // SW baseTick: body pitch decays independently of camera pitch
+        this.bodyPitchO = this.bodyPitch;
+        this.bodyPitch *= 0.9F;
+
         boolean controlled = this.controllerId != null || (this.level().isClientSide && this.hasPendingInput);
         if (!this.level().isClientSide) {
             this.validateController();
@@ -147,6 +156,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.965D, 0.7D, 0.965D));
             } else {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.8D, 1.0D, 0.8D));
+                this.bodyPitch *= 0.7F;
             }
         }
 
@@ -245,10 +255,9 @@ public final class DroneEntity extends Entity implements GeoEntity {
                         true
                 );
             }
-        } else if (stack.is(ModItems.C4_BOMB.get()) || stack.is(ModItems.TM_62.get())) {
-            // Load when empty; if another payload type is held, swap (return old item)
-            if (!this.level().isClientSide) {
-                int newType = stack.is(ModItems.C4_BOMB.get()) ? 1 : 2;
+        } else {
+            int newType = payloadTypeOf(stack);
+            if (newType != 0 && !this.level().isClientSide) {
                 int current = this.entityData.get(PAYLOAD);
                 if (current == 0) {
                     this.entityData.set(PAYLOAD, newType);
@@ -294,8 +303,23 @@ public final class DroneEntity extends Entity implements GeoEntity {
                 yield c4;
             }
             case 2 -> new ItemStack(ModItems.TM_62.get());
+            case 3 -> new ItemStack(ModItems.AMMO.get(ttv.migami.jeg.Reference.id("grenade")).get());
             default -> ItemStack.EMPTY;
         };
+    }
+
+    private static int payloadTypeOf(ItemStack stack) {
+        if (stack.is(ModItems.C4_BOMB.get())) {
+            return 1;
+        }
+        if (stack.is(ModItems.TM_62.get())) {
+            return 2;
+        }
+        var grenade = ModItems.AMMO.get(ttv.migami.jeg.Reference.id("grenade"));
+        if (grenade != null && stack.is(grenade.get())) {
+            return 3;
+        }
+        return 0;
     }
 
     private static void giveOrDrop(Player player, ItemStack stack) {
@@ -373,6 +397,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
 
     /**
      * Superb Warfare bank/pitch rates + mouse look, with true hover when no vertical input.
+     * Camera pitch ({@link #getXRot()}) never steers thrust; body tilt is {@link #bodyPitch}.
      */
     private void applySuperbTravel(int inputs, float mouseYaw, float mousePitch) {
         boolean forward = (inputs & FORWARD) != 0;
@@ -417,6 +442,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
         } else {
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.8D, 1.0D, 0.8D));
             this.setXRot(this.getXRot() * 0.7F);
+            this.bodyPitch *= 0.7F;
             this.holdTickX = 0;
             this.holdTickZ = 0;
         }
@@ -432,7 +458,8 @@ public final class DroneEntity extends Entity implements GeoEntity {
             ));
         } else if (down) {
             this.holdTickY = Math.min(this.holdTickY + 1, 5);
-            this.power = Math.max(this.power - 0.02F * this.holdTickY, this.onGround() ? 0.0F : 0.06F);
+            // Stronger power cut than stock SW 0.02/0.06 so Shift actually sinks
+            this.power = Math.max(this.power - 0.03F * this.holdTickY, this.onGround() ? 0.0F : 0.03F);
             this.setDeltaMovement(new Vec3(
                     this.getDeltaMovement().x,
                     -0.05D * this.holdTickY,
@@ -443,9 +470,10 @@ public final class DroneEntity extends Entity implements GeoEntity {
             this.power = 0.0F;
         }
 
-        // decay bank/pitch rates
+        // decay bank/pitch rates; integrate residual into body pitch (SW setBodyXRot)
         this.deltaRot *= 0.7F;
         this.deltaXRot *= 0.7F;
+        this.bodyPitch = Mth.clamp(this.bodyPitch - this.deltaXRot, -30.0F, 30.0F);
 
         // Rotor lift only while climbing/descending — hover has no free lift (prevents drift)
         if (verticalControl) {
@@ -459,24 +487,28 @@ public final class DroneEntity extends Entity implements GeoEntity {
         Vec3 side = swRight.scale(this.deltaRot * 0.017D);
         this.setDeltaMovement(this.getDeltaMovement().add(side.x, 0.0D, side.z));
 
-        // SW getForwardDirection: (sin(-yaw), 0, cos(yaw)) == MC directionFromRotation(0, yaw)
+        // SW getForwardDirection: always horizontal — camera pitch does not tilt thrust
         Vec3 swForward = new Vec3(Mth.sin(-yawRad), 0.0D, Mth.cos(yawRad));
         Vec3 thrust = swForward.scale(-this.deltaXRot * 0.017D);
-        if (verticalControl) {
-            // full look-direction thrust when climbing/diving
-            Vec3 look = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
-            thrust = look.scale(-this.deltaXRot * 0.017D);
-            this.setDeltaMovement(this.getDeltaMovement().add(thrust));
-        } else {
-            this.setDeltaMovement(this.getDeltaMovement().add(thrust.x, 0.0D, thrust.z));
+        this.setDeltaMovement(this.getDeltaMovement().add(thrust.x, 0.0D, thrust.z));
+        if (!verticalControl) {
             // hard lock altitude while hovering (no up/down keys)
             Vec3 m = this.getDeltaMovement();
             this.setDeltaMovement(m.x, 0.0D, m.z);
         }
 
-        // mouse look (SW: 0.5 * mouse speed, pitch clamp -10..90)
+        // mouse look only (SW: 0.5 * mouse speed, pitch clamp -10..90) — does not affect flight
         this.setYRot(this.getYRot() + 0.5F * Mth.clamp(mouseYaw, -40.0F, 40.0F));
         this.setXRot(Mth.clamp(this.getXRot() + 0.5F * Mth.clamp(mousePitch, -40.0F, 40.0F), -10.0F, 90.0F));
+    }
+
+    /** SW body pitch used for model tilt (W/S), not FPV camera pitch. */
+    public float getBodyPitch() {
+        return this.bodyPitch;
+    }
+
+    public float getBodyPitch(float partialTick) {
+        return Mth.lerp(0.6F * partialTick, this.bodyPitchO, this.bodyPitch);
     }
 
     private void remoteInteract(ServerPlayer player) {
@@ -517,6 +549,26 @@ public final class DroneEntity extends Entity implements GeoEntity {
             serverLevel.addFreshEntity(PlacedExplosiveEntity.placeSettled(
                     serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot(), false
             ));
+        } else if (payload == 3 && this.level() instanceof ServerLevel serverLevel) {
+            this.entityData.set(PAYLOAD, 0);
+            LivingEntity owner = this.ownerPlayer();
+            if (owner == null) {
+                owner = this.controller();
+            }
+            GrenadeEntity grenade = owner != null
+                    ? new GrenadeEntity(serverLevel, owner, 4.0F, 60, false)
+                    : new GrenadeEntity(ModEntities.GRENADE.get(), serverLevel);
+            if (owner == null) {
+                grenade.setExplosionPower(4.0F);
+                grenade.setFuse(60);
+            }
+            Vec3 look = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
+            Vec3 spawn = this.position().add(0.0D, 0.1D, 0.0D).add(look.scale(0.35D));
+            grenade.initialisePosition(spawn);
+            grenade.setDeltaMovement(look.scale(1.25D).add(this.getDeltaMovement().scale(0.5D)));
+            grenade.setYRot(this.getYRot());
+            grenade.setXRot(this.getXRot());
+            serverLevel.addFreshEntity(grenade);
         }
     }
 
