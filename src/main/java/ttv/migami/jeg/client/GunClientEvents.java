@@ -332,11 +332,13 @@ public final class GunClientEvents {
             VEHICLE_ENGINE_SOUNDS.clear();
             VEHICLE_ENGINE_START_STREAK.clear();
             CrosshairHandler.reset();
+            ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.reset();
             return;
         }
 
         tickImmediateGunSwitch(player);
         AimingHandler.get().tick(player);
+        ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.tick(player);
         tickThrowableEffectAudio(player);
         tickVehicleFireAudio(player);
         tickVehicleEngineAudio(player);
