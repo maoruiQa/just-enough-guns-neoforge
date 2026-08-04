@@ -36,6 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -46,8 +47,10 @@ import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.entity.monster.phantom.TerrorPhantom;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.item.C4VestItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
 import ttv.migami.jeg.faction.GunnerProgression;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -368,12 +371,24 @@ public final class GunEvents {
     }
 
     @SubscribeEvent
+    public static void onBomberDeath(LivingDeathEvent event) {
+        if (BomberGunnerHelper.isArmed(event.getEntity()) && !BomberGunnerHelper.hasDetonated(event.getEntity())) {
+            BomberGunnerHelper.explodeVest(event.getEntity());
+        }
+    }
+
+    @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {
         net.minecraft.world.entity.LivingEntity entity = event.getEntity();
 
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
+        }
+
+        if (BomberGunnerHelper.isBomber(entity)) {
+            event.getDrops().removeIf(drop -> drop.getItem().getItem() instanceof C4VestItem);
+            addDrop(event, entity, BomberGunnerHelper.rollGunpowderDrop(entity));
         }
 
         ItemStack held = entity.getMainHandItem();

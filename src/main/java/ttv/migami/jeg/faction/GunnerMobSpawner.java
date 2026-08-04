@@ -105,8 +105,11 @@ public class GunnerMobSpawner {
             abstractPiglin.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20 * 60, 0, false, true));
         }
 
-        // Normalize tagged gunners before assigning their weapon.
-        if (mob.entityTags().contains("MobGunner") && !(heldItem.getItem() instanceof GunItem)) {
+        // Normalize tagged gunners before assigning their weapon / bomber kit.
+        if (mob.entityTags().contains("MobGunner")
+                && !(heldItem.getItem() instanceof GunItem)
+                && !BomberGunnerHelper.isBomber(mob)
+                && !mob.entityTags().contains("GunAttackAssigned")) {
             normalizeGunnerMob(mob);
             if (mob.isBaby()) {
                 return;
@@ -119,26 +122,48 @@ public class GunnerMobSpawner {
 
             if (faction != null) {
                 String gunnerType = GunnerType.keyFor(mob);
-                boolean isCloseRange = mob.getRandom().nextBoolean();
-                int stopRange = isCloseRange ? 7 : 20;
-
-                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType);
-                AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
+                boolean bomber = Config.shouldGunnerBecomeBomber(mob.level(), gunnerType, mob.getRandom());
                 boolean elite = GunMobValues.rollElite(mob.level(), mob.getRandom());
-                int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
-
                 if (elite) {
-                    gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType);
                     applyEliteAttributes(mob);
                 }
 
+                if (elite) {
+                    GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.elite(mob));
+                } else {
+                    GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.normal(mob));
+                }
+
+                if (bomber) {
+                    if (!mob.level().isClientSide()) {
+                        if (!hasTargetGoal(mob)) {
+                            mob.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(mob, Player.class, true));
+                        }
+                        BomberGunnerHelper.applyBomberKit(mob);
+                        mob.addTag("GunAttackAssigned");
+                    }
+                    extendFollowRange(mob);
+                    return;
+                }
+
+                boolean isCloseRange = mob.getRandom().nextBoolean();
+                int stopRange = isCloseRange ? 7 : 20;
+                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType, true);
+                AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
+                int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
+
+                if (elite) {
+                    gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType, true);
+                }
+
+                if (gun == null) {
+                    return;
+                }
+
                 if (!mob.level().isClientSide() && !hasGunAttackGoal(mob)) {
-                    // Add target-finding goal first (priority 1)
                     if (!hasTargetGoal(mob)) {
                         mob.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(mob, Player.class, true));
                     }
-
-                    // Then add gun attack goal (priority 2)
                     mob.goalSelector.addGoal(2, new GunAttackGoal<>(mob, stopRange, 1.2F, aiType, aiLevel));
                     mob.addTag("GunAttackAssigned");
                 }
@@ -147,20 +172,13 @@ public class GunnerMobSpawner {
                 mob.setItemSlot(EquipmentSlot.MAINHAND, modifiedGun);
                 suppressSkeletonSniperDrop(mob, gun);
                 enforceGunnerMainHandLock(mob);
-
-                // Equip armor for all gunners (normal and elite)
-                // HELMET PRIORITY: System will prioritize helmets over body armor
-                if (elite) {
-                    GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.elite(mob));
-                } else {
-                    GunnerArmorEquiper.equipGunnerArmor(mob.getRandom(), GunnerArmorEquiper.GunnerArmorContext.normal(mob));
-                }
-
                 extendFollowRange(mob);
             }
         }
 
-        if (heldItem.getItem() instanceof GunItem) {
+        if (BomberGunnerHelper.isBomber(mob)) {
+            BomberGunnerHelper.ensureBomberGoal(mob);
+        } else if (heldItem.getItem() instanceof GunItem) {
             reassessWeaponGoal(mob);
         }
     }
@@ -212,7 +230,10 @@ public class GunnerMobSpawner {
         }
 
         ItemStack heldItem = mob.getMainHandItem();
-        if (heldItem.getItem() instanceof GunItem) {
+        if (BomberGunnerHelper.isBomber(mob)) {
+            BomberGunnerHelper.ensureBomberGoal(mob);
+            extendFollowRange(mob);
+        } else if (heldItem.getItem() instanceof GunItem) {
             enforceGunnerMainHandLock(mob);
             reassessWeaponGoal(mob);
         } else {

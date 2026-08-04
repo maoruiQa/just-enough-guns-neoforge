@@ -8,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import ttv.migami.jeg.Reference;
 
 public record ApplyServerConfigPayload(Map<String, String> changes) implements CustomPacketPayload {
+    public static final int MAX_CONFIG_ENTRIES = 1024;
     public static final Type<ApplyServerConfigPayload> TYPE = new Type<>(Reference.id("apply_server_config"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ApplyServerConfigPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> writeMap(buf, payload.changes),
@@ -33,7 +34,7 @@ public record ApplyServerConfigPayload(Map<String, String> changes) implements C
 
     static Map<String, String> readMap(RegistryFriendlyByteBuf buf) {
         int size = buf.readVarInt();
-        if (size < 0 || size > 256) {
+        if (size < 0 || size > MAX_CONFIG_ENTRIES) {
             throw new IllegalArgumentException("Invalid config entry count: " + size);
         }
         Map<String, String> values = new LinkedHashMap<>();
