@@ -147,6 +147,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final EntityDataAccessor<Integer> DATA_DECOY_COOLDOWN = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MISSILE_LOCKED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_MISSILE_LOCK_TARGET = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_MISSILE_SEEK_TICKS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> DATA_WARNING_MESSAGE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> DATA_WARNING_UNTIL_TICK = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_LEFT_WHEEL_DAMAGED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
@@ -258,6 +259,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     private static final double HELICOPTER_ROTOR_CONTACT_SAMPLE_RADIUS = 0.55D;
     private static final double DEFAULT_SEEK_RANGE = 64.0D;
     private static final double DEFAULT_SEEK_MIN_DOT = 0.985D;
+    private static final int DEFAULT_SEEK_TIME_TICKS = 10;
     private static final double GRAVITY = 0.08D;
 
     private final SimpleContainer inventory = new SimpleContainer(VehicleMenu.MAX_VEHICLE_SLOT_COUNT);
@@ -498,6 +500,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         builder.define(DATA_DECOY_COOLDOWN, 0);
         builder.define(DATA_MISSILE_LOCKED, false);
         builder.define(DATA_MISSILE_LOCK_TARGET, -1);
+        builder.define(DATA_MISSILE_SEEK_TICKS, 0);
         builder.define(DATA_WARNING_MESSAGE, "");
         builder.define(DATA_WARNING_UNTIL_TICK, 0);
         builder.define(DATA_LEFT_WHEEL_DAMAGED, false);
@@ -844,6 +847,58 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
 
     public boolean hasMissileLock() {
         return this.entityData.get(DATA_MISSILE_LOCKED);
+    }
+
+    public int missileLockTargetId() {
+        return this.entityData.get(DATA_MISSILE_LOCK_TARGET);
+    }
+
+    public int missileSeekTicks() {
+        return this.entityData.get(DATA_MISSILE_SEEK_TICKS);
+    }
+
+    public int missileSeekTime() {
+        SeekInfo seek = this.vehicleData().defaults().seek();
+        return seek.time() > 0 ? seek.time() : DEFAULT_SEEK_TIME_TICKS;
+    }
+
+    public double missileSeekRange() {
+        return this.seekRange();
+    }
+
+    public double missileSeekMinDot() {
+        return this.seekMinDot();
+    }
+
+    public boolean isValidMissileSeekCandidate(LivingEntity shooter, Entity candidate, VehicleMissileProfile profile) {
+        if (shooter == null || candidate == null || !candidate.isAlive() || candidate == this || candidate == shooter) {
+            return false;
+        }
+        if (candidate instanceof VehicleDecoyEntity decoy) {
+            if (decoy.isSmokeDecoy()) {
+                return false;
+            }
+        } else if (!profile.canLock(candidate, shooter, this)) {
+            return false;
+        }
+        Vec3 eye = shooter.getEyePosition();
+        Vec3 direction = shooter.getViewVector(1.0F).normalize();
+        if (direction.lengthSqr() < 1.0E-4D) {
+            return false;
+        }
+        Vec3 targetCenter = candidate instanceof LivingEntity living
+                ? living.getEyePosition()
+                : candidate.position().add(0.0D, candidate.getBbHeight() * 0.5D, 0.0D);
+        Vec3 toTarget = targetCenter.subtract(eye);
+        double distance = toTarget.length();
+        double range = this.seekRange();
+        if (distance <= 0.0D || distance > range) {
+            return false;
+        }
+        if (toTarget.normalize().dot(direction) < this.seekMinDot()) {
+            return false;
+        }
+        return this.canSeeMissileTarget(eye, targetCenter, candidate);
     }
 
     public String activeWarningMessageKey() {
@@ -2064,24 +2119,40 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
 
     private void tickMissileLock() {
         if (!this.hasVehicleWeapons()) {
-            this.entityData.set(DATA_MISSILE_LOCKED, false);
-            this.entityData.set(DATA_MISSILE_LOCK_TARGET, -1);
+            this.clearMissileLockState();
             return;
         }
-        Entity target = null;
         LivingEntity shooter = this.seekInput ? this.seekController() : null;
         VehicleWeaponInfo weapon = shooter == null ? null : this.selectedWeapon(shooter);
+        Entity target = null;
         if (shooter != null && weapon != null && weapon.guided() && VehicleMissileProfile.get(weapon.weaponId()).usesLockOn()) {
             Vec3 direction = shooter.getViewVector(1.0F).normalize();
             if (direction.lengthSqr() >= 1.0E-4D) {
                 target = this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), VehicleMissileProfile.get(weapon.weaponId()));
             }
         }
-        this.entityData.set(DATA_MISSILE_LOCKED, target != null);
-        this.entityData.set(DATA_MISSILE_LOCK_TARGET, target == null ? -1 : target.getId());
-        if (this.shouldWarnSeekTarget() && target != null && this.tickCount % VEHICLE_WARNING_SOUND_INTERVAL_TICKS == 0) {
+        if (target == null) {
+            this.clearMissileLockState();
+            return;
+        }
+
+        int targetId = target.getId();
+        int previousTargetId = this.entityData.get(DATA_MISSILE_LOCK_TARGET);
+        int seekTicks = previousTargetId == targetId ? this.entityData.get(DATA_MISSILE_SEEK_TICKS) + 1 : 1;
+        int seekTime = this.missileSeekTime();
+        boolean locked = seekTicks >= seekTime;
+        this.entityData.set(DATA_MISSILE_LOCK_TARGET, targetId);
+        this.entityData.set(DATA_MISSILE_SEEK_TICKS, seekTicks);
+        this.entityData.set(DATA_MISSILE_LOCKED, locked);
+        if (this.shouldWarnSeekTarget() && locked && this.tickCount % VEHICLE_WARNING_SOUND_INTERVAL_TICKS == 0) {
             this.warnSeekTarget(target);
         }
+    }
+
+    private void clearMissileLockState() {
+        this.entityData.set(DATA_MISSILE_LOCKED, false);
+        this.entityData.set(DATA_MISSILE_LOCK_TARGET, -1);
+        this.entityData.set(DATA_MISSILE_SEEK_TICKS, 0);
     }
 
     private void warnSeekTarget(Entity target) {
@@ -2176,7 +2247,13 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.25D, 0.95D);
         VehicleMissileProfile profile = VehicleMissileProfile.get(weapon.weaponId());
         Vec3 velocity = direction.scale(profile.maxSpeed() * 0.75D).add(this.getDeltaMovement().scale(0.15D));
-        Entity target = seekInput && profile.usesLockOn() ? this.findLookTarget(shooter, direction, this.seekRange(), this.seekMinDot(), profile) : null;
+        Entity target = null;
+        if (profile.usesLockOn() && this.hasMissileLock() && this.missileLockTargetId() >= 0) {
+            Entity locked = this.level().getEntity(this.missileLockTargetId());
+            if (locked != null && locked.isAlive() && this.isValidMissileSeekCandidate(shooter, locked, profile)) {
+                target = locked;
+            }
+        }
         this.level().addFreshEntity(new VehicleMissileEntity(this.level(), shooter, target, muzzle, velocity, weapon.weaponId()));
         this.spawnVehicleMuzzleFlare(weapon, muzzle, direction);
     }
