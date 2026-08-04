@@ -31,6 +31,8 @@ public final class VehicleMissileEntity extends Entity {
     private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
     private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
     private static final int BMP2_NO_DROP_TICKS = 5;
+    /** Matches rocket launcher trail gravity ({@code BulletEntity} when gravity+trail). */
+    private static final double ROCKET_LIKE_GRAVITY = 0.040D;
 
     private int ownerId = -1;
     private int targetId = -1;
@@ -40,6 +42,8 @@ public final class VehicleMissileEntity extends Entity {
     @Nullable
     private Vec3 targetPosition;
     private boolean topAttack;
+    /** Unguided javelin dump: straight rocket-like ballistic (gravity, no steer). */
+    private boolean ballisticUnguided;
 
     public VehicleMissileEntity(EntityType<? extends VehicleMissileEntity> type, Level level) {
         super(type, level);
@@ -66,6 +70,9 @@ public final class VehicleMissileEntity extends Entity {
         this.weaponId = weaponId;
         this.targetPosition = targetPosition;
         this.topAttack = topAttack;
+        this.ballisticUnguided = target == null
+                && targetPosition == null
+                && Reference.id("javelin").equals(weaponId);
         this.setPos(position);
         this.setDeltaMovement(velocity);
     }
@@ -113,6 +120,11 @@ public final class VehicleMissileEntity extends Entity {
     }
 
     private void steerServer() {
+        if (this.ballisticUnguided) {
+            // Rocket-launcher-like: gravity only, no homing/decoy seek.
+            this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -ROCKET_LIKE_GRAVITY, 0.0D));
+            return;
+        }
         VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
         // Only flare decoys attract missiles. Smoke screens block lock and must not be seek targets.
@@ -359,6 +371,7 @@ public final class VehicleMissileEntity extends Entity {
             );
         }
         this.topAttack = input.getBooleanOr("TopAttack", false);
+        this.ballisticUnguided = input.getBooleanOr("BallisticUnguided", false);
     }
 
     @Override
@@ -375,6 +388,7 @@ public final class VehicleMissileEntity extends Entity {
             output.putBoolean("HasTargetPos", false);
         }
         output.putBoolean("TopAttack", this.topAttack);
+        output.putBoolean("BallisticUnguided", this.ballisticUnguided);
     }
 
     @Override

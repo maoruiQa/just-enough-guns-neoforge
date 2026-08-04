@@ -32,6 +32,7 @@ import ttv.migami.jeg.network.ClientNetworkHandler;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
 /**
  * Client lock, FPV drone control, and SW-style layered HUDs for special equipment.
@@ -100,6 +101,11 @@ public final class SpecialEquipmentClientEvents {
             DroneEngineSoundInstance existing = DRONE_ENGINE_SOUNDS.get(previous);
             if (existing != null) {
                 existing.setFpvMode(false);
+            }
+            // Stop client prediction so the world entity no longer ignores network lerp / keeps last keys
+            if (previous >= 0 && minecraft.level != null
+                    && minecraft.level.getEntity(previous) instanceof DroneEntity previousDrone) {
+                previousDrone.clearClientControl();
             }
             if (minecraft.player != null) {
                 minecraft.setCameraEntity(minecraft.player);
@@ -310,6 +316,11 @@ public final class SpecialEquipmentClientEvents {
             return false; // SW noVehicle()
         }
         if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(player, target)) {
+            return false;
+        }
+        // Same as server lock + wall/smoke: no frame for profile-ineligible targets (e.g. living max HP < 55 for ground missiles).
+        VehicleEntity shooterVehicle = player.getVehicle() instanceof VehicleEntity vehicle ? vehicle : null;
+        if (!VehicleMissileProfile.get(launcher.getStats().id()).canLock(target, player, shooterVehicle)) {
             return false;
         }
         double heightDelta = target.getY() - player.getY();
