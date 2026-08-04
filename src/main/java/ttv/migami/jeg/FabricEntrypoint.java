@@ -96,6 +96,9 @@ public final class FabricEntrypoint implements ModInitializer {
             LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(entity, source, amount);
             GunnerFriendlyFireEvents.onIncomingDamage(event);
             VehiclePassengerDamageEvents.onPassengerDamage(event);
+            if (amount > 0.0F && !event.isCanceled()) {
+                ttv.migami.jeg.item.DefuserItem.interruptIfDefusing(entity);
+            }
             return !event.isCanceled();
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {

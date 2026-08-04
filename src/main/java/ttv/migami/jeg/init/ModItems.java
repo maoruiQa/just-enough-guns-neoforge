@@ -39,6 +39,7 @@ import ttv.migami.jeg.item.AnimatedGunItem;
 import ttv.migami.jeg.item.DescribedAmmoItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.C4VestItem;
+import ttv.migami.jeg.item.DefuserItem;
 import ttv.migami.jeg.item.DetonatorItem;
 import ttv.migami.jeg.item.DroneItem;
 import ttv.migami.jeg.item.GuidedLauncherItem;
@@ -300,6 +301,9 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, DetonatorItem> DETONATOR = REGISTER.register(
             "detonator", () -> new DetonatorItem(baseProperties(Reference.id("detonator")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, DefuserItem> DEFUSER = REGISTER.register(
+            "defuser", () -> new DefuserItem(baseProperties(Reference.id("defuser")).stacksTo(1).durability(8))
     );
     public static final DeferredHolder<Item, C4VestItem> C4_VEST = REGISTER.register(
             "c4_vest",
@@ -772,6 +776,7 @@ public final class ModItems {
             event.accept(MONITOR.get());
             event.accept(C4_BOMB.get());
             event.accept(DETONATOR.get());
+            event.accept(DEFUSER.get());
             event.accept(C4_VEST.get());
             event.accept(CLAYMORE_MINE.get());
             event.accept(TM_62.get());

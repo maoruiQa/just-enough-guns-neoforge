@@ -516,10 +516,12 @@ public final class SpecialEquipmentClientEvents {
         g.text(minecraft.font, Component.translatable("des.jeg.drone.health",
                 Mth.ceil(drone.health()) + " / 5"), x - 77, y + 33, 0xFFFFFFFF, false);
         String payload = drone.payloadName();
-        if ("C4".equals(payload)) {
-            g.text(minecraft.font, Component.translatable("des.jeg.drone.kamikaze"), x + 12, y - 37, 0xFFFF0000, false);
-        } else {
+        if ("EMPTY".equals(payload)) {
             g.text(minecraft.font, Component.translatable("des.jeg.drone.ammo", payload), x + 12, y - 37, 0xFFFFFFFF, false);
+        } else if ("C4".equals(payload)) {
+            g.text(minecraft.font, Component.translatable("des.jeg.drone.ammo_release", payload), x + 12, y - 37, 0xFFFF0000, false);
+        } else {
+            g.text(minecraft.font, Component.translatable("des.jeg.drone.ammo_release", payload), x + 12, y - 37, 0xFFFFFFFF, false);
         }
 
         // Look range (block / entity) like SW
