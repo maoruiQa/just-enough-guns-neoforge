@@ -27,8 +27,6 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue HIDE_ATTACHMENT_CONFIG_BUTTON;
     public static final ModConfigSpec.StringValue ATTACHMENT_BUTTON_ALIGNMENT;
 
-    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_NATURAL_CHANCE;
-    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MAX_CHANCE;
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_NATURAL_CHANCE;
     public static final ModConfigSpec.DoubleValue PHANTOM_GUNNER_MAX_CHANCE;
     public static final ModConfigSpec.BooleanValue PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED;
@@ -57,10 +55,6 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_PERCENT;
     public static final ModConfigSpec.DoubleValue GUNNER_SHOTGUN_SPREAD_MULTIPLIER;
     public static final ModConfigSpec.IntValue GUNNER_PROGRESSION_MAX_DAY;
-    public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS;
-    public static final ModConfigSpec.IntValue TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS;
-    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER;
-    public static final ModConfigSpec.DoubleValue TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER;
     public static final ModConfigSpec.IntValue TERROR_RAID_WAVE_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue TERROR_RAID_GROUND_WAVE_COUNT;
     public static final ModConfigSpec.IntValue TERROR_RAID_AIR_WAVE_COUNT;
@@ -169,16 +163,8 @@ public final class Config {
         serverBuilder.pop();
 
         serverBuilder.push("spawns");
-        TERROR_PHANTOM_NATURAL_CHANCE = serverBuilder
-                .comment("Base probability (0-1) that a naturally spawned Phantom upgrades into a Terror Phantom at early game.")
-                .defineInRange("terrorPhantomChance", 0.01D, 0.0D, 1.0D);
-
-        TERROR_PHANTOM_MAX_CHANCE = serverBuilder
-                .comment("Upper cap probability (0-1) for natural Terror Phantom conversion as game time increases.")
-                .defineInRange("terrorPhantomMaxChance", 0.07D, 0.0D, 1.0D);
-
         PHANTOM_GUNNER_NATURAL_CHANCE = serverBuilder
-                .comment("Base probability (0-1) that a naturally spawned Phantom upgrades into a Phantom Gunner (when not converted to Terror Phantom).")
+                .comment("Base probability (0-1) that a naturally spawned Phantom upgrades into a Phantom Gunner.")
                 .defineInRange("phantomGunnerChance", 0.12D, 0.0D, 1.0D);
 
         PHANTOM_GUNNER_MAX_CHANCE = serverBuilder
@@ -278,18 +264,6 @@ public final class Config {
         GUNNER_PROGRESSION_MAX_DAY = serverBuilder
                 .comment("In-game day when gunner weapon strength, armor chance, and armor tier reach their maximum.")
                 .defineInRange("gunnerProgressionMaxDay", 60, 1, 5000);
-        TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS = serverBuilder
-                .comment("Ticks without qualifying minigun/light machine gun hits before Terror Phantom rapid-fire resistance resets.")
-                .defineInRange("terrorPhantomRapidFireResistanceResetTicks", 25, 1, 200);
-        TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS = serverBuilder
-                .comment("Qualifying hits at the start of each burst before Terror Phantom rapid-fire resistance reduces damage.")
-                .defineInRange("terrorPhantomRapidFireResistanceWarmupHits", 10, 0, 200);
-        TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER = serverBuilder
-                .comment("Extra damage multiplier for player minigun hits after Terror Phantom rapid-fire resistance warms up. 1.0 disables this extra resistance.")
-                .defineInRange("terrorPhantomMinigunRapidFireDamageMultiplier", 0.18D, 0.01D, 1.0D);
-        TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER = serverBuilder
-                .comment("Extra damage multiplier for player light machine gun hits after Terror Phantom rapid-fire resistance warms up. 1.0 disables this extra resistance.")
-                .defineInRange("terrorPhantomLightMachineGunRapidFireDamageMultiplier", 0.35D, 0.01D, 1.0D);
         serverBuilder.pop();
 
         serverBuilder.push("terrorRaid");
@@ -388,8 +362,6 @@ public final class Config {
         registerCommandConfig("patrol.intervalDays", FACTION_PATROL_INTERVAL_DAYS);
         registerCommandConfig("patrol.minimumDays", FACTION_PATROL_MINIMUM_DAYS);
         registerCommandConfig("patrol.spawnChance", FACTION_PATROL_SPAWN_CHANCE);
-        registerCommandConfig("mob.mechanism.terrorPhantom.chance", TERROR_PHANTOM_NATURAL_CHANCE);
-        registerCommandConfig("mob.mechanism.terrorPhantom.maxChance", TERROR_PHANTOM_MAX_CHANCE);
         registerCommandConfig("mob.mechanism.phantomGunner.deathExplosion", PHANTOM_GUNNER_DEATH_EXPLOSION_ENABLED);
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
@@ -512,14 +484,6 @@ public final class Config {
             return;
         }
         throw new IllegalArgumentException("Unsupported config value type for " + value.path());
-    }
-
-    public static double terrorPhantomChance() {
-        return clamp01(TERROR_PHANTOM_NATURAL_CHANCE.get());
-    }
-
-    public static double terrorPhantomChance(Level level) {
-        return scaledChance(level, terrorPhantomChance(), clamp01(TERROR_PHANTOM_MAX_CHANCE.get()));
     }
 
     public static double phantomGunnerChance() {
@@ -850,22 +814,6 @@ public final class Config {
         double progress = Math.min(1.0D, (double) (day - startDay) / (double) daysToMax);
         double maxSpreadMultiplier = earlyMultiplier * (1.0D - gunnerAccuracyMaxPercent());
         return (float) (earlyMultiplier + (maxSpreadMultiplier - earlyMultiplier) * progress);
-    }
-
-    public static int terrorPhantomRapidFireResistanceResetTicks() {
-        return Mth.clamp(TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_RESET_TICKS.get(), 1, 200);
-    }
-
-    public static int terrorPhantomRapidFireResistanceWarmupHits() {
-        return Mth.clamp(TERROR_PHANTOM_RAPID_FIRE_RESISTANCE_WARMUP_HITS.get(), 0, 200);
-    }
-
-    public static double terrorPhantomMinigunRapidFireDamageMultiplier() {
-        return Mth.clamp(TERROR_PHANTOM_MINIGUN_RAPID_FIRE_DAMAGE_MULTIPLIER.get(), 0.01D, 1.0D);
-    }
-
-    public static double terrorPhantomLightMachineGunRapidFireDamageMultiplier() {
-        return Mth.clamp(TERROR_PHANTOM_LIGHT_MACHINE_GUN_RAPID_FIRE_DAMAGE_MULTIPLIER.get(), 0.01D, 1.0D);
     }
 
     public static int terrorRaidGroundWaveCount() {

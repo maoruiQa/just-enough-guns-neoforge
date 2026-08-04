@@ -463,8 +463,6 @@
   "gui.jegn.config.option.patrol_interval_days": "Patrouillenintervall (Tage)",
   "gui.jegn.config.option.patrol_minimum_days": "Fr\u00FChester Patrouillentag",
   "gui.jegn.config.option.patrol_spawn_chance": "Patrouillen-Spawnchance",
-  "gui.jegn.config.option.terror_phantom_chance": "Terrorphantom-Chance",
-  "gui.jegn.config.option.terror_phantom_max_chance": "Maximale Terrorphantom-Chance",
   "gui.jegn.config.option.phantom_gunner_death_explosion": "Todesexplosion des Phantomsch\u00FCtzen",
   "gui.jegn.config.option.bullet_block_destruction": "Blockzerst\u00F6rung durch Kugeln",
   "gui.jegn.config.option.magazine_feed": "Magazinversorgung",

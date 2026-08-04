@@ -7,11 +7,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.stream.StreamSupport;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
@@ -37,7 +35,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.phys.AABB;
 import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
 import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.EntityJoinLevelEvent;
 import ttv.migami.jeg.fabric.compat.neoforge.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -66,9 +63,6 @@ public final class GunEvents {
     // Tags for JEG faction gunners (replacing old individual gunner tags)
     public static final String JEG_GUNNER_TAG = "MobGunner";
     public static final String JEG_ELITE_GUNNER_TAG = "EliteGunner";
-    private static final double TERROR_PHANTOM_EXCLUSION_RADIUS = 128.0D;
-    private static final long NATURAL_TERROR_PHANTOM_COOLDOWN_TICKS = 10L * 24000L;
-    private static final Map<MinecraftServer, Long> LAST_NATURAL_TERROR_PHANTOM_SPAWN = new WeakHashMap<>();
 
     private static final Identifier[] DEFAULT_PILLAGER_GUNS = new Identifier[] {
             Reference.id("assault_rifle"),
@@ -331,24 +325,8 @@ public final class GunEvents {
             return;
         }
 
-        double terrorChance = Config.terrorPhantomChance(serverLevel);
-        if (terrorChance > 0.0D
-                && canSpawnNaturalTerrorPhantom(serverLevel, phantom)
-                && phantom.getRandom().nextDouble() < terrorChance) {
-            TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
-            if (terror != null) {
-                terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
-                terror.setYRot(phantom.getYRot());
-                terror.setXRot(phantom.getXRot());
-                terror.setDeltaMovement(phantom.getDeltaMovement());
-                terror.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.EntitySpawnReason.EVENT, spawnData);
-                if (serverLevel.addFreshEntity(terror)) {
-                    recordNaturalTerrorPhantomSpawn(serverLevel);
-                    phantom.discard();
-                    return;
-                }
-            }
-        }
+        // Free-roaming Terror Phantom natural conversion is soft-disabled.
+        // Bound Terror Phantom (guardian) and spawn eggs remain available.
 
         double gunnerChance = Config.phantomGunnerChance(serverLevel);
         if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
@@ -370,29 +348,6 @@ public final class GunEvents {
         if (serverLevel.addFreshEntity(gunner)) {
             phantom.discard();
         }
-    }
-
-    private static boolean canSpawnNaturalTerrorPhantom(ServerLevel level, Phantom sourcePhantom) {
-        if (!isNaturalTerrorPhantomCooldownReady(level)) {
-            return false;
-        }
-
-        AABB checkArea = sourcePhantom.getBoundingBox().inflate(TERROR_PHANTOM_EXCLUSION_RADIUS, 96.0D, TERROR_PHANTOM_EXCLUSION_RADIUS);
-        // Guardian (Bound Terror Phantom) extends TerrorPhantom, so this single query covers both variants.
-        return level.getEntitiesOfClass(TerrorPhantom.class, checkArea, existing -> existing.isAlive()).isEmpty();
-    }
-
-    private static boolean isNaturalTerrorPhantomCooldownReady(ServerLevel level) {
-        MinecraftServer server = level.getServer();
-        Long lastSpawn = LAST_NATURAL_TERROR_PHANTOM_SPAWN.get(server);
-        if (lastSpawn == null) {
-            return true;
-        }
-        return level.getGameTime() - lastSpawn >= NATURAL_TERROR_PHANTOM_COOLDOWN_TICKS;
-    }
-
-    private static void recordNaturalTerrorPhantomSpawn(ServerLevel level) {
-        LAST_NATURAL_TERROR_PHANTOM_SPAWN.put(level.getServer(), level.getGameTime());
     }
 
     @SubscribeEvent
