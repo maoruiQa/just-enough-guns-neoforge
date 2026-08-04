@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -24,20 +25,31 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.GrenadeEntity;
+import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.init.ModItems;
+import ttv.migami.jeg.item.GunItem;
 
 /**
  * Terror Phantom based on original 1.20.1 implementation.
  * Free-roaming Terror Phantom with 5-phase AI system.
  */
 public class TerrorPhantom extends AbstractTerrorPhantom {
+    private static final int ROCKET_COOLDOWN_TICKS = 50;
+    private static final double ROCKET_MIN_RANGE = 16.0D;
+    private static final double ROCKET_MAX_RANGE = 96.0D;
+    private static final double ROCKET_GRAVITY_PER_TICK = 0.040D;
+    private static final ResourceLocation ROCKET_LAUNCHER_ID = Reference.id("rocket_launcher");
+    private int rocketCooldownTicks = 0;
     // Entity data for syncing
     private static final EntityDataAccessor<Boolean> IS_ROLLING = SynchedEntityData.defineId(TerrorPhantom.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_DYING = SynchedEntityData.defineId(TerrorPhantom.class, EntityDataSerializers.BOOLEAN);
@@ -75,9 +87,98 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
         this.moveControl = new TerrorPhantomMoveControl(this);
     }
 
+    /**
+     * Fire a gravity-led rocket at a vehicle-mounted target.
+     * Independent of minigun magazine/reload so both weapon systems can coexist.
+     */
+    protected void tryShootRocketAtVehicleTarget(LivingEntity target) {
+        if (this.level().isClientSide() || this.isDying()) {
+            return;
+        }
+        if (this.rocketCooldownTicks > 0) {
+            this.rocketCooldownTicks--;
+            return;
+        }
+        if (target == null || !target.isAlive() || target.getVehicle() == null) {
+            return;
+        }
+
+        Entity rootVehicle = target.getRootVehicle();
+        if (rootVehicle == null) {
+            return;
+        }
+
+        Vec3 muzzle = rocketMuzzlePosition();
+        Vec3 targetPos = rootVehicle.getBoundingBox().getCenter();
+        double distanceSqr = muzzle.distanceToSqr(targetPos);
+        if (distanceSqr < ROCKET_MIN_RANGE * ROCKET_MIN_RANGE || distanceSqr > ROCKET_MAX_RANGE * ROCKET_MAX_RANGE) {
+            return;
+        }
+        if (!ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(this, target)) {
+            return;
+        }
+
+        var holder = ModItems.GUNS.get(ROCKET_LAUNCHER_ID);
+        if (holder == null) {
+            return;
+        }
+        GunItem rocketGun = holder.get();
+        GunStats rocketStats = rocketGun.getStats();
+        ItemStack rocketStack = new ItemStack(rocketGun);
+
+        Vec3 targetVel = rootVehicle.getDeltaMovement();
+        Vec3 direction = aimDirectionWithGravity(
+                muzzle,
+                targetPos,
+                targetVel,
+                Math.max(0.1D, rocketStats.projectileSpeed()),
+                ROCKET_GRAVITY_PER_TICK
+        );
+        if (direction.lengthSqr() < 1.0E-6D) {
+            return;
+        }
+
+        rocketGun.fireDirectionallyFrom(this.level(), this, rocketStack, muzzle, direction);
+        rocketStats.fireSoundEvent().ifPresent(sound ->
+                this.level().playSound(null, this, sound, SoundSource.HOSTILE, 8.0F, 0.9F + this.random.nextFloat() * 0.2F)
+        );
+        this.gameEvent(GameEvent.ENTITY_ACTION);
+        this.rocketCooldownTicks = ROCKET_COOLDOWN_TICKS;
+    }
+
+    private Vec3 rocketMuzzlePosition() {
+        Vec3 forward = this.getViewVector(1.0F).normalize();
+        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+        double scale = Math.max(0.25D, this.getGeoScale());
+        return this.position()
+                .add(0.0D, this.getBbHeight() * 0.35D, 0.0D)
+                .add(up.scale(-0.35D * scale))
+                .add(forward.scale(1.35D * scale));
+    }
+
+    /**
+     * Iterative intercept aiming that compensates for discrete per-tick gravity drop.
+     */
+    private static Vec3 aimDirectionWithGravity(Vec3 muzzle, Vec3 targetPos, Vec3 targetVel, double speed, double gravityPerTick) {
+        Vec3 aimPoint = targetPos;
+        for (int i = 0; i < 8; i++) {
+            double distance = muzzle.distanceTo(aimPoint);
+            double flightTicks = distance / speed;
+            double drop = gravityPerTick * flightTicks * (flightTicks + 1.0D) * 0.5D;
+            aimPoint = targetPos.add(targetVel.scale(flightTicks)).add(0.0D, drop, 0.0D);
+        }
+        Vec3 delta = aimPoint.subtract(muzzle);
+        double lengthSqr = delta.lengthSqr();
+        if (lengthSqr < 1.0E-8D) {
+            return Vec3.ZERO;
+        }
+        return delta.scale(1.0D / Math.sqrt(lengthSqr));
+    }
+
     @Override
     protected ResourceLocation getVariantTexture() {
-        return Reference.id("textures/entity/phantom_gunner/phantom_gunner.png");
+        // Original JEG atlas includes under-wing minigun UVs; phantom_gunner atlas does not.
+        return Reference.id("textures/entity/terror_phantom/terror_phantom.png");
     }
 
     @Override
@@ -897,6 +998,9 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
 
             // Always look at target
             TerrorPhantom.this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+
+            // Anti-vehicle rockets (independent of minigun reload/cooldown).
+            TerrorPhantom.this.tryShootRocketAtVehicleTarget(target);
 
             // Check if we can shoot (can see through penetrable blocks like leaves)
             if (!ttv.migami.jeg.gun.BulletPenetrationHelper.hasLineOfSightThroughPenetrable(TerrorPhantom.this, target)) return;
