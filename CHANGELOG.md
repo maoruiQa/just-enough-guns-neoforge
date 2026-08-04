@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.8.0 - 2026-08-04
+
+### Added
+- Ported SuperbWarfare-style special equipment into JEG: FPV drones with monitor control, C4 bombs (including remote/detonator variants), claymore mines, and a C4 vest wearable charge.
+- Added the C4 Defuser tool for safely removing placed C4 charges, with durability-based uses.
+- Added guided launchers **Javelin** and **Igla 9K38**, including lock-on fire, SW-aligned first-person poses/ADS, inventory icons, walk/sprint root motion, and full reload animation support.
+- Added C4 drone FPV payload HUD with detonate guidance and a **KAMIKAZE** dive presentation for explosive drone runs.
+- Added a C4 vest bomber gunner variant with configurable spawn rates so suicide-bomber pressure can be tuned per server.
+- Added SW-style smoke screens that deny missile locks while active, including denser custom smoke particles and dedicated release audio.
+- Added SW-style vehicle missile lock frames and seek audio so lockable targets get clear on-screen seek boxes and feedback.
+- Soft-disabled natural Terror Phantom spawns by default to reduce unsolicited aerial boss pressure in normal worlds.
+
+### Changed
+- Set the module version to `1.8.0`.
+- Rebalanced guided missiles: retuned tracking/damage feel and allow unguided Javelin dumps when lock is not available.
+- Improved anti-vehicle rocket performance against armored targets.
+- Strengthened drone descent power cut and raised max drone descent speed by about 1.33x for snappier FPV kamikaze dives.
+- Aligned drone camera pitch with SuperbWarfare FPV framing.
+- Only draw lock boxes for missile/drone targets that are in range and have line of sight.
+- Hide the vanilla armor bar while riding a vehicle so vehicle HUDs stay readable.
+- Improved vehicle state sync with broader tracking coverage and a 256-block fallback for distant vehicles.
+
+### Fixed
+- Fixed drone FPV rubber-banding and missing pilot render during monitor control.
+- Fixed missile/drone seek frames missing when targets were due north.
+- Fixed helicopter rotor spin-down and engine sound continuing after dismount.
+- Fixed guided launcher fire/lock handling, ADS raise, hand orientation, and inventory GUI presentation (including flat Igla icons that fill the item slot).
+- Fixed special equipment audio, monitor link behavior, and payload HUD tip text; repaired related language JSON.
+- Fixed vehicle missile and special-equipment presentation issues carried over from the special equipment port.
+
+### Verification
+- Passed `.\gradlew build`.
+
 ## 1.7.5 - 2026-07-22
 
 ### Added
