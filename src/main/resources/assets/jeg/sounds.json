@@ -1421,6 +1421,24 @@
       }
     ]
   },
+  "vehicle.missile_locking": {
+    "subtitle": "subtitle.jeg.vehicle.missile_locking",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/common/missile_locking",
+        "stream": false
+      }
+    ]
+  },
+  "vehicle.missile_locked": {
+    "subtitle": "subtitle.jeg.vehicle.missile_locked",
+    "sounds": [
+      {
+        "name": "jeg:vehicle/common/missile_locked",
+        "stream": false
+      }
+    ]
+  },
   "vehicle.missile_warning": {
     "subtitle": "subtitle.jeg.vehicle.missile_warning",
     "sounds": [

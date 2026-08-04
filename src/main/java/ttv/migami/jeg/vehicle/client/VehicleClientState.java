@@ -1,7 +1,10 @@
 package ttv.migami.jeg.vehicle.client;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public final class VehicleClientState {
     private static int vehicleId = -1;
@@ -14,6 +17,9 @@ public final class VehicleClientState {
     private static float mouseLerpY;
     private static double lastMouseX = Double.NaN;
     private static double lastMouseY = Double.NaN;
+    private static int lastSeekTicks;
+    private static boolean lastMissileLocked;
+    private static int lastLockedSoundTick = Integer.MIN_VALUE;
 
     private VehicleClientState() {}
 
@@ -22,6 +28,30 @@ public final class VehicleClientState {
         freeLookDown = freeLook;
         zoomDown = zoom;
         seekDown = seek;
+        tickMissileSeekAudio(vehicle, seek);
+    }
+
+    private static void tickMissileSeekAudio(VehicleEntity vehicle, boolean seek) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || !vehicle.isSelectedVehicleWeaponLockOn(player)) {
+            lastSeekTicks = 0;
+            lastMissileLocked = false;
+            return;
+        }
+        int seekTicks = vehicle.missileSeekTicks();
+        boolean locked = vehicle.hasMissileLock();
+        if (seek && seekTicks > 0 && lastSeekTicks <= 0) {
+            player.playSound(VehicleSoundHelper.missileLocking(), 2.0F, 1.0F);
+        }
+        if (locked && !lastMissileLocked) {
+            player.playSound(VehicleSoundHelper.missileLocked(), 2.0F, 1.0F);
+            lastLockedSoundTick = player.tickCount;
+        } else if (locked && seek && player.tickCount - lastLockedSoundTick >= 8) {
+            player.playSound(VehicleSoundHelper.missileLocked(), 2.0F, 1.0F);
+            lastLockedSoundTick = player.tickCount;
+        }
+        lastSeekTicks = seekTicks;
+        lastMissileLocked = locked;
     }
 
     public static void setMousePosition(double mouseX, double mouseY) {
@@ -72,6 +102,9 @@ public final class VehicleClientState {
         clearFrameDeltas();
         mouseLerpX = 0.0F;
         mouseLerpY = 0.0F;
+        lastSeekTicks = 0;
+        lastMissileLocked = false;
+        lastLockedSoundTick = Integer.MIN_VALUE;
     }
 
     public static boolean isRidingVehicle() {
