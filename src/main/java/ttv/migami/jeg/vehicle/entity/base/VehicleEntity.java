@@ -2263,7 +2263,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         Vec3 eye = shooter.getEyePosition();
         Entity bestTarget = null;
         double bestScore = minDot;
-        for (Entity candidate : this.level().getEntities(this, this.getBoundingBox().inflate(range), candidate -> candidate instanceof VehicleDecoyEntity || profile.canLock(candidate, shooter, this))) {
+        for (Entity candidate : this.level().getEntities(this, this.getBoundingBox().inflate(range), candidate -> {
+            if (candidate instanceof VehicleDecoyEntity decoy) {
+                // Flares can be locked; smoke screens only block, they are not lock targets.
+                return !decoy.isSmokeDecoy();
+            }
+            return profile.canLock(candidate, shooter, this);
+        })) {
             if (!candidate.isAlive()) {
                 continue;
             }
@@ -2285,7 +2291,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean canSeeMissileTarget(Vec3 eye, Vec3 targetCenter, Entity candidate) {
-        if (!(candidate instanceof VehicleDecoyEntity) && VehicleDecoyEntity.isSmokeBlockingTarget(candidate)) {
+        // Smoke blocks lock for every non-flare candidate (living, vehicles, etc.).
+        if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(this.level(), eye, candidate)) {
             return false;
         }
         HitResult hit = this.level().clip(new ClipContext(eye, targetCenter, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));

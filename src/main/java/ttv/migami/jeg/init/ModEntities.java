@@ -281,7 +281,8 @@ public final class ModEntities {
             "vehicle_decoy",
             () -> EntityType.Builder.<VehicleDecoyEntity>of(VehicleDecoyEntity::new, MobCategory.MISC)
                     .sized(0.35F, 0.35F)
-                    .clientTrackingRange(8)
+                    // SW smoke decoy tracking is 64 — needed so client lock checks see hand-grenade screens at range.
+                    .clientTrackingRange(64)
                     .updateInterval(1)
                     .build(entityKey("vehicle_decoy"))
     );

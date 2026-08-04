@@ -59,7 +59,7 @@ public abstract class TimedThrowableItemProjectile extends ThrowableItemProjecti
 
         if (this.level().isClientSide()) {
             this.spawnFlightParticles();
-        } else {
+        } else if (this.usesStandardFuse()) {
             int fuse = this.getFuse() - 1;
             if (fuse <= 0) {
                 this.explodeNow();
@@ -75,6 +75,11 @@ public abstract class TimedThrowableItemProjectile extends ThrowableItemProjecti
                 this.setDeltaMovement(Vec3.ZERO);
             }
         }
+    }
+
+    /** When false, subclasses manage fuse/lifecycle in their own tick overrides. */
+    protected boolean usesStandardFuse() {
+        return true;
     }
 
     @Override
@@ -116,7 +121,7 @@ public abstract class TimedThrowableItemProjectile extends ThrowableItemProjecti
     }
 
     public final void setFuse(int fuseTicks) {
-        this.entityData.set(DATA_FUSE, Math.max(1, fuseTicks));
+        this.entityData.set(DATA_FUSE, fuseTicks);
     }
 
     public final void initialisePosition(Vec3 position) {

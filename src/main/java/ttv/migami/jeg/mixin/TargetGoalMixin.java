@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.util.SmokeUtil;
 
 @Mixin(TargetGoal.class)
 public abstract class TargetGoalMixin {
@@ -20,7 +21,10 @@ public abstract class TargetGoalMixin {
 
     @Redirect(method = "canContinueToUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/sensing/Sensing;hasLineOfSight(Lnet/minecraft/world/entity/Entity;)Z"))
     private boolean jeg$hasLineOfSight(Sensing sensing, net.minecraft.world.entity.Entity target) {
-        if (target instanceof Player player && player.hasEffect(ModEffects.SMOKED)) {
+        if (this.mob.hasEffect(ModEffects.SMOKED) || SmokeUtil.isInSmoke(this.mob)) {
+            return false;
+        }
+        if (target instanceof LivingEntity living && (living.hasEffect(ModEffects.SMOKED) || SmokeUtil.isInSmoke(living))) {
             return false;
         }
         if (this.mob.entityTags().contains("MobGunner") && target instanceof Player player && player.isInvisible()) {
