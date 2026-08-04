@@ -39,6 +39,7 @@ import ttv.migami.jeg.item.EnemyVehicleSpawnItem;
 import ttv.migami.jeg.item.FlashlightAttachmentItem;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.item.C4VestItem;
+import ttv.migami.jeg.item.DefuserItem;
 import ttv.migami.jeg.item.DetonatorItem;
 import ttv.migami.jeg.item.DroneItem;
 import ttv.migami.jeg.item.GuidedLauncherItem;
@@ -301,6 +302,9 @@ public final class ModItems {
     );
     public static final DeferredHolder<Item, DetonatorItem> DETONATOR = REGISTER.register(
             "detonator", () -> new DetonatorItem(baseProperties(Reference.id("detonator")).stacksTo(1))
+    );
+    public static final DeferredHolder<Item, DefuserItem> DEFUSER = REGISTER.register(
+            "defuser", () -> new DefuserItem(baseProperties(Reference.id("defuser")).stacksTo(1).durability(8))
     );
     public static final DeferredHolder<Item, C4VestItem> C4_VEST = REGISTER.register(
             "c4_vest",

@@ -24,6 +24,7 @@ public final class FabricCreativeTabs {
             remoteC4.set(ttv.migami.jeg.init.ModDataComponents.C4_REMOTE.get(), true);
             entries.accept(remoteC4);
             entries.accept(ModItems.DETONATOR.get());
+            entries.accept(ModItems.DEFUSER.get());
             entries.accept(ModItems.C4_VEST.get());
             entries.accept(ModItems.CLAYMORE_MINE.get());
             entries.accept(ModItems.TM_62.get());
