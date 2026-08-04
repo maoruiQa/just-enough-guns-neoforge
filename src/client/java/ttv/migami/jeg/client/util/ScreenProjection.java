@@ -5,21 +5,28 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector4f;
 
 /**
- * Lightweight world->screen projection (Superb Warfare VectorUtil style).
+ * Lightweight world-to-screen projection (Superb Warfare VectorUtil style).
+ * <p>
+ * On 1.21.x, {@code GameRenderer.renderLevel} keeps camera look in a separate model-view
+ * ({@code rotation(camera.rotation().conjugate())}), not on the entity PoseStack.
+ * Capturing PoseStack alone is identity-like and mis-projects northward (−Z) targets.
  */
 public final class ScreenProjection {
     private static Matrix4f modelView = new Matrix4f();
     private static Matrix4f projection = new Matrix4f();
     private static double fov = 70.0D;
+    private static boolean matricesValid;
 
     private ScreenProjection() {}
 
     public static void captureMatrices(Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
         modelView = new Matrix4f(modelViewMatrix);
         projection = new Matrix4f(projectionMatrix);
+        matricesValid = true;
     }
 
     public static void setFov(double value) {
@@ -33,22 +40,38 @@ public final class ScreenProjection {
             return null;
         }
         Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 relWorld = worldPos.subtract(camera.getPosition());
+        double lookDepth = relWorld.dot(new Vec3(camera.getLookVector()));
+        if (lookDepth < 0.05D) {
+            return null;
+        }
+
+        // Primary: rebuild view from camera rotation (matches GameRenderer.renderLevel model-view).
+        Matrix4f view = new Matrix4f().rotation(camera.rotation().conjugate(new Quaternionf()));
         Vector4f rel = new Vector4f(
-                (float) (worldPos.x - camera.getPosition().x),
-                (float) (worldPos.y - camera.getPosition().y),
-                (float) (worldPos.z - camera.getPosition().z),
+                (float) relWorld.x,
+                (float) relWorld.y,
+                (float) relWorld.z,
                 1.0F
         );
-        rel.mul(modelView);
-        rel.mul(projection);
+        rel.mul(view);
+
+        if (matricesValid) {
+            rel.mul(projection);
+        } else {
+            // Secondary: live projection from FOV when world capture has not run yet.
+            try {
+                rel.mul(mc.gameRenderer.getProjectionMatrix(fov));
+            } catch (Throwable ignored) {
+                return null;
+            }
+        }
+
         float depth = rel.w;
-        if (depth == 0.0F) {
+        if (depth == 0.0F || depth < 0.05F) {
             return null;
         }
         rel.div(depth);
-        if (depth < 0.05F) {
-            return null;
-        }
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
         return new Vec3(w * (0.5D + rel.x * 0.5D), h * (0.5D - rel.y * 0.5D), depth);

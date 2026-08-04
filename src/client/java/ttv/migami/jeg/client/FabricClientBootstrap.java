@@ -303,13 +303,12 @@ public final class FabricClientBootstrap {
             if (matrixStack == null) {
                 return;
             }
-            // Capture pose/projection for special-equipment world→screen HUD frames (SW VectorUtil style).
-            // Without this, drawSeekFrames / drone entity frames never get valid matrices.
+            // Capture model-view/projection for special-equipment world→screen HUD frames.
+            // 1.21.x: camera look is in positionMatrix (LevelRenderer model-view), NOT entity PoseStack.
+            // Capturing PoseStack alone leaves identity-like model-view and mis-frames northbound targets.
             try {
-                org.joml.Matrix4f modelView = new org.joml.Matrix4f(matrixStack.last().pose());
-                org.joml.Matrix4f projection = new org.joml.Matrix4f(
-                        com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix()
-                );
+                org.joml.Matrix4f modelView = new org.joml.Matrix4f(context.positionMatrix());
+                org.joml.Matrix4f projection = new org.joml.Matrix4f(context.projectionMatrix());
                 ttv.migami.jeg.client.util.ScreenProjection.captureMatrices(modelView, projection);
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.options != null) {
