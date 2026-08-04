@@ -15,6 +15,8 @@ public final class VehicleSoundHelper {
     private static final ResourceLocation LOCKING_WARNING = Reference.id("vehicle.locking_warning");
     private static final ResourceLocation LOCKED_WARNING = Reference.id("vehicle.locked_warning");
     private static final ResourceLocation MISSILE_WARNING = Reference.id("vehicle.missile_warning");
+    private static final ResourceLocation MISSILE_LOCKING = Reference.id("vehicle.missile_locking");
+    private static final ResourceLocation MISSILE_LOCKED = Reference.id("vehicle.missile_locked");
     private static final Map<String, ResourceLocation> FIRE_SOUNDS = Map.ofEntries(
             Map.entry("a10", Reference.id("vehicle.a10.fire")),
             Map.entry("ah6", Reference.id("vehicle.ah6.cannon_fire")),
@@ -57,6 +59,18 @@ public final class VehicleSoundHelper {
 
     public static SoundEvent missileWarning() {
         DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(MISSILE_WARNING);
+        return sound != null ? sound.get() : lockedWarning();
+    }
+
+    /** Shooter-side progressive lock feedback (not radar warning for the target). */
+    public static SoundEvent missileLocking() {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(MISSILE_LOCKING);
+        return sound != null ? sound.get() : lockingWarning();
+    }
+
+    /** Shooter-side full-lock feedback (not radar warning for the target). */
+    public static SoundEvent missileLocked() {
+        DeferredHolder<SoundEvent, SoundEvent> sound = ModSounds.ALL.get(MISSILE_LOCKED);
         return sound != null ? sound.get() : lockedWarning();
     }
 
