@@ -513,10 +513,12 @@ public final class GunClientEvents {
             return;
         }
 
-        // Capture pose/projection for special-equipment world→screen HUD frames (SW VectorUtil style)
+        // Capture model-view/projection for special-equipment world→screen HUD frames.
+        // 1.21.x: camera look is in getModelViewMatrix(), NOT entity PoseStack (identity-like).
+        // PoseStack capture mis-frames northbound targets the same way as Fabric.
         try {
             ttv.migami.jeg.client.util.ScreenProjection.captureMatrices(
-                    new org.joml.Matrix4f(event.getPoseStack().last().pose()),
+                    new org.joml.Matrix4f(event.getModelViewMatrix()),
                     new org.joml.Matrix4f(event.getProjectionMatrix())
             );
         } catch (Throwable ignored) {
