@@ -408,14 +408,12 @@ public class BulletEntity extends Projectile {
                     this.discard();
                     return;
                 }
-                DamageSource source = createBulletDamageSource(livingOwner, false);
+                DamageSource source = createBulletDamageSource(livingOwner);
                 if (hitEntity instanceof LivingEntity living) {
                     GunStats stats = getGunStats();
                     float damage = applyBallisticArmor(living, result, this.entityData.get(DATA_DAMAGE), stats, false);
-                    boolean hurt = living.hurtServer((ServerLevel) this.level(), source, damage);
-                    if (hurt) {
-                        ModDamageTypes.attributePlayerKillCredit(living, livingOwner);
-                    }
+                    boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(
+                            living, (ServerLevel) this.level(), source, damage, livingOwner);
                     if (hurt && livingOwner instanceof ServerPlayer shooter) {
                         NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
                     }
@@ -458,43 +456,46 @@ public class BulletEntity extends Projectile {
             }
 
             boolean creativeShooter = livingOwner instanceof Player player && (player.isCreative() || player.isSpectator());
-            // Custom bullet damage type with shooter as causing entity so achievements / boss kills / modpack kill tracking credit the player.
-            DamageSource source = createBulletDamageSource(livingOwner, creativeShooter);
+            // Always keep the shooter as causing entity. Nulling it makes the Ender Dragon ignore the shot.
+            DamageSource source = createBulletDamageSource(livingOwner);
 
-            if (entity instanceof LivingEntity living) {
-                if (GunHeadshotHelper.isHeadshotHit(result, living)) {
-                    damage *= GunHeadshotHelper.headshotMultiplier(stats, owner);
+            LivingEntity livingTarget = ModDamageTypes.resolveLivingTarget(entity);
+            ServerLevel serverLevel = (ServerLevel) this.level();
+
+            if (livingTarget != null) {
+                if (entity instanceof LivingEntity livingBody) {
+                    if (GunHeadshotHelper.isHeadshotHit(result, livingBody)) {
+                        damage *= GunHeadshotHelper.headshotMultiplier(stats, owner);
+                    }
+                    damage = applyBallisticArmor(livingBody, result, damage, stats, false);
                 }
-                damage = applyBallisticArmor(living, result, damage, stats, false);
 
-                ServerLevel serverLevel = (ServerLevel) this.level();
-                boolean hurt = living.hurtServer(serverLevel, source, damage);
+                ModDamageTypes.attributePlayerKillCredit(livingTarget, livingOwner);
+                boolean hurt;
+                if (entity instanceof LivingEntity livingBody) {
+                    hurt = livingBody.hurtServer(serverLevel, source, damage);
+                } else {
+                    hurt = entity.hurtServer(serverLevel, source, damage);
+                }
+
                 if (hurt && this.entityData.get(DATA_EXPLOSIVE_AMMO)) {
-                    living.igniteForSeconds(2);
+                    livingTarget.igniteForSeconds(2);
                 }
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
-                    NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                    NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, livingTarget));
                 }
-                if (hurt) {
-                    applyKillEffect(living, result);
+                if (hurt && entity instanceof LivingEntity livingBody) {
+                    applyKillEffect(livingBody, result);
                 }
 
-                boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, living);
+                boolean raidFriendlyPair = livingOwner != null && isRaidFriendlyPair(livingOwner, livingTarget);
 
                 if (creativeShooter) {
-                    living.setLastHurtByMob(null);
-                    if (living instanceof Mob mob && livingOwner instanceof Player player && mob.getTarget() == player) {
+                    if (livingTarget instanceof Mob mob && livingOwner instanceof Player player && mob.getTarget() == player) {
                         mob.setTarget(null);
                     }
                 } else if (!raidFriendlyPair && livingOwner instanceof Player player) {
-                    // Explicit player kill credit for advancements, boss progress, and modpack kill counters.
-                    if (hurt) {
-                        ModDamageTypes.attributePlayerKillCredit(living, player);
-                    } else {
-                        living.setLastHurtByMob(player);
-                    }
-
-                    if (!player.isCreative() && !player.isSpectator() && living instanceof Mob mob) {
+                    if (!player.isCreative() && !player.isSpectator() && livingTarget instanceof Mob mob) {
                         double followRange = getEffectiveFollowRange(mob);
                         if (mob.distanceToSqr(player) <= followRange * followRange) {
                             mob.setTarget(player);
@@ -503,8 +504,8 @@ public class BulletEntity extends Projectile {
                         }
                     }
                 } else if (!raidFriendlyPair && livingOwner != null) {
-                    living.setLastHurtByMob(livingOwner);
-                    if (living instanceof Mob mob) {
+                    livingTarget.setLastHurtByMob(livingOwner);
+                    if (livingTarget instanceof Mob mob) {
                         if (mob.getSensing().hasLineOfSight(livingOwner) || mob.getTarget() != null) {
                             mob.setTarget(livingOwner);
                         }
@@ -517,6 +518,9 @@ public class BulletEntity extends Projectile {
             // 1.20.1 parity: allow shotgun pellets from players to apply within the same tick.
             if (owner instanceof Player) {
                 entity.invulnerableTime = 0;
+                if (livingTarget != null) {
+                    livingTarget.invulnerableTime = 0;
+                }
             }
         }
 
@@ -970,7 +974,21 @@ public class BulletEntity extends Projectile {
                 boolean directHitVehicle = result instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof VehicleEntity;
                 float explosionPower = directHitVehicle ? power * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : power;
                 spawnCustomExplosionEffects((ServerLevel) this.level(), this.position(), id);
-                this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionPower, ExplosionInteraction.TNT);
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    double creditRadius = id.equals(ROCKET_LAUNCHER_ID) ? 11.0D : Math.max(explosionPower, 4.0D);
+                    ModDamageTypes.attributePlayerKillCreditInRadius(serverLevel, this.position(), creditRadius, owner);
+                }
+                DamageSource blastSource = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                this.level().explode(
+                        this,
+                        blastSource,
+                        null,
+                        this.getX(),
+                        this.getY(),
+                        this.getZ(),
+                        explosionPower,
+                        false,
+                        ExplosionInteraction.TNT);
                 if (id.equals(ROCKET_LAUNCHER_ID)) {
                     applyRocketBlastDamage(owner, directHitVehicle);
                 } else if (isVehicleRocket(id)) {
@@ -980,16 +998,14 @@ public class BulletEntity extends Projectile {
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity.isAlive()) {
-                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        DamageSource source = blastSource;
                         if (hitEntity instanceof LivingEntity living) {
                             if (id.equals(ROCKET_LAUNCHER_ID) && shouldSkipOwnerFriendlyBlast(owner, living)) {
                                 return true;
                             }
                             float damage = applyBallisticArmor(living, entityHit, directDamage, stats, id.equals(ROCKET_LAUNCHER_ID));
-                            boolean hurt = living.hurtServer((ServerLevel) this.level(), source, damage);
-                            if (hurt) {
-                                ModDamageTypes.attributePlayerKillCredit(living, owner);
-                            }
+                            boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(
+                                    living, (ServerLevel) this.level(), source, damage, owner);
                             if (hurt && owner instanceof ServerPlayer shooter) {
                                 NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
                             }
@@ -1010,18 +1026,21 @@ public class BulletEntity extends Projectile {
                 ExplosionInteraction interaction = Config.bulletBlockDestructionEnabled()
                         ? ExplosionInteraction.TNT
                         : ExplosionInteraction.NONE;
-                this.level().explode(this, pos.x, pos.y, pos.z, vehicleCannonExplosionPower(id), interaction);
+                float cannonPower = vehicleCannonExplosionPower(id);
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    ModDamageTypes.attributePlayerKillCreditInRadius(serverLevel, pos, Math.max(cannonPower, 4.0D), owner);
+                }
+                DamageSource cannonBlast = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                this.level().explode(this, cannonBlast, null, pos.x, pos.y, pos.z, cannonPower, false, interaction);
 
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity.isAlive()) {
-                        DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
+                        DamageSource source = cannonBlast;
                         if (hitEntity instanceof LivingEntity living) {
                             float directDamage = applyBallisticArmor(living, entityHit, stats.damage(), stats, false);
-                            boolean hurt = living.hurtServer((ServerLevel) this.level(), source, directDamage);
-                            if (hurt) {
-                                ModDamageTypes.attributePlayerKillCredit(living, owner);
-                            }
+                            boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(
+                                    living, (ServerLevel) this.level(), source, directDamage, owner);
                             if (hurt && owner instanceof ServerPlayer shooter) {
                                 NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
                             }
@@ -1161,14 +1180,11 @@ public class BulletEntity extends Projectile {
     }
 
     /**
-     * Bullet combat damage: shooter is the causing entity so kill credit / achievements work.
-     * Creative/spectator shooters strip attribution to avoid aggro (existing behavior).
+     * Bullet combat damage: shooter is always the causing entity.
+     * Do not null the causing entity for creative - Ender Dragon ignores non-player causes.
      */
-    private DamageSource createBulletDamageSource(@Nullable LivingEntity livingOwner, boolean creativeShooter) {
+    private DamageSource createBulletDamageSource(@Nullable LivingEntity livingOwner) {
         if (livingOwner != null) {
-            if (creativeShooter) {
-                return this.damageSources().thrown(this, null);
-            }
             return ModDamageTypes.causeBulletDamage(this.level().registryAccess(), this, livingOwner);
         }
         return this.damageSources().thrown(this, this.getOwner());
@@ -1176,9 +1192,7 @@ public class BulletEntity extends Projectile {
 
     private static void hurtEntityWithKillCredit(Entity target, DamageSource source, float damage, @Nullable Entity owner) {
         if (target instanceof LivingEntity living && target.level() instanceof ServerLevel serverLevel) {
-            if (living.hurtServer(serverLevel, source, damage)) {
-                ModDamageTypes.attributePlayerKillCredit(living, owner);
-            }
+            ModDamageTypes.hurtWithPlayerKillCredit(living, serverLevel, source, damage, owner);
             return;
         }
         target.hurt(source, damage);

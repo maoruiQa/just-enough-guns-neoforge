@@ -118,9 +118,7 @@ public class GrenadeEntity extends TimedThrowableItemProjectile {
             if (damage > 0.5F) {
                 var source = this.damageSources().explosion(this, owner);
                 if (this.level() instanceof ServerLevel serverLevel) {
-                    if (target.hurtServer(serverLevel, source, damage)) {
-                        ModDamageTypes.attributePlayerKillCredit(target, owner);
-                    }
+                    ModDamageTypes.hurtWithPlayerKillCredit(target, serverLevel, source, damage, owner);
                 } else {
                     target.hurt(source, damage);
                 }
