@@ -2262,7 +2262,12 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         Vec3 eye = shooter.getEyePosition();
         Entity bestTarget = null;
         double bestScore = minDot;
-        for (Entity candidate : this.level().getEntities(this, this.getBoundingBox().inflate(range), candidate -> candidate instanceof VehicleDecoyEntity || profile.canLock(candidate, shooter, this))) {
+        for (Entity candidate : this.level().getEntities(this, this.getBoundingBox().inflate(range), candidate -> {
+            if (candidate instanceof VehicleDecoyEntity decoy) {
+                return !decoy.isSmokeDecoy();
+            }
+            return profile.canLock(candidate, shooter, this);
+        })) {
             if (!candidate.isAlive()) {
                 continue;
             }
@@ -2284,7 +2289,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
     }
 
     private boolean canSeeMissileTarget(Vec3 eye, Vec3 targetCenter, Entity candidate) {
-        if (!(candidate instanceof VehicleDecoyEntity) && VehicleDecoyEntity.isSmokeBlockingTarget(candidate)) {
+        if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(this.level(), eye, candidate)) {
             return false;
         }
         HitResult hit = this.level().clip(new ClipContext(eye, targetCenter, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));

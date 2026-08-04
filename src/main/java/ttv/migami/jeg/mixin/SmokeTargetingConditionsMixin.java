@@ -4,19 +4,27 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ttv.migami.jeg.init.ModEffects;
+import ttv.migami.jeg.util.SmokeUtil;
 
 @Mixin(TargetingConditions.class)
 public abstract class SmokeTargetingConditionsMixin {
     @Inject(method = "test", at = @At("HEAD"), cancellable = true)
-    private void jeg$rejectSmokedPlayer(ServerLevel level, LivingEntity attacker, LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
-        if (target instanceof Player player && player.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()))) {
+    private void jeg$rejectSmoke(ServerLevel level, LivingEntity attacker, LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
+        if (jeg$isBlindedBySmoke(attacker) || jeg$isBlindedBySmoke(target)) {
             cir.setReturnValue(false);
         }
+    }
+
+    private static boolean jeg$isBlindedBySmoke(LivingEntity entity) {
+        if (entity == null) {
+            return false;
+        }
+        return entity.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()))
+                || SmokeUtil.isInSmoke(entity);
     }
 }
