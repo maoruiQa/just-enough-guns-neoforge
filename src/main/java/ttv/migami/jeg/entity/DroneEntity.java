@@ -69,6 +69,21 @@ public final class DroneEntity extends Entity implements GeoEntity {
     private float pendingMouseYaw;
     private float pendingMousePitch;
     private boolean hasPendingInput;
+    /**
+     * True while this client is FPV-controlling and predicting this drone.
+     * When set, vanilla entity track packets must not snap the predicted pose (SW local-control rule).
+     */
+    private boolean clientLocalControl;
+    /** SW-style soft network reconciliation for non-controller clients. */
+    private static final int NETWORK_LERP_STEPS = 10;
+    /** Hard-correct only if FPV prediction drifts this far from server (blocks^2). */
+    private static final double LOCAL_CONTROL_SNAP_DISTANCE_SQR = 16.0D;
+    private int networkLerpSteps;
+    private double networkLerpX;
+    private double networkLerpY;
+    private double networkLerpZ;
+    private float networkLerpYRot;
+    private float networkLerpXRot;
 
     public DroneEntity(EntityType<? extends DroneEntity> type, Level level) {
         super(type, level);
@@ -120,6 +135,8 @@ public final class DroneEntity extends Entity implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
+        // SW handleClientSync: soft-pull non-controllers; skip while local FPV prediction owns the pose
+        this.handleNetworkReconcile();
         if (this.actionCooldown > 0) {
             this.actionCooldown--;
         }
@@ -130,7 +147,8 @@ public final class DroneEntity extends Entity implements GeoEntity {
         this.bodyPitchO = this.bodyPitch;
         this.bodyPitch *= 0.9F;
 
-        boolean controlled = this.controllerId != null || (this.level().isClientSide && this.hasPendingInput);
+        boolean controlled = this.controllerId != null
+                || (this.level().isClientSide && (this.clientLocalControl || this.hasPendingInput));
         if (!this.level().isClientSide) {
             this.validateController();
             controlled = this.controllerId != null;
@@ -175,6 +193,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
 
     /**
      * Client prediction: same input path as server packets so FPV feels responsive.
+     * Marks this entity as locally controlled so network lerp cannot rubber-band the FPV camera.
      */
     public void clientPredictInput(int inputs, float mouseYaw, float mousePitch) {
         if (!this.level().isClientSide) {
@@ -184,6 +203,91 @@ public final class DroneEntity extends Entity implements GeoEntity {
         this.pendingMouseYaw = mouseYaw;
         this.pendingMousePitch = mousePitch;
         this.hasPendingInput = true;
+        this.clientLocalControl = true;
+        this.networkLerpSteps = 0;
+    }
+
+    /**
+     * Called when local FPV control ends so ghost prediction and lerp-suppression stop.
+     */
+    public void clearClientControl() {
+        if (!this.level().isClientSide) {
+            return;
+        }
+        this.clientLocalControl = false;
+        this.hasPendingInput = false;
+        this.pendingInputs = 0;
+        this.pendingMouseYaw = 0.0F;
+        this.pendingMousePitch = 0.0F;
+        this.holdTickX = this.holdTickY = this.holdTickZ = 0;
+    }
+
+    private boolean isLocallyPredictedControl() {
+        return this.level().isClientSide && this.clientLocalControl;
+    }
+
+    /**
+     * SW-style soft reconcile for spectators / world view; no-op while FPV predicts locally.
+     */
+    private void handleNetworkReconcile() {
+        if (!this.level().isClientSide) {
+            return;
+        }
+        if (this.clientLocalControl) {
+            this.networkLerpSteps = 0;
+            return;
+        }
+        if (this.networkLerpSteps <= 0) {
+            return;
+        }
+        double x = this.getX() + (this.networkLerpX - this.getX()) / (double) this.networkLerpSteps;
+        double y = this.getY() + (this.networkLerpY - this.getY()) / (double) this.networkLerpSteps;
+        double z = this.getZ() + (this.networkLerpZ - this.getZ()) / (double) this.networkLerpSteps;
+        float yRot = this.getYRot() + Mth.wrapDegrees(this.networkLerpYRot - this.getYRot()) / (float) this.networkLerpSteps;
+        float xRot = this.getXRot() + (this.networkLerpXRot - this.getXRot()) / (float) this.networkLerpSteps;
+        this.setPos(x, y, z);
+        this.setYRot(yRot);
+        this.setXRot(xRot);
+        this.networkLerpSteps--;
+    }
+
+    /**
+     * Root hitch fix: while FPV is predicting, ignore vanilla track snaps (SW local-control rule).
+     * Otherwise soft-store the server pose for multi-step pull-in.
+     */
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        if (!this.level().isClientSide) {
+            super.lerpTo(x, y, z, yRot, xRot, steps);
+            return;
+        }
+        if (this.isLocallyPredictedControl()) {
+            double dx = x - this.getX();
+            double dy = y - this.getY();
+            double dz = z - this.getZ();
+            if (dx * dx + dy * dy + dz * dz > LOCAL_CONTROL_SNAP_DISTANCE_SQR) {
+                this.setPos(x, y, z);
+                this.setYRot(yRot);
+                this.setXRot(xRot);
+                this.setOldPosAndRot();
+                this.networkLerpSteps = 0;
+            }
+            return;
+        }
+        this.networkLerpX = x;
+        this.networkLerpY = y;
+        this.networkLerpZ = z;
+        this.networkLerpYRot = yRot;
+        this.networkLerpXRot = xRot;
+        this.networkLerpSteps = NETWORK_LERP_STEPS;
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        if (this.isLocallyPredictedControl()) {
+            return;
+        }
+        super.lerpMotion(x, y, z);
     }
 
     /**
@@ -585,7 +689,8 @@ public final class DroneEntity extends Entity implements GeoEntity {
     }
 
     private int controlRange(ServerPlayer player) {
-        return Math.max(64, player.getServer().getPlayerList().getSimulationDistance() * 16);
+        // Align with 26.2 / SW-style long-range FPV: view distance, not simulation distance.
+        return Math.max(64, player.getServer().getPlayerList().getViewDistance() * 16);
     }
 
     private ItemStack linkedMonitor(ServerPlayer player) {
