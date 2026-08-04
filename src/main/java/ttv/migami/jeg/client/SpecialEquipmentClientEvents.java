@@ -46,6 +46,9 @@ public final class SpecialEquipmentClientEvents {
     private static final double LOCK_RANGE = 256.0D;
     private static final double JAVELIN_MAX_TARGET_HEIGHT = 64.0D;
     private static final double IGLA_MIN_TARGET_HEIGHT = 16.0D;
+    /** SW DroneHudOverlay: SeekTool.seekLivingEntities(drone, 256, 30). */
+    private static final double DRONE_FRAME_RANGE = 256.0D;
+    private static final double DRONE_FRAME_ANGLE = 30.0D;
 
     private static final ResourceLocation JAVELIN_HUD = Reference.id("textures/overlay/javelin/javelin_hud.png");
     private static final ResourceLocation JAVELIN_DIR = Reference.id("textures/overlay/javelin/dir.png");
@@ -276,35 +279,99 @@ public final class SpecialEquipmentClientEvents {
         double bestDot = minimumDot;
         AABB area = player.getBoundingBox().inflate(LOCK_RANGE);
         for (Entity target : player.level().getEntities(player, area, entity -> entity instanceof LivingEntity || entity instanceof VehicleEntity)) {
-            if (!target.isAlive() || player.distanceToSqr(target) > LOCK_RANGE * LOCK_RANGE) continue;
-            if (target.getVehicle() != null) continue; // SW noVehicle(): not riding something
-            if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(player, target)) continue;
-            double heightDelta = target.getY() - player.getY();
-            if (launcher.airOnly()) {
-                boolean airVehicle = target instanceof VehicleEntity vehicle
-                        && (vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
-                        || vehicle.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT);
-                boolean airborne = !target.onGround() && !target.isInWater();
-                if (!airVehicle && !airborne) continue;
-                if (heightDelta < IGLA_MIN_TARGET_HEIGHT && !airVehicle && target.onGround()) continue;
-            } else {
-                // SW ground seek: living on ground / surface vehicles
-                if (target instanceof VehicleEntity vehicle) {
-                    VehicleType type = vehicle.vehicleData().defaults().vehicleType();
-                    if (type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT) continue;
-                } else if (!(target instanceof LivingEntity) || (!target.onGround() && !target.isInWater())) {
-                    continue;
-                }
-                if (heightDelta > JAVELIN_MAX_TARGET_HEIGHT) continue;
+            if (!isLockableCandidate(player, launcher, target)) {
+                continue;
             }
             Vec3 aim = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(eye).normalize();
             double dot = look.dot(aim);
-            if (dot > bestDot && player.hasLineOfSight(target)) {
+            if (dot > bestDot) {
                 bestDot = dot;
                 best = target;
             }
         }
         return best == null ? Integer.MIN_VALUE : best.getId();
+    }
+
+    /**
+     * Shared eligibility for lock tick + HUD frames: range, type/height, smoke, lock cone, LOS.
+     * Frames must not box targets that cannot actually be locked.
+     */
+    private static boolean isLockableCandidate(LocalPlayer player, GuidedLauncherItem launcher, Entity target) {
+        if (target == null || !target.isAlive() || target == player) {
+            return false;
+        }
+        if (player.distanceToSqr(target) > LOCK_RANGE * LOCK_RANGE) {
+            return false;
+        }
+        if (target.getVehicle() != null) {
+            return false; // SW noVehicle()
+        }
+        if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(player, target)) {
+            return false;
+        }
+        double heightDelta = target.getY() - player.getY();
+        if (launcher.airOnly()) {
+            boolean airVehicle = target instanceof VehicleEntity vehicle
+                    && (vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                    || vehicle.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT);
+            boolean airborne = !target.onGround() && !target.isInWater();
+            if (!airVehicle && !airborne) {
+                return false;
+            }
+            if (heightDelta < IGLA_MIN_TARGET_HEIGHT && !airVehicle && target.onGround()) {
+                return false;
+            }
+        } else {
+            if (target instanceof VehicleEntity vehicle) {
+                VehicleType type = vehicle.vehicleData().defaults().vehicleType();
+                if (type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT) {
+                    return false;
+                }
+            } else if (!(target instanceof LivingEntity) || (!target.onGround() && !target.isInWater())) {
+                return false;
+            }
+            if (heightDelta > JAVELIN_MAX_TARGET_HEIGHT) {
+                return false;
+            }
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getViewVector(1.0F).normalize();
+        Vec3 aim = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(eye).normalize();
+        double minimumDot = Math.cos(Math.toRadians(launcher.lockAngleDegrees()));
+        if (look.dot(aim) < minimumDot) {
+            return false;
+        }
+        return player.hasLineOfSight(target);
+    }
+
+    /** SW-style drone seek: range, angle, smoke, block LOS. */
+    private static boolean isDroneFrameCandidate(DroneEntity drone, Entity target, LocalPlayer player) {
+        if (target == null || !target.isAlive() || target == drone || target == player) {
+            return false;
+        }
+        if (!(target instanceof LivingEntity) && !(target instanceof VehicleEntity)) {
+            return false;
+        }
+        if (drone.distanceToSqr(target) > DRONE_FRAME_RANGE * DRONE_FRAME_RANGE) {
+            return false;
+        }
+        if (ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(drone, target)) {
+            return false;
+        }
+        Vec3 eye = drone.getEyePosition();
+        Vec3 look = Vec3.directionFromRotation(drone.getXRot(), drone.getYRot()).normalize();
+        Vec3 center = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
+        Vec3 to = center.subtract(eye).normalize();
+        double minimumDot = Math.cos(Math.toRadians(DRONE_FRAME_ANGLE));
+        if (look.dot(to) < minimumDot) {
+            return false;
+        }
+        HitResult hit = drone.level().clip(new ClipContext(
+                eye, center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, drone));
+        if (hit.getType() == HitResult.Type.MISS) {
+            return true;
+        }
+        return target.getBoundingBox().inflate(0.3D).contains(hit.getLocation());
     }
 
     @SubscribeEvent(receiveCanceled = true)
@@ -353,8 +420,8 @@ public final class SpecialEquipmentClientEvents {
         g.fill(RenderType.guiOverlay(), 0, Mth.floor(top), Mth.floor(left) + 3, Mth.floor(bottom), 0xFF000000);
         g.fill(RenderType.guiOverlay(), Mth.floor(right), Mth.floor(top), w, Mth.floor(bottom), 0xFF000000);
 
-        // Target frames in FOV (SW SeekTool list)
-        drawSeekFrames(g, player, launcher, false);
+        // Target frames for lockable candidates only (range/LOS/smoke/angle/height)
+        drawSeekFrames(g, player, launcher);
 
         int x = w / 2;
         int y = h / 2;
@@ -382,38 +449,27 @@ public final class SpecialEquipmentClientEvents {
         if (progress > 0.9F) blitCentered(g, IGLA_PART_4, cx, cy, 32, 32);
         blitCentered(g, progress >= 1.0F ? IGLA_SHOOT : IGLA_HOLD, cx, cy + 40, 48, 16);
 
-        drawSeekFrames(g, player, launcher, true);
+        drawSeekFrames(g, player, launcher);
 
         int pct = Mth.floor(100.0F * progress);
         String status = lockTarget == Integer.MIN_VALUE ? "NO TARGET" : pct >= 100 ? "LOCKED" : "LOCK " + pct + "%";
         g.drawCenteredString(minecraft.font, status, cx, cy + 56, pct >= 100 ? 0xFF55FF55 : 0xFFFFAA00);
     }
 
-    private static void drawSeekFrames(GuiGraphics g, LocalPlayer player, GuidedLauncherItem launcher, boolean airOnly) {
-        Vec3 eye = player.getEyePosition();
-        double minDot = Math.cos(Math.toRadians(launcher.lockAngleDegrees() + 5.0D));
+    private static void drawSeekFrames(GuiGraphics g, LocalPlayer player, GuidedLauncherItem launcher) {
         for (Entity target : player.level().getEntities(player, player.getBoundingBox().inflate(LOCK_RANGE),
                 e -> e instanceof LivingEntity || e instanceof VehicleEntity)) {
-            if (!target.isAlive() || player.distanceToSqr(target) > LOCK_RANGE * LOCK_RANGE) continue;
-            if (target.getVehicle() != null) continue;
-            boolean airborne = !target.onGround() && !target.isInWater();
-            boolean airVehicle = target instanceof VehicleEntity v
-                    && (v.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
-                    || v.vehicleData().defaults().vehicleType() == VehicleType.AIRCRAFT);
-            if (airOnly) {
-                if (!airVehicle && !airborne) continue;
-            } else {
-                if (airVehicle || (airborne && !(target instanceof VehicleEntity))) continue;
+            if (!isLockableCandidate(player, launcher, target)) {
+                continue;
             }
             Vec3 center = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
-            if (!ScreenProjection.canSee(center)) continue;
-            Vec3 to = center.subtract(eye).normalize();
-            if (player.getViewVector(1.0F).dot(to) < minDot) continue;
             Vec3 screen = ScreenProjection.worldToScreen(center);
             if (screen == null) {
                 screen = ScreenProjection.approximateWorldToScreen(center);
             }
-            if (screen == null) continue;
+            if (screen == null) {
+                continue;
+            }
             boolean locked = target.getId() == lockTarget && lockTicks >= launcher.lockTicks();
             boolean nearest = target.getId() == lockTarget;
             ResourceLocation frame = locked ? FRAME_LOCK : nearest ? FRAME_TARGET : FRAME;
@@ -478,14 +534,20 @@ public final class SpecialEquipmentClientEvents {
             g.drawString(minecraft.font, Component.translatable("des.jeg.drone.range", String.format("%.0fm", blockRange)), x + 12, y - 28, color, false);
         }
 
-        // Nearby entity frames
-        for (Entity e : drone.level().getEntities(drone, drone.getBoundingBox().inflate(256.0D), ent -> ent instanceof LivingEntity || ent instanceof VehicleEntity)) {
-            if (!e.isAlive() || e.distanceTo(drone) > 256.0D) continue;
+        // Nearby entity frames (SW seek: range 256, angle 30°, smoke + LOS)
+        for (Entity e : drone.level().getEntities(drone, drone.getBoundingBox().inflate(DRONE_FRAME_RANGE),
+                ent -> ent instanceof LivingEntity || ent instanceof VehicleEntity)) {
+            if (!isDroneFrameCandidate(drone, e, player)) {
+                continue;
+            }
             Vec3 center = e.position().add(0.0D, e.getBbHeight() * 0.5D, 0.0D);
-            if (!ScreenProjection.canSee(center)) continue;
             Vec3 screen = ScreenProjection.worldToScreen(center);
-            if (screen == null) screen = ScreenProjection.approximateWorldToScreen(center);
-            if (screen == null) continue;
+            if (screen == null) {
+                screen = ScreenProjection.approximateWorldToScreen(center);
+            }
+            if (screen == null) {
+                continue;
+            }
             g.blit(FRAME, Mth.floor(screen.x) - 12, Mth.floor(screen.y) - 12, 0, 0, 24, 24, 24, 24);
         }
     }
