@@ -362,7 +362,8 @@ public final class VehicleDataManager {
         return new SeekInfo(
                 getDouble(object, "range", fallback.range()),
                 getDouble(object, "angle", fallback.angle()),
-                getBoolean(object, "warns_target", fallback.warnsTarget())
+                getBoolean(object, "warns_target", fallback.warnsTarget()),
+                getInt(object, "time", fallback.time() > 0 ? fallback.time() : 10)
         );
     }
 

@@ -16,15 +16,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
+import ttv.migami.jeg.client.util.ScreenProjection;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
+import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 import org.joml.Matrix4f;
 
@@ -53,6 +58,14 @@ public final class VehicleHudOverlay {
     private static final ResourceLocation CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
     private static final ResourceLocation CROSSHAIR_THIRD_CAMERA = Reference.id("textures/overlay/vehicle/crosshair/third_camera.png");
     private static final ResourceLocation CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
+    private static final ResourceLocation FRAME_GREEN = Reference.id("textures/overlay/frame/frame_green.png");
+    private static final ResourceLocation FRAME_TARGET = Reference.id("textures/overlay/frame/frame_target.png");
+    private static final ResourceLocation FRAME_TARGET_TRIANGLE = Reference.id("textures/overlay/frame/frame_target_triangle.png");
+    private static final ResourceLocation FRAME_LOCK = Reference.id("textures/overlay/frame/frame_lock.png");
+    private static final ResourceLocation LOCK_IND_1 = Reference.id("textures/overlay/vehicle/aircraft/locking_ind1.png");
+    private static final ResourceLocation LOCK_IND_2 = Reference.id("textures/overlay/vehicle/aircraft/locking_ind2.png");
+    private static final ResourceLocation LOCK_IND_3 = Reference.id("textures/overlay/vehicle/aircraft/locking_ind3.png");
+    private static final ResourceLocation LOCK_IND_4 = Reference.id("textures/overlay/vehicle/aircraft/locking_ind4.png");
     private static final ResourceLocation WEAPON_ICON_CANNON_20MM = Reference.id("textures/overlay/vehicle/weapon/icons/cannon_20mm.png");
     private static final ResourceLocation WEAPON_ICON_COAX_762 = Reference.id("textures/overlay/vehicle/weapon/icons/gun_7_62mm.png");
     private static final ResourceLocation WEAPON_SELECTED = Reference.id("textures/overlay/vehicle/weapon/frame/selected.png");
@@ -110,6 +123,7 @@ public final class VehicleHudOverlay {
 
     private static boolean shouldHidePlayerHudLayer(String path) {
         return "player_health".equals(path)
+                || "armor_level".equals(path)
                 || "food_level".equals(path)
                 || "experience_bar".equals(path)
                 || "experience_level".equals(path);
@@ -125,6 +139,7 @@ public final class VehicleHudOverlay {
         renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
         if (vehicle.hasVehicleWeapons() && vehicle.canPassengerUseSelectedVehicleWeapon(minecraft.player)) {
             renderReticle(guiGraphics, vehicle);
+            renderMissileSeekFrames(guiGraphics, minecraft, vehicle);
         }
         renderPassengerInfo(guiGraphics, minecraft, vehicle);
         renderWeaponSelector(guiGraphics, minecraft, vehicle);
@@ -176,10 +191,15 @@ public final class VehicleHudOverlay {
                     boolean seeking = VehicleClientState.isRidingVehicle()
                             && VehicleClientState.vehicleId() == vehicle.getId()
                             && VehicleClientState.seekDown();
-                    Component lock = seeking
-                            ? Component.translatable(vehicle.hasMissileLock() ? "hud.jeg.vehicle.locked" : "hud.jeg.vehicle.locking")
+                    boolean locked = vehicle.hasMissileLock();
+                    boolean acquiring = seeking && vehicle.missileSeekTicks() > 0 && !locked;
+                    Component lock = locked
+                            ? Component.translatable("hud.jeg.vehicle.locked")
+                            : acquiring
+                            ? Component.translatable("hud.jeg.vehicle.locking")
                             : Component.translatable("hud.jeg.vehicle.seek_prompt", KeyBindings.VEHICLE_SEEK.getTranslatedKeyMessage());
-                    guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, seeking ? vehicle.hasMissileLock() ? 0xFFFF5555 : 0xFFFFDD88 : 0xFFB8E0FF);
+                    int lockColor = locked ? 0xFFFF5555 : acquiring ? 0xFFFFDD88 : 0xFFB8E0FF;
+                    guiGraphics.drawString(minecraft.font, lock, (width - minecraft.font.width(lock)) / 2, lineY, lockColor);
                     lineY += 11;
                 }
             }
@@ -404,6 +424,67 @@ public final class VehicleHudOverlay {
         int y = (guiGraphics.guiHeight() - size) / 2;
         ResourceLocation texture = reticleTexture(vehicle);
         preciseBlit(guiGraphics, texture, x, y, size, size, 0.0F, 0.0F, 512.0F, 512.0F, 512.0F, 512.0F);
+    }
+
+    private static void renderMissileSeekFrames(GuiGraphics guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        LocalPlayer player = minecraft.player;
+        if (player == null || !vehicle.isSelectedVehicleWeaponLockOn(player) || minecraft.level == null) {
+            return;
+        }
+        ResourceLocation weaponId = vehicle.selectedVehicleWeaponId(player);
+        if (weaponId == null) {
+            return;
+        }
+        VehicleMissileProfile profile = VehicleMissileProfile.get(weaponId);
+        if (!profile.usesLockOn()) {
+            return;
+        }
+
+        double range = vehicle.missileSeekRange();
+        int lockTargetId = vehicle.missileLockTargetId();
+        boolean locked = vehicle.hasMissileLock();
+        int seekTicks = vehicle.missileSeekTicks();
+        int seekTime = Math.max(1, vehicle.missileSeekTime());
+        boolean seeking = VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId()
+                && VehicleClientState.seekDown();
+
+        float partialTick = minecraft.getTimer().getGameTimeDeltaPartialTick(false);
+        for (Entity target : minecraft.level.getEntities(vehicle, vehicle.getBoundingBox().inflate(range),
+                entity -> entity instanceof LivingEntity
+                        || entity instanceof VehicleEntity
+                        || entity instanceof VehicleDecoyEntity)) {
+            if (!vehicle.isValidMissileSeekCandidate(player, target, profile)) {
+                continue;
+            }
+            Vec3 center = target instanceof LivingEntity living
+                    ? living.getEyePosition(partialTick)
+                    : target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
+            Vec3 screen = ScreenProjection.worldToScreen(center);
+            if (screen == null) {
+                screen = ScreenProjection.approximateWorldToScreen(center);
+            }
+            if (screen == null) {
+                continue;
+            }
+            float x = (float) screen.x;
+            float y = (float) screen.y;
+            boolean isLockTarget = target.getId() == lockTargetId;
+            if (isLockTarget && locked) {
+                guiGraphics.blit(FRAME_LOCK, Mth.floor(x) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+            } else if (isLockTarget && seeking && seekTicks > 0) {
+                float lockOffset = Mth.clamp((seekTime - seekTicks) * (20.0F / seekTime), 0.0F, 20.0F);
+                guiGraphics.blit(LOCK_IND_1, Mth.floor(x) - 12, Mth.floor(y - lockOffset) - 12, 0, 0, 24, 24, 24, 24);
+                guiGraphics.blit(LOCK_IND_2, Mth.floor(x) - 12, Mth.floor(y + lockOffset) - 12, 0, 0, 24, 24, 24, 24);
+                guiGraphics.blit(LOCK_IND_3, Mth.floor(x - lockOffset) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+                guiGraphics.blit(LOCK_IND_4, Mth.floor(x + lockOffset) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+                guiGraphics.blit(FRAME_TARGET, Mth.floor(x) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+            } else if (isLockTarget) {
+                guiGraphics.blit(FRAME_TARGET_TRIANGLE, Mth.floor(x) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+            } else {
+                guiGraphics.blit(FRAME_GREEN, Mth.floor(x) - 12, Mth.floor(y) - 12, 0, 0, 24, 24, 24, 24);
+            }
+        }
     }
 
     private static ResourceLocation reticleTexture(VehicleEntity vehicle) {
