@@ -21,6 +21,7 @@
     "HumanoidModelMixin",
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
+    "LevelRendererDroneMixin",
     "MinecraftVehicleHotbarMixin",
     "MouseHandlerVehicleTurnMixin",
     "PlayerRendererMixin",

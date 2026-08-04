@@ -109,8 +109,9 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<DroneEntity>> DRONE = REGISTER.register(
             "drone",
             () -> EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
-                    .sized(0.6F, 0.3F)
-                    .clientTrackingRange(10)
+                    // Match 26.2 / NeoForge: larger tracking so FPV far flights stay smooth
+                    .sized(0.6F, 0.35F)
+                    .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("drone")
     );
