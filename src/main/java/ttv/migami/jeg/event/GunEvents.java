@@ -190,19 +190,8 @@ public final class GunEvents {
         if (phantom instanceof TerrorPhantom || phantom instanceof PhantomGunner) {
             return;
         }
-        double terrorChance = Config.terrorPhantomChance();
-        if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
-            TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
-            terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
-            terror.setYRot(phantom.getYRot());
-            terror.setXRot(phantom.getXRot());
-            terror.setDeltaMovement(phantom.getDeltaMovement());
-            terror.finalizeSpawn(serverLevel, difficulty, net.minecraft.world.entity.MobSpawnType.EVENT, spawnData);
-            if (serverLevel.addFreshEntity(terror)) {
-                phantom.discard();
-                return;
-            }
-        }
+        // Free-roaming Terror Phantom natural conversion is soft-disabled.
+        // Bound Terror Phantom (guardian) and spawn eggs remain available.
         double gunnerChance = Config.phantomGunnerChance();
         if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
             return;
@@ -368,27 +357,15 @@ public final class GunEvents {
             return;
         }
 
-        if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.NATURAL) {
-            double terrorChance = Config.terrorPhantomChance();
-            if (terrorChance > 0.0D && phantom.getRandom().nextDouble() < terrorChance) {
-                TerrorPhantom terror = new TerrorPhantom(ModEntities.TERROR_PHANTOM.get(), serverLevel);
-                if (terror != null) {
-                    terror.setPos(phantom.getX(), phantom.getY(), phantom.getZ());
-                    terror.setYRot(phantom.getYRot());
-                    terror.setXRot(phantom.getXRot());
-                    terror.setDeltaMovement(phantom.getDeltaMovement());
-                    terror.finalizeSpawn(serverLevel, event.getDifficulty(), net.minecraft.world.entity.MobSpawnType.EVENT, event.getSpawnData());
-                    serverLevel.addFreshEntity(terror);
-                    phantom.discard();
-                    return;
-                }
-            }
+        if (event.getSpawnType() != net.minecraft.world.entity.MobSpawnType.NATURAL) {
+            return;
+        }
 
-            double gunnerChance = Config.phantomGunnerChance();
-            if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
-                return;
-            }
-        } else {
+        // Free-roaming Terror Phantom natural conversion is soft-disabled.
+        // Bound Terror Phantom (guardian) and spawn eggs remain available.
+
+        double gunnerChance = Config.phantomGunnerChance();
+        if (gunnerChance <= 0.0D || phantom.getRandom().nextDouble() >= gunnerChance) {
             return;
         }
 

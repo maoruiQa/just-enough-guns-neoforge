@@ -85,8 +85,6 @@ public final class ServerConfigOptions {
         addInteger(options, "patrol.minimumDays", Category.PATROL, 0, 100, "gui.jegn.config.option.patrol_minimum_days");
         addDouble(options, "patrol.spawnChance", Category.PATROL, 0.0D, 1.0D, "gui.jegn.config.option.patrol_spawn_chance");
 
-        addDouble(options, "mob.mechanism.terrorPhantom.chance", Category.MOB, 0.0D, 1.0D, "gui.jegn.config.option.terror_phantom_chance");
-        addDouble(options, "mob.mechanism.terrorPhantom.maxChance", Category.MOB, 0.0D, 1.0D, "gui.jegn.config.option.terror_phantom_max_chance");
         addBoolean(options, "mob.mechanism.phantomGunner.deathExplosion", Category.MOB, "gui.jegn.config.option.phantom_gunner_death_explosion");
         for (String type : Config.gunnerGrowthTypes()) {
             for (String setting : Config.gunnerGrowthSettings()) {

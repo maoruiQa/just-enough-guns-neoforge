@@ -106,7 +106,8 @@ public class TerrorPhantomGuardian extends TerrorPhantom {
 
     @Override
     protected ResourceLocation getVariantTexture() {
-        return Reference.id("textures/entity/phantom_gunner/phantom_gunner_friendly.png");
+        // Share the original terror phantom atlas so under-wing minigun UVs render correctly.
+        return Reference.id("textures/entity/terror_phantom/terror_phantom.png");
     }
 
     @Override
