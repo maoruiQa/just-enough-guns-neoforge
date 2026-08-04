@@ -102,6 +102,7 @@ public final class VehicleHudOverlay {
 
     private static boolean shouldHidePlayerHudLayer(String path) {
         return "player_health".equals(path)
+                || "armor_level".equals(path)
                 || "food_level".equals(path)
                 || "experience_level".equals(path)
                 || "contextual_info_bar".equals(path)
