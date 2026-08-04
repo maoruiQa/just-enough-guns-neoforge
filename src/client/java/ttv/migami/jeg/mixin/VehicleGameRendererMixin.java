@@ -40,9 +40,13 @@ public abstract class VehicleGameRendererMixin {
         GunCameraSwayHandler.apply(poseStack, partialTick);
 
         // Capture world→screen matrices for guided-launcher / drone seek frames.
-        // Without this, ScreenProjection.worldToScreen uses identity matrices and frames never land on entities.
+        // 26.x: poseStack at bobHurt is identity (only bob is applied later into projection).
+        // Real model-view is cameraRenderState.viewRotationMatrix — using poseStack made northbound
+        // targets project with a non-null but wrong result (other axes fell back to approximate).
         try {
-            Matrix4f modelView = new Matrix4f(poseStack.last().pose());
+            Matrix4f modelView = cameraRenderState.viewRotationMatrix != null
+                    ? new Matrix4f(cameraRenderState.viewRotationMatrix)
+                    : new Matrix4f();
             Matrix4f projection = cameraRenderState.projectionMatrix != null
                     ? new Matrix4f(cameraRenderState.projectionMatrix)
                     : new Matrix4f();

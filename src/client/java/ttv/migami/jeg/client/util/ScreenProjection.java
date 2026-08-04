@@ -7,10 +7,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
-import ttv.migami.jeg.Reference;
 
 /**
- * Lightweight world->screen projection (Superb Warfare VectorUtil style).
+ * Lightweight world-to-screen projection (Superb Warfare VectorUtil style).
+ * <p>
+ * On 26.x, prefer {@link net.minecraft.client.renderer.GameRenderer#projectPointToScreen(Vec3)}
+ * which multiplies camera view-rotation × projection. Capturing the empty poseStack at
+ * {@code bobHurt} is identity on 26.x and incorrectly projects only the north (−Z) axis.
  */
 public final class ScreenProjection {
     private static Matrix4f modelView = new Matrix4f();
@@ -41,26 +44,45 @@ public final class ScreenProjection {
     @Nullable
     public static Vec3 worldToScreen(Vec3 worldPos) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gameRenderer == null || !matricesValid) {
+        if (mc.gameRenderer == null) {
             return null;
         }
         Camera camera = mc.gameRenderer.mainCamera();
+        Vec3 relWorld = worldPos.subtract(camera.position());
+        double lookDepth = relWorld.dot(new Vec3(camera.forwardVector()));
+        if (lookDepth < 0.05D) {
+            return null;
+        }
+
+        // Primary: vanilla 26.x projector (viewRotation × projection → NDC).
+        try {
+            Vec3 ndc = mc.gameRenderer.projectPointToScreen(worldPos);
+            if (ndc != null && !Double.isNaN(ndc.x) && !Double.isNaN(ndc.y)) {
+                int w = mc.getWindow().getGuiScaledWidth();
+                int h = mc.getWindow().getGuiScaledHeight();
+                return new Vec3(w * (0.5D + ndc.x * 0.5D), h * (0.5D - ndc.y * 0.5D), lookDepth);
+            }
+        } catch (Throwable ignored) {
+            // Fall through to captured matrices / approximate path.
+        }
+
+        // Secondary: captured modelView + projection (must be viewRotationMatrix, not bob poseStack).
+        if (!matricesValid) {
+            return null;
+        }
         Vector4f rel = new Vector4f(
-                (float) (worldPos.x - camera.position().x),
-                (float) (worldPos.y - camera.position().y),
-                (float) (worldPos.z - camera.position().z),
+                (float) relWorld.x,
+                (float) relWorld.y,
+                (float) relWorld.z,
                 1.0F
         );
         rel.mul(modelView);
         rel.mul(projection);
         float depth = rel.w;
-        if (depth == 0.0F) {
+        if (depth == 0.0F || depth < 0.05F) {
             return null;
         }
         rel.div(depth);
-        if (depth < 0.05F) {
-            return null;
-        }
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
         return new Vec3(w * (0.5D + rel.x * 0.5D), h * (0.5D - rel.y * 0.5D), depth);
