@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
@@ -699,6 +700,10 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
+        // Let defuser item-use handle plain right-click channel (do not consume the click).
+        if (player.getItemInHand(hand).getItem() instanceof ttv.migami.jeg.item.DefuserItem) {
+            return InteractionResult.PASS;
+        }
         UUID ownerId = this.ownerId();
         if (!this.level().isClientSide && player.isShiftKeyDown() && ownerId != null && player.getUUID().equals(ownerId)) {
             ItemStack stack = this.pickupStack();
@@ -712,8 +717,10 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
                     true
             );
             this.discard();
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        // PASS so held items can still receive right-click (no shift required for defuser).
+        return InteractionResult.PASS;
     }
 
     @Override
@@ -768,6 +775,19 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
             case CLAYMORE -> new ItemStack(ModItems.CLAYMORE_MINE.get());
             case TM_62 -> new ItemStack(ModItems.TM_62.get());
         };
+    }
+
+    /** SW Defuser: discard C4 and drop the recoverable stack as an item entity. */
+    public void defuse() {
+        if (this.level().isClientSide || this.isRemoved() || this.detonating) {
+            return;
+        }
+        if (this.kind() != SpecialExplosiveItem.Kind.C4) {
+            return;
+        }
+        ItemStack stack = this.pickupStack();
+        this.discard();
+        this.level().addFreshEntity(new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), stack));
     }
 
     @Override

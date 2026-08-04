@@ -35,6 +35,9 @@ public final class GunnerFriendlyFireEvents {
         if (attacker != null) {
             rememberIgnoredVehicleStrike(event.getEntity(), event.getSource(), attacker);
         }
+        if (!event.isCanceled() && event.getAmount() > 0.0F) {
+            ttv.migami.jeg.item.DefuserItem.interruptIfDefusing(event.getEntity());
+        }
     }
 
     public static boolean shouldCancelFriendlyRocketDamage(LivingEntity target, @Nullable DamageSource source) {

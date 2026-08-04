@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": ["  I", "NS ", " S "],
+  "key": {
+    "I": {"item": "minecraft:iron_ingot"},
+    "N": {"item": "minecraft:iron_nugget"},
+    "S": {"item": "minecraft:stick"}
+  },
+  "result": {"id": "jeg:defuser", "count": 1}
+}
