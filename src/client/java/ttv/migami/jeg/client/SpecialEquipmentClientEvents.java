@@ -516,7 +516,8 @@ public final class SpecialEquipmentClientEvents {
         if ("EMPTY".equals(payload)) {
             g.drawString(minecraft.font, Component.translatable("des.jeg.drone.ammo", payload), x + 12, y - 37, 0xFFFFFFFF, false);
         } else if ("C4".equals(payload)) {
-            g.drawString(minecraft.font, Component.translatable("des.jeg.drone.ammo_release", payload), x + 12, y - 37, 0xFFFF0000, false);
+            g.drawString(minecraft.font, Component.translatable("des.jeg.drone.kamikaze_payload", payload), x + 12, y - 46, 0xFFFF0000, false);
+            g.drawString(minecraft.font, Component.translatable("des.jeg.drone.kamikaze"), x + 12, y - 37, 0xFFFF0000, false);
         } else {
             g.drawString(minecraft.font, Component.translatable("des.jeg.drone.ammo_release", payload), x + 12, y - 37, 0xFFFFFFFF, false);
         }

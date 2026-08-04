@@ -119,6 +119,7 @@
   "des.jeg.drone.distance": "Distance: %s",
   "des.jeg.drone.health": "HP: %s",
   "des.jeg.drone.kamikaze": "KAMIKAZE",
+  "des.jeg.drone.kamikaze_payload": "挂载：%s（引爆：左键）",
   "des.jeg.drone.range": "Range: %s",
   "des.jeg.monitor.distance": "Drone distance: %s",
   "des.jeg.monitor.howto": "Right-click a placed drone to link. Right-click air to enter/exit FPV. Sneak+right-click drone to unlink",
