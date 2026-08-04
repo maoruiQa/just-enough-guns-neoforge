@@ -380,6 +380,7 @@ public final class GunClientEvents {
             VEHICLE_ENGINE_START_STREAK.clear();
             AimingHandler.get().reset();
             CrosshairHandler.reset();
+            ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.reset();
             return;
         }
 
@@ -389,6 +390,7 @@ public final class GunClientEvents {
         tickVehicleEngineAudio(player);
         tickImmediateGunSwitch(player);
         GunItem.tickClientVisualState(player);
+        ttv.migami.jeg.client.render.gun.SwGuidedLauncherMotion.tick(player);
         boolean aiming = AimingHandler.get().isAiming();
         if (aiming != aimingStateLastSent) {
             aimingStateLastSent = aiming;
