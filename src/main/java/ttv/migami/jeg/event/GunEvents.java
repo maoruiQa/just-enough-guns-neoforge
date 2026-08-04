@@ -41,7 +41,9 @@ import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.gun.GunStats;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
 import ttv.migami.jeg.faction.GunnerProgression;
+import ttv.migami.jeg.item.C4VestItem;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
@@ -231,6 +233,11 @@ public final class GunEvents {
             return;
         }
 
+        if (BomberGunnerHelper.isBomber(entity)) {
+            drops.removeIf(drop -> drop.getItem().getItem() instanceof C4VestItem);
+            addDrop(drops, entity, BomberGunnerHelper.rollGunpowderDrop(entity));
+        }
+
         ItemStack held = entity.getMainHandItem();
         if (!(held.getItem() instanceof GunItem gunItem)) {
             if (entity instanceof net.minecraft.world.entity.monster.Skeleton) {
@@ -408,6 +415,11 @@ public final class GunEvents {
         // Handle JEG faction gunners and special gunner types
         if (!isGunner(entity)) {
             return;
+        }
+
+        if (BomberGunnerHelper.isBomber(entity)) {
+            event.getDrops().removeIf(drop -> drop.getItem().getItem() instanceof C4VestItem);
+            addDrop(event, entity, BomberGunnerHelper.rollGunpowderDrop(entity));
         }
 
         ItemStack held = entity.getMainHandItem();

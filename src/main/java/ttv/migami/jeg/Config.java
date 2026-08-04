@@ -103,7 +103,9 @@ public final class Config {
             "weaponInitialTier", "weaponMaxTier", "weaponTierPerDay",
             "armorInitialTier", "armorMaxTier", "armorTierPerDay",
             "rocketLauncherStartDay", "rocketLauncherChance", "rocketLauncherMaxChance",
-            "rocketLauncherChancePerDay", "weaponAggression"
+            "rocketLauncherChancePerDay",
+            "bomberStartDay", "bomberChance", "bomberMaxChance", "bomberChancePerDay",
+            "weaponAggression"
     };
 
     static {
@@ -430,6 +432,11 @@ public final class Config {
             case "rocketLauncherChance" -> 0.02D;
             case "rocketLauncherMaxChance" -> 0.06D;
             case "rocketLauncherChancePerDay" -> 0.0005714286D;
+            // Appear from day 50; ramp 6% → 10% over 70 days so the cap is reached on day 120.
+            case "bomberStartDay" -> 50.0D;
+            case "bomberChance" -> 0.06D;
+            case "bomberMaxChance" -> 0.10D;
+            case "bomberChancePerDay" -> 0.0005714286D;
             case "weaponAggression" -> 0.55D;
             default -> -1.0D;
         };
@@ -694,7 +701,9 @@ public final class Config {
         // Treat the old mob.*GunnerChance value as the default minimum, then grow toward the new cap.
         double min = resolveGunnerGrowthValue(gunnerType, "minSpawnChance", clamp01(legacyBaseChance));
         double max = resolveGunnerGrowthValue(gunnerType, "maxSpawnChance", defaultGunnerMaxSpawnChance(gunnerType, min));
-        double defaultGrowth = Math.max(0.0D, (max - min) / 60.0D);
+        // Keep the historical per-day growth speed (based on the pre-raise caps), only raise the ceiling.
+        double growthBaselineMax = legacyGunnerMaxSpawnChance(gunnerType, min);
+        double defaultGrowth = Math.max(0.0D, (growthBaselineMax - min) / 60.0D);
         double growth = resolveGunnerGrowthValue(gunnerType, "spawnChancePerDay", defaultGrowth);
         long day = Math.max(0L, currentGunnerDay(level) - Math.max(0, SPAWN_SCALING_START_DAY.get()));
         return clamp01(Math.min(max, min + day * Math.max(0.0D, growth)));
@@ -714,13 +723,60 @@ public final class Config {
 
     public static boolean shouldGunnerUseRocketLauncher(Level level, String gunnerType, RandomSource random) {
         // Rocket launchers are gated outside the normal weapon-tier roll so their rate stays independently tunable.
-        long startDay = Math.round(resolveGunnerGrowthValue(gunnerType, "rocketLauncherStartDay", 80.0D));
+        return rollGunnerGrowthChance(
+                level,
+                gunnerType,
+                random,
+                "rocketLauncherStartDay",
+                "rocketLauncherChance",
+                "rocketLauncherMaxChance",
+                "rocketLauncherChancePerDay",
+                80.0D,
+                0.02D,
+                0.06D,
+                0.0005714286D
+        );
+    }
+
+    /**
+     * Independent bomber (C4 vest) conversion roll. Same growth shape as rocket launcher gunners.
+     */
+    public static boolean shouldGunnerBecomeBomber(Level level, String gunnerType, RandomSource random) {
+        return rollGunnerGrowthChance(
+                level,
+                gunnerType,
+                random,
+                "bomberStartDay",
+                "bomberChance",
+                "bomberMaxChance",
+                "bomberChancePerDay",
+                50.0D,
+                0.06D,
+                0.10D,
+                0.0005714286D
+        );
+    }
+
+    private static boolean rollGunnerGrowthChance(
+            Level level,
+            String gunnerType,
+            RandomSource random,
+            String startDayKey,
+            String chanceKey,
+            String maxChanceKey,
+            String growthKey,
+            double defaultStartDay,
+            double defaultChance,
+            double defaultMaxChance,
+            double defaultGrowth
+    ) {
+        long startDay = Math.round(resolveGunnerGrowthValue(gunnerType, startDayKey, defaultStartDay));
         if (currentGunnerDay(level) < startDay) {
             return false;
         }
-        double initial = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChance", 0.02D);
-        double max = resolveGunnerGrowthValue(gunnerType, "rocketLauncherMaxChance", 0.06D);
-        double growth = resolveGunnerGrowthValue(gunnerType, "rocketLauncherChancePerDay", 0.0005714286D);
+        double initial = resolveGunnerGrowthValue(gunnerType, chanceKey, defaultChance);
+        double max = resolveGunnerGrowthValue(gunnerType, maxChanceKey, defaultMaxChance);
+        double growth = resolveGunnerGrowthValue(gunnerType, growthKey, defaultGrowth);
         double daysSinceStart = Math.max(0L, currentGunnerDay(level) - startDay);
         double chance = Mth.clamp(Math.min(max, initial + daysSinceStart * Math.max(0.0D, growth)), 0.0D, 1.0D);
         return chance > 0.0D && random.nextDouble() < chance;
@@ -752,7 +808,25 @@ public final class Config {
         return value != null ? value.get() : -1.0D;
     }
 
+    /**
+     * Raised conversion caps. Per-day growth still uses {@link #legacyGunnerMaxSpawnChance} so the
+     * climb speed stays the same — gunners simply keep growing until they hit the higher ceiling.
+     */
     private static double defaultGunnerMaxSpawnChance(String gunnerType, double min) {
+        double cap = switch (gunnerType) {
+            case "skeleton", "stray" -> 0.42D;
+            case "zombie", "husk", "parched", "drowned", "zombieVillager" -> 0.32D;
+            case "zombifiedPiglin" -> 0.36D;
+            case "piglin", "piglinBrute" -> 0.62D;
+            case "witherSkeleton" -> 0.55D;
+            case "pillager", "vindicator" -> 0.45D;
+            default -> 0.34D;
+        };
+        return Math.max(min, cap);
+    }
+
+    /** Pre-raise caps used only to preserve historical spawnChancePerDay defaults. */
+    private static double legacyGunnerMaxSpawnChance(String gunnerType, double min) {
         double cap = switch (gunnerType) {
             case "skeleton", "stray" -> 0.32D;
             case "zombie", "husk", "parched", "drowned", "zombieVillager" -> 0.22D;
