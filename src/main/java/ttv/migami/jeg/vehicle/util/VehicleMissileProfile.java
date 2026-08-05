@@ -11,6 +11,14 @@ import ttv.migami.jeg.entity.monster.phantom.AbstractTerrorPhantom;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 
+/**
+ * Guided missile combat profile.
+ * <p>
+ * Damage model mirrors SuperbWarfare guns/vehicles:
+ * {@code directHitDamage} = SW {@code Damage},
+ * {@code explosionDamage} = SW {@code ExplosionDamage} (unified for all entities),
+ * {@code blastRadius} = SW {@code ExplosionRadius}.
+ */
 public record VehicleMissileProfile(
         GuidanceMode guidanceMode,
         TargetMode targetMode,
@@ -19,9 +27,10 @@ public record VehicleMissileProfile(
         double turnRate,
         float explosionPower,
         double blastRadius,
-        float vehicleDamage,
-        float livingDamage,
-        float directHitDamage
+        float explosionDamage,
+        float directHitDamage,
+        /** Ballistic armor piercing for vehicle direct hits (same system as rockets/guns). */
+        float armorPiercing
 ) {
     /** Ground missiles may only lock living entities at or above this max health. Air missiles ignore this. */
     private static final float MIN_GROUND_MISSILE_LIVING_MAX_HEALTH = 55.0F;
@@ -35,11 +44,12 @@ public record VehicleMissileProfile(
             2.4F,
             3.0D,
             18.0F,
-            12.0F,
-            18.0F
+            18.0F,
+            10.0F
     );
 
     private static final Map<ResourceLocation, VehicleMissileProfile> PROFILES = Map.of(
+            // SW BMP-2 / TOW: Damage 600, ExplosionDamage 60, Radius 6
             Reference.id("vehicle_bmp2_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
                     TargetMode.GROUND_ENTITY,
@@ -48,10 +58,11 @@ public record VehicleMissileProfile(
                     0.16D,
                     3.0F,
                     6.0D,
-                    180.0F,
-                    12.0F,
-                    180.0F
+                    60.0F,
+                    600.0F,
+                    12.0F
             ),
+            // SW Mi-28 9M120: Damage 650, ExplosionDamage 80, Radius 7
             Reference.id("vehicle_9m120_driver_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
                     TargetMode.GROUND_ENTITY,
@@ -60,9 +71,9 @@ public record VehicleMissileProfile(
                     0.14D,
                     3.5F,
                     7.0D,
-                    180.0F,
-                    18.0F,
-                    180.0F
+                    80.0F,
+                    650.0F,
+                    13.0F
             ),
             Reference.id("vehicle_9m120_passenger_missile"), new VehicleMissileProfile(
                     GuidanceMode.WIRE_GUIDED,
@@ -72,10 +83,11 @@ public record VehicleMissileProfile(
                     0.14D,
                     3.5F,
                     7.0D,
-                    180.0F,
-                    18.0F,
-                    180.0F
+                    80.0F,
+                    650.0F,
+                    13.0F
             ),
+            // SW KH-39: Damage 1100, ExplosionDamage 180, Radius 12
             Reference.id("vehicle_kh39_missile"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
                     TargetMode.GROUND_ENTITY,
@@ -84,10 +96,11 @@ public record VehicleMissileProfile(
                     0.12D,
                     5.5F,
                     12.0D,
-                    300.0F,
-                    32.0F,
-                    300.0F
+                    180.0F,
+                    1100.0F,
+                    15.0F
             ),
+            // SW 9M336 AA: Damage 260, ExplosionDamage 90, Radius 6
             Reference.id("vehicle_9m336_missile"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
                     TargetMode.AIR_ENTITY,
@@ -96,11 +109,11 @@ public record VehicleMissileProfile(
                     0.18D,
                     3.2F,
                     6.0D,
-                    120.0F,
-                    20.0F,
-                    120.0F
+                    90.0F,
+                    260.0F,
+                    11.0F
             ),
-            // SW SeekTool.baseFilter: ground living + ground/surface vehicles (not air).
+            // SW Javelin: Damage 500, ExplosionDamage 120, Radius 9
             Reference.id("javelin"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
                     TargetMode.GROUND_ENTITY,
@@ -110,9 +123,10 @@ public record VehicleMissileProfile(
                     4.2F,
                     9.0D,
                     120.0F,
-                    120.0F,
-                    500.0F
+                    500.0F,
+                    14.0F
             ),
+            // SW Igla: Damage 260, ExplosionDamage 90, Radius 6
             Reference.id("igla_9k38"), new VehicleMissileProfile(
                     GuidanceMode.LOCK_ON,
                     TargetMode.AIR_ENTITY,
@@ -122,8 +136,8 @@ public record VehicleMissileProfile(
                     3.4F,
                     6.0D,
                     90.0F,
-                    90.0F,
-                    260.0F
+                    260.0F,
+                    11.0F
             )
     );
 

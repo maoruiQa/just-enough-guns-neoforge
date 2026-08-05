@@ -108,8 +108,9 @@ public class BulletEntity extends Projectile {
     private static final double MIN_TRAIL_START_DISTANCE_SQR = 0.45D * 0.45D;
     private static final double TRAIL_SYNC_RANGE = 256.0D;
     private static final float ROCKET_EXPLOSION_POWER = 6.8F;
-    private static final float ROCKET_DIRECT_HIT_DAMAGE = 70.0F;
-    private static final float ROCKET_BLAST_BASE_DAMAGE = 32.0F;
+    /** Combat values used by rocket launcher HE; also shown in item tooltip. */
+    public static final float ROCKET_DIRECT_HIT_DAMAGE = 150.0F;
+    public static final float ROCKET_BLAST_BASE_DAMAGE = 50.0F;
     private static final double ROCKET_BLAST_RADIUS = 11.0D;
     private static final float ROCKET_BLAST_EDGE_FLOOR = 0.05F;
     private static final double ROCKET_BLAST_FALLOFF_EXPONENT = 3.4D;
@@ -1036,6 +1037,8 @@ public class BulletEntity extends Projectile {
                 if (result instanceof EntityHitResult entityHit) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity.isAlive()) {
+                        // HE source for living + vehicles. Vehicle damage_modifiers match exact
+                        // player_explosion/explosion once (not projectile tags / arrow).
                         DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
                         if (hitEntity instanceof LivingEntity living) {
                             if (id.equals(ROCKET_LAUNCHER_ID) && shouldSkipOwnerFriendlyBlast(owner, living)) {

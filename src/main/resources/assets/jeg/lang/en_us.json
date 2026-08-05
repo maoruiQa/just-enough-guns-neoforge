@@ -213,6 +213,7 @@
   "info.jeg.shift_tooltip": "Press SHIFT for details!",
   "info.jeg.fire_mode": "Fire Mode: ",
   "info.jeg.damage": "Damage: %s",
+  "info.jeg.blast_damage": "Blast damage: %s",
   "info.jeg.modifier": "Modifier: ",
   "info.jeg.advantage": "Advantage: ",
   "info.jeg.resonance": "This Gun will apply Resonance to Entities!",
