@@ -2881,10 +2881,21 @@ public class GunItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
-        float displayDamage = this.stats.id().equals(GRENADE_LAUNCHER_ID)
-                ? GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR
-                : modifiedDamage(stats, modifiers);
+        boolean rocketLauncher = this.stats.id().equals(ROCKET_LAUNCHER_ID);
+        float displayDamage;
+        if (this.stats.id().equals(GRENADE_LAUNCHER_ID)) {
+            displayDamage = GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR;
+        } else if (rocketLauncher) {
+            // Combat uses hardcoded HE values in BulletEntity, not GunStats.damage (legacy 28).
+            displayDamage = BulletEntity.ROCKET_DIRECT_HIT_DAMAGE * modifiers.damageMultiplier();
+        } else {
+            displayDamage = modifiedDamage(stats, modifiers);
+        }
         tooltip.add(Component.translatable("info.jeg.damage", String.format(Locale.US, "%.1f", displayDamage)));
+        if (rocketLauncher) {
+            float blast = BulletEntity.ROCKET_BLAST_BASE_DAMAGE * modifiers.damageMultiplier();
+            tooltip.add(Component.translatable("info.jeg.blast_damage", String.format(Locale.US, "%.1f", blast)));
+        }
 
         if (usesLoadedAmmo()) {
             tooltip.add(Component.translatable("info.jeg.ammo", getAmmo(stack), modifiedMagazineSize(stack)));

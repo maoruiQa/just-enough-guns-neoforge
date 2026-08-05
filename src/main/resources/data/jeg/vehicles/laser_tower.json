@@ -1,7 +1,6 @@
-{
-  "entity_type": "jeg:laser_tower",
+{"entity_type": "jeg:laser_tower",
   "vehicle_type": "artillery",
-  "max_health": 130.0,
+  "max_health": 100.0,
   "auto_repair_per_tick": 0.01,
   "auto_repair_cooldown_ticks": 180,
   "max_energy": 260,
@@ -23,9 +22,33 @@
   ],
   "destroy": {"explodes": true, "explosion_power": 2.8},
   "armor": {
-    "fallback": {"rating": 4.8, "undermatch_multiplier": 0.14, "overmatch_multiplier": 0.78, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 0.85},
+    "fallback": {"rating": 8.0, "undermatch_multiplier": 0.48, "overmatch_multiplier": 0.82, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 0.85},
     "parts": {
       "turret": {"rating": 5.6, "undermatch_multiplier": 0.12, "overmatch_multiplier": 0.74, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 0.75}
     }
-  }
+  },
+  "damage_modifiers": [
+    "minecraft:arrow * 0.1",
+    "minecraft:trident * 0.2",
+    "minecraft:mob_attack * 0.2",
+    "minecraft:mob_attack_no_aggro * 0.2",
+    "minecraft:mob_projectile * 0.4",
+    "minecraft:player_attack * 0.4",
+    "minecraft:explosion * 1.5",
+    "minecraft:player_explosion * 1.5",
+    "superbwarfare:custom_explosion * 0.5",
+    "superbwarfare:projectile_explosion * 0.5",
+    "superbwarfare:mine * 0.5",
+    "superbwarfare:lunge_mine * 0.5",
+    "superbwarfare:projectile_hit * 0.6",
+    "superbwarfare:grapeshot_hit * 0.4",
+    "#superbwarfare:projectile * 0.5",
+    "#superbwarfare:projectile_absolute * 0.8",
+    "superbwarfare:vehicle_strike * 5",
+    "minecraft:lava - -1",
+    "minecraft:lava * 2",
+    "@minecraft:tnt * 3",
+    "@minecraft:tnt_minecart * 3",
+    "All - 1"
+  ]
 }
