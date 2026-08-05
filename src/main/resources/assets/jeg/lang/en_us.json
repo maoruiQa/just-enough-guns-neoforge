@@ -339,6 +339,7 @@
   "info.jeg.blueprinted_gun": "Blueprint: ",
   "info.jeg.damage": "Damage: %s",
   "info.jeg.blast_damage": "Blast damage: %s",
+  "info.jeg.blast_radius": "Blast radius: %s",
   "info.jeg.echo_shard": "Killing any Entity with this gun has a chance to spawn Echo Shards!",
   "info.jeg.fallback": "Use this item in a crafting grid!",
   "info.jeg.fallback_help": "This is due to refactoring of items, sorry!",
