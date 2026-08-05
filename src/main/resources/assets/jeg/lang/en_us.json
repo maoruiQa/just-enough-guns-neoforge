@@ -214,6 +214,7 @@
   "info.jeg.fire_mode": "Fire Mode: ",
   "info.jeg.damage": "Damage: %s",
   "info.jeg.blast_damage": "Blast damage: %s",
+  "info.jeg.blast_radius": "Blast radius: %s",
   "info.jeg.modifier": "Modifier: ",
   "info.jeg.advantage": "Advantage: ",
   "info.jeg.resonance": "This Gun will apply Resonance to Entities!",

@@ -21,6 +21,8 @@
 - Aligned ported vehicle max health and armor fallback ratings closer to SuperbWarfare where applicable (e.g. BMP-2 300 HP rating 12, LAV-150 270 HP rating 11, Mi-28 350 HP rating 10).
 - Raised LAV-150 HE vulnerability (vanilla explosion *7.5, missile blast *2.5) and lowered helicopter/aircraft HE multipliers (Mi-28/AH-6 *1.75, A-10 *2.0).
 - Rocket launcher combat values: direct 150, blast 50, AP 10; tooltip shows real direct/blast damage instead of the legacy GunStats value (28).
+- Guided launcher (Javelin / Igla) tooltips now mirror the rocket launcher layout: real direct damage, blast damage, blast radius, and profile AP from `VehicleMissileProfile` (GunStats damage was often 0/placeholder); seek range shown as 256; headshot multiplier omitted for HE launchers.
+- Rocket / guided launcher tooltips now include blast radius (rocket 11, Javelin 9, Igla 6).
 - Improved anti-vehicle rocket performance against armored targets.
 - Strengthened drone descent power cut and raised max drone descent speed by about 1.33x for snappier FPV kamikaze dives.
 - Aligned drone camera pitch with SuperbWarfare FPV framing.
@@ -40,6 +42,7 @@
 - Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
 - Fixed vehicle damage-modifier matching that stacked multiple explosion rules and could one-shot full-HP vehicles or nearly nullify rocket damage on airframes.
 - Fixed rocket launcher item tooltip damage readout so it matches actual HE combat numbers (direct + blast).
+- Fixed Javelin and Igla item tooltips so combat stats match `VehicleMissileProfile` instead of empty/placeholder GunStats values.
 
 ### Verification
 - Passed `.\gradlew build`.
