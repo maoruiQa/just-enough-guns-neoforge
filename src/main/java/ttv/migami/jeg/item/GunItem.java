@@ -52,6 +52,7 @@ import ttv.migami.jeg.gun.GunHeadshotHelper;
 import ttv.migami.jeg.gun.GunStats;
 import ttv.migami.jeg.gun.GunRangeHelper;
 import ttv.migami.jeg.gun.RecoilProfiles;
+import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.init.ModBlocks;
 import ttv.migami.jeg.init.ModDataComponents;
 import ttv.migami.jeg.init.ModItems;
@@ -2771,12 +2772,17 @@ public class GunItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltipAdder, TooltipFlag flag) {
         AttachmentModifiers modifiers = GunAttachments.modifiers(stack);
         boolean rocketLauncher = this.stats.id().equals(ROCKET_LAUNCHER_ID);
+        // Javelin / Igla combat stats live on VehicleMissileProfile, not GunStats.damage (often 0).
+        VehicleMissileProfile guidedProfile = this instanceof GuidedLauncherItem
+                ? VehicleMissileProfile.get(this.stats.id())
+                : null;
         float displayDamage;
         if (this.stats.id().equals(GRENADE_LAUNCHER_ID)) {
             displayDamage = GRENADE_BASE_POWER * GRENADE_DAMAGE_FACTOR;
         } else if (rocketLauncher) {
-            // Combat uses hardcoded HE values in BulletEntity, not GunStats.damage (legacy 28).
             displayDamage = BulletEntity.ROCKET_DIRECT_HIT_DAMAGE * modifiers.damageMultiplier();
+        } else if (guidedProfile != null) {
+            displayDamage = guidedProfile.directHitDamage() * modifiers.damageMultiplier();
         } else {
             displayDamage = modifiedDamage(stats, modifiers);
         }
@@ -2784,6 +2790,11 @@ public class GunItem extends Item {
         if (rocketLauncher) {
             float blast = BulletEntity.ROCKET_BLAST_BASE_DAMAGE * modifiers.damageMultiplier();
             tooltipAdder.accept(Component.translatable("info.jeg.blast_damage", String.format(Locale.US, "%.1f", blast)));
+            tooltipAdder.accept(Component.translatable("info.jeg.blast_radius", String.format(Locale.US, "%.1f", BulletEntity.ROCKET_BLAST_RADIUS)));
+        } else if (guidedProfile != null) {
+            float blast = guidedProfile.explosionDamage() * modifiers.damageMultiplier();
+            tooltipAdder.accept(Component.translatable("info.jeg.blast_damage", String.format(Locale.US, "%.1f", blast)));
+            tooltipAdder.accept(Component.translatable("info.jeg.blast_radius", String.format(Locale.US, "%.1f", guidedProfile.blastRadius())));
         }
 
         if (usesLoadedAmmo()) {
@@ -2804,15 +2815,28 @@ public class GunItem extends Item {
             tooltipAdder.accept(Component.translatable("info.jeg.ammo_type", ammoName));
         }
 
-        float armorPiercing = BallisticProtection.effectiveArmorPiercing(
-                this.stats,
-                BallisticProtection.isRocketDirectHit(this.stats),
-                modifiers.explosiveAmmo() ? 0.75F : 1.0F
-        );
+        float armorPiercing;
+        if (guidedProfile != null) {
+            armorPiercing = guidedProfile.armorPiercing();
+        } else {
+            armorPiercing = BallisticProtection.effectiveArmorPiercing(
+                    this.stats,
+                    BallisticProtection.isRocketDirectHit(this.stats),
+                    modifiers.explosiveAmmo() ? 0.75F : 1.0F
+            );
+        }
         tooltipAdder.accept(Component.translatable("info.jeg.armor_piercing", String.format(Locale.US, "%.2f", armorPiercing)));
-        tooltipAdder.accept(Component.translatable("info.jeg.headshot_multiplier", String.format(Locale.US, "%.2fx", GunHeadshotHelper.headshotMultiplier(this.stats))));
+        if (guidedProfile == null && !rocketLauncher) {
+            tooltipAdder.accept(Component.translatable("info.jeg.headshot_multiplier", String.format(Locale.US, "%.2fx", GunHeadshotHelper.headshotMultiplier(this.stats))));
+        }
 
-        double effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
+        double effectiveRange;
+        if (guidedProfile != null) {
+            // Matches GuidedLauncherItem seek range.
+            effectiveRange = 256.0D;
+        } else {
+            effectiveRange = GunRangeHelper.computeFullDamageRange(this.stats);
+        }
         if (effectiveRange > 0.0D) {
             tooltipAdder.accept(Component.translatable("info.jeg.range", String.format(Locale.US, "%.0f", effectiveRange)));
         }
