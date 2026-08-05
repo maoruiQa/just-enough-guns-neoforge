@@ -121,9 +121,9 @@
   },
   "armor": {
     "fallback": {
-      "rating": 4.0,
-      "undermatch_multiplier": 0.18,
-      "overmatch_multiplier": 0.85,
+      "rating": 6.0,
+      "undermatch_multiplier": 0.5,
+      "overmatch_multiplier": 0.88,
       "passenger_leak_multiplier": 0.16,
       "part_damage_multiplier": 0.85
     },

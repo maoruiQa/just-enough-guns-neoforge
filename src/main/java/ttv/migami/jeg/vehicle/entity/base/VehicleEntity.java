@@ -5194,7 +5194,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         OBBInfo.Part hitPart = this.estimateHitPart(source);
         ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
-        float finalDamage = this.vehicleData().defaults().damageModifier().apply(armorHit.finalDamage());
+        float finalDamage = this.vehicleData().defaults().damageModifier().apply(source, armorHit.finalDamage());
         float minimumDamage = source.is(ModDamageTypes.VEHICLE_STRIKE) ? 0.0F : 1.0F;
         if (finalDamage <= minimumDamage) {
             return false;
@@ -5264,20 +5264,36 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private ArmorHit applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
-        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
-            if (source.is(ModDamageTypes.VEHICLE_STRIKE)) {
-                VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
-                float armorMultiplier = Mth.clamp(1.05F - armor.rating() * 0.07F, 0.32F, 1.05F);
-                return new ArmorHit(amount * armorMultiplier, true);
-            }
-            return new ArmorHit(amount, true);
-        }
         VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
         BallisticProtection.IntrinsicArmorProfile intrinsic = new BallisticProtection.IntrinsicArmorProfile(
                 armor.rating(),
                 armor.undermatchMultiplier(),
                 armor.overmatchMultiplier()
         );
+
+        // Missile direct hit: ballistic AP (replaces SW @javelin/*missile entity multipliers).
+        if (source.getDirectEntity() instanceof ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity missile
+                && !source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
+            float ap = ttv.migami.jeg.vehicle.util.VehicleMissileProfile.get(missile.weaponId()).armorPiercing();
+            BallisticProtection.BallisticResult result = BallisticProtection.applyToIntrinsicArmor(amount, ap, intrinsic);
+            return new ArmorHit(result.finalDamage(), !result.armorApplied() || result.overmatched());
+        }
+
+        if (!(source.getDirectEntity() instanceof BulletEntity bullet)) {
+            if (source.is(ModDamageTypes.VEHICLE_STRIKE)) {
+                float armorMultiplier = Mth.clamp(1.05F - armor.rating() * 0.07F, 0.32F, 1.05F);
+                return new ArmorHit(amount * armorMultiplier, true);
+            }
+            // Explosions (missile blast / rocket HE splash path): no ballistic AP; damage_modifiers handle HE.
+            // Soft rating factor only when the vehicle has no SW-style modifier table.
+            boolean hasSwRules = !this.vehicleData().defaults().damageModifier().rules().isEmpty();
+            boolean explosion = source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION);
+            if (explosion && !hasSwRules) {
+                float armorMultiplier = Mth.clamp(1.05F - armor.rating() * 0.07F, 0.32F, 1.05F);
+                return new ArmorHit(amount * armorMultiplier, true);
+            }
+            return new ArmorHit(amount, true);
+        }
         BallisticProtection.BallisticResult result = BallisticProtection.applyToIntrinsicArmor(
                 amount,
                 bullet.getGunStats(),

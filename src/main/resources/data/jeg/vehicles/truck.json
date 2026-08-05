@@ -1,5 +1,4 @@
-{
-  "entity_type": "jeg:truck",
+{"entity_type": "jeg:truck",
   "vehicle_type": "land",
   "max_health": 250.0,
   "auto_repair_per_tick": 0.012,
@@ -30,10 +29,37 @@
   "weapons": [],
   "destroy": {"explodes": false, "explosion_power": 0.0},
   "armor": {
-    "fallback": {"rating": 2.0, "undermatch_multiplier": 0.28, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.18, "part_damage_multiplier": 1.0},
+    "fallback": {"rating": 4.0, "undermatch_multiplier": 0.55, "overmatch_multiplier": 1.0, "passenger_leak_multiplier": 0.18, "part_damage_multiplier": 1.0},
     "parts": {
       "wheel_left": {"rating": 1.0, "undermatch_multiplier": 0.5, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.5},
       "wheel_right": {"rating": 1.0, "undermatch_multiplier": 0.5, "overmatch_multiplier": 1.15, "passenger_leak_multiplier": 0.0, "part_damage_multiplier": 1.5}
     }
-  }
+  },
+  "damage_modifiers": [
+    "All * 0.5",
+    "minecraft:arrow * 0.2",
+    "minecraft:trident * 0.4",
+    "minecraft:mob_attack * 0.4",
+    "minecraft:mob_attack_no_aggro * 0.4",
+    "minecraft:mob_projectile * 0.4",
+    "minecraft:player_attack * 0.4",
+    "minecraft:lava - -4",
+    "minecraft:lava * 4",
+    "@minecraft:tnt * 3",
+    "@minecraft:tnt_minecart * 3",
+    "minecraft:explosion * 4",
+    "minecraft:player_explosion * 4",
+    "superbwarfare:projectile_hit * 0.8",
+    "superbwarfare:grapeshot_hit * 0.2",
+    "@#superbwarfare:aerial_bomb * 1.4",
+    "#superbwarfare:projectile * 0.16",
+    "superbwarfare:vehicle_strike * 0.7",
+    "@superbwarfare:cannon_shell * 0.6",
+    "@superbwarfare:small_cannon_shell * 0.8",
+    "@superbwarfare:gun_grenade * 1.4",
+    "@superbwarfare:rgo_grenade * 3",
+    "@superbwarfare:hand_grenade * 2.5",
+    "@superbwarfare:mortar_shell * 2",
+    "All - 4"
+  ]
 }
