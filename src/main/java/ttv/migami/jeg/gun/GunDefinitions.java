@@ -44,7 +44,7 @@ map.put(Identifier.fromNamespaceAndPath(Reference.MOD_ID, "infantry_rifle"), new
             Identifier.fromNamespaceAndPath("jeg", "rocket"),
             "jeg:manual",
             1, 95, 29, 128,
-            28F, 5.0F, 600,
+            150F, 5.0F, 600,
             true, false, 1F, 1,
             Identifier.fromNamespaceAndPath("jeg", "item.rocket_launcher.fire"),
             null,

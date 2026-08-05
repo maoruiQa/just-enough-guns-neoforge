@@ -27,9 +27,12 @@ public final class BallisticProtection {
     private BallisticProtection() {
     }
 
+    /** Shoulder rocket HE direct hit AP (also used when no GunStats path). */
+    public static final float ROCKET_LAUNCHER_ARMOR_PIERCING = 10.0F;
+
     public static float baseArmorPiercing(GunStats stats, boolean rocketDirectHit) {
         if (rocketDirectHit) {
-            return 10.0F;
+            return ROCKET_LAUNCHER_ARMOR_PIERCING;
         }
         if (stats == null) {
             return 1.0F;
@@ -120,6 +123,11 @@ public final class BallisticProtection {
 
     public static BallisticResult applyToIntrinsicArmor(float rawDamage, GunStats stats, IntrinsicArmorProfile profile, boolean rocketDirectHit) {
         return apply(rawDamage, effectiveArmorPiercing(stats, rocketDirectHit), profile);
+    }
+
+    /** Direct AP application for missiles / other non-GunStats projectiles against vehicle armor. */
+    public static BallisticResult applyToIntrinsicArmor(float rawDamage, float armorPiercing, IntrinsicArmorProfile profile) {
+        return apply(rawDamage, Math.max(0.0F, armorPiercing), profile);
     }
 
     public static ArmorProfile armorProfile(BulletproofArmorItem.Tier tier, EquipmentSlot slot) {

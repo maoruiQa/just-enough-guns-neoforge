@@ -10,29 +10,179 @@
   "has_decoy": true,
   "container_type": "mini",
   "seats": [
-    {"index": 0, "x": 0.0, "y": 0.6, "z": -0.2, "driver": true, "enclosed": false, "ban_hand": true, "min_pitch": -25.0, "max_pitch": 50.0, "min_yaw": -105.0, "max_yaw": 105.0, "sensitivity_x": 0.75, "sensitivity_y": 0.8, "sensitivity_z": 1.0, "zoom_camera": {"x": 0.0, "y": 0.4, "z": -0.6}},
-    {"index": 1, "x": -0.8, "y": 0.35, "z": -1.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
-    {"index": 2, "x": 0.8, "y": 0.35, "z": -1.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
-    {"index": 3, "x": -0.8, "y": 0.35, "z": -2.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0},
-    {"index": 4, "x": 0.8, "y": 0.35, "z": -2.2, "driver": false, "enclosed": false, "min_yaw": -90.0, "max_yaw": 90.0}
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 0.6,
+      "z": -0.2,
+      "driver": true,
+      "enclosed": false,
+      "ban_hand": true,
+      "min_pitch": -25.0,
+      "max_pitch": 50.0,
+      "min_yaw": -105.0,
+      "max_yaw": 105.0,
+      "sensitivity_x": 0.75,
+      "sensitivity_y": 0.8,
+      "sensitivity_z": 1.0,
+      "zoom_camera": {
+        "x": 0.0,
+        "y": 0.4,
+        "z": -0.6
+      }
+    },
+    {
+      "index": 1,
+      "x": -0.8,
+      "y": 0.35,
+      "z": -1.2,
+      "driver": false,
+      "enclosed": false,
+      "min_yaw": -90.0,
+      "max_yaw": 90.0
+    },
+    {
+      "index": 2,
+      "x": 0.8,
+      "y": 0.35,
+      "z": -1.2,
+      "driver": false,
+      "enclosed": false,
+      "min_yaw": -90.0,
+      "max_yaw": 90.0
+    },
+    {
+      "index": 3,
+      "x": -0.8,
+      "y": 0.35,
+      "z": -2.2,
+      "driver": false,
+      "enclosed": false,
+      "min_yaw": -90.0,
+      "max_yaw": 90.0
+    },
+    {
+      "index": 4,
+      "x": 0.8,
+      "y": 0.35,
+      "z": -2.2,
+      "driver": false,
+      "enclosed": false,
+      "min_yaw": -90.0,
+      "max_yaw": 90.0
+    }
   ],
-  "engine": {"type": "boat", "acceleration": 0.065, "max_forward_speed": 0.6, "max_reverse_speed": 0.24, "friction": 0.94, "energy_cost_rate": 48},
-  "third_person_camera": {"x": 0.0, "y": 1.5, "z": -6.0},
-  "dismount": {"x": 1.15, "y": 0.1, "z": 0.0},
+  "engine": {
+    "type": "boat",
+    "acceleration": 0.065,
+    "max_forward_speed": 0.6,
+    "max_reverse_speed": 0.24,
+    "friction": 0.94,
+    "energy_cost_rate": 48
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 1.5,
+    "z": -6.0
+  },
+  "dismount": {
+    "x": 1.15,
+    "y": 0.1,
+    "z": 0.0
+  },
   "collision_level": "light",
   "obb": [
-    {"part": "body", "x": 0.0, "y": 0.875, "z": 0.375, "half_width": 1.5625, "half_height": 0.75, "half_depth": 3.1875},
-    {"part": "main_engine", "x": 0.0, "y": 2.0625, "z": -0.71875, "half_width": 1.0625, "half_height": 0.5, "half_depth": 1.90625}
+    {
+      "part": "body",
+      "x": 0.0,
+      "y": 0.875,
+      "z": 0.375,
+      "half_width": 1.5625,
+      "half_height": 0.75,
+      "half_depth": 3.1875
+    },
+    {
+      "part": "main_engine",
+      "x": 0.0,
+      "y": 2.0625,
+      "z": -0.71875,
+      "half_width": 1.0625,
+      "half_height": 0.5,
+      "half_depth": 1.90625
+    }
   ],
   "weapons": [
-    {"weapon": "jeg:vehicle_coax_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false, "seat": 0, "muzzle": {"x": 0.0, "y": 3.2705, "z": 0.4761}}
-  ],
-  "turret": {"seat": 0, "render_pivot_y": 1.0, "origin_x": 0.0, "origin_y": 2.5616625, "origin_z": -0.565625, "barrel_x": 0.0, "barrel_y": 0.5088375, "barrel_z": 0.04173125, "guided_uses_turret": false},
-  "destroy": {"explodes": true, "explosion_power": 2.0},
-  "armor": {
-    "fallback": {"rating": 5.0, "undermatch_multiplier": 0.14, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.22, "part_damage_multiplier": 1.0},
-    "parts": {
-      "main_engine": {"rating": 3.0, "undermatch_multiplier": 0.24, "overmatch_multiplier": 1.1, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.4}
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 0,
+      "muzzle": {
+        "x": 0.0,
+        "y": 3.2705,
+        "z": 0.4761
+      }
     }
-  }
+  ],
+  "turret": {
+    "seat": 0,
+    "render_pivot_y": 1.0,
+    "origin_x": 0.0,
+    "origin_y": 2.5616625,
+    "origin_z": -0.565625,
+    "barrel_x": 0.0,
+    "barrel_y": 0.5088375,
+    "barrel_z": 0.04173125,
+    "guided_uses_turret": false
+  },
+  "destroy": {
+    "explodes": true,
+    "explosion_power": 2.0
+  },
+  "armor": {
+    "fallback": {
+      "rating": 7.0,
+      "undermatch_multiplier": 0.52,
+      "overmatch_multiplier": 1.0,
+      "passenger_leak_multiplier": 0.22,
+      "part_damage_multiplier": 1.0
+    },
+    "parts": {
+      "main_engine": {
+        "rating": 3.0,
+        "undermatch_multiplier": 0.24,
+        "overmatch_multiplier": 1.1,
+        "passenger_leak_multiplier": 0.1,
+        "part_damage_multiplier": 1.4
+      }
+    }
+  },
+  "damage_modifiers": [
+    "All * 0.5",
+    "minecraft:arrow * 0.2",
+    "minecraft:trident * 0.4",
+    "minecraft:mob_attack * 0.4",
+    "minecraft:mob_attack_no_aggro * 0.4",
+    "minecraft:mob_projectile * 0.4",
+    "minecraft:player_attack * 0.4",
+    "minecraft:lava - -2",
+    "minecraft:lava * 4",
+    "@minecraft:tnt * 3",
+    "@minecraft:tnt_minecart * 3",
+    "minecraft:explosion * 4",
+    "minecraft:player_explosion * 4",
+    "superbwarfare:projectile_hit * 0.8",
+    "superbwarfare:grapeshot_hit * 0.5",
+    "@#superbwarfare:aerial_bomb * 2",
+    "#superbwarfare:projectile * 0.16",
+    "superbwarfare:vehicle_strike * 1",
+    "@superbwarfare:cannon_shell * 0.9",
+    "@superbwarfare:small_cannon_shell * 1.3",
+    "@superbwarfare:gun_grenade * 2.2",
+    "@superbwarfare:rgo_grenade * 6",
+    "@superbwarfare:hand_grenade * 5",
+    "@superbwarfare:mortar_shell * 4",
+    "All - 2"
+  ]
 }

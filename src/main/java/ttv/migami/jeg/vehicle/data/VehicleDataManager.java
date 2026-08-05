@@ -148,7 +148,7 @@ public final class VehicleDataManager {
         CollisionLevel collisionLevel = getEnum(object, "collision_level", CollisionLevel.class, fallback.collisionLevel());
         OBBInfo obb = parseObb(object, fallback.obb());
         VehicleArmorProfile armor = parseArmor(getObject(object, "armor"), fallback.armor());
-        DamageModifierInfo damageModifier = parseDamageModifier(getObject(object, "damage_modifier"), fallback.damageModifier());
+        DamageModifierInfo damageModifier = parseDamageModifier(object, fallback.damageModifier());
         List<VehicleWeaponInfo> weapons = parseWeapons(object, fallback.weapons());
         TurretInfo turret = parseTurret(getObject(object, "turret"), fallback.turret());
         boolean hasDecoy = getBoolean(object, "has_decoy", fallback.hasDecoy());
@@ -416,11 +416,38 @@ public final class VehicleDataManager {
         );
     }
 
-    private static DamageModifierInfo parseDamageModifier(JsonObject object, DamageModifierInfo fallback) {
-        if (object == null) {
+        private static DamageModifierInfo parseDamageModifier(JsonObject root, DamageModifierInfo fallback) {
+        float global = fallback.globalMultiplier();
+        JsonObject object = getObject(root, "damage_modifier");
+        if (object != null) {
+            global = getFloat(object, "global_multiplier", global);
+        }
+        List<String> rules = new java.util.ArrayList<>();
+        JsonElement listElement = root.get("damage_modifiers");
+        if (listElement != null && listElement.isJsonArray()) {
+            for (JsonElement entry : listElement.getAsJsonArray()) {
+                if (entry != null && entry.isJsonPrimitive()) {
+                    rules.add(entry.getAsString());
+                }
+            }
+        }
+        if (object != null) {
+            JsonElement nested = object.get("rules");
+            if (nested != null && nested.isJsonArray()) {
+                for (JsonElement entry : nested.getAsJsonArray()) {
+                    if (entry != null && entry.isJsonPrimitive()) {
+                        rules.add(entry.getAsString());
+                    }
+                }
+            }
+        }
+        if (rules.isEmpty() && object == null) {
             return fallback;
         }
-        return new DamageModifierInfo(getFloat(object, "global_multiplier", fallback.globalMultiplier()));
+        if (rules.isEmpty()) {
+            return new DamageModifierInfo(global, fallback.rules());
+        }
+        return DamageModifierInfo.fromRuleStrings(global, rules);
     }
 
     private static JsonObject getObject(JsonObject object, String name) {

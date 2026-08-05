@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.8.0 - 2026-08-04
+## 1.8.0 - 2026-08-05
 
 ### Added
 - Ported SuperbWarfare-style special equipment into JEG: FPV drones with monitor control, C4 bombs (including remote/detonator variants), claymore mines, and a C4 vest wearable charge.
@@ -15,25 +15,34 @@
 ### Changed
 - Set the module version to `1.8.0`.
 - Rebalanced guided missiles: retuned tracking/damage feel and allow unguided Javelin dumps when lock is not available.
+- Guided missiles now use SW-aligned direct hit plus explosion falloff (`SwStyleExplosion`); removed per-vehicle missile entity multipliers (e.g. javelin/igla *0.x) in favor of ballistic armor piercing on direct hits.
+- Missile combat values aligned to SW where applicable (e.g. Javelin 500/120/R9 AP14, Igla 260/90/R6 AP11; vehicle ATGMs use profile AP 11-15).
+- Rebalanced vehicle armor ratings and HE damage modifiers using SW-style `damage_modifiers` with strict damage-type matching (no stacked explosion multipliers on one hit).
+- Aligned ported vehicle max health and armor fallback ratings closer to SuperbWarfare where applicable (e.g. BMP-2 300 HP rating 12, LAV-150 270 HP rating 11, Mi-28 350 HP rating 10).
+- Raised LAV-150 HE vulnerability (vanilla explosion *7.5, missile blast *2.5) and lowered helicopter/aircraft HE multipliers (Mi-28/AH-6 *1.75, A-10 *2.0).
+- Rocket launcher combat values: direct 150, blast 50, AP 10; tooltip shows real direct/blast damage instead of the legacy GunStats value (28).
 - Improved anti-vehicle rocket performance against armored targets.
 - Strengthened drone descent power cut and raised max drone descent speed by about 1.33x for snappier FPV kamikaze dives.
 - Aligned drone camera pitch with SuperbWarfare FPV framing.
 - Only draw lock boxes for missile/drone targets that are in range and have line of sight.
-- Hide the vanilla armor bar while riding a vehicle so vehicle HUDs stay readable.
 - Improved vehicle state sync with broader tracking coverage and a 256-block fallback for distant vehicles.
+- Hide the vanilla armor bar while riding a vehicle so vehicle HUDs stay readable.
 
 ### Fixed
-- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed drone FPV rubber-banding and missing pilot render during monitor control.
 - Fixed missile/drone seek frames missing when targets were due north.
 - Fixed helicopter rotor spin-down and engine sound continuing after dismount.
 - Fixed guided launcher fire/lock handling, ADS raise, hand orientation, and inventory GUI presentation (including flat Igla icons that fill the item slot).
 - Fixed special equipment audio, monitor link behavior, and payload HUD tip text; repaired related language JSON.
-- Fixed special equipment entity scale, claymore facing, and Fabric 26.2 mixin/render targets for drone and seek frames.
 - Fixed vehicle missile and special-equipment presentation issues carried over from the special equipment port.
+- Fixed special equipment entity scale, claymore facing, and Fabric 26.2 mixin/render targets for drone and seek frames.
+- Fixed gun/missile kills not awarding Free the End / MOB_KILLS; attribute player credit before damage, keep player as bullet causing entity (Ender Dragon), resolve multipart parts, and tag jeg:bullet as always_hurts_ender_dragons.
 - Fixed gun/grenade/molotov kills not counting for vanilla advancements, boss kill credit, `killed_by_player` loot, and modpack kill tracking ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
 - Player-fired bullets now use a dedicated `jeg:bullet` damage type with the shooter as the causing entity, and explicitly set `lastHurtByPlayer` after successful hits.
 - Explosive blast paths (rockets, vehicle cannons, grenades, molotovs) now attribute player kill credit the same way.
+- 26.x kill-credit path attributes from the damage source on incoming damage and death where required; guided missiles use a player-attributed blast source and pre-credit lock/direct-hit bosses.
+- Fixed vehicle damage-modifier matching that stacked multiple explosion rules and could one-shot full-HP vehicles or nearly nullify rocket damage on airframes.
+- Fixed rocket launcher item tooltip damage readout so it matches actual HE combat numbers (direct + blast).
 
 ### Verification
 - Passed `.\gradlew build`.

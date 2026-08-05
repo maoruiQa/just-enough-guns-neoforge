@@ -24,13 +24,13 @@ import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModParticleTypes;
 import ttv.migami.jeg.network.NetworkHandler;
+import ttv.migami.jeg.util.SwStyleExplosion;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 
 public final class VehicleMissileEntity extends Entity {
     private static final double DECOY_SEEK_RANGE = 32.0D;
     private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
-    private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
     private static final int BMP2_NO_DROP_TICKS = 5;
     /** Matches rocket launcher trail gravity ({@code BulletEntity} when gravity+trail). */
     private static final double ROCKET_LIKE_GRAVITY = 0.040D;
@@ -285,7 +285,7 @@ public final class VehicleMissileEntity extends Entity {
         return this.targetId < 0 ? null : this.level().getEntity(this.targetId);
     }
 
-    private void explode() {
+        private void explode() {
         if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
             VehicleMissileProfile profile = this.profile();
             this.spawnMissileExplosionEffects(serverLevel);
@@ -293,9 +293,23 @@ public final class VehicleMissileEntity extends Entity {
             LivingEntity livingOwner = owner instanceof LivingEntity living ? living : null;
             boolean directHitVehicle = this.directHitVehicleId >= 0;
             float explosionPower = directHitVehicle ? profile.explosionPower() * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : profile.explosionPower();
-            double creditRadius = Math.max(profile.blastRadius(), explosionPower) + 8.0D;
+            double creditRadius = Math.max(profile.blastRadius() * 2.0D, explosionPower) + 8.0D;
             ModDamageTypes.attributePlayerKillCreditInRadius(serverLevel, this.position(), creditRadius, owner);
             this.attributeExplicitTargetCredit(owner);
+
+            Entity directHit = this.directHitEntityId < 0 ? null : this.level().getEntity(this.directHitEntityId);
+            if (directHit != null && directHit.isAlive()) {
+                float direct = profile.directHitDamage() * (this.topAttack ? 1.25F : 1.0F);
+                if (direct > 0.5F) {
+                    DamageSource directSource = this.damageSources().thrown(this, livingOwner);
+                    if (directHit instanceof LivingEntity livingHit) {
+                        ModDamageTypes.hurtWithPlayerKillCredit(livingHit, serverLevel, directSource, direct, owner);
+                    } else {
+                        directHit.hurt(directSource, direct);
+                    }
+                }
+            }
+
             DamageSource blastSource = this.damageSources().explosion(this, livingOwner);
             this.level().explode(
                     this,
@@ -307,46 +321,15 @@ public final class VehicleMissileEntity extends Entity {
                     explosionPower,
                     false,
                     ExplosionInteraction.MOB);
-            Entity ownerVehicle = owner == null ? null : owner.getVehicle();
-            Vec3 explosionPos = this.position();
-            for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(profile.blastRadius()))) {
-                if (target != ownerVehicle) {
-                    float damage = target.getId() == this.directHitEntityId
-                            ? profile.vehicleDamage() * (this.topAttack ? 1.25F : 1.0F)
-                            : profile.vehicleDamage();
-                    if (directHitVehicle && target.getId() != this.directHitVehicleId) {
-                        double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos) * VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
-                        if (effectiveDistance > profile.blastRadius()) {
-                            continue;
-                        }
-                        damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
-                    }
-                    if (damage > 0.5F) {
-                        target.hurt(blastSource, damage);
-                    }
-                }
-            }
-            for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(profile.blastRadius() + 8.0D))) {
-                if (target != owner && target.isAlive()) {
-                    float damage = target.getId() == this.directHitEntityId
-                            ? profile.livingDamage() * (this.topAttack ? 1.25F : 1.0F)
-                            : profile.livingDamage();
-                    double effectiveDistance = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).distanceTo(explosionPos);
-                    if (directHitVehicle) {
-                        effectiveDistance *= VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE;
-                    }
-                    boolean explicitTarget = target.getId() == this.directHitEntityId || target.getId() == this.targetId;
-                    if (!explicitTarget && effectiveDistance > profile.blastRadius()) {
-                        continue;
-                    }
-                    if (!explicitTarget && effectiveDistance <= profile.blastRadius()) {
-                        damage *= 1.0F - (float) (effectiveDistance / profile.blastRadius());
-                    }
-                    if (damage > 0.5F) {
-                        ModDamageTypes.hurtWithPlayerKillCredit(target, serverLevel, blastSource, damage, owner);
-                    }
-                }
-            }
+            SwStyleExplosion.damageEntities(
+                    serverLevel,
+                    this.position(),
+                    this,
+                    owner,
+                    profile.explosionDamage(),
+                    (float) profile.blastRadius(),
+                    blastSource
+            );
         }
         this.discard();
     }
@@ -386,6 +369,11 @@ public final class VehicleMissileEntity extends Entity {
         for (ServerPlayer player : serverLevel.players()) {
             serverLevel.sendParticles(player, particle, true, false, x, y, z, count, xOffset, yOffset, zOffset, speed);
         }
+    }
+
+    
+    public Identifier weaponId() {
+        return this.weaponId;
     }
 
     private VehicleMissileProfile profile() {
