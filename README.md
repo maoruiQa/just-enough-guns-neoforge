@@ -5,28 +5,43 @@ A modern NeoForge 26.2 unofficial port of the Forge 1.20.1 mod Just Enough Guns,
 
 ## Overview
 
-This module is the maintained Java 25 NeoForge branch for Just Enough Guns New 1.7.1. It carries the magazine-fed weapon work, Walkurenritt vehicle system, repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
+This module is the maintained Java 25 NeoForge branch for Just Enough Guns New **1.8.0**. It carries magazine-fed weapons, Walkürenritt vehicles, and the 1.8.0 special-equipment pack (FPV drones, C4 / claymore / C4 vest, Javelin & Igla, smoke denial, vehicle lock UI), plus kill-credit fixes and the vehicle / missile / rocket combat balance pass.
 
 ## Latest Release Notes
 
-Version `1.7.1` is the current release line.
+Version `1.8.0` is the current release line. Interim local labels **1.8.1** / **1.8.2** were never separate public releases; their work is included here.
 
-- Ported the maintained NeoForge line to Minecraft 26.2 with NeoForge `26.2.0.1-beta` and GeckoLib `5.5.1`.
-- Restored the `jeg:repair_kit` recipe and made the repair kit the anvil repair material for guns and bulletproof armor.
-- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair tools still repair vehicles.
-- Added first-person held-gun left/right movement camera sway and Y-key gun inspect animations.
-- Fixed Flamethrower reload timing and first-person inspect animation interruption behavior.
-- Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
-- Fixed MI-28 gunner pitch limits, vehicle assembly preview entity IDs, and NeoForge 26.2 renderer/mixin API changes.
-- Fixed Magazine Loader placement orientation, block textures, and container drops when broken.
-- Updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
-- Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
+### Highlights
+
+- **Special equipment** — FPV drones with monitor control, C4 / claymore / C4 vest, C4 defuser, Javelin & Igla guided launchers, smoke denial, and vehicle missile lock UI.
+- **Kill credit** — gun / rocket / explosive kills correctly credit the player for advancements, loot, and boss kills ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
+- **Vehicle / missile / rocket balance** — SW-aligned missile damage model, ballistic AP for missiles, retuned vehicle armor & HE modifiers, rocket numbers and tooltip fixes.
+
+### Added
+
+- Ported SuperbWarfare-style special equipment: FPV drones, C4 (including remote/detonator), claymore mines, C4 vest, and C4 defuser.
+- Added guided launchers **Javelin** and **Igla 9K38** with lock-on fire, SW-aligned first-person poses/ADS, icons, root motion, and reload animations.
+- Added C4 drone FPV payload HUD with detonate guidance and a **KAMIKAZE** dive presentation.
+- Added a C4 vest bomber gunner variant with configurable spawn rates.
+- Added SW-style smoke screens that deny missile locks, denser smoke particles, and release audio.
+- Added vehicle missile lock frames and seek audio for lockable targets.
+- Soft-disabled natural Terror Phantom spawns by default.
+
+### Changed / Fixed
+
+- Rebalanced guided missiles, anti-vehicle rockets, drone descent power, and vehicle state sync.
+- Vehicle armor and HE modifiers use SW-style damage modifiers with strict type matching; guided missiles use direct hit + explosion falloff and ballistic AP.
+- Rocket launcher: direct **150**, blast **50**, radius **11**, AP **10**; tooltips show real combat numbers for rockets and guided launchers.
+- Fixed drone FPV rubber-banding, seek frames due north, helicopter rotor spin-down after dismount, guided launcher presentation, and special-equipment audio/HUD.
+- Fixed kill credit for guns, missiles, grenades, and molotovs (including 26.x damage-source attribution paths).
+- Fixed stacked vehicle explosion modifiers and rocket/Javelin/Igla tooltip damage readouts.
+- **(NeoForge 26.2)** Fixed C4/claymore entity scale and claymore facing; fixed missile/decoy deferred render pose; fixed GeckoLib v5 first-person guided launcher hip pose, ScreenProjection capture for HUD frames, and drone rotor bone spin.
 
 ## Supported Version
 
 | Loader | Minecraft | Java | Mod Version | Required Dependencies |
 | --- | --- | --- | --- | --- |
-| NeoForge | 26.2 | Java 25 | 1.7.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+| NeoForge | 26.2 | Java 25 | 1.8.0 | NeoForge 26.2.x, GeckoLib 5.5.1 |
 
 ## Controls
 
