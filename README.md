@@ -2,11 +2,13 @@
 
 A modern fork and unofficial port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
-![Walkürenritt vehicle assault](screenshots/Walkürenritt.png)
+![Terminal Guidance — 1.8.0 special equipment](screenshots/terminal-guidance-1.8.0.png)
 
-Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork unofficially ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current 1.7.1 builds move the maintained Java 25 line to Minecraft 26.2 while carrying forward repair-kit anvil repair, localization cleanup, vehicle explosive tuning, first-person gun camera sway, gun inspect animations, and focused vehicle and helicopter fixes.
+Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork unofficially ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current **1.8.0** builds add SuperbWarfare-style special equipment — FPV drones, C4 / claymore / C4 vest, Javelin and Igla guided launchers, smoke denial, and vehicle missile lock UI — plus kill-credit fixes and a vehicle / missile / rocket combat balance pass.
 
 ## Screenshots
+
+![Walkürenritt vehicle assault](screenshots/Walkürenritt.png)
 
 ![Light machine gun combat HUD](screenshots/lgm.png)
 
@@ -21,7 +23,8 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 - Forge-style melee support: V-key gun melee, flashlight toggles, sword bayonet damage, and first-person melee or bayonet animations for animated guns.
 - Animated gun inspection on the Y key for held animated guns.
 - Walkürenritt vehicle warfare: assembled land vehicles, boats, aircraft, helicopters, fixed weapon platforms, vehicle inventories, repair tools, charging support, missiles, decoys, and dedicated vehicle HUDs.
-- Hostile gunner mobs: zombie-family, skeleton-family, piglin-family, pillager/vindicator, phantom, ghoul, and parched gunner variants.
+- Special equipment: FPV drones with monitor control and kamikaze payload HUD, C4 (remote/detonator), claymore mines, C4 vest, C4 defuser, Javelin and Igla 9K38 lock-on launchers, smoke screens that deny missile locks, and vehicle missile lock frames with seek audio.
+- Hostile gunner mobs: zombie-family, skeleton-family, piglin-family, pillager/vindicator, phantom, ghoul, and parched gunner variants, plus a configurable C4 vest bomber gunner variant.
 - Faction encounters: patrols, faction omen flow, home-triggered raids, raid flares, boss bars, configurable raid waves, and faction-specific blueprint rewards.
 - Terror Phantom content: rare sky threat, Bound Terror Phantom guardian variant, phantom gunner summons, configurable death explosions, and End Ship Armada structure encounters.
 - Defensive gear: bulletproof helmets and vests, plus armored Joy Harness upgrades.
@@ -29,27 +32,42 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 
 ## Latest Release Notes
 
-Version `1.7.1` is the current release line. It keeps the 1.7.0 magazine-fed weapon and Walkürenritt vehicle work, then adds maintenance fixes and the maintained 26.2 unofficial ports.
+Version `1.8.0` is the current release line. Interim local labels **1.8.1** / **1.8.2** were never separate public releases; their work is included here.
 
-- Added maintained Fabric 26.2 and NeoForge 26.2 branches; Fabric 26.1 and NeoForge 26.1 are now legacy maintenance/reference lines.
-- Restored the `jeg:repair_kit` recipe and made the repair kit the anvil repair material for guns and bulletproof armor.
-- Fixed repair kit behavior so it no longer repairs vehicles on right-click; repair tools still repair vehicles.
-- Added first-person held-gun left/right movement camera sway.
-- Fixed Fabric 1.21.1 custom reload key handling and Flamethrower reload timing.
-- Reduced rocket and missile block damage and splash reach on direct vehicle hits while preserving direct vehicle damage.
-- Fixed MI-28 gunner pitch limits and 26.2 vehicle assembly preview entity IDs.
-- Fixed Magazine Loader placement orientation, inventory tooltip rendering, block textures, and container drops when broken.
-- Added Y-key gun inspect animations and updated helicopter unsafe-descent, crash-damage, rotor, warning HUD/audio, low-energy, and missile-profile behavior.
-- Expanded Chinese localization and converted targeted player-visible hardcoded strings to translation keys.
+### Highlights
+
+- **Special equipment** — FPV drones with monitor control, C4 / claymore / C4 vest, C4 defuser, Javelin & Igla guided launchers, smoke denial, and vehicle missile lock UI.
+- **Kill credit** — gun / rocket / explosive kills correctly credit the player for advancements, loot, and boss kills ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
+- **Vehicle / missile / rocket balance** — SW-aligned missile damage model, ballistic AP for missiles, retuned vehicle armor & HE modifiers, rocket numbers and tooltip fixes.
+
+### Added
+
+- Ported SuperbWarfare-style special equipment: FPV drones, C4 (including remote/detonator), claymore mines, C4 vest, and C4 defuser.
+- Added guided launchers **Javelin** and **Igla 9K38** with lock-on fire, SW-aligned first-person poses/ADS, icons, root motion, and reload animations.
+- Added C4 drone FPV payload HUD with detonate guidance and a **KAMIKAZE** dive presentation for explosive drone runs.
+- Added a C4 vest bomber gunner variant with configurable spawn rates.
+- Added SW-style smoke screens that deny missile locks, denser smoke particles, and release audio.
+- Added vehicle missile lock frames and seek audio for lockable targets.
+- Soft-disabled natural Terror Phantom spawns by default.
+
+### Changed / Fixed
+
+- Rebalanced guided missiles, anti-vehicle rockets, drone descent power, and vehicle state sync; only draw lock boxes for in-range LOS targets.
+- Vehicle armor and HE modifiers use SW-style damage modifiers with strict type matching; guided missiles use direct hit + explosion falloff and ballistic AP.
+- Rocket launcher: direct **150**, blast **50**, radius **11**, AP **10**; tooltips show real direct + blast + radius for rockets and guided launchers.
+- Fixed drone FPV rubber-banding, seek frames due north, helicopter rotor spin-down after dismount, guided launcher fire/lock/ADS presentation, and special-equipment audio/HUD.
+- Fixed kill credit for guns, missiles, grenades, and molotovs across advancements, `killed_by_player` loot, Free the End / `MOB_KILLS`, and multipart bosses.
+- Fixed stacked vehicle explosion modifiers and rocket/Javelin/Igla tooltip damage readouts.
+- **(Fabric)** Hide the vanilla armor bar while riding a vehicle; fixed special-equipment entity scale, claymore facing, and related mixin/render targets for drone and seek frames where applicable.
 
 ## Supported Versions
 
 | Loader | Minecraft | Java | Mod Version | Required Dependencies |
 | --- | --- | --- | --- | --- |
-| Fabric | 1.21.1 | Java 21 | 1.7.1 | Fabric API, GeckoLib 4.8.3 |
-| NeoForge | 1.21.1-1.21.4 | Java 21 | 1.7.1 | NeoForge 21.1.x, GeckoLib 4.8.3 |
-| Fabric | 26.2 | Java 25 | 1.7.1 | Fabric API, GeckoLib 5.5+ |
-| NeoForge | 26.2 | Java 25 | 1.7.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+| Fabric | 1.21.1 | Java 21 | 1.8.0 | Fabric API, GeckoLib 4.8.3 |
+| NeoForge | 1.21.1-1.21.4 | Java 21 | 1.8.0 | NeoForge 21.1.x, GeckoLib 4.8.3 |
+| Fabric | 26.2 | Java 25 | 1.8.0 | Fabric API, GeckoLib 5.5+ |
+| NeoForge | 26.2 | Java 25 | 1.8.0 | NeoForge 26.2.x, GeckoLib 5.5.1 |
 
 The older Fabric 26.1 and NeoForge 26.1 branches are legacy lines after the 26.2 unofficial port. Use 26.2 for the maintained Java 25 release line unless you specifically need a 26.1 legacy build.
 
