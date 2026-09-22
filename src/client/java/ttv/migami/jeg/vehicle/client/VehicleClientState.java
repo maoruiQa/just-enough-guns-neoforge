@@ -15,6 +15,8 @@ public final class VehicleClientState {
     private static float mouseDeltaY;
     private static float mouseLerpX;
     private static float mouseLerpY;
+    private static float pendingMouseX;
+    private static float pendingMouseY;
     private static double lastMouseX = Double.NaN;
     private static double lastMouseY = Double.NaN;
     private static int lastSeekTicks;
@@ -63,6 +65,25 @@ public final class VehicleClientState {
         lastMouseY = mouseY;
     }
 
+    public static void addRawMouseDelta(double deltaX, double deltaY) {
+        pendingMouseX += (float) deltaX;
+        pendingMouseY += (float) deltaY;
+    }
+
+    public static void consumeRawMouseDelta(double mouseX, double mouseY) {
+        mouseDeltaX = pendingMouseX;
+        mouseDeltaY = pendingMouseY;
+        pendingMouseX = 0.0F;
+        pendingMouseY = 0.0F;
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+    }
+
+    public static void discardRawMouseDelta() {
+        pendingMouseX = 0.0F;
+        pendingMouseY = 0.0F;
+    }
+
     public static void updateAircraftMouse(float sensitivity, float smoothingX, float smoothingY, boolean invertY, boolean freeLook) {
         float speedX = mouseDeltaX * sensitivity;
         float speedY = mouseDeltaY * sensitivity * (invertY ? -1.0F : 1.0F);
@@ -88,6 +109,7 @@ public final class VehicleClientState {
         lastMouseX = mouseX;
         lastMouseY = mouseY;
         clearFrameDeltas();
+        discardRawMouseDelta();
         mouseLerpX = 0.0F;
         mouseLerpY = 0.0F;
     }
@@ -100,6 +122,7 @@ public final class VehicleClientState {
         lastMouseX = Double.NaN;
         lastMouseY = Double.NaN;
         clearFrameDeltas();
+        discardRawMouseDelta();
         mouseLerpX = 0.0F;
         mouseLerpY = 0.0F;
         lastSeekTicks = 0;
