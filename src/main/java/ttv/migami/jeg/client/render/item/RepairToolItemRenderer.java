@@ -176,7 +176,9 @@ public final class RepairToolItemRenderer extends GeoItemRenderer<RepairToolItem
                     return;
                 }
 
-                AvatarRenderer<AbstractClientPlayer> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getPlayerRenderer(player);
+                if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(player) instanceof AvatarRenderer<?> renderer)) {
+                    return;
+                }
                 Identifier skin = player.getSkin().body().texturePath();
                 int light = passInfo.packedLight();
                 PlayerModel model = renderer.getModel();

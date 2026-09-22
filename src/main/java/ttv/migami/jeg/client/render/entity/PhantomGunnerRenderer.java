@@ -47,6 +47,6 @@ public final class PhantomGunnerRenderer extends MobRenderer<PhantomGunner, Phan
     @Override
     protected void setupRotations(PhantomRenderState state, PoseStack poseStack, float yaw, float partialTick) {
         super.setupRotations(state, poseStack, yaw, partialTick);
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot));
+        poseStack.rotateDegrees(Axis.XP, state.xRot);
     }
 }

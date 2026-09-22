@@ -189,7 +189,7 @@ public final class ArmoredJoyHarnessItem extends Item {
                 if (!player.getAbilities().instabuild && stack.isEmpty()) {
                     player.setItemInHand(hand, returned);
                 } else if (!player.addItem(returned)) {
-                    player.drop(returned, false);
+                    player.drop(returned, false, net.minecraft.util.Prediction.SERVER_ONLY);
                 }
                 return InteractionResult.SUCCESS_SERVER;
             }

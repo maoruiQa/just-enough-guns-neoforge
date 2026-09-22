@@ -45,7 +45,7 @@ public final class JustEnoughGuns {
         container.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
         container.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);
 
-        LOGGER.info("Initializing Just Enough Guns for Minecraft 1.21.11");
+        LOGGER.info("Initializing Just Enough Guns for Minecraft 26.3");
 
         // Register mod content first
         ModBlocks.REGISTER.register(modBus);

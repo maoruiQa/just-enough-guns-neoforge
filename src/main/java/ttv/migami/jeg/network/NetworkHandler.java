@@ -632,7 +632,7 @@ public final class NetworkHandler {
                 boolean notify = magazine.getLoadPromptMessage(stack, player.getOffhandItem()) == null;
                 boolean loaded = magazine.tryLoad(player.level(), player, stack, player.getOffhandItem(), notify);
                 if (loaded) {
-                    player.swing(payload.hand(), true);
+                    player.swing(payload.hand(), net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                 }
                 return;
             }
@@ -642,7 +642,7 @@ public final class NetworkHandler {
             }
             boolean reloaded = gun.tryReload(player.level(), player, stack, payload.hand(), true);
             if (reloaded) {
-                player.swing(payload.hand(), true);
+                player.swing(payload.hand(), net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             }
         });
     }
@@ -663,7 +663,7 @@ public final class NetworkHandler {
                 player.connection.send(OffhandFullPromptPayload.INSTANCE);
             }
             if (result.transferredAmmo()) {
-                player.swing(InteractionHand.MAIN_HAND, true);
+                player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             }
         });
     }

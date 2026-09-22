@@ -8,10 +8,13 @@
     "TargetGoalMixin",
     "NearestAttackableTargetGoalMixin",
     "GunnerSunBurnMixin",
-    "GunnerWaterConversionMixin"
+    "GunnerWaterConversionMixin",
+    "LivingEntityGunSwingMixin",
+    "LivingEntitySwingStateMixin"
   ],
   "client": [
     "GuiGraphicsExtractorAccessor",
+    "FirstPersonHandsMixin",
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
     "MouseHandlerVehicleMixin",

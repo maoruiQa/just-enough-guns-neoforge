@@ -1,11 +1,11 @@
 
-# Just Enough Guns New - NeoForge 26.2
+# Just Enough Guns New - NeoForge 26.3
 
-A modern NeoForge 26.2 unofficial port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
+A modern NeoForge 26.3 unofficial port of the Forge 1.20.1 mod Just Enough Guns, bringing vanilla-styled firearms, hostile gunners, faction raids, vehicles, and late-game aerial threats to newer Minecraft versions.
 
 ## Overview
 
-This module is the maintained Java 25 NeoForge branch for Just Enough Guns New **1.8.0**. It carries magazine-fed weapons, Walkürenritt vehicles, and the 1.8.0 special-equipment pack (FPV drones, C4 / claymore / C4 vest, Javelin & Igla, smoke denial, vehicle lock UI), plus kill-credit fixes and the vehicle / missile / rocket combat balance pass.
+This module is the Java 25 NeoForge 26.3 port of Just Enough Guns New **1.8.0**, carried forward from the NeoForge 26.2 line. It carries magazine-fed weapons, Walkürenritt vehicles, and the 1.8.0 special-equipment pack (FPV drones, C4 / claymore / C4 vest, Javelin & Igla, smoke denial, vehicle lock UI), plus kill-credit fixes and the vehicle / missile / rocket combat balance pass.
 
 ## Latest Release Notes
 
@@ -41,7 +41,7 @@ Version `1.8.0` is the current release line. Interim local labels **1.8.1** / **
 
 | Loader | Minecraft | Java | Mod Version | Required Dependencies |
 | --- | --- | --- | --- | --- |
-| NeoForge | 26.2 | Java 25 | 1.8.0 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+| NeoForge | 26.3 | Java 25 | 1.8.0 | NeoForge 26.3.x, GeckoLib 5.5.7 |
 
 ## Controls
 
@@ -95,7 +95,7 @@ The result is then scaled by the armor slot and armor tier durability multiplier
 Credits And License
 ==========
 
-This module is a NeoForge 26.2.x unofficial port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
+This module is a NeoForge 26.3.x unofficial port of the original Just Enough Guns project by MigaMi: https://www.curseforge.com/minecraft/mc-mods/just-enough-guns
 
 - Original Just Enough Guns **code** is by MigaMi and is licensed under GPL-3.0.
 - Original Just Enough Guns **assets** (models, textures, sounds, animations, icons, and other art) are by MigaMi and are **All Rights Reserved (ARR)**. This project redistributes and uses those assets with **explicit authorization from the original author (MigaMi)**.

@@ -33,6 +33,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoveSimulationType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Inventory;
@@ -559,7 +560,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (repaired) {
             this.repairCooldown = 0;
             this.resetRecoveredLowHealthState();
-            this.hurtMarked = true;
+            this.syncVelocity = true;
         }
         return repaired;
     }
@@ -970,7 +971,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.entityData.set(DATA_PROPELLER_SPEED, Math.max(this.propellerSpeed(), AI_HELICOPTER_SPAWN_ROTOR_SPEED));
         Vec3 motion = this.getDeltaMovement();
         this.setDeltaMovement(motion.x, Math.max(motion.y, AI_HELICOPTER_SPAWN_UPWARD_SPEED), motion.z);
-        this.hurtMarked = true;
+        this.syncVelocity = true;
         this.needsSync = true;
     }
 
@@ -1484,8 +1485,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             target.setDeltaMovement(Vec3.ZERO);
             this.needsSync = true;
             target.needsSync = true;
-            this.hurtMarked = true;
-            target.hurtMarked = true;
+            this.syncVelocity = true;
+            target.syncVelocity = true;
             this.damageVehicleEntityCollision(target, relativeSpeed);
             return Vec3.ZERO;
         }
@@ -2678,11 +2679,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (selfAlong > 0.0D) {
             this.setDeltaMovement(this.getDeltaMovement().subtract(normal.scale(selfAlong)));
-            this.hurtMarked = true;
+            this.syncVelocity = true;
         }
         if (targetAlong < 0.0D) {
             target.setDeltaMovement(target.getDeltaMovement().subtract(normal.scale(targetAlong)));
-            target.hurtMarked = true;
+            target.syncVelocity = true;
         }
     }
 
@@ -2716,7 +2717,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 VEHICLE_EXPLOSION_KNOCKBACK_MIN_SCALE,
                 VEHICLE_EXPLOSION_KNOCKBACK_MAX_SCALE);
         this.setDeltaMovement(before.add(impulse.scale(scale)));
-        this.hurtMarked = true;
+        this.syncVelocity = true;
     }
 
     private void tickObbEntityCollisionSupport() {
@@ -3912,7 +3913,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         repaired |= this.autoRepairParts(repair);
         if (repaired) {
             this.resetRecoveredLowHealthState();
-            this.hurtMarked = true;
+            this.syncVelocity = true;
         }
     }
 
@@ -3956,7 +3957,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.tickCount % LOW_HEALTH_DECAY_INTERVAL == 0) {
             float newHealth = this.vehicleHealth() - LOW_HEALTH_DECAY_DAMAGE;
             this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
-            this.hurtMarked = true;
+            this.syncVelocity = true;
             if (newHealth <= 0.0F) {
                 this.destroyVehicle();
             }
@@ -4149,7 +4150,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         double nextY = inWater ? (waterContact ? Math.min(0.035D, moved.y + 0.004D) : Math.max(-0.035D, moved.y * 0.94D)) : moved.y * 0.98D;
         this.setDeltaMovement(moved.x * 0.985D, nextY, moved.z * 0.985D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
-            this.hurtMarked = true;
+            this.syncVelocity = true;
             this.needsSync = true;
         }
     }
@@ -4367,7 +4368,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.setDeltaMovement(moved.x * 0.98D, nextY * 0.98D, moved.z * 0.98D);
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
-            this.hurtMarked = true;
+            this.syncVelocity = true;
             this.needsSync = true;
         }
     }
@@ -4779,7 +4780,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.move(MoverType.SELF, velocity);
         Vec3 moved = this.position().subtract(before);
         if (moved.lengthSqr() > 1.0E-7D || this.horizontalCollision || this.verticalCollision) {
-            this.hurtMarked = true;
+            this.syncVelocity = true;
             this.needsSync = true;
         }
     }
@@ -5208,7 +5209,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (newHealth < oldHealth) {
             this.playVehicleDamageSound(armorHit.penetrated());
         }
-        this.hurtMarked = true;
+        this.syncVelocity = true;
         if (newHealth <= 0.0F) {
             this.destroyVehicle();
         }
@@ -5226,7 +5227,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (newHealth < oldHealth) {
             this.playVehicleStrikeSound();
         }
-        this.hurtMarked = true;
+        this.syncVelocity = true;
         if (newHealth <= 0.0F) {
             this.destroyVehicle();
         }
@@ -5455,7 +5456,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.repairCooldown = 0;
             this.syncPartDamageFlags();
             this.resetRecoveredLowHealthState();
-            this.hurtMarked = true;
+            this.syncVelocity = true;
         }
         return repaired;
     }
@@ -5479,7 +5480,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
             ItemStack container = VehicleContainerBlockEntity.createItemFor(this);
             if (!serverPlayer.getInventory().add(container)) {
-                serverPlayer.drop(container, false);
+                serverPlayer.drop(container, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
             if (!serverPlayer.getAbilities().instabuild) {
                 stack.hurtAndBreak(1, serverPlayer, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
@@ -5661,6 +5662,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         return null;
+    }
+
+    @Override
+    public MoveSimulationType getMoveSimulationType() {
+        // A player rider is client-authoritative, and the default type then forbids
+        // server-side MoverType.SELF. Vehicle physics still run on the server, with
+        // the driving client predicting the same movement.
+        return MoveSimulationType.AUTHORITATIVE_SIDE_AND_SERVER;
     }
 
     @Override

@@ -41,17 +41,17 @@ public final class FirstPersonGunArmRenderEvents {
         float f4 = -0.4F * Mth.sin(swingProgress * (float) Math.PI);
 
         poseStack.translate(f * (f2 + 0.64000005F), f3 - 0.6F + equipProgress * -0.6F, f4 - 0.71999997F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(f * 45.0F));
+        poseStack.rotateDegrees(Axis.YP, f * 45.0F);
 
         float f5 = Mth.sin(swingProgress * swingProgress * (float) Math.PI);
         float f6 = Mth.sin(f1 * (float) Math.PI);
-        poseStack.mulPose(Axis.YP.rotationDegrees(f * f6 * 70.0F));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(f * f5 * -20.0F));
+        poseStack.rotateDegrees(Axis.YP, f * f6 * 70.0F);
+        poseStack.rotateDegrees(Axis.ZP, f * f5 * -20.0F);
 
         poseStack.translate(f * -1.0F, 3.6F, 3.5F);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(f * 120.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(200.0F));
-        poseStack.mulPose(Axis.YP.rotationDegrees(f * -135.0F));
+        poseStack.rotateDegrees(Axis.ZP, f * 120.0F);
+        poseStack.rotateDegrees(Axis.XP, 200.0F);
+        poseStack.rotateDegrees(Axis.YP, f * -135.0F);
         poseStack.translate(f * 5.6F, 0.0F, 0.0F);
     }
 }

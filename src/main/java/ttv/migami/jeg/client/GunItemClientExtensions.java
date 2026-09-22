@@ -6,6 +6,7 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
@@ -113,14 +114,15 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
     @Override
     public boolean applyForgeHandTransform(
             PoseStack poseStack,
-            LocalPlayer player,
+            PlayerRenderState playerRenderState,
             HumanoidArm arm,
             ItemStack itemInHand,
             float partialTick,
             float equipProcess,
             float swingProcess
     ) {
-        if (NEOFORGE_APPLIES_GENERIC_HAND_TRANSFORM) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || NEOFORGE_APPLIES_GENERIC_HAND_TRANSFORM) {
             return false;
         }
         return applyForStats(this.stats, poseStack, player, arm, partialTick, equipProcess, swingProcess);
@@ -159,9 +161,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         yaw = Mth.lerp(adsTransition, yaw, 0.0F);
 
         poseStack.translate(direction * xOffset, yOffset, zOffset);
-        poseStack.mulPose(Axis.YP.rotationDegrees(direction * yaw));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(direction * 0.5F * (1.0F - ads)));
-        poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(adsTransition, 4.0F, 0.8F)));
+        poseStack.rotateDegrees(Axis.YP, direction * yaw);
+        poseStack.rotateDegrees(Axis.ZP, direction * 0.5F * (1.0F - ads));
+        poseStack.rotateDegrees(Axis.XP, Mth.lerp(adsTransition, 4.0F, 0.8F));
         poseStack.scale(firstPersonScale, firstPersonScale, firstPersonScale);
 
         // Keep vanilla-like equip/swing movement to reduce "hard snap" while switching items.
@@ -211,13 +213,13 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
             float swayX = Mth.sin(time) * speed * 2.0F;
             float swayZ = Mth.cos(time * 0.7F) * speed * 2.0F;
             float adsDamping = 1.0F - ads * 0.8F;
-            poseStack.mulPose(Axis.XP.rotationDegrees(swayX * adsDamping));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(swayZ * adsDamping));
+            poseStack.rotateDegrees(Axis.XP, swayX * adsDamping);
+            poseStack.rotateDegrees(Axis.ZP, swayZ * adsDamping);
         }
 
         float fallDelta = (float) Mth.clamp(player.yo - player.getY(), -1.0D, 1.0D);
         fallDelta *= (1.0F - ads * 0.5F) * (1.0F - Mth.abs(player.getXRot()) / 90.0F);
-        poseStack.mulPose(Axis.XP.rotationDegrees(fallDelta * 12.0F));
+        poseStack.rotateDegrees(Axis.XP, fallDelta * 12.0F);
     }
 
     private static void applySprintingTransforms(PoseStack poseStack, LocalPlayer player, ItemStack stack, int direction, float ads) {
@@ -230,8 +232,8 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
 
         float transition = 1.0F - ads;
         poseStack.translate(-0.18F * direction * transition, -0.08F * transition, 0.0F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(30.0F * direction * transition));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-18.0F * transition));
+        poseStack.rotateDegrees(Axis.YP, 30.0F * direction * transition);
+        poseStack.rotateDegrees(Axis.XP, -18.0F * transition);
     }
 
     private static boolean hasBayonet(ItemStack stack) {
@@ -261,9 +263,9 @@ public final class GunItemClientExtensions implements IClientItemExtensions {
         float recoilSway = (float) ((GunRecoilHandler.getGunRecoilRandom() * recoilSwayAmount - recoilSwayAmount / 2.0F) * recoilNormal);
         poseStack.translate(0.0D, 0.0D, kick);
         poseStack.translate(0.0D, 0.0D, 0.15D);
-        poseStack.mulPose(Axis.YP.rotationDegrees(recoilSway));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(recoilSway));
-        poseStack.mulPose(Axis.XP.rotationDegrees(recoilLift));
+        poseStack.rotateDegrees(Axis.YP, recoilSway);
+        poseStack.rotateDegrees(Axis.ZP, recoilSway);
+        poseStack.rotateDegrees(Axis.XP, recoilLift);
         poseStack.translate(0.0D, 0.0D, -0.15D);
     }
 

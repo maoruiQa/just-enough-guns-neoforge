@@ -597,7 +597,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
     private static void applyThirdPersonAnimatedTransform(String gunPath, com.mojang.blaze3d.vertex.PoseStack poseStack) {
         if ("minigun".equals(gunPath)) {
             poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION + THIRD_PERSON_MINIGUN_UP_CORRECTION, THIRD_PERSON_MINIGUN_FORWARD_CORRECTION);
-            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+            poseStack.rotateDegrees(Axis.XP, -90.0F);
             return;
         }
         poseStack.translate(0.0D, THIRD_PERSON_ANIMATED_Y_CORRECTION, 0.0D);
@@ -612,7 +612,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         float ticks = minecraft != null && minecraft.player != null
                 ? minecraft.player.tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)
                 : 0.0F;
-        poseStack.mulPose(Axis.XP.rotationDegrees(ATTACHMENT_PREVIEW_X_ROT));
-        poseStack.mulPose(Axis.YP.rotationDegrees(ticks * ATTACHMENT_PREVIEW_Y_ROT_SPEED));
+        poseStack.rotateDegrees(Axis.XP, ATTACHMENT_PREVIEW_X_ROT);
+        poseStack.rotateDegrees(Axis.YP, ticks * ATTACHMENT_PREVIEW_Y_ROT_SPEED);
     }
 }

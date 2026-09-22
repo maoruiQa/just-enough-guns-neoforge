@@ -400,10 +400,7 @@ public final class GunClientEvents {
         ItemStack heldMain = player.getMainHandItem();
         ItemStack heldOff = player.getOffhandItem();
         if (heldMain.getItem() instanceof GunItem || heldOff.getItem() instanceof GunItem) {
-            player.attackAnim = 0.0F;
-            player.oAttackAnim = 0.0F;
-            player.swingTime = 0;
-            player.swinging = false;
+            ((ttv.migami.jeg.util.GunSwingReset) (Object) player).jeg$resetSwing();
         }
 
         if (heldMain.getItem() instanceof GunItem gun) {
@@ -827,9 +824,9 @@ public final class GunClientEvents {
             MuzzleFlashProfile flash = muzzleFlashProfile(held);
             poseStack.pushPose();
             poseStack.translate(muzzlePos.x - cameraPos.x, muzzlePos.y - cameraPos.y, muzzlePos.z - cameraPos.z);
-            poseStack.mulPose(camera.rotation());
-            poseStack.mulPose(Axis.ZP.rotationDegrees(entry.getValue().random * 360.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(entry.getValue().random >= 0.5F ? 180.0F : 0.0F));
+            poseStack.rotate(camera.rotation());
+            poseStack.rotateDegrees(Axis.ZP, entry.getValue().random * 360.0F);
+            poseStack.rotateDegrees(Axis.XP, entry.getValue().random >= 0.5F ? 180.0F : 0.0F);
             poseStack.scale((float) flash.size(), (float) flash.size(), 1.0F);
             poseStack.translate(-0.5F, -0.5F, 0.0F);
             Matrix4f flashPose = new Matrix4f(poseStack.last().pose());
@@ -872,8 +869,8 @@ public final class GunClientEvents {
         poseStack.pushPose();
         try {
             poseStack.translate(xOffset * 0.0625D, (flash.yOffset() - bonePivotY) * 0.0625D, (flash.zOffset() - bonePivotZ) * 0.0625D);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(state.random * 360.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(state.random >= 0.5F ? 180.0F : 0.0F));
+            poseStack.rotateDegrees(Axis.ZP, state.random * 360.0F);
+            poseStack.rotateDegrees(Axis.XP, state.random >= 0.5F ? 180.0F : 0.0F);
             poseStack.scale((float) flash.size(), (float) flash.size(), 1.0F);
             poseStack.translate(-0.5F, -0.5F, 0.0F);
             collector.submitCustomGeometry(

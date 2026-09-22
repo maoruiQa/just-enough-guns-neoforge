@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
-import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -26,9 +26,8 @@ public abstract class VehicleGameRendererMixin {
     private Camera mainCamera;
 
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobHurt(Lnet/minecraft/client/renderer/state/level/CameraRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;)V"))
-    private void jeg$applyVehicleCameraView(DeltaTracker deltaTracker, CallbackInfo callback,
-                                            @Local(ordinal = 0) PoseStack poseStack) {
-        float partialTick = this.mainCamera.getCameraEntityPartialTicks(deltaTracker);
+    private void jeg$applyVehicleCameraView(CallbackInfo callback, @Local(ordinal = 0) PoseStack poseStack) {
+        float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
         GunCameraSwayHandler.apply(poseStack, partialTick);
 
         Entity entity = this.mainCamera.entity();
@@ -46,7 +45,7 @@ public abstract class VehicleGameRendererMixin {
         } else {
             pitchFactor = (180.0F - yawDelta) / 90.0F;
         }
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-rollFactor * vehicle.roll(partialTick) - pitchFactor * Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot())));
+        poseStack.rotateDegrees(Axis.ZP, -rollFactor * vehicle.roll(partialTick) - pitchFactor * Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot()));
 
         if (fixedCamera) {
             return;
@@ -60,10 +59,10 @@ public abstract class VehicleGameRendererMixin {
         quaternion.mul(Axis.ZP.rotationDegrees(vehicle.roll(partialTick)));
         offset.rotate(quaternion);
 
-        poseStack.mulPose(Axis.XP.rotationDegrees(this.mainCamera.xRot()));
-        poseStack.mulPose(Axis.YP.rotationDegrees(this.mainCamera.yRot() + 180.0F));
+        poseStack.rotateDegrees(Axis.XP, this.mainCamera.xRot());
+        poseStack.rotateDegrees(Axis.YP, this.mainCamera.yRot() + 180.0F);
         poseStack.translate(offset.x(), offset.y() + eyeHeight, offset.z());
-        poseStack.mulPose(Axis.YP.rotationDegrees(-this.mainCamera.yRot() - 180.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-this.mainCamera.xRot()));
+        poseStack.rotateDegrees(Axis.YP, -this.mainCamera.yRot() - 180.0F);
+        poseStack.rotateDegrees(Axis.XP, -this.mainCamera.xRot());
     }
 }

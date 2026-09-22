@@ -193,9 +193,9 @@ public final class BulletTrailRenderer {
         double bulletZ = position.z + motion.z * partialTick;
         poseStack.translate(bulletX - view.x(), bulletY - view.y(), bulletZ - view.z());
 
-        poseStack.mulPose(Axis.YP.rotationDegrees(trail.yaw - 90.0F));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(trail.pitch));
-        poseStack.mulPose(Axis.XP.rotationDegrees(45.0F));
+        poseStack.rotateDegrees(Axis.YP, trail.yaw - 90.0F);
+        poseStack.rotateDegrees(Axis.ZP, trail.pitch);
+        poseStack.rotateDegrees(Axis.XP, 45.0F);
         poseStack.scale(0.05625F, 0.05625F, 0.05625F);
         poseStack.translate(-4.0F, 0.0F, 0.0F);
 
@@ -222,7 +222,7 @@ public final class BulletTrailRenderer {
 
         // Body quads rotated around the trail axis.
         for (int i = 0; i < 4; ++i) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+            poseStack.rotateDegrees(Axis.XP, 90.0F);
             matrix = poseStack.last().pose();
             vertex(consumer, matrix, red, green, blue, tailX, -radius, radius, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, light);
             vertex(consumer, matrix, red, green, blue, headX, -radius, radius, 0.5F, 0.0F, 0.0F, 1.0F, 0.0F, light);

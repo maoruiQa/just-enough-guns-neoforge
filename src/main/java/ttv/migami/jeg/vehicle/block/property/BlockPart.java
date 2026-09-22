@@ -28,21 +28,21 @@ public enum BlockPart implements StringRepresentable {
     }
 
     public BlockPos relative(BlockPos pos, Direction direction) {
-        return new BlockPos(switch (direction) {
+        return switch (direction) {
             case WEST, DOWN, UP -> pos.offset(x, y, z);
             case NORTH -> pos.offset(-z, y, x);
             case EAST -> pos.offset(-x, y, -z);
             case SOUTH -> pos.offset(z, y, -x);
-        });
+        };
     }
 
     public BlockPos relativeNegative(BlockPos pos, Direction direction) {
-        return new BlockPos(switch (direction) {
+        return switch (direction) {
             case WEST, DOWN, UP -> pos.offset(-x, -y, -z);
             case NORTH -> pos.offset(z, -y, -x);
             case EAST -> pos.offset(x, -y, z);
             case SOUTH -> pos.offset(-z, -y, x);
-        });
+        };
     }
 
     @Override

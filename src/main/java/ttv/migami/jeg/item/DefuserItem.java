@@ -91,7 +91,7 @@ public final class DefuserItem extends Item {
             InteractionHand hand = player.getUsedItemHand();
             player.stopUsingItem();
             // Single swing only after the channel finishes.
-            player.swing(hand, true);
+            player.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             if (!player.getAbilities().instabuild) {
                 stack.hurtAndBreak(1, player, handToSlot(hand));
             }

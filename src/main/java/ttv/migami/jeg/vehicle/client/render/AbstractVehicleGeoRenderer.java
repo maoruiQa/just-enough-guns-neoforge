@@ -75,7 +75,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
     }
 
     @Override
-    public boolean shouldRender(T vehicle, Frustum camera, double camX, double camY, double camZ) {
+    public boolean shouldRender(T vehicle, Frustum camera, double camX, double camY, double camZ, float partialTick) {
         if (shouldHideVehicleWhileZooming(vehicle)) {
             return false;
         }

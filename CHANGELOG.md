@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0 - NeoForge 26.3 port
+
+### Changed
+- Ported the NeoForge 26.2 1.8.0 line to Minecraft 26.3 / NeoForge 26.3.x.
+- Updated the module dependency set to Minecraft `26.3`, NeoForge `26.3.0.7-beta`, ModDevGradle `2.0.147`, and GeckoLib `geckolib-neoforge-26.3:5.5.7`.
+- Updated the published artifact suffix to `+neoforge26.3`.
+- Resource pack metadata now declares format `97.1`.
+
 ## 1.8.0 - 2026-08-05
 
 ### Added

@@ -7,8 +7,8 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.neoforged.neoforge.client.event.InputEvent;
-import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.NetworkHandler;
@@ -19,7 +19,7 @@ public final class ClientGunInputHandler {
 
     @SubscribeEvent
     public static void onMouseButton(InputEvent.MouseButton.Post event) {
-        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT || event.getAction() != GLFW.GLFW_RELEASE) {
+        if (event.getButton() != InputConstants.MOUSE_BUTTON_LEFT || event.getAction() != InputConstants.RELEASE) {
             return;
         }
 

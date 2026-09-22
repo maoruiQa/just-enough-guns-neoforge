@@ -1,6 +1,5 @@
 package ttv.migami.jeg.vehicle.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -23,8 +22,6 @@ import ttv.migami.jeg.util.HudMessageHelper;
 import ttv.migami.jeg.vehicle.block.entity.VehicleContainerBlockEntity;
 
 public final class VehicleContainerBlock extends BaseEntityBlock {
-    public static final MapCodec<VehicleContainerBlock> CODEC = simpleCodec(VehicleContainerBlock::new);
-
     public VehicleContainerBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
@@ -60,11 +57,6 @@ public final class VehicleContainerBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             HudMessageHelper.showActionBar(player, Component.translatable("message.jeg.vehicle.need_crowbar"));
         }
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

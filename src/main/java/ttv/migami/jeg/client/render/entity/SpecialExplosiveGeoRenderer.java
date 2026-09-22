@@ -100,13 +100,13 @@ public final class SpecialExplosiveGeoRenderer extends GeoEntityRenderer<PlacedE
         if (kind == SpecialExplosiveItem.Kind.CLAYMORE) {
             yaw += 180.0F;
         }
-        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
+        poseStack.rotateDegrees(Axis.YP, -yaw);
 
         // C4 in flight pitches like SW (tip along velocity); settled / claymore / tm62 stay flatter.
         if (kind == SpecialExplosiveItem.Kind.C4 && !state.settled) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch + 90.0F));
+            poseStack.rotateDegrees(Axis.XP, state.bodyPitch + 90.0F);
         } else if (Math.abs(state.bodyPitch) > 1.0F) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch));
+            poseStack.rotateDegrees(Axis.XP, state.bodyPitch);
         }
     }
 

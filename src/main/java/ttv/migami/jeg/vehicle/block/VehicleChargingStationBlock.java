@@ -1,6 +1,5 @@
 package ttv.migami.jeg.vehicle.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -20,15 +19,8 @@ import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.vehicle.block.entity.VehicleChargingStationBlockEntity;
 
 public final class VehicleChargingStationBlock extends BaseEntityBlock {
-    public static final MapCodec<VehicleChargingStationBlock> CODEC = simpleCodec(VehicleChargingStationBlock::new);
-
     public VehicleChargingStationBlock(BlockBehaviour.Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

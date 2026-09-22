@@ -6,7 +6,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.Reference;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -17,106 +16,106 @@ public final class KeyBindings {
 
     public static final KeyMapping RELOAD = new KeyMapping(
             "key.jeg.reload",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_R,
             CATEGORY
     );
 
     public static final KeyMapping ATTACHMENTS = new KeyMapping(
             "key.jeg.attachments",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Z,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_Z,
             CATEGORY
     );
 
     public static final KeyMapping MELEE = new KeyMapping(
             "key.jeg.melee",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping INSPECT = new KeyMapping(
             "key.jeg.inspect",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Y,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_Y,
             CATEGORY
     );
 
     public static final KeyMapping LAUNCHER_MODE = new KeyMapping(
             "key.jeg.launcher_mode",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_N,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_N,
             CATEGORY
     );
 
     public static final KeyMapping DRONE_INTERACT = new KeyMapping(
             "key.jeg.drone_interact",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_X,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_C,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_SWITCH_WEAPON = new KeyMapping(
             "key.jeg.vehicle_switch_weapon",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_X,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_PREVIOUS_WEAPON = new KeyMapping(
             "key.jeg.vehicle_previous_weapon",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Z,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_Z,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_DEPLOY_DECOY = new KeyMapping(
             "key.jeg.vehicle_deploy_decoy",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_G,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_G,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_SEEK = new KeyMapping(
             "key.jeg.vehicle_seek",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_BRAKE_DESCEND = new KeyMapping(
             "key.jeg.vehicle_brake_descend",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_CONTROL,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_LCONTROL,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
             "key.jeg.vehicle_change_seat",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_B,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_B,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_DISMOUNT = new KeyMapping(
             "key.jeg.vehicle_dismount",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_ALT,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_LALT,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_PLAYER_INVENTORY = new KeyMapping(
             "key.jeg.vehicle_player_inventory",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_H,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_H,
             CATEGORY
     );
 

@@ -823,7 +823,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             );
 
             // Grant invulnerability during roll
-            TerrorPhantom.this.invulnerableTime = 20;
+            TerrorPhantom.this.setInvulnerableTime(20);
 
             // Drop grenades periodically
             if (--this.grenadeTick == 0 && this.grenadeRollsLeft > 0) {
@@ -882,7 +882,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             }
 
             // Grant invulnerability
-            TerrorPhantom.this.invulnerableTime = 20;
+            TerrorPhantom.this.setInvulnerableTime(20);
 
             // Summon phantoms periodically
             if (this.tickCounter >= this.summonInterval) {
@@ -968,7 +968,7 @@ public class TerrorPhantom extends AbstractTerrorPhantom {
             );
 
             // Grant brief invulnerability
-            TerrorPhantom.this.invulnerableTime = 20;
+            TerrorPhantom.this.setInvulnerableTime(20);
 
             // Drop grenades
             if (--this.grenadeTick == 0) {

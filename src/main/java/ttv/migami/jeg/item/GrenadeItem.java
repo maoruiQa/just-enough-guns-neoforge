@@ -34,7 +34,7 @@ public class GrenadeItem extends ThrowableWeaponItem {
             ItemStack stack = player.getItemInHand(hand);
             ItemStack waterBomb = new ItemStack(ModItems.AMMO.get(Reference.id("water_bomb")).get());
             if (!player.getInventory().add(waterBomb)) {
-                player.drop(waterBomb, false);
+                player.drop(waterBomb, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
             player.awardStat(Stats.ITEM_USED.get(this));
             if (!player.getAbilities().instabuild) {
