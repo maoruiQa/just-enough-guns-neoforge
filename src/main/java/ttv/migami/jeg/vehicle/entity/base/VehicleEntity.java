@@ -35,6 +35,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoveSimulationType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Inventory;
@@ -5677,6 +5678,14 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
             }
         }
         return null;
+    }
+
+    @Override
+    public MoveSimulationType getMoveSimulationType() {
+        // A player rider is client-authoritative, and the default type then forbids
+        // server-side MoverType.SELF. Vehicle physics still run on the server, with
+        // the driving client predicting the same movement.
+        return MoveSimulationType.AUTHORITATIVE_SIDE_AND_SERVER;
     }
 
     @Override
