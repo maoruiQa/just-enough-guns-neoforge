@@ -1,6 +1,5 @@
 package ttv.migami.jeg.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -35,7 +34,6 @@ import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.block.entity.DynamicLightBlockEntity;
 
 public final class DynamicLightBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
-    public static final MapCodec<DynamicLightBlock> CODEC = simpleCodec(DynamicLightBlock::new);
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     public DynamicLightBlock(BlockBehaviour.Properties properties) {
@@ -48,14 +46,9 @@ public final class DynamicLightBlock extends BaseEntityBlock implements SimpleWa
                 .lightLevel(state -> 8)
                 .noCollision()
                 .noOcclusion()
-                .pushReaction(PushReaction.IGNORE)
+                .pushReaction(PushReaction.IGNORE_ENTITY)
                 .isRedstoneConductor((state, level, pos) -> false));
         this.registerDefaultState(this.getStateDefinition().any().setValue(WATERLOGGED, false));
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package ttv.migami.jeg.item;
 
 import net.minecraft.stats.Stats;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -34,7 +35,7 @@ public class GrenadeItem extends ThrowableWeaponItem {
             ItemStack stack = player.getItemInHand(hand);
             ItemStack waterBomb = new ItemStack(ModItems.AMMO.get(Reference.id("water_bomb")).get());
             if (!player.getInventory().add(waterBomb)) {
-                player.drop(waterBomb, false);
+                player.drop(waterBomb, false, Prediction.SERVER_ONLY);
             }
             player.awardStat(Stats.ITEM_USED.get(this));
             if (!player.getAbilities().instabuild) {

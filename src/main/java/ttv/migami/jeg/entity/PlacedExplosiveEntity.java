@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -731,7 +732,7 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
             ItemStack stack = this.pickupStack();
             if (!player.getAbilities().instabuild) {
                 if (!player.getInventory().add(stack)) {
-                    player.drop(stack, false);
+                    player.drop(stack, false, Prediction.SERVER_ONLY);
                 }
             }
             player.sendSystemMessage(Component.translatable("message.jeg.explosive.recovered", stack.getHoverName()));

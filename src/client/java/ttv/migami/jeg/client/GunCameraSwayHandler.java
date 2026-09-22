@@ -30,8 +30,8 @@ public final class GunCameraSwayHandler {
 
         float yaw = sway * YAW_SWAY_DEGREES;
         float roll = -sway * ROLL_SWAY_DEGREES;
-        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
+        poseStack.rotateDegrees(Axis.YP, yaw);
+        poseStack.rotateDegrees(Axis.ZP, roll);
     }
 
     private static boolean shouldSway(Minecraft minecraft, LocalPlayer player) {

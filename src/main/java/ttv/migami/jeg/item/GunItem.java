@@ -21,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Prediction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -1178,7 +1179,7 @@ public class GunItem extends Item {
         Vec3 direction = look.normalize();
         Vec3 recoilVelocity = direction.scale(-force);
         player.setDeltaMovement(player.getDeltaMovement().add(recoilVelocity));
-        player.hurtMarked = true;
+        player.syncVelocity = true;
         player.fallDistance = 0.0F;
     }
 
@@ -2163,7 +2164,7 @@ public class GunItem extends Item {
             return;
         }
         if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
+            player.drop(stack, false, Prediction.SERVER_ONLY);
         }
     }
 

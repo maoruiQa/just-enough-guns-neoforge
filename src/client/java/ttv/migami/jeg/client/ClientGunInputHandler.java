@@ -8,7 +8,7 @@ import ttv.migami.jeg.fabric.compat.neoforge.api.distmarker.Dist;
 import ttv.migami.jeg.fabric.compat.neoforge.bus.api.SubscribeEvent;
 import ttv.migami.jeg.fabric.compat.neoforge.fml.common.EventBusSubscriber;
 import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.event.InputEvent;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.network.ClientNetworkHandler;
@@ -19,7 +19,7 @@ public final class ClientGunInputHandler {
 
     @SubscribeEvent
     public static void onMouseButton(InputEvent.MouseButton.Post event) {
-        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT || event.getAction() != GLFW.GLFW_RELEASE) {
+        if (event.getButton() != InputConstants.MOUSE_BUTTON_LEFT || event.getAction() != InputConstants.RELEASE) {
             return;
         }
 

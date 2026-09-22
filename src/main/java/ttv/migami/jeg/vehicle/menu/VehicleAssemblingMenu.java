@@ -1,6 +1,7 @@
 package ttv.migami.jeg.vehicle.menu;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Prediction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -69,7 +70,7 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
         ItemStack remaining = result.copy();
         this.insertIntoPlayerInventory(remaining);
         if (!this.dropAtTable(remaining)) {
-            player.drop(remaining.copy(), false);
+            player.drop(remaining.copy(), false, Prediction.SERVER_ONLY);
             remaining.setCount(0);
         }
         this.playerInventory.setChanged();

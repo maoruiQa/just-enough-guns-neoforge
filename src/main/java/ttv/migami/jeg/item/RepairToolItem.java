@@ -127,7 +127,7 @@ public class RepairToolItem extends Item implements GeoItem {
         } else if (target instanceof LivingEntity living) {
             living.hurt(ModDamageTypes.causeRepairToolDamage(level.registryAccess(), player), LIVING_DAMAGE);
             applied = true;
-            living.invulnerableTime = 0;
+            living.setInvulnerableTime(0);
         }
         summonHitParticles(level, hitPos, player.getViewVector(1.0F).scale(-1.0D), null);
         return applied;

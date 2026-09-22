@@ -1,0 +1,56 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "jeg:pistol_ammo",
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 8.0,
+                "max": 16.0
+              },
+              "type": "minecraft:set_count"
+            },
+            {
+              "type": "minecraft:enchanted_count_increase",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 0.0,
+                "max": 4.0
+              },
+              "enchantment": "minecraft:looting"
+            }
+          ]
+        }
+      ],
+      "condition": {
+        "type": "minecraft:killed_by_player"
+      }
+    },
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 0.0,
+        "max": 2.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:phantom_membrane"
+        }
+      ],
+      "modifier": [
+        {
+          "type": "minecraft:enchanted_count_increase",
+          "count": 1.0,
+          "enchantment": "minecraft:looting"
+        }
+      ]
+    }
+  ]
+}

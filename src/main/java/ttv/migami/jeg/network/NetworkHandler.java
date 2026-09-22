@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -312,7 +313,7 @@ public final class NetworkHandler {
             boolean notify = magazine.getLoadPromptMessage(stack, player.getOffhandItem()) == null;
             boolean loaded = magazine.tryLoad(player.level(), player, stack, player.getOffhandItem(), notify);
             if (loaded) {
-                player.swing(payload.hand());
+                player.swingAndResetAttackStrength(payload.hand(), SwingAnimation.DEFAULT, true);
             }
             return;
         }
@@ -322,7 +323,7 @@ public final class NetworkHandler {
         }
         boolean reloaded = gun.tryReload(player.level(), player, stack, payload.hand(), true);
         if (reloaded) {
-            player.swing(payload.hand());
+            player.swingAndResetAttackStrength(payload.hand(), SwingAnimation.DEFAULT, true);
         }
     }
 
@@ -337,7 +338,7 @@ public final class NetworkHandler {
             ServerPlayNetworking.send(player, OffhandFullPromptPayload.INSTANCE);
         }
         if (result.transferredAmmo()) {
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swingAndResetAttackStrength(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
         }
     }
 

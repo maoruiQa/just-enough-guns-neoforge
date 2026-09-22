@@ -6,5 +6,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'Just-Enough-Guns-Fabric-1.21.11'
-rootProject.name = 'Just-Enough-Guns-Fabric-26.1'
+rootProject.name = 'Just-Enough-Guns-Fabric-26.3'

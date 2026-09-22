@@ -29,8 +29,8 @@ public final class VehicleMissileRenderer extends EntityRenderer<VehicleMissileE
         try {
             if (motion.lengthSqr() > 1.0E-4D) {
                 double horizontal = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
-                poseStack.mulPose(Axis.YP.rotationDegrees((float) (Mth.atan2(motion.x, motion.z) * Mth.RAD_TO_DEG)));
-                poseStack.mulPose(Axis.XP.rotationDegrees((float) (Mth.atan2(motion.y, horizontal) * -Mth.RAD_TO_DEG)));
+                poseStack.rotateDegrees(Axis.YP, (float) (Mth.atan2(motion.x, motion.z) * Mth.RAD_TO_DEG));
+                poseStack.rotateDegrees(Axis.XP, (float) (Mth.atan2(motion.y, horizontal) * -Mth.RAD_TO_DEG));
             }
             poseStack.scale(0.18F, 0.18F, 0.65F);
             poseStack.translate(-0.5D, -0.5D, -0.5D);

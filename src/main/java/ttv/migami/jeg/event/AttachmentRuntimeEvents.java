@@ -197,10 +197,10 @@ public final class AttachmentRuntimeEvents {
         AABB hitBox = player.getBoundingBox().inflate(BAYONET_CHARGE_RANGE);
         boolean damaged = false;
         for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> target != player && target.isAlive())) {
-            if (target.invulnerableTime != 0 || !isInBayonetArc(player, target)) {
+            if (target.getInvulnerableTime() != 0 || !isInBayonetArc(player, target)) {
                 continue;
             }
-            player.invulnerableTime = 40;
+            player.setInvulnerableTime(40);
             if (sweepingEdge < 2) {
                 player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 20, 2, false, false));
             }

@@ -50,6 +50,6 @@ public final class TerrorPhantomRenderer extends MobRenderer<AbstractTerrorPhant
     @Override
     protected void setupRotations(RenderState renderState, PoseStack poseStack, float ageInTicks, float partialTick) {
         super.setupRotations(renderState, poseStack, ageInTicks, partialTick);
-        poseStack.mulPose(Axis.XP.rotationDegrees(renderState.xRot));
+        poseStack.rotateDegrees(Axis.XP, renderState.xRot);
 }
 }

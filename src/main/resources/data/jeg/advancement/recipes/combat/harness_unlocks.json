@@ -1,0 +1,66 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "always": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "always"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "jeg:armored_joy_harness_white",
+      "jeg:armored_joy_harness_white_diamond",
+      "jeg:armored_joy_harness_white_netherite",
+      "jeg:armored_joy_harness_orange",
+      "jeg:armored_joy_harness_orange_diamond",
+      "jeg:armored_joy_harness_orange_netherite",
+      "jeg:armored_joy_harness_magenta",
+      "jeg:armored_joy_harness_magenta_diamond",
+      "jeg:armored_joy_harness_magenta_netherite",
+      "jeg:armored_joy_harness_light_blue",
+      "jeg:armored_joy_harness_light_blue_diamond",
+      "jeg:armored_joy_harness_light_blue_netherite",
+      "jeg:armored_joy_harness_yellow",
+      "jeg:armored_joy_harness_yellow_diamond",
+      "jeg:armored_joy_harness_yellow_netherite",
+      "jeg:armored_joy_harness_lime",
+      "jeg:armored_joy_harness_lime_diamond",
+      "jeg:armored_joy_harness_lime_netherite",
+      "jeg:armored_joy_harness_pink",
+      "jeg:armored_joy_harness_pink_diamond",
+      "jeg:armored_joy_harness_pink_netherite",
+      "jeg:armored_joy_harness_gray",
+      "jeg:armored_joy_harness_gray_diamond",
+      "jeg:armored_joy_harness_gray_netherite",
+      "jeg:armored_joy_harness_light_gray",
+      "jeg:armored_joy_harness_light_gray_diamond",
+      "jeg:armored_joy_harness_light_gray_netherite",
+      "jeg:armored_joy_harness_cyan",
+      "jeg:armored_joy_harness_cyan_diamond",
+      "jeg:armored_joy_harness_cyan_netherite",
+      "jeg:armored_joy_harness_purple",
+      "jeg:armored_joy_harness_purple_diamond",
+      "jeg:armored_joy_harness_purple_netherite",
+      "jeg:armored_joy_harness_blue",
+      "jeg:armored_joy_harness_blue_diamond",
+      "jeg:armored_joy_harness_blue_netherite",
+      "jeg:armored_joy_harness_brown",
+      "jeg:armored_joy_harness_brown_diamond",
+      "jeg:armored_joy_harness_brown_netherite",
+      "jeg:armored_joy_harness_green",
+      "jeg:armored_joy_harness_green_diamond",
+      "jeg:armored_joy_harness_green_netherite",
+      "jeg:armored_joy_harness_red",
+      "jeg:armored_joy_harness_red_diamond",
+      "jeg:armored_joy_harness_red_netherite",
+      "jeg:armored_joy_harness_black",
+      "jeg:armored_joy_harness_black_diamond",
+      "jeg:armored_joy_harness_black_netherite"
+    ]
+  },
+  "sends_telemetry_event": false
+}

@@ -122,10 +122,12 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
                 return;
             }
 
-            AvatarRenderer<AbstractClientPlayer> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getPlayerRenderer(player);
+            if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(player) instanceof AvatarRenderer<?> renderer)) {
+                return;
+            }
             Identifier skin = player.getSkin().body().texturePath();
             int light = passInfo.packedLight();
-            PlayerModel model = renderer.getModel();
+            PlayerModel model = (PlayerModel) renderer.getModel();
             ModelPart armPart = side == ArmSide.LEFT ? model.leftArm : model.rightArm;
             ModelPart sleevePart = side == ArmSide.LEFT ? model.leftSleeve : model.rightSleeve;
             PlayerModelPart sleeve = side == ArmSide.LEFT ? PlayerModelPart.LEFT_SLEEVE : PlayerModelPart.RIGHT_SLEEVE;

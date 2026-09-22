@@ -1,6 +1,5 @@
 {
   "type": "jeg:sky_ship_armada",
-  "adapt_noise": false,
   "spawn_overrides": {},
   "terrain_adaptation": "none",
   "step": "surface_structures",

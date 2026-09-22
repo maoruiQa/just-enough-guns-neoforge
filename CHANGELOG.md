@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0 - Fabric 26.3 - 2026-09-22
+
+### Changed
+- Ported the Fabric 26.2 codebase to Minecraft 26.3 / Fabric Loader 0.19.5 / Fabric API 0.161.0+26.3 / GeckoLib 5.5.7.
+- Gameplay is unchanged. Keybinds now use SDL scancodes, and datapacks use the 26.3 loot, advancement, and pack formats.
+
 ## 1.8.0 - 2026-08-05
 
 ### Added

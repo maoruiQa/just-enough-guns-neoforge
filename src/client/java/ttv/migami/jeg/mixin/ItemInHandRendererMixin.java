@@ -1,63 +1,37 @@
 package ttv.migami.jeg.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.extensions.common.IClientItemExtensions;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import ttv.migami.jeg.init.ModDataComponents;
+import ttv.migami.jeg.client.GunHandTransform;
+import ttv.migami.jeg.fabric.compat.neoforge.neoforge.client.extensions.common.IClientItemExtensions;
 import ttv.migami.jeg.item.GunItem;
 import ttv.migami.jeg.vehicle.client.VehicleCameraHandler;
 
-@Mixin(ItemInHandRenderer.class)
+@Mixin(FirstPersonHandsAndItemsRenderer.class)
 public final class ItemInHandRendererMixin {
-    @Shadow
-    private ItemStack mainHandItem;
-
-    @Shadow
-    private ItemStack offHandItem;
-
-    @Shadow
-    private float mainHandHeight;
-
-    @Shadow
-    private float oMainHandHeight;
-
-    @Shadow
-    private float offHandHeight;
-
-    @Shadow
-    private float oOffHandHeight;
-
     @Unique
     private float jeg$capturedEquipProcess = Float.NaN;
 
     @Unique
     private float jeg$capturedSwingProcess = Float.NaN;
 
-    @Unique
-    private ItemStack jeg$preTickMainHandItem = ItemStack.EMPTY;
-
-    @Unique
-    private ItemStack jeg$preTickOffHandItem = ItemStack.EMPTY;
-
     @Inject(method = "submitArmWithItem", at = @At("HEAD"), cancellable = true)
     private void jeg$captureArmRenderContext(
-            AbstractClientPlayer player,
+            PlayerRenderState playerState,
+            FirstPersonHandsAndItemsRenderState handsState,
             float partialTick,
             float pitch,
             InteractionHand hand,
@@ -79,7 +53,8 @@ public final class ItemInHandRendererMixin {
 
     @Inject(method = "submitArmWithItem", at = @At("RETURN"))
     private void jeg$clearArmRenderContext(
-            AbstractClientPlayer player,
+            PlayerRenderState playerState,
+            FirstPersonHandsAndItemsRenderState handsState,
             float partialTick,
             float pitch,
             InteractionHand hand,
@@ -95,71 +70,40 @@ public final class ItemInHandRendererMixin {
         this.jeg$capturedSwingProcess = Float.NaN;
     }
 
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void jeg$capturePreTickHandItems(CallbackInfo ci) {
-        this.jeg$preTickMainHandItem = this.mainHandItem.copy();
-        this.jeg$preTickOffHandItem = this.offHandItem.copy();
-    }
-
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void jeg$stabilizeVolatileGunSwaps(CallbackInfo ci) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) {
-            return;
-        }
-
-        ItemStack liveMain = player.getMainHandItem();
-        if (jeg$isVolatileGunComponentDiff(this.mainHandItem, liveMain)
-                || jeg$isVolatileGunComponentDiff(this.jeg$preTickMainHandItem, liveMain)) {
-            this.mainHandItem = liveMain;
-            this.mainHandHeight = 1.0F;
-            this.oMainHandHeight = 1.0F;
-        }
-
-        ItemStack liveOff = player.getOffhandItem();
-        if (jeg$isVolatileGunComponentDiff(this.offHandItem, liveOff)
-                || jeg$isVolatileGunComponentDiff(this.jeg$preTickOffHandItem, liveOff)) {
-            this.offHandItem = liveOff;
-            this.offHandHeight = 1.0F;
-            this.oOffHandHeight = 1.0F;
-        }
-    }
-
-    @Inject(method = "renderItem", at = @At("HEAD"))
-    private void jeg$renderItem(
-            LivingEntity entity,
+    @Inject(
+            method = "submitArmWithItem",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"
+            )
+    )
+    private void jeg$applyGunHandTransform(
+            PlayerRenderState playerState,
+            FirstPersonHandsAndItemsRenderState handsState,
+            float partialTick,
+            float pitch,
+            InteractionHand hand,
+            float swingProgress,
             ItemStack stack,
-            ItemDisplayContext displayContext,
+            float equipProgress,
             PoseStack poseStack,
             SubmitNodeCollector submitNodeCollector,
             int packedLight,
             CallbackInfo ci
     ) {
-        if (!(entity instanceof LocalPlayer player)) {
-            return;
-        }
-        if (!(stack.getItem() instanceof GunItem gun)) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || !(stack.getItem() instanceof GunItem gun)) {
             return;
         }
 
-        // SW guided launchers: first_person display + GeckoLib center only; skip GunPoseProfile.
         String gunPath = gun.getStats().id().getPath();
         if ("javelin".equals(gunPath) || "igla_9k38".equals(gunPath)) {
             return;
         }
 
-        HumanoidArm arm;
-        if (displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
-            arm = HumanoidArm.RIGHT;
-        } else if (displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND) {
-            arm = HumanoidArm.LEFT;
-        } else {
-            return;
-        }
-
-        float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        float equipProcess = Float.isNaN(this.jeg$capturedEquipProcess) ? 0.0F : this.jeg$capturedEquipProcess;
-        float swingProcess = Float.isNaN(this.jeg$capturedSwingProcess) ? 0.0F : this.jeg$capturedSwingProcess;
+        HumanoidArm arm = hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
+        float equipProcess = Float.isNaN(this.jeg$capturedEquipProcess) ? equipProgress : this.jeg$capturedEquipProcess;
+        float swingProcess = Float.isNaN(this.jeg$capturedSwingProcess) ? swingProgress : this.jeg$capturedSwingProcess;
         IClientItemExtensions extensions = IClientItemExtensions.of(stack);
         if (!extensions.applyForgeHandTransform(
                 poseStack,
@@ -170,54 +114,7 @@ public final class ItemInHandRendererMixin {
                 equipProcess,
                 swingProcess
         )) {
-            ttv.migami.jeg.client.GunHandTransform.apply(
-                    poseStack,
-                    player,
-                    arm,
-                    gun.getStats(),
-                    partialTick
-            );
+            GunHandTransform.apply(poseStack, player, arm, gun.getStats(), partialTick);
         }
-    }
-
-    @Unique
-    private static boolean jeg$isVolatileGunComponentDiff(ItemStack visibleStack, ItemStack liveStack) {
-        if (visibleStack == null || liveStack == null || visibleStack.isEmpty() || liveStack.isEmpty()) {
-            return false;
-        }
-        if (!ItemStack.isSameItem(visibleStack, liveStack)) {
-            return false;
-        }
-        if (!(liveStack.getItem() instanceof GunItem)) {
-            return false;
-        }
-        if (ItemStack.isSameItemSameComponents(visibleStack, liveStack)) {
-            return false;
-        }
-
-        ItemStack visibleStable = visibleStack.copy();
-        ItemStack liveStable = liveStack.copy();
-        jeg$stripVolatileGunRenderComponents(visibleStable);
-        jeg$stripVolatileGunRenderComponents(liveStable);
-        return ItemStack.isSameItemSameComponents(visibleStable, liveStable);
-    }
-
-    @Unique
-    private static void jeg$stripVolatileGunRenderComponents(ItemStack stack) {
-        stack.remove(DataComponents.DAMAGE);
-        stack.remove(ModDataComponents.GUN_AMMO.get());
-        stack.remove(ModDataComponents.GUN_HEAT.get());
-        stack.remove(ModDataComponents.GUN_TRIGGER_LOCK.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_STAGE.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_TOTAL.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_END_TICK.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_FROM_MAGAZINE_ITEM.get());
-        stack.remove(ModDataComponents.GUN_RELOAD_TO_MAGAZINE_ITEM.get());
-        stack.remove(ModDataComponents.GUN_DRAW_TICKS_REMAINING.get());
-        stack.remove(ModDataComponents.GUN_SCOPE_ATTACHMENT_DAMAGE.get());
-        stack.remove(ModDataComponents.GUN_BARREL_ATTACHMENT_DAMAGE.get());
-        stack.remove(ModDataComponents.GUN_STOCK_ATTACHMENT_DAMAGE.get());
-        stack.remove(ModDataComponents.GUN_UNDER_BARREL_ATTACHMENT_DAMAGE.get());
     }
 }

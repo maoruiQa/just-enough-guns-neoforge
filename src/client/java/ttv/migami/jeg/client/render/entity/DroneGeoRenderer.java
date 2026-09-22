@@ -87,8 +87,8 @@ public final class DroneGeoRenderer extends GeoEntityRenderer<DroneEntity, Drone
     public void adjustRenderPose(RenderPassInfo<RenderState> passInfo) {
         PoseStack poseStack = passInfo.poseStack();
         RenderState state = passInfo.renderState();
-        poseStack.mulPose(Axis.YP.rotationDegrees(-state.bodyYaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.bodyPitch));
+        poseStack.rotateDegrees(Axis.YP, -state.bodyYaw);
+        poseStack.rotateDegrees(Axis.XP, state.bodyPitch);
     }
 
     /**

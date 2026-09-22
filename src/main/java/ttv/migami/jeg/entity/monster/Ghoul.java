@@ -81,11 +81,13 @@ public class Ghoul extends Zombie {
     }
 
     @Override
-    protected void doUnderWaterConversion(ServerLevel serverLevel) {
-        this.convertToZombieType(serverLevel, EntityTypes.ZOMBIE);
-        if (!this.isSilent()) {
-            this.level().levelEvent(null, 1041, this.blockPosition(), 0);
-        }
+    protected int getConversionSound() {
+        return 1041;
+    }
+
+    @Override
+    protected EntityType<? extends Zombie> convertsToWhenDrowning() {
+        return EntityTypes.ZOMBIE;
     }
 
     public static AttributeSupplier.Builder createAttributes() {

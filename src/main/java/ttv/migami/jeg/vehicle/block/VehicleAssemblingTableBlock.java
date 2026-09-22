@@ -1,6 +1,5 @@
 package ttv.migami.jeg.vehicle.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -40,7 +39,6 @@ import ttv.migami.jeg.vehicle.block.property.BlockPart;
 import ttv.migami.jeg.vehicle.item.VehicleAssemblingTableBlockItem;
 
 public final class VehicleAssemblingTableBlock extends BaseEntityBlock {
-    public static final MapCodec<VehicleAssemblingTableBlock> CODEC = simpleCodec(VehicleAssemblingTableBlock::new);
     public static final Property<Direction> FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<BlockPart> BLOCK_PART = EnumProperty.create("block_part", BlockPart.class);
 
@@ -148,11 +146,6 @@ public final class VehicleAssemblingTableBlock extends BaseEntityBlock {
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

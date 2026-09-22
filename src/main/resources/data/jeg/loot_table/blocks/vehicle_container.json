@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "jeg:vehicle_container"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "modifier": [
+        {
+          "source": "block_entity",
+          "include": [
+            "minecraft:block_entity_data"
+          ],
+          "type": "minecraft:copy_components"
+        }
+      ]
+    }
+  ]
+}

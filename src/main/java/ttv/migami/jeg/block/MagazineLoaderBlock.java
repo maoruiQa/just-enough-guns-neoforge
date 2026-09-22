@@ -1,6 +1,5 @@
 package ttv.migami.jeg.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,17 +28,11 @@ import ttv.migami.jeg.block.entity.MagazineLoaderBlockEntity;
 import ttv.migami.jeg.init.ModBlockEntities;
 
 public final class MagazineLoaderBlock extends BaseEntityBlock {
-    public static final MapCodec<MagazineLoaderBlock> CODEC = simpleCodec(MagazineLoaderBlock::new);
     public static final Property<Direction> FACING = HorizontalDirectionalBlock.FACING;
 
     public MagazineLoaderBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

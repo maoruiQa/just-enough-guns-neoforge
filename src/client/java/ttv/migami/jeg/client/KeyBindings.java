@@ -3,7 +3,6 @@ package ttv.migami.jeg.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
-import org.lwjgl.glfw.GLFW;
 import ttv.migami.jeg.Reference;
 
 public final class KeyBindings {
@@ -14,106 +13,91 @@ public final class KeyBindings {
 
     public static final KeyMapping RELOAD = new KeyMapping(
             "key.jeg.reload",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
+            InputConstants.KEY_R,
             CATEGORY
     );
 
     public static final KeyMapping ATTACHMENTS = new KeyMapping(
             "key.jeg.attachments",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Z,
+            InputConstants.KEY_Z,
             CATEGORY
     );
 
     public static final KeyMapping MELEE = new KeyMapping(
             "key.jeg.melee",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
+            InputConstants.KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping INSPECT = new KeyMapping(
             "key.jeg.inspect",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Y,
+            InputConstants.KEY_Y,
             CATEGORY
     );
 
     public static final KeyMapping LAUNCHER_MODE = new KeyMapping(
             "key.jeg.launcher_mode",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_N,
+            InputConstants.KEY_N,
             CATEGORY
     );
 
     public static final KeyMapping DRONE_INTERACT = new KeyMapping(
             "key.jeg.drone_interact",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X,
+            InputConstants.KEY_X,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_FREE_LOOK = new KeyMapping(
             "key.jeg.vehicle_free_look",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
+            InputConstants.KEY_C,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_SWITCH_WEAPON = new KeyMapping(
             "key.jeg.vehicle_switch_weapon",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X,
+            InputConstants.KEY_X,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_PREVIOUS_WEAPON = new KeyMapping(
             "key.jeg.vehicle_previous_weapon",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Z,
+            InputConstants.KEY_Z,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_DEPLOY_DECOY = new KeyMapping(
             "key.jeg.vehicle_deploy_decoy",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_G,
+            InputConstants.KEY_G,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_SEEK = new KeyMapping(
             "key.jeg.vehicle_seek",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
+            InputConstants.KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_BRAKE_DESCEND = new KeyMapping(
             "key.jeg.vehicle_brake_descend",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_CONTROL,
+            InputConstants.KEY_LCONTROL,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_CHANGE_SEAT = new KeyMapping(
             "key.jeg.vehicle_change_seat",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_B,
+            InputConstants.KEY_B,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_DISMOUNT = new KeyMapping(
             "key.jeg.vehicle_dismount",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_ALT,
+            InputConstants.KEY_LALT,
             CATEGORY
     );
 
     public static final KeyMapping VEHICLE_PLAYER_INVENTORY = new KeyMapping(
             "key.jeg.vehicle_player_inventory",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_H,
+            InputConstants.KEY_H,
             CATEGORY
     );
 

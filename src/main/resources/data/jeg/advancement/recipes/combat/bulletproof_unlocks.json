@@ -1,0 +1,30 @@
+{
+  "criteria": {
+    "always": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "always"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "jeg:bulletproof_helmet_i",
+      "jeg:bulletproof_helmet_ii",
+      "jeg:bulletproof_helmet_iii",
+      "jeg:bulletproof_helmet_iv",
+      "jeg:bulletproof_helmet_v",
+      "jeg:bulletproof_helmet_vi",
+      "jeg:bulletproof_vest_i",
+      "jeg:bulletproof_vest_ii",
+      "jeg:bulletproof_vest_iii",
+      "jeg:bulletproof_vest_iv",
+      "jeg:bulletproof_vest_v",
+      "jeg:bulletproof_vest_vi"
+    ]
+  },
+  "sends_telemetry_event": false,
+  "parent": "minecraft:recipes/root"
+}

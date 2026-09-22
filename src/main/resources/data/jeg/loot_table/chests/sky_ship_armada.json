@@ -1,0 +1,447 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 2.0,
+        "max": 3.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_ingot",
+          "weight": 6,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 3.0,
+                "max": 6.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_block",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:gold_ingot",
+          "weight": 4,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 2.0,
+                "max": 5.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:gold_block",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:emerald",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:experience_bottle",
+          "weight": 4,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 2.0,
+                "max": 5.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:lapis_lazuli",
+          "weight": 5,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 6.0,
+                "max": 12.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_pearl",
+          "weight": 2,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 1.0,
+        "max": 2.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "weight": 3,
+          "modifier": [
+            {
+              "levels": {
+                "type": "minecraft:uniform",
+                "min": 15.0,
+                "max": 25.0
+              },
+              "type": "minecraft:enchant_with_levels",
+              "options": "#minecraft:on_random_loot"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_chestplate",
+          "weight": 2,
+          "modifier": [
+            {
+              "type": "minecraft:enchant_randomly",
+              "options": [
+                "minecraft:protection",
+                "minecraft:projectile_protection",
+                "minecraft:blast_protection",
+                "minecraft:fire_protection"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_leggings",
+          "weight": 2,
+          "modifier": [
+            {
+              "type": "minecraft:enchant_randomly",
+              "options": [
+                "minecraft:protection",
+                "minecraft:projectile_protection",
+                "minecraft:blast_protection",
+                "minecraft:fire_protection"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_helmet",
+          "weight": 2,
+          "modifier": [
+            {
+              "type": "minecraft:enchant_randomly",
+              "options": [
+                "minecraft:protection",
+                "minecraft:projectile_protection",
+                "minecraft:blast_protection",
+                "minecraft:fire_protection"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_boots",
+          "weight": 2,
+          "modifier": [
+            {
+              "type": "minecraft:enchant_randomly",
+              "options": [
+                "minecraft:feather_falling",
+                "minecraft:protection",
+                "minecraft:projectile_protection"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:crossbow",
+          "weight": 1,
+          "modifier": [
+            {
+              "levels": {
+                "type": "minecraft:uniform",
+                "min": 18.0,
+                "max": 24.0
+              },
+              "type": "minecraft:enchant_with_levels",
+              "options": "#minecraft:on_random_loot"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:shield",
+          "weight": 2,
+          "modifier": [
+            {
+              "levels": {
+                "type": "minecraft:uniform",
+                "min": 12.0,
+                "max": 20.0
+              },
+              "type": "minecraft:enchant_with_levels",
+              "options": "#minecraft:on_random_loot"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 1.0,
+        "max": 2.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:repair_kit",
+          "weight": 4,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:rifle_ammo",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 12.0,
+                "max": 40.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:pistol_ammo",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 12.0,
+                "max": 40.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:rocket",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 3.0,
+                "max": 10.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ],
+          "condition": {
+            "chance": 0.12,
+            "type": "minecraft:random_chance"
+          }
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:arrow",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 8.0,
+                "max": 18.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:golden_carrot",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 2.0,
+                "max": 4.0
+              },
+              "type": "minecraft:set_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_helmet_iv",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_vest_iv",
+          "weight": 3,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_helmet_v",
+          "weight": 2,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_vest_v",
+          "weight": 2,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_helmet_vi",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_vest_vi",
+          "weight": 1,
+          "modifier": [
+            {
+              "count": 1,
+              "type": "minecraft:set_count"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

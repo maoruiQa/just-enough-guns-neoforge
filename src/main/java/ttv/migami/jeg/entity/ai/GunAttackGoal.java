@@ -317,7 +317,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 || this.shooter.hasEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.SMOKED.get()))
                 || ttv.migami.jeg.util.SmokeUtil.isInSmoke(this.shooter);
             if (isDisoriented || (this.aiType == AIType.COWARD &&
-                (this.shooter.getHealth() < (this.shooter.getMaxHealth() / 3) || this.shooter.invulnerableTime != 0))) {
+                (this.shooter.getHealth() < (this.shooter.getMaxHealth() / 3) || this.shooter.getInvulnerableTime() != 0))) {
                 this.isPanicked = true;
                 this.panickTimer = 20;
             }
@@ -820,7 +820,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
             this.zbbBlockDamage.put(pos.immutable(), totalDamage);
             int stage = Math.max(-1, Math.min(9, Mth.floor((float) totalDamage / (float) blockHealth * 10.0F) - 1));
             level.destroyBlockProgress(progressId, pos, stage);
-            this.shooter.swing(InteractionHand.MAIN_HAND);
+            this.shooter.swingForAttack(InteractionHand.MAIN_HAND);
         }
 
         this.zbbBreakCooldownUntil = level.getGameTime() + ZBB_BREAK_COOLDOWN_TICKS;
@@ -2765,7 +2765,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         );
 
         if (this.terrainBreakTicks % 6 == 0) {
-            this.shooter.swing(InteractionHand.MAIN_HAND);
+            this.shooter.swingForAttack(InteractionHand.MAIN_HAND);
         }
 
         this.terrainBreakProgress += this.getBreakProgressPerTick(level, this.terrainBreakTarget, state);
@@ -2953,7 +2953,7 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
         if (pos.equals(this.shooter.blockPosition())) {
             this.shooter.setPos(this.shooter.getX(), this.shooter.getY() + 1.0D, this.shooter.getZ());
         }
-        this.shooter.swing(InteractionHand.MAIN_HAND);
+        this.shooter.swingForAttack(InteractionHand.MAIN_HAND);
         return true;
     }
 

@@ -518,9 +518,9 @@ public class BulletEntity extends Projectile {
 
             // 1.20.1 parity: allow shotgun pellets from players to apply within the same tick.
             if (owner instanceof Player) {
-                entity.invulnerableTime = 0;
+                entity.setInvulnerableTime(0);
                 if (livingTarget != null) {
-                    livingTarget.invulnerableTime = 0;
+                    livingTarget.setInvulnerableTime(0);
                 }
             }
         }

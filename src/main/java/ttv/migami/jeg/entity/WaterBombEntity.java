@@ -83,7 +83,7 @@ public final class WaterBombEntity extends TimedThrowableItemProjectile {
                 continue;
             }
             if (CampfireBlock.isLitCampfire(state)) {
-                CampfireBlock.dowse(null, level, pos, state);
+                CampfireBlock.douse(null, level, pos, state);
                 level.setBlock(pos, state.setValue(CampfireBlock.LIT, Boolean.FALSE), 11);
                 extinguished = true;
                 continue;

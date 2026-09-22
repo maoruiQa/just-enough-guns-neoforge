@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
@@ -91,7 +92,7 @@ public final class DefuserItem extends Item {
             InteractionHand hand = player.getUsedItemHand();
             player.stopUsingItem();
             // Single swing only after the channel finishes.
-            player.swing(hand, true);
+            player.swing(hand, SwingAnimation.DEFAULT, true);
             if (!player.getAbilities().instabuild) {
                 stack.hurtAndBreak(1, player, handToSlot(hand));
             }
