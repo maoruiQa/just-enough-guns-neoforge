@@ -14,6 +14,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MoveSimulationType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.Level;
@@ -44,7 +45,6 @@ public final class VehicleDecoyEntity extends Entity {
 
     public VehicleDecoyEntity(EntityType<? extends VehicleDecoyEntity> type, Level level) {
         super(type, level);
-        this.noPhysics = true;
     }
 
     private VehicleDecoyEntity(Level level, Vec3 position, Vec3 velocity, boolean smoke, boolean releaseSmoke) {
@@ -116,7 +116,15 @@ public final class VehicleDecoyEntity extends Entity {
     }
 
     @Override
+    public MoveSimulationType getMoveSimulationType() {
+        // Trajectory runs on both sides. 26.3 rejects MoverType.SELF on the client unless this is shared.
+        return MoveSimulationType.SERVER_AND_CLIENT;
+    }
+
+    @Override
     public void tick() {
+        // Smoke is a placed volume. Flares keep collision so they burn out on the ground.
+        this.noPhysics = this.isSmokeDecoy();
         super.tick();
         if (this.isSmokeDecoy()) {
             this.tickSmoke();

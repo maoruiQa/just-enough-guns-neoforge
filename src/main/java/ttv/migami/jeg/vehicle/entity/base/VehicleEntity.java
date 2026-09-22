@@ -2927,7 +2927,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
             return;
         }
         if (this.shouldDeploySmokeDecoy()) {
-            this.deploySmokeDecoys(player);
+            this.deploySmokeDecoys();
             this.decoyCooldown = LAND_DECOY_COOLDOWN_TICKS;
             return;
         }
@@ -2941,15 +2941,27 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         return this.hasBuiltInDecoy() && type != VehicleType.HELICOPTER && type != VehicleType.AIRCRAFT;
     }
 
-    private void deploySmokeDecoys(ServerPlayer player) {
-        Vec3 look = player.getViewVector(1.0F).normalize();
+    private void deploySmokeDecoys() {
+        Vec3 forward = this.smokeDecoyForward();
         Vec3 position = this.position().add(0.0D, this.getBbHeight(), 0.0D);
         for (int index = 0; index < 8; index++) {
-            double yaw = Math.toRadians(-78.75D + 22.5D * index);
-            Vec3 direction = look.yRot((float) yaw).normalize();
+            float yaw = (float) Math.toRadians(-78.75D + 22.5D * index);
+            Vec3 direction = forward.yRot(yaw);
             this.level().addFreshEntity(VehicleDecoyEntity.smoke(this.level(), this, position, direction, 4.0F, 8.0F));
         }
         this.level().playSound(null, this, SoundEvents.FIRE_EXTINGUISH, this.getSoundSource(), 1.0F, 1.0F);
+    }
+
+    /** Horizontal turret facing. Gun elevation and free-look pitch must not dump the screen into the ground. */
+    private Vec3 smokeDecoyForward() {
+        Vec3 aim = this.vehicleData().defaults().turret().enabled()
+                ? this.articulatedBarrelDirection(1.0F)
+                : this.rotateLocalOffsetByYaw(0.0D, 0.0D, 1.0D, this.getYRot());
+        Vec3 flat = new Vec3(aim.x, 0.0D, aim.z);
+        if (flat.lengthSqr() < 1.0E-6D) {
+            return this.rotateLocalOffsetByYaw(0.0D, 0.0D, 1.0D, this.getYRot());
+        }
+        return flat.normalize();
     }
 
     private void shootFlareDecoyPair(boolean first) {
