@@ -60,14 +60,19 @@ public final class VehicleInputHandler {
         double mouseX = minecraft.mouseHandler.xpos();
         double mouseY = minecraft.mouseHandler.ypos();
         Screen screen = minecraft.gui.screen();
-        if (screen != null) {
-            VehicleClientState.syncMousePosition(mouseX, mouseY);
-        } else {
-            VehicleClientState.setMousePosition(mouseX, mouseY);
-        }
         boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
         boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
         boolean aircraftControls = isAircraftDriver(player, vehicle);
+        // 26.3 relative mouse mode keeps xpos/ypos at the warp point while grabbed.
+        // Flight attitude uses the raw per-frame deltas captured in handleVehicleMouseTurn.
+        if (screen != null) {
+            VehicleClientState.syncMousePosition(mouseX, mouseY);
+        } else if (aircraftControls && minecraft.mouseHandler.isMouseGrabbed()) {
+            VehicleClientState.consumeRawMouseDelta(mouseX, mouseY);
+        } else {
+            VehicleClientState.setMousePosition(mouseX, mouseY);
+            VehicleClientState.discardRawMouseDelta();
+        }
         if (aircraftControls && screen == null) {
             VehicleClientState.updateAircraftMouse(0.1F, 0.5F, 0.35F, false, freeLook);
         }
@@ -209,6 +214,14 @@ public final class VehicleInputHandler {
         int seatIndex = vehicle.getSeatIndex(player);
         if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
             return false;
+        }
+
+        if (isAircraftDriver(player, vehicle)) {
+            if (KeyBindings.VEHICLE_FREE_LOOK.isDown()) {
+                VehicleClientState.discardRawMouseDelta();
+            } else {
+                VehicleClientState.addRawMouseDelta(accumulatedDX, accumulatedDY);
+            }
         }
 
         double sensitivitySetting = minecraft.options.sensitivity().get() * 0.6000000238418579D + 0.20000000298023224D;
