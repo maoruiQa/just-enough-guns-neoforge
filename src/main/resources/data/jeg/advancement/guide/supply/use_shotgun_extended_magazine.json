@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:shotgun_extended_magazine"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.supply.use_shotgun_extended_magazine.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.supply.use_shotgun_extended_magazine.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "magazine_used",
-        "subject": "jeg:shotgun_extended_magazine"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/supply/load_shotgun_extended_magazine",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

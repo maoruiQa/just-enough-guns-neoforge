@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:pistol_magazine"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.ammunition_ready.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.ammunition_ready.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "load": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_load"
+      }
+    },
+    "reload": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "reload"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "load"
+    ],
+    [
+      "reload"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/ready",
+  "rewards": {
+    "experience": 5
+  }
+}

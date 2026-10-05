@@ -11,7 +11,8 @@
     "GunnerSunBurnMixin",
     "GunnerWaterConversionMixin",
     "GunRepairAdvancementMixin",
-    "ServerGamePacketListenerImplMixin"
+    "ServerGamePacketListenerImplMixin",
+    "PlayerAdvancementsMigrationMixin"
   ],
   "client": [
     "KeyMappingVehicleMixin",

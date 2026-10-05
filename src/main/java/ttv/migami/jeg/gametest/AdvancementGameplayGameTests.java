@@ -28,7 +28,13 @@ import ttv.migami.jeg.advancement.FireWeaponAttribution;
 import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.entity.BulletEntity;
 import ttv.migami.jeg.entity.PlacedExplosiveEntity;
+import ttv.migami.jeg.entity.MolotovCocktailEntity;
+import net.minecraft.advancements.CriteriaTriggers;
+import com.google.gson.JsonParser;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import ttv.migami.jeg.event.GunEvents;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.item.GunItem;
@@ -43,29 +49,30 @@ public final class AdvancementGameplayGameTests {
     private AdvancementGameplayGameTests() {}
 
     @GameTest(template = "empty", timeoutTicks = 40)
-    public static void nativeTriggerMatchesAndPersists(GameTestHelper helper) {
+    public static void nativeGroupsMatchAndPersist(GameTestHelper helper) {
         ServerPlayer player = player(helper, GameType.SURVIVAL);
-        AdvancementHolder advancement = advancement(helper, "guide/gunsmith/install_flashlight");
-        helper.assertTrue(advancement.value().criteria().get("done").trigger() == GameplayActions.ACTION.get(),
+        AdvancementHolder advancement = advancement(helper, "guide/training/loadout");
+        String sight = "sight_jeg_reflex_sight";
+        helper.assertTrue(advancement.value().criteria().get(sight).trigger() == GameplayActions.ACTION.get(),
                 "Loaded criterion must reference the registered native trigger");
-        GameplayActions.action(player, "attachment_install", "jeg:laser_pointer");
-        GameplayActions.action(player, "attachment_use", "jeg:flashlight");
-        helper.assertFalse(done(player, advancement), "Wrong subject or action must not match");
-
-        helper.assertFalse(player.isCreative(), "Mock player must leave creative mode");
-        helper.assertFalse(player.isSpectator(), "Mock player must leave spectator mode");
-        GameplayActions.action(player, "attachment_install", "jeg:flashlight");
-        helper.assertTrue(done(player, advancement), "Survival action and subject must match the native criterion");
+        GameplayActions.action(player, "attachment_install", "jeg:reflex_sight");
+        GameplayActions.action(player, "attachment_use", "jeg:vertical_grip");
+        helper.assertFalse(earned(player, advancement, sight), "Wrong action or subject must not satisfy the sight group");
+        GameplayActions.action(player, "attachment_use", "jeg:reflex_sight");
+        helper.assertTrue(earned(player, advancement, sight), "One sight must satisfy its OR group");
+        helper.assertFalse(done(player, advancement), "The missing functional muzzle must keep the AND goal incomplete");
+        GameplayActions.action(player, "attachment_use", "jeg:silencer");
+        helper.assertTrue(done(player, advancement), "One example in each functional group must complete the goal");
+        int experience = player.totalExperience;
         player.getAdvancements().save();
         player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
-        helper.assertTrue(done(player, advancement), "Awarded criterion must survive advancement save and reload");
-
-        ServerPlayer creative = player(helper, GameType.CREATIVE);
-        GameplayActions.action(creative, "attachment_install", "jeg:flashlight");
-        helper.assertFalse(done(creative, advancement), "Creative players must not earn action criteria");
-        ServerPlayer spectator = player(helper, GameType.SPECTATOR);
-        GameplayActions.action(spectator, "attachment_install", "jeg:flashlight");
-        helper.assertFalse(done(spectator, advancement), "Spectators must not earn action criteria");
+        helper.assertTrue(done(player, advancement), "Grouped progress must survive native save and reload");
+        helper.assertValueEqual(player.totalExperience, experience, "Reload must not repeat the goal reward");
+        for (GameType mode : new GameType[] {GameType.CREATIVE, GameType.SPECTATOR}) {
+            ServerPlayer excluded = player(helper, mode);
+            GameplayActions.action(excluded, "attachment_use", "jeg:reflex_sight");
+            helper.assertFalse(earned(excluded, advancement, sight), "Creative and spectator actions must not count");
+        }
         helper.succeed();
     }
 
@@ -99,14 +106,65 @@ public final class AdvancementGameplayGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 40)
-    public static void existingGunInventoryIsRecheckedAtLogin(GameTestHelper helper) {
+    public static void specialEnemyRolesRequireCreditedKillsBeforeDetonation(GameTestHelper helper) {
+        ServerPlayer killer = player(helper, GameType.SURVIVAL);
+        ServerPlayer observer = player(helper, GameType.SURVIVAL);
+        var bomberGoal = advancement(helper, "guide/battle/bomber_intercept");
+        var eliteGoal = advancement(helper, "guide/battle/elite_hunter");
+        var profiles = advancement(helper, "guide/battle/enemy_profiles");
+
+        Zombie ordinary = helper.spawn(EntityType.ZOMBIE, new Vec3(1, 2, 1));
+        ordinary.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.C4_VEST.get()));
+        ordinary.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertFalse(done(killer, bomberGoal), "A vest alone must not identify a bomber");
+        helper.assertFalse(earned(killer, profiles, "undead_zombie"), "An ordinary unarmed zombie must not count as a gunner");
+
+        Zombie detonated = helper.spawn(EntityType.ZOMBIE, new Vec3(2, 2, 1));
+        detonated.addTag(BomberGunnerHelper.TAG);
+        detonated.addTag(BomberGunnerHelper.DETONATED_TAG);
+        detonated.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.C4_VEST.get()));
+        detonated.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertFalse(done(killer, bomberGoal), "An already detonated bomber must not grant interception");
+
+        Zombie bomber = helper.spawn(EntityType.ZOMBIE, new Vec3(3, 2, 1));
+        bomber.addTag(BomberGunnerHelper.TAG);
+        bomber.addTag(BomberGunnerHelper.ARMED_TAG);
+        bomber.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.C4_VEST.get()));
+        helper.assertFalse(done(killer, bomberGoal), "A living bomber must not grant a kill");
+        bomber.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertTrue(done(killer, bomberGoal), "Real lethal damage before detonation must grant interception");
+        helper.assertFalse(done(observer, bomberGoal), "An observer must not inherit another player's kill");
+
+        Zombie elite = helper.spawn(EntityType.ZOMBIE, new Vec3(4, 2, 1));
+        elite.addTag(GunEvents.JEG_ELITE_GUNNER_TAG);
+        elite.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertTrue(done(killer, eliteGoal), "An actual elite tag must grant the elite goal");
+
+        var skeleton = helper.spawn(EntityType.SKELETON, new Vec3(5, 2, 1));
+        skeleton.addTag(GunEvents.JEG_GUNNER_TAG);
+        skeleton.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertFalse(done(killer, profiles), "Two gunner families must leave the combined profile incomplete");
+        var pillager = helper.spawn(EntityType.PILLAGER, new Vec3(6, 2, 1));
+        pillager.addTag("jeg_pillager_gunner");
+        pillager.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertTrue(done(killer, profiles), "Special pillager tags must satisfy the third gunner family");
+
+        var phantom = helper.spawn(ModEntities.PHANTOM_GUNNER.get(), new Vec3(7, 2, 1));
+        phantom.hurt(helper.getLevel().damageSources().playerAttack(killer), 100.0F);
+        helper.assertTrue(done(killer, advancement(helper, "guide/battle/phantom_hunter")), "Phantom Gunner must have its own enemy goal");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void inventoryDoesNotFabricateCraftingOrArchivedProgress(GameTestHelper helper) {
         ServerPlayer player = player(helper, GameType.SURVIVAL);
         AdvancementHolder obtain = advancement(helper, "guide/arsenal/obtain_assault_rifle");
         player.getInventory().setItem(0, new ItemStack(ModItems.GUNS.get(Reference.id("assault_rifle")).get()));
         player.getAdvancements().revoke(obtain, "obtained");
         helper.assertFalse(done(player, obtain), "Old inventory should start with the obtain criterion missing");
         GameplayActions.login(player);
-        helper.assertTrue(done(player, obtain), "Login inventory recheck must recognize a gun already owned");
+        helper.assertFalse(done(player, obtain), "Archived acquisition criteria must remain frozen");
+        helper.assertFalse(done(player, advancement(helper, "guide/training/ready")), "Owning a gun must not fabricate crafting history");
         helper.succeed();
     }
 
@@ -131,7 +189,7 @@ public final class AdvancementGameplayGameTests {
     public static void successfulInstallAndTimedBlastCredit(GameTestHelper helper) {
         ServerPlayer owner = player(helper, GameType.SURVIVAL);
         ServerPlayer other = player(helper, GameType.SURVIVAL);
-        AdvancementHolder install = advancement(helper, "guide/gunsmith/install_flashlight");
+        AdvancementHolder install = advancement(helper, "guide/training/loadout");
         AdvancementHolder timed = advancement(helper, "guide/special/timed_c4");
 
         ItemStack rifle = new ItemStack(ModItems.GUNS.get(Reference.id("assault_rifle")).get());
@@ -139,11 +197,11 @@ public final class AdvancementGameplayGameTests {
         AttachmentMenu menu = new AttachmentMenu(0, owner.getInventory());
         Slot special = menu.getSlot(AttachmentType.SPECIAL.ordinal());
         helper.assertFalse(special.mayPlace(new ItemStack(Items.STONE)), "Invalid item must be rejected by the attachment slot");
-        helper.assertFalse(done(owner, install), "Rejected installation must not award progress");
+        helper.assertFalse(earned(owner, install, "installed"), "Rejected installation must not award progress");
         ItemStack flashlight = new ItemStack(ModItems.FLASHLIGHT.get());
         helper.assertTrue(special.mayPlace(flashlight), "Assault rifle must accept the flashlight");
         special.set(flashlight);
-        helper.assertTrue(done(owner, install), "Written attachment must award the successful install");
+        helper.assertTrue(earned(owner, install, "installed"), "Written attachment must award the successful install");
 
         PlacedExplosiveEntity c4 = PlacedExplosiveEntity.placeSettled(helper.getLevel(), SpecialExplosiveItem.Kind.C4,
                 owner, helper.absoluteVec(new Vec3(4.0D, 2.0D, 1.0D)), 0.0F, false);
@@ -160,9 +218,9 @@ public final class AdvancementGameplayGameTests {
     public static void delayedFireCreditsRealDamageButNotFriendlyOrImmuneTargets(GameTestHelper helper) {
         ServerPlayer owner = player(helper, GameType.SURVIVAL);
         ServerPlayer filteredOwner = player(helper, GameType.SURVIVAL);
-        AdvancementHolder use = advancement(helper, "guide/arsenal/use_flamethrower");
-        BulletEntity flame = flame(helper, owner);
-        BulletEntity filteredFlame = flame(helper, filteredOwner);
+        AdvancementHolder use = advancement(helper, "guide/special/molotov");
+        MolotovCocktailEntity flame = new MolotovCocktailEntity(helper.getLevel(), owner, 60);
+        MolotovCocktailEntity filteredFlame = new MolotovCocktailEntity(helper.getLevel(), filteredOwner, 60);
         var hostile = helper.spawn(EntityType.RAVAGER, new Vec3(2.0D, 2.0D, 1.0D));
         hostile.setNoAi(true);
         hostile.igniteForSeconds(2.0F);
@@ -172,7 +230,7 @@ public final class AdvancementGameplayGameTests {
         FireWeaponAttribution.remember(hostile, flame, owner);
         helper.assertFalse(done(owner, use), "Ignition alone must not grant a weapon hit");
         helper.assertTrue(hostile.hurt(helper.getLevel().damageSources().onFire(), 2.0F), "Delayed fire must deal real damage");
-        helper.assertTrue(done(owner, use), "Delayed fire damage must retain the fired flamethrower");
+        helper.assertTrue(done(owner, use), "Delayed fire damage must retain the original Molotov owner");
 
         var cow = helper.spawn(EntityType.COW, new Vec3(4.0D, 2.0D, 1.0D));
         cow.igniteForSeconds(6.0F);
@@ -191,8 +249,8 @@ public final class AdvancementGameplayGameTests {
         ServerPlayer killer = player(helper, GameType.SURVIVAL);
         ServerPlayer expiredOwner = player(helper, GameType.SURVIVAL);
         AdvancementHolder kill = advancement(helper, "guide/training/kill");
-        AdvancementHolder category = advancement(helper, "guide/arsenal/category_lmg");
-        AdvancementHolder use = advancement(helper, "guide/arsenal/use_flamethrower");
+        AdvancementHolder category = advancement(helper, "guide/battle/support");
+        AdvancementHolder use = advancement(helper, "guide/special/molotov");
 
         var doomed = helper.spawn(EntityType.ZOMBIE, new Vec3(2.0D, 2.0D, 1.0D));
         doomed.setNoAi(true);
@@ -202,13 +260,13 @@ public final class AdvancementGameplayGameTests {
         FireWeaponAttribution.remember(doomed, flame(helper, killer), killer);
         doomed.hurt(helper.getLevel().damageSources().onFire(), 3.0F);
         helper.assertTrue(done(killer, kill), "Lethal fire must award the real shooter");
-        helper.assertTrue(done(killer, category), "Lethal fire must retain the gun category");
+        helper.assertTrue(earned(killer, category, "support"), "Lethal fire must retain the gun category");
         helper.assertFalse(doomed.getTags().stream().anyMatch(tag -> tag.startsWith("jeg_fire_credit|")), "Death must consume source tags once");
 
         var survivor = helper.spawn(EntityType.RAVAGER, new Vec3(5.0D, 2.0D, 1.0D));
         survivor.setNoAi(true);
         survivor.igniteForSeconds(10.0F);
-        FireWeaponAttribution.remember(survivor, flame(helper, expiredOwner), expiredOwner);
+        FireWeaponAttribution.remember(survivor, new MolotovCocktailEntity(helper.getLevel(), expiredOwner, 60), expiredOwner);
         survivor.setInvulnerable(true);
         long ignitionTime = helper.getLevel().getGameTime();
         helper.runAfterDelay(145, () -> {
@@ -226,7 +284,7 @@ public final class AdvancementGameplayGameTests {
     public static void discardedC4SourceCreditsRealDamageToEnemyVehicle(GameTestHelper helper) {
         ServerPlayer owner = player(helper, GameType.SURVIVAL);
         owner.setInvulnerable(true);
-        AdvancementHolder effect = advancement(helper, "guide/special/c4_effect");
+        AdvancementHolder effect = advancement(helper, "guide/special/remote_ambush");
         var bmp = ModEntities.BMP2.get().create(helper.getLevel());
         helper.assertTrue(bmp != null, "BMP-2 must be registered for the live damage test");
         bmp.setPos(helper.absoluteVec(new Vec3(4.0D, 2.0D, 1.0D)));
@@ -242,8 +300,96 @@ public final class AdvancementGameplayGameTests {
         helper.assertTrue(bmp.hurt(helper.getLevel().damageSources().explosion(c4, owner), 200.0F),
                 "Discarded C4 source must deal real server-side vehicle damage");
         helper.assertTrue(bmp.vehicleHealth() < healthBefore, "Damage must lower the BMP-2 hull");
-        helper.assertTrue(done(owner, effect), "Vehicle damage must retain the discarded C4 weapon source");
+        helper.assertTrue(earned(owner, effect, "hit"), "Vehicle damage must retain the discarded C4 weapon source");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void legacyPartialHistoryImportsWithoutRewards(GameTestHelper helper) {
+        ServerPlayer player = player(helper, GameType.SURVIVAL);
+        AdvancementHolder oldLoad = advancement(helper, "guide/training/load");
+        AdvancementHolder oldReload = advancement(helper, "guide/training/reload");
+        AdvancementHolder combined = advancement(helper, "guide/training/ammunition_ready");
+        AdvancementHolder archived = advancement(helper, "guide/arsenal/obtain_assault_rifle");
+        player.getAdvancements().award(oldLoad, "done");
+        player.getAdvancements().award(archived, "obtained");
+        int experience = player.totalExperience;
+        player.getAdvancements().save();
+        player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        helper.assertTrue(earned(player, combined, "load"), "Saved loading history must import its individual condition");
+        helper.assertFalse(done(player, combined), "Missing historical reload must keep the combined goal incomplete");
+        helper.assertFalse(done(player, advancement(helper, "guide/training/ready")), "Historical ownership must not import crafting");
+        helper.assertTrue(done(player, archived), "Frozen legacy records must survive native loading");
+        helper.assertValueEqual(player.totalExperience, experience, "Partial import must not grant experience");
+        player.getAdvancements().award(oldReload, "done");
+        player.getAdvancements().save();
+        player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        helper.assertTrue(done(player, combined), "Both historical operations must complete the merged goal");
+        helper.assertValueEqual(player.totalExperience, experience, "Complete import must bypass rewards");
+        player.getAdvancements().save();
+        player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        helper.assertValueEqual(player.totalExperience, experience, "Repeated import must be idempotent");
+        ServerPlayer partial = player(helper, GameType.SURVIVAL);
+        partial.getAdvancements().award(oldLoad, "done");
+        partial.getAdvancements().save();
+        partial.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        int beforeAction = partial.totalExperience;
+        GameplayActions.action(partial, "reload", "jeg:combat_pistol");
+        helper.assertTrue(done(partial, combined), "A live operation must finish imported partial progress");
+        helper.assertValueEqual(partial.totalExperience, beforeAction + 5, "Live completion must still grant its one normal reward");
+        GameplayActions.action(partial, "reload", "jeg:combat_pistol");
+        helper.assertValueEqual(partial.totalExperience, beforeAction + 5, "Repeating the live operation must not repeat rewards");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void coreCompletionExcludesOptionalAndArchivedNodes(GameTestHelper helper) {
+        ServerPlayer player = player(helper, GameType.SURVIVAL);
+        grantCore(helper, player);
+        int experience = player.totalExperience;
+        CriteriaTriggers.TICK.trigger(player);
+        CriteriaTriggers.TICK.trigger(player);
+        helper.assertTrue(done(player, advancement(helper, "guide/training/complete")), "Four chapter goals must complete the career");
+        helper.assertFalse(done(player, advancement(helper, "guide/training/signature")), "Optional cosmetics must remain incomplete");
+        helper.assertFalse(done(player, advancement(helper, "guide/arsenal/obtain_assault_rifle")), "Archived collection must not be necessary");
+        helper.assertValueEqual(player.totalExperience, experience + 350, "Four chapters and career must reward exactly once");
+        CriteriaTriggers.TICK.trigger(player);
+        helper.assertValueEqual(player.totalExperience, experience + 350, "Repeated ticks must not repeat rewards");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void importedChapterAndCareerClosureIsSilent(GameTestHelper helper) {
+        ServerPlayer player = player(helper, GameType.SURVIVAL);
+        grantCore(helper, player);
+        int experience = player.totalExperience;
+        player.getAdvancements().save();
+        player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        helper.assertTrue(done(player, advancement(helper, "guide/training/complete")), "Native load must silently close fully satisfied chapters and career");
+        helper.assertValueEqual(player.totalExperience, experience, "Imported chapter and career closure must not grant rewards");
+        player.getAdvancements().save();
+        player.getAdvancements().reload(helper.getLevel().getServer().getAdvancements());
+        helper.assertValueEqual(player.totalExperience, experience, "Saved closure must remain reward-free on subsequent reload");
+        helper.succeed();
+    }
+
+    private static void grantCore(GameTestHelper helper, ServerPlayer player) {
+        try (var reader = new InputStreamReader(AdvancementGameplayGameTests.class
+                .getResourceAsStream("/data/jeg/advancement_migration.json"), StandardCharsets.UTF_8)) {
+            var completion = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("completion");
+            for (var chapter : completion.entrySet()) {
+                if (chapter.getKey().equals("jeg:guide/training/complete")) continue;
+                for (var member : chapter.getValue().getAsJsonArray()) {
+                    AdvancementHolder holder = advancement(helper, member.getAsString().substring(4));
+                    // Choose a single alternative in every AND group.
+                    for (var group : holder.value().requirements().requirements()) {
+                        player.getAdvancements().award(holder, group.getFirst());
+                    }
+                }
+            }
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     private static BulletEntity flame(GameTestHelper helper, ServerPlayer owner) {
@@ -255,6 +401,11 @@ public final class AdvancementGameplayGameTests {
         AdvancementHolder result = helper.getLevel().getServer().getAdvancements().get(Reference.id(path));
         helper.assertTrue(result != null, "Advancement data must load: " + path);
         return result;
+    }
+
+    private static boolean earned(ServerPlayer player, AdvancementHolder advancement, String criterion) {
+        var progress = player.getAdvancements().getOrStartProgress(advancement).getCriterion(criterion);
+        return progress != null && progress.isDone();
     }
 
     private static boolean done(ServerPlayer player, AdvancementHolder advancement) {

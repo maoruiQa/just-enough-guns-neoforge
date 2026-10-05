@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:laser_pointer"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.use_laser_pointer.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.use_laser_pointer.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "laser_on",
-        "subject": "jeg:laser_pointer"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/install_laser_pointer",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

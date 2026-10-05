@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:bulletproof_vest_iv"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.supply.equip_bulletproof_vest_iv.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.supply.equip_bulletproof_vest_iv.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "equip",
-        "subject": "jeg:bulletproof_vest_iv"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/supply/obtain_bulletproof_vest_iv",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }
