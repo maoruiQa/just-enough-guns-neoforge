@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item.attachment;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
@@ -381,6 +382,10 @@ public final class GunAttachments {
             setFlashlightBattery(gunStack, battery - 1);
         }
         gunStack.set(ModDataComponents.GUN_FLASHLIGHT_POWERED.get(), !powered);
+        if (!powered && player != null) {
+            GameplayActions.action(player, "flashlight_on", "jeg:flashlight");
+            GameplayActions.action(player, "attachment_use", "jeg:flashlight");
+        }
         return FlashlightToggleResult.TOGGLED;
     }
 

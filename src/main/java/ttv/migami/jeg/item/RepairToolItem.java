@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.List;
 import java.util.function.Consumer;
 import java.lang.reflect.Proxy;
@@ -133,7 +134,9 @@ public class RepairToolItem extends Item implements GeoItem {
             return vehicle.hurtWithRepairTool(ModDamageTypes.causeRepairToolDamage(level.registryAccess(), player), VEHICLE_DAMAGE);
         }
         float hullRepair = VEHICLE_DAMAGE + 0.0025F * vehicle.maxVehicleHealth();
-        return vehicle.repairWithTool(hullRepair, VEHICLE_PART_REPAIR);
+        boolean repaired = vehicle.repairWithTool(player, hullRepair, VEHICLE_PART_REPAIR);
+        if (repaired) GameplayActions.action(player, "vehicle_repair", vehicle.vehicleDataId());
+        return repaired;
     }
 
     private HitResult trace(ServerLevel level, Player player, Vec3 start, Vec3 end) {

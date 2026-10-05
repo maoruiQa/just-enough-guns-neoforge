@@ -112,6 +112,7 @@ public final class HomeRaidTriggerManager {
             clearOmenFactionTag(player);
             player.removeEffect(factionOmen);
             player.sendSystemMessage(Component.translatable("message.jeg.faction_raid.home_triggered"));
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "home_raid", faction.getName());
         }
     }
 

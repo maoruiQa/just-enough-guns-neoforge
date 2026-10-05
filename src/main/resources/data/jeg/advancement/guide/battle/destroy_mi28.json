@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rocket_launcher"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.destroy_mi28.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.destroy_mi28.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_vehicle_kill",
+        "subject": "jeg:mi28"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 25
+  }
+}

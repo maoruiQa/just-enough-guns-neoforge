@@ -15,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.init.ModSounds;
@@ -95,6 +96,7 @@ public final class SmokeGrenadeEntity extends TimedThrowableItemProjectile {
             if (!this.released) {
                 this.released = true;
                 this.releaseSmokeDecoys();
+                GameplayActions.action(this.getOwner(), "smoke_release");
             }
         }
 

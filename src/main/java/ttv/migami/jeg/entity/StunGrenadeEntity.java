@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.init.ModEffects;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
@@ -74,15 +75,16 @@ public final class StunGrenadeEntity extends TimedThrowableItemProjectile {
             boolean lineOfSight = hasLineOfSight(target, center);
 
             int deafenedTicks = Mth.floor(60 + 160 * distanceFactor);
-            target.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.DEAFENED.get()), deafenedTicks, 0, false, false, true));
+            boolean affected = target.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.DEAFENED.get()), deafenedTicks, 0, false, false, true));
 
             if (lineOfSight && facingFactor > 0.2D) {
                 int blindedTicks = Mth.floor(20 + 100 * distanceFactor * facingFactor);
-                target.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.BLINDED.get()), blindedTicks, 0, false, false, true));
+                affected |= target.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModEffects.BLINDED.get()), blindedTicks, 0, false, false, true));
                 if (target instanceof Mob mob) {
                     mob.setTarget(null);
                 }
             }
+            if (affected && GameplayActions.hostile(target, this.getOwner())) GameplayActions.action(this.getOwner(), "stun_enemy");
         }
     }
 

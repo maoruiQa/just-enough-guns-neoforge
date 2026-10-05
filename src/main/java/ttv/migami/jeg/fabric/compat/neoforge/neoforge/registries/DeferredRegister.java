@@ -85,6 +85,7 @@ public class DeferredRegister<T> {
         if (registryKey == Registries.STRUCTURE_PIECE) {
             return (Registry<T>) BuiltInRegistries.STRUCTURE_PIECE;
         }
+        if (this.registryKey.equals(Registries.TRIGGER_TYPE)) return (Registry<T>) BuiltInRegistries.TRIGGER_TYPES;
         throw new IllegalStateException("Unsupported registry key: " + registryKey);
     }
 

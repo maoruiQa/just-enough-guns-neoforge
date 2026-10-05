@@ -652,6 +652,9 @@ final class TerrorRaidManager {
         boolean allWavesDone = raid.wavesSpawned >= raid.totalWaves;
         if (allWavesDone && remaining <= 0) {
             raid.completed = true;
+            for (var player : raid.bossBar.getPlayers()) {
+                if (isValidRaidTarget(player, level, raid.origin)) ttv.migami.jeg.advancement.GameplayActions.action(player, "terror_raid_win");
+            }
             cleanupRaid(level, raid);
             return;
         }

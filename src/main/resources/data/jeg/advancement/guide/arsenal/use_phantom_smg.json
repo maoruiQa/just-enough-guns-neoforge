@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:phantom_smg"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.arsenal.use_phantom_smg.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.arsenal.use_phantom_smg.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "hit",
+        "subject": "jeg:phantom_smg"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/obtain_phantom_smg",
+  "rewards": {
+    "experience": 5
+  }
+}

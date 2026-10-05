@@ -1,5 +1,6 @@
 package ttv.migami.jeg.event;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,8 @@ public final class AttachmentRuntimeEvents {
             boolean pauseGunLights = shouldPauseGunPoweredAttachments(player, stack);
             if (!pauseGunLights && GunAttachments.isLaserPointerPowered(stack)) {
                 tickLaserPointer(player);
+                GameplayActions.action(player, "laser_on", "jeg:laser_pointer");
+                GameplayActions.action(player, "attachment_use", "jeg:laser_pointer");
             }
             refreshFlashlight = !pauseGunLights && Config.allowFlashlights() && GunAttachments.tickFlashlightBattery(stack, player);
         }
@@ -102,6 +105,8 @@ public final class AttachmentRuntimeEvents {
                 || FlashlightAttachmentItem.isPowered(player.getOffhandItem()));
         if (refreshFlashlight) {
             tickFlashlight(player);
+            GameplayActions.action(player, "flashlight_on", "jeg:flashlight");
+            GameplayActions.action(player, "attachment_use", "jeg:flashlight");
         }
     }
 
@@ -154,6 +159,13 @@ public final class AttachmentRuntimeEvents {
             target.push(direction.x * knockback, 0.5D, direction.z * knockback);
             if (damage > 0.0F && target.hurt(player.damageSources().playerAttack(player), damage)) {
                 damaged = true;
+                if (GameplayActions.hostile(target, player)) {
+                    GameplayActions.action(player, "melee_hit");
+                    if (hasBayonet) {
+                        GameplayActions.action(player, "bayonet_hit");
+                        GameplayActions.action(player, "attachment_use", "jeg:bayonet");
+                    }
+                }
                 if (fireAspect > 0) {
                     target.igniteForSeconds(2.0F * fireAspect);
                 }
@@ -217,6 +229,11 @@ public final class AttachmentRuntimeEvents {
             target.push(direction.x * knockback, 0.5D, direction.z * knockback);
             if (target.hurt(player.damageSources().playerAttack(player), damage)) {
                 damaged = true;
+                if (GameplayActions.hostile(target, player)) {
+                    GameplayActions.action(player, "bayonet_hit");
+                    GameplayActions.action(player, "bayonet_charge");
+                    GameplayActions.action(player, "attachment_use", "jeg:bayonet");
+                }
                 player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 2.0F, 1.0F);
                 if (fireAspect > 0) {
                     target.igniteForSeconds(2.0F * fireAspect);
