@@ -1,0 +1,116 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:assault_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.arsenal.complete.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.arsenal.complete.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "minecraft:type_specific/player": {
+            "advancements": {
+              "jeg:guide/arsenal/obtain_assault_rifle": true,
+              "jeg:guide/arsenal/use_assault_rifle": true,
+              "jeg:guide/arsenal/obtain_blossom_rifle": true,
+              "jeg:guide/arsenal/use_blossom_rifle": true,
+              "jeg:guide/arsenal/obtain_bolt_action_rifle": true,
+              "jeg:guide/arsenal/use_bolt_action_rifle": true,
+              "jeg:guide/arsenal/obtain_burst_rifle": true,
+              "jeg:guide/arsenal/use_burst_rifle": true,
+              "jeg:guide/arsenal/obtain_combat_pistol": true,
+              "jeg:guide/arsenal/use_combat_pistol": true,
+              "jeg:guide/arsenal/obtain_combat_rifle": true,
+              "jeg:guide/arsenal/use_combat_rifle": true,
+              "jeg:guide/arsenal/obtain_custom_smg": true,
+              "jeg:guide/arsenal/use_custom_smg": true,
+              "jeg:guide/arsenal/obtain_double_barrel_shotgun": true,
+              "jeg:guide/arsenal/use_double_barrel_shotgun": true,
+              "jeg:guide/arsenal/obtain_finger_gun": true,
+              "jeg:guide/arsenal/use_finger_gun": true,
+              "jeg:guide/arsenal/obtain_flamethrower": true,
+              "jeg:guide/arsenal/use_flamethrower": true,
+              "jeg:guide/arsenal/obtain_flare_gun": true,
+              "jeg:guide/arsenal/use_flare_gun": true,
+              "jeg:guide/arsenal/obtain_grenade_launcher": true,
+              "jeg:guide/arsenal/use_grenade_launcher": true,
+              "jeg:guide/arsenal/obtain_hollenfire_mk2": true,
+              "jeg:guide/arsenal/use_hollenfire_mk2": true,
+              "jeg:guide/arsenal/obtain_holy_shotgun": true,
+              "jeg:guide/arsenal/use_holy_shotgun": true,
+              "jeg:guide/arsenal/obtain_hypersonic_cannon": true,
+              "jeg:guide/arsenal/use_hypersonic_cannon": true,
+              "jeg:guide/arsenal/obtain_infantry_rifle": true,
+              "jeg:guide/arsenal/use_infantry_rifle": true,
+              "jeg:guide/arsenal/obtain_light_machine_gun": true,
+              "jeg:guide/arsenal/use_light_machine_gun": true,
+              "jeg:guide/arsenal/obtain_minigun": true,
+              "jeg:guide/arsenal/use_minigun": true,
+              "jeg:guide/arsenal/obtain_pump_shotgun": true,
+              "jeg:guide/arsenal/use_pump_shotgun": true,
+              "jeg:guide/arsenal/obtain_repeating_shotgun": true,
+              "jeg:guide/arsenal/use_repeating_shotgun": true,
+              "jeg:guide/arsenal/obtain_revolver": true,
+              "jeg:guide/arsenal/use_revolver": true,
+              "jeg:guide/arsenal/obtain_rocket_launcher": true,
+              "jeg:guide/arsenal/use_rocket_launcher": true,
+              "jeg:guide/arsenal/obtain_semi_auto_pistol": true,
+              "jeg:guide/arsenal/use_semi_auto_pistol": true,
+              "jeg:guide/arsenal/obtain_semi_auto_rifle": true,
+              "jeg:guide/arsenal/use_semi_auto_rifle": true,
+              "jeg:guide/arsenal/obtain_service_rifle": true,
+              "jeg:guide/arsenal/use_service_rifle": true,
+              "jeg:guide/arsenal/obtain_soulhunter_mk2": true,
+              "jeg:guide/arsenal/use_soulhunter_mk2": true,
+              "jeg:guide/arsenal/obtain_subsonic_rifle": true,
+              "jeg:guide/arsenal/use_subsonic_rifle": true,
+              "jeg:guide/arsenal/obtain_supersonic_shotgun": true,
+              "jeg:guide/arsenal/use_supersonic_shotgun": true,
+              "jeg:guide/arsenal/obtain_waterpipe_shotgun": true,
+              "jeg:guide/arsenal/use_waterpipe_shotgun": true,
+              "jeg:guide/arsenal/obtain_javelin": true,
+              "jeg:guide/arsenal/use_javelin": true,
+              "jeg:guide/arsenal/obtain_igla_9k38": true,
+              "jeg:guide/arsenal/use_igla_9k38": true,
+              "jeg:guide/arsenal/category_heavy": true,
+              "jeg:guide/arsenal/category_lmg": true,
+              "jeg:guide/arsenal/category_pistol": true,
+              "jeg:guide/arsenal/category_rifle": true,
+              "jeg:guide/arsenal/category_shotgun": true,
+              "jeg:guide/arsenal/category_smg": true,
+              "jeg:guide/arsenal/category_sniper": true,
+              "jeg:guide/arsenal/fire_single": true,
+              "jeg:guide/arsenal/fire_automatic": true,
+              "jeg:guide/arsenal/feed_manual": true,
+              "jeg:guide/arsenal/reload_manual": true,
+              "jeg:guide/arsenal/feed_mag_fed": true,
+              "jeg:guide/arsenal/reload_mag_fed": true,
+              "jeg:guide/arsenal/feed_inventory_fed": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/root",
+  "rewards": {
+    "experience": 25
+  }
+}

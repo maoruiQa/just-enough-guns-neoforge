@@ -1,0 +1,56 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:pistol_ammo"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.first_ammo.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.first_ammo.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "handmade_shell": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "jeg:handmade_shell"
+      }
+    },
+    "pistol_ammo": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "jeg:pistol_ammo"
+      }
+    },
+    "rifle_ammo": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "jeg:rifle_ammo"
+      }
+    },
+    "shotgun_shell": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "jeg:shotgun_shell"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "handmade_shell",
+      "pistol_ammo",
+      "rifle_ammo",
+      "shotgun_shell"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/first_weapon",
+  "rewards": {
+    "experience": 5
+  }
+}

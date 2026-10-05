@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:stun_grenade"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.obtain_stun_grenade.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.obtain_stun_grenade.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:stun_grenade"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root"
+}

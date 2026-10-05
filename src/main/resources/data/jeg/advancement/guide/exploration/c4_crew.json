@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:c4_vest"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.c4_crew.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.c4_crew.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vest_detonate"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/root",
+  "rewards": {
+    "experience": 100
+  }
+}

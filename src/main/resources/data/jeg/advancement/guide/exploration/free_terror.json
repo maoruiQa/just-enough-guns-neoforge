@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:igla_9k38"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.free_terror.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.free_terror.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_kill",
+        "subject": "jeg:terror_phantom"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/root",
+  "rewards": {
+    "experience": 100
+  }
+}

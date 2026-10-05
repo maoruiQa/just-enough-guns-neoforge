@@ -1,0 +1,186 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:red_dye"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.colours.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.colours.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "white": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:white_dye"
+      }
+    },
+    "orange": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:orange_dye"
+      }
+    },
+    "magenta": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:magenta_dye"
+      }
+    },
+    "light_blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:light_blue_dye"
+      }
+    },
+    "yellow": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:yellow_dye"
+      }
+    },
+    "lime": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:lime_dye"
+      }
+    },
+    "pink": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:pink_dye"
+      }
+    },
+    "gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:gray_dye"
+      }
+    },
+    "light_gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:light_gray_dye"
+      }
+    },
+    "cyan": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:cyan_dye"
+      }
+    },
+    "purple": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:purple_dye"
+      }
+    },
+    "blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:blue_dye"
+      }
+    },
+    "brown": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:brown_dye"
+      }
+    },
+    "green": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:green_dye"
+      }
+    },
+    "red": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:red_dye"
+      }
+    },
+    "black": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye",
+        "subject": "minecraft:black_dye"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "white"
+    ],
+    [
+      "orange"
+    ],
+    [
+      "magenta"
+    ],
+    [
+      "light_blue"
+    ],
+    [
+      "yellow"
+    ],
+    [
+      "lime"
+    ],
+    [
+      "pink"
+    ],
+    [
+      "gray"
+    ],
+    [
+      "light_gray"
+    ],
+    [
+      "cyan"
+    ],
+    [
+      "purple"
+    ],
+    [
+      "blue"
+    ],
+    [
+      "brown"
+    ],
+    [
+      "green"
+    ],
+    [
+      "red"
+    ],
+    [
+      "black"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/root",
+  "rewards": {
+    "experience": 100
+  }
+}

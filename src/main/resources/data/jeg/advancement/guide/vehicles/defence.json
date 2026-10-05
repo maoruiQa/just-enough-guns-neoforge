@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:flare"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.defence.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.defence.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "missile_defence"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/root",
+  "rewards": {
+    "experience": 25
+  }
+}
