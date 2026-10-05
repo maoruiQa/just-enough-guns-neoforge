@@ -12,7 +12,8 @@
     "GunnerSunBurnMixin",
     "GunnerWaterConversionMixin",
     "GunRepairAdvancementMixin",
-    "ServerGamePacketListenerImplMixin"
+    "ServerGamePacketListenerImplMixin",
+    "PlayerAdvancementsMigrationMixin"
   ],
   "client": [
     "GuiGraphicsExtractorAccessor",

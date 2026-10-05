@@ -1,25 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:water_bomb"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.special.water_use.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.special.water_use.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "water_extinguish"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -27,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/special/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

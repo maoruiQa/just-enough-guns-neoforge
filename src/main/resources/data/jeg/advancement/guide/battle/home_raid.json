@@ -9,17 +9,17 @@
     "description": {
       "translate": "advancement.jeg.guide.battle.home_raid.description"
     },
-    "frame": "task",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": false,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "home_raid"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -28,7 +28,7 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/battle/root",
+  "parent": "jeg:guide/battle/patrol",
   "rewards": {
     "experience": 25
   }

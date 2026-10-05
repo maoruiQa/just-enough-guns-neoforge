@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:claymore_mine"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.special.ambush.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.special.ambush.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "hit_jeg_claymore_mine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "hit",
+        "subject": "jeg:claymore_mine"
+      }
+    },
+    "hit_jeg_tm_62": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "hit",
+        "subject": "jeg:tm_62"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "hit_jeg_claymore_mine",
+      "hit_jeg_tm_62"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/special/remote_ambush",
+  "rewards": {
+    "experience": 5
+  }
+}

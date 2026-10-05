@@ -1,0 +1,51 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:combat_pistol"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.qualified.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.qualified.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "minecraft:type_specific/player": {
+            "advancements": {
+              "jeg:guide/training/recipes": true,
+              "jeg:guide/training/ready": true,
+              "jeg:guide/training/ammunition_ready": true,
+              "jeg:guide/training/aim": true,
+              "jeg:guide/training/kill": true,
+              "jeg:guide/training/loadout": true,
+              "jeg:guide/training/electronics": true,
+              "jeg:guide/training/protection": true,
+              "jeg:guide/training/maintenance": true,
+              "jeg:guide/training/logistics": true,
+              "jeg:guide/training/airlift": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/kill",
+  "rewards": {
+    "experience": 25
+  }
+}

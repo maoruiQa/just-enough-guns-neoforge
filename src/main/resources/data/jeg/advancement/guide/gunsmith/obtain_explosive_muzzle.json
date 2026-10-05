@@ -1,29 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:explosive_muzzle"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.obtain_explosive_muzzle.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.obtain_explosive_muzzle.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "obtained": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "jeg:explosive_muzzle"
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -31,6 +9,5 @@
       "obtained"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/root"
+  "sends_telemetry_event": false
 }

@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:flare"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.exploration.raid_the_rattlers.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.exploration.raid_the_rattlers.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "raid_win",
-        "subject": "the_rattlers"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/exploration/root",
-  "rewards": {
-    "experience": 100
-  }
+  "sends_telemetry_event": false
 }

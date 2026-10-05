@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:igla_9k38"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.anti_air.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.anti_air.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "kill_jeg_ah6": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_vehicle_kill",
+        "subject": "jeg:ah6"
+      }
+    },
+    "kill_jeg_mi28": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_vehicle_kill",
+        "subject": "jeg:mi28"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "kill_jeg_ah6",
+      "kill_jeg_mi28"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/anti_armour",
+  "rewards": {
+    "experience": 25
+  }
+}

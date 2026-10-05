@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:c4_vest"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.bomber_intercept.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.bomber_intercept.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "bomber_gunner_kill"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/elite_hunter",
+  "rewards": {
+    "experience": 25
+  }
+}

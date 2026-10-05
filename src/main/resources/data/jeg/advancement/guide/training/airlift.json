@@ -1,0 +1,421 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:armored_joy_harness_white"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.airlift.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.airlift.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "equip_jeg_armored_joy_harness_black": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_black"
+      }
+    },
+    "equip_jeg_armored_joy_harness_black_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_black_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_black_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_black_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_blue"
+      }
+    },
+    "equip_jeg_armored_joy_harness_blue_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_blue_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_blue_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_blue_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_brown": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_brown"
+      }
+    },
+    "equip_jeg_armored_joy_harness_brown_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_brown_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_brown_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_brown_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_cyan": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_cyan"
+      }
+    },
+    "equip_jeg_armored_joy_harness_cyan_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_cyan_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_cyan_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_cyan_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_gray"
+      }
+    },
+    "equip_jeg_armored_joy_harness_gray_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_gray_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_gray_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_gray_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_green": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_green"
+      }
+    },
+    "equip_jeg_armored_joy_harness_green_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_green_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_green_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_green_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_blue"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_blue_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_blue_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_blue_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_blue_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_gray"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_gray_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_gray_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_light_gray_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_gray_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_lime": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_lime"
+      }
+    },
+    "equip_jeg_armored_joy_harness_lime_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_lime_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_lime_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_lime_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_magenta": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_magenta"
+      }
+    },
+    "equip_jeg_armored_joy_harness_magenta_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_magenta_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_magenta_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_magenta_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_orange": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_orange"
+      }
+    },
+    "equip_jeg_armored_joy_harness_orange_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_orange_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_orange_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_orange_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_pink": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_pink"
+      }
+    },
+    "equip_jeg_armored_joy_harness_pink_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_pink_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_pink_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_pink_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_purple": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_purple"
+      }
+    },
+    "equip_jeg_armored_joy_harness_purple_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_purple_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_purple_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_purple_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_red": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_red"
+      }
+    },
+    "equip_jeg_armored_joy_harness_red_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_red_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_red_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_red_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_white": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_white"
+      }
+    },
+    "equip_jeg_armored_joy_harness_white_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_white_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_white_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_white_netherite"
+      }
+    },
+    "equip_jeg_armored_joy_harness_yellow": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_yellow"
+      }
+    },
+    "equip_jeg_armored_joy_harness_yellow_diamond": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_yellow_diamond"
+      }
+    },
+    "equip_jeg_armored_joy_harness_yellow_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_yellow_netherite"
+      }
+    },
+    "repair": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_repair"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "equip_jeg_armored_joy_harness_black",
+      "equip_jeg_armored_joy_harness_black_diamond",
+      "equip_jeg_armored_joy_harness_black_netherite",
+      "equip_jeg_armored_joy_harness_blue",
+      "equip_jeg_armored_joy_harness_blue_diamond",
+      "equip_jeg_armored_joy_harness_blue_netherite",
+      "equip_jeg_armored_joy_harness_brown",
+      "equip_jeg_armored_joy_harness_brown_diamond",
+      "equip_jeg_armored_joy_harness_brown_netherite",
+      "equip_jeg_armored_joy_harness_cyan",
+      "equip_jeg_armored_joy_harness_cyan_diamond",
+      "equip_jeg_armored_joy_harness_cyan_netherite",
+      "equip_jeg_armored_joy_harness_gray",
+      "equip_jeg_armored_joy_harness_gray_diamond",
+      "equip_jeg_armored_joy_harness_gray_netherite",
+      "equip_jeg_armored_joy_harness_green",
+      "equip_jeg_armored_joy_harness_green_diamond",
+      "equip_jeg_armored_joy_harness_green_netherite",
+      "equip_jeg_armored_joy_harness_light_blue",
+      "equip_jeg_armored_joy_harness_light_blue_diamond",
+      "equip_jeg_armored_joy_harness_light_blue_netherite",
+      "equip_jeg_armored_joy_harness_light_gray",
+      "equip_jeg_armored_joy_harness_light_gray_diamond",
+      "equip_jeg_armored_joy_harness_light_gray_netherite",
+      "equip_jeg_armored_joy_harness_lime",
+      "equip_jeg_armored_joy_harness_lime_diamond",
+      "equip_jeg_armored_joy_harness_lime_netherite",
+      "equip_jeg_armored_joy_harness_magenta",
+      "equip_jeg_armored_joy_harness_magenta_diamond",
+      "equip_jeg_armored_joy_harness_magenta_netherite",
+      "equip_jeg_armored_joy_harness_orange",
+      "equip_jeg_armored_joy_harness_orange_diamond",
+      "equip_jeg_armored_joy_harness_orange_netherite",
+      "equip_jeg_armored_joy_harness_pink",
+      "equip_jeg_armored_joy_harness_pink_diamond",
+      "equip_jeg_armored_joy_harness_pink_netherite",
+      "equip_jeg_armored_joy_harness_purple",
+      "equip_jeg_armored_joy_harness_purple_diamond",
+      "equip_jeg_armored_joy_harness_purple_netherite",
+      "equip_jeg_armored_joy_harness_red",
+      "equip_jeg_armored_joy_harness_red_diamond",
+      "equip_jeg_armored_joy_harness_red_netherite",
+      "equip_jeg_armored_joy_harness_white",
+      "equip_jeg_armored_joy_harness_white_diamond",
+      "equip_jeg_armored_joy_harness_white_netherite",
+      "equip_jeg_armored_joy_harness_yellow",
+      "equip_jeg_armored_joy_harness_yellow_diamond",
+      "equip_jeg_armored_joy_harness_yellow_netherite"
+    ],
+    [
+      "repair"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/logistics",
+  "rewards": {
+    "experience": 5
+  }
+}

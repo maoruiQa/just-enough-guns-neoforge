@@ -16,10 +16,10 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "first_gunner"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [

@@ -16,10 +16,10 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "aimed_hit"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -28,7 +28,7 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/training/reload",
+  "parent": "jeg:guide/training/ammunition_ready",
   "rewards": {
     "experience": 5
   }
