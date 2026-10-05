@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:bolt_action_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.range.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.range.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "range_hit"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 5
+  }
+}

@@ -65,6 +65,7 @@ public final class FabricEntrypoint implements ModInitializer {
         ModMenuTypes.REGISTER.register(NeoForge.EVENT_BUS);
         // ModItems initializes spawn eggs which reference EntityTypes; register entities first.
         ModItems.REGISTER.register(NeoForge.EVENT_BUS);
+        ttv.migami.jeg.advancement.GameplayActions.REGISTER.register(NeoForge.EVENT_BUS);
 
         // Fabric-specific hooks.
         NetworkHandler.initCommon();
@@ -86,6 +87,7 @@ public final class FabricEntrypoint implements ModInitializer {
         // Bridge commonly used event-style handlers used by shared code.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             GunEvents.onPlayerLogin(new PlayerEvent.PlayerLoggedInEvent(handler.player));
+            server.execute(() -> ttv.migami.jeg.advancement.GameplayActions.login(handler.player));
             NetworkHandler.sendUiConfig(handler.player);
             NetworkHandler.sendVehicleData(handler.player);
         });
@@ -106,6 +108,7 @@ public final class FabricEntrypoint implements ModInitializer {
             return !event.isCanceled();
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
+            ttv.migami.jeg.advancement.GameplayActions.died(entity, damageSource);
             if (ttv.migami.jeg.faction.BomberGunnerHelper.isArmed(entity)
                     && !ttv.migami.jeg.faction.BomberGunnerHelper.hasDetonated(entity)) {
                 ttv.migami.jeg.faction.BomberGunnerHelper.explodeVest(entity);

@@ -1,6 +1,7 @@
 package ttv.migami.jeg.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -21,6 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.init.ModDataComponents;
 
 import java.util.function.Consumer;
@@ -177,6 +179,7 @@ public final class ArmoredJoyHarnessItem extends Item {
 
             if (!current.isEmpty()) {
                 ghast.setItemSlot(EquipmentSlot.BODY, equipped);
+                GameplayActions.action(player, "harness_equip", BuiltInRegistries.ITEM.getKey(this));
                 HappyGhastArmorHelper.syncAbsorption(ghast);
                 HappyGhastArmorEvents.notifyPassengers(ghast);
                 level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.NEUTRAL, 1.0F, 1.15F);
@@ -195,6 +198,7 @@ public final class ArmoredJoyHarnessItem extends Item {
             }
 
             ghast.setItemSlot(EquipmentSlot.BODY, equipped);
+            GameplayActions.action(player, "harness_equip", BuiltInRegistries.ITEM.getKey(this));
             HappyGhastArmorHelper.syncAbsorption(ghast);
             HappyGhastArmorEvents.notifyPassengers(ghast);
             level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.NEUTRAL, 1.0F, 1.15F);

@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:combat_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.arsenal.category_sniper.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.arsenal.category_sniper.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "category_kill",
+        "subject": "sniper"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/root",
+  "rewards": {
+    "experience": 25
+  }
+}

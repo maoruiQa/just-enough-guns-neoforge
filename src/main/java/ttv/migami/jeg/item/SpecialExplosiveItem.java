@@ -2,6 +2,7 @@ package ttv.migami.jeg.item;
 
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
+import ttv.migami.jeg.advancement.GameplayActions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +61,11 @@ public final class SpecialExplosiveItem extends Item {
                     stack.shrink(1);
                 }
                 player.awardStat(Stats.ITEM_USED.get(this));
+                GameplayActions.action(player, "explosive_place", "jeg:" + switch (this.kind) {
+                    case C4 -> "c4_bomb";
+                    case CLAYMORE -> "claymore_mine";
+                    case TM_62 -> "tm_62";
+                });
             }
         }
 

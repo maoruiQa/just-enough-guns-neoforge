@@ -1,0 +1,156 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:armored_joy_harness_white"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.harness.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.harness.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "armored_joy_harness_black": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_black"
+      }
+    },
+    "armored_joy_harness_blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_blue"
+      }
+    },
+    "armored_joy_harness_brown": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_brown"
+      }
+    },
+    "armored_joy_harness_cyan": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_cyan"
+      }
+    },
+    "armored_joy_harness_gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_gray"
+      }
+    },
+    "armored_joy_harness_green": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_green"
+      }
+    },
+    "armored_joy_harness_light_blue": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_blue"
+      }
+    },
+    "armored_joy_harness_light_gray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_gray"
+      }
+    },
+    "armored_joy_harness_lime": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_lime"
+      }
+    },
+    "armored_joy_harness_magenta": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_magenta"
+      }
+    },
+    "armored_joy_harness_orange": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_orange"
+      }
+    },
+    "armored_joy_harness_pink": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_pink"
+      }
+    },
+    "armored_joy_harness_purple": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_purple"
+      }
+    },
+    "armored_joy_harness_red": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_red"
+      }
+    },
+    "armored_joy_harness_white": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_white"
+      }
+    },
+    "armored_joy_harness_yellow": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_yellow"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "armored_joy_harness_black",
+      "armored_joy_harness_blue",
+      "armored_joy_harness_brown",
+      "armored_joy_harness_cyan",
+      "armored_joy_harness_gray",
+      "armored_joy_harness_green",
+      "armored_joy_harness_light_blue",
+      "armored_joy_harness_light_gray",
+      "armored_joy_harness_lime",
+      "armored_joy_harness_magenta",
+      "armored_joy_harness_orange",
+      "armored_joy_harness_pink",
+      "armored_joy_harness_purple",
+      "armored_joy_harness_red",
+      "armored_joy_harness_white",
+      "armored_joy_harness_yellow"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root",
+  "rewards": {
+    "experience": 5
+  }
+}

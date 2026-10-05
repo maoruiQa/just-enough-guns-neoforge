@@ -61,6 +61,7 @@ public final class VehicleAssemblingMenu extends AbstractContainerMenu {
         this.removeCost(recipe);
         ItemStack result = VehicleContainerBlockEntity.createItemForVehicle(recipe.resultVehicle());
         this.giveOrDropResult(player, result);
+        ttv.migami.jeg.advancement.GameplayActions.action(player, "assemble", recipe.resultVehicle());
         player.sendSystemMessage(Component.translatable("message.jeg.vehicle_assembling.completed"));
         return true;
     }

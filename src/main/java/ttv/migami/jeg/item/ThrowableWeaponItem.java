@@ -86,7 +86,8 @@ public abstract class ThrowableWeaponItem extends Item {
         Vec3 look = livingEntity.getLookAngle();
         projectile.initialisePosition(eyePos.add(look.scale(0.35D)));
         projectile.shootFromRotation(livingEntity, livingEntity.getXRot(), livingEntity.getYRot(), 0.0F, Math.min(1.0F, duration / 10.0F), 1.0F);
-        level.addFreshEntity(projectile);
+        if (!level.addFreshEntity(projectile)) return false;
+        if (this.canCook() && duration > MIN_THROW_TICKS) ttv.migami.jeg.advancement.GameplayActions.action(livingEntity, "grenade_cook", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(this));
         this.onThrown(level, livingEntity, projectile, stack);
         this.consumeAndAward(stack, livingEntity);
         return true;

@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rocket_launcher"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.weapon_bmp2_vehicle_bmp2_missile.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.weapon_bmp2_vehicle_bmp2_missile.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:bmp2/jeg:vehicle_bmp2_missile"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/root",
+  "rewards": {
+    "experience": 5
+  }
+}

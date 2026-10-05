@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:medium_anti_ground_missile"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.obtain_medium_anti_ground_missile.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.obtain_medium_anti_ground_missile.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:medium_anti_ground_missile"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root"
+}

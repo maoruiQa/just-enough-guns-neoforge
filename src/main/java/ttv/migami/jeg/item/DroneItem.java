@@ -1,6 +1,7 @@
 package ttv.migami.jeg.item;
 
 import net.minecraft.server.level.ServerLevel;
+import ttv.migami.jeg.advancement.GameplayActions;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
@@ -23,6 +24,7 @@ public final class DroneItem extends Item {
             return InteractionResult.FAIL;
         }
         context.getItemInHand().consume(1, context.getPlayer());
+        GameplayActions.action(context.getPlayer(), "drone_deploy", "jeg:drone");
         return InteractionResult.SUCCESS;
     }
 }

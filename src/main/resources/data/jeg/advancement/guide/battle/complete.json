@@ -1,0 +1,72 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:infantry_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.complete.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.complete.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "minecraft:type_specific/player": {
+            "advancements": {
+              "jeg:guide/battle/range": true,
+              "jeg:guide/battle/headshot": true,
+              "jeg:guide/battle/melee": true,
+              "jeg:guide/battle/bayonet": true,
+              "jeg:guide/battle/charge": true,
+              "jeg:guide/battle/patrol": true,
+              "jeg:guide/battle/home_raid": true,
+              "jeg:guide/battle/raid": true,
+              "jeg:guide/battle/gunner_skeleton": true,
+              "jeg:guide/battle/gunner_zombie": true,
+              "jeg:guide/battle/gunner_husk": true,
+              "jeg:guide/battle/gunner_zombifiedpiglin": true,
+              "jeg:guide/battle/gunner_piglin": true,
+              "jeg:guide/battle/gunner_witherskeleton": true,
+              "jeg:guide/battle/gunner_drowned": true,
+              "jeg:guide/battle/gunner_zombievillager": true,
+              "jeg:guide/battle/gunner_stray": true,
+              "jeg:guide/battle/gunner_pillager": true,
+              "jeg:guide/battle/gunner_vindicator": true,
+              "jeg:guide/battle/gunner_piglinbrute": true,
+              "jeg:guide/battle/gunner_parched": true,
+              "jeg:guide/battle/faction_night_of_the_undead": true,
+              "jeg:guide/battle/faction_the_rattlers": true,
+              "jeg:guide/battle/faction_nosy_business": true,
+              "jeg:guide/battle/faction_bad_piggies": true,
+              "jeg:guide/battle/faction_hell_hogs": true,
+              "jeg:guide/battle/faction_lost_souls": true,
+              "jeg:guide/battle/destroy_bmp2": true,
+              "jeg:guide/battle/destroy_lav150": true,
+              "jeg:guide/battle/destroy_ah6": true,
+              "jeg:guide/battle/destroy_mi28": true,
+              "jeg:guide/battle/bayonet_fit": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 25
+  }
+}

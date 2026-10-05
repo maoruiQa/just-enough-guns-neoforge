@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:flashlight"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.light.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.light.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "flashlight_on"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/root",
+  "rewards": {
+    "experience": 5
+  }
+}
