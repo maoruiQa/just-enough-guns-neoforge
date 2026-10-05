@@ -1,0 +1,136 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:bulletproof_vest_i"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.complete.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.complete.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:type_specific/player": {
+              "advancements": {
+                "jeg:guide/supply/obtain_machine_gun_magazine": true,
+                "jeg:guide/supply/load_machine_gun_magazine": true,
+                "jeg:guide/supply/use_machine_gun_magazine": true,
+                "jeg:guide/supply/obtain_pistol_magazine": true,
+                "jeg:guide/supply/load_pistol_magazine": true,
+                "jeg:guide/supply/use_pistol_magazine": true,
+                "jeg:guide/supply/obtain_rifle_drum_magazine": true,
+                "jeg:guide/supply/load_rifle_drum_magazine": true,
+                "jeg:guide/supply/use_rifle_drum_magazine": true,
+                "jeg:guide/supply/obtain_rifle_extended_magazine": true,
+                "jeg:guide/supply/load_rifle_extended_magazine": true,
+                "jeg:guide/supply/use_rifle_extended_magazine": true,
+                "jeg:guide/supply/obtain_rifle_magazine": true,
+                "jeg:guide/supply/load_rifle_magazine": true,
+                "jeg:guide/supply/use_rifle_magazine": true,
+                "jeg:guide/supply/obtain_shotgun_drum_magazine": true,
+                "jeg:guide/supply/load_shotgun_drum_magazine": true,
+                "jeg:guide/supply/use_shotgun_drum_magazine": true,
+                "jeg:guide/supply/obtain_shotgun_extended_magazine": true,
+                "jeg:guide/supply/load_shotgun_extended_magazine": true,
+                "jeg:guide/supply/use_shotgun_extended_magazine": true,
+                "jeg:guide/supply/obtain_shotgun_magazine": true,
+                "jeg:guide/supply/load_shotgun_magazine": true,
+                "jeg:guide/supply/use_shotgun_magazine": true,
+                "jeg:guide/supply/obtain_smg_drum_magazine": true,
+                "jeg:guide/supply/load_smg_drum_magazine": true,
+                "jeg:guide/supply/use_smg_drum_magazine": true,
+                "jeg:guide/supply/obtain_smg_extended_magazine": true,
+                "jeg:guide/supply/load_smg_extended_magazine": true,
+                "jeg:guide/supply/use_smg_extended_magazine": true,
+                "jeg:guide/supply/obtain_smg_magazine": true,
+                "jeg:guide/supply/load_smg_magazine": true,
+                "jeg:guide/supply/use_smg_magazine": true,
+                "jeg:guide/supply/unload": true,
+                "jeg:guide/supply/loader": true,
+                "jeg:guide/supply/automate": true,
+                "jeg:guide/supply/obtain_autocannon_shell": true,
+                "jeg:guide/supply/obtain_blaze_round": true,
+                "jeg:guide/supply/obtain_flare": true,
+                "jeg:guide/supply/obtain_grenade": true,
+                "jeg:guide/supply/obtain_handmade_shell": true,
+                "jeg:guide/supply/obtain_javelin_missile": true,
+                "jeg:guide/supply/obtain_large_anti_ground_missile": true,
+                "jeg:guide/supply/obtain_medium_anti_air_missile": true,
+                "jeg:guide/supply/obtain_medium_anti_ground_missile": true,
+                "jeg:guide/supply/obtain_molotov_cocktail": true,
+                "jeg:guide/supply/obtain_pistol_ammo": true,
+                "jeg:guide/supply/obtain_rifle_ammo": true,
+                "jeg:guide/supply/obtain_rocket": true,
+                "jeg:guide/supply/obtain_shotgun_shell": true,
+                "jeg:guide/supply/obtain_small_rocket": true,
+                "jeg:guide/supply/obtain_small_shell": true,
+                "jeg:guide/supply/obtain_smoke_grenade": true,
+                "jeg:guide/supply/obtain_spectre_round": true,
+                "jeg:guide/supply/obtain_stun_grenade": true,
+                "jeg:guide/supply/obtain_water_bomb": true,
+                "jeg:guide/supply/obtain_missile_engine": true,
+                "jeg:guide/supply/obtain_repair_kit": true,
+                "jeg:guide/supply/obtain_repair_tool": true,
+                "jeg:guide/supply/obtain_coolant": true,
+                "jeg:guide/supply/obtain_enhanced_coolant": true,
+                "jeg:guide/supply/enhanced_cooling": true,
+                "jeg:guide/supply/normal_cooling": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_i": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_i": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_i": true,
+                "jeg:guide/supply/equip_bulletproof_vest_i": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_ii": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_ii": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_ii": true,
+                "jeg:guide/supply/equip_bulletproof_vest_ii": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_iii": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_iii": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_iii": true,
+                "jeg:guide/supply/equip_bulletproof_vest_iii": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_iv": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_iv": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_iv": true,
+                "jeg:guide/supply/equip_bulletproof_vest_iv": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_v": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_v": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_v": true,
+                "jeg:guide/supply/equip_bulletproof_vest_v": true,
+                "jeg:guide/supply/obtain_bulletproof_helmet_vi": true,
+                "jeg:guide/supply/equip_bulletproof_helmet_vi": true,
+                "jeg:guide/supply/obtain_bulletproof_vest_vi": true,
+                "jeg:guide/supply/equip_bulletproof_vest_vi": true,
+                "jeg:guide/supply/intercept": true,
+                "jeg:guide/supply/harness": true,
+                "jeg:guide/supply/harness_diamond": true,
+                "jeg:guide/supply/harness_netherite": true,
+                "jeg:guide/supply/harness_repair": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root",
+  "rewards": {
+    "experience": 25
+  }
+}

@@ -5,7 +5,11 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": ["minecraft:iron_helmet"] }
+          {
+            "items": [
+              "minecraft:iron_helmet"
+            ]
+          }
         ]
       }
     },
@@ -17,9 +21,14 @@
     }
   },
   "requirements": [
-    ["has_iron_helmet", "has_recipe"]
+    [
+      "has_iron_helmet",
+      "has_recipe"
+    ]
   ],
   "rewards": {
-    "recipes": ["jeg:bulletproof_helmet_iii"]
+    "recipes": [
+      "jeg:bulletproof_helmet_iii"
+    ]
   }
 }

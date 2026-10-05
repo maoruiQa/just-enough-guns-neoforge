@@ -1,0 +1,156 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:armored_joy_harness_white_netherite"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.harness_netherite.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.harness_netherite.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "armored_joy_harness_black_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_black_netherite"
+      }
+    },
+    "armored_joy_harness_blue_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_blue_netherite"
+      }
+    },
+    "armored_joy_harness_brown_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_brown_netherite"
+      }
+    },
+    "armored_joy_harness_cyan_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_cyan_netherite"
+      }
+    },
+    "armored_joy_harness_gray_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_gray_netherite"
+      }
+    },
+    "armored_joy_harness_green_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_green_netherite"
+      }
+    },
+    "armored_joy_harness_light_blue_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_blue_netherite"
+      }
+    },
+    "armored_joy_harness_light_gray_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_light_gray_netherite"
+      }
+    },
+    "armored_joy_harness_lime_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_lime_netherite"
+      }
+    },
+    "armored_joy_harness_magenta_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_magenta_netherite"
+      }
+    },
+    "armored_joy_harness_orange_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_orange_netherite"
+      }
+    },
+    "armored_joy_harness_pink_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_pink_netherite"
+      }
+    },
+    "armored_joy_harness_purple_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_purple_netherite"
+      }
+    },
+    "armored_joy_harness_red_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_red_netherite"
+      }
+    },
+    "armored_joy_harness_white_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_white_netherite"
+      }
+    },
+    "armored_joy_harness_yellow_netherite": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "harness_equip",
+        "subject": "jeg:armored_joy_harness_yellow_netherite"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "armored_joy_harness_black_netherite",
+      "armored_joy_harness_blue_netherite",
+      "armored_joy_harness_brown_netherite",
+      "armored_joy_harness_cyan_netherite",
+      "armored_joy_harness_gray_netherite",
+      "armored_joy_harness_green_netherite",
+      "armored_joy_harness_light_blue_netherite",
+      "armored_joy_harness_light_gray_netherite",
+      "armored_joy_harness_lime_netherite",
+      "armored_joy_harness_magenta_netherite",
+      "armored_joy_harness_orange_netherite",
+      "armored_joy_harness_pink_netherite",
+      "armored_joy_harness_purple_netherite",
+      "armored_joy_harness_red_netherite",
+      "armored_joy_harness_white_netherite",
+      "armored_joy_harness_yellow_netherite"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root",
+  "rewards": {
+    "experience": 5
+  }
+}

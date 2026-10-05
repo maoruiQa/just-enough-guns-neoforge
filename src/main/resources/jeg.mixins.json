@@ -3,6 +3,8 @@
   "package": "ttv.migami.jeg.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "VehiclePickMixin",
+    "LivingEntityFireDamageMixin",
     "SmokeMobTargetMixin",
     "SmokeTargetingConditionsMixin",
     "TargetGoalMixin",
@@ -10,7 +12,9 @@
     "GunnerSunBurnMixin",
     "GunnerWaterConversionMixin",
     "LivingEntityGunSwingMixin",
-    "LivingEntitySwingStateMixin"
+    "LivingEntitySwingStateMixin",
+    "GunRepairAdvancementMixin",
+    "ServerGamePacketListenerImplMixin"
   ],
   "client": [
     "GuiGraphicsExtractorAccessor",

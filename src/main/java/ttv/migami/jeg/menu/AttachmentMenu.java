@@ -30,6 +30,7 @@ public final class AttachmentMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
     private static final int HOTBAR_END = PLAYER_INVENTORY_END + 9;
 
+    private final net.minecraft.world.entity.player.Player advancementPlayer;
     private final ItemStack weapon;
     private final int selectedSlot;
     private final Container attachments = new SimpleContainer(ATTACHMENT_SLOT_COUNT) {
@@ -44,6 +45,7 @@ public final class AttachmentMenu extends AbstractContainerMenu {
     public AttachmentMenu(int containerId, Inventory playerInventory) {
         super(ModMenuTypes.ATTACHMENT_MENU.get(), containerId);
         this.weapon = playerInventory.getSelectedItem();
+        this.advancementPlayer = playerInventory.player;
         this.selectedSlot = playerInventory.getSelectedSlot();
         this.loadAttachments();
 
@@ -129,12 +131,18 @@ public final class AttachmentMenu extends AbstractContainerMenu {
         for (int index = 0; index < TYPES.length; index++) {
             AttachmentType type = TYPES[index];
             ItemStack stack = this.attachments.getItem(index);
+            ItemStack previous = GunAttachments.stack(this.weapon, type).orElse(ItemStack.EMPTY);
             if (stack.isEmpty()) {
                 GunAttachments.clear(this.weapon, type);
             } else if (type.isCosmetic()) {
                 GunAttachments.setCosmetic(this.weapon, type, stack);
             } else {
                 GunAttachments.set(this.weapon, type, stack);
+            }
+            ItemStack written = GunAttachments.stack(this.weapon, type).orElse(ItemStack.EMPTY);
+            if (!written.isEmpty() && !ItemStack.isSameItemSameComponents(previous, written)) {
+                ttv.migami.jeg.advancement.GameplayActions.action(this.advancementPlayer, "attachment_install", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(written.getItem()));
+                if (type == AttachmentType.DYE) ttv.migami.jeg.advancement.GameplayActions.action(this.advancementPlayer, "gun_dye", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(written.getItem()));
             }
         }
     }

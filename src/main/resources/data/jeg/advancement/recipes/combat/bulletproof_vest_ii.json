@@ -5,7 +5,11 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": ["minecraft:leather_chestplate"] }
+          {
+            "items": [
+              "minecraft:leather_chestplate"
+            ]
+          }
         ]
       }
     },
@@ -17,9 +21,14 @@
     }
   },
   "requirements": [
-    ["has_leather_chest", "has_recipe"]
+    [
+      "has_leather_chest",
+      "has_recipe"
+    ]
   ],
   "rewards": {
-    "recipes": ["jeg:bulletproof_vest_ii"]
+    "recipes": [
+      "jeg:bulletproof_vest_ii"
+    ]
   }
 }

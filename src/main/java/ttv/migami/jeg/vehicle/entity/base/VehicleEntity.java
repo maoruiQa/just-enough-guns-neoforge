@@ -69,6 +69,7 @@ import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.network.NetworkHandler;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.entity.BulletEntity;
@@ -101,6 +102,7 @@ import ttv.migami.jeg.vehicle.menu.VehicleMenu;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.projectile.VehicleMissileEntity;
 import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
+import ttv.migami.jeg.vehicle.util.VehicleGeometry;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
 
@@ -208,6 +210,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.25D;
+    private static final double VEHICLE_IMPACT_FEEDBACK_MIN_SPEED = 0.3D;
+    private static final int VEHICLE_IMPACT_SOUND_COOLDOWN_TICKS = 4;
     private static final int VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS = 10;
     private static final double VEHICLE_HORIZONTAL_IMPACT_DAMAGE_THRESHOLD = 0.25D;
     private static final double VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD = 0.45D;
@@ -276,6 +280,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private int repairCooldown;
     private int fireCooldown;
     private int activeReloadWeaponSlot = -1;
+    @Nullable private ServerPlayer activeReloadPlayer;
     private int activeReloadTicks;
     private int decoyCooldown;
     private int energyRechargeTick;
@@ -283,7 +288,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private int unsupportedVehicleTicks;
     private double airborneStartY = Double.NaN;
     private double airborneMaxY = Double.NaN;
+    @Nullable
+    private OBBInfo.Part pendingHitPart;
     private int lastVehicleImpactSoundTick = Integer.MIN_VALUE;
+    private int lastVehicleStrikeSoundTick = -VEHICLE_IMPACT_SOUND_COOLDOWN_TICKS;
+    private Direction.Axis horizontalImpactAxisThisMove;
+    private boolean verticalImpactFeedbackThisMove;
+    private double pendingSpeedboatBowImpactSpeed;
     private int weaponControllerId = -1;
     private boolean weaponFireInput;
     private int seekControllerId = -1;
@@ -350,8 +361,18 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         ));
     }
 
+    private boolean usesSwVehicleGeometry() {
+        return switch (this.vehicleDataId().getPath()) {
+            case "speedboat", "bmp2", "lav150", "ah6", "mi28" -> true;
+            default -> false;
+        };
+    }
+
     @Override
     protected AABB makeBoundingBox(Vec3 position) {
+        if (this.usesSwVehicleGeometry()) {
+            return super.makeBoundingBox(position);
+        }
         BlockCollisionBounds bounds = this.blockCollisionBounds();
         if (bounds != null) {
             double yaw = Math.toRadians(this.getYRot());
@@ -546,16 +567,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public boolean repairWithTool(float hullAmount, float partAmount) {
+        return this.repairWithTool(null, hullAmount, partAmount);
+    }
+
+    public boolean repairWithTool(@Nullable Player actor, float hullAmount, float partAmount) {
         if (this.level().isClientSide() || this.isRemoved() || hullAmount <= 0.0F) {
             return false;
         }
-        boolean repaired = false;
-        if (this.vehicleHealth() < this.maxVehicleHealth()) {
+        boolean hullRepaired = this.vehicleHealth() < this.maxVehicleHealth();
+        if (hullRepaired) {
             this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + hullAmount));
-            repaired = true;
         }
-        if (partAmount > 0.0F) {
-            repaired |= this.repairParts(partAmount, true);
+        boolean partsRepaired = partAmount > 0.0F && this.repairParts(partAmount, true);
+        boolean repaired = hullRepaired || partsRepaired;
+        if (hullRepaired) {
+            GameplayActions.action(actor, "vehicle_hull_repair", this.vehicleDataId());
+        }
+        if (partsRepaired) {
+            GameplayActions.action(actor, "vehicle_component_repair", this.vehicleDataId());
         }
         if (repaired) {
             this.repairCooldown = 0;
@@ -720,6 +749,51 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return articulatedMuzzle;
         }
         return this.weaponMuzzlePosition(weapon, this.horizontalDirection(this.getYRot()), 1.25D, 0.95D);
+    }
+
+    public Vec3 vehicleHudShootDirection(Entity shooter, float partialTick) {
+        if (!(shooter instanceof LivingEntity living) || shooter.getVehicle() != this) {
+            return shooter.getLookAngle();
+        }
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
+        if (weapon == null || !this.canUseSelectedWeapon(living, weapon)) {
+            return shooter.getLookAngle();
+        }
+        Vec3 articulated = this.articulatedWeaponAimDirection(living);
+        if (articulated != null) {
+            return articulated;
+        }
+        if (this.isAh6Vehicle() && "vehicle_70mm_rocket".equals(weapon.weaponId().getPath())) {
+            return this.rotateLocalDirectionWithPose(0.0D, 0.018D, 1.0D, partialTick).normalize();
+        }
+        return Vec3.directionFromRotation(this.weaponPitch(living), living.getYRot()).normalize();
+    }
+
+    public Vec3 vehicleHudShootPos(Entity shooter, float partialTick) {
+        if (!(shooter instanceof LivingEntity living) || shooter.getVehicle() != this) {
+            return shooter.getEyePosition(partialTick);
+        }
+        VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
+        if (weapon == null || !this.canUseSelectedWeapon(living, weapon)) {
+            return shooter.getEyePosition(partialTick);
+        }
+        String weaponPath = weapon.weaponId().getPath();
+        Vec3 localHudPos = null;
+        if (this.isAh6Vehicle()) {
+            localHudPos = new Vec3(0.0D, 0.62D, 0.8D);
+        } else if (this.isMi28Vehicle()) {
+            if ("vehicle_80mm_rocket".equals(weaponPath)) {
+                localHudPos = new Vec3(0.0D, 0.62D, 0.8D);
+            } else if ("vehicle_9m120_driver_missile".equals(weaponPath)) {
+                localHudPos = new Vec3(0.0D, 3.5625D, 2.25D);
+            } else if (weapon.guided()) {
+                localHudPos = new Vec3(0.0D, 1.0625D, 5.625D);
+            }
+        }
+        if (localHudPos != null) {
+            return this.interpolatedVehiclePosition(partialTick).add(this.rotateLocalOffset(localHudPos.x, localHudPos.y, localHudPos.z, partialTick));
+        }
+        return this.weaponMuzzlePosition(weapon, this.vehicleHudShootDirection(shooter, partialTick), 1.25D, 0.95D);
     }
     public int vehicleRifleAmmo() {
         return this.entityData.get(DATA_RIFLE_AMMO);
@@ -1099,10 +1173,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.vehicleData().defaults().turret().guidedUsesTurret();
     }
 
+    public boolean hasDrivingInput() {
+        return !this.level().isClientSide() && this.getControllingPassenger() instanceof Player
+                && (this.input.forwardAxis() != 0 || this.input.strafeAxis() != 0 || this.input.verticalAxis() != 0);
+    }
+
     public void processInput(ServerPlayer player, VehicleInput input) {
         if (player.getVehicle() != this) {
             return;
         }
+        int previousWeapon = this.selectedVehicleWeaponIndex(player);
         if (this.hasVehicleWeapons()) {
             if (input.switchWeapon() && this.selectWeaponFor(player, 1)) {
                 this.weaponControllerId = player.getId();
@@ -1115,6 +1195,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
         }
         this.selectFallbackWeaponFor(player, input);
+        if (this.selectedVehicleWeaponIndex(player) != previousWeapon) {
+            GameplayActions.action(player, "weapon_change", this.vehicleDataId());
+        }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         boolean canUseSelectedWeapon = selectedWeapon != null && this.canUseSelectedWeapon(player, selectedWeapon);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && canUseSelectedWeapon) {
@@ -1239,6 +1322,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.input = VehicleInput.EMPTY;
                 this.alignPassengerViewToVehicle(player, nextSeat);
                 this.syncSeatAssignments();
+                GameplayActions.action(player, "seat_change", this.vehicleDataId());
                 return;
             }
         }
@@ -1301,6 +1385,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public void move(MoverType type, Vec3 pos) {
+        this.horizontalImpactAxisThisMove = null;
+        this.verticalImpactFeedbackThisMove = false;
         boolean wasVerticallySupported = this.onGround() || this.verticalCollisionBelow;
         int unsupportedTicksBeforeMove = this.unsupportedVehicleTicks;
         Vec3 before = this.position();
@@ -1308,12 +1394,57 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         super.move(type, pos);
         Vec3 actualMovement = this.position().subtract(before);
         actualMovement = this.stopAtVehicleEntityImpact(before, pos, actualMovement, velocityBeforeMove);
+        this.applyVehicleCollisionFeedback(pos, actualMovement, wasVerticallySupported);
         this.applyVehicleImpactDamage(pos, actualMovement, wasVerticallySupported, unsupportedTicksBeforeMove);
         if (!this.onGround() && !this.verticalCollisionBelow && unsupportedTicksBeforeMove == 0 && Double.isNaN(this.airborneStartY)) {
             this.airborneStartY = before.y();
             this.airborneMaxY = Math.max(before.y(), this.getY());
         }
         this.updateVehicleSupportTicks();
+    }
+
+    private void applyVehicleCollisionFeedback(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported) {
+        if (this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
+            this.pendingSpeedboatBowImpactSpeed = 0.0D;
+            return;
+        }
+        Vec3 blocked = requestedMovement.subtract(actualMovement);
+        boolean landBodyImpact = this.vehicleData().defaults().vehicleType() == VehicleType.LAND
+                && requestedMovement.horizontalDistance() >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED
+                && this.isLandVehicleBodyImpact(requestedMovement, actualMovement);
+        boolean horizontalImpact = (this.horizontalCollision
+                && requestedMovement.horizontalDistance() >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED
+                && blocked.horizontalDistanceSqr() > 1.0E-8D)
+                || landBodyImpact
+                || this.pendingSpeedboatBowImpactSpeed >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED;
+        boolean verticalImpact = this.verticalCollision && !wasVerticallySupported
+                && Math.abs(blocked.y) >= VEHICLE_VERTICAL_IMPACT_DAMAGE_THRESHOLD
+                && Math.abs(requestedMovement.y) >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED;
+        this.pendingSpeedboatBowImpactSpeed = 0.0D;
+        if (!horizontalImpact && !verticalImpact) {
+            return;
+        }
+        Vec3 impactDirection = blocked.horizontalDistanceSqr() > 1.0E-8D ? blocked : this.horizontalDirection(this.getYRot());
+        this.horizontalImpactAxisThisMove = horizontalImpact ? this.horizontalImpactBounceDirection(impactDirection).getAxis() : null;
+        this.verticalImpactFeedbackThisMove = verticalImpact;
+        if (horizontalImpact) {
+            this.enginePower *= 0.8D;
+            if (this.vehicleData().defaults().vehicleType() != VehicleType.LAND
+                    && this.vehicleData().defaults().vehicleType() != VehicleType.BOAT) {
+                this.bounceHorizontal(this.horizontalImpactBounceDirection(impactDirection));
+            }
+        }
+        if (verticalImpact && this.vehicleData().defaults().vehicleType() != VehicleType.LAND
+                && this.vehicleData().defaults().vehicleType() != VehicleType.BOAT) {
+            this.bounceVertical(Direction.UP);
+        }
+        this.needsSync = true;
+        this.syncVelocity = true;
+        this.playVehicleStrikeSound();
+    }
+
+    private Direction horizontalImpactBounceDirection(Vec3 blockedMovement) {
+        return Math.abs(blockedMovement.x) >= Math.abs(blockedMovement.z) ? Direction.EAST : Direction.SOUTH;
     }
 
     private void resetAirborneImpactTracking() {
@@ -1381,14 +1512,6 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
-        Direction bounceDirection = this.impactBounceDirection(requestedMovement);
-        if (this.verticalCollision) {
-            this.bounceVertical(bounceDirection);
-        }
-        if (this.horizontalCollision) {
-            this.bounceHorizontal(bounceDirection);
-            this.enginePower *= 0.8D;
-        }
         this.needsSync = true;
     }
 
@@ -1402,18 +1525,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.resetAirborneImpactTracking();
         this.ramDamageCooldown = VEHICLE_IMPACT_DAMAGE_COOLDOWN_TICKS;
-        Direction bounceDirection = this.impactBounceDirection(requestedMovement);
-        if (this.verticalCollision) {
-            this.bounceVertical(bounceDirection);
-        }
-        if (this.horizontalCollision) {
-            this.bounceHorizontal(bounceDirection);
-        }
-        this.enginePower *= 0.8D;
         this.needsSync = true;
 
         DamageSource source = this.vehicleStrikeDamageSource();
-        this.playVehicleStrikeSound();
         if (vehicleType == VehicleType.HELICOPTER && this.lastTickSpeed >= HELICOPTER_FATAL_IMPACT_SPEED) {
             this.hurtVehicleIgnoringArmor(source, Math.max(damageAmount, this.maxVehicleHealth() + 1.0F));
             return;
@@ -1465,28 +1579,35 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 || requestedMovement.lengthSqr() <= 1.0E-8D) {
             return actualMovement;
         }
-        AABB currentBox = this.getBoundingBox();
+        AABB currentBox = VehicleGeometry.bounds(this);
         AABB previousBox = currentBox.move(before.subtract(this.position()));
         AABB sweptBox = this.sweptVehicleEntityCollisionBox(previousBox, currentBox);
-        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, sweptBox.inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, sweptBox.inflate(10.0D))) {
             if (target == this || target.isRemoved() || target.noPhysics
                     || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
             }
-            AABB targetBox = target.getBoundingBox();
+            AABB targetBox = VehicleGeometry.bounds(target);
             boolean alreadyBroadlyOverlapping = previousBox.intersects(targetBox);
             if ((alreadyBroadlyOverlapping && !this.isMovingTowardVehicleImpact(target, requestedMovement))
-                    || (!sweptBox.intersects(targetBox) && !this.vehicleEntityCollisionIntersects(target))) {
+                    || (!sweptBox.intersects(targetBox) || !this.vehicleEntityCollisionIntersects(target))) {
                 continue;
             }
             double relativeSpeed = this.vehicleRelativeCollisionSpeed(target, velocityBeforeMove, target.getDeltaMovement());
             this.setPos(before.x(), before.y(), before.z());
             this.setDeltaMovement(Vec3.ZERO);
             target.setDeltaMovement(Vec3.ZERO);
+            if (relativeSpeed >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED) {
+                this.playVehicleStrikeSound();
+                this.enginePower *= 0.8D;
+                target.enginePower *= 0.8D;
+            }
             this.needsSync = true;
             target.needsSync = true;
             this.syncVelocity = true;
             target.syncVelocity = true;
+            NetworkHandler.broadcastForcedVehicleState(this);
+            NetworkHandler.broadcastForcedVehicleState(target);
             this.damageVehicleEntityCollision(target, relativeSpeed);
             return Vec3.ZERO;
         }
@@ -1633,7 +1754,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void playVehicleStrikeSound() {
-        this.playVehicleMetalHitSound(this.getSoundSource(), 1.0F);
+        if (this.level().isClientSide() || this.tickCount - this.lastVehicleStrikeSoundTick < VEHICLE_IMPACT_SOUND_COOLDOWN_TICKS) {
+            return;
+        }
+        this.lastVehicleStrikeSoundTick = this.tickCount;
+        var holder = ModSounds.ALL.get(Reference.id("vehicle_strike"));
+        SoundEvent sound = holder == null ? SoundEvents.ANVIL_LAND : holder.get();
+        this.level().playSound(null, this, sound, this.getSoundSource(), 1.0F, 1.0F);
     }
 
     private void playVehicleDamageSound(boolean penetrated) {
@@ -1908,7 +2035,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.yo = y;
         this.zo = z;
         this.needsSync = true;
-        if (forceApply && this.level().isClientSide()) {
+        if (forceApply && this.level().isClientSide() && !this.isLocalInstanceAuthoritative()) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
             if (clientVehicleId() == this.getId() && !this.isLocalInstanceAuthoritative()) {
                 clearClientVehicleState();
@@ -2506,11 +2633,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         boolean damaged = false;
-        for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.25D, 0.15D, 0.25D))) {
+        for (LivingEntity target : this.level().getEntitiesOfClass(LivingEntity.class, VehicleGeometry.bounds(this).inflate(0.25D, 0.15D, 0.25D))) {
             if (!target.isAlive() || target.getVehicle() == this) {
                 continue;
             }
-            if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null) {
+            if (this.usesCustomObbEntityCollision() && !VehicleGeometry.intersects(this, target.getBoundingBox())) {
                 continue;
             }
             DamageSource source = this.vehicleStrikeDamageSource();
@@ -2518,13 +2645,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             GunnerFriendlyFireEvents.clearFriendlyVehicleStrikeTargetAfterDamage(target, source);
             damaged = true;
         }
-        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(0.35D, 0.2D, 0.35D))) {
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, VehicleGeometry.bounds(this).inflate(10.0D))) {
             if (target == this || target.isRemoved()
                     || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
             }
-            if ((this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) == null)
-                    || (target.usesCustomObbEntityCollision() && target.obbCollisionCorrection(this.getBoundingBox()) == null)) {
+            if (!VehicleGeometry.intersects(this, target)) {
                 continue;
             }
             double relativeSpeed = this.vehicleRelativeCollisionSpeed(target);
@@ -2533,6 +2659,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
             if (this.damageVehicleEntityCollision(target, relativeSpeed)) {
                 damaged = true;
+            }
+            if (relativeSpeed >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED) {
+                this.playVehicleStrikeSound();
             }
         }
         if (damaged) {
@@ -2596,7 +2725,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
             return;
         }
-        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, this.getBoundingBox().inflate(VEHICLE_ENTITY_COLLISION_SEARCH_EXPANSION))) {
+        for (VehicleEntity target : this.level().getEntitiesOfClass(VehicleEntity.class, VehicleGeometry.bounds(this).inflate(10.0D))) {
             if (target == this || target.isRemoved() || target.noPhysics || this.getId() >= target.getId()
                     || target.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
                 continue;
@@ -2611,36 +2740,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Nullable
     private Vec3 vehicleEntityCollisionCorrection(VehicleEntity target) {
-        Vec3 best = null;
-        double bestLength = Double.POSITIVE_INFINITY;
-        if (this.usesCustomObbEntityCollision()) {
-            ObbCollisionCorrection correction = this.obbCollisionCorrection(target.getBoundingBox());
-            if (correction != null) {
-                best = correction.movement();
-                bestLength = correction.depth();
-            }
-        }
-        if (target.usesCustomObbEntityCollision()) {
-            ObbCollisionCorrection correction = target.obbCollisionCorrection(this.getBoundingBox());
-            if (correction != null && correction.depth() < bestLength) {
-                best = correction.movement().scale(-1.0D);
-                bestLength = correction.depth();
-            }
-        }
-        if (best != null) {
-            return best;
-        }
-        return this.aabbVehicleCollisionCorrection(target);
+        return VehicleGeometry.correction(this, target);
     }
 
     private boolean vehicleEntityCollisionIntersects(VehicleEntity target) {
-        if (this.usesCustomObbEntityCollision() && this.obbCollisionCorrection(target.getBoundingBox()) != null) {
-            return true;
-        }
-        if (target.usesCustomObbEntityCollision() && target.obbCollisionCorrection(this.getBoundingBox()) != null) {
-            return true;
-        }
-        return this.getBoundingBox().intersects(target.getBoundingBox());
+        return VehicleGeometry.intersects(this, target);
     }
 
     @Nullable
@@ -2677,6 +2781,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (closingSpeed <= 0.0D) {
             return;
         }
+        if (closingSpeed >= VEHICLE_IMPACT_FEEDBACK_MIN_SPEED) {
+            this.playVehicleStrikeSound();
+            this.enginePower *= 0.8D;
+            target.enginePower *= 0.8D;
+        }
         if (selfAlong > 0.0D) {
             this.setDeltaMovement(this.getDeltaMovement().subtract(normal.scale(selfAlong)));
             this.syncVelocity = true;
@@ -2685,6 +2794,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             target.setDeltaMovement(target.getDeltaMovement().subtract(normal.scale(targetAlong)));
             target.syncVelocity = true;
         }
+        NetworkHandler.broadcastForcedVehicleState(this);
+        NetworkHandler.broadcastForcedVehicleState(target);
     }
 
     private double vehicleCollisionMass() {
@@ -2727,16 +2838,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         Entity localPlayer = this.level().isClientSide() ? localClientPlayer() : null;
-        for (Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.35D), this::canSupportWithObbCollision)) {
+        for (Entity entity : this.level().getEntities(this, VehicleGeometry.bounds(this).inflate(0.35D), this::canSupportWithObbCollision)) {
             if (this.level().isClientSide() && entity != localPlayer) {
                 continue;
             }
-            ObbCollisionCorrection correction = this.obbCollisionCorrection(entity.getBoundingBox());
+            Vec3 correction = VehicleGeometry.correction(this, entity.getBoundingBox());
             if (correction == null) {
                 continue;
             }
-            entity.setPos(entity.position().add(correction.movement()));
-            if (correction.movement().y > 0.0D) {
+            entity.setPos(entity.position().add(correction));
+            if (correction.y > 0.0D) {
                 entity.setDeltaMovement(entity.getDeltaMovement().x * 0.2D, Math.max(entity.getDeltaMovement().y, 0.0D), entity.getDeltaMovement().z * 0.2D);
                 entity.setOnGround(true);
                 entity.fallDistance = 0.0F;
@@ -2929,13 +3040,17 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (this.shouldDeploySmokeDecoy()) {
-            this.deploySmokeDecoys();
-            this.decoyCooldown = LAND_DECOY_COOLDOWN_TICKS;
+            if (this.deploySmokeDecoys()) {
+                GameplayActions.action(player, "decoy", this.vehicleDataId());
+                this.decoyCooldown = LAND_DECOY_COOLDOWN_TICKS;
+            }
             return;
         }
-        this.shootFlareDecoyPair(true);
-        this.pendingFlareBurstTicks = FLARE_BURST_LAST_DELAY_TICKS;
-        this.decoyCooldown = FLARE_DECOY_COOLDOWN_TICKS;
+        if (this.shootFlareDecoyPair(true)) {
+            GameplayActions.action(player, "decoy", this.vehicleDataId());
+            this.pendingFlareBurstTicks = FLARE_BURST_LAST_DELAY_TICKS;
+            this.decoyCooldown = FLARE_DECOY_COOLDOWN_TICKS;
+        }
     }
 
     private boolean shouldDeploySmokeDecoy() {
@@ -2943,15 +3058,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.hasBuiltInDecoy() && type != VehicleType.HELICOPTER && type != VehicleType.AIRCRAFT;
     }
 
-    private void deploySmokeDecoys() {
+    private boolean deploySmokeDecoys() {
         Vec3 forward = this.smokeDecoyForward();
         Vec3 position = this.position().add(0.0D, this.getBbHeight(), 0.0D);
+        boolean deployed = false;
         for (int index = 0; index < 8; index++) {
             float yaw = (float) Math.toRadians(-78.75D + 22.5D * index);
             Vec3 direction = forward.yRot(yaw);
-            this.level().addFreshEntity(VehicleDecoyEntity.smoke(this.level(), this, position, direction, 4.0F, 8.0F));
+            deployed |= this.level().addFreshEntity(VehicleDecoyEntity.smoke(this.level(), this, position, direction, 4.0F, 8.0F));
         }
-        this.level().playSound(null, this, SoundEvents.FIRE_EXTINGUISH, this.getSoundSource(), 1.0F, 1.0F);
+        if (deployed) {
+            this.level().playSound(null, this, SoundEvents.FIRE_EXTINGUISH, this.getSoundSource(), 1.0F, 1.0F);
+        }
+        return deployed;
     }
 
     /** Horizontal turret facing. Gun elevation and free-look pitch must not dump the screen into the ground. */
@@ -2966,19 +3085,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return flat.normalize();
     }
 
-    private void shootFlareDecoyPair(boolean first) {
+    private boolean shootFlareDecoyPair(boolean first) {
         Vec3 position = this.position().add(this.getDeltaMovement()).add(0.0D, 0.5D, 0.0D);
-        this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(1.0D, -0.2D, 0.6D, 1.0F), first);
-        this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(-1.0D, -0.2D, 0.6D, 1.0F), first);
+        boolean firstSpawned = this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(1.0D, -0.2D, 0.6D, 1.0F), first);
+        boolean secondSpawned = this.shootFlareDecoy(position, this.rotateLocalOffsetWithPose(-1.0D, -0.2D, 0.6D, 1.0F), first);
+        return firstSpawned || secondSpawned;
     }
 
-    private void shootFlareDecoy(Vec3 position, Vec3 direction, boolean first) {
+    private boolean shootFlareDecoy(Vec3 position, Vec3 direction, boolean first) {
         if (direction.lengthSqr() < 1.0E-4D) {
-            return;
+            return false;
         }
         float velocity = (float) (this.getDeltaMovement().length() * 0.3D + 0.7D);
-        this.level().addFreshEntity(VehicleDecoyEntity.flare(this.level(), this, position, direction.normalize(), velocity, 8.0F));
-        this.level().playSound(null, this, first ? SoundEvents.FIREWORK_ROCKET_LAUNCH : SoundEvents.FIRECHARGE_USE, this.getSoundSource(), 2.0F, 1.0F);
+        boolean deployed = this.level().addFreshEntity(VehicleDecoyEntity.flare(this.level(), this, position, direction.normalize(), velocity, 8.0F));
+        if (deployed) {
+            this.level().playSound(null, this, first ? SoundEvents.FIREWORK_ROCKET_LAUNCH : SoundEvents.FIRECHARGE_USE, this.getSoundSource(), 2.0F, 1.0F);
+        }
+        return deployed;
     }
 
     private void tickInventoryEnergyRecharge() {
@@ -3210,6 +3333,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.canReloadSelectedWeapon()) {
             return;
         }
+        this.activeReloadPlayer = null;
         int reloadDuration = this.selectedWeaponReloadDuration();
         if (reloadDuration <= 0) {
             this.finishWeaponReload(this.selectedVehicleWeaponIndex());
@@ -3227,6 +3351,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (!this.canReloadSelectedWeapon(passenger)) {
             return;
         }
+        this.activeReloadPlayer = passenger instanceof ServerPlayer serverPlayer ? serverPlayer : null;
         int slot = this.selectedVehicleWeaponIndex(passenger);
         int reloadDuration = this.selectedWeaponReloadDuration(passenger);
         if (reloadDuration <= 0) {
@@ -3247,6 +3372,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.activeReloadWeaponSlot = -1;
         this.activeReloadTicks = 0;
+        this.activeReloadPlayer = null;
         this.syncSelectedWeaponAmmoState();
     }
 
@@ -3308,6 +3434,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void finishWeaponReload(int slot) {
+        ServerPlayer reloadPlayer = this.activeReloadPlayer;
+        this.activeReloadPlayer = null;
         var weapons = this.vehicleData().defaults().weapons();
         if (slot < 0 || slot >= weapons.size()) {
             this.syncSelectedWeaponAmmoState();
@@ -3321,6 +3449,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         int transfer = Math.min(Math.max(0, magazineSize - loaded), reserve);
         if (transfer > 0 && this.consumeAmmo(weapon.ammoId(), transfer)) {
             this.setWeaponLoadedAmmo(slot, loaded + transfer);
+            if (reloadPlayer != null && reloadPlayer.getVehicle() == this) {
+                GameplayActions.action(reloadPlayer, "vehicle_reload", this.vehicleDataId());
+            }
         }
         this.playWeaponReloadSound(weapon, stats, false);
         this.syncSelectedWeaponAmmoState();
@@ -4160,7 +4291,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.move(MoverType.SELF, this.getDeltaMovement());
         Vec3 moved = this.position().subtract(before);
         double nextY = inWater ? (waterContact ? Math.min(0.035D, moved.y + 0.004D) : Math.max(-0.035D, moved.y * 0.94D)) : moved.y * 0.98D;
-        this.setDeltaMovement(moved.x * 0.985D, nextY, moved.z * 0.985D);
+        this.setDeltaMovement(moved.x * 0.985D * (this.horizontalImpactAxisThisMove == Direction.Axis.X ? 0.8D : 1.0D),
+                this.verticalImpactFeedbackThisMove ? Math.max(0.0D, -velocity.y * 0.8D) : nextY,
+                moved.z * 0.985D * (this.horizontalImpactAxisThisMove == Direction.Axis.Z ? 0.8D : 1.0D));
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.syncVelocity = true;
             this.needsSync = true;
@@ -4224,6 +4357,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (horizontal.lengthSqr() < 1.0E-7D || !this.isSpeedboatBowBlocked(horizontal)) {
             return velocity;
         }
+        this.pendingSpeedboatBowImpactSpeed = horizontal.length();
         this.enginePower *= 0.35D;
         this.wheelSteering *= 0.5D;
         return new Vec3(0.0D, velocity.y, 0.0D);
@@ -4378,7 +4512,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         } else if (this.verticalCollision && nextY > 0.0D) {
             nextY = 0.0D;
         }
-        this.setDeltaMovement(moved.x * 0.98D, nextY * 0.98D, moved.z * 0.98D);
+        this.setDeltaMovement(moved.x * 0.98D * (this.horizontalImpactAxisThisMove == Direction.Axis.X ? 0.8D : 1.0D),
+                (this.verticalImpactFeedbackThisMove ? Math.max(0.0D, -velocity.y * 0.8D) : nextY) * 0.98D,
+                moved.z * 0.98D * (this.horizontalImpactAxisThisMove == Direction.Axis.Z ? 0.8D : 1.0D));
         if (moved.horizontalDistanceSqr() > 1.0E-7D || Math.abs(moved.y) > 1.0E-7D) {
             this.syncVelocity = true;
             this.needsSync = true;
@@ -5218,7 +5354,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         float oldHealth = this.vehicleHealth();
         float newHealth = oldHealth - finalDamage;
         this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
-        if (newHealth < oldHealth) {
+        if (newHealth < oldHealth) GameplayActions.hit(source.getEntity(), source.getDirectEntity(), this, false);
+        if (newHealth < oldHealth && !source.is(ModDamageTypes.VEHICLE_STRIKE)) {
             this.playVehicleDamageSound(armorHit.penetrated());
         }
         this.syncVelocity = true;
@@ -5383,36 +5520,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return false;
     }
 
-    private OBBInfo.Part estimateHitPart(DamageSource source) {
-        Entity direct = source.getDirectEntity();
-        if (direct == null) {
-            return OBBInfo.Part.BODY;
+    public boolean hurtAtPart(DamageSource source, float amount, OBBInfo.Part part) {
+        OBBInfo.Part previous = this.pendingHitPart;
+        this.pendingHitPart = part;
+        try {
+            return this.level() instanceof ServerLevel serverLevel && this.hurtServer(serverLevel, source, amount);
+        } finally {
+            this.pendingHitPart = previous;
         }
-        Vec3 local = this.toLocalVehiclePosition(direct.position());
-        for (OBBInfo.Box box : this.vehicleData().defaults().obb().boxes()) {
-            if (Math.abs(local.x - box.x()) <= box.halfWidth()
-                    && Math.abs(local.y - box.y()) <= box.halfHeight()
-                    && Math.abs(local.z - box.z()) <= box.halfDepth()) {
-                return box.part();
-            }
-        }
-        if (local.y < 0.65D && Math.abs(local.x) > 0.35D) {
-            return local.x < 0.0D ? OBBInfo.Part.WHEEL_LEFT : OBBInfo.Part.WHEEL_RIGHT;
-        }
-        if (local.y < 0.9D && local.z < -0.35D) {
-            return OBBInfo.Part.MAIN_ENGINE;
-        }
-        return OBBInfo.Part.BODY;
     }
 
-    private Vec3 toLocalVehiclePosition(Vec3 worldPosition) {
-        double dx = worldPosition.x - this.getX();
-        double dy = worldPosition.y - this.getY();
-        double dz = worldPosition.z - this.getZ();
-        double yaw = Math.toRadians(this.getYRot());
-        double cos = Math.cos(yaw);
-        double sin = Math.sin(yaw);
-        return new Vec3(dx * cos + dz * sin, dy, -dx * sin + dz * cos);
+    private OBBInfo.Part estimateHitPart(DamageSource source) {
+        // Only a narrow-phase ray supplies a reliable part. Area damage hits the hull.
+        return this.pendingHitPart != null ? this.pendingHitPart : OBBInfo.Part.BODY;
     }
 
     private void applyPartDamage(OBBInfo.Part hitPart, float finalDamage) {
@@ -5497,6 +5617,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             if (!serverPlayer.getAbilities().instabuild) {
                 stack.hurtAndBreak(1, serverPlayer, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             }
+            GameplayActions.action(serverPlayer, "pack", this.vehicleDataId());
             this.discard();
             return InteractionResult.CONSUME;
         }

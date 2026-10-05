@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:combat_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.gunner_pillager.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.gunner_pillager.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "pillager"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 5
+  }
+}

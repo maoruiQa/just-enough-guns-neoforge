@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -81,6 +82,7 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
         }
         int mode = launcherMode(stack) == 0 ? 1 : 0;
         stack.set(ModDataComponents.LAUNCHER_MODE.get(), mode);
+        GameplayActions.action(player, "launcher_mode", mode == 0 ? "direct" : "top_attack");
         player.sendSystemMessage(Component.translatable(mode == 0 ? "message.jeg.javelin.direct" : "message.jeg.javelin.top"));
     }
 
@@ -101,6 +103,11 @@ public final class GuidedLauncherItem extends AnimatedGunItem {
                 ? previous.startedTick
                 : now;
         LOCKS.put(player.getUUID(), new LockState(target, started, now));
+        if (now - started >= launcher.lockTicks()
+                && (previous == null || !previous.target.sameAs(target)
+                || now - previous.startedTick < launcher.lockTicks())) {
+            GameplayActions.action(player, "launcher_locked", launcher.getStats().id());
+        }
     }
 
     public static void clearLock(ServerPlayer player) {

@@ -1,4 +1,7 @@
 {
+  "vehicle_strike": {
+    "sounds": [{ "name": "jeg:vehicle/common/vehicle_strike" }]
+  },
   "item.finger_gun": {
     "subtitle": "subtitle.jeg.fire",
     "sounds": [

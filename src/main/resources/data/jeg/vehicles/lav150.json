@@ -188,6 +188,8 @@
     },
     {
       "part": "turret",
+      "transform": "turret",
+      "rotation": "turret",
       "x": 0.0,
       "y": 0.3625,
       "z": 0.0,

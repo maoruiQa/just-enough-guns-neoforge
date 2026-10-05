@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
 
@@ -63,17 +64,20 @@ public final class WaterBombEntity extends TimedThrowableItemProjectile {
         serverLevel.sendParticles(ParticleTypes.SPLASH, this.getX(), this.getY(), this.getZ(), 45, 1.2D, 0.6D, 1.2D, 0.03D);
         serverLevel.sendParticles(ParticleTypes.BUBBLE, this.getX(), this.getY(), this.getZ(), 25, 1.0D, 0.5D, 1.0D, 0.02D);
 
-        extinguishNearby(serverLevel, this.blockPosition(), 4);
+        boolean extinguished = extinguishNearby(serverLevel, this.blockPosition(), 4);
 
         for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(WATER_RADIUS))) {
             if (!target.isAlive() || target.distanceToSqr(this) > WATER_RADIUS * WATER_RADIUS) {
                 continue;
             }
+            boolean burning = target.isOnFire();
             target.extinguishFire();
+            extinguished |= burning && !target.isOnFire();
         }
+        if (extinguished) GameplayActions.action(this.getOwner(), "water_extinguish");
     }
 
-    private static void extinguishNearby(ServerLevel level, BlockPos center, int radius) {
+    private static boolean extinguishNearby(ServerLevel level, BlockPos center, int radius) {
         boolean extinguished = false;
         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -2, -radius), center.offset(radius, 2, radius))) {
             BlockState state = level.getBlockState(pos);
@@ -97,5 +101,6 @@ public final class WaterBombEntity extends TimedThrowableItemProjectile {
         if (extinguished) {
             level.playSound(null, center, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 1.1F);
         }
+        return extinguished;
     }
 }

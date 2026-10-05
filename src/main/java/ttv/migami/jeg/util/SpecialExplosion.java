@@ -34,7 +34,7 @@ public final class SpecialExplosion {
         explodeAt(level, center, owner, damage, radius, tier, null);
     }
 
-    private static void explodeAt(
+    public static void explodeAt(
             @Nullable ServerLevel level,
             Vec3 center,
             @Nullable Entity owner,
@@ -59,7 +59,7 @@ public final class SpecialExplosion {
         ModDamageTypes.attributePlayerKillCreditInRadius(level, center, radius, owner);
         // Use null exploder so discarded sources do not re-enter entity hurt loops as the blast origin.
         // Pass a player-attributed DamageSource so vanilla blast entity damage also credits the owner.
-        DamageSource blastSource = level.damageSources().explosion(null, owner instanceof LivingEntity living ? living : null);
+        DamageSource blastSource = level.damageSources().explosion(source, owner instanceof LivingEntity living ? living : null);
         level.explode(null, blastSource, null, center.x, center.y, center.z, blockPower, false, ExplosionInteraction.MOB);
 
         AABB area = new AABB(center, center).inflate(radius);

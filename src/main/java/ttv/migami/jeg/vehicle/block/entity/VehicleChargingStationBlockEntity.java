@@ -81,6 +81,12 @@ public final class VehicleChargingStationBlockEntity extends BlockEntity impleme
                 }
                 if (vehicle.vehicleEnergy() > previousEnergy) {
                     station.charging = true;
+                    ttv.migami.jeg.advancement.GameplayActions.action(vehicle.getControllingPassenger(), "vehicle_charge", vehicle.vehicleDataId());
+                    if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                        for (net.minecraft.server.level.ServerPlayer player : server.players()) {
+                            if (player.containerMenu instanceof ttv.migami.jeg.vehicle.menu.VehicleChargingStationMenu menu && menu.isAt(pos)) ttv.migami.jeg.advancement.GameplayActions.action(player, "vehicle_charge", vehicle.vehicleDataId());
+                        }
+                    }
                     station.setChanged();
                 }
                 station.lastVehicleEnergy = vehicle.vehicleEnergy();

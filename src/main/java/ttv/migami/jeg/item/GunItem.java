@@ -651,6 +651,7 @@ public class GunItem extends Item {
         }
 
         applyWaterCooling(gunStack, coolant);
+        ttv.migami.jeg.advancement.GameplayActions.action(player, "cool", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(coolant.getItem()));
         clearWaterCooling(gunStack);
         playWaterCoolingSound(level, player);
         player.awardStat(Stats.ITEM_USED.get(ModItems.COOLANT.get()));
@@ -2285,10 +2286,13 @@ public class GunItem extends Item {
 
     private void completePendingReload(Level level, Player player, ItemStack stack) {
         PendingReload pending = PENDING_RELOADS.remove(player.getUUID());
-        if (usesMagazineSwapReload()) {
-            completeReloadWithMagazineSwap(level, player, stack, pending);
-        } else {
-            completeReloadWithLooseAmmo(player, stack);
+        boolean completed = usesMagazineSwapReload()
+                ? completeReloadWithMagazineSwap(level, player, stack, pending)
+                : completeReloadWithLooseAmmo(player, stack);
+        if (completed) {
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "reload", stats.id());
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "reload_type", stats.reloadType());
+            if (pending != null && pending.magazineItemId() != null) ttv.migami.jeg.advancement.GameplayActions.action(player, "magazine_used", pending.magazineItemId());
         }
     }
 

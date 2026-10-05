@@ -1,0 +1,115 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:reflex_sight"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.complete.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.complete.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:type_specific/player": {
+              "advancements": {
+                "jeg:guide/gunsmith/obtain_angled_grip": true,
+                "jeg:guide/gunsmith/install_angled_grip": true,
+                "jeg:guide/gunsmith/use_angled_grip": true,
+                "jeg:guide/gunsmith/obtain_explosive_muzzle": true,
+                "jeg:guide/gunsmith/install_explosive_muzzle": true,
+                "jeg:guide/gunsmith/use_explosive_muzzle": true,
+                "jeg:guide/gunsmith/obtain_flashlight": true,
+                "jeg:guide/gunsmith/install_flashlight": true,
+                "jeg:guide/gunsmith/use_flashlight": true,
+                "jeg:guide/gunsmith/obtain_holographic_sight": true,
+                "jeg:guide/gunsmith/install_holographic_sight": true,
+                "jeg:guide/gunsmith/use_holographic_sight": true,
+                "jeg:guide/gunsmith/obtain_laser_pointer": true,
+                "jeg:guide/gunsmith/install_laser_pointer": true,
+                "jeg:guide/gunsmith/use_laser_pointer": true,
+                "jeg:guide/gunsmith/obtain_light_grip": true,
+                "jeg:guide/gunsmith/install_light_grip": true,
+                "jeg:guide/gunsmith/use_light_grip": true,
+                "jeg:guide/gunsmith/obtain_light_stock": true,
+                "jeg:guide/gunsmith/install_light_stock": true,
+                "jeg:guide/gunsmith/use_light_stock": true,
+                "jeg:guide/gunsmith/obtain_makeshift_stock": true,
+                "jeg:guide/gunsmith/install_makeshift_stock": true,
+                "jeg:guide/gunsmith/use_makeshift_stock": true,
+                "jeg:guide/gunsmith/obtain_monocle_sight": true,
+                "jeg:guide/gunsmith/install_monocle_sight": true,
+                "jeg:guide/gunsmith/use_monocle_sight": true,
+                "jeg:guide/gunsmith/obtain_reflex_sight": true,
+                "jeg:guide/gunsmith/install_reflex_sight": true,
+                "jeg:guide/gunsmith/use_reflex_sight": true,
+                "jeg:guide/gunsmith/obtain_silencer": true,
+                "jeg:guide/gunsmith/install_silencer": true,
+                "jeg:guide/gunsmith/use_silencer": true,
+                "jeg:guide/gunsmith/obtain_tactical_stock": true,
+                "jeg:guide/gunsmith/install_tactical_stock": true,
+                "jeg:guide/gunsmith/use_tactical_stock": true,
+                "jeg:guide/gunsmith/obtain_telescopic_sight": true,
+                "jeg:guide/gunsmith/install_telescopic_sight": true,
+                "jeg:guide/gunsmith/use_telescopic_sight": true,
+                "jeg:guide/gunsmith/obtain_trumpet": true,
+                "jeg:guide/gunsmith/install_trumpet": true,
+                "jeg:guide/gunsmith/use_trumpet": true,
+                "jeg:guide/gunsmith/obtain_vertical_grip": true,
+                "jeg:guide/gunsmith/install_vertical_grip": true,
+                "jeg:guide/gunsmith/use_vertical_grip": true,
+                "jeg:guide/gunsmith/obtain_weighted_stock": true,
+                "jeg:guide/gunsmith/install_weighted_stock": true,
+                "jeg:guide/gunsmith/use_weighted_stock": true,
+                "jeg:guide/gunsmith/obtain_classic_spray_can": true,
+                "jeg:guide/gunsmith/install_classic_spray_can": true,
+                "jeg:guide/gunsmith/obtain_toy_spray_can": true,
+                "jeg:guide/gunsmith/install_toy_spray_can": true,
+                "jeg:guide/gunsmith/obtain_whiteout_spray_can": true,
+                "jeg:guide/gunsmith/install_whiteout_spray_can": true,
+                "jeg:guide/gunsmith/obtain_golden_spray_can": true,
+                "jeg:guide/gunsmith/install_golden_spray_can": true,
+                "jeg:guide/gunsmith/obtain_creeper_birthday_party_badge": true,
+                "jeg:guide/gunsmith/install_creeper_birthday_party_badge": true,
+                "jeg:guide/gunsmith/obtain_headpoppper_badge": true,
+                "jeg:guide/gunsmith/install_headpoppper_badge": true,
+                "jeg:guide/gunsmith/obtain_trickshot_badge": true,
+                "jeg:guide/gunsmith/install_trickshot_badge": true,
+                "jeg:guide/gunsmith/effect_creeper_birthday_party_badge": true,
+                "jeg:guide/gunsmith/effect_headpoppper_badge": true,
+                "jeg:guide/gunsmith/effect_trickshot_badge": true,
+                "jeg:guide/gunsmith/light": true,
+                "jeg:guide/gunsmith/charge_light": true,
+                "jeg:guide/gunsmith/laser": true,
+                "jeg:guide/gunsmith/kill_effect": true,
+                "jeg:guide/gunsmith/dye": true,
+                "jeg:guide/gunsmith/enchant": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/root",
+  "rewards": {
+    "experience": 25
+  }
+}

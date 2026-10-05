@@ -96,6 +96,7 @@ public final class DefuserItem extends Item {
                 stack.hurtAndBreak(1, player, handToSlot(hand));
             }
             target.defuse();
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "defuse", "jeg:c4_bomb");
         }
     }
 

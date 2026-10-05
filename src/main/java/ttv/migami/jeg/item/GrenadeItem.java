@@ -37,6 +37,7 @@ public class GrenadeItem extends ThrowableWeaponItem {
                 player.drop(waterBomb, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
             player.awardStat(Stats.ITEM_USED.get(this));
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "water_conversion", "jeg:water_bomb");
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
