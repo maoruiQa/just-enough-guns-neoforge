@@ -505,6 +505,7 @@ public final class PatrolEncounterManager {
         }
 
         setOmenFactionTag(player, context.factionName);
+        ttv.migami.jeg.advancement.GameplayActions.action(player, "patrol_win", context.factionName);
         player.addEffect(new MobEffectInstance(ModEffects.FACTION_OMEN, OMEN_DURATION_TICKS, 0, false, true));
         player.sendSystemMessage(Component.translatable("message.jeg.faction_patrol.omen"));
     }

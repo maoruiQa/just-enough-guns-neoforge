@@ -36,6 +36,8 @@ public final class VehicleChargingStationMenu extends AbstractContainerMenu {
         this.addDataSlots(data);
     }
 
+    public boolean isAt(net.minecraft.core.BlockPos pos) { return this.access.evaluate((level, stationPos) -> stationPos.equals(pos), false); }
+
     public int vehicleEnergy() {
         return this.data.get(DATA_ENERGY);
     }

@@ -59,7 +59,16 @@ public final class VehicleMenu extends AbstractContainerMenu {
         this.playerInventoryY = PLAYER_SLOT_Y + rowOffset;
 
         for (int slot = 0; slot < this.vehicleSlotCount; slot++) {
-            this.addSlot(new Slot(vehicleInventory, slot, VEHICLE_SLOT_X + slot % this.vehicleColumns * SLOT_SIZE, VEHICLE_SLOT_Y + slot / this.vehicleColumns * SLOT_SIZE));
+            this.addSlot(new Slot(vehicleInventory, slot, VEHICLE_SLOT_X + slot % this.vehicleColumns * SLOT_SIZE, VEHICLE_SLOT_Y + slot / this.vehicleColumns * SLOT_SIZE) {
+                @Override public void setByPlayer(ItemStack stack) {
+                    int before = this.getItem().getCount();
+                    ItemStack previous = this.getItem().copy();
+                    super.setByPlayer(stack);
+                    if (vehicle != null && !stack.isEmpty() && (!ItemStack.isSameItemSameComponents(previous, stack) || stack.getCount() > before)) {
+                        ttv.migami.jeg.advancement.GameplayActions.action(playerInventory.player, "vehicle_supply", vehicle.vehicleDataId());
+                    }
+                }
+            });
         }
 
         for (int row = 0; row < 3; row++) {
@@ -116,6 +125,7 @@ public final class VehicleMenu extends AbstractContainerMenu {
                 slot.setChanged();
             }
         }
+        if (this.vehicle != null && index >= this.vehicleSlotCount && !copy.isEmpty() && slot.getItem().getCount() < copy.getCount()) ttv.migami.jeg.advancement.GameplayActions.action(player, "vehicle_supply", this.vehicle.vehicleDataId());
         return copy;
     }
 

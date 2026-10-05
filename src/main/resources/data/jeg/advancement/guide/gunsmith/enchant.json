@@ -1,0 +1,70 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:enchanted_book"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.enchant.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.enchant.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "enchanted": {
+      "trigger": "minecraft:enchanted_item",
+      "conditions": {
+        "item": {
+          "items": [
+            "jeg:assault_rifle",
+            "jeg:blossom_rifle",
+            "jeg:bolt_action_rifle",
+            "jeg:burst_rifle",
+            "jeg:combat_pistol",
+            "jeg:combat_rifle",
+            "jeg:custom_smg",
+            "jeg:double_barrel_shotgun",
+            "jeg:finger_gun",
+            "jeg:flamethrower",
+            "jeg:flare_gun",
+            "jeg:grenade_launcher",
+            "jeg:hollenfire_mk2",
+            "jeg:holy_shotgun",
+            "jeg:hypersonic_cannon",
+            "jeg:infantry_rifle",
+            "jeg:light_machine_gun",
+            "jeg:minigun",
+            "jeg:phantom_smg",
+            "jeg:pump_shotgun",
+            "jeg:repeating_shotgun",
+            "jeg:revolver",
+            "jeg:rocket_launcher",
+            "jeg:semi_auto_pistol",
+            "jeg:semi_auto_rifle",
+            "jeg:service_rifle",
+            "jeg:soulhunter_mk2",
+            "jeg:subsonic_rifle",
+            "jeg:supersonic_shotgun",
+            "jeg:waterpipe_shotgun",
+            "jeg:javelin",
+            "jeg:igla_9k38"
+          ]
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "enchanted"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/root",
+  "rewards": {
+    "experience": 5
+  }
+}

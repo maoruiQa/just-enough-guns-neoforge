@@ -1,5 +1,8 @@
 package ttv.migami.jeg.entity;
 
+import ttv.migami.jeg.vehicle.util.VehicleGeometry;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -160,6 +163,19 @@ public class BulletEntity extends Projectile {
     public BulletEntity(Level level, LivingEntity shooter, GunStats stats, Vec3 velocity, float damage, boolean explosiveAmmo) {
         this(ModEntities.BULLET.get(), level);
         this.setOwner(shooter);
+        ItemStack firedStack = shooter.getMainHandItem();
+        if (firedStack.getItem() instanceof GunItem gun && gun.getStats().id().equals(stats.id())) {
+            java.util.List<String> used = new java.util.ArrayList<>();
+            for (ttv.migami.jeg.item.attachment.AttachmentType type : ttv.migami.jeg.item.attachment.AttachmentType.values()) {
+                if (type.isCosmetic() || type == ttv.migami.jeg.item.attachment.AttachmentType.SCOPE && !(shooter instanceof ServerPlayer p && ttv.migami.jeg.network.NetworkHandler.isAiming(p))) continue;
+                ttv.migami.jeg.item.attachment.GunAttachments.id(firedStack, type).ifPresent(id -> {
+                    if (!id.getPath().equals("bayonet") && !id.getPath().equals("flashlight") && !id.getPath().equals("laser_pointer")) used.add(id.toString());
+                });
+            }
+            this.advancementAttachments = String.join(",", used);
+        }
+        this.advancementAimed = shooter instanceof net.minecraft.server.level.ServerPlayer player && ttv.migami.jeg.network.NetworkHandler.isAiming(player);
+        if (shooter.getVehicle() instanceof VehicleEntity vehicle) this.advancementVehicle = vehicle.vehicleDataId().toString();
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.entityData.set(DATA_GUN, stats.id().toString());
         this.entityData.set(DATA_DAMAGE, damage);
@@ -399,6 +415,15 @@ public class BulletEntity extends Projectile {
         }
     }
 
+    public String advancementWeaponId() { return this.entityData.get(DATA_GUN); }
+    private boolean advancementAimed;
+    private String advancementVehicle = "";
+    private String advancementAttachments = "";
+    public String advancementAttachments() { return this.advancementAttachments; }
+    private VehicleGeometry.Hit vehicleHit;
+    public String advancementVehicleId() { return this.advancementVehicle; }
+    public boolean advancementAimed() { return advancementAimed; }
+
     @Override
     protected void onHitEntity(EntityHitResult result) {
         Entity entity = result.getEntity();
@@ -421,15 +446,18 @@ public class BulletEntity extends Projectile {
                     boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(living, source, damage, livingOwner);
                     if (hurt && livingOwner instanceof ServerPlayer shooter) {
                         NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, living));
+                        ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(result, living));
                         applyKillEffect(living, result);
                     }
                 } else {
-                    hitEntity.hurt(source, this.entityData.get(DATA_DAMAGE));
+                    hurtNonLiving(hitEntity, source, this.entityData.get(DATA_DAMAGE));
                 }
                 if (hitEntity instanceof LivingEntity living) {
                     living.igniteForSeconds(5);
+                    if (living.isOnFire()) ttv.migami.jeg.advancement.GameplayActions.action(this.getOwner(), "signal", "jeg:flare_gun");
                 } else {
                     hitEntity.igniteForSeconds(5);
+                    if (hitEntity.isOnFire()) ttv.migami.jeg.advancement.GameplayActions.action(this.getOwner(), "signal", "jeg:flare_gun");
                 }
             }
             this.discard();
@@ -475,13 +503,14 @@ public class BulletEntity extends Projectile {
                 ModDamageTypes.attributePlayerKillCredit(livingTarget, livingOwner);
                 boolean hurt = entity instanceof LivingEntity livingBody
                         ? livingBody.hurt(source, damage)
-                        : entity.hurt(source, damage);
+                        : hurtNonLiving(entity, source, damage);
 
                 if (hurt && this.entityData.get(DATA_EXPLOSIVE_AMMO)) {
                     livingTarget.igniteForSeconds(2);
                 }
                 if (hurt && livingOwner instanceof ServerPlayer shooter) {
                     NetworkHandler.sendHitMarker(shooter, isCriticalHit(result, livingTarget));
+                        ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, livingTarget, isCriticalHit(result, livingTarget));
                     if (entity instanceof LivingEntity livingBody) {
                         applyKillEffect(livingBody, result);
                     }
@@ -511,7 +540,7 @@ public class BulletEntity extends Projectile {
                     }
                 }
             } else {
-                entity.hurt(source, damage);
+                hurtNonLiving(entity, source, damage);
             }
 
             // 1.20.1 parity: allow shotgun pellets from players to apply within the same tick.
@@ -548,6 +577,7 @@ public class BulletEntity extends Projectile {
             return;
         }
 
+        if (ttv.migami.jeg.advancement.GameplayActions.hostile(target, this.getOwner())) ttv.migami.jeg.advancement.GameplayActions.action(this.getOwner(), "kill_effect", killEffectId);
         if (killEffectId.equals(BuiltInRegistries.ITEM.getKey(ModItems.CREEPER_BIRTHDAY_PARTY_BADGE.get()))) {
             sendLongDistanceParticles(
                     serverLevel,
@@ -697,6 +727,9 @@ public class BulletEntity extends Projectile {
         if (result.durabilityDamage() > 0) {
             stack.hurtAndBreak(result.durabilityDamage(), target, slot);
         }
+        if (rawDamage > result.finalDamage() && target instanceof ServerPlayer) {
+            ttv.migami.jeg.advancement.GameplayActions.action(target, "armour_intercept");
+        }
         return result.finalDamage();
     }
 
@@ -753,7 +786,7 @@ public class BulletEntity extends Projectile {
                 if (this.random.nextFloat() > 0.50F
                         && BaseFireBlock.canBePlacedAt(this.level(), offsetPos, result.getDirection())) {
                     BlockState fireState = BaseFireBlock.getState(this.level(), offsetPos);
-                    this.level().setBlock(offsetPos, fireState, 11);
+                    if (this.level().setBlock(offsetPos, fireState, 11)) ttv.migami.jeg.advancement.GameplayActions.action(this.getOwner(), "signal", "jeg:flare_gun");
                     ((ServerLevel) this.level()).sendParticles(
                             ParticleTypes.LAVA,
                             result.getLocation().x,
@@ -860,6 +893,10 @@ public class BulletEntity extends Projectile {
 
     @Override
     protected void addAdditionalSaveData(CompoundTag output) {
+        super.addAdditionalSaveData(output);
+        output.putBoolean("AdvancementAimed", this.advancementAimed);
+        output.putString("AdvancementAttachments", this.advancementAttachments);
+        output.putString("AdvancementVehicle", this.advancementVehicle);
         output.putString("GunId", this.entityData.get(DATA_GUN));
         output.putFloat("Damage", this.entityData.get(DATA_DAMAGE));
         output.putInt("Life", this.entityData.get(DATA_LIFE));
@@ -876,6 +913,10 @@ public class BulletEntity extends Projectile {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag input) {
+        super.readAdditionalSaveData(input);
+        this.advancementAimed = input.getBoolean("AdvancementAimed");
+        this.advancementAttachments = input.getString("AdvancementAttachments");
+        this.advancementVehicle = input.getString("AdvancementVehicle");
         this.entityData.set(DATA_GUN, input.contains("GunId") ? input.getString("GunId") : Reference.id("assault_rifle").toString());
         this.entityData.set(DATA_DAMAGE, input.contains("Damage") ? input.getFloat("Damage") : this.entityData.get(DATA_DAMAGE));
         this.entityData.set(DATA_LIFE, input.contains("Life") ? input.getInt("Life") : this.entityData.get(DATA_LIFE));
@@ -994,7 +1035,10 @@ public class BulletEntity extends Projectile {
                 if (result instanceof EntityHitResult entityHit && entityHit.getEntity() != null) {
                     Entity hitEntity = entityHit.getEntity();
                     if (hitEntity instanceof LivingEntity living) {
+                        int fireBefore = living.getRemainingFireTicks();
                         living.igniteForSeconds(6);
+                        if (living.getRemainingFireTicks() > fireBefore)
+                            ttv.migami.jeg.advancement.FireWeaponAttribution.remember(living, this, this.getOwner());
                     } else {
                         hitEntity.igniteForSeconds(6);
                     }
@@ -1048,9 +1092,10 @@ public class BulletEntity extends Projectile {
                             boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(living, source, damage, owner);
                             if (hurt && owner instanceof ServerPlayer shooter) {
                                 NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                        ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hitEntity.hurt(source, directDamage);
+                            hurtNonLiving(hitEntity, source, directDamage);
                         }
                     }
                 }
@@ -1077,9 +1122,10 @@ public class BulletEntity extends Projectile {
                             boolean hurt = ModDamageTypes.hurtWithPlayerKillCredit(living, source, directDamage, owner);
                             if (hurt && owner instanceof ServerPlayer shooter) {
                                 NetworkHandler.sendHitMarker(shooter, isCriticalHit(entityHit, living));
+                        ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hitEntity.hurt(source, stats.damage());
+                            hurtNonLiving(hitEntity, source, stats.damage());
                         }
                     }
                 }
@@ -1229,7 +1275,8 @@ public class BulletEntity extends Projectile {
             ModDamageTypes.hurtWithPlayerKillCredit(living, source, damage, owner);
             return;
         }
-        target.hurt(source, damage);
+        boolean hurt = target.hurt(source, damage);
+        if (hurt) ttv.migami.jeg.advancement.GameplayActions.hit(owner, source.getDirectEntity(), target, false);
     }
 
     private static int projectileLifeFor(GunStats stats) {
@@ -1645,6 +1692,16 @@ public class BulletEntity extends Projectile {
         return this.level().clip(fallback);
     }
 
+    private boolean hurtNonLiving(Entity target, DamageSource source, float damage) {
+        if (target instanceof VehicleEntity vehicle) {
+            if (vehicle.hurtAtPart(source, damage, this.vehicleHit == null ? ttv.migami.jeg.vehicle.data.subdata.OBBInfo.Part.BODY : this.vehicleHit.part())) {
+                ttv.migami.jeg.advancement.GameplayActions.hit(this.getOwner(), this, target, false);
+                return true;
+            }
+            return false;
+        } else return target.hurt(source, damage);
+    }
+
     @Nullable
     private EntityHitResult findClosestEntityHit(Vec3 start, Vec3 end) {
         Vec3 segment = end.subtract(start);
@@ -1654,7 +1711,12 @@ public class BulletEntity extends Projectile {
         double closestDistanceSqr = Double.MAX_VALUE;
         Entity owner = this.getOwner();
 
-        for (Entity entity : this.level().getEntities(this, searchBox, this::canHitEntity)) {
+        this.vehicleHit = null;
+        java.util.List<Entity> candidates = new java.util.ArrayList<>(this.level().getEntities(this, searchBox, this::canHitEntity));
+        for (VehicleEntity vehicle : this.level().getEntitiesOfClass(VehicleEntity.class, searchBox.inflate(16), this::canHitEntity)) {
+            if (!candidates.contains(vehicle) && VehicleGeometry.bounds(vehicle).intersects(searchBox)) candidates.add(vehicle);
+        }
+        for (Entity entity : candidates) {
             // Avoid pellet-to-pellet collisions for multi-projectile weapons.
             if (entity instanceof BulletEntity) {
                 continue;
@@ -1663,7 +1725,9 @@ public class BulletEntity extends Projectile {
             if (entity == owner) {
                 continue;
             }
-            Vec3 hitPos = entity.getBoundingBox().inflate(0.3D).clip(start, end).orElse(null);
+            VehicleGeometry.Hit partHit = entity instanceof VehicleEntity vehicle ? VehicleGeometry.clip(vehicle, start, end) : null;
+            Vec3 hitPos = entity instanceof VehicleEntity ? (partHit == null ? null : partHit.position())
+                    : entity.getBoundingBox().inflate(0.3D).clip(start, end).orElse(null);
             if (hitPos == null) {
                 continue;
             }
@@ -1672,6 +1736,7 @@ public class BulletEntity extends Projectile {
                 closestDistanceSqr = distanceSqr;
                 closestEntity = entity;
                 closestHitPos = hitPos;
+                this.vehicleHit = partHit;
             }
         }
 

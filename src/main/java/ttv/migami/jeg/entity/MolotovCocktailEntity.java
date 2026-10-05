@@ -13,6 +13,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.FireWeaponAttribution;
 import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.init.ModEntities;
 import ttv.migami.jeg.init.ModItems;
@@ -68,7 +69,9 @@ public final class MolotovCocktailEntity extends TimedThrowableItemProjectile {
             }
             ModDamageTypes.hurtWithPlayerKillCredit(
                     target, this.damageSources().explosion(this, owner), 6.0F, owner);
+            int fireBefore = target.getRemainingFireTicks();
             target.igniteForSeconds(8.0F);
+            if (target.isAlive() && target.getRemainingFireTicks() > fireBefore) FireWeaponAttribution.remember(target, this, owner);
         }
 
         igniteNearby(serverLevel, this.blockPosition(), 2);

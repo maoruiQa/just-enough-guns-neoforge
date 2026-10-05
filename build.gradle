@@ -209,3 +209,11 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Exercise the vehicle OBB ray/contact assertions on this module's mapped runtime classpath.
+tasks.register('checkVehicleGeometry', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.vehicle.util.VehicleGeometry'
+    jvmArgs '-ea'
+}

@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:phantom_smg"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.root.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png"
+  },
+  "criteria": {
+    "start": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "start"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

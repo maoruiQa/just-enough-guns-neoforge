@@ -1,5 +1,6 @@
 package ttv.migami.jeg.entity;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -284,7 +285,11 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
         if (!this.level().isClientSide && !this.entityData.get(REMOTE)) {
             int bombTick = this.entityData.get(BOMB_TICK);
             if (bombTick >= C4_COUNTDOWN) {
+                Entity timedOwner = this.ownerEntity();
                 this.detonate();
+                if (this.isRemoved()) {
+                    GameplayActions.action(timedOwner, "c4_timed");
+                }
                 return;
             }
             int remaining = C4_COUNTDOWN - bombTick;
@@ -624,6 +629,11 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
             return;
         }
         this.detonating = true;
+        GameplayActions.action(this.ownerEntity(), "detonate", "jeg:" + switch (this.kind()) {
+            case C4 -> "c4_bomb";
+            case CLAYMORE -> "claymore_mine";
+            case TM_62 -> "tm_62";
+        });
 
         Entity owner = this.ownerEntity();
         Vec3 pos = this.position();
@@ -664,7 +674,7 @@ public final class PlacedExplosiveEntity extends Entity implements GeoEntity {
 
         // Remove from world BEFORE exploding so vanilla/custom blast cannot re-hurt this entity.
         this.discard();
-        SpecialExplosion.explodeAt(serverLevel, pos, owner, damage, radius, tier);
+        SpecialExplosion.explodeAt(serverLevel, pos, owner, damage, radius, tier, this);
     }
 
     @Nullable

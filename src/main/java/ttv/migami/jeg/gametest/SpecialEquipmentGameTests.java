@@ -29,7 +29,7 @@ public final class SpecialEquipmentGameTests {
     @GameTest(template = "empty", timeoutTicks = 40)
     public static void launcherTargetModes(GameTestHelper helper) {
         ServerPlayer shooter = helper.makeMockServerPlayerInLevel();
-        Cow ground = helper.spawn(EntityType.COW, new Vec3(1.5D, 1.0D, 1.5D));
+        var ground = helper.spawn(EntityType.IRON_GOLEM, new Vec3(1.5D, 1.0D, 1.5D));
         Phantom air = helper.spawn(EntityType.PHANTOM, new Vec3(1.5D, 5.0D, 1.5D));
         ground.setOnGround(true);
 
@@ -77,6 +77,7 @@ public final class SpecialEquipmentGameTests {
 
         helper.runAfterDelay(2, () -> {
             helper.assertFalse(mine.isRemoved(), "Crouching targets must not trigger Claymore");
+            if (!expired.isRemoved()) expired.tick(); // GameTest templates do not always tick spawned entities.
             helper.assertTrue(expired.isRemoved(), "Claymore must expire at 12000 ticks");
             target.setShiftKeyDown(false);
         });
@@ -91,7 +92,7 @@ public final class SpecialEquipmentGameTests {
         ServerPlayer owner = helper.makeMockServerPlayerInLevel();
         PlacedExplosiveEntity pressure = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(1.0D, 2.0D, 1.0D), false);
         pressure.tickCount = 19;
-        helper.spawn(EntityType.COW, new Vec3(1.0D, 2.0D, 1.0D));
+        helper.spawn(EntityType.RAVAGER, new Vec3(1.0D, 2.0D, 1.0D));
         PlacedExplosiveEntity timed = explosive(helper, SpecialExplosiveItem.Kind.TM_62, owner, new Vec3(4.0D, 2.0D, 1.0D), true);
         timed.tickCount = 99;
         helper.runAfterDelay(2, () -> {

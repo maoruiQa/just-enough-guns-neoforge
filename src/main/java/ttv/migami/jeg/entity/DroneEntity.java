@@ -1,5 +1,6 @@
 package ttv.migami.jeg.entity;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
@@ -313,6 +314,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
                     } else {
                         stack.set(ModDataComponents.DRONE_LINK.get(), this.getUUID().toString());
                         this.ownerId = player.getUUID();
+                        GameplayActions.action(player, "drone_bind", "jeg:drone");
                         player.displayClientMessage(Component.translatable("message.jeg.drone.linked"), true);
                     }
                 } else {
@@ -343,6 +345,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
                     this.unlinkMonitors();
                     this.entityData.set(PAYLOAD, 0);
                     this.discard();
+                    GameplayActions.action(player, "drone_pack", "jeg:drone");
                 }
             }
         } else if (stack.isEmpty()) {
@@ -350,7 +353,9 @@ public final class DroneEntity extends Entity implements GeoEntity {
             if (!this.level().isClientSide && this.entityData.get(PAYLOAD) != 0) {
                 ItemStack payload = this.payloadAsItem();
                 String unloadedName = this.payloadName();
+                int unloadedType = this.entityData.get(PAYLOAD);
                 this.entityData.set(PAYLOAD, 0);
+                GameplayActions.action(player, "drone_payload_unload", payloadId(unloadedType));
                 if (!player.getAbilities().instabuild && !payload.isEmpty()) {
                     giveOrDrop(player, payload);
                 }
@@ -365,6 +370,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
                 int current = this.entityData.get(PAYLOAD);
                 if (current == 0) {
                     this.entityData.set(PAYLOAD, newType);
+                    GameplayActions.action(player, "drone_payload_load", payloadId(newType));
                     if (!player.getAbilities().instabuild) {
                         stack.shrink(1);
                     }
@@ -376,6 +382,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
                     ItemStack old = this.payloadAsItem();
                     String oldName = this.payloadName();
                     this.entityData.set(PAYLOAD, newType);
+                    GameplayActions.action(player, "drone_payload_load", payloadId(newType));
                     if (!player.getAbilities().instabuild) {
                         stack.shrink(1);
                         if (!old.isEmpty()) {
@@ -397,6 +404,15 @@ public final class DroneEntity extends Entity implements GeoEntity {
 
         // SW always consumes the interaction
         return InteractionResult.sidedSuccess(this.level().isClientSide);
+    }
+
+    private static String payloadId(int payload) {
+        return "jeg:" + switch (payload) {
+            case 1 -> "c4_bomb";
+            case 2 -> "tm_62";
+            case 3 -> "grenade";
+            default -> "drone";
+        };
     }
 
     private ItemStack payloadAsItem() {
@@ -460,6 +476,7 @@ public final class DroneEntity extends Entity implements GeoEntity {
         this.controllerId = player.getUUID();
         monitor.set(ModDataComponents.DRONE_CONTROLLING.get(), true);
         NetworkHandler.sendDroneControl(player, this.getId(), true, this.controlRange(player));
+        GameplayActions.action(player, "drone_control", "jeg:drone");
     }
 
     public void stopControl(@Nullable ServerPlayer expected) {
@@ -623,16 +640,20 @@ public final class DroneEntity extends Entity implements GeoEntity {
                 .stream().min(java.util.Comparator.comparingDouble(entity -> entity.distanceToSqr(this))).orElse(null);
         if (target != null) {
             player.attack(target);
+            GameplayActions.action(player, "drone_interact", "jeg:drone");
             return;
         }
         BlockHitResult hit = this.level().clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this));
         if (hit.getType() == HitResult.Type.BLOCK) {
-            this.level().getBlockState(hit.getBlockPos()).useWithoutItem(this.level(), player, hit);
+            if (this.level().getBlockState(hit.getBlockPos()).useWithoutItem(this.level(), player, hit).consumesAction()) {
+                GameplayActions.action(player, "drone_interact", "jeg:drone");
+            }
         }
     }
 
     private void activatePayload() {
         int payload = this.entityData.get(PAYLOAD);
+        Entity actionOwner = this.ownerEntity();
         if (payload == 1 && this.level() instanceof ServerLevel serverLevel) {
             // C4 kamikaze: consume payload first so blast death does not drop C4
             this.entityData.set(PAYLOAD, 0);
@@ -649,13 +670,15 @@ public final class DroneEntity extends Entity implements GeoEntity {
                     SpecialExplosion.Tier.HUGE
             );
             this.discard();
+            GameplayActions.action(actionOwner, "drone_payload_release", payloadId(payload));
         } else if (payload == 2 && this.level() instanceof ServerLevel serverLevel) {
-            this.entityData.set(PAYLOAD, 0);
-            serverLevel.addFreshEntity(PlacedExplosiveEntity.placeSettled(
+            if (serverLevel.addFreshEntity(PlacedExplosiveEntity.placeSettled(
                     serverLevel, SpecialExplosiveItem.Kind.TM_62, this.ownerPlayer(), this.position(), this.getYRot(), false
-            ));
+            ))) {
+                this.entityData.set(PAYLOAD, 0);
+                GameplayActions.action(actionOwner, "drone_payload_release", payloadId(payload));
+            }
         } else if (payload == 3 && this.level() instanceof ServerLevel serverLevel) {
-            this.entityData.set(PAYLOAD, 0);
             LivingEntity owner = this.ownerPlayer();
             if (owner == null) {
                 owner = this.controller();
@@ -673,7 +696,10 @@ public final class DroneEntity extends Entity implements GeoEntity {
             grenade.setDeltaMovement(look.scale(1.25D).add(this.getDeltaMovement().scale(0.5D)));
             grenade.setYRot(this.getYRot());
             grenade.setXRot(this.getXRot());
-            serverLevel.addFreshEntity(grenade);
+            if (serverLevel.addFreshEntity(grenade)) {
+                this.entityData.set(PAYLOAD, 0);
+                GameplayActions.action(actionOwner, "drone_payload_release", payloadId(payload));
+            }
         }
     }
 

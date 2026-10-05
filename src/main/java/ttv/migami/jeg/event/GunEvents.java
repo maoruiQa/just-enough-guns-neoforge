@@ -86,6 +86,7 @@ public final class GunEvents {
 
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) player.level().getServer().execute(() -> ttv.migami.jeg.advancement.GameplayActions.login(player));
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
@@ -378,6 +379,7 @@ public final class GunEvents {
 
     @SubscribeEvent
     public static void onBomberDeath(LivingDeathEvent event) {
+        ttv.migami.jeg.advancement.GameplayActions.died(event.getEntity(), event.getSource());
         LivingEntity entity = event.getEntity();
         // Armed bombers still detonate if killed mid-fuse.
         if (BomberGunnerHelper.isArmed(entity) && !BomberGunnerHelper.hasDetonated(entity)) {

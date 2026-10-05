@@ -65,7 +65,8 @@ public final class SwStyleExplosion {
             if (entity instanceof LivingEntity living) {
                 ModDamageTypes.hurtWithPlayerKillCredit(living, damageSource, damageFinal, owner);
             } else {
-                entity.hurt(damageSource, damageFinal);
+                boolean hurt = entity.hurt(damageSource, damageFinal);
+                if (hurt) ttv.migami.jeg.advancement.GameplayActions.hit(owner, source, entity, false);
             }
         }
     }

@@ -53,6 +53,7 @@ public final class JustEnoughGuns {
         ModBlockEntities.REGISTER.register(modBus);
         ModMenuTypes.REGISTER.register(modBus);
         ModItems.REGISTER.register(modBus);
+        ttv.migami.jeg.advancement.GameplayActions.REGISTER.register(modBus);
         ModDataComponents.REGISTER.register(modBus);
         ModEntities.REGISTER.register(modBus);
         ModEffects.REGISTER.register(modBus);

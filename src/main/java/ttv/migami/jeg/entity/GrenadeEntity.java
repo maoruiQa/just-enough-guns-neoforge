@@ -90,6 +90,8 @@ public class GrenadeEntity extends TimedThrowableItemProjectile {
         this.igniteNearby();
     }
 
+    public String advancementWeaponId() { return this.isLaunched() ? "jeg:grenade_launcher" : "jeg:grenade"; }
+
     private void applyBalancedBlastDamage() {
         double radius = Math.max(2.6D, this.explosionPower * DAMAGE_RADIUS_MULTIPLIER);
         float baseDamage = this.explosionPower * BALANCED_DAMAGE_FACTOR;

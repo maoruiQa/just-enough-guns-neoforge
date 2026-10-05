@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -59,6 +60,11 @@ public final class SpecialExplosiveItem extends Item {
                     stack.shrink(1);
                 }
                 player.awardStat(Stats.ITEM_USED.get(this));
+                GameplayActions.action(player, "explosive_place", "jeg:" + switch (this.kind) {
+                    case C4 -> "c4_bomb";
+                    case CLAYMORE -> "claymore_mine";
+                    case TM_62 -> "tm_62";
+                });
             }
         }
 

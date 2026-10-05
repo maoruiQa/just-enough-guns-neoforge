@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:creeper_birthday_party_badge"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.install_creeper_birthday_party_badge.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.install_creeper_birthday_party_badge.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install",
+        "subject": "jeg:creeper_birthday_party_badge"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/obtain_creeper_birthday_party_badge",
+  "rewards": {
+    "experience": 5
+  }
+}

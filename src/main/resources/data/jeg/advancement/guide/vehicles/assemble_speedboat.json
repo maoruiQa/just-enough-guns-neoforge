@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:vehicle_assembling_table"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.assemble_speedboat.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.assemble_speedboat.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "assemble",
+        "subject": "jeg:speedboat"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/root",
+  "rewards": {
+    "experience": 5
+  }
+}

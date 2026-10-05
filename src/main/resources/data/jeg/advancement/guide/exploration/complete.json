@@ -1,0 +1,45 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:phantom_smg"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.complete.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.complete.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "type_specific": {
+            "type": "minecraft:player",
+            "advancements": {
+              "jeg:guide/exploration/armada": true,
+              "jeg:guide/exploration/loot": true,
+              "jeg:guide/exploration/guardian": true,
+              "jeg:guide/exploration/after_battle": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/root",
+  "rewards": {
+    "experience": 25
+  }
+}

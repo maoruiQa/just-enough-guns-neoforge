@@ -1,0 +1,40 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:phantom_smg"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.loot.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.loot.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "open_container",
+        "player": {
+          "location": {
+            "structures": "jeg:sky_ship_armada"
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/armada",
+  "rewards": {
+    "experience": 5
+  }
+}

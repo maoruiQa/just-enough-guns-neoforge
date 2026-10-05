@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:javelin"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.special.javelin_top.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.special.javelin_top.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "guided_hit",
+        "subject": "top_attack"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/special/root",
+  "rewards": {
+    "experience": 5
+  }
+}

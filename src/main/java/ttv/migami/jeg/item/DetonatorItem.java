@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -37,9 +38,13 @@ public final class DetonatorItem extends Item {
             // Infinite AABB is rejected by entity lookups — scan all loaded entities like SW.
             int detonated = 0;
             for (var entity : serverLevel.getAllEntities()) {
-                if (entity instanceof PlacedExplosiveEntity explosive && explosive.isRemoteC4OwnedBy(player.getUUID())) {
+                if (entity instanceof PlacedExplosiveEntity explosive && explosive.isRemoteC4OwnedBy(player.getUUID())
+                        && !explosive.isRemoved() && !explosive.isDetonating()) {
                     explosive.detonate();
-                    detonated++;
+                    if (explosive.isRemoved()) {
+                        GameplayActions.action(player, "c4_remote", "jeg:c4_bomb");
+                        detonated++;
+                    }
                 }
             }
             // Worn C4 vests owned by this player only

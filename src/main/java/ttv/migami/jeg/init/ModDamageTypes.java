@@ -14,6 +14,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 
 public final class ModDamageTypes {
     public static final ResourceKey<DamageType> VEHICLE_STRIKE = ResourceKey.create(Registries.DAMAGE_TYPE, Reference.id("vehicle_strike"));
@@ -55,7 +56,9 @@ public final class ModDamageTypes {
             @Nullable Entity attacker
     ) {
         attributePlayerKillCredit(target, attacker);
-        return target.hurt(source, damage);
+        boolean hurt = target.hurt(source, damage);
+        if (hurt) GameplayActions.hit(attacker, source.getDirectEntity(), target, false);
+        return hurt;
     }
 
     public static void attributePlayerKillCreditInRadius(

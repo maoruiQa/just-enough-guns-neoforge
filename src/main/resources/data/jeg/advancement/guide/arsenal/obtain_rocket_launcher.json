@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rocket_launcher"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.arsenal.obtain_rocket_launcher.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.arsenal.obtain_rocket_launcher.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:rocket_launcher"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/root"
+}

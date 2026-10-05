@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:shotgun_extended_magazine"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.supply.obtain_shotgun_extended_magazine.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.supply.obtain_shotgun_extended_magazine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:shotgun_extended_magazine"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/supply/root"
+}

@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:flare"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.home_raid.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.home_raid.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "home_raid"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 25
+  }
+}

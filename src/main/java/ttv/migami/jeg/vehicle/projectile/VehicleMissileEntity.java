@@ -1,5 +1,7 @@
 package ttv.migami.jeg.vehicle.projectile;
 
+import ttv.migami.jeg.vehicle.util.VehicleGeometry;
+
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -35,6 +37,20 @@ public final class VehicleMissileEntity extends Entity {
     /** Matches rocket launcher trail gravity ({@code BulletEntity} when gravity+trail). */
     private static final double ROCKET_LIKE_GRAVITY = 0.040D;
 
+    public String advancementWeaponId() { return this.weaponId.toString(); }
+    private String advancementVehicle = "";
+    private VehicleGeometry.Hit vehicleHit;
+    public String advancementVehicleId() { return this.advancementVehicle; }
+    public String advancementGuidance() {
+        if (this.weaponId.equals(Reference.id("igla_9k38"))) return "air";
+        if (this.weaponId.equals(Reference.id("javelin")) && !this.ballisticUnguided) return this.topAttack ? "top_attack" : "direct";
+        return "";
+    }
+    private java.util.UUID ownerUuid;
+    private Entity advancementOwner() {
+        if (this.ownerUuid != null && this.level() instanceof ServerLevel server) return server.getEntity(this.ownerUuid);
+        return this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+    }
     private int ownerId = -1;
     private int targetId = -1;
     private int directHitVehicleId = -1;
@@ -60,6 +76,8 @@ public final class VehicleMissileEntity extends Entity {
     public VehicleMissileEntity(Level level, Entity owner, @Nullable Entity target, @Nullable Vec3 targetPosition, Vec3 position, Vec3 velocity, ResourceLocation weaponId, boolean topAttack) {
         this(ModEntities.VEHICLE_MISSILE.get(), level);
         this.ownerId = owner.getId();
+        this.ownerUuid = owner.getUUID();
+        if (owner.getVehicle() instanceof VehicleEntity vehicle) this.advancementVehicle = vehicle.vehicleDataId().toString();
         this.targetId = target == null ? -1 : target.getId();
         this.weaponId = weaponId;
         this.targetPosition = targetPosition;
@@ -113,17 +131,22 @@ public final class VehicleMissileEntity extends Entity {
         }
         VehicleMissileProfile profile = this.profile();
         Entity target = this.currentTarget();
+        Entity defendedTarget = target;
         if (profile.usesLockOn()) {
             VehicleDecoyEntity.findNearestFlare(this.level(), this.position(), DECOY_SEEK_RANGE)
                     .ifPresent(decoy -> this.targetId = decoy.getId());
             target = this.currentTarget();
         }
-        Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+        Entity owner = this.advancementOwner();
         Entity ownerVehicle = owner == null ? null : owner.getVehicle();
+        Entity defender = defendedTarget instanceof VehicleEntity vehicle ? vehicle.getControllingPassenger() : defendedTarget;
+        boolean hostileMissile = ttv.migami.jeg.advancement.GameplayActions.hostile(ownerVehicle == null ? owner : ownerVehicle, defender);
+        if (hostileMissile && target != defendedTarget && target instanceof VehicleDecoyEntity) ttv.migami.jeg.advancement.GameplayActions.action(defender, "missile_defence");
         boolean flareTarget = target instanceof VehicleDecoyEntity decoy && !decoy.isSmokeDecoy();
         boolean validTarget = flareTarget
                 || (target != null && profile.canContinueTracking(target, owner, ownerVehicle)
                 && !ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(this, target));
+        if (hostileMissile && defendedTarget != null && !validTarget && ttv.migami.jeg.util.SmokeUtil.isSmokeBlockingLock(this, defendedTarget)) ttv.migami.jeg.advancement.GameplayActions.action(defender, "missile_defence");
         Vec3 aimPoint = target != null
                 ? target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D)
                 : this.targetPosition;
@@ -131,6 +154,7 @@ public final class VehicleMissileEntity extends Entity {
                 && ttv.migami.jeg.util.SmokeUtil.isLineOccludedBySmoke(this.level(), this.position(), aimPoint)) {
             validTarget = false;
             this.targetId = -1;
+            if (hostileMissile) ttv.migami.jeg.advancement.GameplayActions.action(defender, "missile_defence");
         }
         // SW Igla: lose active guidance if owner stops zooming / loses LOS
         if (Reference.id("igla_9k38").equals(this.weaponId) && owner instanceof ServerPlayer player) {
@@ -157,14 +181,7 @@ public final class VehicleMissileEntity extends Entity {
                 }
                 Vec3 desired = aimPoint.subtract(this.position()).normalize().scale(profile.maxSpeed());
                 this.setDeltaMovement(this.getDeltaMovement().scale(1.0D - profile.turnRate()).add(desired.scale(profile.turnRate())));
-                if (target != null && this.distanceToSqr(target) < 1.4D) {
-                    this.directHitEntityId = target.getId();
-                    if (target instanceof VehicleEntity) {
-                        this.directHitVehicleId = target.getId();
-                        this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
-                    }
-                    this.explode();
-                } else if (target == null && (!this.topAttack || this.tickCount >= 30) && this.position().distanceToSqr(aimPoint) < 1.4D) {
+                if (target == null && (!this.topAttack || this.tickCount >= 30) && this.position().distanceToSqr(aimPoint) < 1.4D) {
                     this.explode();
                 }
             }
@@ -209,14 +226,7 @@ public final class VehicleMissileEntity extends Entity {
         // SW multiplies motion after steering
         this.setDeltaMovement(this.getDeltaMovement().scale(0.92D).add(toVec.scale(0.08D * profile.maxSpeed())));
 
-        if (target != null && this.distanceToSqr(target) < 1.4D) {
-            this.directHitEntityId = target.getId();
-            if (target instanceof VehicleEntity) {
-                this.directHitVehicleId = target.getId();
-                this.setPos(target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D));
-            }
-            this.explode();
-        } else if (target == null && this.position().distanceToSqr(aimPoint) < 1.4D) {
+        if (target == null && this.position().distanceToSqr(aimPoint) < 1.4D) {
             this.explode();
         }
     }
@@ -231,31 +241,33 @@ public final class VehicleMissileEntity extends Entity {
 
     private boolean hitAlongPath(Vec3 start, Vec3 end) {
         HitResult blockHit = this.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-        if (blockHit.getType() != HitResult.Type.MISS) {
-            this.setPos(blockHit.getLocation());
-            this.explode();
-            return true;
-        }
-
-        Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+        Entity owner = this.advancementOwner();
         Entity ownerVehicle = owner == null ? null : owner.getVehicle();
         AABB path = new AABB(start, end).inflate(0.55D);
         Entity closest = null;
-        double closestDistance = Double.MAX_VALUE;
-        for (Entity target : this.level().getEntities(this, path, target -> this.canImpact(target, owner, ownerVehicle))) {
-            double distance = target.distanceToSqr(start);
-            if (distance < closestDistance) {
-                closest = target;
-                closestDistance = distance;
-            }
+        Vec3 hitPosition = null;
+        double closestDistance = start.distanceToSqr(blockHit.getLocation());
+        if (blockHit.getType() == HitResult.Type.MISS) closestDistance = Double.MAX_VALUE;
+        java.util.List<Entity> candidates = new java.util.ArrayList<>(this.level().getEntities(this, path, target -> this.canImpact(target, owner, ownerVehicle)));
+        for (VehicleEntity vehicle : this.level().getEntitiesOfClass(VehicleEntity.class, path.inflate(16), target -> this.canImpact(target, owner, ownerVehicle))) {
+            if (!candidates.contains(vehicle) && VehicleGeometry.bounds(vehicle).intersects(path)) candidates.add(vehicle);
+        }
+        this.vehicleHit = null;
+        for (Entity target : candidates) {
+            VehicleGeometry.Hit partHit = target instanceof VehicleEntity vehicle ? VehicleGeometry.clip(vehicle, start, end) : null;
+            Vec3 point = target instanceof VehicleEntity ? (partHit == null ? null : partHit.position()) : target.getBoundingBox().inflate(0.3).clip(start, end).orElse(null);
+            if (point == null) continue;
+            double distance = start.distanceToSqr(point);
+            if (distance < closestDistance) { closest = target; hitPosition = point; closestDistance = distance; this.vehicleHit = partHit; }
         }
         if (closest != null) {
-            this.setPos(closest.position().add(0.0D, closest.getBbHeight() * 0.5D, 0.0D));
+            this.setPos(hitPosition);
             this.directHitVehicleId = closest instanceof VehicleEntity ? closest.getId() : -1;
             this.directHitEntityId = closest.getId();
             this.explode();
             return true;
         }
+        if (blockHit.getType() != HitResult.Type.MISS) { this.setPos(blockHit.getLocation()); this.explode(); return true; }
         return false;
     }
 
@@ -276,7 +288,7 @@ public final class VehicleMissileEntity extends Entity {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             VehicleMissileProfile profile = this.profile();
             this.spawnMissileExplosionEffects(serverLevel);
-            Entity owner = this.ownerId < 0 ? null : this.level().getEntity(this.ownerId);
+            Entity owner = this.advancementOwner();
             LivingEntity livingOwner = owner instanceof LivingEntity living ? living : null;
             boolean directHitVehicle = this.directHitVehicleId >= 0;
             float explosionPower = directHitVehicle ? profile.explosionPower() * VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE : profile.explosionPower();
@@ -294,7 +306,9 @@ public final class VehicleMissileEntity extends Entity {
                     if (directHit instanceof LivingEntity livingHit) {
                         ModDamageTypes.hurtWithPlayerKillCredit(livingHit, directSource, direct, owner);
                     } else {
-                        directHit.hurt(directSource, direct);
+                        if (directHit instanceof VehicleEntity vehicle && vehicle.hurtAtPart(directSource, direct, this.vehicleHit == null ? ttv.migami.jeg.vehicle.data.subdata.OBBInfo.Part.BODY : this.vehicleHit.part())) {
+                            ttv.migami.jeg.advancement.GameplayActions.hit(owner, this, vehicle, false);
+                        }
                     }
                 }
             }

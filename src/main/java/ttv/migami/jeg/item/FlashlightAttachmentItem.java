@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -42,6 +43,7 @@ public class FlashlightAttachmentItem extends AttachmentItem {
         }
         int battery = ensureBattery(stack);
         setBattery(stack, battery + CHARGE_AMOUNT);
+        if (battery(stack) > battery) GameplayActions.action(player, "flashlight_charge", "jeg:flashlight");
         player.level().gameEvent(player, GameEvent.NOTE_BLOCK_PLAY, player.position());
         playSound(player.level(), player, Reference.id("item.flashlight_charge"), 1.0F, randomChargePitch(player));
     }
@@ -73,6 +75,10 @@ public class FlashlightAttachmentItem extends AttachmentItem {
                 setBattery(stack, battery - 1);
             }
             setPowered(stack, !powered);
+            if (!powered) {
+                GameplayActions.action(player, "flashlight_on", "jeg:flashlight");
+                GameplayActions.action(player, "attachment_use", "jeg:flashlight");
+            }
             player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
             level.gameEvent(player, GameEvent.BLOCK_ACTIVATE, player.position());
             playSound(level, player, Reference.id("item.flashlight"), 1.0F, 1.0F);

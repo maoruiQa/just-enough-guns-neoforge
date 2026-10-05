@@ -1,0 +1,39 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:phantom_smg"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.exploration.armada.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.exploration.armada.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "explore": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "structures": "jeg:sky_ship_armada"
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "explore"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/exploration/root",
+  "rewards": {
+    "experience": 25
+  }
+}

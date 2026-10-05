@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.advancement.GameplayActions;
 import ttv.migami.jeg.init.ModBlockEntities;
 import ttv.migami.jeg.init.ModItems;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -98,7 +99,10 @@ public final class VehicleContainerBlockEntity extends BlockEntity {
             player.displayClientMessage(Component.translatable("message.jeg.vehicle_container.blocked"), true);
             return false;
         }
-        level.addFreshEntity(vehicle);
+        if (!level.addFreshEntity(vehicle)) {
+            return false;
+        }
+        GameplayActions.action(player, "deploy", vehicle.vehicleDataId());
         level.removeBlock(this.getBlockPos(), false);
         return true;
     }
