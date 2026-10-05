@@ -10,6 +10,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.KeyBindings;
@@ -17,6 +19,7 @@ import ttv.migami.jeg.client.util.ScreenProjection;
 import ttv.migami.jeg.vehicle.client.VehicleClientState;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleType;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.util.VehicleGeometry;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
@@ -45,6 +48,10 @@ public final class VehicleHudOverlay {
     private static final Identifier CROSSHAIR_SEEK_MISSILE = Reference.id("textures/overlay/vehicle/crosshair/common_seek_missile.png");
     private static final Identifier CROSSHAIR_THIRD_CAMERA = Reference.id("textures/overlay/vehicle/crosshair/third_camera.png");
     private static final Identifier CROSSHAIR_US_APC = Reference.id("textures/overlay/vehicle/crosshair/us_apc.png");
+    private static final Identifier CROSSHAIR_RU_APC = Reference.id("textures/overlay/vehicle/crosshair/ru_apc.png");
+    private static final Identifier CROSSHAIR_DYNAMIC = Reference.id("textures/overlay/vehicle/crosshair/common_dynamic_cross.png");
+    private static final Identifier CROSSHAIR_FIXED_POINT = Reference.id("textures/overlay/vehicle/crosshair/common_fixed_point.png");
+    private static final Identifier HELICOPTER_CROSSHAIR = Reference.id("textures/overlay/vehicle/helicopter/crosshair_ind.png");
     private static final Identifier FRAME_GREEN = Reference.id("textures/overlay/frame/frame_green.png");
     private static final Identifier FRAME_TARGET = Reference.id("textures/overlay/frame/frame_target.png");
     private static final Identifier FRAME_TARGET_TRIANGLE = Reference.id("textures/overlay/frame/frame_target_triangle.png");
@@ -391,13 +398,84 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderReticle(GuiGraphicsExtractor guiGraphics, VehicleEntity vehicle) {
-        int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
-        int x = (guiGraphics.guiWidth() - size) / 2;
-        int y = (guiGraphics.guiHeight() - size) / 2;
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null) return;
+        if (vehicle.selectedVehicleWeaponId(player) == null || !vehicle.canPassengerUseSelectedVehicleWeapon(player)) return;
+        CameraType camera = minecraft.options.getCameraType();
+        boolean zooming = VehicleClientState.isRidingVehicle()
+                && VehicleClientState.vehicleId() == vehicle.getId() && VehicleClientState.zoomDown();
+        boolean helicopterPilot = vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                && vehicle.getSeatIndex(player) == 0;
+        // SW's separate helicopter HUD draws a small projected indicator for the pilot.
+        if (camera == CameraType.THIRD_PERSON_FRONT && !helicopterPilot && !zooming) return;
+
+        Vec3 screen = null;
+        if (camera != CameraType.FIRST_PERSON || helicopterPilot || isDynamicReticle(vehicle, player, zooming)) {
+            float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+            Vec3 start = vehicle.vehicleHudShootPos(player, partialTick);
+            Vec3 direction = vehicle.vehicleHudShootDirection(player, partialTick).normalize();
+            if (direction.lengthSqr() > 1.0E-4D) {
+                Vec3 end = start.add(direction.scale(512.0D));
+                Vec3 hit = minecraft.level.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player)).getLocation();
+                double distance = start.distanceToSqr(hit);
+                for (Entity target : minecraft.level.getEntities(vehicle, new AABB(start, hit).inflate(8.0D),
+                        entity -> entity.isAlive() && !entity.isSpectator() && entity != player
+                                && entity.getVehicle() != vehicle && (entity instanceof LivingEntity || entity instanceof VehicleEntity))) {
+                    Vec3 point = null;
+                    if (target instanceof VehicleEntity other) {
+                        if (VehicleGeometry.bounds(other).intersects(new AABB(start, hit).inflate(0.3D))) {
+                            VehicleGeometry.Hit vehicleHit = VehicleGeometry.clip(other, start, hit);
+                            if (vehicleHit != null) point = vehicleHit.position();
+                        }
+                    } else {
+                        point = target.getBoundingBox().inflate(0.3D).clip(start, hit).orElse(null);
+                    }
+                    if (point != null && start.distanceToSqr(point) < distance) {
+                        hit = point;
+                        distance = start.distanceToSqr(point);
+                    }
+                }
+                if (ScreenProjection.canSee(hit)) screen = ScreenProjection.worldToScreen(hit);
+            }
+        }
+
+        if (helicopterPilot) {
+            if (screen != null) {
+                int size = 16;
+                boolean helicopterHudTexture = camera == CameraType.FIRST_PERSON || zooming;
+                Identifier texture = helicopterHudTexture ? HELICOPTER_CROSSHAIR : CROSSHAIR_THIRD_CAMERA;
+                int textureSize = helicopterHudTexture ? 32 : 64;
+                coloredReticleBlit(guiGraphics, texture, (float) screen.x - size / 2.0F, (float) screen.y - size / 2.0F,
+                        size, size, 0.0F, 0.0F, textureSize, textureSize, textureSize, textureSize, reticleColor(vehicle));
+            }
+            return;
+        }
+        if (camera == CameraType.THIRD_PERSON_BACK && !zooming) {
+            if (screen != null) preciseBlit(guiGraphics, CROSSHAIR_THIRD_CAMERA, (float) screen.x - 12.0F,
+                    (float) screen.y - 12.0F, 24, 24, 0.0F, 0.0F, 64, 64, 64, 64);
+            return;
+        }
         Identifier texture = reticleTexture(vehicle);
-        preciseBlit(guiGraphics, texture, x, y, size, size, 0.0F, 0.0F, 512.0F, 512.0F, 512.0F, 512.0F);
+        int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
+        float x = (guiGraphics.guiWidth() - size) / 2.0F;
+        float y = (guiGraphics.guiHeight() - size) / 2.0F;
+        if (isDynamicReticle(vehicle, player, zooming)) {
+            if (screen != null) coloredReticleBlit(guiGraphics, texture, (float) screen.x - size / 2.0F,
+                    (float) screen.y - size / 2.0F, size, size, 0.0F, 0.0F, 512, 512, 512, 512, reticleColor(vehicle));
+            if ("speedboat".equals(vehicle.vehicleDataId().getPath())) texture = CROSSHAIR_FIXED_POINT;
+            else return;
+        }
+        coloredReticleBlit(guiGraphics, texture, x, y, size, size, 0.0F, 0.0F, 512, 512, 512, 512, reticleColor(vehicle));
     }
 
+    private static boolean isDynamicReticle(VehicleEntity vehicle, Entity passenger, boolean zooming) {
+        if (zooming) return false;
+        String vehicleId = vehicle.vehicleDataId().getPath();
+        Identifier weaponId = vehicle.selectedVehicleWeaponId(passenger);
+        return "speedboat".equals(vehicleId) || "mi28".equals(vehicleId)
+                && weaponId != null && "light_machine_gun".equals(weaponId.getPath());
+    }
 
     private static void renderMissileSeekFrames(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
         LocalPlayer player = minecraft.player;
@@ -468,8 +546,17 @@ public final class VehicleHudOverlay {
         boolean zooming = VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
-        if (!zooming && Minecraft.getInstance().options.getCameraType() != CameraType.FIRST_PERSON) {
-            return CROSSHAIR_THIRD_CAMERA;
+        switch (vehiclePath) {
+            case "speedboat": return zooming ? CROSSHAIR_GUN : CROSSHAIR_DYNAMIC;
+            case "bmp2":
+                if ("vehicle_30mm_cannon".equals(weaponPath)) return CROSSHAIR_RU_APC;
+                return "vehicle_bmp2_missile".equals(weaponPath) ? CROSSHAIR_MISSILE : CROSSHAIR_GUN;
+            case "lav150": return "vehicle_20mm_cannon".equals(weaponPath) ? CROSSHAIR_US_APC : CROSSHAIR_GUN;
+            case "mi28":
+                if ("light_machine_gun".equals(weaponPath)) return CROSSHAIR_GUN;
+                if ("vehicle_9m336_missile".equals(weaponPath) || zooming && "vehicle_kh39_missile".equals(weaponPath)) return CROSSHAIR_SEEK_MISSILE;
+                return CROSSHAIR_MISSILE;
+            default: break;
         }
         if (zooming && "hpj11".equals(vehiclePath)) {
             return CROSSHAIR_CN_HPJ_ZOOMING;
@@ -562,8 +649,20 @@ public final class VehicleHudOverlay {
                 && VehicleClientState.zoomDown();
     }
 
+    private static int reticleColor(VehicleEntity vehicle) {
+        return switch (vehicle.vehicleDataId().getPath()) {
+            case "bmp2", "mi28" -> 0xFFFFC700;
+            case "lav150" -> 0xFF66FF00;
+            default -> 0xFFFFFFFF;
+        };
+    }
+
+    private static void coloredReticleBlit(GuiGraphicsExtractor guiGraphics, Identifier texture, float x, float y, float width, float height, float uOffset, float vOffset, float uWidth, float vHeight, float textureWidth, float textureHeight, int color) {
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, Math.round(x), Math.round(y), uOffset, vOffset, Math.round(width), Math.round(height), Math.round(uWidth), Math.round(vHeight), Math.round(textureWidth), Math.round(textureHeight), color);
+    }
+
     private static void preciseBlit(GuiGraphicsExtractor guiGraphics, Identifier texture, float x, float y, float width, float height, float uOffset, float vOffset, float uWidth, float vHeight, float textureWidth, float textureHeight) {
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, Math.round(x), Math.round(y), uOffset, vOffset, Math.round(width), Math.round(height), Math.round(textureWidth), Math.round(textureHeight), Math.round(textureWidth), Math.round(textureHeight));
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, Math.round(x), Math.round(y), uOffset, vOffset, Math.round(width), Math.round(height), Math.round(uWidth), Math.round(vHeight), Math.round(textureWidth), Math.round(textureHeight));
     }
 
     private static void blitVehiclePart(GuiGraphicsExtractor guiGraphics, Identifier texture, int x, int y, boolean damaged) {

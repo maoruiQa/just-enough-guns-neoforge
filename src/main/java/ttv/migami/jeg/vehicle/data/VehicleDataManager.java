@@ -315,7 +315,9 @@ public final class VehicleDataManager {
                     getDouble(box, "z", 0.0D),
                     getDouble(box, "half_width", 0.5D),
                     getDouble(box, "half_height", 0.5D),
-                    getDouble(box, "half_depth", 0.5D)
+                    getDouble(box, "half_depth", 0.5D),
+                    getString(box, "transform", "vehicle"),
+                    getString(box, "rotation", "vehicle")
             ));
         }
         return new OBBInfo(List.copyOf(boxes));

@@ -15,5 +15,10 @@ public record OBBInfo(List<Box> boxes) {
         INTERACTIVE
     }
 
-    public record Box(Part part, double x, double y, double z, double halfWidth, double halfHeight, double halfDepth) {}
+    public record Box(Part part, double x, double y, double z, double halfWidth, double halfHeight, double halfDepth,
+                      String transform, String rotation) {
+        public Box(Part part, double x, double y, double z, double halfWidth, double halfHeight, double halfDepth) {
+            this(part, x, y, z, halfWidth, halfHeight, halfDepth, "vehicle", "vehicle");
+        }
+    }
 }

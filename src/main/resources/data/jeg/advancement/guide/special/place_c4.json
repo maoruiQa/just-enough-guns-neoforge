@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:c4_bomb"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.special.place_c4.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.special.place_c4.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "explosive_place",
+        "subject": "jeg:c4_bomb"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/special/root",
+  "rewards": {
+    "experience": 5
+  }
+}

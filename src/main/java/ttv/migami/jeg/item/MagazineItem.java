@@ -137,6 +137,7 @@ public final class MagazineItem extends Item {
         magazineStack.set(ModDataComponents.MAGAZINE_AMMO_COUNT.get(), ammoCount + 1);
         player.getCooldowns().addCooldown(magazineStack, type.cooldownTicks());
         playLoadSound(level, player);
+        ttv.migami.jeg.advancement.GameplayActions.action(player, "magazine_load", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(magazineStack.getItem()));
         return true;
     }
 
@@ -173,6 +174,7 @@ public final class MagazineItem extends Item {
         }
 
         int transferCount = Math.min(state.ammoCount(), state.receivableCount());
+        ttv.migami.jeg.advancement.GameplayActions.action(player, "magazine_unload", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(magazineStack.getItem()));
         ItemStack offhandStack = player.getOffhandItem();
         if (offhandStack.isEmpty()) {
             player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ammoItem, transferCount));

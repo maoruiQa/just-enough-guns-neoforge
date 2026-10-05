@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rocket_launcher"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.weapon_ah6_vehicle_70mm_rocket.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.weapon_ah6_vehicle_70mm_rocket.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:ah6/jeg:vehicle_70mm_rocket"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/root",
+  "rewards": {
+    "experience": 5
+  }
+}

@@ -1,5 +1,7 @@
 package ttv.migami.jeg.menu;
 
+import ttv.migami.jeg.advancement.GameplayActions;
+import ttv.migami.jeg.init.ModDataComponents;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -64,6 +66,15 @@ public final class MagazineLoaderMenu extends AbstractContainerMenu {
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return false;
             }
+
+            @Override
+            public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
+                if (stack.getItem() instanceof MagazineItem
+                        && stack.getOrDefault(ModDataComponents.MAGAZINE_AMMO_COUNT.get(), 0) > 0) {
+                    GameplayActions.action(player, "loader_output");
+                }
+                super.onTake(player, stack);
+            }
         });
 
         for (int row = 0; row < 3; row++) {
@@ -121,7 +132,7 @@ public final class MagazineLoaderMenu extends AbstractContainerMenu {
         if (stack.getCount() == copy.getCount()) {
             return ItemStack.EMPTY;
         }
-        slot.onTake(player, stack);
+        slot.onTake(player, index == SLOT_OUTPUT ? copy : stack);
         return copy;
     }
 

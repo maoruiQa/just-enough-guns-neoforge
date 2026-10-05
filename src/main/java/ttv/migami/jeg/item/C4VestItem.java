@@ -1,5 +1,6 @@
 package ttv.migami.jeg.item;
 
+import ttv.migami.jeg.advancement.GameplayActions;
 import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -95,6 +96,7 @@ public final class C4VestItem extends Item {
                 continue;
             }
             explodeTwice(level, owner, target);
+            if (target != owner) GameplayActions.action(owner, "vest_detonate", "jeg:c4_vest");
             target.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
             count++;
         }

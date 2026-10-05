@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:angled_grip"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.obtain_angled_grip.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.obtain_angled_grip.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:angled_grip"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/root"
+}

@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:waterpipe_shotgun"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.arsenal.obtain_waterpipe_shotgun.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.arsenal.obtain_waterpipe_shotgun.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:waterpipe_shotgun"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/root"
+}

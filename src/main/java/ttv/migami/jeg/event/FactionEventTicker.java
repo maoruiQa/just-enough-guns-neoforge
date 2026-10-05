@@ -35,6 +35,7 @@ public final class FactionEventTicker {
         }
 
         MainThreadLevelActionScheduler.tick(event.getServer());
+        for (var player : event.getServer().getPlayerList().getPlayers()) ttv.migami.jeg.advancement.GameplayActions.tick(player);
     }
 }
 

@@ -266,7 +266,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> SPEEDBOAT = configuredVehicle("speedboat", 3.0F, 2.0F);
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> AH6 = configuredVehicle("ah6", 3.0F, 2.9F);
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> A10 = configuredVehicle("a10", 2.8F, 1.0F);
-    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> BMP2 = configuredVehicle("bmp2", 4.4F, 3.0F);
+    public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> BMP2 = configuredVehicle("bmp2", 4.0F, 3.0F);
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> MI28 = configuredVehicle("mi28", 4.5F, 4.5F);
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> TOM6 = configuredVehicle("tom6", 2.8F, 1.0F);
     public static final DeferredHolder<EntityType<?>, EntityType<ConfiguredVehicleEntity>> LASER_TOWER = configuredVehicle("laser_tower", 1.4F, 2.0F);

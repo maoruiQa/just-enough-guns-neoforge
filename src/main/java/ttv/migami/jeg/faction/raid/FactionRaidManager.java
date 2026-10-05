@@ -631,6 +631,7 @@ public final class FactionRaidManager {
                 continue;
             }
             eligiblePlayers.add(player);
+            ttv.migami.jeg.advancement.GameplayActions.action(player, "raid_win", raid.factionName);
         }
         if (eligiblePlayers.isEmpty()) {
             return;

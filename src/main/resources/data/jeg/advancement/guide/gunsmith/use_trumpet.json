@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:trumpet"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.use_trumpet.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.use_trumpet.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:trumpet"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/install_trumpet",
+  "rewards": {
+    "experience": 5
+  }
+}

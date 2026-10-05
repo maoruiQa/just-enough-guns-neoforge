@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:weighted_stock"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.gunsmith.obtain_weighted_stock.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.gunsmith.obtain_weighted_stock.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "jeg:weighted_stock"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "obtained"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/gunsmith/root"
+}
