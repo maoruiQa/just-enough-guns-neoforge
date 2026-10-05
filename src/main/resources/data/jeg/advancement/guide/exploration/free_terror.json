@@ -9,18 +9,18 @@
     "description": {
       "translate": "advancement.jeg.guide.exploration.free_terror.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "enemy_kill",
         "subject": "jeg:terror_phantom"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -29,7 +29,7 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/exploration/root",
+  "parent": "jeg:guide/exploration/after_battle",
   "rewards": {
     "experience": 100
   }

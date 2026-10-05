@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:silencer"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.use_silencer.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.use_silencer.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "attachment_use",
-        "subject": "jeg:silencer"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/install_silencer",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

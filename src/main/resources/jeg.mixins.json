@@ -15,7 +15,8 @@
     "GunnerSunBurnMixin",
     "GunnerWaterConversionMixin",
     "LivingEntityDeathDropsMixin",
-    "GunRepairAdvancementMixin"
+    "GunRepairAdvancementMixin",
+    "PlayerAdvancementsMigrationMixin"
   ],
   "client": [
     "GameRendererMixin",

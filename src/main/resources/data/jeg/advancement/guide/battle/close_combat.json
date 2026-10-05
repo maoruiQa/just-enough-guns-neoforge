@@ -1,0 +1,42 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_sword"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.close_combat.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.close_combat.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "hit_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "melee_hit"
+      }
+    },
+    "hit_1": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "bayonet_hit"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "hit_0",
+      "hit_1"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/close_quarters",
+  "rewards": {
+    "experience": 5
+  }
+}

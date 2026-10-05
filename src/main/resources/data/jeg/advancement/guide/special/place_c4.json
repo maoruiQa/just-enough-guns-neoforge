@@ -16,11 +16,11 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "explosive_place",
         "subject": "jeg:c4_bomb"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [

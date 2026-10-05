@@ -1,0 +1,53 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rifle_ammo"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.crew.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.crew.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "seat": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "seat_change"
+      }
+    },
+    "weapon": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "weapon_change"
+      }
+    },
+    "reload": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_reload"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "seat"
+    ],
+    [
+      "weapon"
+    ],
+    [
+      "reload"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/workshop",
+  "rewards": {
+    "experience": 5
+  }
+}

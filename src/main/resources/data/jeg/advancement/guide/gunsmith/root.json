@@ -1,23 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:reflex_sight"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.root.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.root.description"
-    },
-    "frame": "task",
-    "show_toast": false,
-    "announce_to_chat": false,
-    "hidden": false,
-    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png"
-  },
   "criteria": {
     "start": {
-      "trigger": "minecraft:tick"
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [

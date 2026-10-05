@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "id": "jeg:combat_pistol"
+      "id": "minecraft:book"
     },
     "title": {
       "translate": "advancement.jeg.guide.training.root.title"

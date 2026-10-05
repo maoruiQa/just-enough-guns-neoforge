@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:custom_smg"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.arsenal.use_custom_smg.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.arsenal.use_custom_smg.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "hit",
-        "subject": "jeg:custom_smg"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/arsenal/obtain_custom_smg",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:rocket_launcher"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.anti_armour.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.anti_armour.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "kill_jeg_bmp2": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_vehicle_kill",
+        "subject": "jeg:bmp2"
+      }
+    },
+    "kill_jeg_lav150": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_vehicle_kill",
+        "subject": "jeg:lav150"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "kill_jeg_bmp2",
+      "kill_jeg_lav150"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/enemy_profiles",
+  "rewards": {
+    "experience": 25
+  }
+}

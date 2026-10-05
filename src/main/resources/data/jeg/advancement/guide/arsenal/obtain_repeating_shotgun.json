@@ -1,29 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:repeating_shotgun"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.arsenal.obtain_repeating_shotgun.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.arsenal.obtain_repeating_shotgun.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "obtained": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "jeg:repeating_shotgun"
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -31,6 +9,5 @@
       "obtained"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/arsenal/root"
+  "sends_telemetry_event": false
 }
