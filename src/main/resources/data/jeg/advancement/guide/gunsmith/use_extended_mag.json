@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:extended_mag"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.use_extended_mag.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.use_extended_mag.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "attachment_use",
-        "subject": "jeg:extended_mag"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/install_extended_mag",
-  "rewards": {
-    "experience": 100
-  }
+  "sends_telemetry_event": false
 }

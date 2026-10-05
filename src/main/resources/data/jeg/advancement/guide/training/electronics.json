@@ -1,0 +1,53 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:flashlight"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.electronics.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.electronics.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "light": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "flashlight_on"
+      }
+    },
+    "laser": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "laser_on"
+      }
+    },
+    "charge": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "flashlight_charge"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "light"
+    ],
+    [
+      "laser"
+    ],
+    [
+      "charge"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/loadout",
+  "rewards": {
+    "experience": 5
+  }
+}

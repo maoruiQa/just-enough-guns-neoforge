@@ -1,0 +1,153 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:reflex_sight"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.loadout.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.loadout.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "installed": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install"
+      }
+    },
+    "sight_jeg_holographic_sight": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:holographic_sight"
+      }
+    },
+    "sight_jeg_monocle_sight": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:monocle_sight"
+      }
+    },
+    "sight_jeg_reflex_sight": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:reflex_sight"
+      }
+    },
+    "sight_jeg_telescopic_sight": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:telescopic_sight"
+      }
+    },
+    "handling_jeg_angled_grip": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:angled_grip"
+      }
+    },
+    "handling_jeg_light_grip": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:light_grip"
+      }
+    },
+    "handling_jeg_light_stock": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:light_stock"
+      }
+    },
+    "handling_jeg_makeshift_stock": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:makeshift_stock"
+      }
+    },
+    "handling_jeg_tactical_stock": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:tactical_stock"
+      }
+    },
+    "handling_jeg_vertical_grip": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:vertical_grip"
+      }
+    },
+    "handling_jeg_weighted_stock": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:weighted_stock"
+      }
+    },
+    "muzzle_jeg_explosive_muzzle": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:explosive_muzzle"
+      }
+    },
+    "muzzle_jeg_silencer": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:silencer"
+      }
+    },
+    "muzzle_jeg_trumpet": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_use",
+        "subject": "jeg:trumpet"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "installed"
+    ],
+    [
+      "sight_jeg_holographic_sight",
+      "sight_jeg_monocle_sight",
+      "sight_jeg_reflex_sight",
+      "sight_jeg_telescopic_sight"
+    ],
+    [
+      "handling_jeg_angled_grip",
+      "handling_jeg_light_grip",
+      "handling_jeg_light_stock",
+      "handling_jeg_makeshift_stock",
+      "handling_jeg_tactical_stock",
+      "handling_jeg_vertical_grip",
+      "handling_jeg_weighted_stock"
+    ],
+    [
+      "muzzle_jeg_explosive_muzzle",
+      "muzzle_jeg_silencer",
+      "muzzle_jeg_trumpet"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/ammunition_ready",
+  "rewards": {
+    "experience": 25
+  }
+}

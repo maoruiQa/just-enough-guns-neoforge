@@ -1,0 +1,136 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:combat_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.enemy_profiles.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.enemy_profiles.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "undead_zombie": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "zombie"
+      }
+    },
+    "undead_husk": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "husk"
+      }
+    },
+    "undead_drowned": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "drowned"
+      }
+    },
+    "undead_zombie_illager": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "zombieVillager"
+      }
+    },
+    "undead_zombified_iglin": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "zombifiedPiglin"
+      }
+    },
+    "marksman_skeleton": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "skeleton"
+      }
+    },
+    "marksman_stray": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "stray"
+      }
+    },
+    "marksman_wither_keleton": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "witherSkeleton"
+      }
+    },
+    "marksman_parched": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "parched"
+      }
+    },
+    "raider_pillager": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "pillager"
+      }
+    },
+    "raider_vindicator": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "vindicator"
+      }
+    },
+    "raider_piglin": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "piglin"
+      }
+    },
+    "raider_piglin_rute": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gunner_kill",
+        "subject": "piglinBrute"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "undead_zombie",
+      "undead_husk",
+      "undead_drowned",
+      "undead_zombie_illager",
+      "undead_zombified_iglin"
+    ],
+    [
+      "marksman_skeleton",
+      "marksman_stray",
+      "marksman_wither_keleton",
+      "marksman_parched"
+    ],
+    [
+      "raider_pillager",
+      "raider_vindicator",
+      "raider_piglin",
+      "raider_piglin_rute"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/root",
+  "rewards": {
+    "experience": 25
+  }
+}

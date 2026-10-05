@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "id": "jeg:combat_pistol"
+      "id": "minecraft:book"
     },
     "title": {
       "translate": "advancement.jeg.guide.training.recipes.title"
@@ -16,10 +16,10 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "recipe_view"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [

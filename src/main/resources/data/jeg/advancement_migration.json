@@ -1,0 +1,2018 @@
+{
+  "criteria": {
+    "jeg:guide/training/recipes": {
+      "done": [
+        [
+          "jeg:guide/training/recipes",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/ready": {
+      "weapon_jeg_assault_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "assault_rifle"
+        ]
+      ],
+      "weapon_jeg_blossom_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "blossom_rifle"
+        ]
+      ],
+      "weapon_jeg_bolt_action_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "bolt_action_rifle"
+        ]
+      ],
+      "weapon_jeg_burst_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "burst_rifle"
+        ]
+      ],
+      "weapon_jeg_combat_pistol": [
+        [
+          "jeg:guide/training/first_weapon",
+          "combat_pistol"
+        ]
+      ],
+      "weapon_jeg_combat_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "combat_rifle"
+        ]
+      ],
+      "weapon_jeg_custom_smg": [
+        [
+          "jeg:guide/training/first_weapon",
+          "custom_smg"
+        ]
+      ],
+      "weapon_jeg_double_barrel_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "double_barrel_shotgun"
+        ]
+      ],
+      "weapon_jeg_finger_gun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "finger_gun"
+        ]
+      ],
+      "weapon_jeg_flamethrower": [
+        [
+          "jeg:guide/training/first_weapon",
+          "flamethrower"
+        ]
+      ],
+      "weapon_jeg_flare_gun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "flare_gun"
+        ]
+      ],
+      "weapon_jeg_grenade_launcher": [
+        [
+          "jeg:guide/training/first_weapon",
+          "grenade_launcher"
+        ]
+      ],
+      "weapon_jeg_hollenfire_mk2": [
+        [
+          "jeg:guide/training/first_weapon",
+          "hollenfire_mk2"
+        ]
+      ],
+      "weapon_jeg_holy_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "holy_shotgun"
+        ]
+      ],
+      "weapon_jeg_hypersonic_cannon": [
+        [
+          "jeg:guide/training/first_weapon",
+          "hypersonic_cannon"
+        ]
+      ],
+      "weapon_jeg_infantry_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "infantry_rifle"
+        ]
+      ],
+      "weapon_jeg_light_machine_gun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "light_machine_gun"
+        ]
+      ],
+      "weapon_jeg_minigun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "minigun"
+        ]
+      ],
+      "weapon_jeg_pump_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "pump_shotgun"
+        ]
+      ],
+      "weapon_jeg_repeating_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "repeating_shotgun"
+        ]
+      ],
+      "weapon_jeg_revolver": [
+        [
+          "jeg:guide/training/first_weapon",
+          "revolver"
+        ]
+      ],
+      "weapon_jeg_rocket_launcher": [
+        [
+          "jeg:guide/training/first_weapon",
+          "rocket_launcher"
+        ]
+      ],
+      "weapon_jeg_semi_auto_pistol": [
+        [
+          "jeg:guide/training/first_weapon",
+          "semi_auto_pistol"
+        ]
+      ],
+      "weapon_jeg_semi_auto_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "semi_auto_rifle"
+        ]
+      ],
+      "weapon_jeg_service_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "service_rifle"
+        ]
+      ],
+      "weapon_jeg_soulhunter_mk2": [
+        [
+          "jeg:guide/training/first_weapon",
+          "soulhunter_mk2"
+        ]
+      ],
+      "weapon_jeg_subsonic_rifle": [
+        [
+          "jeg:guide/training/first_weapon",
+          "subsonic_rifle"
+        ]
+      ],
+      "weapon_jeg_supersonic_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "supersonic_shotgun"
+        ]
+      ],
+      "weapon_jeg_waterpipe_shotgun": [
+        [
+          "jeg:guide/training/first_weapon",
+          "waterpipe_shotgun"
+        ]
+      ],
+      "weapon_jeg_javelin": [
+        [
+          "jeg:guide/training/first_weapon",
+          "javelin"
+        ]
+      ],
+      "weapon_jeg_igla_9k38": [
+        [
+          "jeg:guide/training/first_weapon",
+          "igla_9k38"
+        ]
+      ],
+      "ammo_jeg_handmade_shell": [
+        [
+          "jeg:guide/training/first_ammo",
+          "handmade_shell"
+        ]
+      ],
+      "ammo_jeg_pistol_ammo": [
+        [
+          "jeg:guide/training/first_ammo",
+          "pistol_ammo"
+        ]
+      ],
+      "ammo_jeg_rifle_ammo": [
+        [
+          "jeg:guide/training/first_ammo",
+          "rifle_ammo"
+        ]
+      ],
+      "ammo_jeg_shotgun_shell": [
+        [
+          "jeg:guide/training/first_ammo",
+          "shotgun_shell"
+        ]
+      ]
+    },
+    "jeg:guide/training/ammunition_ready": {
+      "load": [
+        [
+          "jeg:guide/supply/load_machine_gun_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_pistol_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_rifle_drum_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_rifle_extended_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_rifle_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_shotgun_drum_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_shotgun_extended_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_shotgun_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_smg_drum_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_smg_extended_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/load_smg_magazine",
+          "done"
+        ],
+        [
+          "jeg:guide/training/load",
+          "done"
+        ]
+      ],
+      "reload": [
+        [
+          "jeg:guide/training/reload",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/aim": {
+      "done": [
+        [
+          "jeg:guide/training/aim",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/kill": {
+      "done": [
+        [
+          "jeg:guide/training/kill",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/loadout": {
+      "installed": [
+        [
+          "jeg:guide/gunsmith/install_angled_grip",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_classic_spray_can",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_creeper_birthday_party_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_drum_mag",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_explosive_muzzle",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_extended_mag",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_flashlight",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_golden_spray_can",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_headpoppper_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_holographic_sight",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_laser_pointer",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_light_grip",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_light_stock",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_makeshift_stock",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_monocle_sight",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_reflex_sight",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_silencer",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_tactical_stock",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_telescopic_sight",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_toy_spray_can",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_trickshot_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_trumpet",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_vertical_grip",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_weighted_stock",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/install_whiteout_spray_can",
+          "done"
+        ],
+        [
+          "jeg:guide/training/attachment",
+          "done"
+        ]
+      ],
+      "sight_jeg_holographic_sight": [
+        [
+          "jeg:guide/gunsmith/use_holographic_sight",
+          "done"
+        ]
+      ],
+      "sight_jeg_monocle_sight": [
+        [
+          "jeg:guide/gunsmith/use_monocle_sight",
+          "done"
+        ]
+      ],
+      "sight_jeg_reflex_sight": [
+        [
+          "jeg:guide/gunsmith/use_reflex_sight",
+          "done"
+        ]
+      ],
+      "sight_jeg_telescopic_sight": [
+        [
+          "jeg:guide/gunsmith/use_telescopic_sight",
+          "done"
+        ]
+      ],
+      "handling_jeg_angled_grip": [
+        [
+          "jeg:guide/gunsmith/use_angled_grip",
+          "done"
+        ]
+      ],
+      "handling_jeg_light_grip": [
+        [
+          "jeg:guide/gunsmith/use_light_grip",
+          "done"
+        ]
+      ],
+      "handling_jeg_light_stock": [
+        [
+          "jeg:guide/gunsmith/use_light_stock",
+          "done"
+        ]
+      ],
+      "handling_jeg_makeshift_stock": [
+        [
+          "jeg:guide/gunsmith/use_makeshift_stock",
+          "done"
+        ]
+      ],
+      "handling_jeg_tactical_stock": [
+        [
+          "jeg:guide/gunsmith/use_tactical_stock",
+          "done"
+        ]
+      ],
+      "handling_jeg_vertical_grip": [
+        [
+          "jeg:guide/gunsmith/use_vertical_grip",
+          "done"
+        ]
+      ],
+      "handling_jeg_weighted_stock": [
+        [
+          "jeg:guide/gunsmith/use_weighted_stock",
+          "done"
+        ]
+      ],
+      "muzzle_jeg_explosive_muzzle": [
+        [
+          "jeg:guide/gunsmith/use_explosive_muzzle",
+          "done"
+        ]
+      ],
+      "muzzle_jeg_silencer": [
+        [
+          "jeg:guide/gunsmith/use_silencer",
+          "done"
+        ]
+      ],
+      "muzzle_jeg_trumpet": [
+        [
+          "jeg:guide/gunsmith/use_trumpet",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/electronics": {
+      "light": [
+        [
+          "jeg:guide/gunsmith/light",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/use_flashlight",
+          "done"
+        ]
+      ],
+      "laser": [
+        [
+          "jeg:guide/gunsmith/laser",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/use_laser_pointer",
+          "done"
+        ]
+      ],
+      "charge": [
+        [
+          "jeg:guide/gunsmith/charge_light",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/protection": {
+      "helmet_jeg_bulletproof_helmet_i": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_i",
+          "done"
+        ]
+      ],
+      "helmet_jeg_bulletproof_helmet_ii": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_ii",
+          "done"
+        ]
+      ],
+      "helmet_jeg_bulletproof_helmet_iii": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_iii",
+          "done"
+        ]
+      ],
+      "helmet_jeg_bulletproof_helmet_iv": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_iv",
+          "done"
+        ]
+      ],
+      "helmet_jeg_bulletproof_helmet_v": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_v",
+          "done"
+        ]
+      ],
+      "helmet_jeg_bulletproof_helmet_vi": [
+        [
+          "jeg:guide/supply/equip_bulletproof_helmet_vi",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_i": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_i",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_ii": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_ii",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_iii": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_iii",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_iv": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_iv",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_v": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_v",
+          "done"
+        ]
+      ],
+      "vest_jeg_bulletproof_vest_vi": [
+        [
+          "jeg:guide/supply/equip_bulletproof_vest_vi",
+          "done"
+        ]
+      ],
+      "intercept": [
+        [
+          "jeg:guide/supply/intercept",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/maintenance": {
+      "repair": [
+        [
+          "jeg:guide/training/repair",
+          "done"
+        ]
+      ],
+      "cool": [
+        [
+          "jeg:guide/supply/enhanced_cooling",
+          "done"
+        ],
+        [
+          "jeg:guide/supply/normal_cooling",
+          "done"
+        ],
+        [
+          "jeg:guide/training/cool",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/logistics": {
+      "unload": [
+        [
+          "jeg:guide/supply/unload",
+          "done"
+        ]
+      ],
+      "loader": [
+        [
+          "jeg:guide/supply/automate",
+          "done"
+        ]
+      ],
+      "capacity_jeg_rifle_drum_magazine": [
+        [
+          "jeg:guide/supply/use_rifle_drum_magazine",
+          "done"
+        ]
+      ],
+      "capacity_jeg_rifle_extended_magazine": [
+        [
+          "jeg:guide/supply/use_rifle_extended_magazine",
+          "done"
+        ]
+      ],
+      "capacity_jeg_shotgun_drum_magazine": [
+        [
+          "jeg:guide/supply/use_shotgun_drum_magazine",
+          "done"
+        ]
+      ],
+      "capacity_jeg_shotgun_extended_magazine": [
+        [
+          "jeg:guide/supply/use_shotgun_extended_magazine",
+          "done"
+        ]
+      ],
+      "capacity_jeg_smg_drum_magazine": [
+        [
+          "jeg:guide/supply/use_smg_drum_magazine",
+          "done"
+        ]
+      ],
+      "capacity_jeg_smg_extended_magazine": [
+        [
+          "jeg:guide/supply/use_smg_extended_magazine",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/training/signature": {
+      "style_0": [
+        [
+          "jeg:guide/exploration/colours",
+          "black"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "blue"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "brown"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "cyan"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "gray"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "green"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "light_blue"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "light_gray"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "lime"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "magenta"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "orange"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "pink"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "purple"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "red"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "white"
+        ],
+        [
+          "jeg:guide/exploration/colours",
+          "yellow"
+        ],
+        [
+          "jeg:guide/gunsmith/dye",
+          "done"
+        ]
+      ],
+      "style_jeg_classic_spray_can": [
+        [
+          "jeg:guide/gunsmith/install_classic_spray_can",
+          "done"
+        ]
+      ],
+      "style_jeg_toy_spray_can": [
+        [
+          "jeg:guide/gunsmith/install_toy_spray_can",
+          "done"
+        ]
+      ],
+      "style_jeg_whiteout_spray_can": [
+        [
+          "jeg:guide/gunsmith/install_whiteout_spray_can",
+          "done"
+        ]
+      ],
+      "style_jeg_golden_spray_can": [
+        [
+          "jeg:guide/gunsmith/install_golden_spray_can",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/gunsmith/kill_effect": {
+      "done": [
+        [
+          "jeg:guide/gunsmith/effect_creeper_birthday_party_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/effect_headpoppper_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/effect_trickshot_badge",
+          "done"
+        ],
+        [
+          "jeg:guide/gunsmith/kill_effect",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/gunsmith/enchant": {
+      "enchanted": [
+        [
+          "jeg:guide/gunsmith/enchant",
+          "enchanted"
+        ]
+      ]
+    },
+    "jeg:guide/training/airlift": {
+      "equip_jeg_armored_joy_harness_black": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_black"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_black_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_black_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_black_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_black_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_blue": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_blue"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_blue_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_blue_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_blue_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_blue_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_brown": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_brown"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_brown_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_brown_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_brown_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_brown_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_cyan": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_cyan"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_cyan_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_cyan_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_cyan_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_cyan_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_gray": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_gray"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_gray_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_gray_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_gray_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_gray_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_green": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_green"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_green_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_green_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_green_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_green_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_blue": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_light_blue"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_blue_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_light_blue_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_blue_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_light_blue_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_gray": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_light_gray"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_gray_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_light_gray_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_light_gray_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_light_gray_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_lime": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_lime"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_lime_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_lime_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_lime_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_lime_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_magenta": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_magenta"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_magenta_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_magenta_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_magenta_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_magenta_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_orange": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_orange"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_orange_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_orange_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_orange_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_orange_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_pink": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_pink"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_pink_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_pink_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_pink_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_pink_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_purple": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_purple"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_purple_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_purple_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_purple_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_purple_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_red": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_red"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_red_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_red_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_red_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_red_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_white": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_white"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_white_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_white_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_white_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_white_netherite"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_yellow": [
+        [
+          "jeg:guide/supply/harness",
+          "armored_joy_harness_yellow"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_yellow_diamond": [
+        [
+          "jeg:guide/supply/harness_diamond",
+          "armored_joy_harness_yellow_diamond"
+        ]
+      ],
+      "equip_jeg_armored_joy_harness_yellow_netherite": [
+        [
+          "jeg:guide/supply/harness_netherite",
+          "armored_joy_harness_yellow_netherite"
+        ]
+      ],
+      "repair": [
+        [
+          "jeg:guide/supply/harness_repair",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/arsenal/category_rifle": {
+      "done": [
+        [
+          "jeg:guide/arsenal/category_rifle",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/patrol": {
+      "done": [
+        [
+          "jeg:guide/battle/patrol",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/home_raid": {
+      "done": [
+        [
+          "jeg:guide/battle/home_raid",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/raid": {
+      "done": [
+        [
+          "jeg:guide/battle/raid",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_bad_piggies",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_hell_hogs",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_lost_souls",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_night_of_the_undead",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_nosy_business",
+          "done"
+        ],
+        [
+          "jeg:guide/exploration/raid_the_rattlers",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/arsenal/category_pistol": {
+      "done": [
+        [
+          "jeg:guide/arsenal/category_pistol",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/close_quarters": {
+      "kill_smg": [
+        [
+          "jeg:guide/arsenal/category_smg",
+          "done"
+        ]
+      ],
+      "kill_shotgun": [
+        [
+          "jeg:guide/arsenal/category_shotgun",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/close_combat": {
+      "hit_0": [
+        [
+          "jeg:guide/battle/melee",
+          "done"
+        ]
+      ],
+      "hit_1": [
+        [
+          "jeg:guide/battle/bayonet",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/charge": {
+      "done": [
+        [
+          "jeg:guide/battle/charge",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/precision": {
+      "kill": [
+        [
+          "jeg:guide/arsenal/category_sniper",
+          "done"
+        ]
+      ],
+      "headshot": [
+        [
+          "jeg:guide/battle/headshot",
+          "done"
+        ]
+      ],
+      "range": [
+        [
+          "jeg:guide/battle/range",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/support": {
+      "support": [
+        [
+          "jeg:guide/arsenal/category_lmg",
+          "done"
+        ]
+      ],
+      "heavy": [
+        [
+          "jeg:guide/arsenal/category_heavy",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/sniper": {
+      "done": [
+        [
+          "jeg:guide/exploration/sniper",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/enemy_profiles": {
+      "undead_zombie": [
+        [
+          "jeg:guide/battle/gunner_zombie",
+          "done"
+        ]
+      ],
+      "undead_husk": [
+        [
+          "jeg:guide/battle/gunner_husk",
+          "done"
+        ]
+      ],
+      "undead_drowned": [
+        [
+          "jeg:guide/battle/gunner_drowned",
+          "done"
+        ]
+      ],
+      "undead_zombie_illager": [
+        [
+          "jeg:guide/battle/gunner_zombievillager",
+          "done"
+        ]
+      ],
+      "undead_zombified_iglin": [
+        [
+          "jeg:guide/battle/gunner_zombifiedpiglin",
+          "done"
+        ]
+      ],
+      "marksman_skeleton": [
+        [
+          "jeg:guide/battle/gunner_skeleton",
+          "done"
+        ]
+      ],
+      "marksman_stray": [
+        [
+          "jeg:guide/battle/gunner_stray",
+          "done"
+        ]
+      ],
+      "marksman_wither_keleton": [
+        [
+          "jeg:guide/battle/gunner_witherskeleton",
+          "done"
+        ]
+      ],
+      "marksman_parched": [
+        [
+          "jeg:guide/battle/gunner_parched",
+          "done"
+        ]
+      ],
+      "raider_pillager": [
+        [
+          "jeg:guide/battle/gunner_pillager",
+          "done"
+        ]
+      ],
+      "raider_vindicator": [
+        [
+          "jeg:guide/battle/gunner_vindicator",
+          "done"
+        ]
+      ],
+      "raider_piglin": [
+        [
+          "jeg:guide/battle/gunner_piglin",
+          "done"
+        ]
+      ],
+      "raider_piglin_rute": [
+        [
+          "jeg:guide/battle/gunner_piglinbrute",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/anti_armour": {
+      "kill_jeg_bmp2": [
+        [
+          "jeg:guide/battle/destroy_bmp2",
+          "done"
+        ]
+      ],
+      "kill_jeg_lav150": [
+        [
+          "jeg:guide/battle/destroy_lav150",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/anti_air": {
+      "kill_jeg_ah6": [
+        [
+          "jeg:guide/battle/destroy_ah6",
+          "done"
+        ]
+      ],
+      "kill_jeg_mi28": [
+        [
+          "jeg:guide/battle/destroy_mi28",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/battle/six_fronts": {
+      "night_of_the_undead": [
+        [
+          "jeg:guide/battle/faction_night_of_the_undead",
+          "done"
+        ]
+      ],
+      "the_rattlers": [
+        [
+          "jeg:guide/battle/faction_the_rattlers",
+          "done"
+        ]
+      ],
+      "nosy_business": [
+        [
+          "jeg:guide/battle/faction_nosy_business",
+          "done"
+        ]
+      ],
+      "bad_piggies": [
+        [
+          "jeg:guide/battle/faction_bad_piggies",
+          "done"
+        ]
+      ],
+      "hell_hogs": [
+        [
+          "jeg:guide/battle/faction_hell_hogs",
+          "done"
+        ]
+      ],
+      "lost_souls": [
+        [
+          "jeg:guide/battle/faction_lost_souls",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/fuse": {
+      "cook": [
+        [
+          "jeg:guide/special/cook",
+          "done"
+        ]
+      ],
+      "hit": [
+        [
+          "jeg:guide/special/grenade",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/stun": {
+      "done": [
+        [
+          "jeg:guide/special/stun",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/smoke": {
+      "done": [
+        [
+          "jeg:guide/special/smoke",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/arsenal/use_flare_gun": {
+      "done": [
+        [
+          "jeg:guide/arsenal/use_flare_gun",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/molotov": {
+      "done": [
+        [
+          "jeg:guide/special/molotov",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/water_response": {
+      "convert": [
+        [
+          "jeg:guide/special/water_convert",
+          "done"
+        ]
+      ],
+      "extinguish": [
+        [
+          "jeg:guide/special/water_use",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/place_c4": {
+      "done": [
+        [
+          "jeg:guide/special/place_c4",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/timed_c4": {
+      "done": [
+        [
+          "jeg:guide/special/timed_c4",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/remote_ambush": {
+      "remote": [
+        [
+          "jeg:guide/special/c4_remote",
+          "done"
+        ]
+      ],
+      "hit": [
+        [
+          "jeg:guide/special/c4_effect",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/ambush": {
+      "hit_jeg_claymore_mine": [
+        [
+          "jeg:guide/special/claymore_effect",
+          "done"
+        ]
+      ],
+      "hit_jeg_tm_62": [
+        [
+          "jeg:guide/special/tm62_effect",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/defuse": {
+      "done": [
+        [
+          "jeg:guide/special/defuse",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/c4_crew": {
+      "done": [
+        [
+          "jeg:guide/exploration/c4_crew",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/remote_control": {
+      "deploy": [
+        [
+          "jeg:guide/special/drone_deploy",
+          "done"
+        ]
+      ],
+      "bind": [
+        [
+          "jeg:guide/special/drone_bind",
+          "done"
+        ]
+      ],
+      "control": [
+        [
+          "jeg:guide/special/drone_control",
+          "done"
+        ]
+      ],
+      "interact": [
+        [
+          "jeg:guide/special/drone_interact",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/air_delivery": {
+      "release_jeg_grenade": [
+        [
+          "jeg:guide/special/drone_payload_grenade",
+          "done"
+        ]
+      ],
+      "release_jeg_c4_bomb": [
+        [
+          "jeg:guide/special/drone_payload_c4_bomb",
+          "done"
+        ]
+      ],
+      "release_jeg_tm_62": [
+        [
+          "jeg:guide/special/drone_payload_tm_62",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/return_home": {
+      "unload": [
+        [
+          "jeg:guide/special/drone_unload",
+          "done"
+        ]
+      ],
+      "recover": [
+        [
+          "jeg:guide/special/drone_pack",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/special/guidance": {
+      "direct": [
+        [
+          "jeg:guide/special/javelin_direct",
+          "done"
+        ]
+      ],
+      "top": [
+        [
+          "jeg:guide/special/javelin_top",
+          "done"
+        ]
+      ],
+      "air": [
+        [
+          "jeg:guide/special/igla_hit",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/workshop": {
+      "assemble": [
+        [
+          "jeg:guide/vehicles/assemble_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/assemble_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/assemble_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/assemble_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/assemble_speedboat",
+          "done"
+        ]
+      ],
+      "deploy": [
+        [
+          "jeg:guide/vehicles/deploy_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/deploy_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/deploy_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/deploy_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/deploy_speedboat",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/crew": {
+      "seat": [
+        [
+          "jeg:guide/vehicles/seat",
+          "done"
+        ]
+      ],
+      "weapon": [
+        [
+          "jeg:guide/vehicles/switch_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/switch_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/switch_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/switch_mi28",
+          "done"
+        ]
+      ],
+      "reload": [
+        [
+          "jeg:guide/vehicles/reload",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/resupply": {
+      "supply": [
+        [
+          "jeg:guide/vehicles/vehicle_supply_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_supply_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_supply_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_supply_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_supply_speedboat",
+          "done"
+        ]
+      ],
+      "charge": [
+        [
+          "jeg:guide/vehicles/charge_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/charge_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/charge_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/charge_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/charge_speedboat",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/repair": {
+      "hull": [
+        [
+          "jeg:guide/vehicles/vehicle_hull_repair_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_hull_repair_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_hull_repair_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_hull_repair_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_hull_repair_speedboat",
+          "done"
+        ]
+      ],
+      "component": [
+        [
+          "jeg:guide/vehicles/vehicle_component_repair_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_component_repair_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_component_repair_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_component_repair_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/vehicle_component_repair_speedboat",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/countermeasures": {
+      "deploy": [
+        [
+          "jeg:guide/vehicles/decoy_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/decoy_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/decoy_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/decoy_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/decoy_speedboat",
+          "done"
+        ]
+      ],
+      "defence": [
+        [
+          "jeg:guide/vehicles/defence",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/recover": {
+      "done": [
+        [
+          "jeg:guide/vehicles/pack_ah6",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/pack_bmp2",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/pack_lav150",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/pack_mi28",
+          "done"
+        ],
+        [
+          "jeg:guide/vehicles/pack_speedboat",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/armada": {
+      "explore": [
+        [
+          "jeg:guide/exploration/armada",
+          "explore"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/loot": {
+      "done": [
+        [
+          "jeg:guide/exploration/loot",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/guardian": {
+      "done": [
+        [
+          "jeg:guide/exploration/guardian",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/after_battle": {
+      "done": [
+        [
+          "jeg:guide/exploration/after_battle",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/exploration/free_terror": {
+      "done": [
+        [
+          "jeg:guide/exploration/free_terror",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/bmp2_assault": {
+      "drive": [
+        [
+          "jeg:guide/vehicles/drive_bmp2",
+          "done"
+        ]
+      ],
+      "hit_0": [
+        [
+          "jeg:guide/vehicles/weapon_bmp2_vehicle_30mm_cannon",
+          "done"
+        ]
+      ],
+      "hit_1": [
+        [
+          "jeg:guide/vehicles/weapon_bmp2_vehicle_bmp2_missile",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/lav_firepower": {
+      "drive": [
+        [
+          "jeg:guide/vehicles/drive_lav150",
+          "done"
+        ]
+      ],
+      "hit_0": [
+        [
+          "jeg:guide/vehicles/weapon_lav150_vehicle_20mm_cannon",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/river_push": {
+      "drive": [
+        [
+          "jeg:guide/vehicles/drive_speedboat",
+          "done"
+        ]
+      ],
+      "hit_0": [
+        [
+          "jeg:guide/vehicles/weapon_speedboat_vehicle_coax_machine_gun",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/low_support": {
+      "drive": [
+        [
+          "jeg:guide/vehicles/drive_ah6",
+          "done"
+        ]
+      ],
+      "hit_0": [
+        [
+          "jeg:guide/vehicles/weapon_ah6_light_machine_gun",
+          "done"
+        ]
+      ],
+      "hit_1": [
+        [
+          "jeg:guide/vehicles/weapon_ah6_vehicle_70mm_rocket",
+          "done"
+        ]
+      ]
+    },
+    "jeg:guide/vehicles/heavy_hunter": {
+      "drive": [
+        [
+          "jeg:guide/vehicles/drive_mi28",
+          "done"
+        ]
+      ],
+      "hit_0": [
+        [
+          "jeg:guide/vehicles/weapon_mi28_vehicle_80mm_rocket",
+          "done"
+        ]
+      ],
+      "hit_1_jeg_mi28_jeg_vehicle_9m120_driver_missile": [
+        [
+          "jeg:guide/vehicles/weapon_mi28_vehicle_9m120_driver_missile",
+          "done"
+        ]
+      ],
+      "hit_1_jeg_mi28_jeg_vehicle_9m336_missile": [
+        [
+          "jeg:guide/vehicles/weapon_mi28_vehicle_9m336_missile",
+          "done"
+        ]
+      ],
+      "hit_1_jeg_mi28_jeg_vehicle_9m120_passenger_missile": [
+        [
+          "jeg:guide/vehicles/weapon_mi28_vehicle_9m120_passenger_missile",
+          "done"
+        ]
+      ],
+      "hit_1_jeg_mi28_jeg_vehicle_kh39_missile": [
+        [
+          "jeg:guide/vehicles/weapon_mi28_vehicle_kh39_missile",
+          "done"
+        ]
+      ]
+    }
+  },
+  "completion": {
+    "jeg:guide/training/qualified": [
+      "jeg:guide/training/recipes",
+      "jeg:guide/training/ready",
+      "jeg:guide/training/ammunition_ready",
+      "jeg:guide/training/aim",
+      "jeg:guide/training/kill",
+      "jeg:guide/training/loadout",
+      "jeg:guide/training/electronics",
+      "jeg:guide/training/protection",
+      "jeg:guide/training/maintenance",
+      "jeg:guide/training/logistics",
+      "jeg:guide/training/airlift"
+    ],
+    "jeg:guide/battle/veteran": [
+      "jeg:guide/arsenal/category_rifle",
+      "jeg:guide/battle/patrol",
+      "jeg:guide/battle/home_raid",
+      "jeg:guide/battle/raid",
+      "jeg:guide/arsenal/category_pistol",
+      "jeg:guide/battle/close_quarters",
+      "jeg:guide/battle/close_combat",
+      "jeg:guide/battle/precision",
+      "jeg:guide/battle/support",
+      "jeg:guide/battle/enemy_profiles",
+      "jeg:guide/battle/elite_hunter",
+      "jeg:guide/battle/bomber_intercept",
+      "jeg:guide/battle/anti_armour",
+      "jeg:guide/battle/anti_air"
+    ],
+    "jeg:guide/special/expert": [
+      "jeg:guide/special/fuse",
+      "jeg:guide/special/stun",
+      "jeg:guide/special/smoke",
+      "jeg:guide/special/molotov",
+      "jeg:guide/special/water_response",
+      "jeg:guide/special/place_c4",
+      "jeg:guide/special/timed_c4",
+      "jeg:guide/special/remote_ambush",
+      "jeg:guide/special/ambush",
+      "jeg:guide/special/defuse",
+      "jeg:guide/special/remote_control",
+      "jeg:guide/special/air_delivery",
+      "jeg:guide/special/return_home",
+      "jeg:guide/special/guidance"
+    ],
+    "jeg:guide/vehicles/expedition_complete": [
+      "jeg:guide/vehicles/workshop",
+      "jeg:guide/vehicles/crew",
+      "jeg:guide/vehicles/resupply",
+      "jeg:guide/vehicles/repair",
+      "jeg:guide/vehicles/countermeasures",
+      "jeg:guide/vehicles/recover",
+      "jeg:guide/exploration/armada",
+      "jeg:guide/exploration/loot",
+      "jeg:guide/exploration/guardian",
+      "jeg:guide/exploration/after_battle",
+      "jeg:guide/vehicles/bmp2_assault",
+      "jeg:guide/vehicles/lav_firepower",
+      "jeg:guide/vehicles/river_push",
+      "jeg:guide/vehicles/low_support",
+      "jeg:guide/vehicles/heavy_hunter"
+    ],
+    "jeg:guide/training/complete": [
+      "jeg:guide/training/qualified",
+      "jeg:guide/battle/veteran",
+      "jeg:guide/special/expert",
+      "jeg:guide/vehicles/expedition_complete"
+    ]
+  }
+}

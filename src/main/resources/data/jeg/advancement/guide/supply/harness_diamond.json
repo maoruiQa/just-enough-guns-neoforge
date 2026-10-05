@@ -1,131 +1,52 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:armored_joy_harness_white_diamond"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.supply.harness_diamond.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.supply.harness_diamond.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "armored_joy_harness_black_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_black_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_blue_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_blue_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_brown_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_brown_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_cyan_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_cyan_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_gray_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_gray_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_green_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_green_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_light_blue_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_light_blue_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_light_gray_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_light_gray_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_lime_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_lime_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_magenta_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_magenta_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_orange_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_orange_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_pink_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_pink_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_purple_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_purple_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_red_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_red_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_white_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_white_diamond"
-      }
+      "trigger": "minecraft:impossible"
     },
     "armored_joy_harness_yellow_diamond": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_equip",
-        "subject": "jeg:armored_joy_harness_yellow_diamond"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -148,9 +69,5 @@
       "armored_joy_harness_yellow_diamond"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/supply/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

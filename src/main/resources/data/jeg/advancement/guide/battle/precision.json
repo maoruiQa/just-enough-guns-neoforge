@@ -1,0 +1,54 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:bolt_action_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.precision.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.precision.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "kill": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "category_kill",
+        "subject": "sniper"
+      }
+    },
+    "headshot": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "headshot"
+      }
+    },
+    "range": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "range_hit"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "kill"
+    ],
+    [
+      "headshot"
+    ],
+    [
+      "range"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/arsenal/category_rifle",
+  "rewards": {
+    "experience": 25
+  }
+}

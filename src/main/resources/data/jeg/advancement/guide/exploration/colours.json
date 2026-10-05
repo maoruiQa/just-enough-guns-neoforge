@@ -1,131 +1,52 @@
 {
-  "display": {
-    "icon": {
-      "id": "minecraft:red_dye"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.exploration.colours.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.exploration.colours.description"
-    },
-    "frame": "challenge",
-    "show_toast": true,
-    "announce_to_chat": true,
-    "hidden": false
-  },
   "criteria": {
-    "white": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:white_dye"
-      }
-    },
-    "orange": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:orange_dye"
-      }
-    },
-    "magenta": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:magenta_dye"
-      }
-    },
-    "light_blue": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:light_blue_dye"
-      }
-    },
-    "yellow": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:yellow_dye"
-      }
-    },
-    "lime": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:lime_dye"
-      }
-    },
-    "pink": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:pink_dye"
-      }
-    },
-    "gray": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:gray_dye"
-      }
-    },
-    "light_gray": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:light_gray_dye"
-      }
-    },
-    "cyan": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:cyan_dye"
-      }
-    },
-    "purple": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:purple_dye"
-      }
+    "black": {
+      "trigger": "minecraft:impossible"
     },
     "blue": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:blue_dye"
-      }
+      "trigger": "minecraft:impossible"
     },
     "brown": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:brown_dye"
-      }
+      "trigger": "minecraft:impossible"
+    },
+    "cyan": {
+      "trigger": "minecraft:impossible"
+    },
+    "gray": {
+      "trigger": "minecraft:impossible"
     },
     "green": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:green_dye"
-      }
+      "trigger": "minecraft:impossible"
+    },
+    "light_blue": {
+      "trigger": "minecraft:impossible"
+    },
+    "light_gray": {
+      "trigger": "minecraft:impossible"
+    },
+    "lime": {
+      "trigger": "minecraft:impossible"
+    },
+    "magenta": {
+      "trigger": "minecraft:impossible"
+    },
+    "orange": {
+      "trigger": "minecraft:impossible"
+    },
+    "pink": {
+      "trigger": "minecraft:impossible"
+    },
+    "purple": {
+      "trigger": "minecraft:impossible"
     },
     "red": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:red_dye"
-      }
+      "trigger": "minecraft:impossible"
     },
-    "black": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "gun_dye",
-        "subject": "minecraft:black_dye"
-      }
+    "white": {
+      "trigger": "minecraft:impossible"
+    },
+    "yellow": {
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -178,9 +99,5 @@
       "black"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/exploration/root",
-  "rewards": {
-    "experience": 100
-  }
+  "sends_telemetry_event": false
 }

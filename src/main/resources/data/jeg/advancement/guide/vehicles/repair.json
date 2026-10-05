@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:repair_tool"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.repair.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.repair.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "hull": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hull_repair"
+      }
+    },
+    "component": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_component_repair"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "hull"
+    ],
+    [
+      "component"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/crew",
+  "rewards": {
+    "experience": 5
+  }
+}

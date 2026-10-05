@@ -9,18 +9,18 @@
     "description": {
       "translate": "advancement.jeg.guide.arsenal.use_flare_gun.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "signal",
         "subject": "jeg:flare_gun"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -29,8 +29,8 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/arsenal/obtain_flare_gun",
+  "parent": "jeg:guide/special/smoke",
   "rewards": {
-    "experience": 5
+    "experience": 100
   }
 }
