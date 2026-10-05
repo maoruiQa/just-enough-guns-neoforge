@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "id": "jeg:phantom_smg"
+      "id": "minecraft:chest"
     },
     "title": {
       "translate": "advancement.jeg.guide.exploration.loot.title"
@@ -16,19 +16,19 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "open_container",
         "player": {
-          "type": "minecraft:entity_properties",
           "entity": "this",
           "predicate": {
             "minecraft:location": {
               "structures": "jeg:sky_ship_armada"
             }
-          }
+          },
+          "type": "minecraft:entity_properties"
         }
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [

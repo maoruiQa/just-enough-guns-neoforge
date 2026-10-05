@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "id": "jeg:combat_rifle"
+      "id": "jeg:infantry_rifle"
     },
     "title": {
       "translate": "advancement.jeg.guide.arsenal.category_rifle.title"
@@ -16,11 +16,11 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "category_kill",
         "subject": "rifle"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -29,8 +29,8 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/arsenal/root",
+  "parent": "jeg:guide/battle/root",
   "rewards": {
-    "experience": 25
+    "experience": 5
   }
 }

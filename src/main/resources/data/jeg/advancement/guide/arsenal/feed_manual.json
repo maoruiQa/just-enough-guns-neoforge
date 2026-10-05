@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:rifle_ammo"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.arsenal.feed_manual.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.arsenal.feed_manual.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "feed_hit",
-        "subject": "jeg:manual"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/arsenal/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

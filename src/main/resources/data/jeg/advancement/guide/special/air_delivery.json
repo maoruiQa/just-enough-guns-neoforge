@@ -1,0 +1,52 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:drone"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.special.air_delivery.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.special.air_delivery.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "release_jeg_grenade": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drone_payload_release",
+        "subject": "jeg:grenade"
+      }
+    },
+    "release_jeg_c4_bomb": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drone_payload_release",
+        "subject": "jeg:c4_bomb"
+      }
+    },
+    "release_jeg_tm_62": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drone_payload_release",
+        "subject": "jeg:tm_62"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "release_jeg_grenade",
+      "release_jeg_c4_bomb",
+      "release_jeg_tm_62"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/special/remote_control",
+  "rewards": {
+    "experience": 5
+  }
+}

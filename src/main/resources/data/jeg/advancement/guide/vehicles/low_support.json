@@ -1,0 +1,56 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:vehicle_assembling_table"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.low_support.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.low_support.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "drive": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drive",
+        "subject": "jeg:ah6"
+      }
+    },
+    "hit_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:ah6/jeg:light_machine_gun"
+      }
+    },
+    "hit_1": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:ah6/jeg:vehicle_70mm_rocket"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "drive"
+    ],
+    [
+      "hit_0"
+    ],
+    [
+      "hit_1"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/workshop",
+  "rewards": {
+    "experience": 25
+  }
+}

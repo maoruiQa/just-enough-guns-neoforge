@@ -9,14 +9,13 @@
     "description": {
       "translate": "advancement.jeg.guide.gunsmith.enchant.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "enchanted": {
-      "trigger": "minecraft:enchanted_item",
       "conditions": {
         "item": {
           "items": [
@@ -54,7 +53,8 @@
             "jeg:igla_9k38"
           ]
         }
-      }
+      },
+      "trigger": "minecraft:enchanted_item"
     }
   },
   "requirements": [
@@ -63,8 +63,8 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/root",
+  "parent": "jeg:guide/training/signature",
   "rewards": {
-    "experience": 5
+    "experience": 100
   }
 }

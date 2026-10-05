@@ -1,0 +1,94 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:magazine_loader"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.logistics.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.logistics.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "unload": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_unload"
+      }
+    },
+    "loader": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "loader_output"
+      }
+    },
+    "capacity_jeg_rifle_drum_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:rifle_drum_magazine"
+      }
+    },
+    "capacity_jeg_rifle_extended_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:rifle_extended_magazine"
+      }
+    },
+    "capacity_jeg_shotgun_drum_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:shotgun_drum_magazine"
+      }
+    },
+    "capacity_jeg_shotgun_extended_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:shotgun_extended_magazine"
+      }
+    },
+    "capacity_jeg_smg_drum_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:smg_drum_magazine"
+      }
+    },
+    "capacity_jeg_smg_extended_magazine": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "magazine_used",
+        "subject": "jeg:smg_extended_magazine"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "unload"
+    ],
+    [
+      "loader"
+    ],
+    [
+      "capacity_jeg_rifle_drum_magazine",
+      "capacity_jeg_rifle_extended_magazine",
+      "capacity_jeg_shotgun_drum_magazine",
+      "capacity_jeg_shotgun_extended_magazine",
+      "capacity_jeg_smg_drum_magazine",
+      "capacity_jeg_smg_extended_magazine"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/maintenance",
+  "rewards": {
+    "experience": 25
+  }
+}

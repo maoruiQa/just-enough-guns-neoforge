@@ -1,0 +1,80 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:vehicle_assembling_table"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.heavy_hunter.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.heavy_hunter.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "drive": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drive",
+        "subject": "jeg:mi28"
+      }
+    },
+    "hit_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:mi28/jeg:vehicle_80mm_rocket"
+      }
+    },
+    "hit_1_jeg_mi28_jeg_vehicle_9m120_driver_missile": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:mi28/jeg:vehicle_9m120_driver_missile"
+      }
+    },
+    "hit_1_jeg_mi28_jeg_vehicle_9m336_missile": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:mi28/jeg:vehicle_9m336_missile"
+      }
+    },
+    "hit_1_jeg_mi28_jeg_vehicle_9m120_passenger_missile": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:mi28/jeg:vehicle_9m120_passenger_missile"
+      }
+    },
+    "hit_1_jeg_mi28_jeg_vehicle_kh39_missile": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:mi28/jeg:vehicle_kh39_missile"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "drive"
+    ],
+    [
+      "hit_0"
+    ],
+    [
+      "hit_1_jeg_mi28_jeg_vehicle_9m120_driver_missile",
+      "hit_1_jeg_mi28_jeg_vehicle_9m336_missile",
+      "hit_1_jeg_mi28_jeg_vehicle_9m120_passenger_missile",
+      "hit_1_jeg_mi28_jeg_vehicle_kh39_missile"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/low_support",
+  "rewards": {
+    "experience": 25
+  }
+}

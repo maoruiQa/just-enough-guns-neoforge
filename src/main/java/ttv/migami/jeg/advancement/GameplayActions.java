@@ -26,6 +26,8 @@ import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.entity.TimedThrowableItemProjectile;
 import ttv.migami.jeg.event.GunEvents;
 import ttv.migami.jeg.faction.GunnerType;
+import ttv.migami.jeg.faction.BomberGunnerHelper;
+import ttv.migami.jeg.entity.monster.phantom.PhantomGunner;
 import ttv.migami.jeg.faction.FactionSpawnHelper;
 import ttv.migami.jeg.gun.GunCategory;
 import ttv.migami.jeg.init.ModItems;
@@ -51,8 +53,16 @@ public final class GameplayActions {
     public static boolean hostile(Entity target, Entity shooter) {
         if (target == null || target == shooter || target instanceof Player || shooter == null || shooter.isAlliedTo(target)) return false;
         if (target instanceof VehicleEntity) return target != shooter.getVehicle() && target.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_TAG);
-        return target.entityTags().contains(GunEvents.JEG_GUNNER_TAG)
+        return isGunner(target)
                 || target instanceof Mob mob && (mob.getType().getCategory() == MobCategory.MONSTER || mob.getTarget() == shooter);
+    }
+
+    private static boolean isGunner(Entity target) {
+        return target.entityTags().contains(GunEvents.JEG_GUNNER_TAG)
+                || target.entityTags().contains(GunEvents.JEG_ELITE_GUNNER_TAG)
+                || target.entityTags().contains("jeg_pillager_gunner")
+                || target instanceof PhantomGunner
+                || target instanceof LivingEntity living && BomberGunnerHelper.isBomber(living);
     }
 
     public static String weapon(Entity source) {
@@ -105,9 +115,14 @@ public final class GameplayActions {
     private static void killed(Entity shooter, Entity target, String weapon) {
         if (!hostile(target, shooter)) return;
         action(shooter, "combat_kill");
-        if (target.entityTags().contains(GunEvents.JEG_GUNNER_TAG) && target instanceof PathfinderMob mob) {
+        if (isGunner(target)) action(shooter, "first_gunner");
+        if (target.entityTags().contains(GunEvents.JEG_ELITE_GUNNER_TAG)) action(shooter, "elite_gunner_kill");
+        if (target instanceof LivingEntity living && BomberGunnerHelper.isBomber(living)
+                && BomberGunnerHelper.wearingC4Vest(living) && !BomberGunnerHelper.hasDetonated(living)) {
+            action(shooter, "bomber_gunner_kill");
+        }
+        if (isGunner(target) && target instanceof PathfinderMob mob) {
             action(shooter, "gunner_kill", GunnerType.keyFor(mob));
-            action(shooter, "first_gunner");
             for (String tag : target.entityTags()) {
                 if (tag.startsWith(FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX)) action(shooter, "faction_kill", tag.substring(FactionSpawnHelper.PATROL_FACTION_TAG_PREFIX.length()));
             }

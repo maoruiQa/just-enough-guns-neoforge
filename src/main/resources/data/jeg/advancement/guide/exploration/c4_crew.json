@@ -9,17 +9,17 @@
     "description": {
       "translate": "advancement.jeg.guide.exploration.c4_crew.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "vest_detonate"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -28,7 +28,7 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/exploration/root",
+  "parent": "jeg:guide/special/remote_ambush",
   "rewards": {
     "experience": 100
   }

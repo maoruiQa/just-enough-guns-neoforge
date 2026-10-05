@@ -1,0 +1,46 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:light_machine_gun"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.support.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.support.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "support": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "category_kill",
+        "subject": "lmg"
+      }
+    },
+    "heavy": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "category_kill",
+        "subject": "heavy"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "support"
+    ],
+    [
+      "heavy"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/precision",
+  "rewards": {
+    "experience": 25
+  }
+}

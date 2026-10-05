@@ -1,0 +1,86 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:infantry_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.six_fronts.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.six_fronts.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "night_of_the_undead": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "night_of_the_undead"
+      }
+    },
+    "the_rattlers": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "the_rattlers"
+      }
+    },
+    "nosy_business": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "nosy_business"
+      }
+    },
+    "bad_piggies": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "bad_piggies"
+      }
+    },
+    "hell_hogs": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "hell_hogs"
+      }
+    },
+    "lost_souls": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "faction_kill",
+        "subject": "lost_souls"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "night_of_the_undead"
+    ],
+    [
+      "the_rattlers"
+    ],
+    [
+      "nosy_business"
+    ],
+    [
+      "bad_piggies"
+    ],
+    [
+      "hell_hogs"
+    ],
+    [
+      "lost_souls"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/raid",
+  "rewards": {
+    "experience": 100
+  }
+}

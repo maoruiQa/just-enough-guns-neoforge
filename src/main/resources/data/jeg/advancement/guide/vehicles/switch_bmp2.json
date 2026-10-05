@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:rifle_ammo"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.vehicles.switch_bmp2.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.vehicles.switch_bmp2.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "weapon_change",
-        "subject": "jeg:bmp2"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/vehicles/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

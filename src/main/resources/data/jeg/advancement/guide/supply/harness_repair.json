@@ -1,25 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:repair_tool"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.supply.harness_repair.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.supply.harness_repair.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "harness_repair"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -27,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/supply/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

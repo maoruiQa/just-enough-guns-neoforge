@@ -1,0 +1,135 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:bulletproof_vest_i"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.protection.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.protection.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "helmet_jeg_bulletproof_helmet_i": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_i"
+      }
+    },
+    "helmet_jeg_bulletproof_helmet_ii": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_ii"
+      }
+    },
+    "helmet_jeg_bulletproof_helmet_iii": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_iii"
+      }
+    },
+    "helmet_jeg_bulletproof_helmet_iv": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_iv"
+      }
+    },
+    "helmet_jeg_bulletproof_helmet_v": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_v"
+      }
+    },
+    "helmet_jeg_bulletproof_helmet_vi": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_helmet_vi"
+      }
+    },
+    "vest_jeg_bulletproof_vest_i": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_i"
+      }
+    },
+    "vest_jeg_bulletproof_vest_ii": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_ii"
+      }
+    },
+    "vest_jeg_bulletproof_vest_iii": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_iii"
+      }
+    },
+    "vest_jeg_bulletproof_vest_iv": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_iv"
+      }
+    },
+    "vest_jeg_bulletproof_vest_v": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_v"
+      }
+    },
+    "vest_jeg_bulletproof_vest_vi": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "equip",
+        "subject": "jeg:bulletproof_vest_vi"
+      }
+    },
+    "intercept": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "armour_intercept"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "helmet_jeg_bulletproof_helmet_i",
+      "helmet_jeg_bulletproof_helmet_ii",
+      "helmet_jeg_bulletproof_helmet_iii",
+      "helmet_jeg_bulletproof_helmet_iv",
+      "helmet_jeg_bulletproof_helmet_v",
+      "helmet_jeg_bulletproof_helmet_vi"
+    ],
+    [
+      "vest_jeg_bulletproof_vest_i",
+      "vest_jeg_bulletproof_vest_ii",
+      "vest_jeg_bulletproof_vest_iii",
+      "vest_jeg_bulletproof_vest_iv",
+      "vest_jeg_bulletproof_vest_v",
+      "vest_jeg_bulletproof_vest_vi"
+    ],
+    [
+      "intercept"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/ready",
+  "rewards": {
+    "experience": 25
+  }
+}

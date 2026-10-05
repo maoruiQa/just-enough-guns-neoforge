@@ -16,11 +16,11 @@
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "hit",
         "subject": "jeg:molotov_cocktail"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -29,7 +29,7 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/special/root",
+  "parent": "jeg:guide/special/fuse",
   "rewards": {
     "experience": 5
   }

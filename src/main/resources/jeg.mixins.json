@@ -14,7 +14,8 @@
     "LivingEntityGunSwingMixin",
     "LivingEntitySwingStateMixin",
     "GunRepairAdvancementMixin",
-    "ServerGamePacketListenerImplMixin"
+    "ServerGamePacketListenerImplMixin",
+    "PlayerAdvancementsMigrationMixin"
   ],
   "client": [
     "GuiGraphicsExtractorAccessor",

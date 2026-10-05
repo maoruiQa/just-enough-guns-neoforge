@@ -1,29 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:trickshot_badge"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.gunsmith.obtain_trickshot_badge.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.gunsmith.obtain_trickshot_badge.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "obtained": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "jeg:trickshot_badge"
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -31,6 +9,5 @@
       "obtained"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/root"
+  "sends_telemetry_event": false
 }
