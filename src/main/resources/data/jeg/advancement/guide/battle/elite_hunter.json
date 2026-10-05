@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:bulletproof_vest_iv"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.elite_hunter.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.elite_hunter.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "elite_gunner_kill"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/enemy_profiles",
+  "rewards": {
+    "experience": 25
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:flare"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.countermeasures.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.countermeasures.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "deploy": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "decoy"
+      }
+    },
+    "defence": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "missile_defence"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "deploy"
+    ],
+    [
+      "defence"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/resupply",
+  "rewards": {
+    "experience": 25
+  }
+}

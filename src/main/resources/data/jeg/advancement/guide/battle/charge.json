@@ -9,17 +9,17 @@
     "description": {
       "translate": "advancement.jeg.guide.battle.charge.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "bayonet_charge"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -28,8 +28,8 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/battle/root",
+  "parent": "jeg:guide/battle/close_combat",
   "rewards": {
-    "experience": 25
+    "experience": 100
   }
 }

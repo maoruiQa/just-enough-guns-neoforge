@@ -1,0 +1,36 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:phantom_membrane"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.phantom_hunter.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.phantom_hunter.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "enemy_kill",
+        "subject": "jeg:phantom_gunner"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/elite_hunter",
+  "rewards": {
+    "experience": 100
+  }
+}

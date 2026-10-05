@@ -1,205 +1,97 @@
 {
-  "display": {
-    "icon": {
-      "id": "jeg:combat_pistol"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.training.first_weapon.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.training.first_weapon.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "assault_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:assault_rifle"
-      }
+      "trigger": "minecraft:impossible"
     },
     "blossom_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:blossom_rifle"
-      }
+      "trigger": "minecraft:impossible"
     },
     "bolt_action_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:bolt_action_rifle"
-      }
+      "trigger": "minecraft:impossible"
     },
     "burst_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:burst_rifle"
-      }
+      "trigger": "minecraft:impossible"
     },
     "combat_pistol": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:combat_pistol"
-      }
+      "trigger": "minecraft:impossible"
     },
     "combat_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:combat_rifle"
-      }
+      "trigger": "minecraft:impossible"
     },
     "custom_smg": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:custom_smg"
-      }
+      "trigger": "minecraft:impossible"
     },
     "double_barrel_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:double_barrel_shotgun"
-      }
+      "trigger": "minecraft:impossible"
     },
     "finger_gun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:finger_gun"
-      }
+      "trigger": "minecraft:impossible"
     },
     "flamethrower": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:flamethrower"
-      }
+      "trigger": "minecraft:impossible"
     },
     "flare_gun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:flare_gun"
-      }
+      "trigger": "minecraft:impossible"
     },
     "grenade_launcher": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:grenade_launcher"
-      }
+      "trigger": "minecraft:impossible"
     },
     "hollenfire_mk2": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:hollenfire_mk2"
-      }
+      "trigger": "minecraft:impossible"
     },
     "holy_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:holy_shotgun"
-      }
+      "trigger": "minecraft:impossible"
     },
     "hypersonic_cannon": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:hypersonic_cannon"
-      }
-    },
-    "infantry_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:infantry_rifle"
-      }
-    },
-    "light_machine_gun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:light_machine_gun"
-      }
-    },
-    "minigun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:minigun"
-      }
-    },
-    "pump_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:pump_shotgun"
-      }
-    },
-    "repeating_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:repeating_shotgun"
-      }
-    },
-    "revolver": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:revolver"
-      }
-    },
-    "rocket_launcher": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:rocket_launcher"
-      }
-    },
-    "semi_auto_pistol": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:semi_auto_pistol"
-      }
-    },
-    "semi_auto_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:semi_auto_rifle"
-      }
-    },
-    "service_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:service_rifle"
-      }
-    },
-    "soulhunter_mk2": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:soulhunter_mk2"
-      }
-    },
-    "subsonic_rifle": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:subsonic_rifle"
-      }
-    },
-    "supersonic_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:supersonic_shotgun"
-      }
-    },
-    "waterpipe_shotgun": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:waterpipe_shotgun"
-      }
-    },
-    "javelin": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:javelin"
-      }
+      "trigger": "minecraft:impossible"
     },
     "igla_9k38": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "jeg:igla_9k38"
-      }
+      "trigger": "minecraft:impossible"
+    },
+    "infantry_rifle": {
+      "trigger": "minecraft:impossible"
+    },
+    "javelin": {
+      "trigger": "minecraft:impossible"
+    },
+    "light_machine_gun": {
+      "trigger": "minecraft:impossible"
+    },
+    "minigun": {
+      "trigger": "minecraft:impossible"
+    },
+    "pump_shotgun": {
+      "trigger": "minecraft:impossible"
+    },
+    "repeating_shotgun": {
+      "trigger": "minecraft:impossible"
+    },
+    "revolver": {
+      "trigger": "minecraft:impossible"
+    },
+    "rocket_launcher": {
+      "trigger": "minecraft:impossible"
+    },
+    "semi_auto_pistol": {
+      "trigger": "minecraft:impossible"
+    },
+    "semi_auto_rifle": {
+      "trigger": "minecraft:impossible"
+    },
+    "service_rifle": {
+      "trigger": "minecraft:impossible"
+    },
+    "soulhunter_mk2": {
+      "trigger": "minecraft:impossible"
+    },
+    "subsonic_rifle": {
+      "trigger": "minecraft:impossible"
+    },
+    "supersonic_shotgun": {
+      "trigger": "minecraft:impossible"
+    },
+    "waterpipe_shotgun": {
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -237,9 +129,5 @@
       "igla_9k38"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/training/recipes",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

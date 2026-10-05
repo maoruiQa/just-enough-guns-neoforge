@@ -1,26 +1,7 @@
 {
-  "display": {
-    "icon": {
-      "id": "minecraft:iron_sword"
-    },
-    "title": {
-      "translate": "advancement.jeg.guide.battle.bayonet_fit.title"
-    },
-    "description": {
-      "translate": "advancement.jeg.guide.battle.bayonet_fit.description"
-    },
-    "frame": "task",
-    "show_toast": true,
-    "announce_to_chat": false,
-    "hidden": false
-  },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
-      "conditions": {
-        "action": "attachment_use",
-        "subject": "jeg:bayonet"
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -28,9 +9,5 @@
       "done"
     ]
   ],
-  "sends_telemetry_event": false,
-  "parent": "jeg:guide/battle/root",
-  "rewards": {
-    "experience": 5
-  }
+  "sends_telemetry_event": false
 }

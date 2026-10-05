@@ -1,0 +1,67 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:red_dye"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.training.signature.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.training.signature.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "style_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "gun_dye"
+      }
+    },
+    "style_jeg_classic_spray_can": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install",
+        "subject": "jeg:classic_spray_can"
+      }
+    },
+    "style_jeg_toy_spray_can": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install",
+        "subject": "jeg:toy_spray_can"
+      }
+    },
+    "style_jeg_whiteout_spray_can": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install",
+        "subject": "jeg:whiteout_spray_can"
+      }
+    },
+    "style_jeg_golden_spray_can": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "attachment_install",
+        "subject": "jeg:golden_spray_can"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "style_0",
+      "style_jeg_classic_spray_can",
+      "style_jeg_toy_spray_can",
+      "style_jeg_whiteout_spray_can",
+      "style_jeg_golden_spray_can"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/training/loadout",
+  "rewards": {
+    "experience": 100
+  }
+}

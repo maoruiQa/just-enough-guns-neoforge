@@ -1,0 +1,56 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:vehicle_assembling_table"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.bmp2_assault.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.bmp2_assault.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "drive": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drive",
+        "subject": "jeg:bmp2"
+      }
+    },
+    "hit_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:bmp2/jeg:vehicle_30mm_cannon"
+      }
+    },
+    "hit_1": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:bmp2/jeg:vehicle_bmp2_missile"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "drive"
+    ],
+    [
+      "hit_0"
+    ],
+    [
+      "hit_1"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/workshop",
+  "rewards": {
+    "experience": 25
+  }
+}

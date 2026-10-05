@@ -1,0 +1,54 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:infantry_rifle"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.battle.veteran.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.battle.veteran.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "minecraft:type_specific/player": {
+            "advancements": {
+              "jeg:guide/arsenal/category_rifle": true,
+              "jeg:guide/battle/patrol": true,
+              "jeg:guide/battle/home_raid": true,
+              "jeg:guide/battle/raid": true,
+              "jeg:guide/arsenal/category_pistol": true,
+              "jeg:guide/battle/close_quarters": true,
+              "jeg:guide/battle/close_combat": true,
+              "jeg:guide/battle/precision": true,
+              "jeg:guide/battle/support": true,
+              "jeg:guide/battle/enemy_profiles": true,
+              "jeg:guide/battle/elite_hunter": true,
+              "jeg:guide/battle/bomber_intercept": true,
+              "jeg:guide/battle/anti_armour": true,
+              "jeg:guide/battle/anti_air": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "complete"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/battle/raid",
+  "rewards": {
+    "experience": 25
+  }
+}

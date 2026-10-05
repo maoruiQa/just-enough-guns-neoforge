@@ -1,0 +1,46 @@
+{
+  "display": {
+    "icon": {
+      "id": "jeg:vehicle_assembling_table"
+    },
+    "title": {
+      "translate": "advancement.jeg.guide.vehicles.river_push.title"
+    },
+    "description": {
+      "translate": "advancement.jeg.guide.vehicles.river_push.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "drive": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "drive",
+        "subject": "jeg:speedboat"
+      }
+    },
+    "hit_0": {
+      "trigger": "jeg:gameplay_action",
+      "conditions": {
+        "action": "vehicle_hit",
+        "subject": "jeg:speedboat/jeg:vehicle_coax_machine_gun"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "drive"
+    ],
+    [
+      "hit_0"
+    ]
+  ],
+  "sends_telemetry_event": false,
+  "parent": "jeg:guide/vehicles/bmp2_assault",
+  "rewards": {
+    "experience": 25
+  }
+}

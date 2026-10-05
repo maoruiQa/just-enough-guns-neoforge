@@ -9,17 +9,17 @@
     "description": {
       "translate": "advancement.jeg.guide.gunsmith.kill_effect.description"
     },
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
     "done": {
-      "trigger": "jeg:gameplay_action",
       "conditions": {
         "action": "kill_effect"
-      }
+      },
+      "trigger": "jeg:gameplay_action"
     }
   },
   "requirements": [
@@ -28,8 +28,8 @@
     ]
   ],
   "sends_telemetry_event": false,
-  "parent": "jeg:guide/gunsmith/root",
+  "parent": "jeg:guide/training/signature",
   "rewards": {
-    "experience": 5
+    "experience": 100
   }
 }
