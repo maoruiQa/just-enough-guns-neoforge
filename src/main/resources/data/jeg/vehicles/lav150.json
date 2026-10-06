@@ -1,9 +1,9 @@
 {
   "entity_type": "jeg:lav150",
   "vehicle_type": "land",
-  "max_health": 270.0,
-  "auto_repair_per_tick": 0.014,
-  "auto_repair_cooldown_ticks": 150,
+  "max_health": 270,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 5000000,
   "up_step": 1.5,
   "allow_free_cam": true,
@@ -121,7 +121,9 @@
       "z": 1.584375,
       "half_width": 0.3,
       "half_height": 0.75,
-      "half_depth": 0.75
+      "half_depth": 0.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "wheel_left",
@@ -130,7 +132,9 @@
       "z": 1.584375,
       "half_width": 0.3,
       "half_height": 0.75,
-      "half_depth": 0.75
+      "half_depth": 0.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "wheel_left",
@@ -139,7 +143,9 @@
       "z": -1.571875,
       "half_width": 0.3,
       "half_height": 0.75,
-      "half_depth": 0.75
+      "half_depth": 0.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "wheel_right",
@@ -148,34 +154,42 @@
       "z": -1.571875,
       "half_width": 0.3,
       "half_height": 0.75,
-      "half_depth": 0.75
+      "half_depth": 0.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.53125,
       "z": -0.4375,
       "half_width": 1.3125,
       "half_height": 0.90625,
-      "half_depth": 2.4375
+      "half_depth": 2.4375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.90625,
       "z": -3.21875,
       "half_width": 1.3125,
       "half_height": 0.53125,
-      "half_depth": 0.34375
+      "half_depth": 0.34375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.4375,
       "z": 2.53125,
       "half_width": 1.3125,
       "half_height": 0.625,
-      "half_depth": 0.53125
+      "half_depth": 0.53125,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "main_engine",
@@ -184,18 +198,20 @@
       "z": -2.0625,
       "half_width": 0.71875,
       "half_height": 0.46875,
-      "half_depth": 0.875
+      "half_depth": 0.875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "turret",
-      "transform": "turret",
-      "rotation": "turret",
-      "x": 0.0,
+      "x": 0,
       "y": 0.3625,
-      "z": 0.0,
+      "z": 0,
       "half_width": 0.875,
       "half_height": 0.3625,
-      "half_depth": 1.25
+      "half_depth": 1.25,
+      "transform": "turret",
+      "rotation": "turret"
     }
   ],
   "weapons": [
@@ -237,7 +253,12 @@
   },
   "destroy": {
     "explodes": true,
-    "explosion_power": 2.6
+    "explosion_power": 7,
+    "explosion_damage": 120,
+    "explode_blocks": true,
+    "explode_passengers": true,
+    "crash_passengers": false,
+    "particle_type": "huge"
   },
   "seek": {
     "range": 72.0,
@@ -285,10 +306,10 @@
     "minecraft:mob_attack * 2.5",
     "minecraft:mob_attack_no_aggro * 2",
     "minecraft:mob_projectile * 1.5",
-    "minecraft:explosion * 7.5",
-    "minecraft:player_explosion * 7.5",
-    "superbwarfare:custom_explosion * 2.5",
-    "superbwarfare:projectile_explosion * 2.5",
+    "minecraft:explosion * 6",
+    "minecraft:player_explosion * 6",
+    "superbwarfare:custom_explosion * 2.0",
+    "superbwarfare:projectile_explosion * 2",
     "superbwarfare:mine * 0.75",
     "superbwarfare:projectile_hit * 1.25",
     "superbwarfare:grapeshot_hit * 0.3",
@@ -299,6 +320,15 @@
     "superbwarfare:vehicle_strike * 4",
     "@superbwarfare:mortar_shell * 1.25",
     "@superbwarfare:gun_grenade * 1.5",
+    "@superbwarfare:javelin_missile * 0.8",
+    "@superbwarfare:igla_9k38_missile * 0.75",
     "All - 11"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0.1,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0.25,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": true,
+  "mass": 13.6
 }
