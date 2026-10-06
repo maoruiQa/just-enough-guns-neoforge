@@ -522,6 +522,10 @@ public final class NetworkHandler {
         ServerPlayNetworking.send(player, payload);
     }
 
+    public static void sendHitMarker(ServerPlayer player, boolean critical, boolean vehicle, boolean killed) {
+        ServerPlayNetworking.send(player, new HitMarkerPayload(critical, vehicle, killed));
+    }
+
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
     }
@@ -591,7 +595,8 @@ public final class NetworkHandler {
                 vehicle.getDeltaMovement().z,
                 vehicle.getYRot(),
                 vehicle.getXRot(),
-                forceApply
+                forceApply,
+                vehicle.enginePower(), vehicle.steeringPower(), vehicle.rudderPower(), vehicle.roll(), vehicle.engineStarted(), vehicle.engineReady()
         );
         // Tracking full + 256-block fallback (deduped). Avoids freeze when vanilla lerp is disabled
         // for LAND/BOAT/HELICOPTER but the entity is still tracked beyond a short distance radius.

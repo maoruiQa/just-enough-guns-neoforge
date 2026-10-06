@@ -12,6 +12,7 @@ public final class VehicleCameraHandler {
     private VehicleCameraHandler() {}
 
     public static double thirdPersonDistance(LocalPlayer player, VehicleEntity vehicle, double currentDistance) {
+        if (vehicle.usesSwControls()) return currentDistance;
         CameraPos camera = thirdPersonCameraFor(player, vehicle);
         double configuredDistance = Math.abs(camera.z());
         if (configuredDistance > 0.0D) {
@@ -28,7 +29,7 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId() || !VehicleClientState.zoomDown()) {
             return fov;
         }
-        return fov / VEHICLE_ZOOM_DIVISOR;
+        return fov / (vehicle.usesSwControls() ? vehicle.selectedVehicleZoom(player) : VEHICLE_ZOOM_DIVISOR);
     }
 
     public static boolean shouldRenderHand() {

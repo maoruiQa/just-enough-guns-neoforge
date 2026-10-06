@@ -73,6 +73,8 @@ abstract class AbstractVehicleGeoRenderer extends GeoEntityRenderer<VehicleEntit
         return player != null
                 && player.getVehicle() == vehicle
                 && vehicle.hasFocusedSightHud(player)
+                && (!vehicle.usesSwControls() || (vehicle.vehicleData().defaults().turret().enabled()
+                && vehicle.getSeatIndex(player) == vehicle.vehicleData().defaults().turret().seatIndex()))
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();

@@ -217,7 +217,21 @@ public final class VehicleDataManager {
                 getDouble(object, "roll_speed", fallback.rollSpeed()),
                 getDouble(object, "lift_speed", fallback.liftSpeed()),
                 getResourceLocation(object, "engine_start_sound", fallback.engineStartSound()),
-                getFloat(object, "engine_sound_volume", fallback.engineSoundVolume())
+                getFloat(object, "engine_sound_volume", fallback.engineSoundVolume()),
+                getBoolean(object, "sw_controls", fallback.swControls()),
+                getDouble(object, "buoyancy", fallback.buoyancy()),
+                getDouble(object, "body_pitch_rate", fallback.bodyPitchRate()),
+                getDouble(object, "body_roll_rate", fallback.bodyRollRate()),
+                getDouble(object, "mouse_sensitivity", fallback.mouseSensitivity()),
+                getDouble(object, "mouse_speed_x", fallback.mouseSpeedX()),
+                getDouble(object, "mouse_speed_y", fallback.mouseSpeedY()),
+                getDouble(object, "wheel_rot_speed", fallback.wheelRotSpeed()),
+                getDouble(object, "wheel_differential", fallback.wheelDifferential()),
+                getDouble(object, "track_rot_speed", fallback.trackRotSpeed()),
+                getDouble(object, "track_differential", fallback.trackDifferential()),
+                getDouble(object, "inertia_rotate_rate", fallback.inertiaRotateRate()),
+                getDouble(object, "terrain_rotate_rate", fallback.terrainRotateRate()),
+                parseVectors(object, "terrain_points", fallback.terrainPoints())
         );
     }
 
@@ -240,7 +254,10 @@ public final class VehicleDataManager {
                 getBoolean(object, "use_simulated_third_person", fallback.useSimulatedThirdPerson()),
                 getDouble(object, "simulated_third_person_distance", fallback.simulatedThirdPersonDistance()),
                 getDouble(object, "simulated_third_person_height", fallback.simulatedThirdPersonHeight()),
-                getString(object, "transform", fallback.transform())
+                getString(object, "transform", fallback.transform()),
+                getBoolean(object, "has_zoom_position", object.has("zoom_x") || object.has("zoom_y") || object.has("zoom_z") || fallback.hasZoomPosition()),
+                getString(object, "direction", fallback.direction()),
+                getString(object, "zoom_direction", fallback.zoomDirection())
         );
     }
 
@@ -285,7 +302,11 @@ public final class VehicleDataManager {
                     (float) getDouble(seat, "sensitivity_y", fallbackSeat.sensitivityY()),
                     (float) getDouble(seat, "sensitivity_z", fallbackSeat.sensitivityZ()),
                     parseCamera(getObject(seat, "zoom_camera"), fallbackSeat.zoomCamera()),
-                    parseDismount(getObject(seat, "dismount"), fallbackSeat.dismount())
+                    parseDismount(getObject(seat, "dismount"), fallbackSeat.dismount()),
+                getString(seat, "transform", fallbackSeat.transform()),
+                getFloat(seat, "orientation", fallbackSeat.orientation()),
+                getBoolean(seat, "can_rotate_head", fallbackSeat.canRotateHead()),
+                getBoolean(seat, "can_rotate_body", fallbackSeat.canRotateBody())
             ));
         }
         seats.sort(Comparator.comparingInt(SeatInfo::index));
@@ -341,7 +362,18 @@ public final class VehicleDataManager {
                     getInt(weapon, "seat", getInt(weapon, "seat_index", -1)),
                     muzzle == null ? Double.NaN : getDouble(muzzle, "x", Double.NaN),
                     muzzle == null ? Double.NaN : getDouble(muzzle, "y", Double.NaN),
-                    muzzle == null ? Double.NaN : getDouble(muzzle, "z", Double.NaN)
+                    muzzle == null ? Double.NaN : getDouble(muzzle, "z", Double.NaN),
+                Math.max(1.0F, getFloat(weapon, "default_zoom", 3.0F)),
+                getString(weapon, "crosshair", ""),
+                getString(weapon, "crosshair_zooming", getString(weapon, "crosshair", "")),
+                getInt(weapon, "crosshair_color", 0xFFFFFF),
+                getResourceLocation(weapon, "icon", null),
+                getString(weapon, "hud_transform", "vehicle"),
+                parseVector(weapon, "hud_position"),
+                getString(weapon, "hud_direction", "default"),
+                parseVector(weapon, "hud_direction_vector"),
+                getString(weapon, "view_direction", "default"),
+                parseVector(weapon, "view_position")
             ));
         }
         return List.copyOf(weapons);
@@ -360,7 +392,11 @@ public final class VehicleDataManager {
                 getDouble(object, "barrel_x", fallback.barrelX()),
                 getDouble(object, "barrel_y", fallback.barrelY()),
                 getDouble(object, "barrel_z", fallback.barrelZ()),
-                getBoolean(object, "guided_uses_turret", fallback.guidedUsesTurret())
+                getBoolean(object, "guided_uses_turret", fallback.guidedUsesTurret()),
+                getFloat(object, "pitch_turn_speed", fallback.pitchTurnSpeed()),
+                getFloat(object, "yaw_turn_speed", fallback.yawTurnSpeed()),
+                getFloat(object, "min_pitch", fallback.minPitch()),
+                getFloat(object, "max_pitch", fallback.maxPitch())
         );
     }
 
@@ -452,6 +488,30 @@ public final class VehicleDataManager {
             return new DamageModifierInfo(global, fallback.rules());
         }
         return DamageModifierInfo.fromRuleStrings(global, rules);
+    }
+
+    private static net.minecraft.world.phys.Vec3 parseVector(JsonObject object, String name) {
+        JsonElement element = object.get(name);
+        if (element == null) return null;
+        JsonArray array = element.getAsJsonArray();
+        if (array.size() != 3) throw new JsonSyntaxException(name + " must have three coordinates");
+        double x = array.get(0).getAsDouble(), y = array.get(1).getAsDouble(), z = array.get(2).getAsDouble();
+        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) {
+            throw new JsonSyntaxException(name + " must contain finite coordinates");
+        }
+        return new net.minecraft.world.phys.Vec3(x, y, z);
+    }
+
+    private static List<net.minecraft.world.phys.Vec3> parseVectors(JsonObject object, String name, List<net.minecraft.world.phys.Vec3> fallback) {
+        JsonElement element = object.get(name);
+        if (element == null) return fallback;
+        var vectors = new java.util.ArrayList<net.minecraft.world.phys.Vec3>();
+        for (JsonElement entry : element.getAsJsonArray()) {
+            JsonObject wrapper = new JsonObject();
+            wrapper.add(name, entry);
+            vectors.add(parseVector(wrapper, name));
+        }
+        return List.copyOf(vectors);
     }
 
     private static JsonObject getObject(JsonObject object, String name) {

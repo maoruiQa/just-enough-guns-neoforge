@@ -28,7 +28,7 @@ public abstract class VehicleGameRendererMixin {
         GunCameraSwayHandler.apply(poseStack, partialTick);
 
         Entity entity = this.mainCamera.getEntity();
-        if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || this.mainCamera.isDetached()) {
+        if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || vehicle.usesSwControls() || this.mainCamera.isDetached()) {
             original.call(instance, poseStack, partialTick);
             return;
         }

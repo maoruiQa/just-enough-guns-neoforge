@@ -52,6 +52,11 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     }
 
     @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        graphics.drawString(this.font,this.title,this.titleLabelX,this.titleLabelY,4210752,false);
+    }
+
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);

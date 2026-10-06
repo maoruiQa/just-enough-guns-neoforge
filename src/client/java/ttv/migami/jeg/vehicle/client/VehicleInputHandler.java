@@ -18,12 +18,17 @@ public final class VehicleInputHandler {
     private static boolean ignoreVehicleInventoryUntilRelease;
     private static boolean vehicleInventoryWasDown;
     private static int vehicleInventoryInputBlockTicks;
+    private static int scrollWeaponDirection;
+    private static int scrollCooldown;
 
     private VehicleInputHandler() {}
 
     public static void onClientTick(Minecraft minecraft) {
+        if (VehicleNetworkCheck.tick(minecraft)) return;
+        if (VehicleCaptureCheck.tick(minecraft)) return;
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.getConnection() == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            scrollWeaponDirection = scrollCooldown = 0;
             VehicleClientState.clear();
             ignorePlayerInventoryUntilRelease = false;
             ignoreVehicleInventoryUntilRelease = false;
@@ -32,6 +37,7 @@ public final class VehicleInputHandler {
             return;
         }
 
+        if (scrollCooldown > 0) scrollCooldown--;
         boolean vehicleInventoryDown = minecraft.options.keyInventory.isDown();
         if (vehicleInventoryInputBlockTicks > 0) {
             vehicleInventoryInputBlockTicks--;
@@ -45,18 +51,31 @@ public final class VehicleInputHandler {
             ignorePlayerInventoryUntilRelease = false;
         }
 
+        boolean controlsActive = minecraft.screen == null && minecraft.isWindowActive();
+        boolean freeLook = controlsActive && KeyBindings.VEHICLE_FREE_LOOK.isDown();
+        boolean vehicleZoom = controlsActive && minecraft.options.keyUse.isDown() && vehicle.canPassengerUseSelectedVehicleWeapon(player);
+        VehicleClientState.update(vehicle, freeLook, vehicleZoom, controlsActive && KeyBindings.VEHICLE_SEEK.isDown());
         double mouseX = minecraft.mouseHandler.xpos();
         double mouseY = minecraft.mouseHandler.ypos();
-        if (minecraft.screen != null) {
+        if (!controlsActive) {
             VehicleClientState.syncMousePosition(mouseX, mouseY);
         } else {
             VehicleClientState.setMousePosition(mouseX, mouseY);
         }
-        boolean freeLook = KeyBindings.VEHICLE_FREE_LOOK.isDown();
-        boolean seek = KeyBindings.VEHICLE_SEEK.isDown();
+        boolean seek = controlsActive && KeyBindings.VEHICLE_SEEK.isDown();
         boolean aircraftControls = isAircraftDriver(player, vehicle);
-        if (aircraftControls && minecraft.screen == null) {
-            VehicleClientState.updateAircraftMouse(0.1F, 0.5F, 0.35F, false, freeLook);
+        if (aircraftControls && controlsActive) {
+            var engine = vehicle.vehicleData().defaults().engine();
+            VehicleClientState.updateAircraftMouse(vehicle.usesSwControls() ? (float) engine.mouseSensitivity() : .1F, vehicle.usesSwControls() ? (float) engine.mouseSpeedX() : .5F, vehicle.usesSwControls() ? (float) engine.mouseSpeedY() : .35F, minecraft.options.invertYMouse().get(), freeLook);
+        }
+        float flightX = VehicleClientState.mouseLerpX(), flightY = VehicleClientState.mouseLerpY();
+        if (vehicle.usesSwControls() && minecraft.options.getCameraType().isFirstPerson()) {
+            float roll = vehicle.roll();
+            float fraction = Math.abs(roll) / 90.0F;
+            float sign = roll < 0 ? 1 : roll > 0 ? -1 : 0;
+            if (Math.abs(roll) > 90) sign *= 1 - (Math.abs(roll) - 90) / 90;
+            flightX = (1 - fraction) * VehicleClientState.mouseLerpX() + fraction * VehicleClientState.mouseLerpY() * sign;
+            flightY = (1 - fraction) * VehicleClientState.mouseLerpY() + fraction * VehicleClientState.mouseLerpX() * (roll < 0 ? -1 : 1);
         }
         boolean reload = KeyBindings.RELOAD.consumeClick();
         int weaponSlot = -1;
@@ -66,7 +85,6 @@ public final class VehicleInputHandler {
                 break;
             }
         }
-        boolean vehicleZoom = minecraft.options.keyUse.isDown() && vehicle.canPassengerUseSelectedVehicleWeapon(player);
         VehicleClientState.update(vehicle, freeLook, vehicleZoom, seek);
         if (KeyBindings.VEHICLE_CHANGE_SEAT.consumeClick()) {
             ClientNetworkHandler.sendVehicleChangeSeat(vehicle.getId());
@@ -110,7 +128,7 @@ public final class VehicleInputHandler {
                 minecraft.setScreen(new InventoryScreen(player));
             }
         }
-        VehicleInput input = new VehicleInput(
+        VehicleInput input = minecraft.screen != null || !minecraft.isWindowActive() ? VehicleInput.EMPTY : new VehicleInput(
                 minecraft.options.keyUp.isDown(),
                 minecraft.options.keyDown.isDown(),
                 minecraft.options.keyLeft.isDown(),
@@ -121,27 +139,30 @@ public final class VehicleInputHandler {
                 minecraft.options.keyAttack.isDown(),
                 reload,
                 freeLook,
-                KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick(),
-                KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick(),
+                KeyBindings.VEHICLE_SWITCH_WEAPON.consumeClick() || scrollWeaponDirection > 0,
+                KeyBindings.VEHICLE_PREVIOUS_WEAPON.consumeClick() || scrollWeaponDirection < 0,
                 weaponSlot,
                 seek,
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick(),
-                aircraftControls && !freeLook ? VehicleClientState.mouseLerpX() : 0.0F,
-                aircraftControls && !freeLook ? VehicleClientState.mouseLerpY() : 0.0F
+                aircraftControls && !freeLook ? flightX : 0.0F,
+                aircraftControls && !freeLook ? flightY : 0.0F,
+                vehicleZoom
         );
+        scrollWeaponDirection = 0;
         vehicle.processClientInput(player, input);
         ClientNetworkHandler.sendVehicleInput(vehicle.getId(), input);
     }
 
-    public static double adjustMouseSensitivity(double mouseSensitivity) {
+    public static double adjustMouseSensitivity(double base) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
-            return mouseSensitivity;
+            return base;
         }
+        if (usesHandheldMouse(player, vehicle)) return base;
         int seatIndex = vehicle.getSeatIndex(player);
         if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
-            return mouseSensitivity;
+            return base;
         }
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
         if (minecraft.options.getCameraType().isFirstPerson()) {
@@ -154,14 +175,14 @@ public final class VehicleInputHandler {
             deltaY = player.getXRot() - player.xRotO;
         }
         VehicleClientState.setMouseDelta(deltaX, deltaY);
-        float base = (float) mouseSensitivity;
+        float scaledBase = (float) base;
         float sensitivity = minecraft.options.getCameraType().isFirstPerson() ? seat.sensitivityY() : seat.sensitivityZ();
         if (VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown()) {
             sensitivity = seat.sensitivityX();
         }
-        return Math.max(0.0F, base * sensitivity);
+        return vehicle.usesSwControls() ? Math.max(0.0D, base * sensitivity) : Math.max(0.0F, scaledBase * sensitivity);
     }
 
     public static boolean handleVehicleMouseTurn(Minecraft minecraft, double accumulatedDX, double accumulatedDY, double frameTime) {
@@ -169,6 +190,7 @@ public final class VehicleInputHandler {
         if (player == null || minecraft.screen != null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return false;
         }
+        if (usesHandheldMouse(player, vehicle)) return false;
         int seatIndex = vehicle.getSeatIndex(player);
         if (seatIndex < 0 || seatIndex >= vehicle.vehicleData().defaults().seats().size()) {
             return false;
@@ -176,11 +198,12 @@ public final class VehicleInputHandler {
 
         double sensitivitySetting = minecraft.options.sensitivity().get() * 0.6000000238418579D + 0.20000000298023224D;
         double baseSensitivity = sensitivitySetting * sensitivitySetting * sensitivitySetting * 8.0D;
-        double vehicleSensitivity = adjustMouseSensitivity(baseSensitivity);
+        double adjustedSetting = adjustMouseSensitivity(sensitivitySetting);
+        double vehicleSensitivity = vehicle.usesSwControls() ? adjustedSetting * adjustedSetting * adjustedSetting * 8.0D : adjustMouseSensitivity(baseSensitivity);
         double turnX = accumulatedDX * vehicleSensitivity;
         double turnY = accumulatedDY * vehicleSensitivity;
         minecraft.getTutorial().onMouse(turnX, turnY);
-        player.turn(turnX, turnY);
+        player.turn(turnX, turnY * (minecraft.options.invertYMouse().get() ? -1 : 1));
 
         var seat = vehicle.vehicleData().defaults().seats().get(seatIndex);
         clampSeatView(player, vehicle, seat);
@@ -188,7 +211,33 @@ public final class VehicleInputHandler {
         return true;
     }
 
+    public static void checkHandheldCapture(Minecraft mc, boolean aiming) {
+        var player = mc.player;
+        if (!(player.getMainHandItem().getItem() instanceof ttv.migami.jeg.item.GunItem)
+                || !(player.getVehicle() instanceof VehicleEntity vehicle) || vehicle.shouldBanPassengerHand(player)) {
+            throw new IllegalStateException("Truck must expose the native held gun and its HUD");
+        }
+        if (handleVehicleMouseTurn(mc, 0, 0, 0) || adjustMouseSensitivity(.5) != .5) {
+            throw new IllegalStateException("Truck held gun must retain native mouse input");
+        }
+        float ads = ttv.migami.jeg.client.handler.AimingHandler.get().getNormalisedAdsProgress();
+        if (aiming ? ads < .99F : ads > .01F) throw new IllegalStateException("Native gun ADS did not transition: " + ads);
+    }
+
+    private static boolean usesHandheldMouse(LocalPlayer player, VehicleEntity vehicle) {
+        return vehicle.usesSwControls() && !vehicle.shouldBanPassengerHand(player)
+                && player.getMainHandItem().getItem() instanceof ttv.migami.jeg.item.GunItem;
+    }
+
     private static void clampSeatView(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
+        if (vehicle.usesSwControls()) {
+            if (isAircraftDriver(player, vehicle) && seat.sensitivityY() == 0 && seat.sensitivityZ() == 0 && !VehicleClientState.freeLookDown()) {
+                player.setYRot(vehicle.getYRot());
+                player.setXRot(vehicle.getXRot());
+            }
+            vehicle.clampSwPassengerView(player);
+            return;
+        }
         float targetYaw = aircraftBoundYaw(player, vehicle, seat);
         float targetPitch = aircraftBoundPitch(player, vehicle, seat);
         player.setYRot(targetYaw);
@@ -205,16 +254,16 @@ public final class VehicleInputHandler {
         if (isAircraftDriver(player, vehicle) && seat.sensitivityY() == 0.0F && seat.sensitivityZ() == 0.0F && !VehicleClientState.freeLookDown()) {
             return vehicle.getYRot();
         }
-        float relativeYaw = Mth.wrapDegrees(player.getYRot() - vehicle.getYRot());
+        float relativeYaw = Mth.wrapDegrees(player.getYRot() - vehicle.getYRot() - (vehicle.usesSwControls() ? seat.orientation() : 0));
         float clampedYaw = Mth.clamp(relativeYaw, seat.minYaw(), seat.maxYaw());
-        return vehicle.getYRot() + clampedYaw;
+        return vehicle.getYRot() + (vehicle.usesSwControls() ? seat.orientation() : 0) + clampedYaw;
     }
 
     private static float aircraftBoundPitch(LocalPlayer player, VehicleEntity vehicle, ttv.migami.jeg.vehicle.data.subdata.SeatInfo seat) {
         if (isAircraftDriver(player, vehicle) && seat.sensitivityY() == 0.0F && seat.sensitivityZ() == 0.0F && !VehicleClientState.freeLookDown()) {
             return Mth.clamp(vehicle.getXRot(), seat.minPitch(), seat.maxPitch());
         }
-        return Mth.clamp(player.getXRot(), seat.minPitch(), seat.maxPitch());
+        return vehicle.usesSwControls() ? Mth.clamp(player.getXRot(), -seat.maxPitch(), -seat.minPitch()) : Mth.clamp(player.getXRot(), seat.minPitch(), seat.maxPitch());
     }
 
     private static boolean isAircraftDriver(LocalPlayer player, VehicleEntity vehicle) {
@@ -284,5 +333,21 @@ public final class VehicleInputHandler {
 
     public static void suppressVehicleInventoryClickOnce() {
         suppressVehicleInventoryClick = true;
+    }
+    public static boolean onVehicleScroll(double amount) {
+        var minecraft = Minecraft.getInstance();
+        var player = minecraft.player;
+        if (player == null || minecraft.screen != null || !(player.getVehicle() instanceof VehicleEntity vehicle) || !vehicle.usesSwControls()) return false;
+        if (vehicle.getControllingPassenger() == player && VehicleClientState.freeLookDown()) {
+            VehicleClientState.scrollCamera(amount);
+            return true;
+        } else if (!player.isShiftKeyDown() && vehicle.shouldBanPassengerHand(player) && vehicle.canPassengerUseSelectedVehicleWeapon(player)) {
+            if (scrollCooldown == 0) {
+                scrollWeaponDirection = amount > 0 ? -1 : 1;
+                scrollCooldown = 3;
+            }
+            return true;
+        }
+        return false;
     }
 }

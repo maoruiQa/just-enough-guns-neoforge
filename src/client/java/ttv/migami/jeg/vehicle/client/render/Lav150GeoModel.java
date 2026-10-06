@@ -22,7 +22,7 @@ public final class Lav150GeoModel extends NamedVehicleGeoModel {
 
         GeoBone barrel = this.getAnimationProcessor().getBone("barrel");
         if (barrel != null) {
-            barrel.setRotX(Mth.clamp(-animatable.turretPitch(partialTick), -15.0F, 32.5F) * Mth.DEG_TO_RAD);
+            barrel.setRotX((animatable.usesSwControls() ? animatable.swBarrelModelPitch(partialTick) : Mth.clamp(-animatable.turretPitch(partialTick), -15.0F, 32.5F)) * Mth.DEG_TO_RAD);
         }
     }
 }

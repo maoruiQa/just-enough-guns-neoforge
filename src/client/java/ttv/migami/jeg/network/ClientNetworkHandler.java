@@ -51,7 +51,7 @@ public final class ClientNetworkHandler {
         });
 
         ClientPlayNetworking.registerGlobalReceiver(HitMarkerPayload.TYPE, (payload, context) -> {
-            context.client().execute(() -> ttv.migami.jeg.client.CrosshairHandler.playHitMarker(payload.critical()));
+            context.client().execute(() -> ttv.migami.jeg.client.CrosshairHandler.playHitMarker(payload.critical(), payload.vehicle(), payload.killed()));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(HeadshotMedalPayload.TYPE, (payload, context) -> {
@@ -219,7 +219,8 @@ public final class ClientNetworkHandler {
                 input.seekTarget(),
                 input.deployDecoy(),
                 input.mouseX(),
-                input.mouseY()
+                input.mouseY(),
+                input.aiming()
         ));
     }
 }

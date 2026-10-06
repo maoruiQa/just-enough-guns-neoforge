@@ -63,6 +63,11 @@ public final class CrosshairHandler {
         techScale = 1.5F;
     }
 
+    public static void playHitMarker(boolean critical, boolean vehicle, boolean killed) {
+        if (Config.showHitmarker() && ClientUiConfig.showHitFeedback() && ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay.recordHit(critical, vehicle, killed)) return;
+        playHitMarker(critical);
+    }
+
     public static void playHitMarker(boolean critical) {
         if (!Config.showHitmarker() || !ClientUiConfig.showHitFeedback()) {
             return;
