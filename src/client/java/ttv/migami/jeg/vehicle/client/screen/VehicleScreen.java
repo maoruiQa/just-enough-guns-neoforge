@@ -38,6 +38,11 @@ public final class VehicleScreen extends AbstractContainerScreen<VehicleMenu> {
     }
 
     @Override
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        graphics.text(this.font,this.title,this.titleLabelX,this.titleLabelY,0xFF404040,false);
+    }
+
+    @Override
     public void extractContents(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int x = this.leftPos;
         int y = this.topPos;

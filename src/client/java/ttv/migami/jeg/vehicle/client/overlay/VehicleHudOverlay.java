@@ -23,6 +23,8 @@ import ttv.migami.jeg.vehicle.util.VehicleGeometry;
 import ttv.migami.jeg.vehicle.projectile.VehicleDecoyEntity;
 import ttv.migami.jeg.vehicle.util.VehicleMissileProfile;
 import ttv.migami.jeg.vehicle.util.VehicleWeaponStats;
+import com.mojang.math.Axis;
+import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
 
 public final class VehicleHudOverlay {
     private static final Identifier ARMOR_ICON = Reference.id("textures/overlay/vehicle/base/armor.png");
@@ -106,12 +108,18 @@ public final class VehicleHudOverlay {
     }
 
     private static boolean shouldReplaceHotbar(LocalPlayer player, VehicleEntity vehicle) {
-        return player == vehicle.getControllingPassenger()
+        return (player == vehicle.getControllingPassenger() && !vehicle.usesSwControls())
                 || vehicle.shouldBanPassengerHand(player)
                 || vehicle.canPassengerUseSelectedVehicleWeapon(player);
     }
 
     private static void render(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (vehicle.usesSwControls()) { renderSwHud(guiGraphics, minecraft, vehicle); return; }
+
+
+
+
+        swAlpha = 1.0F;
         boolean focusedSight = isFocusedVehicleSight(vehicle);
         renderLandVehicleStatus(guiGraphics, minecraft, vehicle);
         if (vehicle.hasVehicleWeapons() && vehicle.canPassengerUseSelectedVehicleWeapon(minecraft.player)) {
@@ -203,10 +211,6 @@ public final class VehicleHudOverlay {
         }
     }
 
-    public static void renderArmorValueBar(GuiGraphicsExtractor guiGraphics, int x, int y, float ratio) {
-        renderValueBar(guiGraphics, ARMOR_ICON, x, y, ratio);
-    }
-
     private static void renderSelectedWeaponIcon(GuiGraphicsExtractor guiGraphics, VehicleEntity vehicle, Entity passenger, int x, int y) {
         Identifier selectedWeaponId = vehicle.selectedVehicleWeaponId(passenger);
         if (selectedWeaponId == null) {
@@ -229,6 +233,7 @@ public final class VehicleHudOverlay {
     }
 
     private static void renderWeaponSelector(GuiGraphicsExtractor guiGraphics, Minecraft minecraft, VehicleEntity vehicle) {
+        if (vehicle.usesSwControls()) { renderSwWeaponSelector(guiGraphics,minecraft,vehicle); return; }
         if (!hasWeaponSelectorHud(vehicle)) {
             return;
         }
@@ -252,7 +257,8 @@ public final class VehicleHudOverlay {
             int x = width - 85;
             int y = height - frameIndex * 18 - 20;
             Identifier icon = weaponIcon(weapons.get(index).weaponId());
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_FRAMES[Math.min(displayIndex, WEAPON_FRAMES.length - 1)], x, y, 0, 0, 75, 16, 75, 16);
+            swAlpha = index == selected ? 1.0F : 0.35F;
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_FRAMES[Math.min(displayIndex, WEAPON_FRAMES.length - 1)], x, y, 0.0F, 0.0F, 75, 16, 75, 16);
             if (icon != null) {
                 blitWeaponIcon(guiGraphics, icon, x, y);
             } else {
@@ -270,10 +276,11 @@ public final class VehicleHudOverlay {
                 guiGraphics.text(minecraft.font, slotNumber, width - 20 - minecraft.font.width(slotNumber), y + 5, 0xFFFFFFFF, false);
             }
             if (index == selected) {
-                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_SELECTED, width - 95, y + 4, 0, 0, 8, 8, 8, 8);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WEAPON_SELECTED, width - 95, y + 4, 0.0F, 0.0F, 8, 8, 8, 8);
             }
             frameIndex++;
         }
+        swAlpha = 1.0F;
     }
 
     private static Identifier weaponIcon(Identifier weaponId) {
@@ -440,6 +447,9 @@ public final class VehicleHudOverlay {
             }
         }
 
+        if (vehicle.usesSwControls() && (helicopterPilot || reticleTexture(vehicle) != null)) renderSwFeedback(guiGraphics, vehicle, screen,
+                helicopterPilot || camera != CameraType.FIRST_PERSON && !zooming || isDynamicReticle(vehicle, player, zooming));
+
         if (helicopterPilot) {
             if (screen != null) {
                 int size = 16;
@@ -447,16 +457,31 @@ public final class VehicleHudOverlay {
                 Identifier texture = helicopterHudTexture ? HELICOPTER_CROSSHAIR : CROSSHAIR_THIRD_CAMERA;
                 int textureSize = helicopterHudTexture ? 32 : 64;
                 coloredReticleBlit(guiGraphics, texture, (float) screen.x - size / 2.0F, (float) screen.y - size / 2.0F,
-                        size, size, 0.0F, 0.0F, textureSize, textureSize, textureSize, textureSize, reticleColor(vehicle));
+                        size, size, 0.0F, 0.0F, textureSize, textureSize, textureSize, textureSize, vehicle.usesSwControls() ? helicopterHudTexture ? swHudColor(vehicle) : 0xFFFFFFFF : reticleColor(vehicle));
+                if (vehicle.usesSwControls() && !helicopterHudTexture) {
+                    guiGraphics.pose().pushMatrix();
+                    guiGraphics.pose().rotateAbout(vehicle.roll()*Mth.DEG_TO_RAD, (float) screen.x, (float) screen.y);
+                    guiGraphics.pose().translate((float) screen.x, (float) screen.y);
+                    guiGraphics.pose().scale(.75F, .75F);
+                    String text = swWeaponText(minecraft, vehicle);
+                    if (text != null) swText(guiGraphics, minecraft, text, 30, -9, 0xFFFFFFFF);
+                    if (vehicle.hasBuiltInDecoy()) {
+                        Component status = Component.translatable(vehicle.vehicleDecoyCooldown() > 0 ? "hud.jeg.vehicle.decoy_reloading" : "hud.jeg.vehicle.decoy_ready");
+                        swText(guiGraphics, minecraft, status.getString() + (vehicle.vehicleDecoyCooldown() > 0 ? "" : " [" + KeyBindings.VEHICLE_DEPLOY_DECOY.getTranslatedKeyMessage().getString() + "]"), 30, 1, vehicle.vehicleDecoyCooldown() > 0 ? 0xFFFF0000 : 0xFFFFFFFF);
+                    }
+                    guiGraphics.pose().popMatrix();
+                }
             }
-            return;
         }
+        if (camera == CameraType.THIRD_PERSON_FRONT && !zooming) return;
+        if (vehicle.usesSwControls() && reticleTexture(vehicle) == null) return;
         if (camera == CameraType.THIRD_PERSON_BACK && !zooming) {
             if (screen != null) preciseBlit(guiGraphics, CROSSHAIR_THIRD_CAMERA, (float) screen.x - 12.0F,
                     (float) screen.y - 12.0F, 24, 24, 0.0F, 0.0F, 64, 64, 64, 64);
             return;
         }
         Identifier texture = reticleTexture(vehicle);
+        if (texture == null) return;
         int size = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
         float x = (guiGraphics.guiWidth() - size) / 2.0F;
         float y = (guiGraphics.guiHeight() - size) / 2.0F;
@@ -469,7 +494,51 @@ public final class VehicleHudOverlay {
         coloredReticleBlit(guiGraphics, texture, x, y, size, size, 0.0F, 0.0F, 512, 512, 512, 512, reticleColor(vehicle));
     }
 
+    private static int feedbackVehicle = -1, feedbackHitUntil, feedbackKillUntil;
+    private static boolean feedbackCritical, feedbackOnVehicle;
+
+    public static void clearFeedback() {
+        feedbackVehicle = -1;
+        feedbackHitUntil = feedbackKillUntil = 0;
+    }
+
+    public static boolean recordHit(boolean critical, boolean onVehicle, boolean killed) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || !(player.getVehicle() instanceof VehicleEntity vehicle) || !vehicle.usesSwControls() || !vehicle.canPassengerUseSelectedVehicleWeapon(player)) return false;
+        if (feedbackVehicle != vehicle.getId()) clearFeedback();
+        feedbackVehicle = vehicle.getId();
+        feedbackHitUntil = player.tickCount + 5;
+        feedbackCritical = critical; feedbackOnVehicle = onVehicle;
+        if (killed) feedbackKillUntil = player.tickCount + 8;
+        return true;
+    }
+
+    private static void renderSwFeedback(GuiGraphicsExtractor gui, VehicleEntity vehicle, Vec3 screen, boolean projected) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || feedbackVehicle != vehicle.getId()) return;
+        if (projected && screen == null) return;
+        float x = (projected ? (float) screen.x : gui.guiWidth() / 2F) - 7.5F;
+        float y = (projected ? (float) screen.y : gui.guiHeight() / 2F) - 7.5F;
+        int hit = feedbackHitUntil - player.tickCount, kill = feedbackKillUntil - player.tickCount;
+        if (hit > 0 && hit <= 5) {
+            float hitX = projected ? x : x + (float)(2*(Math.random()-.5));
+            float hitY = projected ? y : y + (float)(2*(Math.random()-.5));
+            String file = feedbackOnVehicle ? "hit_marker_vehicle" : "hit_marker";
+            preciseBlit(gui, Reference.id("textures/overlay/crosshair/" + file + ".png"), hitX, hitY, 16, 16, 0, 0, 16, 16, 16, 16);
+            if (feedbackCritical) preciseBlit(gui, Reference.id("textures/overlay/crosshair/headshot_marker.png"), hitX, hitY, 16, 16, 0, 0, 16, 16, 16, 16);
+        }
+        if (kill > 0 && kill <= 8) {
+            float rate = (40 - kill * 5) / 5.5F, first = -2 + rate, second = 2 - rate;
+            for (int i = 0; i < 4; i++) preciseBlit(gui, Reference.id("textures/overlay/crosshair/kill_marker_" + (i+1) + ".png"), x + ((i & 1) == 0 ? first : second), y + (i < 2 ? first : second), 16, 16, 0, 0, 16, 16, 16, 16);
+        }
+    }
+
     private static boolean isDynamicReticle(VehicleEntity vehicle, Entity passenger, boolean zooming) {
+        if (vehicle.usesSwControls()) {
+            var weapon = vehicle.selectedVehicleWeaponInfo(passenger);
+            String name = weapon == null ? "@Empty" : zooming ? weapon.crosshairZooming() : weapon.crosshair();
+            return "@VehicleCommonGunDynamic".equals(name) || "@VehicleDynamicCross".equals(name);
+        }
         if (zooming) return false;
         String vehicleId = vehicle.vehicleDataId().getPath();
         Identifier weaponId = vehicle.selectedVehicleWeaponId(passenger);
@@ -500,7 +569,7 @@ public final class VehicleHudOverlay {
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.seekDown();
 
-        float partialTick = 1.0F;
+        float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         for (Entity target : minecraft.level.getEntities(vehicle, vehicle.getBoundingBox().inflate(range),
                 entity -> entity instanceof LivingEntity
                         || entity instanceof VehicleEntity
@@ -539,6 +608,20 @@ public final class VehicleHudOverlay {
     }
 
     private static Identifier reticleTexture(VehicleEntity vehicle) {
+        if (vehicle.usesSwControls()) {
+            var weapon = vehicle.selectedVehicleWeaponInfo(Minecraft.getInstance().player);
+            String name = weapon == null ? "@Empty" : VehicleClientState.zoomDown() ? weapon.crosshairZooming() : weapon.crosshair();
+            return switch (name) {
+                case "@VehicleUsApc" -> CROSSHAIR_US_APC;
+                case "@VehicleRuApc" -> CROSSHAIR_RU_APC;
+                case "@VehicleCommonGun", "@VehicleCommonGunDynamic" -> CROSSHAIR_GUN;
+                case "@VehicleCommonMissile" -> CROSSHAIR_MISSILE;
+                case "@VehicleCommonSeekMissile" -> CROSSHAIR_SEEK_MISSILE;
+                case "@VehicleDynamicCross" -> CROSSHAIR_DYNAMIC;
+                case "@VehicleFixedPoint" -> CROSSHAIR_FIXED_POINT;
+                default -> null;
+            };
+        }
         String vehiclePath = vehicle.vehicleDataId().getPath();
         Entity passenger = Minecraft.getInstance().player;
         Identifier selectedWeaponId = passenger == null ? vehicle.selectedVehicleWeaponId() : vehicle.selectedVehicleWeaponId(passenger);
@@ -590,7 +673,7 @@ public final class VehicleHudOverlay {
             String number = "[" + (seat + 1) + "]";
             guiGraphics.text(minecraft.font, number, 25 - minecraft.font.width(number), y, 0xFF66FF00);
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, seat == 0 ? DRIVER_ICON : PASSENGER_ICON, 30, y, 0.0F, 0.0F, 8, 8, 8, 8);
-            guiGraphics.text(minecraft.font, name, 42, y, passenger == null ? 0xFF4F8740 : 0xFF66FF00);
+            guiGraphics.text(minecraft.font, name, 42, y, 0xFF66FF00);
         }
     }
 
@@ -650,6 +733,10 @@ public final class VehicleHudOverlay {
     }
 
     private static int reticleColor(VehicleEntity vehicle) {
+        if (vehicle.usesSwControls()) {
+            var weapon = vehicle.selectedVehicleWeaponInfo(Minecraft.getInstance().player);
+            return weapon == null ? 0xFFFFFFFF : 0xFF000000 | weapon.crosshairColor();
+        }
         return switch (vehicle.vehicleDataId().getPath()) {
             case "bmp2", "mi28" -> 0xFFFFC700;
             case "lav150" -> 0xFF66FF00;
@@ -658,14 +745,218 @@ public final class VehicleHudOverlay {
     }
 
     private static void coloredReticleBlit(GuiGraphicsExtractor guiGraphics, Identifier texture, float x, float y, float width, float height, float uOffset, float vOffset, float uWidth, float vHeight, float textureWidth, float textureHeight, int color) {
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, Math.round(x), Math.round(y), uOffset, vOffset, Math.round(width), Math.round(height), Math.round(uWidth), Math.round(vHeight), Math.round(textureWidth), Math.round(textureHeight), color);
+        if (width <= 0 || height <= 0) return;
+        int pixelsWide = Math.max(1, Math.round(width)), pixelsHigh = Math.max(1, Math.round(height));
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(x, y);
+        guiGraphics.pose().scale(width / pixelsWide, height / pixelsHigh);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, 0, 0, uOffset, vOffset, pixelsWide, pixelsHigh, Math.round(uWidth), Math.round(vHeight), Math.round(textureWidth), Math.round(textureHeight), color);
+        guiGraphics.pose().popMatrix();
     }
 
     private static void preciseBlit(GuiGraphicsExtractor guiGraphics, Identifier texture, float x, float y, float width, float height, float uOffset, float vOffset, float uWidth, float vHeight, float textureWidth, float textureHeight) {
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, Math.round(x), Math.round(y), uOffset, vOffset, Math.round(width), Math.round(height), Math.round(uWidth), Math.round(vHeight), Math.round(textureWidth), Math.round(textureHeight));
+        coloredReticleBlit(guiGraphics, texture, x, y, width, height, uOffset, vOffset, uWidth, vHeight, textureWidth, textureHeight, ((int)(swAlpha*255)<<24)|0xFFFFFF);
     }
 
     private static void blitVehiclePart(GuiGraphicsExtractor guiGraphics, Identifier texture, int x, int y, boolean damaged) {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F, 32, 32, 32, 32);
+    }
+
+    private static float swAlpha = 1;
+    private static int animatedVehicle = -1, animatedSeat = -1, animatedWeapon = -1, previousAnimatedWeapon = -1;
+    private static long weaponChangedAt;
+    private static final float[] slotAnimation = new float[9];
+    private static final float[] slotStart = new float[9];
+    private static int lastTerrainWarningTick = Integer.MIN_VALUE;
+    private static float helicopterScope = .7F, helicopterVerticalSpeed;
+
+    private static void renderSwHud(GuiGraphicsExtractor gui, Minecraft mc, VehicleEntity vehicle) {
+        if (mc.gui.hud.isHidden() || mc.player == null || mc.player.isSpectator()) return;
+        int w=gui.guiWidth(), h=gui.guiHeight();
+
+        swAlpha = 1;
+        float tick=mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        var weapon=vehicle.selectedVehicleWeaponInfo(mc.player);
+        if (weapon != null) {
+            if (vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER) renderSwHelicopter(gui,mc,vehicle,tick);
+            else if (("bmp2".equals(vehicle.vehicleDataId().getPath()) || "lav150".equals(vehicle.vehicleDataId().getPath()))
+                    && vehicle.getSeatIndex(mc.player)==vehicle.vehicleData().defaults().turret().seatIndex()) renderSwLand(gui,mc,vehicle,tick);
+            renderReticle(gui,vehicle);
+            renderMissileSeekFrames(gui,mc,vehicle);
+        }
+        if (vehicle.maxVehicleEnergy() > 0) swValueBar(gui,ENERGY_ICON,h-22,(float)vehicle.vehicleEnergy()/vehicle.maxVehicleEnergy());
+        swValueBar(gui,ARMOR_ICON,h-13,vehicle.vehicleHealth()/Math.max(1,vehicle.maxVehicleHealth()));
+        renderPassengerInfo(gui,mc,vehicle);
+        renderSwWeaponSelector(gui,mc,vehicle);
+        if (!vehicle.activeWarningMessageKey().isEmpty()) {
+            Component warning=Component.translatable(vehicle.activeWarningMessageKey());
+            gui.text(mc.font,warning,(w-mc.font.width(warning))/2,h/2+24,0xFFFF0000,false);
+        }
+        swAlpha = 1;
+    }
+
+    private static void swValueBar(GuiGraphicsExtractor gui, Identifier icon, int y, float ratio) {
+        preciseBlit(gui,icon,10,y,8,8,0,0,8,8,8,8);
+        preciseBlit(gui,VALUE_FRAME,20,y+1,60,6,0,0,60,6,60,6);
+        int fill=(int)(60*Mth.clamp(ratio,0,1));
+        if(fill>0) preciseBlit(gui,VALUE_BAR,20,y+1,fill,6,0,0,fill,6,60,6);
+    }
+
+    private static void renderSwWeaponSelector(GuiGraphicsExtractor gui, Minecraft mc, VehicleEntity vehicle) {
+        if (!vehicle.shouldBanPassengerHand(mc.player)) return;
+        var weapons=vehicle.vehicleData().defaults().weapons();
+        var indexes=new java.util.ArrayList<Integer>();
+        for(int i=0;i<weapons.size() && indexes.size()<9;i++) if(vehicle.canPassengerUseVehicleWeapon(mc.player,i)) indexes.add(i);
+        int selected=indexes.indexOf(vehicle.selectedVehicleWeaponIndex(mc.player));
+        if(selected<0) return;
+        int seat=vehicle.getSeatIndex(mc.player);
+        long now=System.nanoTime();
+        if(animatedVehicle!=vehicle.getId() || animatedSeat!=seat) {
+            java.util.Arrays.fill(slotAnimation,0);
+            animatedVehicle=vehicle.getId(); animatedSeat=seat; animatedWeapon=-1;
+        }
+        if(animatedWeapon!=selected) {
+            System.arraycopy(slotAnimation,0,slotStart,0,9);
+            previousAnimatedWeapon=animatedWeapon<0?selected:animatedWeapon;
+            animatedWeapon=selected; weaponChangedAt=now;
+        }
+        float time=Mth.clamp((now-weaponChangedAt)/300_000_000.0F,0,1);
+        float ease=(float)Math.sqrt(1-(time-1)*(time-1));
+        int w=gui.guiWidth(),h=gui.guiHeight();
+        for(int i=indexes.size()-1;i>=0;i--) {
+            int row=indexes.size()-1-i,slot=indexes.get(i);
+            slotAnimation[i]=Mth.lerp(ease,slotStart[i],i==selected?1:0);
+            float offset=37*(1-slotAnimation[i]),x=w-85+offset,y=h-row*18-20;
+            swAlpha = Mth.lerp(slotAnimation[i],.2F,1);
+            preciseBlit(gui,WEAPON_FRAMES[i],x,y,75,16,0,0,75,16,75,16);
+            Identifier icon=weapons.get(slot).icon();
+            if(icon!=null) preciseBlit(gui,icon,x,y,75,16,0,0,75,16,75,16);
+            if(i==selected) {
+                float marker=Mth.lerp(ease,h-(indexes.size()-1-previousAnimatedWeapon)*18-16,h-row*18-16);
+                preciseBlit(gui,WEAPON_SELECTED,w-95,marker,8,8,0,0,8,8,8,8);
+                renderWeaponNumber(gui,vehicle.selectedVehicleWeaponAmmo(mc.player),(int)(w-20+offset),(int)(y+4.5F));
+            }
+        }
+        swAlpha = 1;
+    }
+
+    private static int swHudColor(VehicleEntity vehicle) { return "bmp2".equals(vehicle.vehicleDataId().getPath()) || "mi28".equals(vehicle.vehicleDataId().getPath()) ? 0xFFFFC700 : 0xFF66FF00; }
+    private static void swBlit(GuiGraphicsExtractor gui,String file,float x,float y,float width,float height,int color) {
+        coloredReticleBlit(gui,Reference.id("textures/overlay/vehicle/"+file+".png"),x,y,width,height,0,0,width,height,width,height,color);
+    }
+    private static void swCompass(GuiGraphicsExtractor gui,float yaw,int y,int color) {
+        coloredReticleBlit(gui,COMPASS,gui.guiWidth()/2F-128,y,256,16,128+64F/45*yaw,0,256,16,512,16,color);
+    }
+    private static void swText(GuiGraphicsExtractor gui,Minecraft mc,String text,int x,int y,int color) { gui.text(mc.font,text,x,y,color|0xFF000000,false); }
+    private static String swNumber(double value,String unit) { return String.format(java.util.Locale.ROOT,"%.0f%s",value,unit); }
+    private static void swSightFrame(GuiGraphicsExtractor gui) {
+        int w=gui.guiWidth(),h=gui.guiHeight(),addW=w/h*48,addH=w/h*27;
+        preciseBlit(gui,LAND_FRAME,-addW/2F,-addH/2F,w+addW,h+addH,0,0,w+addW,h+addH,w+addW,h+addH);
+    }
+    private static void swRange(GuiGraphicsExtractor gui,Minecraft mc,VehicleEntity vehicle,float tick,int color) {
+        Vec3 origin=vehicle.vehicleHudShootPos(mc.player,tick),direction=vehicle.vehicleHudShootDirection(mc.player,tick);
+        Vec3 hit=mc.level.clip(new ClipContext(origin,origin.add(direction.scale(512)),ClipContext.Block.OUTLINE,ClipContext.Fluid.NONE,mc.player)).getLocation();
+        double distance=origin.distanceTo(hit);
+        for(Entity target:mc.level.getEntities(vehicle,new AABB(origin,hit).inflate(8),e->e.isAlive() && e!=mc.player && e.getVehicle()!=vehicle)) {
+            Vec3 point=target.getBoundingBox().inflate(.1).clip(origin,hit).orElse(null);
+            if(target instanceof VehicleEntity other) {
+                VehicleGeometry.Hit vehicleHit=VehicleGeometry.clip(other,origin,hit);
+                point=vehicleHit==null?null:vehicleHit.position();
+            }
+            if(point!=null) distance=Math.min(distance,origin.distanceTo(point));
+        }
+        String range=distance>500?"---m":swNumber(distance," m");
+        swText(gui,mc,range,(gui.guiWidth()-mc.font.width(range))/2,gui.guiHeight()-53,color);
+    }
+    private static String swWeaponText(Minecraft mc,VehicleEntity vehicle) {
+        var id=vehicle.selectedVehicleWeaponId(mc.player);
+        if(id==null) return null;
+        String text=Component.translatable("item."+id.getNamespace()+"."+id.getPath()).getString()+" "+vehicle.selectedVehicleWeaponAmmo(mc.player);
+        if(vehicle.selectedVehicleWeaponReloading(mc.player)) text=Component.translatable("hud.jeg.vehicle.reloading").getString()+" "+swNumber(vehicle.selectedVehicleWeaponReloadTicks(mc.player)/20D,"s");
+        else if(canManualReloadPrompt(vehicle)) text+=" ["+KeyBindings.RELOAD.getTranslatedKeyMessage().getString()+"]";
+        return text;
+    }
+    private static void swWeaponReadout(GuiGraphicsExtractor gui,Minecraft mc,VehicleEntity vehicle,int color) {
+        int w=gui.guiWidth(),h=gui.guiHeight();
+        String text=swWeaponText(mc,vehicle);
+        if(text==null) return;
+        boolean pilot=vehicle.vehicleData().defaults().vehicleType()==VehicleType.HELICOPTER && (!vehicle.vehicleData().defaults().turret().enabled() || vehicle.getSeatIndex(mc.player)!=vehicle.vehicleData().defaults().turret().seatIndex());
+        swText(gui,mc,text,pilot?w/2-160:(w-mc.font.width(text))/2,pilot?h/2-59:h-65,color);
+        if(vehicle.maxVehicleEnergy()>0 && vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.2) swText(gui,mc,vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.02?"NO POWER!":"LOW POWER",w/2-144,h/2+14,vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.02?0xFFFF0000:0xFFFF6B00);
+    }
+    private static void swDecoy(GuiGraphicsExtractor gui,Minecraft mc,VehicleEntity vehicle,int y,int color) {
+        if(!vehicle.hasBuiltInDecoy() || mc.player!=vehicle.getControllingPassenger()) return;
+        Component status=Component.translatable(vehicle.vehicleDecoyCooldown()>0?"hud.jeg.vehicle.decoy_reloading":"hud.jeg.vehicle.decoy_ready");
+        swText(gui,mc,status.getString()+(vehicle.vehicleDecoyCooldown()>0?"":" ["+KeyBindings.VEHICLE_DEPLOY_DECOY.getTranslatedKeyMessage().getString()+"]"),gui.guiWidth()/2-(vehicle.vehicleData().defaults().vehicleType()==VehicleType.HELICOPTER?160:165),y,vehicle.vehicleDecoyCooldown()>0?0xFF0000:color);
+    }
+    private static int swPartColor(int color,float health) {
+        // SW interpolates hue in HSV toward red; these HUD colors have full saturation/value.
+        float ratio = ((int) (100 - Mth.clamp(health,0,1) * 100)) / 100F;
+        float hue = (color & 0xFFFFFF) == 0xFFC700 ? 199F / 1530F : .26666667F;
+        return 0xFF000000 | Mth.hsvToRgb(hue * (1-ratio), 1, 1);
+    }
+    private static void renderSwLand(GuiGraphicsExtractor gui,Minecraft mc,VehicleEntity vehicle,float tick) {
+        if(!mc.options.getCameraType().isFirstPerson() && !VehicleClientState.zoomDown()) return;
+        int w=gui.guiWidth(),h=gui.guiHeight(),color=swHudColor(vehicle);
+        swSightFrame(gui); swCompass(gui,mc.player.getYRot(),10,color);
+        swBlit(gui,"helicopter/roll_ind",w/2F-8,30,16,16,color);
+        swBlit(gui,"land/line",w/2F-64,h-56,128,1,color);
+        swBlit(gui,"land/line",w/2F+112,h-71,1,16,swPartColor(color,vehicle.partHealthFraction(OBBInfo.Part.TURRET)));
+        gui.pose().pushMatrix(); gui.pose().rotateAbout(vehicle.turretYaw(tick)*Mth.DEG_TO_RAD,w/2F+112,h-56);
+        swBlit(gui,"land/body",w/2F+96,h-72,32,32,swPartColor(color,vehicle.partHealthFraction(OBBInfo.Part.BODY)));
+        swBlit(gui,"land/left_wheel",w/2F+96,h-72,32,32,swPartColor(color,vehicle.partHealthFraction(OBBInfo.Part.WHEEL_LEFT)));
+        swBlit(gui,"land/right_wheel",w/2F+96,h-72,32,32,swPartColor(color,vehicle.partHealthFraction(OBBInfo.Part.WHEEL_RIGHT)));
+        swBlit(gui,"land/engine",w/2F+96,h-72,32,32,swPartColor(color,vehicle.partHealthFraction(OBBInfo.Part.MAIN_ENGINE))); gui.pose().popMatrix();
+        swText(gui,mc,swNumber(vehicle.getDeltaMovement().dot(vehicle.getViewVector(tick))*72," km/h"),w/2+160,h/2-48,color);
+        swText(gui,mc,swNumber(vehicle.vehicleHealth()/vehicle.maxVehicleHealth()*100,""),w/2-165,h/2-46,color);
+        swRange(gui,mc,vehicle,tick,color); swDecoy(gui,mc,vehicle,h/2-36,color); swWeaponReadout(gui,mc,vehicle,color);
+    }
+    private static void renderSwHelicopter(GuiGraphicsExtractor gui,Minecraft mc,VehicleEntity vehicle,float tick) {
+        int w=gui.guiWidth(),h=gui.guiHeight(),color=swHudColor(vehicle);
+        boolean sight=mc.options.getCameraType().isFirstPerson() || VehicleClientState.zoomDown();
+        if(vehicle.vehicleData().defaults().turret().enabled() && vehicle.getSeatIndex(mc.player)==vehicle.vehicleData().defaults().turret().seatIndex()) {
+            if(!VehicleClientState.zoomDown()) return;
+            swSightFrame(gui); swCompass(gui,(float)vehicle.cameraRotationFor(mc.player,tick).x,10,color);
+            swBlit(gui,"helicopter/roll_ind",w/2F-8,30,16,16,color); swBlit(gui,"land/line",w/2F-64,h-56,128,1,color);
+            swText(gui,mc,swNumber(vehicle.getDeltaMovement().dot(vehicle.getViewVector(tick))*72," km/h"),w/2+160,h/2-48,color);
+            swText(gui,mc,swNumber(vehicle.getY()," m"),w/2+160,h/2-39,color);
+            swRange(gui,mc,vehicle,tick,color); swWeaponReadout(gui,mc,vehicle,color); return;
+        }
+        if(vehicle.getSeatIndex(mc.player)!=0) return;
+        double speed=vehicle.getDeltaMovement().length()*72;
+        helicopterVerticalSpeed=(float)Mth.lerp(.021F*tick,helicopterVerticalSpeed,vehicle.getDeltaMovement().y*20);
+        if(sight) {
+            helicopterScope=Mth.lerp(tick,helicopterScope,1);
+            float size=Mth.floor(Math.min(w,h)*helicopterScope),x=(w-size)/2F,y=(h-size)/2F;
+            swBlit(gui,"helicopter/heli_base",x,y,size,size,color);
+            swBlit(gui,"helicopter/heli_driver_angle",x-vehicle.turretYaw(tick)*.3F,y+(vehicle.turretPitch(tick)-vehicle.getXRot())*.072F,size,size,color);
+            swCompass(gui,vehicle.getYRot(),6,color);
+            gui.pose().pushMatrix();gui.pose().rotateAbout(-vehicle.roll(tick)*Mth.DEG_TO_RAD,w/2F,h/2F);
+            swBlit(gui,"helicopter/heli_line",w/2F-128,h/2F-512-5.475F*Mth.lerp(tick,vehicle.xRotO,vehicle.getXRot()),256,1024,color);gui.pose().popMatrix();
+            gui.pose().pushMatrix();gui.pose().rotateAbout(vehicle.roll(tick)*Mth.DEG_TO_RAD,w/2F,h/2F-56);
+            swBlit(gui,"helicopter/roll_ind",w/2F-8,h/2F-88,16,16,color);gui.pose().popMatrix();
+            swBlit(gui,"helicopter/heli_power_ruler",w/2F+100,h/2F-64,64,128,color);
+            float power=(float)vehicle.enginePower()*980;
+            if(power>0) swBlit(gui,"helicopter/heli_power",w/2F+130,h/2F+60-power,4,power,color);
+            float vyY=h/2F-3-Math.max(helicopterVerticalSpeed,-24)*2.5F;
+            swBlit(gui,"helicopter/heli_vy_move",w/2F+138,vyY,8,8,color);
+            swText(gui,mc,swNumber(helicopterVerticalSpeed,"m/s"),w/2+146,(int)vyY,helicopterVerticalSpeed<-24?0xFF0000:color);
+            swText(gui,mc,swNumber(vehicle.getY(),""),w/2+104,h/2,color);
+            swBlit(gui,"helicopter/speed_frame",w/2F-144,h/2F-6,50,18,color);
+            swText(gui,mc,swNumber(speed,"km/h"),w/2-140,h/2,color);
+            swDecoy(gui,mc,vehicle,h/2-50,color);swWeaponReadout(gui,mc,vehicle,color);
+        }
+        Vec3 ground=mc.level.clip(new ClipContext(vehicle.position(),vehicle.position().add(0,-100,0),ClipContext.Block.OUTLINE,ClipContext.Fluid.ANY,vehicle)).getLocation();
+        Vec3 ahead=mc.level.clip(new ClipContext(vehicle.position(),vehicle.position().add(vehicle.getDeltaMovement().add(0,.06,0).normalize().scale(100)),ClipContext.Block.OUTLINE,ClipContext.Fluid.ANY,vehicle)).getLocation();
+        String warning=helicopterVerticalSpeed<-16?"SINK RATE, PULL UP!":((helicopterVerticalSpeed<-10 || helicopterVerticalSpeed<-3 && speed>100) && vehicle.position().distanceTo(ground)<36 || speed>72 && vehicle.position().distanceTo(ahead)<72)?"TERRAIN TERRAIN":"";
+        if(!warning.isEmpty()) swText(gui,mc,warning,(w-mc.font.width(warning))/2,h/2+24,0xFF0000);
+        if(!warning.isEmpty() && mc.player.tickCount % 30 == 0 && lastTerrainWarningTick != mc.player.tickCount) {
+            lastTerrainWarningTick = mc.player.tickCount;
+            var sound = ttv.migami.jeg.init.ModSounds.ALL.get(Reference.id(helicopterVerticalSpeed < -16 ? "vehicle.pull_up" : "vehicle.terrain"));
+            if(sound != null) mc.player.playSound(sound.get(), 3, 1);
+        }
+    }
+    public static void renderArmorValueBar(GuiGraphicsExtractor guiGraphics, int x, int y, float ratio) {
+        renderValueBar(guiGraphics, ARMOR_ICON, x, y, ratio);
     }
 }

@@ -25,6 +25,9 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0D);
 
     @Shadow
+    protected abstract float getMaxZoom(float distance);
+
+    @Shadow
     protected abstract void setRotation(float yRot, float xRot);
 
     @Shadow
@@ -75,6 +78,34 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
         CameraType cameraType = minecraft.options.getCameraType();
         boolean detached = !cameraType.isFirstPerson();
         boolean thirdPersonReverse = cameraType.isMirrored();
+        if (vehicle.usesSwControls()) {
+            ttv.migami.jeg.vehicle.client.VehicleCaptureCheck.freezeFrame(vehicle);
+            boolean zoom = ttv.migami.jeg.vehicle.client.VehicleClientState.zoomDown();
+            double freeYaw = ttv.migami.jeg.vehicle.client.VehicleClientState.freeYaw();
+            double freePitch = ttv.migami.jeg.vehicle.client.VehicleClientState.freePitch();
+            double distance = ttv.migami.jeg.vehicle.client.VehicleClientState.cameraDistance();
+            if (!detached || zoom) {
+                Vec3 position = vehicle.cameraPositionFor(player, partialTick);
+                Vec3 rotation = vehicle.cameraRotationFor(player, partialTick);
+                if (vehicle.usesAircraftCamera(player)) {
+                    rotation = new Vec3(net.minecraft.util.Mth.rotLerp(partialTick, vehicle.yRotO, vehicle.getYRot()) - freeYaw,
+                            net.minecraft.util.Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot()) + freePitch, detached && !zoom ? 0 : vehicle.swCameraRoll(player, (float) (net.minecraft.util.Mth.rotLerp(partialTick, vehicle.yRotO, vehicle.getYRot()) - freeYaw), partialTick));
+                }
+                this.jeg$setCameraRotation(rotation);
+                this.setPosition(position.x, position.y, position.z);
+            } else if (vehicle.usesAircraftCamera(player)) {
+                Vec3 position = vehicle.swAircraftCameraPosition(player, partialTick, freeYaw, freePitch, distance);
+                this.jeg$setCameraRotation(new Vec3(net.minecraft.util.Mth.rotLerp(partialTick, vehicle.yRotO, vehicle.getYRot()) - freeYaw,
+                        net.minecraft.util.Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot()) + freePitch, 0));
+                this.setPosition(position.x, position.y, position.z);
+            }
+            if (detached && !zoom && !vehicle.usesAircraftCamera(player)) {
+                var camera = vehicle.vehicleData().defaults().thirdPersonCamera();
+                this.move(-this.getMaxZoom((float) (camera.z() + distance)), (float) camera.y(), (float) camera.x());
+            }
+            ttv.migami.jeg.vehicle.client.VehicleClientState.updateCamera(partialTick);
+            return;
+        }
         if (detached) {
             if (!vehicle.usesVehiclePoseTransform()) {
                 VehicleCameraHandler.applyThirdPersonCameraOffset((Camera) (Object) this);
@@ -125,10 +156,9 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
             this.setRotation(yaw, pitch);
             return;
         }
-        this.xRot = pitch;
-        this.yRot = yaw;
+        this.setRotation(yaw, pitch); // Invalidate Camera's cached view and projection matrices.
         this.rotation.rotationYXZ((float) Math.PI - yaw * DEG_TO_RAD, -pitch * DEG_TO_RAD, roll * DEG_TO_RAD);
-        this.forwards.set(0.0F, 0.0F, 1.0F).rotate(this.rotation);
+        this.forwards.set(0.0F, 0.0F, -1.0F).rotate(this.rotation);
         this.up.set(0.0F, 1.0F, 0.0F).rotate(this.rotation);
         this.left.set(1.0F, 0.0F, 0.0F).rotate(this.rotation);
     }

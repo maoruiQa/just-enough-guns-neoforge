@@ -58,4 +58,8 @@ public final class MouseHandlerVehicleMixin {
         }
         return value;
     }
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
+    private void jeg$vehicleScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
+        if (VehicleInputHandler.onVehicleScroll(vertical)) ci.cancel();
+    }
 }

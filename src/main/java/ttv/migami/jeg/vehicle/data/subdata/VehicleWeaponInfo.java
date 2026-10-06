@@ -1,8 +1,34 @@
 package ttv.migami.jeg.vehicle.data.subdata;
 
+import net.minecraft.world.phys.Vec3;
+
 import net.minecraft.resources.Identifier;
 
-public record VehicleWeaponInfo(Identifier weaponId, Identifier ammoId, int energyCost, boolean guided, int seatIndex, double muzzleX, double muzzleY, double muzzleZ) {
+public record VehicleWeaponInfo(
+        Identifier weaponId,
+        Identifier ammoId,
+        int energyCost,
+        boolean guided,
+        int seatIndex,
+        double muzzleX,
+        double muzzleY,
+        double muzzleZ,
+        float defaultZoom,
+        String crosshair,
+        String crosshairZooming,
+        int crosshairColor,
+        Identifier icon,
+        String hudTransform,
+        Vec3 hudPosition,
+        String hudDirection,
+        Vec3 hudDirectionVector,
+        String viewDirection,
+        Vec3 viewPosition
+) {
+    public VehicleWeaponInfo(Identifier weaponId, Identifier ammoId, int energyCost, boolean guided, int seatIndex, double muzzleX, double muzzleY, double muzzleZ) {
+        this(weaponId, ammoId, energyCost, guided, seatIndex, muzzleX, muzzleY, muzzleZ, 3.0F, "", "", 0xFFFFFF, null, "vehicle", null, "default", null, "default", null);
+    }
+
     public VehicleWeaponInfo(Identifier weaponId, Identifier ammoId, int energyCost, boolean guided) {
         this(weaponId, ammoId, energyCost, guided, -1);
     }

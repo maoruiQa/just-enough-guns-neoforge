@@ -94,6 +94,8 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
         return player != null
                 && player.getVehicle() == vehicle
                 && vehicle.hasFocusedSightHud(player)
+                && (!vehicle.usesSwControls() || (vehicle.vehicleData().defaults().turret().enabled()
+                && vehicle.getSeatIndex(player) == vehicle.vehicleData().defaults().turret().seatIndex()))
                 && VehicleClientState.isRidingVehicle()
                 && VehicleClientState.vehicleId() == vehicle.getId()
                 && VehicleClientState.zoomDown();
@@ -108,6 +110,26 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
 
     private static void updateVehicleBones(VehicleEntity vehicle, float ageInTicks, com.geckolib.renderer.base.BoneSnapshots snapshots) {
         float partialTick = ageInTicks - vehicle.tickCount;
+        if (vehicle.usesSwControls()) {
+            for (var side : new String[]{"L", "R"}) {
+                float wheel = 1.5F * vehicle.swWheelRotation(side.equals("L"), partialTick);
+                for (int id = 0; id < 10; id++) {
+                    snapshots.ifPresent("wheel" + side + id, bone -> bone.setRotX(wheel));
+                    snapshots.ifPresent("wheel" + side + id + "Turn", bone -> { bone.setRotX(wheel); bone.setRotY(vehicle.swRudderRotation(partialTick)); });
+                }
+                if (vehicle.vehicleDataId().getPath().equals("bmp2")) for (int id = 0; id < 50; id++) {
+                    float phase = vehicle.swTrackPhase(side.equals("L"), id, partialTick);
+                    snapshots.ifPresent("trackRot" + side + id, bone -> bone.setRotX(-Bmp2GeoModel.swTrackRotX(phase) * Mth.DEG_TO_RAD));
+                    snapshots.ifPresent("trackMov" + side + id, bone -> { bone.setTranslateY(Bmp2GeoModel.swTrackY(phase)); bone.setTranslateZ(Bmp2GeoModel.swTrackZ(phase)); });
+                }
+            }
+            if (vehicle.isTruckVehicle()) snapshots.ifPresent("control", bone -> bone.setRotY(12 * vehicle.swRudderRotation(partialTick)));
+        }
+        if ("bmp2".equals(vehicle.vehicleDataId().getPath()) && vehicle.usesSwControls()) {
+            var mc = Minecraft.getInstance();
+            boolean hideBody = mc.player != null && mc.player.getVehicle() == vehicle && vehicle.getSeatIndex(mc.player) != 0 && (mc.options.getCameraType().isFirstPerson() || VehicleClientState.zoomDown());
+            for (String name : new String[]{"base", "TrackL", "TrackR"}) snapshots.ifPresent(name, snapshot -> snapshot.skipRender(hideBody));
+        }
         switch (vehicle.vehicleDataId().getPath()) {
             case "ah6" -> updateHelicopterRotors(vehicle, partialTick, snapshots);
             case "bmp2" -> updateTurret(vehicle, partialTick, snapshots, -74.0F, 7.5F);
@@ -124,7 +146,7 @@ abstract class AbstractVehicleGeoRenderer<T extends VehicleEntity> extends GeoEn
 
     private static void updateTurret(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots, float minPitch, float maxPitch) {
         snapshots.ifPresent("turret", snapshot -> snapshot.setRotY(vehicle.turretYaw(partialTick) * Mth.DEG_TO_RAD));
-        snapshots.ifPresent("barrel", snapshot -> snapshot.setRotX(Mth.clamp(-vehicle.turretPitch(partialTick), minPitch, maxPitch) * Mth.DEG_TO_RAD));
+        snapshots.ifPresent("barrel", snapshot -> snapshot.setRotX((vehicle.usesSwControls() ? vehicle.swBarrelModelPitch(partialTick) : Mth.clamp(-vehicle.turretPitch(partialTick), minPitch, maxPitch)) * Mth.DEG_TO_RAD));
     }
 
     private static void updateHelicopterRotors(VehicleEntity vehicle, float partialTick, com.geckolib.renderer.base.BoneSnapshots snapshots) {
