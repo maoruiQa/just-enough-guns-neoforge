@@ -53,7 +53,7 @@ public final class ClientNetworkHandler {
         });
 
         ClientPlayNetworking.registerGlobalReceiver(HitMarkerPayload.TYPE, (payload, context) -> {
-            context.client().execute(() -> CrosshairHandler.playHitMarker(payload.critical()));
+            context.client().execute(() -> CrosshairHandler.playHitMarker(payload.critical(), payload.vehicle(), payload.killed()));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(HeadshotMedalPayload.TYPE, (payload, context) -> {
@@ -91,6 +91,7 @@ public final class ClientNetworkHandler {
                 }
                 var entity = context.client().level.getEntity(payload.vehicleId());
                 if (entity instanceof VehicleEntity vehicle) {
+                    vehicle.syncAuthoritativeControls(payload.power(), payload.steering(), payload.rudder(), payload.roll(), payload.engineStarted(), payload.engineReady());
                     vehicle.syncAuthoritativeState(payload.x(), payload.y(), payload.z(), payload.motionX(), payload.motionY(), payload.motionZ(), payload.yaw(), payload.pitch(), payload.forceApply());
                 }
             });
@@ -188,7 +189,8 @@ public final class ClientNetworkHandler {
                 input.seekTarget(),
                 input.deployDecoy(),
                 input.mouseX(),
-                input.mouseY()
+                input.mouseY(),
+                input.aiming()
         ));
     }
 

@@ -41,7 +41,8 @@ public final class HudMixin {
     @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
     private void jeg$hideCrosshairWhenHoldingGun(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (VehicleHudOverlay.isVehicleHudActive()) {
+        if (minecraft.player != null && minecraft.player.getVehicle() instanceof VehicleEntity vehicle
+                && (!vehicle.usesSwControls() || vehicle.canPassengerUseSelectedVehicleWeapon(minecraft.player))) {
             ci.cancel();
             return;
         }
@@ -89,7 +90,7 @@ public final class HudMixin {
 
     private static boolean jeg$isVehicleHudActive() {
         var player = Minecraft.getInstance().player;
-        return player != null && player.getVehicle() instanceof VehicleEntity;
+        return player != null && player.getVehicle() instanceof VehicleEntity vehicle && !vehicle.usesSwControls();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

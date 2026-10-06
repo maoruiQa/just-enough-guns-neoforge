@@ -1040,5 +1040,10 @@
   "advancement.jeg.guide.training.complete.title": "久经沙场",
   "advancement.jeg.guide.training.complete.description": "完成四章核心目标，掌握作战角色与系统，完成五种载具任务及末地远征；同类装备任选，独立挑战不计入。",
   "message.jeg.vehicle.low_health_warning": "载具受损，需要维修",
-  "message.jeg.vehicle.critical_health_warning": "载具濒毁，请立即维修"
+  "message.jeg.vehicle.critical_health_warning": "载具濒毁，请立即维修",
+  "hud.jeg.vehicle.reloading": "装填中",
+  "hud.jeg.vehicle.decoy_ready": "干扰弹就绪",
+  "hud.jeg.vehicle.decoy_reloading": "干扰弹装填中",
+  "hud.jeg.vehicle.need_ammo": "弹药不足！需要 ",
+  "hud.jeg.vehicle.not_enough_energy": "能量不足"
 }

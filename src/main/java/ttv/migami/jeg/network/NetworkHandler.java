@@ -472,6 +472,10 @@ public final class NetworkHandler {
         }
     }
 
+    public static void sendHitMarker(ServerPlayer player, boolean critical, boolean vehicle, boolean killed) {
+        ServerPlayNetworking.send(player, new HitMarkerPayload(critical, vehicle, killed));
+    }
+
     public static void sendHitMarker(ServerPlayer player, boolean critical) {
         ServerPlayNetworking.send(player, new HitMarkerPayload(critical));
     }
@@ -515,7 +519,8 @@ public final class NetworkHandler {
                 vehicle.getDeltaMovement().z,
                 vehicle.getYRot(),
                 vehicle.getXRot(),
-                forceApply
+                forceApply,
+                vehicle.enginePower(), vehicle.steeringPower(), vehicle.rudderPower(), vehicle.roll(), vehicle.engineStarted(), vehicle.engineReady()
         ));
     }
 

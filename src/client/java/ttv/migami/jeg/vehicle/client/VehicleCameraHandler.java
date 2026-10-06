@@ -20,7 +20,7 @@ public final class VehicleCameraHandler {
                 || !VehicleClientState.zoomDown()) {
             return fov;
         }
-        return fov / VEHICLE_ZOOM_DIVISOR;
+        return fov / (vehicle.usesSwControls() ? vehicle.selectedVehicleZoom(player) : VEHICLE_ZOOM_DIVISOR);
     }
 
     public static float thirdPersonCameraDistance(float fallbackDistance) {
@@ -31,6 +31,11 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId()) {
             return fallbackDistance;
         }
+        if (vehicle.usesSwControls()) return fallbackDistance;
+        if (vehicle.usesSwControls()) return fallbackDistance;
+        if (vehicle.usesSwControls()) return fallbackDistance;
+        if (vehicle.usesSwControls()) return fallbackDistance;
+        if (vehicle.usesSwControls()) return fallbackDistance;
         double configuredDistance = Math.abs(thirdPersonCameraFor(player, vehicle).z());
         return configuredDistance > 0.0D ? (float) configuredDistance : fallbackDistance;
     }
@@ -46,6 +51,11 @@ public final class VehicleCameraHandler {
                 || vehicle.usesVehiclePoseTransform()) {
             return;
         }
+        if (vehicle.usesSwControls()) return;
+        if (vehicle.usesSwControls()) return;
+        if (vehicle.usesSwControls()) return;
+        if (vehicle.usesSwControls()) return;
+        if (vehicle.usesSwControls()) return;
         CameraPos cameraPos = thirdPersonCameraFor(player, vehicle);
         if (cameraPos.x() != 0.0D || cameraPos.y() != 0.0D) {
             ((VehicleCameraAccess) camera).jeg$moveVehicleCamera(0.0F, (float) cameraPos.y(), (float) -cameraPos.x());

@@ -62,7 +62,7 @@ public abstract class VehicleGameRendererMixin {
         }
 
         Entity entity = this.mainCamera.entity();
-        if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || this.mainCamera.isDetached()) {
+        if (entity == null || !(entity.getRootVehicle() instanceof VehicleEntity vehicle) || vehicle.usesSwControls() || this.mainCamera.isDetached()) {
             return;
         }
         boolean fixedCamera = vehicle.usesFixedCameraPosition(entity);
