@@ -22,6 +22,18 @@ public final class ModDamageTypes {
     /** Player/gunner bullet hits; causing entity must be the shooter for kill credit. */
     public static final ResourceKey<DamageType> BULLET = ResourceKey.create(Registries.DAMAGE_TYPE, Reference.id("bullet"));
 
+    public static final ResourceKey<DamageType> VEHICLE_EXPLOSION = ResourceKey.create(Registries.DAMAGE_TYPE, Reference.id("vehicle_explosion"));
+    public static final ResourceKey<DamageType> CUSTOM_EXPLOSION = ResourceKey.create(Registries.DAMAGE_TYPE, Reference.id("custom_explosion"));
+    public static final ResourceKey<DamageType> AIR_CRASH = ResourceKey.create(Registries.DAMAGE_TYPE, Reference.id("air_crash"));
+
+    public static DamageSource causeVehicleDestructionDamage(RegistryAccess registryAccess, @Nullable Entity attacker, boolean crash) {
+        return new DamageSource(registryAccess.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(crash ? AIR_CRASH : VEHICLE_EXPLOSION), null, attacker);
+    }
+
+    public static DamageSource causeVehicleBlastDamage(RegistryAccess registryAccess, Entity vehicle, @Nullable Entity attacker) {
+        return new DamageSource(registryAccess.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(CUSTOM_EXPLOSION), vehicle, attacker);
+    }
+
     private ModDamageTypes() {
     }
 
