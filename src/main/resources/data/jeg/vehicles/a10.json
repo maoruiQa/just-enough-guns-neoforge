@@ -1,9 +1,9 @@
 {
   "entity_type": "jeg:a10",
   "vehicle_type": "aircraft",
-  "max_health": 350.0,
-  "auto_repair_per_tick": 0.01,
-  "auto_repair_cooldown_ticks": 150,
+  "max_health": 350,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 220,
   "allow_free_cam": true,
   "container_type": "small",
@@ -38,21 +38,124 @@
   "obb": [
     {
       "part": "body",
-      "x": 0.0,
-      "y": 0.8,
-      "z": 0.0,
-      "half_width": 1.35,
-      "half_height": 0.45,
-      "half_depth": 1.65
+      "x": 0,
+      "y": 2.65625,
+      "z": 1.71875,
+      "half_width": 0.6875,
+      "half_height": 1.09375,
+      "half_depth": 3.65625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 0,
+      "y": 2.35,
+      "z": -0.46875,
+      "half_width": 8.8125,
+      "half_height": 0.3125,
+      "half_depth": 1.40625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 0,
+      "y": 2.4375,
+      "z": -6.71875,
+      "half_width": 3.1875,
+      "half_height": 0.125,
+      "half_depth": 0.96875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": -3.125,
+      "y": 3.65625,
+      "z": -6.71875,
+      "half_width": 0.0625,
+      "half_height": 1.09375,
+      "half_depth": 0.84375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 3.125,
+      "y": 3.65625,
+      "z": -6.71875,
+      "half_width": 0.0625,
+      "half_height": 1.09375,
+      "half_depth": 0.84375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 0,
+      "y": 2.34375,
+      "z": 6.46875,
+      "half_width": 0.625,
+      "half_height": 0.78125,
+      "half_depth": 1.09375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 0,
+      "y": 2.5625,
+      "z": -4.875,
+      "half_width": 0.6875,
+      "half_height": 0.75,
+      "half_depth": 2.9375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "main_engine",
-      "x": 0.0,
-      "y": 0.95,
-      "z": -1.1,
-      "half_width": 0.7,
-      "half_height": 0.3,
-      "half_depth": 0.35
+      "x": -1.625,
+      "y": 3.375,
+      "z": -3.5,
+      "half_width": 0.75,
+      "half_height": 0.75,
+      "half_depth": 1.5625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "sub_engine",
+      "x": 1.625,
+      "y": 3.375,
+      "z": -3.5,
+      "half_width": 0.75,
+      "half_height": 0.75,
+      "half_depth": 1.5625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": -2.703125,
+      "y": 1.921875,
+      "z": 0.03125,
+      "half_width": 0.34375,
+      "half_height": 0.359375,
+      "half_depth": 1.78125,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "body",
+      "x": 2.703125,
+      "y": 1.921875,
+      "z": 0.03125,
+      "half_width": 0.34375,
+      "half_height": 0.359375,
+      "half_depth": 1.78125,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     }
   ],
   "weapons": [
@@ -71,7 +174,12 @@
   ],
   "destroy": {
     "explodes": true,
-    "explosion_power": 3.0
+    "explosion_power": 16,
+    "explosion_damage": 800,
+    "explode_blocks": true,
+    "explode_passengers": true,
+    "crash_passengers": true,
+    "particle_type": "giant"
   },
   "seek": {
     "range": 104.0,
@@ -106,8 +214,8 @@
     "minecraft:lava * 2.66",
     "@minecraft:tnt * 5",
     "@minecraft:tnt_minecart * 5",
-    "minecraft:explosion * 2.0",
-    "minecraft:player_explosion * 2.0",
+    "minecraft:explosion * 6",
+    "minecraft:player_explosion * 6",
     "superbwarfare:custom_explosion * 3.4",
     "superbwarfare:projectile_explosion * 3",
     "superbwarfare:mine * 0.75",
@@ -120,9 +228,17 @@
     "@superbwarfare:rgo_grenade * 5",
     "@superbwarfare:hand_grenade * 5",
     "@superbwarfare:mortar_shell * 5",
+    "@superbwarfare:igla_9k38_missile * 1.3",
     "@superbwarfare:gun_grenade * 1.5",
     "@#superbwarfare:at_rocket * 3",
     "All * 0.75",
     "All - 7"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0.1,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": true,
+  "mass": 20
 }

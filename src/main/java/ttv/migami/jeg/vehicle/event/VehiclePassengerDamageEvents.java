@@ -46,7 +46,8 @@ public final class VehiclePassengerDamageEvents {
     }
 
     private static boolean shouldBypassVehicle(DamageSource source) {
-        return source.is(DamageTypeTags.IS_DROWNING)
+        return source.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.DAMAGE_TYPE, net.minecraft.resources.Identifier.parse("jeg:bypasses_vehicle")))
+                || source.is(DamageTypeTags.IS_DROWNING)
                 || source.is(DamageTypeTags.IS_FREEZING)
                 || source.is(DamageTypes.IN_WALL)
                 || source.is(DamageTypes.CRAMMING)

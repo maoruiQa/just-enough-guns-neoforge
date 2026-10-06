@@ -1,9 +1,9 @@
 {
   "entity_type": "jeg:bmp2",
   "vehicle_type": "land",
-  "max_health": 300.0,
-  "auto_repair_per_tick": 0.014,
-  "auto_repair_cooldown_ticks": 180,
+  "max_health": 300,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 5000000,
   "up_step": 2.25,
   "allow_free_cam": true,
@@ -194,32 +194,25 @@
   "obb": [
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.5,
       "z": -0.28125,
       "half_width": 2.1875,
       "half_height": 0.875,
-      "half_depth": 3.90625
+      "half_depth": 3.90625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.5625,
       "z": 4.28125,
       "half_width": 2.1875,
       "half_height": 0.5,
-      "half_depth": 0.65625
-    },
-    {
-      "part": "turret",
-      "transform": "turret",
-      "rotation": "turret",
-      "x": 0.0,
-      "y": 0.46875,
-      "z": 0.0,
-      "half_width": 1.5,
-      "half_height": 0.34375,
-      "half_depth": 1.5
+      "half_depth": 0.65625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "wheel_left",
@@ -228,7 +221,9 @@
       "z": 0.15625,
       "half_width": 0.375,
       "half_height": 0.78125,
-      "half_depth": 3.46875
+      "half_depth": 3.46875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "wheel_right",
@@ -237,7 +232,9 @@
       "z": 0.15625,
       "half_width": 0.375,
       "half_height": 0.78125,
-      "half_depth": 3.46875
+      "half_depth": 3.46875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "main_engine",
@@ -246,7 +243,20 @@
       "z": 1.75,
       "half_width": 1.15625,
       "half_height": 0.375,
-      "half_depth": 1.125
+      "half_depth": 1.125,
+      "transform": "vehicle",
+      "rotation": "vehicle"
+    },
+    {
+      "part": "turret",
+      "x": 0,
+      "y": 0.46875,
+      "z": 0,
+      "half_width": 1.5,
+      "half_height": 0.34375,
+      "half_depth": 1.5,
+      "transform": "turret",
+      "rotation": "turret"
     }
   ],
   "weapons": [
@@ -300,7 +310,12 @@
   },
   "destroy": {
     "explodes": true,
-    "explosion_power": 4.5
+    "explosion_power": 8,
+    "explosion_damage": 160,
+    "explode_blocks": true,
+    "explode_passengers": true,
+    "crash_passengers": false,
+    "particle_type": "huge"
   },
   "seek": {
     "range": 76.0,
@@ -367,11 +382,20 @@
     "superbwarfare:grapeshot_hit * 0.25",
     "superbwarfare:laser * 1.25",
     "@#superbwarfare:aerial_bomb * 2",
+    "@superbwarfare:igla_9k38_missile * 0.75",
     "#superbwarfare:projectile * 0.1",
     "#superbwarfare:projectile_absolute * 0.7",
     "#superbwarfare:vehicle_strike * 13",
     "@superbwarfare:mortar_shell * 1.1",
     "@superbwarfare:gun_grenade * 1.5",
+    "@superbwarfare:javelin_missile * 0.8",
     "All - 13"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0.1,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0.4,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": true,
+  "mass": 14.6
 }
