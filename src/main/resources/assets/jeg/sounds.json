@@ -1772,5 +1772,23 @@
         "name": "jeg:vehicle/common/no_health"
       }
     ]
+  },
+  "vehicle.terrain": {
+    "sounds": [
+      {
+        "attenuation_distance": 64,
+        "stream": true,
+        "name": "jeg:vehicle/common/terrain"
+      }
+    ]
+  },
+  "vehicle.pull_up": {
+    "sounds": [
+      {
+        "attenuation_distance": 64,
+        "stream": true,
+        "name": "jeg:vehicle/common/pull_up"
+      }
+    ]
   }
 }

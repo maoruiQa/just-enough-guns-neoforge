@@ -394,8 +394,8 @@ public final class NetworkHandler {
         context.enqueueWork(() -> invokeClientStatic(
                 "ttv.migami.jeg.client.CrosshairHandler",
                 "playHitMarker",
-                new Class<?>[] { boolean.class },
-                payload.critical()));
+                new Class<?>[] { boolean.class, boolean.class, boolean.class },
+                payload.critical(), payload.vehicle(), payload.killed()));
     }
 
     private static void handleHeadshotMedal(HeadshotMedalPayload payload, IPayloadContext context) {
@@ -457,7 +457,8 @@ public final class NetworkHandler {
                 vehicle.getDeltaMovement().z,
                 vehicle.getYRot(),
                 vehicle.getXRot(),
-                forceApply
+                forceApply,
+                vehicle.enginePower(), vehicle.steeringPower(), vehicle.rudderPower(), vehicle.roll(), vehicle.engineStarted(), vehicle.engineReady()
         ));
     }
 
@@ -512,6 +513,7 @@ public final class NetworkHandler {
             if (!(entity instanceof VehicleEntity vehicle)) {
                 return;
             }
+            vehicle.syncAuthoritativeControls(payload.power(), payload.steering(), payload.rudder(), payload.roll(), payload.engineStarted(), payload.engineReady());
             vehicle.syncAuthoritativeState(payload.x(), payload.y(), payload.z(), payload.motionX(), payload.motionY(), payload.motionZ(), payload.yaw(), payload.pitch(), payload.forceApply());
         });
     }
@@ -830,6 +832,10 @@ public final class NetworkHandler {
                 player.connection.send(payload);
             }
         }
+    }
+
+    public static void sendHitMarker(ServerPlayer player, boolean critical, boolean vehicle, boolean killed) {
+        player.connection.send(new HitMarkerPayload(critical, vehicle, killed));
     }
 
     public static void sendHitMarker(ServerPlayer player, boolean critical) {

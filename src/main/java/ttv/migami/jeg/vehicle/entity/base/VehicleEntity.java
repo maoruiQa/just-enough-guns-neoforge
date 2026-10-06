@@ -140,6 +140,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final Set<String> RADAR_WARNING_VEHICLES = Set.of("lav150", "bmp2", "ah6", "mi28", "speedboat");
 
     private static final EntityDataAccessor<String> DATA_VEHICLE_ID = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Float> DATA_LEFT_WHEEL_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_RIGHT_WHEEL_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_ENGINE_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_SUB_ENGINE_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_TURRET_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_AIMING_SEATS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_RIFLE_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
@@ -312,12 +318,19 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private String lastVehicleWarningSoundKey = "";
     private int lastVehicleWarningSoundTick = Integer.MIN_VALUE;
     private int boatWaterborneTicks;
+    private float desiredTurretYaw;
+    private float desiredTurretPitch;
+    private boolean hasTurretTarget;
+    private double rudder;
+    private double swVelocity;
     private float turretYawO;
     private float turretPitchO;
     /** Local visual rotor angle (not entity-data). Advanced every tick from synced propeller speed. */
     private float propellerRot;
     private float propellerRotO;
     private float rollO;
+    private final float[] swMotionAnimation = new float[8];
+    private double swRudderO;
     private int holdTick;
     private int holdPowerTick;
     private boolean engineStart;
@@ -516,6 +529,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_VEHICLE_ID, DefaultVehicleData.TEST_WHEEL.id().toString());
+        builder.define(DATA_LEFT_WHEEL_HEALTH, PART_MAX_HEALTH);
+        builder.define(DATA_RIGHT_WHEEL_HEALTH, PART_MAX_HEALTH);
+        builder.define(DATA_ENGINE_HEALTH, PART_MAX_HEALTH);
+        builder.define(DATA_SUB_ENGINE_HEALTH, PART_MAX_HEALTH);
+        builder.define(DATA_TURRET_HEALTH, PART_MAX_HEALTH);
+        builder.define(DATA_AIMING_SEATS, 0);
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
         builder.define(DATA_RIFLE_AMMO, 0);
@@ -678,8 +697,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.level().isClientSide()) {
             return;
         }
-        if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(yaw));
-        if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, pitch);
+        this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(yaw));
+        this.entityData.set(DATA_TURRET_PITCH, pitch);
     }
 
     public boolean selectAiWeaponForSeat(int seatIndex, int slot) {
@@ -759,6 +778,16 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         return this.weaponMuzzlePosition(weapon, this.horizontalDirection(this.getYRot()), 1.25D, 0.95D);
     }
     public Vec3 vehicleHudShootDirection(Entity shooter, float partialTick) {
+        if (this.usesSwControls()) {
+            VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
+            if (weapon != null) {
+                if (weapon.hudDirectionVector() != null) return this.swTransformDirection(weapon.hudTransform(), weapon.hudDirectionVector(), partialTick);
+                if ("default".equalsIgnoreCase(weapon.hudDirection())) {
+                    return "default".equalsIgnoreCase(weapon.viewDirection()) ? this.getViewVector(partialTick) : this.swDirection(weapon.viewDirection(), shooter, partialTick);
+                }
+                return this.swDirection(weapon.hudDirection(), shooter, partialTick);
+            }
+        }
         if (!(shooter instanceof LivingEntity living) || shooter.getVehicle() != this) {
             return shooter.getLookAngle();
         }
@@ -777,6 +806,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public Vec3 vehicleHudShootPos(Entity shooter, float partialTick) {
+        if (this.usesSwControls()) {
+            VehicleWeaponInfo weapon = this.selectedWeapon(shooter);
+            if (weapon != null) {
+                Vec3 local = weapon.hudPosition();
+                if (local == null && weapon.hasMuzzle()) local = new Vec3(weapon.muzzleX(), weapon.muzzleY(), weapon.muzzleZ());
+                if (local != null) return this.swPosition(weapon.hudTransform(), local, partialTick);
+            }
+        }
         if (!(shooter instanceof LivingEntity living) || shooter.getVehicle() != this) {
             return shooter.getEyePosition(partialTick);
         }
@@ -902,7 +939,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     public boolean canPassengerUseVehicleWeapon(Entity passenger, int weaponIndex) {
         var weapons = this.vehicleData().defaults().weapons();
-        if (weaponIndex < 0 || weaponIndex >= weapons.size()) {
+        if (!this.hasVehicleWeapons() || weaponIndex < 0 || weaponIndex >= weapons.size()) {
             return false;
         }
         int fallbackIndex = this.getPassengers().indexOf(passenger);
@@ -1207,23 +1244,28 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         boolean canUseSelectedWeapon = selectedWeapon != null && this.canUseSelectedWeapon(player, selectedWeapon);
+        int aimSeat = this.getSeatIndex(player);
+        if (aimSeat >= 0 && aimSeat < 31) {
+            int mask = this.entityData.get(DATA_AIMING_SEATS);
+            mask = input.aiming() && canUseSelectedWeapon ? mask | (1 << aimSeat) : mask & ~(1 << aimSeat);
+            this.entityData.set(DATA_AIMING_SEATS, mask);
+        }
         if (selectedWeapon != null && !this.isFreeLookInput(input) && canUseSelectedWeapon) {
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
+            this.updateTurretTarget(player);
         }
         if (input.reload() && canUseSelectedWeapon) {
             this.startWeaponReload(player);
         }
-        if (input.deployDecoy()) {
+        if (input.deployDecoy() && (!this.usesSwControls() || player == this.getControllingPassenger())) {
             this.tryDeployDecoy(player);
         }
-        if (this.hasVehicleWeapons() && input.seekTarget()) {
+        if (canUseSelectedWeapon && input.seekTarget()) {
             this.seekControllerId = player.getId();
             this.seekInput = true;
         } else if (this.seekControllerId == player.getId()) {
             this.seekInput = false;
         }
-        if (this.hasVehicleWeapons() && input.fire()) {
+        if (canUseSelectedWeapon && input.fire()) {
             this.weaponControllerId = player.getId();
             this.weaponFireInput = true;
         } else if (this.weaponControllerId == player.getId()) {
@@ -1252,8 +1294,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.selectFallbackWeaponFor(player, input);
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
+            this.updateTurretTarget(player);
         }
         if (player == this.getControllingPassenger()) {
             this.input = input;
@@ -1270,8 +1311,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(living);
         if (selectedWeapon != null && this.canUseSelectedWeapon(living, selectedWeapon)) {
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(living));
-            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(living));
+            this.updateTurretTarget(living);
         }
     }
 
@@ -1326,6 +1366,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             int nextSeat = (currentSeat + offset) % seatCount;
             if (!this.isSeatOccupied(nextSeat, player)) {
                 this.seatAssignments.put(player.getUUID(), nextSeat);
+                this.entityData.set(DATA_AIMING_SEATS, this.entityData.get(DATA_AIMING_SEATS) & ~(1 << currentSeat));
                 this.input = VehicleInput.EMPTY;
                 this.alignPassengerViewToVehicle(player, nextSeat);
                 this.syncSeatAssignments();
@@ -1341,6 +1382,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.turretPitchO = this.turretPitch();
         this.propellerRotO = this.propellerRot;
         this.rollO = this.roll();
+        System.arraycopy(this.swMotionAnimation, 0, this.swMotionAnimation, 4, 4);
+        this.swRudderO = this.rudder;
         this.updateLastTickMovementSpeed();
         super.tick();
         if (this.level().isClientSide() && this.dismountLerpSuppressionTicks > 0) {
@@ -1348,6 +1391,15 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.tickDamageEffects();
         this.applyPassengerYaw();
+        this.tickSwTurret();
+        if (!this.level().isClientSide()) {
+            int occupied = 0;
+            for (Entity passenger : this.getPassengers()) {
+                int seat = this.getSeatIndex(passenger);
+                if (seat >= 0 && seat < 31) occupied |= 1 << seat;
+            }
+            this.entityData.set(DATA_AIMING_SEATS, this.entityData.get(DATA_AIMING_SEATS) & occupied);
+        }
         if (!this.level().isClientSide()) {
             this.clearStaleDriverInput();
             this.tickServerMovement();
@@ -1365,6 +1417,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.tickDriverStateSync();
             this.entityData.set(DATA_RIFLE_AMMO, this.countRifleAmmo());
             this.syncSelectedWeaponAmmoState();
+            this.tickSwWeaponWarnings();
             this.entityData.set(DATA_FLARE_AMMO, this.countAmmo(FLARE_AMMO));
             this.entityData.set(DATA_DECOY_COOLDOWN, this.decoyCooldown);
         } else if (this.shouldRunClientPrediction()) {
@@ -1386,6 +1439,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.syncClientEngineResidualFromRotor();
             this.clientHeliResidualResync = true;
         }
+        if (this.usesSwControls() && this.level().isClientSide() && !this.shouldRunClientPrediction()) this.animateSwWheels(this.vehicleData().defaults().engine(), this.getDeltaMovement(), "bmp2".equals(this.vehicleDataId().getPath()));
         // Always advance visual rotor from synced speed so unmanned / remote clients still spin down.
         this.tickPropellerVisual();
         this.tickObbEntityCollisionSupport();
@@ -1902,6 +1956,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void clearControlState(boolean stopHorizontalMotion) {
         this.input = VehicleInput.EMPTY;
+        this.hasTurretTarget = false;
+        this.entityData.set(DATA_AIMING_SEATS, 0);
         this.weaponFireInput = false;
         this.seekInput = false;
         this.weaponControllerId = -1;
@@ -2059,6 +2115,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.xo = x;
         this.yo = y;
         this.zo = z;
+        if (forceApply && this.usesSwControls()) this.snapControlInterpolation();
         this.needsSync = true;
         if (forceApply && this.level().isClientSide() && !this.isLocalInstanceAuthoritative()) {
             this.dismountLerpSuppressionTicks = DISMOUNT_LERP_SUPPRESSION_TICKS;
@@ -2106,6 +2163,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         return Math.abs(Mth.wrapDegrees(this.getYRot() - yaw)) >= CLIENT_RESYNC_YAW_DELTA
                 || Math.abs(Mth.wrapDegrees(this.getXRot() - pitch)) >= CLIENT_RESYNC_PITCH_DELTA;
+    }
+
+    private void tickSwWeaponWarnings() {
+        if (!this.usesSwControls()) return;
+        for (Entity passenger : this.getPassengers()) {
+            if (!(passenger instanceof ServerPlayer player)) continue;
+            VehicleWeaponInfo weapon = this.selectedWeapon(player);
+            if (weapon == null || !this.canUseSelectedWeapon(player, weapon)) continue;
+            if (!this.hasEnergy(weapon.energyCost())) {
+                player.sendSystemMessage(Component.translatable("hud.jeg.vehicle.not_enough_energy"), true);
+            } else if (!this.selectedVehicleWeaponReloading(player)
+                    && this.selectedVehicleWeaponAmmo(player) + this.selectedVehicleWeaponReserveAmmo(player) == 0) {
+                var ammo = this.resolveAmmoItem(weapon.ammoId());
+                if (ammo != null) player.sendSystemMessage(Component.translatable("hud.jeg.vehicle.need_ammo")
+                        .append(Component.literal("[").append(new ItemStack(ammo).getHoverName()).append("]")
+                                .withStyle(ChatFormatting.YELLOW)), true);
+            }
+        }
     }
 
     private void tickServerWeapon() {
@@ -2310,6 +2385,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 weaponMuzzlePosition(VehicleWeaponInfo weapon, Vec3 direction, double fallbackForwardOffset, double fallbackHeight) {
+        if (this.usesSwControls() && weapon.hasMuzzle()) {
+            return this.swPosition(weapon.hudTransform(), new Vec3(weapon.muzzleX(), weapon.muzzleY(), weapon.muzzleZ()), 1.0F);
+        }
         Vec3 articulatedMuzzle = this.articulatedWeaponMuzzlePosition(weapon);
         if (articulatedMuzzle != null) {
             return articulatedMuzzle;
@@ -2486,6 +2564,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 weaponAimDirection(LivingEntity shooter) {
+        if (this.usesSwControls()) return this.vehicleHudShootDirection(shooter, 1.0F);
         Vec3 articulatedAim = this.articulatedWeaponAimDirection(shooter);
         if (articulatedAim != null) {
             return articulatedAim;
@@ -2523,6 +2602,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private float weaponPitch(LivingEntity shooter) {
+        if (this.usesSwControls()) {
+            SeatInfo seat = this.seatForPassenger(shooter, this.getPassengers().indexOf(shooter));
+            return Mth.clamp(shooter.getXRot(), -seat.maxPitch(), -seat.minPitch());
+        }
         SeatInfo seat = this.seatForPassenger(shooter, this.getPassengers().indexOf(shooter));
         return Mth.clamp(shooter.getXRot(), seat.minPitch(), seat.maxPitch());
     }
@@ -3726,6 +3809,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private boolean hasWeaponUsableBySeat(int seatIndex) {
+        if (!this.hasVehicleWeapons()) return false;
         for (VehicleWeaponInfo weapon : this.vehicleData().defaults().weapons()) {
             if (weapon.usableBySeat(seatIndex)) {
                 return true;
@@ -3755,6 +3839,23 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public Vec3 cameraPositionFor(Entity passenger, float partialTick) {
+        if (this.usesSwControls() && this.hasPassenger(passenger)) {
+            SeatInfo seat = this.seatForPassenger(passenger, this.getPassengers().indexOf(passenger));
+            CameraPos camera = seat.zoomCamera();
+            var weapon = this.selectedWeapon(passenger);
+            Vec3 position;
+            if (clientZoomDown() && weapon != null && weapon.viewPosition() != null) position = this.swPosition(weapon.hudTransform(), weapon.viewPosition(), partialTick);
+            else if (clientZoomDown() && camera.hasZoomPosition()) position = this.swPosition(camera.transform(), new Vec3(camera.zoomX(), camera.zoomY(), camera.zoomZ()), partialTick);
+            else if (camera.useSimulatedThirdPerson()) position = this.simulatedThirdPersonCameraPosition(passenger, camera, partialTick);
+            else if (camera.useFixedCameraPos()) position = this.swPosition(camera.transform(), new Vec3(camera.x(), camera.y(), camera.z()), partialTick);
+            else position = passenger.getEyePosition(partialTick);
+            // SW adds this eye correction in GameRenderer; apply it once in the camera so HUD projection agrees.
+            if (!camera.useFixedCameraPos()) {
+                double eye = passenger.getEyeHeight();
+                position = position.add(this.swTransformDirection("vehicle", new Vec3(0, 1, 0), partialTick).scale(eye)).add(0, -eye, 0);
+            }
+            return position;
+        }
         int fallbackIndex = this.getPassengers().indexOf(passenger);
         if (fallbackIndex < 0) {
             return passenger.getEyePosition(partialTick);
@@ -3803,6 +3904,20 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public Vec3 cameraRotationFor(Entity passenger, float partialTick) {
+        if (this.usesSwControls() && this.hasPassenger(passenger)) {
+            SeatInfo seat = this.seatForPassenger(passenger, this.getPassengers().indexOf(passenger));
+            CameraPos camera = seat.zoomCamera();
+            String direction = clientZoomDown() && !"default".equalsIgnoreCase(camera.zoomDirection()) ? camera.zoomDirection() : camera.direction();
+            var weapon = this.selectedWeapon(passenger);
+            if (clientZoomDown() && weapon != null && !"default".equalsIgnoreCase(weapon.viewDirection())) direction = weapon.viewDirection();
+            if (!"default".equalsIgnoreCase(direction)) {
+                Vec3 view = this.swDirection(direction, passenger, partialTick);
+                float yaw = this.yRotFromVector(view);
+                return new Vec3(yaw, this.xRotFromVector(view), this.swCameraRoll(passenger, yaw, partialTick));
+            }
+            float yaw = passenger.getViewYRot(partialTick);
+            return new Vec3(yaw, passenger.getViewXRot(partialTick), this.swCameraRoll(passenger, yaw, partialTick));
+        }
         int fallbackIndex = this.getPassengers().indexOf(passenger);
         if (fallbackIndex >= 0) {
             SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
@@ -4255,6 +4370,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickBoatMovement(EngineInfo engine, boolean consumeEnergy) {
+        if (engine.swControls()) { this.tickSwSurfaceMovement(engine, true, consumeEnergy); return; }
         Vec3 velocity = this.getDeltaMovement();
         int forwardAxis = this.input.forwardAxis();
         int steeringAxis = this.steeringAxis();
@@ -4458,6 +4574,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickSteeredLandMovement(EngineInfo engine, Vec3 velocity, int forwardAxis, int steeringAxis, boolean engineSound) {
+        if (engine.swControls()) { this.tickSwSurfaceMovement(engine, false, engineSound); return; }
         double mobility = this.mobilityMultiplier();
         Vec3 forward = this.landDriveForward();
 
@@ -4527,6 +4644,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void moveGroundVehicle(Vec3 velocity) {
+        if (this.usesSwControls()) {
+            this.setDeltaMovement(velocity);
+            this.move(MoverType.SELF, velocity);
+            this.hurtMarked = true;
+            return;
+        }
         Vec3 before = this.position();
         this.setDeltaMovement(velocity);
         this.move(MoverType.SELF, this.getDeltaMovement());
@@ -4688,6 +4811,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void tickHelicopterMovement(EngineInfo engine, boolean consumeEnergy) {
+        if (engine.swControls()) { this.tickSwHelicopterMovement(engine, consumeEnergy); return; }
         Vec3 velocity = this.getDeltaMovement();
         double verticalSpeedBeforeDrag = velocity.y;
         int forwardAxis = this.input.forwardAxis();
@@ -5008,6 +5132,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void applyPassengerYaw() {
+        if (this.usesSwControls()) return;
         Entity passenger = this.getControllingPassenger();
         VehicleType type = this.vehicleData().defaults().vehicleType();
         if (passenger == null || this.isFreeLookInputDown() || type == VehicleType.LAND || type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT) {
@@ -5030,6 +5155,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         SeatInfo seat = this.seatForPassenger(passenger, fallbackIndex);
         Vec3 offset = this.seatOffset(seat, 0.0D, 1.0F);
         callback.accept(passenger, this.getX() + offset.x, this.getY() + offset.y, this.getZ() + offset.z);
+        if (this.usesSwControls()) this.clampSwPassengerView(passenger);
         if (passenger instanceof LivingEntity living) {
             living.fallDistance = 0.0F;
         }
@@ -5040,6 +5166,10 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 seatOffset(SeatInfo seat, double eyeHeight, float partialTick) {
+        if (this.usesSwControls()) {
+            return this.swPosition(seat.transform(), new Vec3(seat.x(), seat.y() + eyeHeight, seat.z()), partialTick)
+                    .subtract(this.interpolatedVehiclePosition(partialTick));
+        }
         if (this.usesVehiclePoseTransform()) {
             return this.rotateLocalOffsetWithPose(seat.x(), seat.y() + eyeHeight, seat.z(), partialTick);
         }
@@ -5047,6 +5177,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     public boolean usesVehiclePoseTransform() {
+        if (this.usesSwControls()) return true;
         VehicleType type = this.vehicleData().defaults().vehicleType();
         return type == VehicleType.HELICOPTER || type == VehicleType.AIRCRAFT;
     }
@@ -5183,6 +5314,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 articulatedBarrelPosition(double localX, double localY, double localZ, float partialTick) {
+        if (this.usesSwControls()) return this.swPosition("barrel", new Vec3(localX, localY, localZ), partialTick);
         var turret = this.vehicleData().defaults().turret();
         Vec3 barrelOrigin = this.articulatedTurretOffset(turret.barrelX(), turret.barrelY(), turret.barrelZ(), partialTick);
         return this.interpolatedVehiclePosition(partialTick)
@@ -5191,6 +5323,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private Vec3 articulatedBarrelDirection(float partialTick) {
+        if (this.usesSwControls()) return this.swDirection("barrel", this.getControllingPassenger(), partialTick);
         return this.rotateLocalOffsetByYawAndPitch(0.0D, 0.0D, 1.0D, this.articulatedWorldTurretYaw(partialTick), this.articulatedTurretPitch(partialTick));
     }
 
@@ -5694,6 +5827,12 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void syncPartDamageFlags() {
+        this.entityData.set(DATA_LEFT_WHEEL_HEALTH, this.leftWheelHealth);
+        this.entityData.set(DATA_RIGHT_WHEEL_HEALTH, this.rightWheelHealth);
+        this.entityData.set(DATA_ENGINE_HEALTH, this.engineHealth);
+        this.entityData.set(DATA_SUB_ENGINE_HEALTH, this.subEngineHealth);
+        this.entityData.set(DATA_TURRET_HEALTH, this.turretHealth);
+
         this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, VehicleDamageProfile.damaged(this.leftWheelHealth, this.entityData.get(DATA_LEFT_WHEEL_DAMAGED)));
         this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, VehicleDamageProfile.damaged(this.rightWheelHealth, this.entityData.get(DATA_RIGHT_WHEEL_DAMAGED)));
         this.entityData.set(DATA_ENGINE_DAMAGED, VehicleDamageProfile.damaged(this.engineHealth, this.entityData.get(DATA_ENGINE_DAMAGED)));
@@ -5776,7 +5915,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.jeg.vehicle");
+        return this.usesSwControls() ? this.getType().getDescription() : Component.translatable("container.jeg.vehicle");
     }
 
     @Override
@@ -5830,6 +5969,8 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             }
             this.recentDismountSeatAssignments.put(passenger.getUUID(), this.seatIndexForPassenger(passenger, fallbackIndex));
         }
+        int removedSeat = this.getSeatIndex(passenger);
+        if (removedSeat >= 0 && removedSeat < 31) this.entityData.set(DATA_AIMING_SEATS, this.entityData.get(DATA_AIMING_SEATS) & ~(1 << removedSeat));
         boolean preserveSeatAssignment = this.preservedSeatAssignments.remove(passenger.getUUID());
         if (controllingPassenger) {
             this.cancelWeaponReload();
@@ -5941,6 +6082,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     @Override
+    public boolean isClientAuthoritative() {
+        // Since 26.2, vanilla otherwise skips server collision/ground updates for player pilots.
+        // Local client prediction still uses isLocalClientAuthoritative() independently.
+        return !this.usesSwControls() && super.isClientAuthoritative();
+    }
+
+    @Override
     @Nullable
     public LivingEntity getControllingPassenger() {
         Entity passenger = null;
@@ -5995,4 +6143,408 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private record ArmorHit(float finalDamage, boolean penetrated) {
     }
 
+
+    public boolean usesSwControls() {
+        return this.vehicleData().defaults().engine().swControls();
+    }
+
+    public float selectedVehicleZoom(Entity passenger) {
+        VehicleWeaponInfo weapon = this.selectedWeapon(passenger);
+        return weapon == null ? 1.0F : weapon.defaultZoom();
+    }
+
+    private void updateTurretTarget(LivingEntity passenger) {
+        if (this.usesSwControls()) {
+            int seat = this.getSeatIndex(passenger);
+            if (seat != this.vehicleData().defaults().turret().seatIndex()) return;
+            this.desiredTurretYaw = this.turretYawFromPlayer(passenger);
+            this.desiredTurretPitch = this.weaponPitch(passenger);
+            this.hasTurretTarget = true;
+        } else {
+            this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(passenger));
+            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(passenger));
+        }
+    }
+
+    private void tickSwTurret() {
+        if (!this.usesSwControls() || !this.hasTurretTarget) return;
+        var turret = this.vehicleData().defaults().turret();
+        Entity controller = this.getPassengers().stream().filter(p -> this.getSeatIndex(p) == turret.seatIndex()).findFirst().orElse(null);
+        if (controller == null) { this.hasTurretTarget = false; return; }
+        if (this.level().isClientSide() && controller != localClientPlayer()) return;
+        float damage = this.isTurretDamaged() ? 0.2F : 1.0F;
+        float pitchSpeed = turret.pitchTurnSpeed() * damage;
+        float yawSpeed = turret.yawTurnSpeed() * damage;
+        this.entityData.set(DATA_TURRET_YAW, this.turretYaw() + Mth.clamp(0.9F * Mth.wrapDegrees(this.desiredTurretYaw - this.turretYaw()), -yawSpeed, yawSpeed));
+        this.entityData.set(DATA_TURRET_PITCH, Mth.clamp(this.turretPitch() + Mth.clamp(0.95F * Mth.wrapDegrees(this.desiredTurretPitch - this.turretPitch()), -pitchSpeed, pitchSpeed), -turret.maxPitch(), -turret.minPitch()));
+    }
+
+    public float swBarrelModelPitch(float partialTick) {
+        float yaw = Mth.wrapDegrees(this.turretYaw(partialTick));
+        float r = (Math.abs(yaw) - 90.0F) / 90.0F;
+        float r2 = Math.abs(yaw) <= 90.0F ? yaw / 90.0F : yaw < 0 ? -(180.0F + yaw) / 90.0F : (180.0F - yaw) / 90.0F;
+        var turret = this.vehicleData().defaults().turret();
+        return Mth.clamp(-this.turretPitch(partialTick) - r * Mth.lerp(partialTick, this.xRotO, this.getXRot()) - r2 * this.roll(partialTick), turret.minPitch(), turret.maxPitch());
+    }
+
+    public void clampSwPassengerView(Entity passenger) {
+        int index = this.getSeatIndex(passenger);
+        if (!this.usesSwControls() || index < 0) return;
+        SeatInfo seat = this.vehicleData().defaults().seats().get(index);
+        boolean turret = "turret".equalsIgnoreCase(seat.transform());
+        float bodyYaw = this.getYRot() + seat.orientation();
+        if (!seat.canRotateBody()) {
+            float relative = Mth.wrapDegrees(passenger.getYRot() - bodyYaw);
+            float correction = Mth.clamp(relative, seat.minYaw(), seat.maxYaw()) - relative;
+            passenger.setYRot(passenger.getYRot() + correction);
+            passenger.yRotO += correction;
+        }
+        float a = turret ? Mth.wrapDegrees(this.turretYaw()) : -Mth.wrapDegrees(passenger.getYRot() - this.getYRot());
+        float r = (Math.abs(a) - 90.0F) / 90.0F;
+        float r2 = Math.abs(a) <= 90.0F ? a / 90.0F : a < 0 ? -(180.0F + a) / 90.0F : (180.0F - a) / 90.0F;
+        float pitch = Mth.wrapDegrees(passenger.getXRot());
+        float offset = r * this.getXRot() + r2 * this.roll();
+        float correction = Mth.clamp(pitch, -seat.maxPitch() - offset, -seat.minPitch() - offset) - pitch;
+        passenger.setXRot(passenger.getXRot() + correction);
+        passenger.xRotO += correction;
+        if (!seat.canRotateBody()) passenger.setYBodyRot(turret ? this.getYRot() - this.turretYaw() + seat.orientation() : bodyYaw);
+        if (!turret && !seat.canRotateHead()) passenger.setYRot(bodyYaw);
+    }
+
+    @Override
+    public void onPassengerTurned(Entity passenger) {
+        if (this.usesSwControls()) this.clampSwPassengerView(passenger);
+        else super.onPassengerTurned(passenger);
+    }
+
+    public Matrix4d swTransform(String name, float partialTick) {
+        Matrix4d transform = this.vehiclePoseTransform(partialTick);
+        var turret = this.vehicleData().defaults().turret();
+        if (("turret".equalsIgnoreCase(name) || "barrel".equalsIgnoreCase(name)) && turret.enabled()) {
+            transform.translate(turret.originX(), turret.originY(), turret.originZ());
+            float yaw = Mth.wrapDegrees(this.turretYaw(partialTick));
+            transform.rotate(Axis.YP.rotationDegrees(yaw));
+            if ("barrel".equalsIgnoreCase(name)) {
+                transform.translate(turret.barrelX(), turret.barrelY(), turret.barrelZ());
+                transform.rotate(Axis.XP.rotationDegrees(-this.swBarrelModelPitch(partialTick)));
+            }
+        }
+        return transform;
+    }
+
+    public Vec3 swPosition(String transform, Vec3 local, float partialTick) {
+        Vector4d world = this.swTransform(transform, partialTick).transform(new Vector4d(local.x, local.y, local.z, 1.0D));
+        return new Vec3(world.x, world.y, world.z);
+    }
+
+    private Vec3 swTransformDirection(String transform, Vec3 local, float partialTick) {
+        Vector4d direction = this.swTransform(transform, partialTick).transform(new Vector4d(local.x, local.y, local.z, 0.0D));
+        return new Vec3(direction.x, direction.y, direction.z).normalize();
+    }
+
+    private Vec3 swDirection(String direction, Entity passenger, float partialTick) {
+        return switch (direction.toLowerCase(java.util.Locale.ROOT)) {
+            case "barrel", "turret", "vehicle" -> this.swTransformDirection(direction, new Vec3(0, 0, 1), partialTick);
+            case "passenger" -> passenger == null ? this.getViewVector(partialTick) : passenger.getViewVector(partialTick);
+            default -> passenger == null ? this.getViewVector(partialTick) : passenger.getViewVector(partialTick);
+        };
+    }
+
+    private double swSubmergedHeight() {
+        return Math.max(this.getFluidHeight(net.minecraft.tags.FluidTags.WATER), this.getFluidHeight(net.minecraft.tags.FluidTags.LAVA));
+    }
+
+    private double swMotionAngle(Vec3 movement) {
+        Vec3 a = movement.multiply(1, 0, 1).normalize();
+        Vec3 b = this.getViewVector(1).multiply(1, 0, 1).normalize();
+        return Math.toDegrees(Math.acos(Mth.clamp(a.dot(b), -1.0D, 1.0D)));
+    }
+
+    private void tickSwSurfaceMovement(EngineInfo engine, boolean ship, boolean consumeEnergy) {
+        boolean track = engine.type() == ttv.migami.jeg.vehicle.data.subdata.EngineType.TRACK;
+        boolean fluid = this.isInWater() || this.isInLava() || this.swSubmergedHeight() > 0.0D;
+        Vec3 velocity = this.getDeltaMovement().add(0, engine.buoyancy() * this.swSubmergedHeight(), 0);
+        double angle = this.swMotionAngle(velocity);
+        Vec3 forward = this.getViewVector(1);
+        if (this.onGround()) {
+            double drag = ship ? 0.2D : 0.54F + 0.25F * Math.abs(90.0D - angle) / 90.0D;
+            if (!ship) velocity = velocity.add(forward.normalize().scale(0.05D * velocity.dot(forward)));
+            velocity = velocity.multiply(drag, 0.99D, drag);
+        } else if (fluid) {
+            double drag = (ship ? 0.75F - 0.04F * Math.min(this.swSubmergedHeight(), this.getBbHeight()) : 0.74F)
+                    + 0.09F * Math.abs(90.0D - angle) / 90.0D;
+            velocity = velocity.add(forward.normalize().scale(0.04D * velocity.dot(forward))).multiply(drag, 0.85D, drag);
+        } else velocity = velocity.scale(0.99D);
+
+        boolean energyActive = Math.abs(this.enginePower) > 1.0E-4D || this.input.forward() || this.input.backward();
+        int cost = this.scaledEngineEnergyCost(engine, energyActive, Math.abs(this.enginePower));
+        boolean hasEnergy = (cost <= 0 || this.vehicleEnergy() >= cost) && (this.maxVehicleEnergy() <= 0 || this.vehicleEnergy() > 0);
+        boolean driving = this.getControllingPassenger() != null;
+        boolean forwardInput = driving && hasEnergy && this.input.forward();
+        boolean backwardInput = driving && hasEnergy && this.input.backward();
+        boolean rightInput = driving && (!track || hasEnergy) && this.input.right();
+        boolean leftInput = driving && (!track || hasEnergy) && this.input.left();
+        if (!hasEnergy) { this.enginePower *= 0.95F; if(track) this.wheelSteering *= .5F; }
+        if (!driving && !ship) this.enginePower = 0;
+        if (forwardInput) this.enginePower = Math.min(this.enginePower + engine.increment() * (this.enginePower < 0 ? 2 : 1), 1);
+        if (backwardInput) this.enginePower = Math.max(this.enginePower - engine.decrement() * (this.enginePower > 0 ? 2 : 1), -1);
+        double targetSpeed = this.enginePower > 0 ? engine.maxForwardSpeed() : engine.maxReverseSpeed();
+        if (!ship) targetSpeed *= this.enginePower > 0 ? 1 + this.getXRot() / 55.0F : 1 - this.getXRot() / 55.0F;
+        if (!forwardInput && !backwardInput) this.enginePower *= track ? 0.96F : 0.97F;
+        if (!ship && this.input.brake()) this.enginePower *= 0.6F;
+        if (rightInput || leftInput) this.enginePower *= track ? 0.96F : 0.98F;
+        if (consumeEnergy) this.consumeEngineEnergyCost(cost);
+        int damagedSteering = 0;
+        if (!ship) {
+            if (this.isLeftWheelDamaged() && this.isRightWheelDamaged()) this.enginePower *= 0.93F;
+            else if (this.isLeftWheelDamaged()) { this.enginePower *= 0.975F; damagedSteering = 3; }
+            else if (this.isRightWheelDamaged()) { this.enginePower *= 0.975F; damagedSteering = -3; }
+        }
+        if (this.isEngineDamaged()) this.enginePower *= track ? 0.96F : 0.875F;
+        int steering = rightInput ? 1 : leftInput ? -1 : 0;
+        this.wheelSteering += steering * engine.steeringSpeed() * (ship || track && !backwardInput ? -1 : 1);
+        this.wheelSteering *= track ? Math.max(0.76F - 0.1F * velocity.horizontalDistance(), 0.3D)
+                : Math.max(0.78F - 0.25F * velocity.horizontalDistance(), 0.1D);
+        this.rudder = Mth.clamp(this.rudder - this.wheelSteering, -0.8D, 0.8D) * 0.75F;
+        double signedSpeed = velocity.dot(this.getViewVector(1));
+        this.animateSwWheels(engine, velocity, track);
+        double yaw = this.getYRot();
+        if (ship && fluid) {
+            double direct = (90.0D - this.swMotionAngle(velocity)) / 90.0D;
+            this.setXRot((float) (this.getXRot() * 0.85F - direct * (this.onGround() ? 0 : 1) * engine.bodyPitchRate() * velocity.horizontalDistance()));
+            yaw -= 20 * velocity.horizontalDistance() * this.wheelSteering * (this.enginePower > 0 ? 1 : -1);
+            this.setRoll((float) (this.roll() - direct * this.wheelSteering * (this.onGround() ? 0 : 1) * engine.bodyRollRate() * 10 * velocity.horizontalDistance()));
+        } else if (ship) this.setXRot(this.getXRot() * 0.99F);
+        else if (track) yaw -= (fluid && !this.onGround() ? 2.5D : 6.0D) * this.wheelSteering + damagedSteering * signedSpeed;
+        else yaw -= (fluid && !this.onGround() ? 6.0D : 12.0D) * velocity.horizontalDistance() * this.rudder * (this.enginePower > 0 ? 1 : -1) + damagedSteering * signedSpeed;
+        this.setVehicleYawIfUnblocked((float) yaw);
+        if (ship) this.setRoll(this.roll() * 0.85F);
+        if (fluid || !ship && this.onGround()) {
+            double waterRate = !ship && fluid && !this.onGround() ? 0.3D : 1.0D;
+            velocity = velocity.add(this.getViewVector(1).scale(0.15D * waterRate * targetSpeed * this.enginePower));
+        }
+        if (!this.isNoGravity()) velocity = velocity.add(0, -0.06D, 0);
+        double previousVelocity = this.swVelocity;
+        this.swVelocity = Mth.lerp(.4D, this.swVelocity, velocity.horizontalDistance() * (90 - this.swMotionAngle(velocity)) / 90 * 20);
+        this.moveGroundVehicle(velocity);
+        this.tickSwTerrain(engine);
+        this.setXRot((float) (this.getXRot() - .5F * (this.swVelocity - previousVelocity) * engine.inertiaRotateRate()));
+        if (consumeEnergy) this.tickEngineSound();
+    }
+
+    private void tickSwHelicopterMovement(EngineInfo engine, boolean consumeEnergy) {
+        Vec3 velocity = this.getDeltaMovement();
+        boolean pilot = this.getControllingPassenger() != null;
+        boolean up = pilot && (this.input.ascend() || this.input.forward());
+        boolean down = pilot && this.input.descend();
+        boolean back = pilot && this.input.backward();
+        float rotor = this.propellerSpeed();
+        if (this.onGround()) velocity = velocity.multiply(0.8D, 1, 0.8D);
+        else {
+            this.setRoll(this.roll() * (back ? 0.9F : 0.99F));
+            float drag = (float) Mth.clamp(0.95F - 0.015D * velocity.length() + 0.02F * Math.abs(90 - this.swMotionAngle(velocity)) / 90, 0.01D, 0.99D);
+            velocity = velocity.add(this.getViewVector(1).scale((this.getXRot() < 0 ? -0.035D : this.getXRot() > 0 ? 0.035D : 0) * velocity.length())).multiply(drag, 0.95D, drag);
+        }
+        boolean hasEnergy = this.hasEngineEnergy(engine, true) && (this.maxVehicleEnergy() <= 0 || this.vehicleEnergy() > 0);
+        if (this.isInWater()) velocity = velocity.scale(0.6D);
+        this.setXRot(Mth.wrapDegrees(this.getXRot()));
+        if (!this.isLowHealthDecayActive() && this.vehicleHealth() > 0.1F * this.maxVehicleHealth()) {
+            Vec3 landing = back ? this.swLandingPosition() : null;
+            if (!pilot) {
+                this.holdTick = 0;
+                this.setRoll(this.roll() * 0.98F);
+                this.setXRot(this.getXRot() * 0.98F);
+                if (this.hasPlayerPassenger()) this.enginePower *= 0.99F;
+            } else {
+                if (!back || landing == null) {
+                    if (this.input.right() || this.input.left()) {
+                        this.holdTick++;
+                        this.wheelSteering += (this.input.right() ? -2 : 2) * Math.min(this.holdTick, 7) * this.enginePower;
+                    } else this.holdTick = 0;
+                    this.setXRot((float) (this.getXRot() + (this.onGround() ? 0 : 1.5F) * engine.pitchSpeed() * this.input.mouseY() * rotor));
+                    this.setRoll((float) (this.roll() - engine.rollSpeed() * (this.wheelSteering + (this.onGround() ? 0 : 0.25F) * this.input.mouseX() * rotor)));
+                }
+                this.setYRot((float) (this.getYRot() + engine.yawSpeed() * Mth.clamp((this.onGround() ? 0.1F : 2) * this.input.mouseX() * rotor + (this.isSubEngineDamaged() ? 25 : 0) * rotor, -10, 10)));
+                if (landing != null && !this.onGround()) {
+                    velocity = velocity.multiply(0.975D, 0.99D, 0.975D);
+                    Vec3 horizontal = landing.subtract(this.position()).multiply(1, 0, 1);
+                    double distance = horizontal.length();
+                    Vec3 direction = distance > 0 ? horizontal.normalize().yRot((float) Math.toRadians(this.getYRot())) : Vec3.ZERO;
+                    float tilt = (float) Math.min(15, (distance - 5 * velocity.horizontalDistance()) * 2);
+                    this.setXRot(this.getXRot() + 0.1F * Mth.wrapDegrees((float) (direction.z * tilt) - this.getXRot()));
+                    this.setRoll(this.roll() + 0.1F * Mth.wrapDegrees((float) (-direction.x * tilt) - this.roll()));
+                }
+                if (this.onGround()) { this.setRoll(this.roll() * 0.98F); this.setXRot(this.getXRot() * 0.98F); }
+            }
+            if (!hasEnergy) {
+                this.enginePower *= 0.995F;
+                this.engineStart = false;
+                this.engineStartOver = false;
+            } else {
+                if (!this.engineStart && up) {
+                    this.engineStart = true;
+                    if (consumeEnergy) {
+                        SoundEvent sound = VehicleSoundHelper.engineStartSound(this);
+                        if (sound != null) this.level().playSound(null, this, sound, this.getSoundSource(), 1.2F, 1);
+                    }
+                }
+                if (up && this.engineStartOver) this.enginePower = Math.min(this.enginePower + 0.0007F * engine.increment() * Math.min(++this.holdPowerTick, 10), 0.12F);
+                if (this.engineStartOver && (down || back)) this.enginePower = Math.max(this.enginePower - 0.001F * engine.decrement() * Math.min(++this.holdPowerTick, 5), this.onGround() ? 0 : (down ? 0.025F : 0.058F) / engine.liftSpeed());
+                if (this.engineStart && !this.engineStartOver) this.enginePower = Math.min(this.enginePower + 0.0012F * engine.increment(), 0.045F);
+                if (!(up || down || back) && this.engineStartOver) {
+                    this.enginePower = velocity.y < 0 ? Math.min(this.enginePower + 0.0002F, 0.12F) : Math.max(this.enginePower - (this.onGround() ? 0.00005F : 0.0002F), 0);
+                    this.holdPowerTick = 0;
+                }
+            }
+        } else if (!this.onGround() && this.engineStartOver) {
+            this.enginePower = Math.max(this.enginePower - 0.0003F, 0.01F);
+            this.destroyRot += 0.08F;
+            this.setXRot(this.getXRot() + (45 - this.getXRot()) * 0.05F * rotor);
+            this.setYRot(this.getYRot() + this.destroyRot);
+            this.setRoll(this.roll() + (-20 - this.roll()) * 0.1F * rotor);
+            velocity = velocity.add(0, -this.destroyRot * 0.004D, 0);
+        }
+        if (this.isEngineDamaged()) this.enginePower *= 0.98F;
+        this.wheelSteering *= 0.9F;
+        float nextRotor = Mth.lerp(0.18F, rotor, (float) this.enginePower) * 0.9995F;
+        this.entityData.set(DATA_PROPELLER_SPEED, nextRotor);
+        if (consumeEnergy && this.engineStart) this.consumeEngineEnergyCost(this.scaledEngineEnergyCost(engine, true, Math.max(8.3333D * Math.abs(this.enginePower), 1.0E-4D)));
+        velocity = velocity.add(this.helicopterLiftVector(nextRotor * engine.liftSpeed())).add(0, -0.06D, 0);
+        if (this.enginePower > 0.04F) this.engineStartOver = true;
+        if (this.enginePower < 0.0004F) { this.engineStart = false; this.engineStartOver = false; }
+        this.updateVehicleBoundingBox();
+        this.moveHelicopter(velocity);
+        this.tickSwTerrain(engine);
+    }
+
+    private Vec3 swLandingPosition() {
+        var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, Reference.id("auto_landing"));
+        BlockPos origin = this.blockPosition();
+        Vec3 nearest = null;
+        double best = Double.MAX_VALUE;
+        for (int x = -30; x <= 30; x++) for (int z = -30; z <= 30; z++) for (int y = -30; y <= 0; y++) {
+            if (x*x + y*y + z*z > 900) continue;
+            BlockPos pos = origin.offset(x,y,z);
+            if (!this.level().getBlockState(pos).is(tag)) continue;
+            double distance = this.position().distanceToSqr(pos.getX() + .5, pos.getY() + 1, pos.getZ() + .5);
+            if (distance < best) { best = distance; nearest = Vec3.atCenterOf(pos); }
+        }
+        return nearest;
+    }
+
+    private void tickSwTerrain(EngineInfo engine) {
+        if (this.onGround()) {
+            Matrix4d wheels = new Matrix4d().translate(this.getX(),this.getY(),this.getZ()).rotate(Axis.YP.rotationDegrees(-this.getYRot()));
+            for (Vec3 point : engine.terrainPoints()) {
+                Vector4d world = wheels.transform(new Vector4d(point.x, point.y - .02, point.z, 1));
+                Vec3 p = new Vec3(world.x, world.y, world.z);
+                var hit = this.level().clip(new ClipContext(p, p.add(0,-512,0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+                BlockPos pos = BlockPos.containing(p);
+                if (this.level().getBlockState(pos.above()).canOcclude()) pos = pos.above();
+                var shape = this.level().getBlockState(pos).getCollisionShape(this.level(),pos);
+                double height = !shape.isEmpty() ? p.y - shape.max(Direction.Axis.Y) - pos.getY()
+                        : hit.getType() == HitResult.Type.BLOCK && this.level().noCollision(new AABB(p,p)) ? Mth.clamp(p.y - hit.getLocation().y,0,20) : 0;
+                AABB bounds = this.getBoundingBox();
+                Vec3 origin = this.position();
+                var support = this.level().findSupportingBlock(this, new AABB(bounds.minX,bounds.minY - 1.0E-6D,bounds.minZ,bounds.maxX,bounds.minY,bounds.maxZ));
+                if (support.isPresent()) origin = origin.add(Vec3.atCenterOf(support.get()).subtract(origin).scale(.6));
+                Vec3 horizontal = p.subtract(origin).multiply(1,0,1);
+                double distance = horizontal.length();
+                Vec3 direction = distance > 0 ? horizontal.normalize().yRot((float) Math.toRadians(this.getYRot())) : Vec3.ZERO;
+                float tilt = (float) Math.min(height * 9 * engine.terrainRotateRate() * distance,45);
+                this.setXRot(this.getXRot() + .03F * Mth.wrapDegrees((float) (direction.z * tilt) - this.getXRot()));
+                this.setRoll(this.roll() + .03F * Mth.wrapDegrees((float) (-direction.x * tilt) - this.roll()));
+            }
+        } else if (this.swSubmergedHeight() > 0) { this.setXRot(this.getXRot() * .9F); this.setRoll(this.roll() * .9F); }
+    }
+
+    public double enginePower() { return this.enginePower; }
+    public double steeringPower() { return this.wheelSteering; }
+    public double rudderPower() { return this.rudder; }
+    public boolean engineStarted() { return this.engineStart; }
+    public boolean engineReady() { return this.engineStartOver; }
+    public VehicleWeaponInfo selectedVehicleWeaponInfo(Entity passenger) { return this.selectedWeapon(passenger); }
+    public boolean isPassengerAiming(Entity passenger) {
+        if (passenger.getVehicle() != this) return false;
+        int seat = this.getSeatIndex(passenger);
+        return seat >= 0 && seat < 31 && (this.entityData.get(DATA_AIMING_SEATS) & (1 << seat)) != 0;
+    }
+
+    public float partHealthFraction(OBBInfo.Part part) {
+        float health = switch (part) {
+            case WHEEL_LEFT -> this.entityData.get(DATA_LEFT_WHEEL_HEALTH);
+            case WHEEL_RIGHT -> this.entityData.get(DATA_RIGHT_WHEEL_HEALTH);
+            case MAIN_ENGINE -> this.entityData.get(DATA_ENGINE_HEALTH);
+            case SUB_ENGINE -> this.entityData.get(DATA_SUB_ENGINE_HEALTH);
+            case TURRET -> this.entityData.get(DATA_TURRET_HEALTH);
+            default -> this.vehicleHealth() / Math.max(1.0F, this.maxVehicleHealth()) * PART_MAX_HEALTH;
+        };
+        return Mth.clamp(health / PART_MAX_HEALTH, 0, 1);
+    }
+
+    /** Snap control poses alongside teleports and forced server corrections. */
+    public void snapControlInterpolation() {
+        this.rollO = this.roll();
+        this.swRudderO = this.rudder;
+        this.turretYawO = this.turretYaw();
+        this.turretPitchO = this.turretPitch();
+    }
+
+    public void syncAuthoritativeControls(double power, double steering, double rudder, float roll, boolean started, boolean ready) {
+        if (!this.usesSwControls()) return;
+        if (!Double.isFinite(power) || !Double.isFinite(steering) || !Double.isFinite(rudder) || !Float.isFinite(roll)) return;
+        this.enginePower = power;
+        this.wheelSteering = steering;
+        this.rudder = rudder;
+        this.setRoll(roll);
+        this.engineStart = started;
+        this.engineStartOver = ready;
+    }
+
+    private void animateSwWheels(EngineInfo engine, Vec3 velocity, boolean track) {
+        double speed = velocity.dot(this.getViewVector(1));
+        double differential = Mth.clamp(engine.wheelDifferential() * this.wheelSteering, -5, 5);
+        this.swMotionAnimation[0] += (float) (-engine.wheelRotSpeed() * speed + (track ? differential : -differential * velocity.length()));
+        this.swMotionAnimation[1] += (float) (-engine.wheelRotSpeed() * speed + (track ? -differential : differential * velocity.length()));
+        if (track) {
+            double offset = Mth.clamp(engine.trackDifferential() * Math.PI * this.wheelSteering, -5, 5);
+            this.swMotionAnimation[2] += (float) (-engine.trackRotSpeed() * Math.PI * speed + offset);
+            this.swMotionAnimation[3] += (float) (-engine.trackRotSpeed() * Math.PI * speed - offset);
+        }
+    }
+
+    public float swWheelRotation(boolean left, float partialTick) {
+        int index = left ? 0 : 1;
+        return Mth.lerp(partialTick, this.swMotionAnimation[index + 4], this.swMotionAnimation[index]);
+    }
+
+    public float swTrackPhase(boolean left, int index, float partialTick) {
+        int side = left ? 2 : 3;
+        float phase = Mth.lerp(partialTick, this.swMotionAnimation[side + 4], this.swMotionAnimation[side]) + 2 * index;
+        return (phase % 100 + 100) % 100;
+    }
+
+    public float swRudderRotation(float partialTick) { return (float) Mth.lerp(partialTick, this.swRudderO, this.rudder); }
+
+    public float swCameraRoll(Entity passenger, float cameraYaw, float partialTick) {
+        float angle = Mth.wrapDegrees(cameraYaw - Mth.rotLerp(partialTick, this.yRotO, this.getYRot()));
+        if ("vehicleflat".equalsIgnoreCase(this.seatForPassenger(passenger, this.getPassengers().indexOf(passenger)).transform())) angle = 0;
+        float rollRate = (Math.abs(angle) - 90) / 90;
+        float pitchRate = Math.abs(angle) <= 90 ? angle / 90 : angle < 0 ? -(180 + angle) / 90 : (180 - angle) / 90;
+        // Camera quaternion is inverted for the view matrix; SW's render-stage Z rotation has the opposite sign.
+        return rollRate * this.roll(partialTick) + pitchRate * Mth.lerp(partialTick, this.xRotO, this.getXRot());
+    }
+
+    public Vec3 swAircraftCameraPosition(Entity passenger, float partialTick, double freeYaw, double freePitch, double distance) {
+        CameraPos camera = this.seatForPassenger(passenger, this.getPassengers().indexOf(passenger)).zoomCamera();
+        Vec3 origin = this.interpolatedVehiclePosition(partialTick).add(0,this.rotateOffsetHeight(),0);
+        Matrix4d transform = new Matrix4d().translate(origin.x,origin.y,origin.z)
+                .rotate(Axis.YP.rotationDegrees((float) (-Mth.rotLerp(partialTick,this.yRotO,this.getYRot()) + freeYaw)))
+                .rotate(Axis.XP.rotationDegrees((float) (Mth.lerp(partialTick,this.xRotO,this.getXRot()) + freePitch)));
+        Vector4d world = transform.transform(new Vector4d(camera.aircraftX(),camera.aircraftY()+.1D*distance,camera.aircraftZ()-distance,1));
+        Vec3 desired = new Vec3(world.x,world.y,world.z);
+        Vec3 direction = desired.subtract(origin).normalize();
+        var hit = this.level().clip(new ClipContext(origin,desired.add(direction),ClipContext.Block.VISUAL,ClipContext.Fluid.NONE,passenger));
+        return hit.getType() == HitResult.Type.MISS ? desired : hit.getLocation().subtract(direction);
+    }
 }

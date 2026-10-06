@@ -7,65 +7,99 @@
   "max_energy": 10000000,
   "allow_free_cam": true,
   "has_decoy": true,
-  "container_type": "small",
+  "container_type": "medium",
   "seats": [
     {
       "index": 0,
-      "x": 0.0,
+      "x": 0,
       "y": 1.9625,
       "z": 2.25,
       "driver": true,
       "enclosed": true,
       "ban_hand": true,
-      "min_pitch": -80.0,
-      "max_pitch": 80.0,
-      "min_yaw": -80.0,
-      "max_yaw": 80.0,
-      "sensitivity_x": 0.0,
-      "sensitivity_y": 0.0,
-      "sensitivity_z": 0.0,
+      "min_pitch": -80,
+      "max_pitch": 80,
+      "min_yaw": -80,
+      "max_yaw": 80,
+      "sensitivity_x": 0,
+      "sensitivity_y": 0,
+      "sensitivity_z": 0,
       "zoom_camera": {
-        "x": 0.0,
+        "x": 0,
         "y": 3.5625,
         "z": 2.25,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
         "use_fixed_camera_pos": true,
         "use_aircraft_camera": true,
         "aircraft_x": -3.8,
         "aircraft_y": 3.5,
-        "aircraft_z": -15.0
+        "aircraft_z": -15,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
       },
       "dismount": {
         "x": -2.5,
         "y": 0.5,
         "z": 2.5
-      }
+      },
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": false,
+      "hide_passenger": false,
+      "can_rotate_body": false
     },
     {
       "index": 1,
-      "x": 0.0,
+      "x": 0,
       "y": 1.3375,
       "z": 3.8125,
       "driver": false,
       "enclosed": true,
       "ban_hand": true,
-      "min_pitch": -10.0,
-      "max_pitch": 40.0,
-      "min_yaw": -110.0,
-      "max_yaw": 110.0,
+      "min_pitch": -60,
+      "max_pitch": 10,
+      "min_yaw": -110,
+      "max_yaw": 110,
       "sensitivity_x": 0.59,
       "sensitivity_y": 0.8,
       "sensitivity_z": 0.9,
       "zoom_camera": {
-        "x": 0.0,
-        "y": 1.0625,
-        "z": 5.625,
-        "use_fixed_camera_pos": true
+        "x": 0,
+        "y": 2.9375,
+        "z": 3.8125,
+        "zoom_x": 0,
+        "zoom_y": 1.0625,
+        "zoom_z": 5.625,
+        "has_zoom_position": true,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "barrel",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
       },
       "dismount": {
         "x": -2.5,
         "y": 0.5,
         "z": 3.5625
-      }
+      },
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "can_rotate_body": false
     }
   ],
   "engine": {
@@ -75,19 +109,42 @@
     "max_reverse_speed": 0.2,
     "friction": 0.92,
     "energy_cost_rate": 320,
-    "increment": 0.68,
-    "decrement": 1.0,
+    "increment": 0.8,
+    "decrement": 0.8,
     "pitch_speed": 0.75,
     "yaw_speed": 0.85,
     "roll_speed": 0.6,
-    "lift_speed": 0.68,
+    "lift_speed": 0.8,
     "engine_start_sound": "jeg:vehicle.mi28.engine",
-    "engine_sound_volume": 2.0
+    "engine_sound_volume": 2.0,
+    "sw_controls": true,
+    "terrain_points": [
+      [
+        -1.284,
+        0,
+        1.728
+      ],
+      [
+        1.284,
+        0,
+        1.728
+      ],
+      [
+        0,
+        0.58,
+        -11.1
+      ]
+    ],
+    "terrain_rotate_rate": 0.18,
+    "inertia_rotate_rate": 0,
+    "mouse_sensitivity": 0.25,
+    "mouse_speed_x": 0.28,
+    "mouse_speed_y": 0.19
   },
   "third_person_camera": {
-    "x": 0.0,
-    "y": 3.6,
-    "z": -8.0
+    "x": 2.7,
+    "y": 4,
+    "z": 12
   },
   "dismount": {
     "x": 1.55,
@@ -98,13 +155,17 @@
   "turret": {
     "seat": 1,
     "render_pivot_y": 1.8,
-    "origin_x": 0.0,
+    "origin_x": 0,
     "origin_y": 1.107375,
     "origin_z": 4.2125,
-    "barrel_x": 0.0,
+    "barrel_x": 0,
     "barrel_y": -0.55,
     "barrel_z": -0.051,
-    "guided_uses_turret": true
+    "guided_uses_turret": true,
+    "pitch_turn_speed": 15,
+    "yaw_turn_speed": 15,
+    "min_pitch": -40,
+    "max_pitch": 10
   },
   "obb": [
     {
@@ -240,7 +301,24 @@
         "x": -1.787,
         "y": 1.548,
         "z": -0.151
-      }
+      },
+      "default_zoom": 2,
+      "crosshair": "@Empty",
+      "crosshair_zooming": "@Empty",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/small_rocket.png",
+      "hud_transform": "vehicle",
+      "hud_position": [
+        0,
+        0.62,
+        0.8
+      ],
+      "hud_direction_vector": [
+        0,
+        0.018,
+        1
+      ],
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:vehicle_9m120_driver_missile",
@@ -252,7 +330,20 @@
         "x": -2.258,
         "y": 1.932,
         "z": 0.0
-      }
+      },
+      "default_zoom": 2,
+      "crosshair": "@AirCraftMissile",
+      "crosshair_zooming": "@AirCraftMissile",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/missile_9m120.png",
+      "hud_transform": "vehicle",
+      "hud_position": [
+        0,
+        3.5625,
+        2.25
+      ],
+      "hud_direction": "default",
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:vehicle_9m336_missile",
@@ -264,7 +355,20 @@
         "x": -2.806,
         "y": 1.932,
         "z": 0.0
-      }
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonSeekMissile",
+      "crosshair_zooming": "@VehicleCommonSeekMissile",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/ru_9m336.png",
+      "hud_transform": "vehicle",
+      "hud_position": [
+        0,
+        1.0625,
+        5.625
+      ],
+      "hud_direction": "default",
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:light_machine_gun",
@@ -276,7 +380,15 @@
         "x": 0.0,
         "y": 0.102,
         "z": 3.013
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleCommonGunDynamic",
+      "crosshair_zooming": "@VehicleCommonGunDynamic",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/cannon_30mm.png",
+      "hud_transform": "barrel",
+      "hud_direction": "barrel",
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:vehicle_9m120_passenger_missile",
@@ -288,7 +400,20 @@
         "x": 2.258,
         "y": 1.932,
         "z": 0.0
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleCommonMissile",
+      "crosshair_zooming": "@VehicleCommonMissile",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/missile_9m120.png",
+      "hud_transform": "vehicle",
+      "hud_position": [
+        0,
+        1.0625,
+        5.625
+      ],
+      "hud_direction": "default",
+      "view_direction": "barrel"
     },
     {
       "weapon": "jeg:vehicle_kh39_missile",
@@ -300,7 +425,20 @@
         "x": -2.641,
         "y": 1.1875,
         "z": 0.0
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleCommonMissile",
+      "crosshair_zooming": "@VehicleCommonSeekMissile",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/kh_39.png",
+      "hud_transform": "vehicle",
+      "hud_position": [
+        0,
+        1.0625,
+        5.625
+      ],
+      "hud_direction": "default",
+      "view_direction": "barrel"
     }
   ],
   "destroy": {
