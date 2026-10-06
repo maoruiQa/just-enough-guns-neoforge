@@ -8,28 +8,48 @@
   "up_step": 0.0,
   "allow_free_cam": true,
   "has_decoy": true,
-  "container_type": "mini",
+  "container_type": "medium",
   "seats": [
     {
       "index": 0,
-      "x": 0.0,
+      "x": 0,
       "y": 0.6,
       "z": -0.2,
       "driver": true,
       "enclosed": false,
       "ban_hand": true,
-      "min_pitch": -25.0,
-      "max_pitch": 50.0,
-      "min_yaw": -105.0,
-      "max_yaw": 105.0,
+      "min_pitch": -25,
+      "max_pitch": 50,
+      "min_yaw": -105,
+      "max_yaw": 105,
       "sensitivity_x": 0.75,
       "sensitivity_y": 0.8,
-      "sensitivity_z": 1.0,
+      "sensitivity_z": 1,
       "zoom_camera": {
-        "x": 0.0,
-        "y": 0.4,
-        "z": -0.6
-      }
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0.4,
+        "zoom_z": -0.6,
+        "has_zoom_position": true,
+        "transform": "barrel",
+        "direction": "barrel",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "can_rotate_body": false
     },
     {
       "index": 1,
@@ -38,8 +58,39 @@
       "z": -1.2,
       "driver": false,
       "enclosed": false,
-      "min_yaw": -90.0,
-      "max_yaw": 90.0
+      "min_yaw": -90,
+      "max_yaw": 90,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "ban_hand": false,
+      "min_pitch": -90,
+      "max_pitch": 90,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     },
     {
       "index": 2,
@@ -48,8 +99,39 @@
       "z": -1.2,
       "driver": false,
       "enclosed": false,
-      "min_yaw": -90.0,
-      "max_yaw": 90.0
+      "min_yaw": -90,
+      "max_yaw": 90,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "ban_hand": false,
+      "min_pitch": -90,
+      "max_pitch": 90,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     },
     {
       "index": 3,
@@ -58,8 +140,39 @@
       "z": -2.2,
       "driver": false,
       "enclosed": false,
-      "min_yaw": -90.0,
-      "max_yaw": 90.0
+      "min_yaw": -90,
+      "max_yaw": 90,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "ban_hand": false,
+      "min_pitch": -90,
+      "max_pitch": 90,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     },
     {
       "index": 4,
@@ -68,22 +181,138 @@
       "z": -2.2,
       "driver": false,
       "enclosed": false,
-      "min_yaw": -90.0,
-      "max_yaw": 90.0
+      "min_yaw": -90,
+      "max_yaw": 90,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "ban_hand": false,
+      "min_pitch": -90,
+      "max_pitch": 90,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     }
   ],
   "engine": {
     "type": "boat",
     "acceleration": 0.065,
-    "max_forward_speed": 0.6,
-    "max_reverse_speed": 0.24,
+    "max_forward_speed": 1.5,
+    "max_reverse_speed": 1.0,
     "friction": 0.94,
-    "energy_cost_rate": 48
+    "energy_cost_rate": 48,
+    "sw_controls": true,
+    "buoyancy": 0.12,
+    "increment": 0.035,
+    "decrement": 0.022,
+    "steering_speed": 0.15,
+    "body_pitch_rate": 1.1,
+    "terrain_points": [
+      [
+        0.875,
+        0,
+        1.1875
+      ],
+      [
+        0,
+        0,
+        1.1875
+      ],
+      [
+        -0.875,
+        0,
+        1.1875
+      ],
+      [
+        0.875,
+        0,
+        0.1875
+      ],
+      [
+        0,
+        0,
+        0.1875
+      ],
+      [
+        -0.875,
+        0,
+        0.1875
+      ],
+      [
+        0.875,
+        0,
+        -0.8125
+      ],
+      [
+        0,
+        0,
+        -0.8125
+      ],
+      [
+        -0.875,
+        0,
+        -0.8125
+      ],
+      [
+        0.875,
+        0,
+        -1.8125
+      ],
+      [
+        0,
+        0,
+        -1.8125
+      ],
+      [
+        -0.875,
+        0,
+        -1.8125
+      ],
+      [
+        0.875,
+        0,
+        -2.6875
+      ],
+      [
+        0,
+        0,
+        -2.6875
+      ],
+      [
+        -0.875,
+        0,
+        -2.6875
+      ]
+    ],
+    "terrain_rotate_rate": 1,
+    "inertia_rotate_rate": 2
   },
   "third_person_camera": {
-    "x": 0.0,
+    "x": 0,
     "y": 1.5,
-    "z": -6.0
+    "z": 3
   },
   "dismount": {
     "x": 1.15,
@@ -126,19 +355,31 @@
         "x": 0.0,
         "y": 3.2705,
         "z": 0.4761
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleDynamicCross",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16777215,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_12_7mm.png",
+      "hud_transform": "barrel",
+      "hud_direction": "barrel",
+      "view_direction": "default"
     }
   ],
   "turret": {
     "seat": 0,
-    "render_pivot_y": 1.0,
-    "origin_x": 0.0,
+    "render_pivot_y": 1,
+    "origin_x": 0,
     "origin_y": 2.5616625,
     "origin_z": -0.565625,
-    "barrel_x": 0.0,
+    "barrel_x": 0,
     "barrel_y": 0.5088375,
     "barrel_z": 0.04173125,
-    "guided_uses_turret": false
+    "guided_uses_turret": false,
+    "pitch_turn_speed": 25,
+    "yaw_turn_speed": 25,
+    "min_pitch": -25,
+    "max_pitch": 50
   },
   "destroy": {
     "explodes": true,

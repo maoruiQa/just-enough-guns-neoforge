@@ -1,65 +1,117 @@
-# Vehicle Superb Warfare Alignment Mapping
+# Six-vehicle SW alignment
 
-This file is the Phase 0 mapping for aligning the NeoForge 1.21.1 vehicle system with `external/SuperbWarfare-0.8.8-1.21.1`.
+Baseline: local Superb Warfare 0.8.8 / Minecraft 1.21.1, commit
+`0cfd00d560e3a458b1319826137b669a6351084a`. No SW runtime dependency.
+This document covers NeoForge-26.3 only; the same behavior is ported to all six
+maintained Fabric / NeoForge 1.21.1, 26.2 and 26.3 modules.
 
-## Canonical Vehicle Ids
+| JEG entity/data id | SW id | Seats | Visible inventory | Control / view |
+| --- | --- | ---: | ---: | --- |
+| `jeg:bmp2` | `bmp_2` | 7 | 54 | Tracks, barrel/turret cameras, cannon elevation 74 degrees |
+| `jeg:lav150` | `lav_150` | 5 | 54 | Wheels, turret, simulated passenger third person |
+| `jeg:truck` | `truck` | 2 | 102 | Wheels, cabin views, ordinary handheld items and guns |
+| `jeg:speedboat` | `speedboat` | 5 | 54 | Buoyancy, water/land transitions, machine-gun sight |
+| `jeg:mi28` | `mi_28` | 2 | 54 | Helicopter, separate pilot/gunner HUD and normal/aim cameras |
+| `jeg:ah6` | `ah_6` | 4 | 54 | Helicopter, free look and oriented passenger views |
 
-| JEG vehicle data id | JEG entity id | SW vehicle id | Type | Container | Current JEG model | Current JEG texture | Current JEG animation | JEG assembly recipe | HUD / crosshair target |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `a10` | `jeg:a10` | `a_10a` | aircraft | small | `geo/entity/vehicle/a10.geo.json` | `textures/entity/vehicle/a10.png` | generic fallback | `data/jeg/vehicle_assembly/a10.json` | aircraft / gun + missile |
-| `ah6` | `jeg:ah6` | `ah_6` | helicopter | small | `geo/entity/vehicle/ah6.geo.json`, `lod/ah6_lod1-3.geo.json` | `textures/entity/vehicle/ah6.png` | generic fallback | `data/jeg/vehicle_assembly/ah6.json` | helicopter / gun + missile |
-| `bmp2` | `jeg:bmp2` | `bmp_2` | land | medium | `geo/entity/vehicle/bmp2.geo.json`, `lod/bmp2_lod1-2.geo.json` | `textures/entity/vehicle/bmp2.png` | generic fallback | `data/jeg/vehicle_assembly/bmp2.json` | land APC / gun + missile |
-| `hpj11` | `jeg:hpj11` | `hpj_11` | artillery | mini | `geo/entity/vehicle/hpj11.geo.json` | `textures/entity/vehicle/hpj11.png`, `hpj11_glow.png` | generic fallback | `data/jeg/vehicle_assembly/hpj11.json` | fixed weapon / HPJ zoom |
-| `laser_tower` | `jeg:laser_tower` | `laser_tower` | artillery | mini | `geo/entity/vehicle/laser_tower.geo.json`, `lod/laser_tower_lod1-2.geo.json` | `textures/entity/vehicle/laser_tower.png`, `laser_tower_glow.png` | `animations/entity/vehicle/laser_tower.animation.json` | `data/jeg/vehicle_assembly/laser_tower.json` | fixed weapon / laser cannon |
-| `lav150` | `jeg:lav150` | `lav_150` | land | medium | `geo/entity/vehicle/lav150.geo.json`, `lod/lav150_lod1-2.geo.json` | `textures/entity/vehicle/lav150.png`, `lod/lav150_lod1-2.png` | `animations/entity/vehicle/lav150.animation.json` | `data/jeg/vehicle_assembly/lav150.json` | land APC / gun + missile |
-| `mi28` | `jeg:mi28` | `mi_28` | helicopter | small | `geo/entity/vehicle/mi28.geo.json`, `lod/mi28_lod1.geo.json` | `textures/entity/vehicle/mi28.png` | generic fallback | `data/jeg/vehicle_assembly/mi28.json` | helicopter / gun + missile |
-| `speedboat` | `jeg:speedboat` | `speedboat` | boat | mini | `geo/entity/vehicle/speedboat.geo.json`, `lod/speedboat_lod1.geo.json` | `textures/entity/vehicle/speedboat.png`, `speedboat_glow.png` | `animations/entity/vehicle/speedboat.animation.json` | `data/jeg/vehicle_assembly/speedboat.json` | boat / gun |
-| `tom6` | `jeg:tom6` | `tom_6` | aircraft | small | `geo/entity/vehicle/tom6.geo.json` | `textures/entity/vehicle/tom6.png` | generic fallback | `data/jeg/vehicle_assembly/tom6.json` | aircraft / gun + missile |
-| `truck` | `jeg:truck` | `truck` | land | small | `geo/entity/vehicle/truck.geo.json` | `textures/entity/vehicle/truck.png` | generic fallback | `data/jeg/vehicle_assembly/truck.json` | land utility / pistol |
-| `waveforce_tower` | `jeg:waveforce_tower` | `waveforce_tower` | artillery | mini | `geo/entity/vehicle/waveforce_tower.geo.json` | `textures/entity/vehicle/waveforce_tower.png`, `waveforce_tower_glow.png` | `animations/entity/vehicle/waveforce_tower.animation.json` | `data/jeg/vehicle_assembly/waveforce_tower.json` | fixed weapon / cannon |
+Inventory sizes deliberately follow SW JSON, as requested, rather than SW's
+hardcoded 102-slot runtime screen. Existing physical inventory storage and saved
+slot indices remain intact, including old contents beyond the visible slots.
+The standard menu quick-move logic operates on the exposed slots. No entity,
+item or save-key renaming is involved.
 
-## JEG-Only Compatibility Vehicles
+## Behavior and data
 
-These records are JEG test or compatibility vehicles. They do not have direct SW ids and should not be treated as proof that the SW alignment is complete.
+Only these six records opt into `engine.sw_controls`. Other vehicles retain their
+existing motion and camera paths. Existing server authority, seat ownership,
+client prediction, JEG key bindings and custom remaps remain in use. In 26.x the
+native player-authority shortcut is disabled for these vehicles so the dedicated
+server continues to tick movement. Damage, armor, ammunition cost, energy cost
+and recipes retain JEG values. Truck uses handheld guns rather than a synthetic
+mounted pistol.
 
-| JEG vehicle data id | JEG entity id | Type | Container | Current role |
-| --- | --- | --- | --- | --- |
-| `test_wheel_vehicle` | `jeg:test_wheel_vehicle` | land | mini | minimal wheel test target |
-| `light_combat_vehicle` | `jeg:light_combat_vehicle` | land | small | pre-SW generic combat vehicle |
-| `test_helicopter` | `jeg:test_helicopter` | helicopter | mini | minimal rotor test target |
-| `test_boat` | `jeg:test_boat` | boat | mini | minimal boat test target |
-| `test_artillery` | `jeg:test_artillery` | artillery | small | minimal static weapon test target |
-| `test_aircraft` | `jeg:test_aircraft` | aircraft | mini | minimal aircraft test target |
+SW acceleration/reverse/braking, steering inertia, terrain attitude and buoyancy
+use the existing vehicle base class. Helicopters use SW startup/lift, pitch/yaw/
+roll, hover, braking and tagged-pad landing. Mouse sensitivity precedes each
+helicopter's own smoothing. Menus, focus loss, seat changes, dismounts and
+disconnects clear input, free look, zoom, smoothing and hit feedback.
 
-## SW Source Resource Names
+Seat data now includes orientation, transform and head/body rotation constraints.
+Camera data separates normal/aim positions and directions. Engine data adds
+buoyancy, steering, terrain and helicopter coefficients; turret data adds turn
+speed; weapon data adds zoom, reticles, HUD/view origins, directions and transform.
+Old JSON and constructor callers receive compatible defaults. The existing JSON
+reload/sync path transports these fields. Existing vehicle input/state packets
+also carry seat aiming and predicted power, steering, rudder, roll and engine
+state; existing synchronized entity data carries real component health.
 
-| SW id | Geo | Texture | Extra textures | Animation | LOD geo |
-| --- | --- | --- | --- | --- | --- |
-| `a_10a` | `geo/a_10a.geo.json` | `textures/entity/a_10a.png` | none found | none found | none found |
-| `ah_6` | `geo/ah_6.geo.json` | `textures/entity/ah_6.png` | none found | none found | `geo/vehicle_lod/ah_6_lod1-3.geo.json` |
-| `bmp_2` | `geo/bmp_2.geo.json` | `textures/entity/bmp_2.png` | none found | none found | `geo/vehicle_lod/bmp_2_lod1-2.geo.json` |
-| `hpj_11` | `geo/hpj_11.geo.json` | `textures/entity/hpj_11.png` | `hpj_11_e.png`, `hpj_11_heat.png` | none found | none found |
-| `laser_tower` | `geo/laser_tower.geo.json` | `textures/entity/laser_tower.png` | `laser_tower_e.png`, `laser_tower_laser.png` | `animations/laser_tower.animation.json` | `geo/vehicle_lod/laser_tower_lod1-2.geo.json` |
-| `lav_150` | `geo/lav_150.geo.json` | `textures/entity/lav_150.png` | `lav_150_lod1.png`, `lav_150_lod2.png` | `animations/lav_150.animation.json` | `geo/vehicle_lod/lav_150_lod1-2.geo.json` |
-| `mi_28` | `geo/mi_28.geo.json` | `textures/entity/mi_28.png` | none found | none found | `geo/vehicle_lod/mi_28_lod1.geo.json` |
-| `speedboat` | `geo/speedboat.geo.json` | `textures/entity/speedboat.png` | `speedboat_e.png`, `speedboat_heat.png`, `speedboat_power.png` | `animations/speedboat.animation.json` | `geo/vehicle_lod/speedboat_lod1.geo.json` |
-| `tom_6` | `geo/tom_6.geo.json` | `textures/entity/tom_6.png` | none found | none found | none found |
-| `truck` | `geo/truck.geo.json` | `textures/entity/truck_green.png` | `truck_red.png` | none found | none found |
-| `waveforce_tower` | `geo/waveforce_tower.geo.json` | `textures/entity/waveforce_tower.png` | `waveforce_tower_glow_e.png` | `animations/waveforce_tower.animation.json` | none found |
+Body, turret and barrel transforms drive camera, passenger, model and HUD
+projection from the same interpolated pose. Camera rotation owns bank correction
+once. Its forward vector and native 26.x cached view matrix stay consistent with
+the camera quaternion. Native wall clipping and SW helicopter-camera clipping
+remain active. Zoom comes from the current station/weapon.
 
-## Naming Adaptation Rules
+The SW HUD uses JEG's actual health, energy, ammunition, reload/lock/decoy state
+and bindings. Layout includes status bars, all seats, the animated weapon
+selector, land sights/part health/range, helicopter instruments, reticles,
+warnings and hit/kill feedback. Empty reticles remain empty. Truck retains the
+native handheld crosshair and mouse path. Survival health/food/armor/XP HUD stays
+available. Weapon switching uses the SW 300 ms animation. SW HUD/feedback PNGs
+and terrain/pull-up warning OGGs are reused and checked by SHA-256.
 
-- Strip underscores when copying SW vehicle ids into JEG ids: `lav_150 -> lav150`, `bmp_2 -> bmp2`, `mi_28 -> mi28`, `tom_6 -> tom6`, `hpj_11 -> hpj11`.
-- Map SW `a_10a` to JEG `a10`; keep this exception explicit because it is not a pure underscore removal.
-- Keep SW `truck`, `speedboat`, `laser_tower`, and `waveforce_tower` names unchanged.
-- Put copied entity resources under JEG's current loader paths: `geo/entity/vehicle/`, `textures/entity/vehicle/`, `animations/entity/vehicle/`.
-- Put copied LOD geo under `geo/entity/vehicle/lod/`; copied LOD textures currently exist only for `lav150`.
+## Runnable verification
 
-## Remaining Mapping Gaps
+Use Java 21 for 1.21.1 and Java 25 for 26.2 / 26.3. Run Gradle from this module.
 
-- Vehicle icons from `textures/vehicle_icon/*_icon.png` are copied for mapped SW vehicles and shown in the JEG assembling preview; they are not yet used for category/filter UI.
-- SW JSON behavior data under `assets/superbwarfare/sbw/vehicles/*.json` has not been fully translated into JEG `data/jeg/vehicles/*.json`.
-- Representative SW weapon-fire sounds are copied and registered for `a10`, `ah6`, `bmp2`, `hpj11`, `laser_tower`, `lav150`, `mi28`, and `waveforce_tower`; engine loops are copied and wired for `a10`, `ah6`, `bmp2`, `lav150`, `mi28`, `speedboat`, `tom6`, and `truck`, while horns, distance variants, and remaining vehicle-specific sounds are not yet mapped.
-- SW vehicle inventory textures are copied and the JEG vehicle menu now uses SW-style row/column sizes for container types (`mini=1x9`, `small=3x9`, `medium=6x9`, `large=6x13`, `huge=6x17`); upgrade slots are still not implemented.
-- Seat counts now match SW for `ah6`, `bmp2`, `lav150`, and `speedboat`; seat transforms, camera constraints, passenger hiding, and per-seat weapon station controls still need deeper porting.
-- SW container/rendering assets for vehicle deployers, charging station, and vehicle assembling table are only partly copied into JEG block model usage.
+```powershell
+.\gradlew.bat build
+.\gradlew.bat runServer
+.\gradlew.bat runClient
+python scripts/verify_vehicle_sw_alignment.py --module . --sw ../external/SuperbWarfare-0.8.8-1.21.1
+```
+
+The focused vehicle GameTests live in NeoForge 1.21.1; these scripts also check this port.
+
+The opt-in capture hooks do nothing in ordinary gameplay. They copy an existing
+disposable flat world and record actual window frames, camera quaternions and
+server-tick motion; they never mutate the supplied world.
+
+```powershell
+python scripts/run_vehicle_capture.py --world "run/saves/Your Flat Test World" --output "E:/verification/base"
+python scripts/run_vehicle_capture.py --world "run/saves/Your Flat Test World" --output "E:/verification/tilt" --tilt --width 1024 --height 768 --gui-scale 3
+python scripts/run_vehicle_capture.py --world "run/saves/Your Flat Test World" --output "E:/verification/survival" --hud-only --survival
+python scripts/run_vehicle_capture.py --world "run/saves/Your Flat Test World" --output "E:/verification/handheld" --handheld
+python scripts/run_vehicle_capture.py --world "run/saves/Your Flat Test World" --output "E:/verification/motion" --mode drive
+python scripts/compare_vehicle_sw_capture.py SW/camera.csv JEG/camera.csv --output camera-result.json
+python scripts/compare_vehicle_sw_capture.py SW/motion.csv JEG/motion.csv --motion --output motion-result.json
+python scripts/verify_vehicle_sw_hud_pixels.py SW JEG --output hud-result.json
+python scripts/run_vehicle_network_check.py --world "run/saves/Your Flat Test World" --output "E:/verification/network" --port 25582 --delay-ms 100
+```
+
+Configuration, reticle sampling, capture, curve and network scripts use Python's
+standard library. Only the optional screenshot pixel comparison needs Pillow.
+Use a fresh output directory for each capture. The network check launches a real
+dedicated server and three real clients (driver, gunner, observer), delays every
+TCP forwarding chunk by 100 ms in each direction, and checks seats/permissions,
+input clearing, menu access, zero energy, component HUD and driver relogin.
+This delay is not a claim of a precisely fixed end-to-end RTT.
+
+The full static matrix contains 198 camera states (every seat, every station
+weapon, three perspectives, normal/aim) plus six inventory screenshots, at
+854x480 auto GUI and 1024x768 GUI scale 3 with yaw 25 / pitch 12 / roll 18.
+Camera tolerance is 1 cm / 0.1 degree; visible SW HUD anchors are compared in both
+directions within one GUI pixel. Different native fonts, localized names,
+bindings and actual JEG state values are not pixel-equality targets. Unarmed
+seats use the native crosshair; their scene pixels are not vehicle-reticle anchors.
+The real part-health outlines remain visible to show JEG component health even
+where the pinned SW renderer makes that layer transparent.
+
+Motion uses 181 fixed server ticks per vehicle with forward, reverse, turning,
+braking and helicopter ascent/descent/mouse input. Velocity error is normalized
+to the SW curve's peak speed (limit 1%); attitude tolerance is 0.1 degree. Saved
+frames can be replayed as GIFs using their server-tick timestamps.
+
+Validation artifacts and the six commit ids are indexed in the workspace's
+`vehicle-sw-evidence/README.md`. Checks were run in the existing working trees;
+unrelated config-menu, monitor, release-note and runtime changes are preserved.
+26.1 legacy, assembling-table and charging-station screens are outside this change.

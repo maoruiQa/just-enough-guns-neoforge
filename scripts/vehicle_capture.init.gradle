@@ -1,0 +1,34 @@
+allprojects {
+    afterEvaluate {
+        def captureDir = project.findProperty('vehicleCapture')
+        if (captureDir == null) return
+        def worldName = project.findProperty('captureWorld') ?: 'New World (6)'
+        if (extensions.findByName('neoForge') != null) {
+            neoForge.runs.named('client') {
+                gameDirectory = project.file(project.findProperty('captureRunDir'))
+                systemProperty 'jeg.vehicleCaptureHudOnly', project.findProperty('captureHudOnly') ?: 'false'
+                systemProperty 'jeg.vehicleCaptureSurvival', project.findProperty('captureSurvival') ?: 'false'
+                systemProperty 'jeg.vehicleCaptureHandheld', project.findProperty('captureHandheld') ?: 'false'
+                systemProperty 'jeg.vehicleCaptureTilt', project.findProperty('captureTilt') ?: 'false'
+                programArguments.addAll '--width', project.findProperty('captureWidth').toString(), '--height', project.findProperty('captureHeight').toString()
+                systemProperty 'jeg.vehicleCapture', captureDir.toString()
+                systemProperty 'jeg.vehicleCaptureExit', 'true'
+                systemProperty 'jeg.vehicleCaptureMode', project.findProperty('captureMode') ?: 'static'
+                programArguments.addAll '--quickPlayPath', 'vehicle-quickplay.json', '--quickPlaySingleplayer', worldName.toString()
+            }
+        } else {
+            loom.runs.named('client') {
+                runDir project.relativePath(project.file(project.findProperty('captureRunDir')))
+                vmArg '-Djeg.vehicleCaptureHudOnly=' + (project.findProperty('captureHudOnly') ?: 'false')
+                vmArg '-Djeg.vehicleCaptureSurvival=' + (project.findProperty('captureSurvival') ?: 'false')
+                vmArg '-Djeg.vehicleCaptureHandheld=' + (project.findProperty('captureHandheld') ?: 'false')
+                vmArg '-Djeg.vehicleCaptureTilt=' + (project.findProperty('captureTilt') ?: 'false')
+                programArgs '--width', project.findProperty('captureWidth').toString(), '--height', project.findProperty('captureHeight').toString()
+                vmArg '-Djeg.vehicleCapture=' + captureDir
+                vmArg '-Djeg.vehicleCaptureExit=true'
+                vmArg '-Djeg.vehicleCaptureMode=' + (project.findProperty('captureMode') ?: 'static')
+                programArgs '--quickPlayPath', 'vehicle-quickplay.json', '--quickPlaySingleplayer', worldName.toString()
+            }
+        }
+    }
+}

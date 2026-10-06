@@ -24,8 +24,13 @@ public record VehicleInputPayload(
         boolean seekTarget,
         boolean deployDecoy,
         float mouseX,
-        float mouseY
+        float mouseY,
+        boolean aiming
 ) implements CustomPacketPayload {
+    public VehicleInputPayload(int vehicleId, boolean forward, boolean backward, boolean left, boolean right, boolean brake, boolean ascend, boolean descend, boolean fire, boolean reload, boolean freeLook, boolean switchWeapon, boolean previousWeapon, int weaponSlot, boolean seekTarget, boolean deployDecoy, float mouseX, float mouseY) {
+        this(vehicleId, forward, backward, left, right, brake, ascend, descend, fire, reload, freeLook, switchWeapon, previousWeapon, weaponSlot, seekTarget, deployDecoy, mouseX, mouseY, false);
+    }
+
     public static final Type<VehicleInputPayload> TYPE = new Type<>(Reference.id("vehicle_input"));
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleInputPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> {
@@ -47,6 +52,7 @@ public record VehicleInputPayload(
                 buf.writeBoolean(payload.deployDecoy());
                 buf.writeFloat(payload.mouseX());
                 buf.writeFloat(payload.mouseY());
+                buf.writeBoolean(payload.aiming());
             },
             buf -> new VehicleInputPayload(
                     buf.readVarInt(),
@@ -66,12 +72,13 @@ public record VehicleInputPayload(
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readFloat(),
-                    buf.readFloat()
+                    buf.readFloat(),
+                    buf.readBoolean()
             )
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.reload, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy, this.mouseX, this.mouseY);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.reload, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy, this.mouseX, this.mouseY, this.aiming);
     }
 
     @Override
