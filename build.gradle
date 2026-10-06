@@ -71,3 +71,20 @@ tasks.register('checkVehicleGeometry', JavaExec) {
     mainClass = 'ttv.migami.jeg.vehicle.util.VehicleGeometry'
     jvmArgs '-ea'
 }
+
+// Small assertion checks for SW component recovery, save migration and damage-rule parsing.
+tasks.register('checkVehicleDamage', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.vehicle.data.subdata.VehicleDamageProfile'
+    jvmArgs '-ea'
+}
+tasks.register('checkVehicleDamageModifiers', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo'
+    jvmArgs '-ea'
+}
+tasks.named('check') {
+    dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
+}

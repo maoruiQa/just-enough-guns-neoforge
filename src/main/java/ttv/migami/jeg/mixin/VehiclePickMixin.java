@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.util.VehicleGeometry;
+import ttv.migami.jeg.vehicle.util.VehiclePartHit;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +50,10 @@ public final class VehiclePickMixin {
                 nearestEntity = entity;
                 nearestPoint = point;
             }
+        }
+        if (source instanceof VehiclePartHit carrier) {
+            VehicleGeometry.Hit hit = nearestEntity instanceof VehicleEntity vehicle ? VehicleGeometry.clip(vehicle, from, to) : null;
+            carrier.jeg$setVehiclePartHit(nearestEntity == null ? -1 : nearestEntity.getId(), hit == null ? null : hit.part());
         }
         result.setReturnValue(nearestEntity == null ? null : new EntityHitResult(nearestEntity, nearestPoint));
     }

@@ -16,7 +16,9 @@
     "GunnerWaterConversionMixin",
     "LivingEntityDeathDropsMixin",
     "GunRepairAdvancementMixin",
-    "PlayerAdvancementsMigrationMixin"
+    "PlayerAdvancementsMigrationMixin",
+    "VehicleProjectileHitMixin",
+    "VehicleExplosionMixin"
   ],
   "client": [
     "GameRendererMixin",

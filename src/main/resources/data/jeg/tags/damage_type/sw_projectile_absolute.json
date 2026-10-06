@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "id": "tacz:bullet_ignore_armor",
+      "required": false
+    },
+    {
+      "id": "tacz:bullet_void_ignore_armor",
+      "required": false
+    },
+    {
+      "id": "dreamaticvoyage:leviy_beam_absolute",
+      "required": false
+    }
+  ]
+}

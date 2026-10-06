@@ -1,32 +1,85 @@
-{"entity_type": "jeg:tom6",
+{
+  "entity_type": "jeg:tom6",
   "vehicle_type": "aircraft",
-  "max_health": 40.0,
-  "auto_repair_per_tick": 0.009,
-  "auto_repair_cooldown_ticks": 170,
+  "max_health": 40,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 240,
   "allow_free_cam": true,
   "container_type": "small",
   "seats": [
-    {"index": 0, "x": 0.0, "y": 0.92, "z": 0.0, "driver": true, "enclosed": true}
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 0.92,
+      "z": 0.0,
+      "driver": true,
+      "enclosed": true
+    }
   ],
-  "engine": {"type": "jet", "acceleration": 0.04, "max_forward_speed": 0.86, "max_reverse_speed": 0.1, "friction": 0.96},
-  "third_person_camera": {"x": 0.0, "y": 3.5, "z": -10.0},
-  "dismount": {"x": 1.65, "y": 0.1, "z": 0.0},
+  "engine": {
+    "type": "jet",
+    "acceleration": 0.04,
+    "max_forward_speed": 0.86,
+    "max_reverse_speed": 0.1,
+    "friction": 0.96
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 3.5,
+    "z": -10.0
+  },
+  "dismount": {
+    "x": 1.65,
+    "y": 0.1,
+    "z": 0.0
+  },
   "collision_level": "heavy",
-  "obb": [
-    {"part": "body", "x": 0.0, "y": 0.82, "z": 0.0, "half_width": 1.4, "half_height": 0.46, "half_depth": 1.75},
-    {"part": "main_engine", "x": 0.0, "y": 0.9, "z": -1.22, "half_width": 0.75, "half_height": 0.32, "half_depth": 0.42}
-  ],
+  "obb": [],
   "weapons": [
-    {"weapon": "jeg:light_machine_gun", "ammo": "jeg:rifle_ammo", "energy_cost": 1, "guided": false},
-    {"weapon": "jeg:rocket_launcher", "ammo": "jeg:rocket", "energy_cost": 3, "guided": true}
+    {
+      "weapon": "jeg:light_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false
+    },
+    {
+      "weapon": "jeg:rocket_launcher",
+      "ammo": "jeg:rocket",
+      "energy_cost": 3,
+      "guided": true
+    }
   ],
-  "destroy": {"explodes": true, "explosion_power": 3.2},
-  "seek": {"range": 112.0, "angle": 14.0, "warns_target": true},
+  "destroy": {
+    "explodes": true,
+    "explosion_power": 2,
+    "explosion_damage": 15,
+    "explode_blocks": true,
+    "explode_passengers": true,
+    "crash_passengers": true,
+    "particle_type": "medium"
+  },
+  "seek": {
+    "range": 112.0,
+    "angle": 14.0,
+    "warns_target": true
+  },
   "armor": {
-    "fallback": {"rating": 6.0, "undermatch_multiplier": 0.52, "overmatch_multiplier": 0.94, "passenger_leak_multiplier": 0.16, "part_damage_multiplier": 0.9},
+    "fallback": {
+      "rating": 6.0,
+      "undermatch_multiplier": 0.52,
+      "overmatch_multiplier": 0.94,
+      "passenger_leak_multiplier": 0.16,
+      "part_damage_multiplier": 0.9
+    },
     "parts": {
-      "main_engine": {"rating": 2.0, "undermatch_multiplier": 0.36, "overmatch_multiplier": 1.05, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 1.45}
+      "main_engine": {
+        "rating": 2.0,
+        "undermatch_multiplier": 0.36,
+        "overmatch_multiplier": 1.05,
+        "passenger_leak_multiplier": 0.1,
+        "part_damage_multiplier": 1.45
+      }
     }
   },
   "damage_modifiers": [
@@ -35,5 +88,12 @@
     "superbwarfare:grapeshot_hit * 0.5",
     "@minecraft:tnt * 3",
     "@minecraft:tnt_minecart * 3"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": false,
+  "mass": 0.02
 }

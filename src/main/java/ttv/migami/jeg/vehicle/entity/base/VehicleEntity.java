@@ -89,6 +89,14 @@ import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.OBBInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleDamageProfile;
+import ttv.migami.jeg.vehicle.util.VehiclePartHit;
+import ttv.migami.jeg.util.SwStyleExplosion;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.core.particles.ParticleTypes;
 import ttv.migami.jeg.vehicle.data.subdata.SeatInfo;
 import ttv.migami.jeg.vehicle.data.subdata.SeekInfo;
 import ttv.migami.jeg.vehicle.data.subdata.VehicleContainerType;
@@ -168,7 +176,6 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private static final int FLARE_BURST_INTERVAL_TICKS = 6;
     private static final int REDSTONE_ENERGY_VALUE = 20;
     private static final int ENERGY_RECHARGE_INTERVAL = 20;
-    private static final int LOW_HEALTH_DECAY_INTERVAL = 40;
     private static final int VEHICLE_WARNING_DISPLAY_TICKS = 60;
     private static final int VEHICLE_WARNING_SOUND_INTERVAL_TICKS = 10;
     private static final int RAM_DAMAGE_COOLDOWN_TICKS = 10;
@@ -199,11 +206,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             "laser_tower", "animation.lt.idle",
             "waveforce_tower", "animation.waveforce_tower.idle"
     );
-    private static final float PART_MAX_HEALTH = 10.0F;
+    private static final float PART_MAX_HEALTH = VehicleDamageProfile.PART_MAX_HEALTH;
     private static final float REPAIR_KIT_HULL_REPAIR = 12.0F;
     private static final float REPAIR_KIT_PART_REPAIR = 5.0F;
-    private static final float LOW_HEALTH_DECAY_THRESHOLD = 20.0F;
-    private static final float LOW_HEALTH_DECAY_DAMAGE = 0.25F;
     private static final double RAM_DAMAGE_MIN_SPEED = 0.18D;
     private static final double VEHICLE_COLLISION_MIN_RELATIVE_SPEED = 0.25D;
     private static final double VEHICLE_IMPACT_FEEDBACK_MIN_SPEED = 0.3D;
@@ -322,6 +327,9 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     private int dismountLerpSuppressionTicks;
     private UUID recentDismountSyncPlayerId;
     private int recentDismountSyncTicks;
+    private UUID lastDamageAttacker;
+    private boolean crashDamage;
+    private boolean destroying;
     private float leftWheelHealth = PART_MAX_HEALTH;
     private float rightWheelHealth = PART_MAX_HEALTH;
     private float engineHealth = PART_MAX_HEALTH;
@@ -568,10 +576,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     public boolean repairWithTool(@Nullable Player actor, float hullAmount, float partAmount) {
-        if (this.level().isClientSide || this.isRemoved() || hullAmount <= 0.0F) {
+        if (this.level().isClientSide || this.isRemoved() || hullAmount < 0.0F || partAmount < 0.0F
+                || !Float.isFinite(hullAmount) || !Float.isFinite(partAmount) || (hullAmount == 0.0F && partAmount == 0.0F)) {
             return false;
         }
-        boolean hullRepaired = this.vehicleHealth() < this.maxVehicleHealth();
+        boolean hullRepaired = hullAmount > 0.0F && this.vehicleHealth() < this.maxVehicleHealth();
         if (hullRepaired) {
             this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + hullAmount));
         }
@@ -667,8 +676,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (this.level().isClientSide) {
             return;
         }
-        this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(yaw));
-        this.entityData.set(DATA_TURRET_PITCH, pitch);
+        if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(yaw));
+        if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, pitch);
     }
 
     public boolean selectAiWeaponForSeat(int seatIndex, int slot) {
@@ -1197,8 +1206,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         boolean canUseSelectedWeapon = selectedWeapon != null && this.canUseSelectedWeapon(player, selectedWeapon);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && canUseSelectedWeapon) {
-            this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
-            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
         if (input.reload() && canUseSelectedWeapon) {
             this.startWeaponReload(player);
@@ -1241,8 +1250,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.selectFallbackWeaponFor(player, input);
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(player);
         if (selectedWeapon != null && !this.isFreeLookInput(input) && this.canUseSelectedWeapon(player, selectedWeapon)) {
-            this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
-            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(player));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(player));
         }
         if (player == this.getControllingPassenger()) {
             this.input = input;
@@ -1259,8 +1268,8 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
         VehicleWeaponInfo selectedWeapon = this.selectedWeapon(living);
         if (selectedWeapon != null && this.canUseSelectedWeapon(living, selectedWeapon)) {
-            this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(living));
-            this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(living));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, this.turretYawFromPlayer(living));
+            if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, this.weaponPitch(living));
         }
     }
 
@@ -1335,6 +1344,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (this.level().isClientSide && this.dismountLerpSuppressionTicks > 0) {
             this.dismountLerpSuppressionTicks--;
         }
+        this.tickDamageEffects();
         this.applyPassengerYaw();
         if (!this.level().isClientSide) {
             this.clearStaleDriverInput();
@@ -1462,8 +1472,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             return;
         }
         VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
-        if (vehicleType == VehicleType.HELICOPTER || vehicleType == VehicleType.AIRCRAFT) {
+        if (!this.vehicleData().defaults().damageProfile().superbWarfare()
+                && (vehicleType == VehicleType.HELICOPTER || vehicleType == VehicleType.AIRCRAFT)) {
             this.applyAirVehicleImpactDamage(vehicleType, requestedMovement);
+            return;
+        }
+        if (this.vehicleData().defaults().damageProfile().superbWarfare()) {
+            float damage = VehicleDamageProfile.impactDamage(this.lastTickSpeed, this.lastTickVerticalSpeed, this.roll(),
+                    this.horizontalCollision, this.verticalCollision, vehicleType == VehicleType.HELICOPTER,
+                    vehicleType == VehicleType.AIRCRAFT && (Math.abs(this.roll()) > 20 || Math.abs(this.getXRot()) > 30));
+            if (damage > 0.0F) this.hurtVehicleStrikeWithArmor(this.vehicleStrikeDamageSource(), damage);
+            if (this.horizontalCollision) this.ramDamageCooldown = 4;
             return;
         }
         boolean landVehicle = vehicleType == VehicleType.LAND;
@@ -2681,11 +2700,15 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (relativeSpeed < VEHICLE_COLLISION_MIN_RELATIVE_SPEED) {
             return false;
         }
-        if (this.applyFatalHelicopterVehicleEntityImpact(target)) {
+        if (!this.vehicleData().defaults().damageProfile().superbWarfare() && this.applyFatalHelicopterVehicleEntityImpact(target)) {
             return true;
         }
-        float targetDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D);
-        float selfDamage = this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
+        boolean sw = this.vehicleData().defaults().damageProfile().superbWarfare();
+        double impact = Math.max(0.0D, relativeSpeed - .3D);
+        float targetDamage = sw ? (float) (60 * impact * impact) : this.vehicleImpactDamage(relativeSpeed, 0.0D);
+        float selfDamage = sw ? (float) (40 * impact * impact * Mth.clamp(target.vehicleData().defaults().damageProfile().mass()
+                / this.vehicleData().defaults().damageProfile().mass(), .25F, 4.0F))
+                : this.vehicleImpactDamage(relativeSpeed, 0.0D) * VEHICLE_COLLISION_SELF_DAMAGE_MULTIPLIER;
         boolean targetDamaged = targetDamage > 0.0F && target.hurtVehicleStrikeWithArmor(this.vehicleStrikeDamageSource(), targetDamage);
         boolean selfDamaged = selfDamage > 0.0F && this.hurtVehicleStrikeWithArmor(target.vehicleStrikeDamageSource(), selfDamage);
         if (targetDamaged || selfDamaged) {
@@ -4018,14 +4041,44 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         }
     }
 
+    private void tickDamageEffects() {
+        var profile = this.vehicleData().defaults().damageProfile();
+        if (!this.level().isClientSide) {
+            if (profile.lowHealthWarning() && this.vehicleHealth() <= .4F * this.maxVehicleHealth()) {
+                boolean critical = this.vehicleHealth() < .1F * this.maxVehicleHealth();
+                this.showVehicleWarning(critical ? "message.jeg.vehicle.critical_health_warning" : "message.jeg.vehicle.low_health_warning");
+                if (this.tickCount % (critical ? 13 : 10) == 0) this.level().playSound(null, this.blockPosition(),
+                        VehicleSoundHelper.healthWarning(critical), SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
+            return;
+        }
+        for (VehicleGeometry.Hit part : VehicleGeometry.parts(this)) {
+            boolean damaged = switch (part.part()) {
+                case TURRET -> this.isTurretDamaged();
+                case WHEEL_LEFT -> this.isLeftWheelDamaged();
+                case WHEEL_RIGHT -> this.isRightWheelDamaged();
+                case MAIN_ENGINE -> this.isEngineDamaged();
+                case SUB_ENGINE -> this.isSubEngineDamaged();
+                default -> false;
+            };
+            if (damaged) {
+                Vec3 pos = part.position();
+                this.level().addParticle(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 0, 0.015D, 0);
+                if (this.tickCount % 4 == 0) this.level().addParticle(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 0, 0.025D, 0);
+            }
+        }
+        if (this.vehicleData().defaults().damageProfile().lowHealthWarning() && this.vehicleHealth() <= .25F * this.maxVehicleHealth()) {
+            this.level().addParticle(ParticleTypes.LARGE_SMOKE, this.getX(), this.getY() + 1, this.getZ(), 0, .03D, 0);
+        }
+    }
+
     private void tickAutoRepair() {
+        this.repairParts(VehicleDamageProfile.PART_REPAIR_PER_TICK, true);
+        if (this.repairCooldown > 0) this.repairCooldown--;
         if (this.tickLowHealthDecay()) {
             return;
         }
-        if (this.repairCooldown > 0) {
-            this.repairCooldown--;
-            return;
-        }
+        if (this.repairCooldown > 0 || this.vehicleData().defaults().autoRepairCooldownTicks() < 0) return;
         float repair = this.vehicleData().defaults().autoRepairPerTick();
         if (repair <= 0.0F) {
             return;
@@ -4035,37 +4088,32 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.entityData.set(DATA_HEALTH, Math.min(this.maxVehicleHealth(), this.vehicleHealth() + repair));
             repaired = true;
         }
-        repaired |= this.autoRepairParts(repair);
         if (repaired) {
             this.resetRecoveredLowHealthState();
             this.hurtMarked = true;
         }
     }
 
-    private boolean autoRepairParts(float repair) {
-        return this.repairParts(repair, false);
-    }
-
     private boolean repairParts(float repair, boolean includeSubEngine) {
         boolean repaired = false;
         if (this.leftWheelHealth < PART_MAX_HEALTH) {
-            this.leftWheelHealth = Math.min(PART_MAX_HEALTH, this.leftWheelHealth + repair);
+            this.leftWheelHealth = VehicleDamageProfile.repairPart(this.leftWheelHealth, repair);
             repaired = true;
         }
         if (this.rightWheelHealth < PART_MAX_HEALTH) {
-            this.rightWheelHealth = Math.min(PART_MAX_HEALTH, this.rightWheelHealth + repair);
+            this.rightWheelHealth = VehicleDamageProfile.repairPart(this.rightWheelHealth, repair);
             repaired = true;
         }
         if (this.engineHealth < PART_MAX_HEALTH) {
-            this.engineHealth = Math.min(PART_MAX_HEALTH, this.engineHealth + repair);
+            this.engineHealth = VehicleDamageProfile.repairPart(this.engineHealth, repair);
             repaired = true;
         }
         if (includeSubEngine && this.subEngineHealth < PART_MAX_HEALTH) {
-            this.subEngineHealth = Math.min(PART_MAX_HEALTH, this.subEngineHealth + repair);
+            this.subEngineHealth = VehicleDamageProfile.repairPart(this.subEngineHealth, repair);
             repaired = true;
         }
         if (this.turretHealth < PART_MAX_HEALTH) {
-            this.turretHealth = Math.min(PART_MAX_HEALTH, this.turretHealth + repair);
+            this.turretHealth = VehicleDamageProfile.repairPart(this.turretHealth, repair);
             repaired = true;
         }
         if (repaired) {
@@ -4079,24 +4127,15 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.resetRecoveredLowHealthState();
             return false;
         }
-        if (this.tickCount % LOW_HEALTH_DECAY_INTERVAL == 0) {
-            float newHealth = this.vehicleHealth() - LOW_HEALTH_DECAY_DAMAGE;
-            this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
-            this.hurtMarked = true;
-            if (newHealth <= 0.0F) {
-                this.destroyVehicle();
-            }
-        }
+        float newHealth = this.vehicleHealth() - this.vehicleData().defaults().damageProfile().selfHurtAmount();
+        this.entityData.set(DATA_HEALTH, Math.max(0.0F, newHealth));
+        this.hurtMarked = true;
+        if (newHealth <= 0.0F) this.destroyVehicle();
         return true;
     }
 
-    private float lowHealthDecayThreshold() {
-        return Math.min(LOW_HEALTH_DECAY_THRESHOLD, this.maxVehicleHealth());
-    }
-
     private boolean isLowHealthDecayActive() {
-        float health = this.vehicleHealth();
-        return health > 0.0F && health < this.lowHealthDecayThreshold();
+        return this.vehicleData().defaults().damageProfile().decays(this.vehicleHealth(), this.maxVehicleHealth());
     }
 
     private void resetRecoveredLowHealthState() {
@@ -4223,6 +4262,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.992D;
         }
 
+        this.applySwDriveDamage(engine);
         if (consumeEnergy) {
             int cost = this.scaledEngineEnergyCost(engine, Math.abs(this.enginePower) > 1.0E-4D, Math.abs(this.enginePower));
             if (cost > 0 && !this.consumeEngineEnergyCost(cost)) {
@@ -4423,6 +4463,7 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
             this.enginePower *= 0.98D;
         }
 
+        this.applySwDriveDamage(engine);
         if (engineSound) {
             int cost = this.scaledEngineEnergyCost(engine, Math.abs(this.enginePower) > 1.0E-4D, Math.abs(this.enginePower));
             if (cost > 0 && !this.consumeEngineEnergyCost(cost)) {
@@ -4919,7 +4960,29 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.tickBoatMovement(engine, true);
     }
 
+    private void applySwDriveDamage(EngineInfo engine) {
+        if (!this.vehicleData().defaults().damageProfile().superbWarfare()) return;
+        VehicleType type = this.vehicleData().defaults().vehicleType();
+        if (type == VehicleType.LAND) {
+            if (this.isLeftWheelDamaged() && this.isRightWheelDamaged()) this.enginePower *= .93D;
+            else if (this.isLeftWheelDamaged() || this.isRightWheelDamaged()) {
+                this.enginePower *= .975D;
+                if (this.onGround()) {
+                    double signedSpeed = this.getDeltaMovement().dot(this.getViewVector(1));
+                    this.setYRot(this.getYRot() - (float) ((this.isLeftWheelDamaged() ? 3 : -3) * signedSpeed));
+                    this.updateVehicleBoundingBox();
+                }
+            }
+        }
+        if (this.isEngineDamaged()) this.enginePower *= engine.type() == ttv.migami.jeg.vehicle.data.subdata.EngineType.TRACK ? .96D : .875D;
+    }
+
     private double mobilityMultiplier() {
+        if (this.vehicleData().defaults().damageProfile().superbWarfare()
+                && this.vehicleData().defaults().vehicleType() != VehicleType.AIRCRAFT) return 1.0D;
+        if (this.vehicleData().defaults().damageProfile().superbWarfare()) {
+            return (this.isEngineDamaged() ? .96D : 1.0D) * (this.isSubEngineDamaged() ? .96D : 1.0D);
+        }
         double multiplier = this.isEngineDamaged() ? 0.35D : 1.0D;
         if (this.isLeftWheelDamaged()) {
             multiplier *= 0.75D;
@@ -5189,6 +5252,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         output.putFloat(TAG_ENGINE_HEALTH, this.engineHealth);
         output.putFloat(TAG_SUB_ENGINE_HEALTH, this.subEngineHealth);
         output.putFloat(TAG_TURRET_HEALTH, this.turretHealth);
+        output.putInt("PartDamageVersion", 1);
+        output.putInt("PartDamageFlags", (this.isLeftWheelDamaged() ? 1 : 0) | (this.isRightWheelDamaged() ? 2 : 0)
+                | (this.isEngineDamaged() ? 4 : 0) | (this.isSubEngineDamaged() ? 8 : 0) | (this.isTurretDamaged() ? 16 : 0));
+        output.putBoolean("CrashDamage", this.crashDamage);
+        if (this.lastDamageAttacker != null) output.putString("LastDamageAttacker", this.lastDamageAttacker.toString());
         if (!this.persistentData.isEmpty()) {
             output.put(TAG_PERSISTENT_DATA, this.persistentData.copy());
         }
@@ -5227,6 +5295,21 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         this.engineHealth = input.contains(TAG_ENGINE_HEALTH) ? input.getFloat(TAG_ENGINE_HEALTH) : PART_MAX_HEALTH;
         this.subEngineHealth = input.contains(TAG_SUB_ENGINE_HEALTH) ? input.getFloat(TAG_SUB_ENGINE_HEALTH) : PART_MAX_HEALTH;
         this.turretHealth = input.contains(TAG_TURRET_HEALTH) ? input.getFloat(TAG_TURRET_HEALTH) : PART_MAX_HEALTH;
+        int version = input.getInt("PartDamageVersion");
+        int flags = input.getInt("PartDamageFlags");
+        this.crashDamage = input.getBoolean("CrashDamage");
+        try { this.lastDamageAttacker = UUID.fromString(input.getString("LastDamageAttacker")); }
+        catch (IllegalArgumentException ignored) { this.lastDamageAttacker = null; }
+        this.leftWheelHealth = Math.min(PART_MAX_HEALTH, VehicleDamageProfile.migratePart(this.leftWheelHealth, version));
+        this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, (flags & 1) != 0 || (version == 0 && this.leftWheelHealth <= 0));
+        this.rightWheelHealth = Math.min(PART_MAX_HEALTH, VehicleDamageProfile.migratePart(this.rightWheelHealth, version));
+        this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, (flags & 2) != 0 || (version == 0 && this.rightWheelHealth <= 0));
+        this.engineHealth = Math.min(PART_MAX_HEALTH, VehicleDamageProfile.migratePart(this.engineHealth, version));
+        this.entityData.set(DATA_ENGINE_DAMAGED, (flags & 4) != 0 || (version == 0 && this.engineHealth <= 0));
+        this.subEngineHealth = Math.min(PART_MAX_HEALTH, VehicleDamageProfile.migratePart(this.subEngineHealth, version));
+        this.entityData.set(DATA_SUB_ENGINE_DAMAGED, (flags & 8) != 0 || (version == 0 && this.subEngineHealth <= 0));
+        this.turretHealth = Math.min(PART_MAX_HEALTH, VehicleDamageProfile.migratePart(this.turretHealth, version));
+        this.entityData.set(DATA_TURRET_DAMAGED, (flags & 16) != 0 || (version == 0 && this.turretHealth <= 0));
         this.clearPersistentData();
         if (input.contains(TAG_PERSISTENT_DATA)) {
             this.persistentData.merge(input.getCompound(TAG_PERSISTENT_DATA));
@@ -5336,15 +5419,28 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (this.isEnemyAiVehicle() && source.getEntity() instanceof LivingEntity attacker) {
             EnemyVehicleController.rememberTarget(this, attacker, 20 * 30);
         }
+        boolean bypass = source.is(TagKey.create(Registries.DAMAGE_TYPE, Reference.id("bypasses_vehicle")));
+        if (!Float.isFinite(amount) || amount <= 0.0F || this.destroying || this.isVehicleDamageImmune(source)) return false;
+        if (source.getEntity() != null && source.getEntity().getVehicle() == this
+                && (source.getDirectEntity() instanceof BulletEntity || source.getDirectEntity() instanceof VehicleMissileEntity)) return false;
         OBBInfo.Part hitPart = this.estimateHitPart(source);
-        ArmorHit armorHit = this.applyVehicleArmor(source, amount, hitPart);
-        float finalDamage = this.vehicleData().defaults().damageModifier().apply(source, armorHit.finalDamage());
-        float minimumDamage = source.is(ModDamageTypes.VEHICLE_STRIKE) ? 0.0F : 1.0F;
-        if (finalDamage <= minimumDamage) {
+        ArmorHit armorHit = bypass || this.vehicleData().defaults().damageProfile().superbWarfare()
+                ? new ArmorHit(amount, true) : this.applyVehicleArmor(source, amount, hitPart);
+        float finalDamage = bypass ? amount : this.vehicleData().defaults().damageModifier().apply(source, armorHit.finalDamage());
+        if (!bypass) {
+            Entity attacker = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
+            if (attacker != null) {
+                Vec3 direction = attacker.position().subtract(this.position().add(0, this.getBbHeight() / 2, 0)).normalize();
+                finalDamage *= this.vehicleData().defaults().damageProfile().directionalMultiplier(direction.dot(this.getViewVector(1.0F)));
+            }
+        }
+        if (!Float.isFinite(finalDamage) || finalDamage <= 0.0F) {
             return false;
         }
         this.applyPartDamage(hitPart, finalDamage);
         this.applyPassengerLeakDamage(source, finalDamage, hitPart, armorHit.penetrated());
+        this.crashDamage = source.is(ModDamageTypes.VEHICLE_STRIKE);
+        if (source.getEntity() != null) this.lastDamageAttacker = source.getEntity().getUUID();
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
         float oldHealth = this.vehicleHealth();
         float newHealth = oldHealth - finalDamage;
@@ -5367,9 +5463,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private boolean hurtVehicleIgnoringArmor(DamageSource source, float amount) {
-        if (this.level().isClientSide || this.isRemoved() || this.isInvulnerableTo(source) || amount <= 0.0F) {
+        if (this.level().isClientSide || this.isRemoved() || this.isInvulnerableTo(source) || amount <= 0.0F || !Float.isFinite(amount) || this.destroying) {
             return false;
         }
+        this.crashDamage = source.is(ModDamageTypes.VEHICLE_STRIKE);
+        if (source.getEntity() != null) this.lastDamageAttacker = source.getEntity().getUUID();
         this.repairCooldown = this.vehicleData().defaults().autoRepairCooldownTicks();
         float oldHealth = this.vehicleHealth();
         float newHealth = oldHealth - amount;
@@ -5385,19 +5483,44 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private void destroyVehicle() {
-        for (Entity passenger : java.util.List.copyOf(this.getPassengers())) {
-            if (passenger.getTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
-                passenger.discard();
-            }
-        }
+        if (this.destroying || this.isRemoved() || !(this.level() instanceof ServerLevel serverLevel)) return;
+        this.destroying = true;
+        var destroy = this.vehicleData().defaults().destroy();
+        Entity attacker = this.lastDamageAttacker == null ? null : serverLevel.getEntity(this.lastDamageAttacker);
+        java.util.List<Entity> passengers = java.util.List.copyOf(this.getPassengers());
         this.ejectPassengers();
-        if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY() + 0.6D, this.getZ(), 12, 0.8D, 0.5D, 0.8D, 0.08D);
-            var destroy = this.vehicleData().defaults().destroy();
-            if (destroy.explodes() && destroy.explosionPower() > 0.0F) {
-                this.level().explode(this, this.getX(), this.getY() + 0.4D, this.getZ(), destroy.explosionPower(), ExplosionInteraction.MOB);
+        for (Entity passenger : passengers) {
+            if (destroy.explodePassengers() && passenger instanceof LivingEntity living) {
+                DamageSource source = ModDamageTypes.causeVehicleDestructionDamage(this.level().registryAccess(),
+                        attacker == passenger ? null : attacker, this.crashDamage && destroy.crashPassengers());
+                // SW's default destruction damage runs five times, defeating normal hurt cooldowns.
+                for (int i = 0; i < 5 && living.isAlive(); i++) {
+                    living.invulnerableTime = 0;
+                    ModDamageTypes.hurtWithPlayerKillCredit(living, source, 114514.0F, source.getEntity());
+                }
             }
+            if (passenger.getTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) passenger.discard();
         }
+        DamageSource explosionSource = ModDamageTypes.causeVehicleBlastDamage(this.level().registryAccess(), this, attacker);
+        if (destroy.explodes() && destroy.explosionPower() > 0.0F) {
+            // Use the existing SW falloff once; the block explosion must not apply a second entity hit.
+            SwStyleExplosion.damageEntities(serverLevel, this.position(), this, null,
+                    destroy.explosionDamage(), destroy.explosionPower(), explosionSource);
+            ExplosionDamageCalculator calculator = new ExplosionDamageCalculator() {
+                @Override public boolean shouldDamageEntity(Explosion explosion, Entity entity) { return false; }
+                @Override public float getKnockbackMultiplier(Entity entity) { return 0.0F; }
+            };
+            this.level().explode(this, explosionSource, calculator, this.getX(), this.getY(), this.getZ(),
+                    destroy.explosionPower(), false, destroy.explodeBlocks() ? ExplosionInteraction.TNT : ExplosionInteraction.NONE);
+        }
+        int particleCount = switch (destroy.particleType()) {
+            case "giant" -> 40;
+            case "huge" -> 24;
+            case "medium" -> 12;
+            default -> 6;
+        };
+        serverLevel.sendParticles(ModParticleTypes.SMALL_EXPLOSION.get(), this.getX(), this.getY() + 0.6D, this.getZ(),
+                particleCount, 0.8D, 0.5D, 0.8D, 0.08D);
         this.discard();
     }
 
@@ -5405,6 +5528,17 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
         if (!this.level().isClientSide && !this.isRemoved() && this.isEnemyAiVehicle()) {
             this.destroyVehicle();
         }
+    }
+
+    private boolean isVehicleDamageImmune(DamageSource source) {
+        if (source.is(TagKey.create(Registries.DAMAGE_TYPE, Reference.id("vehicle_immune")))) return true;
+        if (!this.vehicleData().defaults().damageProfile().defaultImmunities()) return false;
+        if (source.is(TagKey.create(Registries.DAMAGE_TYPE, Reference.id("default_vehicle_immune")))) return true;
+        Entity direct = source.getDirectEntity();
+        if (direct == null) return false;
+        String type = BuiltInRegistries.ENTITY_TYPE.getKey(direct.getType()).toString();
+        return type.equals("minecraft:potion") || type.equals("minecraft:splash_potion")
+                || type.equals("minecraft:lingering_potion") || type.equals("minecraft:area_effect_cloud");
     }
 
     private ArmorHit applyVehicleArmor(DamageSource source, float amount, OBBInfo.Part hitPart) {
@@ -5525,19 +5659,26 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private OBBInfo.Part estimateHitPart(DamageSource source) {
-        // Only a narrow-phase ray supplies a reliable part. Area damage hits the hull.
-        return this.pendingHitPart != null ? this.pendingHitPart : OBBInfo.Part.BODY;
+        // Area damage always reaches the hull, even when the projectile also made a direct hit.
+        if (source.is(DamageTypeTags.IS_EXPLOSION)) return OBBInfo.Part.BODY;
+        if (this.pendingHitPart != null) return this.pendingHitPart;
+        if (source.getDirectEntity() instanceof VehiclePartHit carrier) {
+            OBBInfo.Part part = carrier.jeg$getVehiclePartHit(this.getId());
+            if (part != null) return part;
+        }
+        return OBBInfo.Part.BODY;
     }
 
     private void applyPartDamage(OBBInfo.Part hitPart, float finalDamage) {
         VehiclePartArmorProfile armor = this.vehicleData().defaults().armor().forPart(hitPart);
-        float partDamage = finalDamage * armor.partDamageMultiplier();
+        float partDamage = this.vehicleData().defaults().damageProfile().superbWarfare()
+                ? finalDamage : finalDamage * armor.partDamageMultiplier();
         switch (hitPart) {
-            case WHEEL_LEFT -> this.leftWheelHealth = Math.max(0.0F, this.leftWheelHealth - partDamage);
-            case WHEEL_RIGHT -> this.rightWheelHealth = Math.max(0.0F, this.rightWheelHealth - partDamage);
-            case MAIN_ENGINE -> this.engineHealth = Math.max(0.0F, this.engineHealth - partDamage);
-            case SUB_ENGINE -> this.subEngineHealth = Math.max(0.0F, this.subEngineHealth - partDamage);
-            case TURRET -> this.turretHealth = Math.max(0.0F, this.turretHealth - partDamage);
+            case WHEEL_LEFT -> this.leftWheelHealth -= partDamage;
+            case WHEEL_RIGHT -> this.rightWheelHealth -= partDamage;
+            case MAIN_ENGINE -> this.engineHealth -= partDamage;
+            case SUB_ENGINE -> this.subEngineHealth -= partDamage;
+            case TURRET -> this.turretHealth -= partDamage;
             default -> {
             }
         }
@@ -5545,11 +5686,11 @@ public class VehicleEntity extends Entity implements ExtendedScreenHandlerFactor
     }
 
     private void syncPartDamageFlags() {
-        this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, this.leftWheelHealth <= 0.0F);
-        this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, this.rightWheelHealth <= 0.0F);
-        this.entityData.set(DATA_ENGINE_DAMAGED, this.engineHealth <= 0.0F);
-        this.entityData.set(DATA_SUB_ENGINE_DAMAGED, this.subEngineHealth <= 0.0F);
-        this.entityData.set(DATA_TURRET_DAMAGED, this.turretHealth <= 0.0F);
+        this.entityData.set(DATA_LEFT_WHEEL_DAMAGED, VehicleDamageProfile.damaged(this.leftWheelHealth, this.entityData.get(DATA_LEFT_WHEEL_DAMAGED)));
+        this.entityData.set(DATA_RIGHT_WHEEL_DAMAGED, VehicleDamageProfile.damaged(this.rightWheelHealth, this.entityData.get(DATA_RIGHT_WHEEL_DAMAGED)));
+        this.entityData.set(DATA_ENGINE_DAMAGED, VehicleDamageProfile.damaged(this.engineHealth, this.entityData.get(DATA_ENGINE_DAMAGED)));
+        this.entityData.set(DATA_SUB_ENGINE_DAMAGED, VehicleDamageProfile.damaged(this.subEngineHealth, this.entityData.get(DATA_SUB_ENGINE_DAMAGED)));
+        this.entityData.set(DATA_TURRET_DAMAGED, VehicleDamageProfile.damaged(this.turretHealth, this.entityData.get(DATA_TURRET_DAMAGED)));
     }
 
     private boolean repairWithKit() {

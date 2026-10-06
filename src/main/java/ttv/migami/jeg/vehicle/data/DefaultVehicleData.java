@@ -7,6 +7,7 @@ import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleDamageProfile;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineType;
@@ -41,7 +42,8 @@ public record DefaultVehicleData(
         TurretInfo turret,
         boolean hasDecoy,
         SeekInfo seek,
-        DestroyInfo destroy
+        DestroyInfo destroy,
+        VehicleDamageProfile damageProfile
 ) {
     public static final DefaultVehicleData TEST_WHEEL = new DefaultVehicleData(
             Reference.id("test_wheel_vehicle"),
@@ -69,7 +71,8 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            DestroyInfo.NONE
+            DestroyInfo.NONE,
+            VehicleDamageProfile.DEFAULT
     );
 
     public static final DefaultVehicleData LIGHT_COMBAT = new DefaultVehicleData(
@@ -99,7 +102,8 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            DestroyInfo.NONE
+            DestroyInfo.NONE,
+            VehicleDamageProfile.DEFAULT
     );
 
     public static final DefaultVehicleData TEST_HELICOPTER = new DefaultVehicleData(
@@ -128,7 +132,8 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            new DestroyInfo(true, 2.0F)
+            new DestroyInfo(true, 2.0F),
+            VehicleDamageProfile.DEFAULT
     );
 
     public static final DefaultVehicleData TEST_BOAT = new DefaultVehicleData(
@@ -156,7 +161,8 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            new DestroyInfo(false, 0.0F)
+            new DestroyInfo(false, 0.0F),
+            VehicleDamageProfile.DEFAULT
     );
 
     public static final DefaultVehicleData TEST_ARTILLERY = new DefaultVehicleData(
@@ -185,7 +191,8 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            new DestroyInfo(true, 2.2F)
+            new DestroyInfo(true, 2.2F),
+            VehicleDamageProfile.DEFAULT
     );
 
     public static final DefaultVehicleData TEST_AIRCRAFT = new DefaultVehicleData(
@@ -214,6 +221,7 @@ public record DefaultVehicleData(
             TurretInfo.NONE,
             false,
             SeekInfo.NONE,
-            new DestroyInfo(true, 2.4F)
+            new DestroyInfo(true, 2.4F),
+            VehicleDamageProfile.DEFAULT
     );
 }

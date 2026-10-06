@@ -105,6 +105,10 @@ public final class VehicleGeometry {
         return result;
     }
 
+    public static List<Hit> parts(VehicleEntity vehicle) {
+        return boxes(vehicle).stream().map(box -> new Hit(box.center(), box.part(), 0.0D)).toList();
+    }
+
     public static Hit clip(VehicleEntity vehicle, Vec3 start, Vec3 end) {
         return clip(boxes(vehicle), start, end);
     }

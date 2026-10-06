@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import net.minecraft.util.Mth;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import ttv.migami.jeg.vehicle.data.subdata.CameraPos;
 import ttv.migami.jeg.vehicle.data.subdata.CollisionLevel;
 import ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo;
 import ttv.migami.jeg.vehicle.data.subdata.DestroyInfo;
+import ttv.migami.jeg.vehicle.data.subdata.VehicleDamageProfile;
 import ttv.migami.jeg.vehicle.data.subdata.DismountInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.data.subdata.EngineType;
@@ -165,7 +167,15 @@ public final class VehicleDataManager {
                 turret,
                 hasDecoy,
                 seek,
-                destroy
+                destroy,
+                new VehicleDamageProfile(
+                        getBoolean(object, "superb_warfare_damage", fallback.damageProfile().superbWarfare()),
+                        Mth.clamp(getFloat(object, "self_hurt_percent", fallback.damageProfile().selfHurtPercent()), 0.0F, 1.0F),
+                        Math.max(0.0F, getFloat(object, "self_hurt_amount", fallback.damageProfile().selfHurtAmount())),
+                        Mth.clamp(getFloat(object, "directional_armor", fallback.damageProfile().directionalArmor()), 0.0F, 1.0F),
+                        getBoolean(object, "apply_default_damage_modifiers", fallback.damageProfile().defaultImmunities()),
+                        getBoolean(object, "has_low_health_warning", fallback.damageProfile().lowHealthWarning()),
+                        Math.max(0.001F, getFloat(object, "mass", fallback.damageProfile().mass())))
         ));
     }
 
@@ -289,7 +299,7 @@ public final class VehicleDataManager {
         }
         JsonArray array = element.getAsJsonArray();
         if (array.isEmpty()) {
-            return fallback;
+            return new OBBInfo(List.of());
         }
         java.util.ArrayList<OBBInfo.Box> boxes = new java.util.ArrayList<>();
         for (JsonElement boxElement : array) {
@@ -360,7 +370,12 @@ public final class VehicleDataManager {
         }
         return new DestroyInfo(
                 getBoolean(object, "explodes", fallback.explodes()),
-                getFloat(object, "explosion_power", fallback.explosionPower())
+                Math.max(0.0F, getFloat(object, "explosion_power", fallback.explosionPower())),
+                Math.max(0.0F, getFloat(object, "explosion_damage", fallback.explosionDamage())),
+                getBoolean(object, "explode_blocks", fallback.explodeBlocks()),
+                getBoolean(object, "explode_passengers", fallback.explodePassengers()),
+                getBoolean(object, "crash_passengers", fallback.crashPassengers()),
+                getString(object, "particle_type", fallback.particleType())
         );
     }
 
@@ -461,12 +476,14 @@ public final class VehicleDataManager {
 
     private static float getFloat(JsonObject object, String name, float fallback) {
         JsonElement element = object.get(name);
-        return element != null ? element.getAsFloat() : fallback;
+        float value = element != null ? element.getAsFloat() : fallback;
+        return Float.isFinite(value) ? value : fallback;
     }
 
     private static double getDouble(JsonObject object, String name, double fallback) {
         JsonElement element = object.get(name);
-        return element != null ? element.getAsDouble() : fallback;
+        double value = element != null ? element.getAsDouble() : fallback;
+        return Double.isFinite(value) ? value : fallback;
     }
 
     private static ResourceLocation getResourceLocation(JsonObject object, String name, ResourceLocation fallback) {
