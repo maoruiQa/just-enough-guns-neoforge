@@ -16,11 +16,39 @@
       "z": 3.6375,
       "driver": true,
       "enclosed": true,
-      "ban_hand": true,
-      "min_pitch": -60.0,
-      "max_pitch": 60.0,
-      "min_yaw": -95.0,
-      "max_yaw": 95.0
+      "ban_hand": false,
+      "min_pitch": -60,
+      "max_pitch": 60,
+      "min_yaw": -95,
+      "max_yaw": 95,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     },
     {
       "index": 1,
@@ -29,11 +57,39 @@
       "z": 3.6375,
       "driver": false,
       "enclosed": true,
-      "ban_hand": true,
-      "min_pitch": -60.0,
-      "max_pitch": 60.0,
-      "min_yaw": -95.0,
-      "max_yaw": 95.0
+      "ban_hand": false,
+      "min_pitch": -60,
+      "max_pitch": 60,
+      "min_yaw": -95,
+      "max_yaw": 95,
+      "transform": "vehicle",
+      "orientation": 0,
+      "can_rotate_head": true,
+      "hide_passenger": false,
+      "sensitivity_x": 1,
+      "sensitivity_y": 1,
+      "sensitivity_z": 1,
+      "zoom_camera": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "can_rotate_body": false
     }
   ],
   "engine": {
@@ -43,12 +99,42 @@
     "max_reverse_speed": 0.7,
     "friction": 0.82,
     "steering_speed": 0.05,
-    "energy_cost_rate": 64
+    "energy_cost_rate": 64,
+    "sw_controls": true,
+    "buoyancy": 0,
+    "increment": 0.012,
+    "decrement": 0.009,
+    "wheel_rot_speed": 0.833,
+    "wheel_differential": 0.5,
+    "terrain_points": [
+      [
+        1.1875,
+        0,
+        3.1875
+      ],
+      [
+        -1.1875,
+        0,
+        3.1875
+      ],
+      [
+        1.1875,
+        0,
+        -1.0625
+      ],
+      [
+        -1.1875,
+        0,
+        -1.0625
+      ]
+    ],
+    "terrain_rotate_rate": 1,
+    "inertia_rotate_rate": 0.3
   },
   "third_person_camera": {
-    "x": 0.0,
-    "y": 1.0,
-    "z": -5.0
+    "x": 0,
+    "y": 1,
+    "z": 5
   },
   "dismount": {
     "x": 1.25,
@@ -225,5 +311,9 @@
   "directional_armor": 0,
   "apply_default_damage_modifiers": true,
   "has_low_health_warning": true,
+  "turret": {
+    "seat": -1,
+    "render_pivot_y": 2.2
+  },
   "mass": 20
 }

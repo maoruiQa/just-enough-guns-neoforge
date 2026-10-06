@@ -1,0 +1,324 @@
+package ttv.migami.jeg.gametest;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import ttv.migami.jeg.Reference;
+import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
+import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
+import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
+
+@GameTestHolder("jeg_vehicle_controls")
+@PrefixGameTestTemplate(false)
+public final class VehicleControlGameTests {
+    private VehicleControlGameTests() {}
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void aiDriverAndUntargetedVehicles(GameTestHelper helper) throws ReflectiveOperationException {
+        var bmp = helper.spawn(ModEntities.BMP2.get(), new Vec3(2, 1, 2));
+        var crew = helper.spawn(EntityType.HUSK, new Vec3(2, 1, 2));
+        crew.setNoAi(true);
+        crew.startRiding(bmp, true);
+        bmp.addEnergy(bmp.maxVehicleEnergy());
+        bmp.setOnGround(true);
+        bmp.setAiVehicleInput(input(true, false, false, false, 0, 0));
+        invoke(bmp, "tickServerMovement", new Class<?>[]{});
+        helper.assertTrue(bmp.getControllingPassenger() == crew && bmp.enginePower() > 0,
+                "An AI driver must retain powered control of the aligned vehicle");
+        helper.assertTrue(bmp.vehicleData().defaults().seats().getFirst().enclosed(),
+                "Camera alignment must preserve BMP occupant protection");
+        crew.stopRiding();
+        helper.assertTrue(bmp.enginePower() == 0, "An empty ground vehicle must clear AI throttle");
+        for (String id : new String[]{"a10", "tom6", "hpj11", "laser_tower", "waveforce_tower", "test_wheel_vehicle"}) {
+            var old = new ttv.migami.jeg.vehicle.entity.ConfiguredVehicleEntity(ModEntities.BMP2.get(),
+                    helper.getLevel(), Reference.id(id));
+            helper.assertFalse(old.usesSwControls(), id + " must retain its existing control formulas");
+        }
+        var truck = helper.spawn(ModEntities.TRUCK.get(), new Vec3(2, 1, 2));
+        var player = mockPlayer(helper);
+        player.startRiding(truck, true);
+        helper.assertFalse(truck.shouldBanPassengerHand(player), "Truck seats must retain handheld items");
+        helper.assertFalse(truck.canPassengerUseSelectedVehicleWeapon(player), "Truck must not acquire a synthetic mounted weapon");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void swAccelerationReverseAndBraking(GameTestHelper helper) throws ReflectiveOperationException {
+        for (String id : new String[]{"bmp2", "lav150", "truck"}) {
+            VehicleEntity vehicle = isolatedVehicle(helper, ModEntities.BMP2.get(), id);
+            EngineInfo engine = vehicle.vehicleData().defaults().engine();
+            double power = 0, speed = 0;
+            for (int tick = 0; tick < 100; tick++) {
+                boolean forward = tick < 40, reverse = tick >= 40 && tick < 80, brake = tick >= 90;
+                set(vehicle, "input", input(forward, reverse, brake, false, 0, 0));
+                vehicle.setXRot(0); vehicle.setYRot(0); set(vehicle, "swVelocity", 0.0D);
+                vehicle.setOnGround(true);
+                // Fixed SW 0cfd00d5 track/wheel reference, flat ground without collision.
+                if (forward) power = Math.min(power + engine.increment() * (power < 0 ? 2 : 1), 1);
+                if (reverse) power = Math.max(power - engine.decrement() * (power > 0 ? 2 : 1), -1);
+                double rate = power > 0 ? engine.maxForwardSpeed() : engine.maxReverseSpeed();
+                if (!forward && !reverse) power *= id.equals("bmp2") ? .96F : .97F;
+                if (brake) power *= .6F;
+                speed = speed * 1.05D * (.54F + .25F) + .15D * rate * power;
+                invoke(vehicle,"tickSwSurfaceMovement",new Class<?>[]{EngineInfo.class,boolean.class,boolean.class},engine,false,false);
+                helper.assertTrue(Math.abs(vehicle.getDeltaMovement().z - speed) <= Math.max(1.0E-6D, Math.abs(speed) * .01D),
+                        id + " SW speed curve differs at tick " + tick);
+                helper.assertTrue(Math.abs(vehicle.enginePower() - power) < 1.0E-6D,id + " SW power curve differs at tick " + tick);
+            }
+            helper.assertTrue(speed < 0, id + " must reverse after the opposite throttle sequence");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void swHelicopterStartupAndLift(GameTestHelper helper) throws ReflectiveOperationException {
+        for (String id : new String[]{"mi28", "ah6"}) {
+            VehicleEntity vehicle = isolatedVehicle(helper, ModEntities.AH6.get(), id);
+            EngineInfo engine = vehicle.vehicleData().defaults().engine();
+            double power = 0, rotor = 0, vertical = 0;
+            int hold = 0;
+            boolean ready = false;
+            set(vehicle,"input",input(true,false,false,false,0,0));
+            for (int tick = 0; tick < 80; tick++) {
+                vehicle.setOnGround(false);
+                if (ready) power = Math.min(power + .0007F * engine.increment() * Math.min(++hold,10),.12F);
+                else power = Math.min(power + .0012F * engine.increment(),.045F);
+                rotor = (.82F * rotor + .18F * (float)power) * .9995F;
+                vertical = vertical * .95D + rotor * engine.liftSpeed() - .06D;
+                ready |= power > .04F;
+                invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+                helper.assertTrue(Math.abs(vehicle.getDeltaMovement().y - vertical) <= Math.max(1.0E-5D,Math.abs(vertical)*.01D),
+                        id + " SW lift curve differs at tick " + tick);
+            }
+            helper.assertTrue(vehicle.engineReady() && vehicle.getDeltaMovement().y > 0,id + " must finish startup and climb");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void seatPermissionsTurretAndInventoryRoundTrip(GameTestHelper helper) throws ReflectiveOperationException {
+        var bmp = helper.spawn(ModEntities.BMP2.get(), new Vec3(2,1,2));
+        var player = mockPlayer(helper);
+        player.startRiding(bmp,true);
+        helper.assertTrue(bmp.canPassengerUseVehicleWeapon(player,0),"BMP driver must own the cannon");
+        helper.assertFalse(bmp.canPassengerUseVehicleWeapon(player,3),"BMP driver must not own another seat's machine gun");
+        player.setXRot(-90);
+        bmp.processInput(player,input(false,false,false,false,0,0));
+        for(int tick=0;tick<20;tick++) invoke(bmp,"tickSwTurret",new Class<?>[]{});
+        helper.assertTrue(Math.abs(bmp.turretPitch()+74)<.1F,"BMP cannon must elevate to SW's 74 degree limit");
+        bmp.processInput(player,new VehicleInput(false,false,false,false,false,false,false,false,false,false,false,false,-1,false,false,0,0,true));
+        helper.assertTrue(bmp.isPassengerAiming(player),"The driver aiming state must replicate");
+        helper.assertFalse(bmp.isPassengerAiming(mockPlayer(helper)),"A non-passenger must not inherit a seat's aiming state");
+        bmp.changeSeat(player);
+        helper.assertFalse(bmp.isPassengerAiming(player),"Changing seat must immediately clear old aiming state");
+        helper.assertTrue(bmp.getSeatIndex(player)==1 && bmp.canPassengerUseVehicleWeapon(player,3),
+                "Changing seat must transfer control to that seat's machine gun");
+        helper.assertFalse(bmp.canPassengerUseVehicleWeapon(player,0),"A former driver must lose cannon permission");
+        bmp.vehicleInventory().setItem(101,new ItemStack(Items.DIAMOND,7));
+        var saved=bmp.saveVehicleContainerState();
+        var restored=helper.spawn(ModEntities.BMP2.get(),new Vec3(2,1,2));
+        restored.loadVehicleContainerState(saved);
+        helper.assertTrue(restored.vehicleInventory().getItem(101).getCount()==7,"Changing exposed slots must preserve hidden stored items");
+        var outsider=mockPlayer(helper);
+        double power=bmp.enginePower();
+        bmp.processInput(outsider,input(true,false,false,false,100,100));
+        helper.assertTrue(bmp.enginePower()==power,"A non-passenger must not control the vehicle");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void swSteeringAndShipBuoyancy(GameTestHelper helper) throws ReflectiveOperationException {
+        for(String id:new String[]{"bmp2","lav150","truck","speedboat"}) {
+            VehicleEntity vehicle=isolatedVehicle(helper,ModEntities.BMP2.get(),id);
+            EngineInfo engine=vehicle.vehicleData().defaults().engine();
+            boolean track=id.equals("bmp2"),ship=id.equals("speedboat");
+            Vec3 velocity=Vec3.ZERO;
+            double power=0,steering=0,rudder=0;
+            float yaw=0;
+            for(int tick=0;tick<80;tick++) {
+                boolean forward=tick<50,reverse=tick>=50&&tick<70,right=tick<70;
+                vehicle.setXRot(0);vehicle.setYRot(yaw);vehicle.setOnGround(!ship);
+                set(vehicle,"input",input(forward,reverse,false,right,0,0));
+                Vec3 view=Vec3.directionFromRotation(0,yaw);
+                if(ship) velocity=velocity.add(0,engine.buoyancy(),0);
+                double dot=velocity.multiply(1,0,1).normalize().dot(view.multiply(1,0,1).normalize());
+                double direct=(90-Math.toDegrees(Math.acos(net.minecraft.util.Mth.clamp(dot,-1,1))))/90;
+                double drag=ship?.75F-.04F+.09F*Math.abs(direct):.54F+.25F*Math.abs(direct);
+                velocity=velocity.add(view.scale((ship?.04D:.05D)*velocity.dot(view))).multiply(drag,ship?.85D:.99D,drag);
+                if(forward) power=Math.min(power+engine.increment()*(power<0?2:1),1);
+                if(reverse) power=Math.max(power-engine.decrement()*(power>0?2:1),-1);
+                double rate=power>0?engine.maxForwardSpeed():engine.maxReverseSpeed();
+                if(!forward&&!reverse) power*=track?.96F:.97F;
+                if(right) power*=track?.96F:.98F;
+                if(right) steering+=engine.steeringSpeed()*(ship||track&&!reverse?-1:1);
+                steering*=track?Math.max(.76F-.1F*velocity.horizontalDistance(),.3D):Math.max(.78F-.25F*velocity.horizontalDistance(),.1D);
+                rudder=net.minecraft.util.Mth.clamp(rudder-steering,-.8D,.8D)*.75F;
+                float pitch=ship?(float)(-direct*engine.bodyPitchRate()*velocity.horizontalDistance()):0;
+                yaw-=ship?20*velocity.horizontalDistance()*steering*(power>0?1:-1):track?6*steering:12*velocity.horizontalDistance()*rudder*(power>0?1:-1);
+                velocity=velocity.add(Vec3.directionFromRotation(pitch,yaw).scale(.15D*rate*power)).add(0,-.06D,0);
+                invoke(vehicle,"tickSwSurfaceMovement",new Class<?>[]{EngineInfo.class,boolean.class,boolean.class},engine,ship,false);
+                helper.assertTrue(vehicle.getDeltaMovement().distanceTo(velocity)<=Math.max(1.0E-5D,velocity.length()*.01D),id+" SW steering curve differs at "+tick);
+                helper.assertTrue(Math.abs(net.minecraft.util.Mth.wrapDegrees(vehicle.getYRot()-yaw))<.1F,id+" SW yaw differs at "+tick);
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void swLandingTargetAndNoEnergy(GameTestHelper helper) throws ReflectiveOperationException {
+        var heli=isolatedVehicle(helper,ModEntities.AH6.get(),"ah6");
+        var pad=helper.absolutePos(new net.minecraft.core.BlockPos(2,1,2));
+        helper.getLevel().setBlockAndUpdate(pad,net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(Reference.id("vehicle_charging_station")).defaultBlockState());
+        heli.setPos(Vec3.atCenterOf(pad).add(8,8,0));
+        Method find=VehicleEntity.class.getDeclaredMethod("swLandingPosition");find.setAccessible(true);
+        Vec3 landing=(Vec3)find.invoke(heli);
+        helper.assertTrue(landing!=null&&landing.distanceTo(Vec3.atCenterOf(pad))<.01,"Automatic landing must find the tagged pad below");
+        set(heli,"enginePower",.08D);set(heli,"engineStartOver",true);set(heli,"engineStart",true);
+        set(heli,"input",input(false,true,false,false,0,0));
+        invoke(heli,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},heli.vehicleData().defaults().engine(),false);
+        helper.assertTrue(heli.enginePower()<.08D&&heli.roll()>0,"Landing input must reduce lift and tilt toward the pad");
+        var bmp=isolatedVehicle(helper,ModEntities.BMP2.get(),"bmp2");
+        bmp.consumeEnergy(bmp.vehicleEnergy());bmp.setOnGround(true);
+        set(bmp,"input",input(true,false,false,true,0,0));
+        invoke(bmp,"tickSwSurfaceMovement",new Class<?>[]{EngineInfo.class,boolean.class,boolean.class},bmp.vehicleData().defaults().engine(),false,false);
+        helper.assertTrue(bmp.enginePower()==0&&bmp.steeringPower()==0,"Empty energy must neutralize powered track controls");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void passengerPoseAndInventoryQuickMove(GameTestHelper helper) {
+        var vehicle=helper.spawn(ModEntities.BMP2.get(),new Vec3(2,1,2));
+        var player=mockPlayer(helper);
+        player.startRiding(vehicle,true);
+        vehicle.changeSeat(player);
+        vehicle.setYRot(30);vehicle.setXRot(10);
+        player.setYRot(-170);player.setXRot(-80);
+        vehicle.clampSwPassengerView(player);
+        var seat=vehicle.vehicleData().defaults().seats().get(1);
+        float relative=net.minecraft.util.Mth.wrapDegrees(player.getYRot()-vehicle.getYRot()-seat.orientation());
+        helper.assertTrue(relative>=seat.minYaw()&&relative<=seat.maxYaw(),"Passenger yaw must respect seat orientation");
+        helper.assertTrue(Math.abs(player.yBodyRot-(vehicle.getYRot()+seat.orientation()))<.1,"Seated body must follow the seat instead of the viewing direction");
+        vehicle.vehicleInventory().setItem(0,new ItemStack(Items.IRON_INGOT,16));
+        vehicle.vehicleInventory().setItem(101,new ItemStack(Items.DIAMOND,3));
+        var menu=new ttv.migami.jeg.vehicle.menu.VehicleMenu(1,player.getInventory(),vehicle.vehicleInventory(),54,vehicle);
+        helper.assertTrue(menu.quickMoveStack(player,0).getCount()==16&&vehicle.vehicleInventory().getItem(0).isEmpty(),"Quick move must transfer the vehicle stack");
+        menu.quickMoveStack(player,54+27+8);
+        helper.assertTrue(vehicle.vehicleInventory().getItem(0).getCount()==16,"Quick move must return the stack to the visible vehicle slots");
+        helper.assertTrue(vehicle.vehicleInventory().getItem(101).getCount()==3,"The smaller SW menu must preserve old hidden slots");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void cameraTransformsAndInputSanitization(GameTestHelper helper) {
+        var bmp=helper.spawn(ModEntities.BMP2.get(),new Vec3(2,1,2));
+        bmp.setYRot(0); bmp.yRotO=0; bmp.setXRot(0); bmp.xRotO=0;
+        var turret=bmp.vehicleData().defaults().turret();
+        Vec3 position=bmp.swPosition("barrel",new Vec3(-.4,.4,0),1);
+        Vec3 expected=bmp.position().add(turret.originX()+turret.barrelX()-.4,turret.originY()+turret.barrelY()+.4,turret.originZ()+turret.barrelZ());
+        helper.assertTrue(position.distanceTo(expected)<.01,"BMP sight transform must agree within one centimeter");
+        var mi=helper.spawn(ModEntities.MI28.get(),new Vec3(2,1,2));
+        var camera=mi.vehicleData().defaults().seats().get(1).zoomCamera();
+        helper.assertTrue(camera.hasZoomPosition() && Math.abs(camera.y()-2.9375)<1.0E-8 && Math.abs(camera.zoomY()-1.0625)<1.0E-8,
+                "Mi-28 gunner must keep separate normal and aiming camera positions");
+        mi.syncAuthoritativeControls(0, 0, 0, 18, false, false);
+        mi.syncAuthoritativeState(mi.getX(), mi.getY(), mi.getZ(), 0, 0, 0, 25, 12, true);
+        helper.assertTrue(Math.abs(mi.roll(.25F)-18)<.001F,
+                "Forced position correction must also snap the previous roll used by the camera");
+        VehicleInput invalid=input(false,false,false,false,Float.NaN,Float.POSITIVE_INFINITY);
+        helper.assertTrue(invalid.mouseX()==0 && invalid.mouseY()==0,"Non-finite network mouse input must be neutralized");
+        var pilot = mockPlayer(helper);
+        pilot.startRiding(mi, true);
+        mi.setYRot(0); mi.yRotO = 0; mi.setXRot(0); mi.xRotO = 0;
+        mi.setPos(mi.position().add(0, 50, 0));
+        mi.xo = mi.getX(); mi.yo = mi.getY(); mi.zo = mi.getZ();
+        Vec3 origin = mi.position().add(0, mi.rotateOffsetHeight(), 0);
+        Vec3 openCamera = mi.swAircraftCameraPosition(pilot, 1, 0, 0, 0);
+        var obstruction = net.minecraft.core.BlockPos.containing(origin.lerp(openCamera, .5));
+        helper.getLevel().setBlockAndUpdate(obstruction, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        Vec3 clippedCamera = mi.swAircraftCameraPosition(pilot, 1, 0, 0, 0);
+        helper.assertTrue(clippedCamera.distanceTo(origin) < openCamera.distanceTo(origin) - 1,
+                "Aircraft camera must move in front of a wall: open=" + openCamera + ", clipped=" + clippedCamera);
+        helper.getLevel().setBlockAndUpdate(obstruction, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void gunnerHudAndActualHitFeedback(GameTestHelper helper) {
+        var received = new java.util.concurrent.atomic.AtomicReference<ttv.migami.jeg.network.HitMarkerPayload>();
+        var player = mockPlayer(helper, packet -> {
+            if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket custom && custom.payload() instanceof ttv.migami.jeg.network.HitMarkerPayload marker) received.set(marker);
+        });
+        var mi = helper.spawn(ModEntities.MI28.get(), new Vec3(2,1,2));
+        player.startRiding(mi, true); mi.changeSeat(player);
+        int slot = mi.vehicleWeaponIndexForDisplaySlot(player, 1);
+        mi.processInput(player, new VehicleInput(false,false,false,false,false,false,false,false,false,false,false,false,slot,false,false,0,0));
+        mi.setXRot(12); mi.xRotO = 12; mi.syncAuthoritativeControls(0,0,0,18,false,false); mi.snapControlInterpolation();
+        Vec3 expected = mi.swPosition("barrel", new Vec3(0,0,1), 1).subtract(mi.swPosition("barrel", Vec3.ZERO, 1)).normalize();
+        helper.assertTrue(mi.vehicleHudShootDirection(player,1).distanceTo(expected) < .000001, "Mi gunner missile HUD must inherit its barrel view direction");
+        var target = helper.spawn(net.minecraft.world.entity.EntityType.ZOMBIE, new Vec3(5,1,5));
+        var source = target.damageSources().thrown(player, player);
+        ttv.migami.jeg.init.ModDamageTypes.hurtWithPlayerKillCredit(target, source, 1, player);
+        helper.assertTrue(received.get() != null && !received.get().vehicle() && !received.get().killed(), "A successful gunner hit must send live hit feedback");
+        received.set(null); target.invulnerableTime = 0;
+        ttv.migami.jeg.init.ModDamageTypes.hurtWithPlayerKillCredit(target, source, 100, player);
+        helper.assertTrue(received.get() != null && received.get().killed(), "Kill feedback must follow the actual damage result");
+        player.stopRiding(); received.set(null);
+        ttv.migami.jeg.advancement.GameplayActions.hit(player, player, target, false);
+        helper.assertTrue(received.get() == null, "Unmounted players must not receive mounted weapon feedback");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            var expectedPayload = new ttv.migami.jeg.network.HitMarkerPayload(true, true, true);
+            ttv.migami.jeg.network.HitMarkerPayload.STREAM_CODEC.encode(buffer, expectedPayload);
+            helper.assertTrue(expectedPayload.equals(ttv.migami.jeg.network.HitMarkerPayload.STREAM_CODEC.decode(buffer)),
+                    "Critical, vehicle and kill feedback flags must survive the existing network codec");
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
+    private static net.minecraft.server.level.ServerPlayer mockPlayer(GameTestHelper helper) {
+        return mockPlayer(helper, packet -> {});
+    }
+
+    private static net.minecraft.server.level.ServerPlayer mockPlayer(GameTestHelper helper, java.util.function.Consumer<net.minecraft.network.protocol.Packet<?>> receive) {
+        var player=helper.makeMockServerPlayerInLevel();
+        player.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(helper.getLevel().getServer(),
+                new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND),player,
+                net.minecraft.server.network.CommonListenerCookie.createInitial(player.getGameProfile(),false)) {
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet) { receive.accept(packet); }
+            @Override public boolean hasChannel(net.minecraft.resources.ResourceLocation channel) { return false; }
+        };
+        return player;
+    }
+
+    private static VehicleEntity isolatedVehicle(GameTestHelper helper, EntityType<? extends VehicleEntity> type, String id) {
+        LivingEntity pilot=mockPlayer(helper);
+        return new VehicleEntity(type,helper.getLevel()) {
+            { this.setVehicleData(Reference.id(id)); this.addEnergy(this.maxVehicleEnergy()); }
+            @Override public LivingEntity getControllingPassenger() { return pilot; }
+            @Override public void move(MoverType mover,Vec3 delta) { this.setDeltaMovement(delta); }
+            @Override public double getFluidHeight(net.minecraft.tags.TagKey<net.minecraft.world.level.material.Fluid> tag) {
+                return id.equals("speedboat") ? 1.0D : 0.0D;
+            }
+        };
+    }
+
+    private static VehicleInput input(boolean forward,boolean reverse,boolean brake,boolean right,float x,float y) {
+        return new VehicleInput(forward,reverse,false,right,brake,false,false,false,false,false,false,false,-1,false,false,x,y);
+    }
+    private static void set(VehicleEntity vehicle,String name,Object value) throws ReflectiveOperationException {
+        Field field=VehicleEntity.class.getDeclaredField(name);field.setAccessible(true);field.set(vehicle,value);
+    }
+    private static void invoke(VehicleEntity vehicle,String name,Class<?>[] types,Object...args) throws ReflectiveOperationException {
+        Method method=VehicleEntity.class.getDeclaredMethod(name,types);method.setAccessible(true);method.invoke(vehicle,args);
+    }
+}

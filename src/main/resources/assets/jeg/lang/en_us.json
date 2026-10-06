@@ -1027,5 +1027,10 @@
   "advancement.jeg.guide.training.complete.title": "Battle Hardened",
   "advancement.jeg.guide.training.complete.description": "Complete all four chapters: combat roles, systems, five vehicle missions and the End expedition. Equivalent equipment is your choice; independent challenges are excluded.",
   "message.jeg.vehicle.low_health_warning": "Vehicle damaged — repair required",
-  "message.jeg.vehicle.critical_health_warning": "Vehicle critical — repair immediately"
+  "message.jeg.vehicle.critical_health_warning": "Vehicle critical — repair immediately",
+  "hud.jeg.vehicle.reloading": "Reloading",
+  "hud.jeg.vehicle.decoy_ready": "CM READY",
+  "hud.jeg.vehicle.decoy_reloading": "CM RELOADING",
+  "hud.jeg.vehicle.need_ammo": "Not Enough Ammo! Need ",
+  "hud.jeg.vehicle.not_enough_energy": "Not Enough Energy"
 }

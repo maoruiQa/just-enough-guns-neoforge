@@ -8,6 +8,11 @@ import ttv.migami.jeg.vehicle.util.VehicleSoundHelper;
 
 public final class VehicleClientState {
     private static int vehicleId = -1;
+    private static int seatIndex = -1;
+    private static double freeYaw;
+    private static double freePitch;
+    private static double cameraDistance;
+    private static double cameraDistanceLerp;
     private static boolean freeLookDown;
     private static boolean zoomDown;
     private static boolean seekDown;
@@ -24,6 +29,14 @@ public final class VehicleClientState {
     private VehicleClientState() {}
 
     public static void update(VehicleEntity vehicle, boolean freeLook, boolean zoom, boolean seek) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        int seat = player == null ? -1 : vehicle.getSeatIndex(player);
+        if (vehicleId != vehicle.getId() || seatIndex != seat) {
+            clear();
+            var mouse = Minecraft.getInstance().mouseHandler;
+            syncMousePosition(mouse.xpos(), mouse.ypos());
+        }
+        seatIndex = seat;
         vehicleId = vehicle.getId();
         freeLookDown = freeLook;
         zoomDown = zoom;
@@ -68,10 +81,7 @@ public final class VehicleClientState {
         float speedY = mouseDeltaY * sensitivity * (invertY ? -1.0F : 1.0F);
         mouseLerpX = Mth.lerp(smoothingX, mouseLerpX, speedX);
         mouseLerpY = Mth.lerp(smoothingY, mouseLerpY, speedY);
-        if (freeLook) {
-            mouseLerpX = 0.0F;
-            mouseLerpY = 0.0F;
-        }
+
     }
 
     public static void setMouseDelta(float deltaX, float deltaY) {
@@ -93,7 +103,10 @@ public final class VehicleClientState {
     }
 
     public static void clear() {
+        ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay.clearFeedback();
         vehicleId = -1;
+        seatIndex = -1;
+        freeYaw = freePitch = cameraDistance = cameraDistanceLerp = 0;
         freeLookDown = false;
         zoomDown = false;
         seekDown = false;
@@ -142,4 +155,22 @@ public final class VehicleClientState {
     public static float mouseLerpY() {
         return mouseLerpY;
     }
+
+    public static void updateCamera(float partialTick) {
+        double times = .6D * Math.min(partialTick, .8D);
+        freeYaw -= .4D * times * mouseLerpX;
+        freePitch += .3D * times * mouseLerpY;
+        if (!freeLookDown) {
+            freeYaw = Mth.lerp(.6D * times, freeYaw, 0);
+            freePitch = Mth.lerp(.6D * times, freePitch, 0);
+        }
+        freeYaw = Mth.wrapDegrees(freeYaw);
+        freePitch = Mth.wrapDegrees(freePitch);
+        cameraDistanceLerp = Mth.lerp(times, cameraDistanceLerp, cameraDistance);
+    }
+
+    public static void scrollCamera(double amount) { cameraDistance = Mth.clamp(cameraDistance - amount, -3, 8); }
+    public static double cameraDistance() { return cameraDistanceLerp; }
+    public static double freeYaw() { return freeYaw; }
+    public static double freePitch() { return freePitch; }
 }

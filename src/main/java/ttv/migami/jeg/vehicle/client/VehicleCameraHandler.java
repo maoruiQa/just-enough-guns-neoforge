@@ -28,6 +28,7 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId()) {
             return;
         }
+        if (vehicle.usesSwControls()) return;
         CameraPos camera = thirdPersonCameraFor(player, vehicle);
         double configuredDistance = Math.abs(camera.z());
         if (configuredDistance > 0.0D) {
@@ -45,6 +46,7 @@ public final class VehicleCameraHandler {
             return;
         }
         float partialTick = (float) event.getPartialTick();
+        if (vehicle.usesSwControls()) { VehicleClientState.updateCamera(partialTick); return; }
         if (Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON) {
             return;
         }
@@ -66,7 +68,7 @@ public final class VehicleCameraHandler {
         if (!VehicleClientState.isRidingVehicle() || VehicleClientState.vehicleId() != vehicle.getId() || !VehicleClientState.zoomDown()) {
             return;
         }
-        event.setFOV(event.getFOV() / VEHICLE_ZOOM_DIVISOR);
+        event.setFOV(event.getFOV() / (vehicle.usesSwControls() ? vehicle.selectedVehicleZoom(player) : VEHICLE_ZOOM_DIVISOR));
     }
 
     @SubscribeEvent

@@ -22,7 +22,7 @@ public final class SpeedboatGeoModel extends NamedVehicleGeoModel {
 
         GeoBone barrel = this.getAnimationProcessor().getBone("barrel");
         if (barrel != null) {
-            barrel.setRotX(Mth.clamp(-animatable.turretPitch(partialTick), -25.0F, 50.0F) * Mth.DEG_TO_RAD);
+            barrel.setRotX((animatable.usesSwControls() ? animatable.swBarrelModelPitch(partialTick) : Mth.clamp(-animatable.turretPitch(partialTick), -25.0F, 50.0F)) * Mth.DEG_TO_RAD);
         }
     }
 }

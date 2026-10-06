@@ -63,6 +63,11 @@ public final class CrosshairHandler {
         techScale = 1.5F;
     }
 
+    public static void playHitMarker(boolean critical, boolean vehicle, boolean killed) {
+        if (Config.showHitmarker() && ClientUiConfig.showHitFeedback() && ttv.migami.jeg.vehicle.client.overlay.VehicleHudOverlay.recordHit(critical, vehicle, killed)) return;
+        playHitMarker(critical);
+    }
+
     public static void playHitMarker(boolean critical) {
         if (!Config.showHitmarker() || !ClientUiConfig.showHitFeedback()) {
             return;
@@ -94,7 +99,7 @@ public final class CrosshairHandler {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         renderHitMarker(guiGraphics, width, height, partialTick);
-        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.isTruckVehicle()) {
+        if (player.getVehicle() instanceof VehicleEntity vehicle && vehicle.isTruckVehicle() && !vehicle.usesSwControls()) {
             return;
         }
         if (!ClientUiConfig.showCrosshair()) {

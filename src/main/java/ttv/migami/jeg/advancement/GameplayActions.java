@@ -79,6 +79,10 @@ public final class GameplayActions {
     }
 
     public static void hit(Entity shooter, Entity source, Entity target, boolean headshot) {
+        if (shooter instanceof ServerPlayer player && player.getVehicle() instanceof VehicleEntity mounted && mounted.usesSwControls() && mounted.canPassengerUseSelectedVehicleWeapon(player)) {
+            boolean killed = target instanceof VehicleEntity vehicleTarget ? vehicleTarget.vehicleHealth() <= 0 : target instanceof LivingEntity livingTarget && livingTarget.isDeadOrDying();
+            ttv.migami.jeg.network.NetworkHandler.sendHitMarker(player, headshot, target instanceof VehicleEntity, killed);
+        }
         if (!hostile(target, shooter)) return;
         String weapon = weapon(source);
         if (!weapon.isEmpty()) action(shooter, "hit", weapon);

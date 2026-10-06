@@ -13,24 +13,43 @@
     {
       "index": 0,
       "x": 0.36,
-      "y": 0.65,
-      "z": 0.1,
+      "y": -0.25,
+      "z": 0.56,
       "driver": true,
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
       "min_pitch": -7.5,
-      "max_pitch": 7.5,
+      "max_pitch": 74,
       "sensitivity_x": 0.53,
       "sensitivity_y": 0.71,
       "sensitivity_z": 0.9,
       "zoom_camera": {
-        "x": -0.5,
-        "y": 0.4,
-        "z": 0.55,
-        "use_fixed_camera_pos": true,
-        "transform": "barrel"
-      }
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "zoom_x": -0.4,
+        "zoom_y": 0.4,
+        "zoom_z": 0,
+        "has_zoom_position": true,
+        "transform": "barrel",
+        "direction": "barrel",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": false,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "turret",
+      "orientation": 0,
+      "can_rotate_head": false,
+      "min_yaw": -180,
+      "max_yaw": 180,
+      "can_rotate_body": false
     },
     {
       "index": 1,
@@ -41,10 +60,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -52,8 +71,26 @@
         "x": 1.803125,
         "y": 1.9765625,
         "z": -0.8125,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": -90,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     },
     {
       "index": 2,
@@ -64,10 +101,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -75,8 +112,26 @@
         "x": -1.803125,
         "y": 1.9765625,
         "z": -0.8125,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": 90,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     },
     {
       "index": 3,
@@ -87,10 +142,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -98,8 +153,26 @@
         "x": 1.815625,
         "y": 1.9765625,
         "z": -0.8125,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": -90,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     },
     {
       "index": 4,
@@ -110,10 +183,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -121,8 +194,26 @@
         "x": -1.815625,
         "y": 1.9765625,
         "z": -0.8125,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": 90,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     },
     {
       "index": 5,
@@ -133,10 +224,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -144,8 +235,26 @@
         "x": 0.6875,
         "y": 1.6015625,
         "z": -4.1,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": 180,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     },
     {
       "index": 6,
@@ -156,10 +265,10 @@
       "enclosed": true,
       "hide_passenger": true,
       "ban_hand": true,
-      "min_pitch": -40.0,
-      "max_pitch": 40.0,
-      "min_yaw": -50.0,
-      "max_yaw": 50.0,
+      "min_pitch": -40,
+      "max_pitch": 40,
+      "min_yaw": -50,
+      "max_yaw": 50,
       "sensitivity_x": 0.58,
       "sensitivity_y": 0.77,
       "sensitivity_z": 0.9,
@@ -167,23 +276,113 @@
         "x": -1.50625,
         "y": 1.9765625,
         "z": -3.0625,
-        "use_fixed_camera_pos": true
-      }
+        "zoom_x": 0,
+        "zoom_y": 0,
+        "zoom_z": 0,
+        "has_zoom_position": false,
+        "transform": "vehicle",
+        "direction": "default",
+        "zoom_direction": "default",
+        "use_fixed_camera_pos": true,
+        "use_aircraft_camera": false,
+        "aircraft_x": 0,
+        "aircraft_y": 3,
+        "aircraft_z": -10,
+        "use_simulated_third_person": false,
+        "simulated_third_person_distance": 0,
+        "simulated_third_person_height": 0
+      },
+      "transform": "vehicle",
+      "orientation": 90,
+      "can_rotate_head": true,
+      "can_rotate_body": false
     }
   ],
   "engine": {
     "type": "track",
     "acceleration": 0.0384,
-    "max_forward_speed": 0.68,
-    "max_reverse_speed": 0.4526,
+    "max_forward_speed": 0.82,
+    "max_reverse_speed": 0.4,
     "friction": 0.82,
     "steering_speed": 0.1,
-    "energy_cost_rate": 96
+    "energy_cost_rate": 96,
+    "sw_controls": true,
+    "buoyancy": 0.052,
+    "increment": 0.025,
+    "decrement": 0.015,
+    "wheel_rot_speed": 1.25,
+    "wheel_differential": 0.5,
+    "track_rot_speed": 1.9,
+    "track_differential": 0.8,
+    "terrain_points": [
+      [
+        1.875,
+        0,
+        2.375
+      ],
+      [
+        -1.875,
+        0,
+        2.375
+      ],
+      [
+        1.875,
+        0,
+        1.438
+      ],
+      [
+        -1.875,
+        0,
+        1.438
+      ],
+      [
+        1.875,
+        0,
+        0.5
+      ],
+      [
+        -1.875,
+        0,
+        0.5
+      ],
+      [
+        1.875,
+        0,
+        -0.4375
+      ],
+      [
+        -1.875,
+        0,
+        -0.4375
+      ],
+      [
+        1.875,
+        0,
+        -1.4375
+      ],
+      [
+        -1.875,
+        0,
+        -1.4375
+      ],
+      [
+        1.875,
+        0,
+        -2.4375
+      ],
+      [
+        -1.875,
+        0,
+        -2.4375
+      ]
+    ],
+    "terrain_rotate_rate": 1,
+    "inertia_rotate_rate": 1
   },
   "third_person_camera": {
-    "x": 0.0,
-    "y": 3.0,
-    "z": -6.8
+    "x": 0,
+    "y": 1,
+    "z": 3
   },
   "dismount": {
     "x": 2.95,
@@ -270,7 +469,15 @@
         "x": -0.0875,
         "y": 2.943125,
         "z": 3.677825
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleRuApc",
+      "crosshair_zooming": "@VehicleRuApc",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/cannon_30mm.png",
+      "hud_transform": "barrel",
+      "hud_direction": "barrel",
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:vehicle_coax_machine_gun",
@@ -282,7 +489,15 @@
         "x": 0.1625,
         "y": 2.843125,
         "z": 0.977825
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "barrel",
+      "hud_direction": "barrel",
+      "view_direction": "default"
     },
     {
       "weapon": "jeg:vehicle_bmp2_missile",
@@ -294,19 +509,151 @@
         "x": -0.0875,
         "y": 2.943125,
         "z": 3.677825
-      }
+      },
+      "default_zoom": 3,
+      "crosshair": "@VehicleCommonMissile",
+      "crosshair_zooming": "@VehicleCommonMissile",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/missile_9m113.png",
+      "hud_transform": "turret",
+      "hud_direction": "turret",
+      "view_direction": "barrel"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 1,
+      "muzzle": {
+        "x": 1.803125,
+        "y": 1.9765625,
+        "z": -0.8125
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 2,
+      "muzzle": {
+        "x": -1.803125,
+        "y": 1.9765625,
+        "z": -0.8125
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 3,
+      "muzzle": {
+        "x": 1.815625,
+        "y": 1.9765625,
+        "z": -0.8125
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 4,
+      "muzzle": {
+        "x": -1.815625,
+        "y": 1.9765625,
+        "z": -0.8125
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 5,
+      "muzzle": {
+        "x": 0.6875,
+        "y": 1.6015625,
+        "z": -4.1
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
+    },
+    {
+      "weapon": "jeg:vehicle_coax_machine_gun",
+      "ammo": "jeg:rifle_ammo",
+      "energy_cost": 1,
+      "guided": false,
+      "seat": 6,
+      "muzzle": {
+        "x": -1.50625,
+        "y": 1.9765625,
+        "z": -3.0625
+      },
+      "default_zoom": 2,
+      "crosshair": "@VehicleCommonGun",
+      "crosshair_zooming": "@VehicleCommonGun",
+      "crosshair_color": 16762624,
+      "icon": "jeg:textures/overlay/vehicle/weapon/icons/gun_7_62mm.png",
+      "hud_transform": "vehicle",
+      "hud_direction": "passenger",
+      "view_direction": "default"
     }
   ],
   "turret": {
     "seat": 0,
-    "render_pivot_y": 0.0,
-    "origin_x": 0.0,
+    "render_pivot_y": 2.7,
+    "origin_x": 0,
     "origin_y": 2.25,
     "origin_z": -0.703125,
-    "barrel_x": 0.0,
-    "barrel_y": 0.3041,
-    "barrel_z": 0.814420625,
-    "guided_uses_turret": false
+    "barrel_x": 0.3625,
+    "barrel_y": 0.293125,
+    "barrel_z": 1.18095,
+    "guided_uses_turret": false,
+    "pitch_turn_speed": 12.5,
+    "yaw_turn_speed": 10,
+    "min_pitch": -7.5,
+    "max_pitch": 74
   },
   "destroy": {
     "explodes": true,
