@@ -21,6 +21,11 @@ public record VehicleDamageProfile(boolean superbWarfare, float selfHurtPercent,
         return (float) damage;
     }
 
+    /** Civilian chassis: three safe blocks, full hull damage at twenty blocks. */
+    public static float truckFallDamage(double dropDistance, float maxHealth) {
+        return (float) (Math.max(0.0D, dropDistance - 3.0D) * maxHealth / 17.0D);
+    }
+
     public static final float PART_MAX_HEALTH = 50.0F;
     public static final float PART_REPAIR_PER_TICK = 0.0025F * PART_MAX_HEALTH;
 
@@ -50,6 +55,9 @@ public record VehicleDamageProfile(boolean superbWarfare, float selfHurtPercent,
         assert Math.abs(impactDamage(1, 0, 0, true, false, false, false) - 45.36F) < .001F;
         assert impactDamage(1, 1, 0, false, true, true, false) == 15.0F;
         assert Math.abs(impactDamage(1, 1, 0, false, true, false, false) - 28.224F) < .001F;
+        assert truckFallDamage(2, 250) == 0 && truckFallDamage(3, 250) == 0;
+        assert Math.abs(truckFallDamage(5, 250) - 29.411764F) < .001F;
+        assert truckFallDamage(20, 250) == 250 && truckFallDamage(50, 250) > 250;
         assert DEFAULT.decays(35.0F, 350.0F);
         assert !DEFAULT.decays(35.01F, 350.0F);
         assert !new VehicleDamageProfile(true, 0, 0.1F, 0, true, false).decays(1, 100);
