@@ -70,6 +70,16 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
     )
     private void jeg$setupVehicleCamera(DeltaTracker deltaTracker, CallbackInfo callback) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (entity instanceof VehicleEntity fixture && ttv.migami.jeg.vehicle.client.VehicleCaptureCheck.isAiFixture(fixture)) {
+            float partialTick = this.getCameraEntityPartialTicks(deltaTracker);
+            float yaw = net.minecraft.util.Mth.rotLerp(partialTick, fixture.yRotO, fixture.getYRot());
+            Vec3 back = Vec3.directionFromRotation(0, yaw).scale(-16);
+            this.setPosition(net.minecraft.util.Mth.lerp(partialTick, fixture.xo, fixture.getX()) + back.x,
+                    net.minecraft.util.Mth.lerp(partialTick, fixture.yo, fixture.getY()) + 10,
+                    net.minecraft.util.Mth.lerp(partialTick, fixture.zo, fixture.getZ()) + back.z);
+            this.jeg$setCameraRotation(new Vec3(yaw, 28, 0));
+            return;
+        }
         LocalPlayer player = minecraft.player;
         if (player == null || this.entity != player || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
