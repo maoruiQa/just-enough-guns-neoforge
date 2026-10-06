@@ -139,6 +139,56 @@ public final class VehicleDamageGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 160)
+    public static void truckFallsDamageChassisWithCreativeDriver(GameTestHelper helper) throws ReflectiveOperationException {
+        java.util.List<VehicleEntity> trucks = new java.util.ArrayList<>();
+        int[] heights = {2, 5, 20};
+        float[] expectedHealth = {250, 250 - 250 * 2.0F / 17, 0};
+        boolean[] landed = new boolean[heights.length];
+        for (int i = 0; i < heights.length; i++) {
+            var floor = helper.absolutePos(new net.minecraft.core.BlockPos(24 + i * 48, 1, 24));
+            for (int x = -8; x <= 8; x++) for (int z = -8; z <= 8; z++) {
+                helper.getLevel().setChunkForced((floor.getX() + x) >> 4, (floor.getZ() + z) >> 4, true);
+                helper.getLevel().setBlockAndUpdate(floor.offset(x, 0, z), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+            }
+            var truck = ModEntities.TRUCK.get().create(helper.getLevel());
+            if (heights[i] == 20) {
+                Field cooldown = VehicleEntity.class.getDeclaredField("ramDamageCooldown");
+                cooldown.setAccessible(true);
+                cooldown.setInt(truck, 1000);
+            }
+            truck.setPos(floor.getX() + .5, floor.getY() + 1 + heights[i], floor.getZ() + .5);
+            helper.getLevel().addFreshEntity(truck);
+            var driver = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
+            net.minecraft.world.level.GameType.CREATIVE.updatePlayerAbilities(driver.getAbilities());
+            driver.setPos(truck.position());
+            helper.assertTrue(driver.startRiding(truck, true), "Creative driver must occupy the truck");
+            trucks.add(truck);
+        }
+        helper.onEachTick(() -> {
+            boolean allLanded = true;
+            for (int i = 0; i < trucks.size(); i++) {
+                VehicleEntity truck = trucks.get(i);
+                if (!landed[i] && (truck.isRemoved() || truck.onGround())) {
+                    helper.assertTrue(Math.abs(truck.vehicleHealth() - expectedHealth[i]) < .01F,
+                            "Truck health after " + heights[i] + " block drop: " + truck.vehicleHealth());
+                    helper.assertTrue(truck.isRemoved() == (heights[i] == 20), "Only the severe fall must destroy the truck");
+                    if (heights[i] == 2) {
+                        Vec3 supportedMotion = new Vec3(.1, -.06, 0);
+                        truck.setDeltaMovement(supportedMotion);
+                        truck.move(net.minecraft.world.entity.MoverType.SELF, supportedMotion);
+                        helper.assertValueEqual(truck.vehicleHealth(), 250.0F, "Driving on supported ground must not damage the chassis");
+                    }
+                    landed[i] = true;
+                    truck.ejectPassengers();
+                    truck.discard();
+                }
+                allLanded &= landed[i];
+            }
+            if (allLanded) helper.succeed();
+        });
+    }
+
     private static float partHealth(VehicleEntity vehicle, String name) throws ReflectiveOperationException {
         Field field = VehicleEntity.class.getDeclaredField(name);
         field.setAccessible(true);

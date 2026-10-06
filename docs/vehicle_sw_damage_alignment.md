@@ -13,7 +13,7 @@ All eleven existing SW-derived vehicles: A10, AH6, BMP2, HPJ11, laser tower, LAV
 - Damage applies immunities, fixed reductions, multipliers, then directional armor. Registered damage types and entity/damage tags work with data-pack rules. JEG bullet, shell, rocket, missile and destruction sources map to the corresponding SW families without stacking mutually exclusive explosion rules.
 - Damaged wheels/tracks reduce power and cause one-sided drift; engine damage reduces propulsion; helicopter tail rotor damage induces yaw. A damaged turret cannot aim or fire. Existing vehicle controls and flight implementations remain the host for these effects.
 - Hull repair defaults to 0.05 per tick after a 200-tick damage cooldown. At/below the configured critical health threshold, hull decays by 0.1 per tick; SW tower/TOM6 exceptions are retained. Negative hull repair cooldown disables hull auto-repair.
-- Wall, landing, vehicle and living-entity collisions use the SW speed/mass damage formulas. The port retains its current movement/collision solver; fixed-wing unsafe landing detects tilt because this port has no retractable landing gear state.
+- Wall, landing, vehicle and living-entity collisions use the SW speed/mass damage formulas, including SW vehicles whose legacy collision level is `none`. The port retains its current movement/collision solver; fixed-wing unsafe landing detects tilt because this port has no retractable landing gear state.
 - Destruction handles passenger death/crash attribution, separate blast damage/radius, the full vanilla exposure ray fan, 15% minimum exposure, SW weak block ray power, native block drops/hooks, and the configured particle tier. Native entity damage and knockback are disabled for the destruction blast to avoid duplicate application.
 - Broken parts produce smoke/flame. Low-health warnings use the SW warning audio and translated passenger messages.
 
@@ -35,3 +35,7 @@ NeoForge 1.21.1 also provides real server GameTests:
 ```
 
 The focused namespace checks component repair/save migration, arrow OBB picking, independent tail rotor repair, critical hull decay, immunities/passenger destruction, projectile families, and the actual cannon impact path. It is isolated from the older suite's mock player connections, which have no negotiated mod networking channels.
+
+## Truck fall correction
+
+The civilian truck uses structural landing damage instead of SW weapon resistance: drops up to three blocks are safe, each additional block removes 1/17 of maximum hull health, and a twenty-block fall destroys the truck. This is an intentional gameplay adjustment requested after natural-fall testing found that the old `none` collision gate made the truck entirely immune. Normal movement on supported ground does not apply this damage. A landing applies this structural damage once, without also applying the SW vertical impact hit. Other vehicle impact formulas are unchanged.
