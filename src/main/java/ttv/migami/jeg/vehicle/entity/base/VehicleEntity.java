@@ -1470,13 +1470,21 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     private void applyVehicleImpactDamage(Vec3 requestedMovement, Vec3 actualMovement, boolean wasVerticallySupported, int unsupportedTicksBeforeMove) {
         if (this.level().isClientSide()
-                || this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE) {
+                || (this.vehicleData().defaults().collisionLevel() == CollisionLevel.NONE
+                    && !this.vehicleData().defaults().damageProfile().superbWarfare())) {
             return;
+        }
+        VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
+        boolean truckLanding = this.isTruckVehicle() && this.verticalCollision && !wasVerticallySupported
+                && requestedMovement.y() < -LAND_VEHICLE_FALL_DAMAGE_MIN_VERTICAL_SPEED;
+        if (truckLanding) {
+            // Landing damages the chassis; weapon armor must not make a civilian truck fall-proof.
+            float damage = VehicleDamageProfile.truckFallDamage(this.currentAirborneDropDistance(), this.maxVehicleHealth());
+            if (damage > 0.0F) this.hurtVehicleIgnoringArmor(this.vehicleStrikeDamageSource(), damage);
         }
         if (this.ramDamageCooldown > 0) {
             return;
         }
-        VehicleType vehicleType = this.vehicleData().defaults().vehicleType();
         if (!this.vehicleData().defaults().damageProfile().superbWarfare()
                 && (vehicleType == VehicleType.HELICOPTER || vehicleType == VehicleType.AIRCRAFT)) {
             this.applyAirVehicleImpactDamage(vehicleType, requestedMovement);
@@ -1484,7 +1492,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         if (this.vehicleData().defaults().damageProfile().superbWarfare()) {
             float damage = VehicleDamageProfile.impactDamage(this.lastTickSpeed, this.lastTickVerticalSpeed, this.roll(),
-                    this.horizontalCollision, this.verticalCollision, vehicleType == VehicleType.HELICOPTER,
+                    this.horizontalCollision, this.verticalCollision && !truckLanding, vehicleType == VehicleType.HELICOPTER,
                     vehicleType == VehicleType.AIRCRAFT && (Math.abs(this.roll()) > 20 || Math.abs(this.getXRot()) > 30));
             if (damage > 0.0F) this.hurtVehicleStrikeWithArmor(this.vehicleStrikeDamageSource(), damage);
             if (this.horizontalCollision) this.ramDamageCooldown = 4;
