@@ -1025,5 +1025,7 @@
   "advancement.jeg.guide.vehicles.expedition_complete.title": "Expedition Complete",
   "advancement.jeg.guide.vehicles.expedition_complete.description": "Complete this chapter’s core field objectives. Independent challenges do not count.",
   "advancement.jeg.guide.training.complete.title": "Battle Hardened",
-  "advancement.jeg.guide.training.complete.description": "Complete all four chapters: combat roles, systems, five vehicle missions and the End expedition. Equivalent equipment is your choice; independent challenges are excluded."
+  "advancement.jeg.guide.training.complete.description": "Complete all four chapters: combat roles, systems, five vehicle missions and the End expedition. Equivalent equipment is your choice; independent challenges are excluded.",
+  "message.jeg.vehicle.low_health_warning": "Vehicle damaged — repair required",
+  "message.jeg.vehicle.critical_health_warning": "Vehicle critical — repair immediately"
 }

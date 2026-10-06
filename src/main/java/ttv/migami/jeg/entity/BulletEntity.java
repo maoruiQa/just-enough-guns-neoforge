@@ -1095,7 +1095,7 @@ public class BulletEntity extends Projectile {
                         ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hurtNonLiving(hitEntity, source, directDamage);
+                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source, directDamage);
                         }
                     }
                 }
@@ -1125,7 +1125,7 @@ public class BulletEntity extends Projectile {
                         ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hurtNonLiving(hitEntity, source, stats.damage());
+                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source, stats.damage());
                         }
                     }
                 }

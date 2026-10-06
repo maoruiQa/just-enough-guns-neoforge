@@ -1,9 +1,9 @@
 {
   "entity_type": "jeg:mi28",
   "vehicle_type": "helicopter",
-  "max_health": 350.0,
-  "auto_repair_per_tick": 0.01,
-  "auto_repair_cooldown_ticks": 160,
+  "max_health": 350,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 10000000,
   "allow_free_cam": true,
   "has_decoy": true,
@@ -109,66 +109,80 @@
   "obb": [
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.75,
       "z": -0.5625,
       "half_width": 1.25,
       "half_height": 0.75,
-      "half_depth": 2.75
+      "half_depth": 2.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.84375,
       "z": 4.0625,
       "half_width": 0.9375,
       "half_height": 0.65625,
-      "half_depth": 1.875
+      "half_depth": 1.875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 3.15625,
       "z": -0.3125,
       "half_width": 0.75,
       "half_height": 0.65625,
-      "half_depth": 3.6875
+      "half_depth": 3.6875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 2.90625,
       "z": 4.34375,
       "half_width": 0.75,
       "half_height": 0.40625,
-      "half_depth": 0.96875
+      "half_depth": 0.96875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 3.28125,
       "z": 0.09375,
       "half_width": 1.8125,
       "half_height": 0.53125,
-      "half_depth": 3.28125
+      "half_depth": 3.28125,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
-      "x": 0.0,
+      "x": 0,
       "y": 1.90625,
       "z": -7.6875,
       "half_width": 0.625,
       "half_height": 0.90625,
-      "half_depth": 4.375
+      "half_depth": 4.375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "turret",
-      "x": 0.0,
+      "x": 0,
       "y": 0.8125,
       "z": 4.1875,
       "half_width": 0.75,
       "half_height": 0.375,
-      "half_depth": 0.75
+      "half_depth": 0.75,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
@@ -177,7 +191,9 @@
       "z": -0.0625,
       "half_width": 0.96875,
       "half_height": 0.875,
-      "half_depth": 1.1875
+      "half_depth": 1.1875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "body",
@@ -186,25 +202,31 @@
       "z": -0.0625,
       "half_width": 0.96875,
       "half_height": 0.875,
-      "half_depth": 1.1875
+      "half_depth": 1.1875,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "sub_engine",
-      "x": 0.0,
+      "x": 0,
       "y": 3.65625,
       "z": -11.71875,
       "half_width": 0.375,
       "half_height": 0.84375,
-      "half_depth": 1.09375
+      "half_depth": 1.09375,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     },
     {
       "part": "main_engine",
-      "x": 0.0,
+      "x": 0,
       "y": 4.625,
       "z": 0.5,
       "half_width": 0.625,
       "half_height": 0.8125,
-      "half_depth": 0.625
+      "half_depth": 0.625,
+      "transform": "vehicle",
+      "rotation": "vehicle"
     }
   ],
   "weapons": [
@@ -283,7 +305,12 @@
   ],
   "destroy": {
     "explodes": true,
-    "explosion_power": 3.0
+    "explosion_power": 14,
+    "explosion_damage": 400,
+    "explode_blocks": true,
+    "explode_passengers": true,
+    "crash_passengers": true,
+    "particle_type": "giant"
   },
   "seek": {
     "range": 384.0,
@@ -333,8 +360,8 @@
     "minecraft:lava * 2.6",
     "@minecraft:tnt * 3",
     "@minecraft:tnt_minecart * 3",
-    "minecraft:explosion * 1.75",
-    "minecraft:player_explosion * 1.75",
+    "minecraft:explosion * 3.5",
+    "minecraft:player_explosion * 3.5",
     "superbwarfare:projectile_hit * 0.6",
     "superbwarfare:grapeshot_hit * 0.5",
     "#superbwarfare:projectile * 0.03",
@@ -351,5 +378,12 @@
     "All * 0.77",
     "All - 10",
     "@#superbwarfare:aerial_bomb * 2"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0.1,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": true,
+  "mass": 1.2
 }

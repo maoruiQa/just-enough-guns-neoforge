@@ -1028,5 +1028,7 @@
   "advancement.jeg.guide.vehicles.expedition_complete.title": "远征归来",
   "advancement.jeg.guide.vehicles.expedition_complete.description": "完成本章核心实战目标；独立挑战不计入。",
   "advancement.jeg.guide.training.complete.title": "久经沙场",
-  "advancement.jeg.guide.training.complete.description": "完成四章核心目标，掌握作战角色与系统，完成五种载具任务及末地远征；同类装备任选，独立挑战不计入。"
+  "advancement.jeg.guide.training.complete.description": "完成四章核心目标，掌握作战角色与系统，完成五种载具任务及末地远征；同类装备任选，独立挑战不计入。",
+  "message.jeg.vehicle.low_health_warning": "载具受损，需要维修",
+  "message.jeg.vehicle.critical_health_warning": "载具濒毁，请立即维修"
 }

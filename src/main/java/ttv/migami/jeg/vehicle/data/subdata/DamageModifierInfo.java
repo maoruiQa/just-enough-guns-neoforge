@@ -8,6 +8,9 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -67,11 +70,13 @@ public final class DamageModifierInfo {
         for (Rule rule : this.rules) {
             if (rule.op == Op.REDUCE && rule.matches(source)) {
                 result = Math.max(0.0F, result - rule.value);
+                if (result <= 0.0F) return 0.0F;
             }
         }
         for (Rule rule : this.rules) {
             if (rule.op == Op.MULTIPLY && rule.matches(source)) {
                 result *= rule.value;
+                if (result <= 0.0F) return 0.0F;
             }
         }
         return Math.max(0.0F, result);
@@ -94,6 +99,8 @@ public final class DamageModifierInfo {
             return null;
         }
         String trimmed = raw.trim();
+        // SW also accepts type/tag/entity immunity rules without an operator (e.g. minecraft:fall 0).
+        if (trimmed.matches("[^\\s]+\\s+0")) trimmed = trimmed.replaceFirst("\\s+0$", "") + " * 0";
         Matcher matcher = RULE_PATTERN.matcher(trimmed);
         if (!matcher.matches()) {
             if (trimmed.equalsIgnoreCase("All") || trimmed.equalsIgnoreCase("All 0")) {
@@ -103,11 +110,18 @@ public final class DamageModifierInfo {
         }
         String prefix = matcher.group("prefix") == null ? "" : matcher.group("prefix");
         String id = matcher.group("id");
+        if (!id.equalsIgnoreCase("All") && ResourceLocation.tryParse(id.toLowerCase(Locale.ROOT)) == null) return null;
         String operator = matcher.group("operator");
-        float value = Float.parseFloat(matcher.group("value"));
+        float value;
+        try {
+            value = Float.parseFloat(matcher.group("value"));
+        } catch (NumberFormatException invalid) {
+            return null;
+        }
+        if (!Float.isFinite(value)) return null;
         Op op = switch (operator) {
             case "-" -> Op.REDUCE;
-            case "*" -> Op.MULTIPLY;
+            case "*" -> value == 0.0F ? Op.IMMUNE : Op.MULTIPLY;
             default -> Op.IMMUNE;
         };
         MatchKind kind;
@@ -156,19 +170,11 @@ public final class DamageModifierInfo {
             };
         }
 
-        /**
-         * Strict type matching: each JEG hit should map to at most one SW explosion family rule,
-         * mirroring SW where damage types are mutually exclusive.
-         * <ul>
-         *   <li>Missile explosion ({@link VehicleMissileEntity} + explosion) → {@code projectile_explosion} only</li>
-         *   <li>Other explosions (rocket HE, TNT, vanilla) → exact {@code minecraft:explosion} / {@code player_explosion}</li>
-         *   <li>{@code custom_explosion} → non-missile explosion that is not a vanilla explosion type key path (unused for rockets)</li>
-         * </ul>
-         */
+        /** Exact registry keys plus aliases for JEG shared projectile entities. */
         private static boolean matchesDamageType(DamageSource source, String id) {
             String key = normalize(id);
             boolean missileExplosion = isExplosion(source) && isMissileDirect(source);
-            boolean nonMissileExplosion = isExplosion(source) && !isMissileDirect(source);
+            boolean nonMissileExplosion = isExplosion(source) && !isMissileDirect(source) && !isShellOrRocket(source);
 
             // Vanilla types: exact only, and never for missile warheads (those use projectile_explosion in SW).
             if (key.equals("minecraft:explosion") || key.equals("explosion")) {
@@ -184,19 +190,18 @@ public final class DamageModifierInfo {
                 return missileExplosion;
             }
 
-            // SW custom HE — only non-missile, and only when not already classified as vanilla explosion/player_explosion.
-            // (Prevents stacking custom_explosion * N on top of minecraft:explosion * M for the same rocket hit.)
+            // Cannon/rocket HE and vehicle destruction map to SW custom_explosion.
             if (key.equals("superbwarfare:custom_explosion") || key.equals("jeg:custom_explosion")) {
-                return false;
+                return source.is(ModDamageTypes.CUSTOM_EXPLOSION) || isExplosion(source) && isShellOrRocket(source);
             }
 
             // SW projectile hit (missile kinetic / direct) — thrown / non-explosion missile sources.
             if (key.equals("superbwarfare:projectile_hit") || key.equals("jeg:projectile_hit")) {
-                return isMissileDirect(source) && !isExplosion(source);
+                return (isMissileDirect(source) || isShellOrRocket(source)) && !isExplosion(source);
             }
 
             if (key.equals("minecraft:lava") || key.equals("lava")) {
-                return source.is(DamageTypes.LAVA) || source.is(DamageTypes.IN_FIRE) || source.is(DamageTypes.ON_FIRE);
+                return source.is(DamageTypes.LAVA);
             }
             // Do NOT treat every BulletEntity as an arrow (that zeroed rocket damage on helicopters).
             if (key.equals("minecraft:arrow") || key.equals("arrow")) {
@@ -224,19 +229,17 @@ public final class DamageModifierInfo {
             if (key.equals("jeg:bullet") || key.equals("superbwarfare:bullet")) {
                 return isKineticBullet(source);
             }
-            return false;
+            return source.is(ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.parse(key)));
         }
 
         private static boolean matchesDamageTag(DamageSource source, String id) {
             String key = normalize(id);
-            if (key.endsWith("vehicle_strike") || key.equals("superbwarfare:vehicle_strike") || key.equals("jeg:vehicle_strike")) {
-                return source.is(ModDamageTypes.VEHICLE_STRIKE);
-            }
-            // #superbwarfare:projectile — ballistic projectiles only, never HE/rocket/missile blasts.
-            if (key.contains("projectile")) {
-                return isKineticBullet(source);
-            }
-            return false;
+            if (source.is(TagKey.create(Registries.DAMAGE_TYPE, ResourceLocation.parse(key)))) return true;
+            if (key.equals("superbwarfare:vehicle_strike")) return source.is(ModDamageTypes.VEHICLE_STRIKE);
+            // Absolute projectile damage is a separate SW tag, never stacked on normal JEG bullets.
+            if (key.equals("superbwarfare:projectile_absolute")) return source.is(TagKey.create(Registries.DAMAGE_TYPE, ResourceLocation.parse("jeg:sw_projectile_absolute")));
+            return key.equals("superbwarfare:projectile") && !isExplosion(source) && !isMissileDirect(source) && !isShellOrRocket(source)
+                    && (isKineticBullet(source) || source.is(TagKey.create(Registries.DAMAGE_TYPE, ResourceLocation.parse("jeg:sw_projectile"))));
         }
 
         private static boolean matchesEntityId(DamageSource source, String id) {
@@ -250,6 +253,10 @@ public final class DamageModifierInfo {
                     return true;
                 }
             }
+            if (direct instanceof BulletEntity bullet && key.equals("superbwarfare:small_cannon_shell")) {
+                String weapon = bullet.getGunStats().id().getPath();
+                if (weapon.equals("vehicle_20mm_cannon") || weapon.equals("vehicle_30mm_cannon")) return true;
+            }
             if (key.equals("jeg:vehicle_missile") || key.equals("superbwarfare:vehicle_missile")) {
                 return direct instanceof VehicleMissileEntity;
             }
@@ -259,7 +266,7 @@ public final class DamageModifierInfo {
                     return true;
                 }
             }
-            if (causing != null) {
+            if (direct == null && causing != null) {
                 ResourceLocation typeId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(causing.getType());
                 if (typeId != null && (typeId.toString().equals(key) || typeId.getPath().equals(key))) {
                     return true;
@@ -276,15 +283,11 @@ public final class DamageModifierInfo {
 
         private static boolean matchesEntityTag(DamageSource source, String id) {
             String key = normalize(id);
-            // Do not treat every explosion as aerial bomb / AT rocket.
-            if (key.contains("aerial_bomb")) {
-                return false;
-            }
-            if (key.contains("at_rocket")) {
-                // Shoulder rockets / vehicle rockets as BulletEntity HE
-                return isExplosion(source) && source.getDirectEntity() instanceof BulletEntity;
-            }
-            return false;
+            Entity direct = source.getDirectEntity();
+            if (direct == null) return false;
+            if (net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(direct.getType()).is(TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(key)))) return true;
+            return key.equals("superbwarfare:at_rocket") && direct instanceof BulletEntity bullet
+                    && ttv.migami.jeg.gun.BallisticProtection.isRocketDirectHit(bullet.getGunStats());
         }
 
         private static boolean matchesMissileAlias(String key, String weaponId, String weaponPath) {
@@ -315,14 +318,17 @@ public final class DamageModifierInfo {
             return source.getDirectEntity() instanceof VehicleMissileEntity;
         }
 
-        private static boolean isMissile(DamageSource source) {
-            return source.getDirectEntity() instanceof VehicleMissileEntity
-                    || source.getEntity() instanceof VehicleMissileEntity;
+        private static boolean isShellOrRocket(DamageSource source) {
+            if (!(source.getDirectEntity() instanceof BulletEntity bullet)) return false;
+            return switch (bullet.getGunStats().id().getPath()) {
+                case "vehicle_20mm_cannon", "vehicle_30mm_cannon", "rocket_launcher", "vehicle_70mm_rocket", "vehicle_80mm_rocket" -> true;
+                default -> false;
+            };
         }
 
         /** Normal gun bullets — excludes rocket HE (explosion) and missiles. */
         private static boolean isKineticBullet(DamageSource source) {
-            if (isExplosion(source) || isMissileDirect(source)) {
+            if (isExplosion(source) || isMissileDirect(source) || isShellOrRocket(source)) {
                 return false;
             }
             if (source.is(ModDamageTypes.BULLET)) {
@@ -334,5 +340,18 @@ public final class DamageModifierInfo {
         private static String normalize(String id) {
             return id == null ? "" : id.trim().toLowerCase(Locale.ROOT);
         }
+    }
+
+    public static void main(String[] args) {
+        Rule immune = parseRule("minecraft:fall 0");
+        assert immune != null && immune.op() == Op.IMMUNE && immune.kind() == MatchKind.DAMAGE_TYPE;
+        assert parseRule("minecraft:fall\t0").op() == Op.IMMUNE;
+        assert parseRule("@#superbwarfare:aerial_bomb * 2").kind() == MatchKind.ENTITY_TAG;
+        assert parseRule("#superbwarfare:projectile_absolute * .7") == null;
+        assert parseRule("minecraft:lava - -13").value() == -13.0F;
+        assert parseRule("All - 13").kind() == MatchKind.ALL;
+        assert parseRule("minecraft:bad:rule * 2") == null;
+        assert parseRule("broken") == null && parseRule("All * NaN") == null;
+        assert parseRule("All * 99999999999999999999999999999999999999999999999999999") == null;
     }
 }

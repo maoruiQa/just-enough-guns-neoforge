@@ -77,7 +77,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.hasProperty('vehicleDamageOnly') ? 'jeg_vehicle_damage' : project.mod_id
         }
 
         data {
@@ -216,4 +216,21 @@ tasks.register('checkVehicleGeometry', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'ttv.migami.jeg.vehicle.util.VehicleGeometry'
     jvmArgs '-ea'
+}
+
+// Small assertion checks for SW component recovery, save migration and damage-rule parsing.
+tasks.register('checkVehicleDamage', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.vehicle.data.subdata.VehicleDamageProfile'
+    jvmArgs '-ea'
+}
+tasks.register('checkVehicleDamageModifiers', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo'
+    jvmArgs '-ea'
+}
+tasks.named('check') {
+    dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
 }

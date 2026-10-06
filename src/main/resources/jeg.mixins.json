@@ -12,7 +12,9 @@
     "GunnerWaterConversionMixin",
     "GunRepairAdvancementMixin",
     "ServerGamePacketListenerImplMixin",
-    "PlayerAdvancementsMigrationMixin"
+    "PlayerAdvancementsMigrationMixin",
+    "VehicleProjectileHitMixin",
+    "VehicleExplosionMixin"
   ],
   "client": [
     "KeyMappingVehicleMixin",

@@ -43,6 +43,11 @@ public final class VehicleSoundHelper {
 
     private VehicleSoundHelper() {}
 
+    public static SoundEvent healthWarning(boolean critical) {
+        var sound = ModSounds.ALL.get(Reference.id(critical ? "vehicle.no_health" : "vehicle.low_health"));
+        return sound != null ? sound.get() : SoundEvents.NOTE_BLOCK_BELL.value();
+    }
+
     public static SoundEvent lockWarning() {
         return lockedWarning();
     }

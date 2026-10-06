@@ -1,0 +1,37 @@
+# Superb Warfare vehicle damage alignment
+
+Reference: the workspace's `external/SuperbWarfare-0.8.8-1.21.1`, including `entity/vehicle/base/VehicleEntity`, `entity/vehicle/damage/DamageModifier`, `tools/CustomExplosion`, and `data/superbwarfare/sbw/vehicles`.
+
+## Covered vehicles
+
+All eleven existing SW-derived vehicles: A10, AH6, BMP2, HPJ11, laser tower, LAV150, MI28, speedboat, TOM6, truck, and waveforce tower. Their entire OBB arrays (centers, half extents, parts, position/rotation transforms), hull health, immunity/modifier tables, repair settings, mass, directional armor, warning flags and destruction settings match this reference. Vehicles without an SW OBB use their entity AABB.
+
+## Behavior
+
+- Bullets, cannon/rocket direct hits, missiles, and vanilla projectile picking carry the selected OBB part to server damage. Blast damage affects the hull.
+- Every component starts at 50 health and regenerates 0.125 per tick independently of hull repair cooldown. Negative health breaks the component; a broken component recovers only above 47.5 health. Fault flags survive save/reload. Old 10-point component saves migrate proportionally.
+- Damage applies immunities, fixed reductions, multipliers, then directional armor. Registered damage types and entity/damage tags work with data-pack rules. JEG bullet, shell, rocket, missile and destruction sources map to the corresponding SW families without stacking mutually exclusive explosion rules.
+- Damaged wheels/tracks reduce power and cause one-sided drift; engine damage reduces propulsion; helicopter tail rotor damage induces yaw. A damaged turret cannot aim or fire. Existing vehicle controls and flight implementations remain the host for these effects.
+- Hull repair defaults to 0.05 per tick after a 200-tick damage cooldown. At/below the configured critical health threshold, hull decays by 0.1 per tick; SW tower/TOM6 exceptions are retained. Negative hull repair cooldown disables hull auto-repair.
+- Wall, landing, vehicle and living-entity collisions use the SW speed/mass damage formulas. The port retains its current movement/collision solver; fixed-wing unsafe landing detects tilt because this port has no retractable landing gear state.
+- Destruction handles passenger death/crash attribution, separate blast damage/radius, the full vanilla exposure ray fan, 15% minimum exposure, SW weak block ray power, native block drops/hooks, and the configured particle tier. Native entity damage and knockback are disabled for the destruction blast to avoid duplicate application.
+- Broken parts produce smoke/flame. Low-health warnings use the SW warning audio and translated passenger messages.
+
+## Verification
+
+Run from this module, using Java 21 for 1.21.1 or Java 25 for 26.2/26.3:
+
+```powershell
+.\gradlew.bat build
+```
+
+The standard `check` now includes `checkVehicleGeometry`, `checkVehicleDamage`, and `checkVehicleDamageModifiers`. Client presentation/audio still requires an in-game client check.
+
+NeoForge 1.21.1 also provides real server GameTests:
+
+```powershell
+.\gradlew.bat runGameTestServer -PvehicleDamageOnly --no-configuration-cache
+.\gradlew.bat runGameTestServer --no-configuration-cache
+```
+
+The focused namespace checks component repair/save migration, arrow OBB picking, independent tail rotor repair, critical hull decay, immunities/passenger destruction, projectile families, and the actual cannon impact path. It is isolated from the older suite's mock player connections, which have no negotiated mod networking channels.

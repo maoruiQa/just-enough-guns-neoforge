@@ -1679,5 +1679,19 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "vehicle.low_health": {
+    "sounds": [
+      {
+        "name": "jeg:vehicle/common/low_health"
+      }
+    ]
+  },
+  "vehicle.no_health": {
+    "sounds": [
+      {
+        "name": "jeg:vehicle/common/no_health"
+      }
+    ]
   }
 }
