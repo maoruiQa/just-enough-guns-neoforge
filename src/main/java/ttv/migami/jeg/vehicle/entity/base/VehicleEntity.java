@@ -688,6 +688,13 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         if (this.level().isClientSide) {
             return;
         }
+        if (this.usesSwControls()) {
+            var turret = this.vehicleData().defaults().turret();
+            this.desiredTurretYaw = Mth.wrapDegrees(yaw);
+            this.desiredTurretPitch = Mth.clamp(pitch, -turret.maxPitch(), -turret.minPitch());
+            this.hasTurretTarget = turret.enabled();
+            return;
+        }
         if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_YAW, Mth.wrapDegrees(yaw));
         if (!this.isTurretDamaged()) this.entityData.set(DATA_TURRET_PITCH, pitch);
     }
@@ -762,6 +769,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return this.position().add(0.0D, 1.0D, 0.0D);
         }
         VehicleWeaponInfo weapon = weapons.get(weaponSlot);
+        if (this.usesSwControls()) return this.weaponMuzzlePosition(weapon, this.getViewVector(1), 1.25D, 0.95D);
         Vec3 articulatedMuzzle = this.articulatedWeaponMuzzlePosition(weapon);
         if (articulatedMuzzle != null) {
             return articulatedMuzzle;
@@ -1077,8 +1085,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         }
         this.engineStart = true;
         this.engineStartOver = true;
-        this.enginePower = Math.max(this.enginePower, AI_HELICOPTER_SPAWN_ENGINE_POWER);
-        this.entityData.set(DATA_PROPELLER_SPEED, Math.max(this.propellerSpeed(), AI_HELICOPTER_SPAWN_ROTOR_SPEED));
+        double hover = this.usesSwControls() ? 0.06D / this.vehicleData().defaults().engine().liftSpeed() : AI_HELICOPTER_SPAWN_ENGINE_POWER;
+        this.enginePower = Math.max(this.enginePower, hover);
+        this.entityData.set(DATA_PROPELLER_SPEED, Math.max(this.propellerSpeed(), this.usesSwControls() ? (float) hover : AI_HELICOPTER_SPAWN_ROTOR_SPEED));
         Vec3 motion = this.getDeltaMovement();
         this.setDeltaMovement(motion.x, Math.max(motion.y, AI_HELICOPTER_SPAWN_UPWARD_SPEED), motion.z);
         this.hurtMarked = true;

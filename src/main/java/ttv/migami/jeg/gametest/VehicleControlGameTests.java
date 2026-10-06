@@ -14,6 +14,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.init.ModEntities;
+import ttv.migami.jeg.vehicle.ai.EnemyVehicleController;
 import ttv.migami.jeg.vehicle.data.subdata.EngineInfo;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
 import ttv.migami.jeg.vehicle.entity.base.VehicleInput;
@@ -283,6 +284,177 @@ public final class VehicleControlGameTests {
                     "Critical, vehicle and kill feedback flags must survive the existing network codec");
         } finally { buffer.release(); }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void enemySurfaceRetreatTurningAndIdle(GameTestHelper helper) throws ReflectiveOperationException {
+        var brain = enemyBrain();
+        var vehicle = isolatedVehicle(helper, ModEntities.BMP2.get(), "bmp2");
+        vehicle.setPos(helper.absoluteVec(new Vec3(2, 20, 2)));
+        Vec3 target = vehicle.position().add(-10, 0, 10);
+        enemyCall("driveToward", vehicle, brain, target, 180D, 5D, true);
+        VehicleInput retreat = aiInput(vehicle);
+        helper.assertTrue(retreat.backward() && retreat.left() && !retreat.brake(),
+                "Close enemies must retreat and invert steering when reversing");
+        enemyCall("driveToward", vehicle, brain, vehicle.position().add(-30, 0, 0), 5D, 5D, false);
+        helper.assertTrue(!aiInput(vehicle).forward() && aiInput(vehicle).right(),
+                "BMP must pivot before accelerating into a sharp turn");
+        for (int tick = 0; tick < 100; tick++) {
+            vehicle.tickCount = tick;
+            enemyCall("driveToward", vehicle, brain, vehicle.position(), 12D, 8D, false);
+            helper.assertTrue(aiInput(vehicle).brake() && !aiInput(vehicle).backward(),
+                    "An idle patrol must not classify its deliberate stop as being stuck");
+        }
+        var truck = isolatedVehicle(helper, ModEntities.TRUCK.get(), "truck");
+        truck.setPos(vehicle.position());
+        enemyCall("driveToward", truck, enemyBrain(), truck.position().add(0, 0, 30), 5D, 5D, false);
+        helper.assertTrue(aiInput(truck).forward(), "Truck AI must retain ordinary pursuit control");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void enemyBoatWaterAndShoreAvoidance(GameTestHelper helper) throws ReflectiveOperationException {
+        var boat = isolatedVehicle(helper, ModEntities.SPEEDBOAT.get(), "speedboat");
+        boat.setPos(helper.absoluteVec(new Vec3(502, 30, 502)));
+        var level = helper.getLevel();
+        var samples = new java.util.HashMap<net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState>();
+        for (int step = 3; step <= 8; step++) {
+            var pos = net.minecraft.core.BlockPos.containing(boat.position().add(0, .1, step));
+            samples.put(pos, level.getBlockState(pos)); level.setBlock(pos, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+        }
+        try {
+            Method unsafe = EnemyVehicleController.class.getDeclaredMethod("isForwardUnsafe", VehicleEntity.class, boolean.class);
+            unsafe.setAccessible(true);
+            helper.assertFalse((boolean) unsafe.invoke(null, boat, false), "A boat must accept open water as its route");
+            var truck = isolatedVehicle(helper, ModEntities.TRUCK.get(), "truck"); truck.setPos(boat.position());
+            helper.assertTrue((boolean) unsafe.invoke(null, truck, false), "A truck must avoid the same water route");
+            level.setBlock(net.minecraft.core.BlockPos.containing(boat.position().add(0, .1, 8)), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            helper.assertTrue((boolean) unsafe.invoke(null, boat, false), "A boat must detect an approaching shoreline");
+        } finally {
+            samples.forEach((pos, state) -> level.setBlock(pos, state, 3));
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void enemyTurretSlewAndActualWeaponAlignment(GameTestHelper helper) throws ReflectiveOperationException {
+        for (var type : new EntityType[]{ModEntities.BMP2.get(), ModEntities.LAV150.get(), ModEntities.SPEEDBOAT.get(), ModEntities.MI28.get()}) {
+            VehicleEntity vehicle = (VehicleEntity) helper.spawn(type, new Vec3(2, 20, 2));
+            var crew = helper.spawn(EntityType.HUSK, new Vec3(2, 20, 2));
+            crew.setNoAi(true);
+            int seat = vehicle.vehicleData().defaults().turret().seatIndex();
+            vehicle.rememberSeatAssignment(crew, seat); crew.startRiding(vehicle, true);
+            vehicle.selectAiWeaponForSeat(seat, seat == 1 ? 3 : 0);
+            vehicle.setAiTurretAim(90, -90);
+            helper.assertTrue(vehicle.turretYaw() == 0 && vehicle.turretPitch() == 0,
+                    "Enemy turret aim must not teleport past SW turn rates");
+            invoke(vehicle, "tickSwTurret", new Class<?>[]{});
+            helper.assertTrue(Math.abs(vehicle.turretYaw()) <= vehicle.vehicleData().defaults().turret().yawTurnSpeed(),
+                    "Enemy yaw slew must use the configured turret rate");
+            for (int tick = 0; tick < 60; tick++) invoke(vehicle, "tickSwTurret", new Class<?>[]{});
+            helper.assertTrue(Math.abs(vehicle.turretPitch() + vehicle.vehicleData().defaults().turret().maxPitch()) < .1,
+                    "Enemy elevation must honor the matching vehicle's SW pitch limit");
+            Vec3 muzzle = vehicle.aiWeaponMuzzlePosition(vehicle.selectedVehicleWeaponIndex(crew));
+            Vec3 direction = vehicle.vehicleHudShootDirection(crew, 1);
+            Method actualMuzzle = VehicleEntity.class.getDeclaredMethod("weaponMuzzlePosition", ttv.migami.jeg.vehicle.data.subdata.VehicleWeaponInfo.class,
+                    Vec3.class, double.class, double.class); actualMuzzle.setAccessible(true);
+            var weapon = vehicle.vehicleData().defaults().weapons().get(vehicle.selectedVehicleWeaponIndex(crew));
+            helper.assertTrue(muzzle.distanceTo((Vec3) actualMuzzle.invoke(vehicle, weapon, direction, 1.25D, .95D)) < 1.0E-6,
+                    "Enemy aim must originate at the same muzzle that actually launches the projectile");
+            Method aligned = EnemyVehicleController.class.getDeclaredMethod("weaponAligned", VehicleEntity.class, LivingEntity.class, Vec3.class, double.class);
+            aligned.setAccessible(true);
+            helper.assertTrue((boolean) aligned.invoke(null, vehicle, crew, muzzle.add(direction.scale(40)), 5D),
+                    "A target on the real weapon axis must be eligible for fire");
+            helper.assertFalse((boolean) aligned.invoke(null, vehicle, crew, muzzle.subtract(direction.scale(40)), 5D),
+                    "AI must not fire at a target behind its actual barrel");
+            vehicle.discard(); crew.discard();
+        }
+        var ah = helper.spawn(ModEntities.AH6.get(), new Vec3(2, 20, 2));
+        var pilot = helper.spawn(EntityType.HUSK, new Vec3(2, 20, 2));
+        pilot.setNoAi(true); pilot.startRiding(ah, true); ah.selectAiWeaponForSeat(0, 0);
+        var target = mockPlayer(helper);
+        Vec3 point = ah.aiWeaponMuzzlePosition(0).add(Vec3.directionFromRotation(10, 0).scale(60));
+        target.setPos(point.x, point.y - target.getEyeHeight(), point.z);
+        var aimConstructor = Class.forName(EnemyVehicleController.class.getName() + "$Aim").getDeclaredConstructor(float.class, float.class, float.class);
+        aimConstructor.setAccessible(true);
+        enemyCall("tickAh6Weapons", ah, pilot, target, aimConstructor.newInstance(0F, 0F, 10F), 60D, true);
+        helper.assertTrue(ah.selectedVehicleWeaponIndex(pilot) == 0,
+                "AH-6 must use its machine gun when the nose angle permits gun fire but not an accurate rocket");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void enemySwFlightClosedLoop(GameTestHelper helper) throws ReflectiveOperationException {
+        for (String id : new String[]{"mi28", "ah6"}) {
+            var pilot = mockPlayer(helper);
+            VehicleEntity vehicle = new VehicleEntity(ModEntities.AH6.get(), helper.getLevel()) {
+                { setVehicleData(Reference.id(id)); addEnergy(maxVehicleEnergy()); }
+                @Override public LivingEntity getControllingPassenger() { return pilot; }
+                @Override public void move(MoverType mover, Vec3 delta) { setPos(position().add(delta)); setDeltaMovement(delta); }
+            };
+            Vec3 origin = helper.absoluteVec(new Vec3(1002, 1, 1002));
+            helper.getLevel().getChunkAt(net.minecraft.core.BlockPos.containing(origin));
+            int ground = helper.getLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    (int) origin.x, (int) origin.z);
+            vehicle.setPos(origin.x, ground + 12, origin.z); vehicle.setYRot(90);
+            vehicle.primeAiHelicopterSpawnHover();
+            var brain = enemyBrain();
+            Vec3 destination = vehicle.position().add(0, 0, 45);
+            double peakRoll = 0, peakSpeed = 0;
+            for (int tick = 0; tick < 400; tick++) {
+                vehicle.tickCount = tick; vehicle.xo = vehicle.getX(); vehicle.yo = vehicle.getY(); vehicle.zo = vehicle.getZ();
+                vehicle.yRotO = vehicle.getYRot(); vehicle.xRotO = vehicle.getXRot();
+                enemyCall("flySwToward", vehicle, brain, destination, null, 24D, id);
+                VehicleInput input = aiInput(vehicle);
+                helper.assertFalse(input.forward() || input.backward(), "SW AI must use tilt and collective, without auto landing input");
+                invoke(vehicle, "tickSwHelicopterMovement", new Class<?>[]{EngineInfo.class, boolean.class}, vehicle.vehicleData().defaults().engine(), false);
+                peakRoll = Math.max(peakRoll, Math.abs(vehicle.roll())); peakSpeed = Math.max(peakSpeed, vehicle.getDeltaMovement().horizontalDistance());
+            }
+            double altitude = vehicle.getY() - helper.getLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    net.minecraft.util.Mth.floor(vehicle.getX()), net.minecraft.util.Mth.floor(vehicle.getZ()));
+            System.out.println("JEG enemy flight " + id + ": altitude=" + altitude + " distance=" + destination.subtract(vehicle.position()).horizontalDistance()
+                    + " peakRoll=" + peakRoll + " peakSpeed=" + peakSpeed);
+            helper.assertTrue(altitude > 20 && altitude < 28, id + " must climb then hold its patrol altitude");
+            helper.assertTrue(destination.subtract(vehicle.position()).horizontalDistance() < 20, id + " must close on its patrol point");
+            helper.assertTrue(peakRoll < 40 && peakSpeed < 0.9, id + " must retain playable banking and speed");
+            var target = mockPlayer(helper);
+            target.setPos(vehicle.getX(), ground + 1, vehicle.getZ() - 10);
+            enemyCall("airEngage", vehicle, brain, target, id, (double) vehicle.distanceTo(target));
+            Field evasion = brain.getClass().getDeclaredField("airEvasionTicks"); evasion.setAccessible(true);
+            helper.assertTrue(evasion.getInt(brain) == 0, "Close-range retreat must not indefinitely request an obstacle climb");
+            double attackPeakSpeed = 0, attackPeakAltitude = 0;
+            int noseAimTicks = 0;
+            for (int tick = 0; tick < 600; tick++) {
+                vehicle.tickCount++;
+                vehicle.xo = vehicle.getX(); vehicle.yo = vehicle.getY(); vehicle.zo = vehicle.getZ();
+                vehicle.yRotO = vehicle.getYRot(); vehicle.xRotO = vehicle.getXRot();
+                enemyCall("airEngage", vehicle, brain, target, id, (double) vehicle.distanceTo(target));
+                invoke(vehicle, "tickSwHelicopterMovement", new Class<?>[]{EngineInfo.class, boolean.class}, vehicle.vehicleData().defaults().engine(), false);
+                attackPeakSpeed = Math.max(attackPeakSpeed, vehicle.getDeltaMovement().horizontalDistance());
+                attackPeakAltitude = Math.max(attackPeakAltitude, vehicle.getY() - ground);
+                Vec3 toTarget = target.getEyePosition().subtract(vehicle.position());
+                if (vehicle.getViewVector(1).dot(toTarget.normalize()) > Math.cos(Math.toRadians(12))) noseAimTicks++;
+            }
+            System.out.println("JEG enemy attack " + id + ": peakSpeed=" + attackPeakSpeed + " peakAltitude=" + attackPeakAltitude + " noseAimTicks=" + noseAimTicks);
+            helper.assertTrue(attackPeakSpeed < 1.05 && attackPeakAltitude < 60, id + " must keep attack runs within playable speed and altitude");
+            helper.assertTrue(noseAimTicks > 5, id + " must bring its fixed nose weapons onto the target during attack runs");
+        }
+        helper.succeed();
+    }
+
+    private static Object enemyBrain() throws ReflectiveOperationException {
+        var constructor = Class.forName(EnemyVehicleController.class.getName() + "$Brain").getDeclaredConstructor();
+        constructor.setAccessible(true); return constructor.newInstance();
+    }
+
+    private static void enemyCall(String name, Object... arguments) throws ReflectiveOperationException {
+        Method method = java.util.Arrays.stream(EnemyVehicleController.class.getDeclaredMethods())
+                .filter(candidate -> candidate.getName().equals(name)).findFirst().orElseThrow();
+        method.setAccessible(true); method.invoke(null, arguments);
+    }
+
+    private static VehicleInput aiInput(VehicleEntity vehicle) throws ReflectiveOperationException {
+        Field field = VehicleEntity.class.getDeclaredField("input"); field.setAccessible(true); return (VehicleInput) field.get(vehicle);
     }
 
     private static net.minecraft.server.level.ServerPlayer mockPlayer(GameTestHelper helper) {

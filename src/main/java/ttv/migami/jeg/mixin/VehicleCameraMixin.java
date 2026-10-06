@@ -59,6 +59,15 @@ public abstract class VehicleCameraMixin {
             at = @At("TAIL")
     )
     private void jeg$setupVehicleCamera(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo callback) {
+        if (entity instanceof VehicleEntity fixture && ttv.migami.jeg.vehicle.client.VehicleCaptureCheck.isAiFixture(fixture)) {
+            float yaw = net.minecraft.util.Mth.rotLerp(partialTick, fixture.yRotO, fixture.getYRot());
+            Vec3 back = Vec3.directionFromRotation(0, yaw).scale(-16);
+            this.setPosition(net.minecraft.util.Mth.lerp(partialTick, fixture.xo, fixture.getX()) + back.x,
+                    net.minecraft.util.Mth.lerp(partialTick, fixture.yo, fixture.getY()) + 10,
+                    net.minecraft.util.Mth.lerp(partialTick, fixture.zo, fixture.getZ()) + back.z);
+            this.jeg$setCameraRotation(new Vec3(yaw, 28, 0));
+            return;
+        }
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || entity != player || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
             return;
