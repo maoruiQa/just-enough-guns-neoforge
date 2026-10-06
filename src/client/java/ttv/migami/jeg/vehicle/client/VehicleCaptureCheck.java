@@ -25,7 +25,8 @@ public final class VehicleCaptureCheck {
     private static int vehicleIndex, seat, view, stationWeapon, captures, stateTicks, entityId = -1;
     private static final boolean TILT = Boolean.getBoolean("jeg.vehicleCaptureTilt");
     private static boolean started, finished;
-    private static final boolean DRIVE = "drive".equals(System.getProperty("jeg.vehicleCaptureMode"));
+    private static final boolean AI = "ai".equals(System.getProperty("jeg.vehicleCaptureMode"));
+    private static final boolean DRIVE = AI || "drive".equals(System.getProperty("jeg.vehicleCaptureMode"));
     private static int driveTick, lastFrameTick = -1;
     private static boolean driveReady;
     private static CameraType originalCamera;
@@ -33,6 +34,10 @@ public final class VehicleCaptureCheck {
     private static net.minecraft.world.entity.monster.Husk fixturePilot;
 
     private VehicleCaptureCheck() {}
+
+    public static boolean isAiFixture(VehicleEntity vehicle) {
+        return AI && !OUTPUT.isEmpty() && !finished && vehicle.getId() == entityId;
+    }
 
     /** Returns true while the fixture owns input; ordinary play never enters this path. */
     public static boolean tick(Minecraft mc) {
@@ -123,6 +128,7 @@ public final class VehicleCaptureCheck {
                 if (DRIVE) {
                     var server = mc.getSingleplayerServer();
                     var source = server.createCommandSourceStack();
+                    if (AI) server.getCommands().performPrefixedCommand(source, "gamemode creative @a");
                     for (int x = -4; x <= 4; x++) for (int z = -1; z <= 12; z++) player.level().getChunk(x, z);
                     for (int y = -60; y <= -50; y++) server.getCommands().performPrefixedCommand(source,
                             "fill -64 " + y + " -16 64 " + y + " 192 minecraft:air");
@@ -130,6 +136,13 @@ public final class VehicleCaptureCheck {
                     if (name.equals("speedboat")) {
                         for (int y = -64; y <= -61; y++) server.getCommands().performPrefixedCommand(source,
                                 "fill -64 " + y + " -16 64 " + y + " 192 minecraft:water");
+                    }
+                    if (AI) {
+                        for (int y = -60; y <= -50; y++) server.getCommands().performPrefixedCommand(source,
+                                "fill -64 " + y + " -64 64 " + y + " 64 minecraft:air");
+                        server.getCommands().performPrefixedCommand(source, "fill -64 -61 -64 64 -61 64 minecraft:grass_block");
+                        if (name.equals("speedboat")) for (int y = -64; y <= -61; y++) server.getCommands().performPrefixedCommand(source,
+                                "fill -64 " + y + " -64 64 " + y + " 64 minecraft:water");
                     }
                 }
                 EntityType<? extends VehicleEntity> type = switch (name) {
@@ -140,13 +153,25 @@ public final class VehicleCaptureCheck {
                     case "mi28" -> ModEntities.MI28.get();
                     default -> ModEntities.AH6.get();
                 };
-                fixture = new ConfiguredVehicleEntity(type, player.level(), Reference.id(name));
-                fixture.setPos(0, DRIVE && vehicleIndex < 4 ? -60 : 30, 0);
+                int initialY = DRIVE && vehicleIndex < 4 ? -60 : AI ? -40 : 30;
+                fixture = AI ? ttv.migami.jeg.item.EnemyVehicleSpawnItem.spawnVehicle((net.minecraft.server.level.ServerLevel) player.level(),
+                        new net.minecraft.core.BlockPos(0, initialY, 0), type, Reference.id(name), null, null, false)
+                        : new ConfiguredVehicleEntity(type, player.level(), Reference.id(name));
+                if (fixture == null) throw new IllegalStateException("Enemy fixture spawn failed: " + name);
+                fixture.setPos(0, initialY, 0);
                 fixture.setNoGravity(!DRIVE);
                 fixture.setYRot(0);
                 fixture.addEnergy(fixture.maxVehicleEnergy());
-                player.level().addFreshEntity(fixture);
-                if (DRIVE) {
+                if (!AI) player.level().addFreshEntity(fixture);
+                if (AI) {
+                    fixture.getRandom().setSeed(0x0888L);
+                    ttv.migami.jeg.vehicle.ai.EnemyVehicleController.setAnchor(fixture, new Vec3(0, -60, 0));
+                    if (vehicleIndex >= 4) fixture.primeAiHelicopterSpawnHover();
+                    if (name.equals("speedboat")) {
+                        fixture.addAmmoForAi(Reference.id("rifle_ammo"), 600); fixture.reloadAiVehicleWeapons();
+                    }
+                }
+                if (DRIVE && !AI) {
                     fixturePilot = new net.minecraft.world.entity.monster.Husk(EntityType.HUSK, player.level());
                     fixturePilot.setNoAi(true);
                     fixturePilot.setInvulnerable(true);
@@ -155,7 +180,7 @@ public final class VehicleCaptureCheck {
                     player.level().addFreshEntity(fixturePilot);
                     fixturePilot.startRiding(fixture, true);
                 }
-                player.startRiding(fixture, true);
+                if (!AI) player.startRiding(fixture, true);
             }
             if (!DRIVE) for (int attempts = 0; fixture.getSeatIndex(player) != seat && attempts < 8; attempts++) fixture.changeSeat(player);
             if (HANDHELD) {
@@ -189,7 +214,9 @@ public final class VehicleCaptureCheck {
             }
             return true;
         }
-        if (!(mc.player.getVehicle() instanceof VehicleEntity vehicle) || vehicle.getId() != entityId) return true;
+        var entity = AI ? mc.level.getEntity(entityId) : mc.player.getVehicle();
+        if (!(entity instanceof VehicleEntity vehicle) || vehicle.getId() != entityId) return true;
+        if (AI) mc.setCameraEntity(vehicle);
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         mc.gui.getChat().clearMessages(false);
         VehicleClientState.update(vehicle, false, false, false);
@@ -217,7 +244,7 @@ public final class VehicleCaptureCheck {
         // Server task scheduling can spawn the fixture one tick before the capture hook.
         // Establish the same physical starting state immediately before sample zero.
         if (driveTick == 0) {
-            fixture.setPos(0, vehicleIndex < 4 ? -60 : 30, 0);
+            fixture.setPos(0, vehicleIndex < 4 ? -60 : AI ? -40 : 30, 0);
             fixture.setDeltaMovement(Vec3.ZERO);
             fixture.setYRot(0); fixture.setXRot(0);
         }
@@ -226,22 +253,36 @@ public final class VehicleCaptureCheck {
         try {
             Files.createDirectories(Path.of(OUTPUT));
             Files.writeString(Path.of(OUTPUT).resolve("motion.csv"), row, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            if (AI) Files.writeString(Path.of(OUTPUT).resolve("combat.csv"), VEHICLES[vehicleIndex] + "," + driveTick + ","
+                    + fixture.isWeaponFiring() + "," + fixture.turretYaw() + "," + fixture.turretPitch() + ","
+                    + fixture.selectedVehicleWeaponIndex() + "," + fixture.selectedVehicleWeaponAmmo() + ","
+                    + fixture.vehicleEnergy() + "," + fixture.vehicleHealth() + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException error) { throw new IllegalStateException("Cannot record vehicle controls", error); }
         boolean helicopter = vehicleIndex >= 4;
         int tick = driveTick++;
-        fixture.setAiVehicleInput(new ttv.migami.jeg.vehicle.entity.base.VehicleInput(
+        if (AI && tick == 200) {
+            var server = mc.getSingleplayerServer();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "gamemode survival @a");
+            player.getAbilities().invulnerable = true;
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "tp @a 0 -60 60");
+            player.level().setBlock(new net.minecraft.core.BlockPos(0, -61, 60), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+            ttv.migami.jeg.vehicle.ai.EnemyVehicleController.rememberTarget(fixture, player, 600);
+        }
+        if (!AI) fixture.setAiVehicleInput(new ttv.migami.jeg.vehicle.entity.base.VehicleInput(
                 tick < 60 || tick >= 100 && tick < 140, tick >= 60 && tick < 100,
                 false, tick >= 100 && tick < 140, tick >= 140,
                 helicopter && tick < 80, helicopter && tick >= 140,
                 false,false,false,false,false,-1,false,false, helicopter && tick >= 100 && tick < 140 ? 1 : 0,
                 helicopter && tick >= 100 && tick < 140 ? .5F : 0));
-        if (driveTick == 181) {
+        if (driveTick == (AI ? vehicleIndex >= 4 ? 601 : 401 : 181)) {
             driveReady = false; stateTicks = 0; lastFrameTick = -1;
-            player.stopRiding(); fixture.discard(); fixture = null;
+            player.stopRiding();
+            if (AI) for (var crew : java.util.List.copyOf(fixture.getPassengers())) crew.discard();
+            fixture.discard(); fixture = null;
             if (fixturePilot != null) { fixturePilot.discard(); fixturePilot = null; }
             if (++vehicleIndex == VEHICLES.length) {
-                finished = true; mc.options.setCameraType(originalCamera); VehicleClientState.clear();
-                System.out.println("JEG vehicle control recording completed: 6 vehicles, 181 server samples each at " + OUTPUT);
+                finished = true; mc.options.setCameraType(originalCamera); if (AI) mc.setCameraEntity(mc.player); VehicleClientState.clear();
+                System.out.println("JEG vehicle control recording completed: 6 vehicles, " + (AI ? "401 surface / 601 air" : "181") + " server samples each at " + OUTPUT);
             }
         }
     }

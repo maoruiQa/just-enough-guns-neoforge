@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--world", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--mode", choices=("static", "drive"), default="static")
+    parser.add_argument("--mode", choices=("static", "drive", "ai"), default="static")
     parser.add_argument("--handheld", action="store_true")
     parser.add_argument("--hud-only", action="store_true")
     parser.add_argument("--survival", action="store_true")
@@ -19,8 +19,8 @@ def main():
     parser.add_argument("--height", type=int, default=480)
     parser.add_argument("--gui-scale", type=int, default=0)
     args = parser.parse_args()
-    assert not (args.hud_only and args.mode == "drive"), "HUD check needs static input"
-    assert not (args.handheld and args.mode == "drive"), "Handheld check is a static Truck fixture"
+    assert not (args.hud_only and args.mode != "static"), "HUD check needs static input"
+    assert not (args.handheld and args.mode != "static"), "Handheld check is a static Truck fixture"
     module = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
     assert not (output / "camera.csv").exists() and not (output / "motion.csv").exists(), "Use a fresh capture directory"
@@ -39,7 +39,7 @@ def main():
     with (output / "runClient.log").open("w", encoding="utf8") as log:
         result = subprocess.run(command, cwd=module, stdout=log, stderr=subprocess.STDOUT, timeout=900)
     assert result.returncode == 0, output / "runClient.log"
-    csv_file = output / ("motion.csv" if args.mode == "drive" else "camera.csv")
+    csv_file = output / ("motion.csv" if args.mode in ("drive", "ai") else "camera.csv")
     assert csv_file.exists(), "Client exited without recording fixtures"
     print(module.name + ": runClient and " + args.mode + " capture completed", flush=True)
 
