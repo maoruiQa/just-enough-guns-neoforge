@@ -1,30 +1,74 @@
-{"entity_type": "jeg:laser_tower",
+{
+  "entity_type": "jeg:laser_tower",
   "vehicle_type": "artillery",
-  "max_health": 100.0,
-  "auto_repair_per_tick": 0.01,
-  "auto_repair_cooldown_ticks": 180,
+  "max_health": 100,
+  "auto_repair_per_tick": 0.05,
+  "auto_repair_cooldown_ticks": 200,
   "max_energy": 260,
   "allow_free_cam": true,
   "container_type": "mini",
   "seats": [
-    {"index": 0, "x": 0.0, "y": 1.0, "z": 0.0, "driver": true, "enclosed": true}
+    {
+      "index": 0,
+      "x": 0.0,
+      "y": 1.0,
+      "z": 0.0,
+      "driver": true,
+      "enclosed": true
+    }
   ],
-  "engine": {"type": "static", "acceleration": 0.0, "max_forward_speed": 0.0, "max_reverse_speed": 0.0, "friction": 1.0},
-  "third_person_camera": {"x": 0.0, "y": 3.3, "z": -5.8},
-  "dismount": {"x": 1.3, "y": 0.1, "z": 0.0},
+  "engine": {
+    "type": "static",
+    "acceleration": 0.0,
+    "max_forward_speed": 0.0,
+    "max_reverse_speed": 0.0,
+    "friction": 1.0
+  },
+  "third_person_camera": {
+    "x": 0.0,
+    "y": 3.3,
+    "z": -5.8
+  },
+  "dismount": {
+    "x": 1.3,
+    "y": 0.1,
+    "z": 0.0
+  },
   "collision_level": "heavy",
-  "obb": [
-    {"part": "body", "x": 0.0, "y": 0.75, "z": 0.0, "half_width": 0.7, "half_height": 0.55, "half_depth": 0.7},
-    {"part": "turret", "x": 0.0, "y": 1.45, "z": 0.0, "half_width": 0.55, "half_height": 0.48, "half_depth": 0.55}
-  ],
+  "obb": [],
   "weapons": [
-    {"weapon": "jeg:hypersonic_cannon", "ammo": "minecraft:echo_shard", "energy_cost": 6, "guided": false}
+    {
+      "weapon": "jeg:hypersonic_cannon",
+      "ammo": "minecraft:echo_shard",
+      "energy_cost": 6,
+      "guided": false
+    }
   ],
-  "destroy": {"explodes": true, "explosion_power": 2.8},
+  "destroy": {
+    "explodes": true,
+    "explosion_power": 3,
+    "explosion_damage": 10,
+    "explode_blocks": false,
+    "explode_passengers": true,
+    "crash_passengers": false,
+    "particle_type": "medium"
+  },
   "armor": {
-    "fallback": {"rating": 8.0, "undermatch_multiplier": 0.48, "overmatch_multiplier": 0.82, "passenger_leak_multiplier": 0.12, "part_damage_multiplier": 0.85},
+    "fallback": {
+      "rating": 8.0,
+      "undermatch_multiplier": 0.48,
+      "overmatch_multiplier": 0.82,
+      "passenger_leak_multiplier": 0.12,
+      "part_damage_multiplier": 0.85
+    },
     "parts": {
-      "turret": {"rating": 5.6, "undermatch_multiplier": 0.12, "overmatch_multiplier": 0.74, "passenger_leak_multiplier": 0.1, "part_damage_multiplier": 0.75}
+      "turret": {
+        "rating": 5.6,
+        "undermatch_multiplier": 0.12,
+        "overmatch_multiplier": 0.74,
+        "passenger_leak_multiplier": 0.1,
+        "part_damage_multiplier": 0.75
+      }
     }
   },
   "damage_modifiers": [
@@ -50,5 +94,12 @@
     "@minecraft:tnt * 3",
     "@minecraft:tnt_minecart * 3",
     "All - 1"
-  ]
+  ],
+  "superb_warfare_damage": true,
+  "self_hurt_percent": 0,
+  "self_hurt_amount": 0.1,
+  "directional_armor": 0,
+  "apply_default_damage_modifiers": true,
+  "has_low_health_warning": false,
+  "mass": 0.5
 }

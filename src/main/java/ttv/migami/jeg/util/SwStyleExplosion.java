@@ -7,10 +7,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.init.ModDamageTypes;
 import ttv.migami.jeg.vehicle.entity.base.VehicleEntity;
@@ -59,11 +57,19 @@ public final class SwStyleExplosion {
             double seenPercent = Mth.clamp(seenPercent(level, center, entity), MIN_SEEN_PERCENT, Double.POSITIVE_INFINITY);
             double damagePercent = (1.0D - distanceRate) * seenPercent;
             float damageFinal = (float) ((damagePercent * damagePercent + damagePercent) / 2.0D * damage);
-            if (damageFinal <= 0.5F) {
+            if (damageFinal <= 0.0F) {
                 continue;
             }
             if (entity instanceof LivingEntity living) {
-                ModDamageTypes.hurtWithPlayerKillCredit(living, level, damageSource, damageFinal, owner);
+                float livingDamage = living instanceof Monster ? damageFinal * 1.2F : damageFinal;
+                ModDamageTypes.hurtWithPlayerKillCredit(living, level, damageSource, livingDamage, owner == null ? damageSource.getEntity() : owner);
+                if (damageSource.is(ModDamageTypes.CUSTOM_EXPLOSION)) {
+                    double resistance = Math.max(level.getBlockState(net.minecraft.core.BlockPos.containing(center)).getBlock().getExplosionResistance(),
+                            level.getFluidState(net.minecraft.core.BlockPos.containing(center)).getExplosionResistance());
+                    double force = damageFinal * .015D - (resistance + .3D) * .3D;
+                    living.setDeltaMovement(living.getDeltaMovement().add(center.vectorTo(living.getBoundingBox().getCenter()).normalize().scale(force)));
+                    living.setInvulnerableTime(1);
+                }
             } else {
                 boolean hurt = entity.hurtServer(level, damageSource, damageFinal);
                 if (hurt) ttv.migami.jeg.advancement.GameplayActions.hit(owner, source, entity, false);
@@ -86,16 +92,8 @@ public final class SwStyleExplosion {
         return candidate instanceof LivingEntity || candidate instanceof VehicleEntity;
     }
 
-    /**
-     * Approximate SW {@link Explosion#getSeenPercent} with a single LOS sample to entity center.
-     * Full ray fan is unnecessary for balance parity here.
-     */
+    /** Vanilla exposure ray fan, matching SW CustomExplosion. */
     private static double seenPercent(ServerLevel level, Vec3 center, Entity entity) {
-        Vec3 to = entity.position().add(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
-        HitResult hit = level.clip(new ClipContext(center, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
-        if (hit.getType() == HitResult.Type.MISS) {
-            return 1.0D;
-        }
-        return MIN_SEEN_PERCENT;
+        return net.minecraft.world.level.ServerExplosion.getSeenPercent(center, entity);
     }
 }
