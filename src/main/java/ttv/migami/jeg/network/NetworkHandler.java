@@ -97,6 +97,9 @@ public final class NetworkHandler {
                 .playToServer(OpenServerConfigPayload.TYPE, OpenServerConfigPayload.STREAM_CODEC, NetworkHandler::handleOpenServerConfig)
                 .playToServer(ApplyServerConfigPayload.TYPE, ApplyServerConfigPayload.STREAM_CODEC, NetworkHandler::handleApplyServerConfig)
                 .playToClient(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC, NetworkHandler::handleBulletTrail)
+                .playToClient(ExplosionShakePayload.TYPE, ExplosionShakePayload.STREAM_CODEC, (payload, context) ->
+                        context.enqueueWork(() -> invokeClientStatic("ttv.migami.jeg.client.ExplosionShakeHandler", "receive",
+                                new Class<?>[]{ExplosionShakePayload.class}, payload)))
                 .playToClient(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC, NetworkHandler::handleGunFireFx)
                 .playToClient(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC, NetworkHandler::handleOffhandFullPrompt)
                 .playToClient(UiConfigPayload.TYPE, UiConfigPayload.STREAM_CODEC, NetworkHandler::handleUiConfig)
@@ -843,6 +846,18 @@ public final class NetworkHandler {
             Class<?> handlerClass = Class.forName(className);
             handlerClass.getMethod(methodName, parameterTypes).invoke(null, args);
         } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    /** Server-only blast notification, also usable by custom explosion implementations. */
+    public static void sendExplosionShake(ServerLevel level, net.minecraft.world.phys.Vec3 center, float blastRadius) {
+        ExplosionShakePayload payload = new ExplosionShakePayload(center.x, center.y, center.z,
+                4.0D * blastRadius, 20.0D + 0.2D * blastRadius, 50.0D + 0.5D * blastRadius);
+        if (!Float.isFinite(blastRadius) || blastRadius <= 0 || !payload.valid()) return;
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(center) < payload.radius() * payload.radius()) {
+                player.connection.send(payload);
+            }
         }
     }
 
