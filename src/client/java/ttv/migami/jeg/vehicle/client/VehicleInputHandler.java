@@ -28,6 +28,7 @@ public final class VehicleInputHandler {
         if (VehicleCaptureCheck.tick(minecraft)) return;
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.getConnection() == null || !(player.getVehicle() instanceof VehicleEntity vehicle)) {
+            while (minecraft.options.keyJump.consumeClick()) {} // Drain clicks from walking before boarding.
             scrollWeaponDirection = scrollCooldown = 0;
             VehicleClientState.clear();
             ignorePlayerInventoryUntilRelease = false;
@@ -131,13 +132,20 @@ public final class VehicleInputHandler {
                 minecraft.setScreenAndShow(new InventoryScreen(player));
             }
         }
+        boolean hoverControls = vehicle.usesSwControls()
+                && vehicle.vehicleData().defaults().vehicleType() == ttv.migami.jeg.vehicle.data.subdata.VehicleType.HELICOPTER
+                && player == vehicle.getControllingPassenger();
+        boolean toggleHover = false;
+        while (minecraft.options.keyJump.consumeClick()) {
+            if (controlsActive && hoverControls) toggleHover = true;
+        }
         VehicleInput input = minecraft.gui.screen() != null || !minecraft.isWindowActive() ? VehicleInput.EMPTY : new VehicleInput(
                 minecraft.options.keyUp.isDown(),
                 minecraft.options.keyDown.isDown(),
                 minecraft.options.keyLeft.isDown(),
                 minecraft.options.keyRight.isDown(),
                 KeyBindings.VEHICLE_BRAKE_DESCEND.isDown(),
-                minecraft.options.keyJump.isDown(),
+                !hoverControls && minecraft.options.keyJump.isDown(),
                 KeyBindings.VEHICLE_BRAKE_DESCEND.isDown(),
                 minecraft.options.keyAttack.isDown(),
                 reload,
@@ -149,7 +157,8 @@ public final class VehicleInputHandler {
                 KeyBindings.VEHICLE_DEPLOY_DECOY.consumeClick(),
                 aircraftControls && !freeLook ? flightX : 0.0F,
                 aircraftControls && !freeLook ? flightY : 0.0F,
-                vehicleZoom
+                vehicleZoom,
+                toggleHover
         );
         scrollWeaponDirection = 0;
         vehicle.processClientInput(player, input);

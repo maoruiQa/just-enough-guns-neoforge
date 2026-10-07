@@ -197,7 +197,8 @@ public final class ClientNetworkHandler {
                 input.deployDecoy(),
                 input.mouseX(),
                 input.mouseY(),
-                input.aiming()
+                input.aiming(),
+                input.toggleHover()
         ));
     }
 
