@@ -101,9 +101,7 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
 
         Identifier gunTexture = Reference.id("textures/animated/gun/" + gun.getStats().id().getPath() + ".png");
         for (GeoBone bone : passInfo.model().topLevelBones()) {
-            if (isGlowBone(bone.name())) {
-                passInfo.addPerBoneRender(bone, new GunGlowRenderTask(gunTexture));
-            }
+            addGlowRenderTask(passInfo, bone, gunTexture);
         }
 
         passInfo.model().getBone(ATTACHMENT_BONE)
@@ -302,6 +300,16 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                 || "flashlight_glow".equals(name);
     }
 
+    private static void addGlowRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, Identifier texture) {
+        if (isGlowBone(bone.name())) {
+            passInfo.addPerBoneRender(bone, new GunGlowRenderTask(texture));
+            return;
+        }
+        for (GeoBone child : bone.children()) {
+            addGlowRenderTask(passInfo, child, texture);
+        }
+    }
+
     static void renderGlowModel(
             BakedGeoModel bakedModel,
             RenderPassInfo<GeoRenderState> passInfo,
@@ -316,12 +324,20 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             transform.accept(renderPose);
             int fullBright = Brightness.FULL_BRIGHT.pack();
             for (GeoBone bone : bakedModel.topLevelBones()) {
-                if (isGlowBone(bone.name())) {
-                    bone.positionAndRender(passInfo, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
-                }
+                renderGlowBone(bone, passInfo, buffer, fullBright);
             }
         } finally {
             renderPose.popPose();
+        }
+    }
+
+    private static void renderGlowBone(GeoBone bone, RenderPassInfo<GeoRenderState> passInfo, VertexConsumer buffer, int fullBright) {
+        if (isGlowBone(bone.name())) {
+            bone.positionAndRender(passInfo, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
+            return;
+        }
+        for (GeoBone child : bone.children()) {
+            renderGlowBone(child, passInfo, buffer, fullBright);
         }
     }
 
