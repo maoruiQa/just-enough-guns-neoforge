@@ -309,6 +309,9 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                 bone.renderChildren(passInfo, renderPose, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
                 return;
             }
+            if (bone.frameSnapshot != null && bone.frameSnapshot.areChildrenHidden()) {
+                return;
+            }
             for (GeoBone child : bone.children()) {
                 renderGlowBone(child, passInfo, buffer, fullBright);
             }
