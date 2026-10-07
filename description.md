@@ -6,6 +6,14 @@ A modern fork and unofficial port of the Forge 1.20.1 mod Just Enough Guns, brin
 
 Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork continues its Minecraft-friendly firearms, survival crafting, hostile gunners, raids, vehicles, and special equipment on modern Fabric and NeoForge versions. The current **1.8.2** builds add a four-chapter combat-career guide, SW-aligned vehicle controls and part damage, revised ADS/spread, magazine-mode notices and recipe rules, and combat/configuration fixes across all six maintained branches.
 
+## Documentation / Wiki
+
+The detailed player and server guide is available in five languages. English is the reference language.
+
+- [Wiki index](https://github.com/maoruiQa/just-enough-guns-neoforge/tree/fabric-26.2/docs/wiki)
+- [English](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/docs/wiki/en-US.md) · [简体中文](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/docs/wiki/zh-CN.md) · [日本語](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/docs/wiki/ja-JP.md)
+- [Deutsch](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/docs/wiki/de-DE.md) · [Español](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/docs/wiki/es-ES.md)
+
 ## Screenshots
 
 ![Walkürenritt vehicle update](https://github.com/maoruiQa/just-enough-guns-neoforge/raw/fabric-26.2/screenshots/mi-28.png)
