@@ -252,6 +252,11 @@ public final class NetworkHandler {
         if (GunItem.isDrawOperationLocked(stack)) {
             return;
         }
+        if (payload.aiming()) {
+            AIMING_PLAYERS.add(player.getUUID());
+        } else {
+            AIMING_PLAYERS.remove(player.getUUID());
+        }
         if (GunItem.isHoldToFireWeapon(stack) && !hasCompletedHoldFire(player, stack)) {
             return;
         }
