@@ -490,11 +490,11 @@ public final class FabricClientBootstrap {
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
                     applyLocalVisualRecoil(player, heldMain, gun);
-                    GunItem.recordClientShotSpread(player, gun.getStats());
+                    GunItem.recordClientShotSpread(player, gun.getStats(), AimingHandler.get().isAiming());
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(heldMain, gun);
                 }
-            } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
+            } else if (!gun.isAutomatic() && (attackHeldLastTick || GunItem.isTriggerLocked(heldMain))) {
                 GunItem.clearTriggerLock(heldMain);
                 ClientNetworkHandler.sendTriggerRelease(InteractionHand.MAIN_HAND);
                 nextVisualShotTickMain = 0L;
@@ -970,7 +970,7 @@ public final class FabricClientBootstrap {
             if (rocketHoldStartSent) {
                 ClientNetworkHandler.sendHoldFire(InteractionHand.MAIN_HAND, false);
             }
-            if (attackHeldLastTick && GunItem.isTriggerLocked(stack)) {
+            if (attackHeldLastTick || GunItem.isTriggerLocked(stack)) {
                 GunItem.clearTriggerLock(stack);
                 ClientNetworkHandler.sendTriggerRelease(InteractionHand.MAIN_HAND);
             }
@@ -1009,7 +1009,7 @@ public final class FabricClientBootstrap {
         rocketShotSent = true;
         if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
             applyLocalVisualRecoil(player, stack, gun);
-            GunItem.recordClientShotSpread(player, gun.getStats());
+            GunItem.recordClientShotSpread(player, gun.getStats(), AimingHandler.get().isAiming());
             CrosshairHandler.onGunFired();
             forceExitScopedAdsAfterShot(stack, gun);
         }

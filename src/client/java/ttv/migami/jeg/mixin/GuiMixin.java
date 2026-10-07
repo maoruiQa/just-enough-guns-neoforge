@@ -31,7 +31,8 @@ public final class GuiMixin {
         VehicleHudOverlay.renderHud(guiGraphics);
         MedalManager.render(guiGraphics);
         ClientHudRenderer.render(guiGraphics);
-        if (player.getVehicle() instanceof VehicleEntity
+        if (player.getVehicle() instanceof VehicleEntity vehicle
+                && (!vehicle.usesSwControls() || vehicle.canPassengerUseSelectedVehicleWeapon(player))
                 || player.getMainHandItem().getItem() instanceof GunItem
                 || player.getOffhandItem().getItem() instanceof GunItem) {
             ScopeOverlayRenderer.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false));
@@ -87,6 +88,6 @@ public final class GuiMixin {
 
     private static boolean jeg$isVehicleHudActive() {
         var player = Minecraft.getInstance().player;
-        return player != null && player.getVehicle() instanceof VehicleEntity;
+        return player != null && player.getVehicle() instanceof VehicleEntity vehicle && !vehicle.usesSwControls();
     }
 }
