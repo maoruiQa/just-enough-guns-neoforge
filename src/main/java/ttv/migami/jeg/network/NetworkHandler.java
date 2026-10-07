@@ -57,6 +57,10 @@ public final class NetworkHandler {
     private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR = 256.0D * 256.0D;
 
     private static boolean commonRegistered;
+    public static void sendMagazineMode(ServerPlayer player, MagazineModePayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
+
     private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
@@ -69,6 +73,11 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MagazineModeAckPayload.TYPE, MagazineModeAckPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MagazineModePayload.TYPE, MagazineModePayload.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MagazineModeAckPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> ttv.migami.jeg.gun.MagazineModeServer.confirm(context.player(), payload.revision()));
+        });
         PayloadTypeRegistry.serverboundPlay().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC);

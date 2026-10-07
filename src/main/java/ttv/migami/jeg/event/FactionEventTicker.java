@@ -22,6 +22,7 @@ public final class FactionEventTicker {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        ttv.migami.jeg.gun.MagazineModeServer.refresh(event.getServer());
         ServerLevel overworld = event.getServer().overworld();
         if (overworld != null) {
             PATROL_SPAWNER.tick(overworld, true, false);

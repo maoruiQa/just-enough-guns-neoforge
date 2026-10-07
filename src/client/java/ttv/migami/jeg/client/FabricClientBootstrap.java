@@ -247,6 +247,7 @@ public final class FabricClientBootstrap {
         KeyBindings.init();
         SpecialEquipmentClientEvents.init();
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            MagazineModeClient.tick();
             if (client.options != null) {
                 ttv.migami.jeg.client.util.ScreenProjection.setFov(client.options.fov().get());
             }
