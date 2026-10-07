@@ -25,10 +25,15 @@ public record VehicleInputPayload(
         boolean deployDecoy,
         float mouseX,
         float mouseY,
-        boolean aiming
+        boolean aiming,
+        boolean toggleHover
 ) implements CustomPacketPayload {
     public VehicleInputPayload(int vehicleId, boolean forward, boolean backward, boolean left, boolean right, boolean brake, boolean ascend, boolean descend, boolean fire, boolean reload, boolean freeLook, boolean switchWeapon, boolean previousWeapon, int weaponSlot, boolean seekTarget, boolean deployDecoy, float mouseX, float mouseY) {
         this(vehicleId, forward, backward, left, right, brake, ascend, descend, fire, reload, freeLook, switchWeapon, previousWeapon, weaponSlot, seekTarget, deployDecoy, mouseX, mouseY, false);
+    }
+
+    public VehicleInputPayload(int vehicleId, boolean forward, boolean backward, boolean left, boolean right, boolean brake, boolean ascend, boolean descend, boolean fire, boolean reload, boolean freeLook, boolean switchWeapon, boolean previousWeapon, int weaponSlot, boolean seekTarget, boolean deployDecoy, float mouseX, float mouseY, boolean aiming) {
+        this(vehicleId, forward, backward, left, right, brake, ascend, descend, fire, reload, freeLook, switchWeapon, previousWeapon, weaponSlot, seekTarget, deployDecoy, mouseX, mouseY, aiming, false);
     }
 
     public static final Type<VehicleInputPayload> TYPE = new Type<>(Reference.id("vehicle_input"));
@@ -53,6 +58,7 @@ public record VehicleInputPayload(
                 buf.writeFloat(payload.mouseX());
                 buf.writeFloat(payload.mouseY());
                 buf.writeBoolean(payload.aiming());
+                buf.writeBoolean(payload.toggleHover());
             },
             buf -> new VehicleInputPayload(
                     buf.readVarInt(),
@@ -73,12 +79,13 @@ public record VehicleInputPayload(
                     buf.readBoolean(),
                     buf.readFloat(),
                     buf.readFloat(),
+                    buf.readBoolean(),
                     buf.readBoolean()
             )
     );
 
     public VehicleInput toInput() {
-        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.reload, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy, this.mouseX, this.mouseY, this.aiming);
+        return new VehicleInput(this.forward, this.backward, this.left, this.right, this.brake, this.ascend, this.descend, this.fire, this.reload, this.freeLook, this.switchWeapon, this.previousWeapon, this.weaponSlot, this.seekTarget, this.deployDecoy, this.mouseX, this.mouseY, this.aiming, this.toggleHover);
     }
 
     @Override

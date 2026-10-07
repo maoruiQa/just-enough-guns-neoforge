@@ -804,6 +804,11 @@ public final class VehicleHudOverlay {
         }
         if (vehicle.maxVehicleEnergy() > 0) swValueBar(gui,ENERGY_ICON,h-22,(float)vehicle.vehicleEnergy()/vehicle.maxVehicleEnergy());
         swValueBar(gui,ARMOR_ICON,h-13,vehicle.vehicleHealth()/Math.max(1,vehicle.maxVehicleHealth()));
+        if (vehicle.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER && mc.player == vehicle.getControllingPassenger()) {
+            String hoverKey = vehicle.hoverMode() ? "gui.jeg.vehicle.hover_on" : vehicle.canHover() ? "gui.jeg.vehicle.hover_off" : "gui.jeg.vehicle.hover_unavailable";
+            Component hover = Component.translatable(hoverKey, mc.options.keyJump.getTranslatedKeyMessage());
+            swText(gui, mc, hover.getString(), 85, h - 13, vehicle.hoverMode() ? swHudColor(vehicle) : vehicle.canHover() ? 0xFFFFFF : 0xAAAAAA);
+        }
         renderPassengerInfo(gui,mc,vehicle);
         renderSwWeaponSelector(gui,mc,vehicle);
         if (!vehicle.activeWarningMessageKey().isEmpty()) {
