@@ -354,6 +354,7 @@ public final class GunClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        MagazineModeClient.tick();
         GunRecoilHandler.tick();
         MedalManager.tick();
         if (Config.legacyBulletTrailEnabled()) {
