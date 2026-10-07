@@ -32,3 +32,9 @@ The standard `check` now includes `checkVehicleGeometry`, `checkVehicleDamage`, 
 ## Truck fall correction
 
 The civilian truck uses structural landing damage instead of SW weapon resistance: drops up to three blocks are safe, each additional block removes 1/17 of maximum hull health, and a twenty-block fall destroys the truck. This is an intentional gameplay adjustment requested after natural-fall testing found that the old `none` collision gate made the truck entirely immune. Normal movement on supported ground does not apply this damage. A landing applies this structural damage once, without also applying the SW vertical impact hit. Other vehicle impact formulas are unchanged.
+
+### Handheld anti-armor rockets and missile contact
+
+RPG direct hits on vehicles use the SW standard warhead (340 direct damage, 80 vehicle splash, radius 5). Living-target values stay in the existing RPG path. Splash damages the hull; the direct ray damages the struck component. A BODY hit has no separate side-component fault.
+
+Missiles fired on foot can collide with unmounted targets. Exclusion of passengers applies only when the shooter actually occupies a vehicle. NeoForge 1.21.1 launcher GameTests exercise RPG side components and all eleven SW vehicles, Javelin direct/top/unguided flight, and Igla airborne impact.
