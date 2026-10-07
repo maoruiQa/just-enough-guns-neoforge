@@ -88,6 +88,7 @@ public final class GunEvents {
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) player.level().getServer().execute(() -> ttv.migami.jeg.advancement.GameplayActions.login(player));
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            ttv.migami.jeg.gun.MagazineModeServer.login(serverPlayer);
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
             if (!GameTestHooks.isGametestServer()) {
@@ -101,6 +102,7 @@ public final class GunEvents {
     @SubscribeEvent
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            ttv.migami.jeg.gun.MagazineModeServer.logout(serverPlayer);
             saveVehicleSeat(serverPlayer);
         }
     }
@@ -132,6 +134,7 @@ public final class GunEvents {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
+        ttv.migami.jeg.gun.MagazineModeServer.refresh(event.getServer());
         long count = StreamSupport.stream(event.getServer().getRecipeManager().getRecipes().spliterator(), false)
                 .filter(holder -> holder.id().getNamespace().equals(Reference.MOD_ID))
                 .count();

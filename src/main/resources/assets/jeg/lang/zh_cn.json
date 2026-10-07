@@ -1,4 +1,11 @@
 {
+  "gui.jeg.magazine_mode.title": "服务器供弹规则",
+  "gui.jeg.magazine_mode.confirm": "我知道了",
+  "gui.jeg.magazine_mode.first": "本服务器使用以下供弹规则。",
+  "gui.jeg.magazine_mode.changed": "服务器的供弹规则已变更。",
+  "gui.jeg.magazine_mode.magazine": "当前模式：弹匣供弹。先给兼容的实体弹匣装入弹药，再为支持换弹匣的枪械换弹。扩容请使用实体加长弹匣或弹鼓；旧式“扩容弹匣”和“弹鼓”配件在此模式下不可合成或使用。",
+  "gui.jeg.magazine_mode.direct": "当前模式：直供弹。装填直接消耗背包中的兼容散装弹药，无需实体弹匣。扩容请使用“扩容弹匣”或“弹鼓”配件；实体弹匣和弹匣装填机在此模式下不可合成。",
+  "gui.jeg.magazine_mode.special": "采用特殊供弹机制的枪械仍按其自身规则运行。",
   "advantage.jeg:fire": "Fire",
   "advantage.jeg:heavy": "Heavy",
   "advantage.jeg:undead": "Undead",

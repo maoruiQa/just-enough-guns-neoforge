@@ -55,6 +55,10 @@ public final class NetworkHandler {
     private static final double VEHICLE_STATE_FALLBACK_DISTANCE = 256.0D;
     private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR =
             VEHICLE_STATE_FALLBACK_DISTANCE * VEHICLE_STATE_FALLBACK_DISTANCE;
+
+    public static void sendMagazineMode(ServerPlayer player, MagazineModePayload payload) {
+        player.connection.send(payload);
+    }
     private static final String AIMING_TAG = "jeg_aiming";
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
@@ -64,6 +68,11 @@ public final class NetworkHandler {
                 .playToServer(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC, NetworkHandler::handleHoldFire)
                 .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
                 .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
+                .playToServer(MagazineModeAckPayload.TYPE, MagazineModeAckPayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) ttv.migami.jeg.gun.MagazineModeServer.confirm(player, payload.revision());
+                }))
+                .playToClient(MagazineModePayload.TYPE, MagazineModePayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> invokeClientStatic(
+                        "ttv.migami.jeg.client.MagazineModeClient", "handle", new Class<?>[] { MagazineModePayload.class }, payload)))
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(MeleePayload.TYPE, MeleePayload.STREAM_CODEC, NetworkHandler::handleMelee)
@@ -754,6 +763,10 @@ public final class NetworkHandler {
     }
 
     public static void sendServerConfigChanges(ApplyServerConfigPayload payload) {
+        sendToServer(payload);
+    }
+
+    public static void sendMagazineModeAck(MagazineModeAckPayload payload) {
         sendToServer(payload);
     }
 
