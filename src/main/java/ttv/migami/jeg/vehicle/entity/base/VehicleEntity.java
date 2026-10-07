@@ -120,6 +120,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final float CLIENT_RESYNC_PITCH_DELTA = 12.0F;
     private static final int MOVING_DRIVER_STATE_SYNC_INTERVAL = 2;
     private static final int UNMANNED_AIRBORNE_STATE_SYNC_INTERVAL = 1;
+    private static final int REMOTE_VEHICLE_NETWORK_LERP_STEPS = 10;
     private static final double VEHICLE_IDLE_FALL_SPEED_THRESHOLD = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_MOTION_THRESHOLD_SQR = 1.0E-4D;
     private static final double VEHICLE_IDLE_SYNC_Y_DELTA = 1.0E-3D;
@@ -337,6 +338,14 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private boolean engineStartOver;
     /** Client: after unmanned coast, remount must adopt residual rotor once before predicting. */
     private boolean clientHeliResidualResync;
+    /** Client-only SW-style smoothing for remote vehicle state packets. */
+    private int remoteVehicleNetworkLerpSteps;
+    private boolean remoteVehicleNetworkHasTarget;
+    private double remoteVehicleNetworkLerpX;
+    private double remoteVehicleNetworkLerpY;
+    private double remoteVehicleNetworkLerpZ;
+    private float remoteVehicleNetworkLerpYRot;
+    private float remoteVehicleNetworkLerpXRot;
     private Vec3 preExplosionKnockbackVelocity;
     private int preExplosionKnockbackTick = -1;
     private float destroyRot;
@@ -1395,6 +1404,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         this.swRudderO = this.rudder;
         this.updateLastTickMovementSpeed();
         super.tick();
+        this.tickRemoteVehicleNetworkLerp();
         if (this.level().isClientSide() && this.dismountLerpSuppressionTicks > 0) {
             this.dismountLerpSuppressionTicks--;
         }
@@ -2109,12 +2119,36 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         if (this.level().isClientSide() && !forceApply && !this.shouldRunClientPrediction()) {
-            int lerpSteps = this.authoritativeVehicleStateSyncInterval(false);
-            super.lerpPositionAndRotationStep(lerpSteps > 0 ? lerpSteps : MOVING_DRIVER_STATE_SYNC_INTERVAL, x, y, z, yaw, pitch);
+            VehicleType type = this.vehicleData().defaults().vehicleType();
+            if (type != VehicleType.LAND && type != VehicleType.BOAT && type != VehicleType.HELICOPTER) {
+                int lerpSteps = this.authoritativeVehicleStateSyncInterval(false);
+                super.lerpPositionAndRotationStep(lerpSteps > 0 ? lerpSteps : MOVING_DRIVER_STATE_SYNC_INTERVAL, x, y, z, yaw, pitch);
+                return;
+            }
+            if (this.getInterpolation() != null) this.getInterpolation().cancel();
+            double targetDeltaX = x - this.getX();
+            double targetDeltaY = y - this.getY();
+            double targetDeltaZ = z - this.getZ();
+            double motionLengthSqr = motionX * motionX + motionY * motionY + motionZ * motionZ;
+            if (this.remoteVehicleNetworkHasTarget && motionLengthSqr > 1.0E-6D
+                    && targetDeltaX * motionX + targetDeltaY * motionY + targetDeltaZ * motionZ < -1.0E-5D) {
+                super.lerpMotion(new Vec3(motionX, motionY, motionZ));
+                return;
+            }
+            this.remoteVehicleNetworkLerpX = x;
+            this.remoteVehicleNetworkLerpY = y;
+            this.remoteVehicleNetworkLerpZ = z;
+            this.remoteVehicleNetworkLerpYRot = yaw;
+            this.remoteVehicleNetworkLerpXRot = pitch;
+            this.remoteVehicleNetworkLerpSteps = REMOTE_VEHICLE_NETWORK_LERP_STEPS;
+            this.remoteVehicleNetworkHasTarget = true;
             super.lerpMotion(new Vec3(motionX, motionY, motionZ));
             return;
         }
-        this.setPos(x, y, z);
+        this.remoteVehicleNetworkLerpSteps = 0;
+        this.remoteVehicleNetworkHasTarget = false;
+        if (this.level().isClientSide() && this.getInterpolation() != null) this.getInterpolation().cancel();
+        super.setPos(x, y, z);
         this.setDeltaMovement(motionX, motionY, motionZ);
         this.setYRot(yaw);
         this.setXRot(pitch);
@@ -2133,6 +2167,43 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.clearControlState(false);
             }
         }
+    }
+
+    private void tickRemoteVehicleNetworkLerp() {
+        if (!this.level().isClientSide()) {
+            return;
+        }
+        if (this.shouldRunClientPrediction()) {
+            if (this.getInterpolation() != null) this.getInterpolation().cancel();
+            this.remoteVehicleNetworkLerpSteps = 0;
+            this.remoteVehicleNetworkHasTarget = false;
+            return;
+        }
+        if (this.remoteVehicleNetworkLerpSteps <= 0) {
+            return;
+        }
+        double x = this.getX() + (this.remoteVehicleNetworkLerpX - this.getX()) / (double) this.remoteVehicleNetworkLerpSteps;
+        double y = this.getY() + (this.remoteVehicleNetworkLerpY - this.getY()) / (double) this.remoteVehicleNetworkLerpSteps;
+        double z = this.getZ() + (this.remoteVehicleNetworkLerpZ - this.getZ()) / (double) this.remoteVehicleNetworkLerpSteps;
+        float yRot = this.getYRot() + Mth.wrapDegrees(this.remoteVehicleNetworkLerpYRot - this.getYRot()) / (float) this.remoteVehicleNetworkLerpSteps;
+        float xRot = this.getXRot() + Mth.wrapDegrees(this.remoteVehicleNetworkLerpXRot - this.getXRot()) / (float) this.remoteVehicleNetworkLerpSteps;
+        super.setPos(x, y, z);
+        this.setYRot(yRot);
+        this.setXRot(xRot);
+        this.updateVehicleBoundingBox();
+        this.remoteVehicleNetworkLerpSteps--;
+    }
+
+    @Override
+    public void setPos(double x, double y, double z) {
+        // Vanilla tracker packets can race the custom state packet on remote vehicles.
+        if (this.level().isClientSide() && this.remoteVehicleNetworkHasTarget && !this.shouldRunClientPrediction()) {
+            VehicleType type = this.vehicleData().defaults().vehicleType();
+            if (type == VehicleType.LAND || type == VehicleType.BOAT || type == VehicleType.HELICOPTER) {
+                return;
+            }
+        }
+        super.setPos(x, y, z);
     }
 
     @Override

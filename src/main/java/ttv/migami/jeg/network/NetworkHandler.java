@@ -20,6 +20,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.config.ServerConfigEditor;
@@ -51,29 +53,31 @@ import ttv.migami.jeg.vehicle.network.VehicleSeatAssignmentsPayload;
 import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private NetworkHandler() {}
-    /** Minimum vehicle-state broadcast radius in blocks (tracking range may raise this further). */
-    private static final double VEHICLE_STATE_FALLBACK_DISTANCE = 256.0D;
-    private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR =
-            VEHICLE_STATE_FALLBACK_DISTANCE * VEHICLE_STATE_FALLBACK_DISTANCE;
 
     public static void sendMagazineMode(ServerPlayer player, MagazineModePayload payload) {
         player.connection.send(payload);
     }
+    /** Minimum vehicle-state broadcast radius in blocks (tracking range may raise this further). */
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE = 256.0D;
+    private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR =
+            VEHICLE_STATE_FALLBACK_DISTANCE * VEHICLE_STATE_FALLBACK_DISTANCE;
     private static final String AIMING_TAG = "jeg_aiming";
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
     public static void register(RegisterPayloadHandlersEvent event) {
         event.registrar(Reference.MOD_ID)
-                .playToServer(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC, NetworkHandler::handleShootRequest)
-                .playToServer(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC, NetworkHandler::handleHoldFire)
-                .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
-                .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(MagazineModeAckPayload.TYPE, MagazineModeAckPayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) ttv.migami.jeg.gun.MagazineModeServer.confirm(player, payload.revision());
                 }))
                 .playToClient(MagazineModePayload.TYPE, MagazineModePayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> invokeClientStatic(
                         "ttv.migami.jeg.client.MagazineModeClient", "handle", new Class<?>[] { MagazineModePayload.class }, payload)))
+                .playToServer(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC, NetworkHandler::handleShootRequest)
+                .playToServer(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC, NetworkHandler::handleHoldFire)
+                .playToServer(TriggerReleasePayload.TYPE, TriggerReleasePayload.STREAM_CODEC, NetworkHandler::handleTriggerRelease)
+                .playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC, NetworkHandler::handleReloadRequest)
                 .playToServer(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC, NetworkHandler::handleUnloadMagazineRequest)
                 .playToServer(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC, NetworkHandler::handleOpenAttachments)
                 .playToServer(MeleePayload.TYPE, MeleePayload.STREAM_CODEC, NetworkHandler::handleMelee)
@@ -118,8 +122,12 @@ public final class NetworkHandler {
                         ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
                 return;
             }
-            player.connection.send(new ServerConfigStatePayload(
-                    ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+            try {
+                player.connection.send(new ServerConfigStatePayload(
+                        ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+            } catch (Throwable ex) {
+                LOGGER.error("Failed to open the JEG config menu", ex);
+            }
         });
     }
 
@@ -747,15 +755,15 @@ public final class NetworkHandler {
         player.connection.send(new DroneControlPayload(entityId, active, maxRange));
     }
 
+    public static void sendMagazineModeAck(MagazineModeAckPayload payload) {
+        sendToServer(payload);
+    }
+
     public static void sendOpenServerConfig() {
         sendToServer(OpenServerConfigPayload.INSTANCE);
     }
 
     public static void sendServerConfigChanges(ApplyServerConfigPayload payload) {
-        sendToServer(payload);
-    }
-
-    public static void sendMagazineModeAck(MagazineModeAckPayload payload) {
         sendToServer(payload);
     }
 

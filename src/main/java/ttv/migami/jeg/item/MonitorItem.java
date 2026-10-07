@@ -4,7 +4,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -115,11 +113,7 @@ public final class MonitorItem extends Item {
         }
         // Client-only distance readout; keep tooltip safe on dedicated server.
         if (context.level() != null && context.level().isClientSide()) {
-            Player player = Minecraft.getInstance().player;
-            if (player != null) {
-                double dist = player.position().distanceTo(new Vec3(x, y, z));
-                tooltipAdder.accept(Component.translatable("des.jeg.monitor.distance", String.format("%.1fm", dist)).withStyle(ChatFormatting.GRAY));
-            }
+            ttv.migami.jeg.client.MonitorDistanceTooltip.append(tooltipAdder, x, y, z);
         }
         tooltipAdder.accept(Component.literal(String.format("X: %.1f Y: %.1f Z: %.1f", x, y, z)).withStyle(ChatFormatting.DARK_GRAY));
     }

@@ -368,7 +368,7 @@ public final class ServerConfigScreen extends Screen {
 
     private Tooltip optionTooltip(ServerConfigOptions.Option option) {
         MutableComponent tooltip = Component.translatable(option.labelKey()).withStyle(ChatFormatting.GOLD);
-        tooltip.append("\\n").append(Component.translatable("gui.jegn.config.tooltip.key", option.key()));
+        tooltip.append("\n").append(Component.translatable("gui.jegn.config.tooltip.key", option.key()));
         if (option.hasRange()) {
             tooltip.append("\n").append(Component.translatable("gui.jegn.config.tooltip.range", formatNumber(option.min()), formatNumber(option.max())));
         }
