@@ -67,6 +67,18 @@ public final class GunBuiltinScopeLayer extends GeoRenderLayer<AnimatedGunItem, 
                         }
                     }
             );
+
+            collector.submitCustomGeometry(
+                    passInfo.poseStack(),
+                    RenderTypes.entityTranslucentEmissive(SCOPE_TEXTURE),
+                    (pose, buffer) -> GunAttachmentLayer.renderGlowModel(
+                            bakedModel,
+                            passInfo,
+                            pose,
+                            buffer,
+                            scopePose -> scopePose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D)
+                    )
+            );
         }
     }
 }
