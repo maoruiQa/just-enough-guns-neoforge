@@ -402,11 +402,19 @@ public final class ServerConfigScreen extends Screen {
             int maxWidth = Math.max(40, row.labelRight - this.workspaceLeft - 8);
             boolean dirty = !this.drafts.getOrDefault(row.option.key(), "").equals(this.baseline.get(row.option.key()));
             String suffix = dirty ? " *" : "";
-            String rendered = this.font.plainSubstrByWidth(label.getString(), Math.max(20, maxWidth - this.font.width(suffix))) + suffix;
+            int labelWidth = Math.max(20, maxWidth - this.font.width(suffix));
+            boolean truncated = this.font.width(label) > labelWidth;
+            String rendered = truncated
+                    ? this.font.plainSubstrByWidth(label.getString(), labelWidth - this.font.width("...")) + "..." + suffix
+                    : label.getString() + suffix;
             if (dirty) {
                 color = GOLD;
             }
             guiGraphics.drawString(this.font, rendered, this.workspaceLeft + 4, row.y + 6, color, false);
+            if (mouseX >= this.workspaceLeft && mouseX < row.labelRight
+                    && mouseY >= row.y && mouseY < row.y + 20) {
+                this.setTooltipForNextRenderPass(this.optionTooltip(row.option).toCharSequence(this.minecraft));
+            }
         }
         if (!this.statusMessage.getString().isEmpty()) {
             guiGraphics.drawCenteredString(this.font, this.statusMessage, this.width / 2, this.height - 39, 0xFFFFFFFF);
