@@ -386,6 +386,9 @@ public class AnimatedGunItem extends GunItem implements GeoItem {
         if (!isReloadAnimation(controller.getCurrentRawAnimation())) {
             return;
         }
+        if (controller.isPlayingTriggeredAnimation()) {
+            return;
+        }
         if (stack != null && !stack.isEmpty()
                 && stack.getOrDefault(ModDataComponents.GUN_RELOAD_TICKS_REMAINING.get(), 0) > 0) {
             return;
