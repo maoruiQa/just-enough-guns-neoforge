@@ -375,7 +375,7 @@ public final class GunClientEvents {
                 }
                 if (shouldApplyVisualRecoil(player, heldMain, gun, attackHeldLastTick, nowTick)) {
                     applyLocalVisualRecoil(gun, heldMain);
-                    GunItem.recordClientShotSpread(player, gun.getStats());
+                    GunItem.recordClientShotSpread(player, gun.getStats(), AimingHandler.get().isAiming());
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(heldMain, gun);
                 }
@@ -649,7 +649,7 @@ public final class GunClientEvents {
         rocketShotSent = true;
         if (shouldApplyVisualRecoil(player, stack, gun, false, nowTick)) {
             applyLocalVisualRecoil(gun, stack);
-            GunItem.recordClientShotSpread(player, gun.getStats());
+            GunItem.recordClientShotSpread(player, gun.getStats(), AimingHandler.get().isAiming());
             CrosshairHandler.onGunFired();
             forceExitScopedAdsAfterShot(stack, gun);
         }

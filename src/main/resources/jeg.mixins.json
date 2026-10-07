@@ -6,6 +6,8 @@
     "MagazineModeRecipeMixin",
     "MagazineModeServerMixin",
     "VehiclePickMixin",
+    "VehicleProjectileHitMixin",
+    "VehicleExplosionMixin",
     "LivingEntityFireDamageMixin",
     "SmokeMobTargetMixin",
     "SmokeTargetingConditionsMixin",
@@ -14,9 +16,7 @@
     "GunnerWaterConversionMixin",
     "GunRepairAdvancementMixin",
     "ServerGamePacketListenerImplMixin",
-    "PlayerAdvancementsMigrationMixin",
-    "VehicleProjectileHitMixin",
-    "VehicleExplosionMixin"
+    "PlayerAdvancementsMigrationMixin"
   ],
   "client": [
     "VehicleHitboxRenderMixin",

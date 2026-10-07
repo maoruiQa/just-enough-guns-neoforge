@@ -1,9 +1,17 @@
 # Just Enough Guns – NeoForge 1.21.1 Workspace
 
 ## Overview
+- Current mod version: **1.8.2**; requires Java 21 and GeckoLib 4.8.3.
 - Builds the NeoForge branch of **Just Enough Guns** against Minecraft **1.21.1**, with declared compatibility through **1.21.4**.
-- All gameplay logic and assets are sourced from the `Just-Enough-Guns-NeoForge-1.21.10` mother tree (which must remain untouched).
-- Common code lives under `src/main/java/ttv/migami/jeg`, while client-only helpers belong in `src/client/java/ttv/migami/jeg`.
+- Common code lives under `src/main/java/ttv/migami/jeg`, while client-only helpers belong in `src/main/java/ttv/migami/jeg/client`.
+
+## Latest Release Notes
+
+Version `1.8.2` adds a four-chapter combat-career guide with legacy progress migration, SW-aligned vehicle controls and part damage, ADS/spread adjustments, and server magazine-mode notices with matching recipes. It also fixes delayed trigger release, anti-armor impacts, truck fall damage, and config-menu feedback.
+
+- Smoothed remote land vehicles, boats, and helicopters on NeoForge, preventing competing tracker updates from snapping them backward while preserving local driver prediction.
+
+Full notes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Build & Verification
 - `./gradlew compileJava` – quick syntax and mappings validation.
@@ -19,7 +27,7 @@
 
 ## Directory Notes
 - `src/main/resources` – assets, data packs (`data/jeg/recipe/`, loot tables, tags).
-- `src/client/java` – renderer/HUD/keybind code guarded via `ClientOnly`.
+- `src/main/java/ttv/migami/jeg/client` – renderer/HUD/keybind code guarded for the client environment.
 - `libs/` – drop third-party jars (e.g., GeckoLib) if Maven coordinates are unavailable.
 - `PORTING_STATUS.md` – running checklist, references, and compatibility notes.
 

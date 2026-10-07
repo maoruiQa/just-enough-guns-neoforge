@@ -3,7 +3,6 @@ package ttv.migami.jeg.item;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,9 +14,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -98,7 +94,6 @@ public final class MonitorItem extends Item {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.translatable("des.jeg.monitor.howto").withStyle(ChatFormatting.GRAY));
@@ -114,10 +109,8 @@ public final class MonitorItem extends Item {
         if (x == null || y == null || z == null) {
             return;
         }
-        Player player = Minecraft.getInstance().player;
-        if (player != null) {
-            double dist = player.position().distanceTo(new Vec3(x, y, z));
-            tooltipComponents.add(Component.translatable("des.jeg.monitor.distance", String.format("%.1fm", dist)).withStyle(ChatFormatting.GRAY));
+        if (context.level() != null && context.level().isClientSide()) {
+            ttv.migami.jeg.client.MonitorDistanceTooltip.append(tooltipComponents, x, y, z);
         }
         tooltipComponents.add(Component.literal(String.format("X: %.1f Y: %.1f Z: %.1f", x, y, z)).withStyle(ChatFormatting.DARK_GRAY));
     }
