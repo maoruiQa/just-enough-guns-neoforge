@@ -1061,5 +1061,6 @@
   "gui.jegn.config.option.enemy_vehicle_adaptive_combat": "Adaptive Enemy Vehicle Combat",
   "raid.jeg.difficulty": "Difficulty %s",
   "raid.jeg.reward": "Reward %s",
-  "message.jeg.vehicle.attack_warning": "Incoming vehicle attack! Take cover!"
+  "message.jeg.vehicle.attack_warning": "Incoming vehicle attack! Take cover!",
+  "gui.jegn.config.option.natural_gunner_dynamic_difficulty": "Dynamic natural gunner difficulty"
 }

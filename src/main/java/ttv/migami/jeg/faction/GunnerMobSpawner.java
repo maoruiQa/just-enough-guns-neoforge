@@ -93,6 +93,8 @@ public class GunnerMobSpawner {
             return;
         }
 
+        NaturalGunnerDifficulty.tick(mob);
+
         if (mob.tickCount >= 2) {
             return;
         }
@@ -124,7 +126,10 @@ public class GunnerMobSpawner {
                 String gunnerType = GunnerType.keyFor(mob);
                 var raidDifficulty = ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(mob);
                 boolean bomber = raidDifficulty == null && Config.shouldGunnerBecomeBomber(mob.level(), gunnerType, mob.getRandom());
-                boolean elite = raidDifficulty == null ? GunMobValues.rollElite(mob.level(), mob.getRandom()) : mob.entityTags().contains("EliteGunner");
+                boolean natural = NaturalGunnerDifficulty.applies(mob);
+                if (natural) NaturalGunnerDifficulty.refresh(mob);
+                boolean elite = natural ? GunMobValues.elitesEnabled && mob.getRandom().nextDouble() < NaturalGunnerDifficulty.eliteChance(NaturalGunnerDifficulty.profile(mob).score())
+                        : raidDifficulty == null ? GunMobValues.rollElite(mob.level(), mob.getRandom()) : mob.entityTags().contains("EliteGunner");
                 if (elite) {
                     applyEliteAttributes(mob);
                 }
@@ -149,12 +154,12 @@ public class GunnerMobSpawner {
 
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
-                Item gun = raidDifficulty == null ? faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType, true)
+                Item gun = natural ? faction.getNaturalGun(isCloseRange, elite, mob, false) : raidDifficulty == null ? faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType, true)
                         : faction.getRaidGun(isCloseRange, elite, raidDifficulty, mob.getRandom(), gunnerType);
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
-                if (elite && raidDifficulty == null) {
+                if (elite && raidDifficulty == null && !natural) {
                     gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType, true);
                 }
 
@@ -210,6 +215,11 @@ public class GunnerMobSpawner {
         FactionRaidHooks.recoverRaidMob(mob);
         TerrorRaidHooks.recoverRaidMob(mob);
 
+        // Old naturally converted gunners already carry the spawn-check marker.
+        if (mob.entityTags().contains(GUNNER_SPAWN_CHECKED_TAG) && mob.entityTags().contains("MobGunner")) {
+            mob.addTag(NaturalGunnerDifficulty.NATURAL_TAG);
+        }
+
         mob.removeTag("GunAttackAssigned");
 
         // Check if this mob should become a gunner (only for newly spawned mobs)
@@ -226,6 +236,8 @@ public class GunnerMobSpawner {
                         if (mob.level() instanceof ServerLevel naturalLevel && EnemyVehicleSpawner.tryReplaceNaturalGunner(naturalLevel, mob)) {
                             return;
                         }
+                        mob.addTag(NaturalGunnerDifficulty.NATURAL_TAG);
+                        if (NaturalGunnerDifficulty.applies(mob)) NaturalGunnerDifficulty.refresh(mob);
                     }
                 }
             }
@@ -357,7 +369,7 @@ public class GunnerMobSpawner {
         mob.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, -1, 0, false, false));
     }
 
-    private static ItemStack createModifiedGun(PathfinderMob mob, Item gun) {
+    static ItemStack createModifiedGun(PathfinderMob mob, Item gun) {
         ItemStack gunStack = new ItemStack(gun);
         if (gun instanceof GunItem gunItem) {
             GunStats stats = gunItem.getStats();

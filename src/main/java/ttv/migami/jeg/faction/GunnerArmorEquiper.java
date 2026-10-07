@@ -28,7 +28,7 @@ public class GunnerArmorEquiper {
             BulletproofArmorItem.Tier helmetTier = determineHelmetTier(random, context);
             if (helmetTier != null) {
                 ItemStack helmet = new ItemStack(ModItems.BULLETPROOF_HELMETS.get(helmetTier).get());
-                context.mob.setItemSlot(EquipmentSlot.HEAD, helmet);
+                equipArmor(context, EquipmentSlot.HEAD, helmet);
             }
         }
 
@@ -37,12 +37,19 @@ public class GunnerArmorEquiper {
             BulletproofArmorItem.Tier bodyTier = determineBodyArmorTier(random, context);
             if (bodyTier != null) {
                 ItemStack vest = new ItemStack(ModItems.BULLETPROOF_VESTS.get(bodyTier).get());
-                context.mob.setItemSlot(EquipmentSlot.CHEST, vest);
+                equipArmor(context, EquipmentSlot.CHEST, vest);
             }
         }
 
         // Elite gunners and special situations get only helmet and chest armor
         // No leggings or boots will be equipped
+    }
+
+    private static void equipArmor(GunnerArmorContext context, EquipmentSlot slot, ItemStack stack) {
+        if (NaturalGunnerDifficulty.applies(context.mob)
+                && context.mob.getItemBySlot(slot).getItem() instanceof BulletproofArmorItem old
+                && stack.getItem() instanceof BulletproofArmorItem next && old.tier().tierNumber() >= next.tier().tierNumber()) return;
+        context.mob.setItemSlot(slot, stack);
     }
 
     private static BulletproofArmorItem.Tier determineHelmetTier(RandomSource random, GunnerArmorContext context) {
@@ -70,15 +77,17 @@ public class GunnerArmorEquiper {
     }
 
     private static int maximumTier(GunnerArmorContext context) {
+        var natural = NaturalGunnerDifficulty.applies(context.mob) ? NaturalGunnerDifficulty.profile(context.mob) : null;
+        if (natural != null) return natural.armorTier();
         var difficulty = ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob);
         return difficulty == null ? Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob)) : difficulty.armorTier();
     }
 
     private static BulletproofArmorItem.Tier randomTier(RandomSource random, GunnerArmorContext context, int minimumTier) {
         int maximumTier = maximumTier(context);
-        if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && context.isElite) {
+        if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && !NaturalGunnerDifficulty.applies(context.mob) && context.isElite) {
             maximumTier = Math.max(maximumTier, 4);
-        } else if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && context.isSpecialSituation) {
+        } else if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && !NaturalGunnerDifficulty.applies(context.mob) && context.isSpecialSituation) {
             maximumTier = Math.max(maximumTier, 3);
         }
         minimumTier = Math.min(minimumTier, maximumTier);
