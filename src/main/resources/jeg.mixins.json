@@ -8,6 +8,7 @@
     "MagazineModeServerMixin",
     "VehiclePickMixin",
     "VehicleProjectileHitMixin",
+    "FabricExplosionShakeMixin",
     "VehicleExplosionMixin",
     "LivingEntityFireDamageMixin",
     "SmokeMobTargetMixin",

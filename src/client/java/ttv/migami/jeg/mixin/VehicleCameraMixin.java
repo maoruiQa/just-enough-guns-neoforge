@@ -69,6 +69,24 @@ public abstract class VehicleCameraMixin implements VehicleCameraHandler.Vehicle
             at = @At("TAIL")
     )
     private void jeg$setupVehicleCamera(DeltaTracker deltaTracker, CallbackInfo callback) {
+        this.jeg$positionVehicleCamera(deltaTracker, callback);
+        var shake = ttv.migami.jeg.client.ExplosionShakeHandler.frame();
+        if (shake.equals(ttv.migami.jeg.client.ExplosionShakeState.Angles.ZERO)) {
+            ttv.migami.jeg.client.ExplosionShakeCheck.frame(shake);
+            return;
+        }
+        // Keep the existing vehicle roll while changing only the rendered camera orientation.
+        Quaternionf roll = new Quaternionf().rotationYXZ((float) Math.PI - this.yRot * DEG_TO_RAD,
+                -this.xRot * DEG_TO_RAD, 0).conjugate().mul(this.rotation);
+        this.setRotation(this.yRot + shake.yaw(), this.xRot + shake.pitch());
+        this.rotation.mul(roll).rotateZ(shake.roll() * DEG_TO_RAD);
+        this.forwards.set(0, 0, -1).rotate(this.rotation);
+        this.up.set(0, 1, 0).rotate(this.rotation);
+        this.left.set(1, 0, 0).rotate(this.rotation);
+        ttv.migami.jeg.client.ExplosionShakeCheck.frame(shake);
+    }
+
+    private void jeg$positionVehicleCamera(DeltaTracker deltaTracker, CallbackInfo callback) {
         Minecraft minecraft = Minecraft.getInstance();
         if (entity instanceof VehicleEntity fixture && ttv.migami.jeg.vehicle.client.VehicleCaptureCheck.isAiFixture(fixture)) {
             float partialTick = this.getCameraEntityPartialTicks(deltaTracker);
