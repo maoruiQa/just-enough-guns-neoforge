@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -98,8 +99,42 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             return;
         }
 
+        Identifier gunTexture = Reference.id("textures/animated/gun/" + gun.getStats().id().getPath() + ".png");
+        for (GeoBone bone : passInfo.model().topLevelBones()) {
+            if (isGlowBone(bone.name())) {
+                passInfo.addPerBoneRender(bone, new GunGlowRenderTask(gunTexture));
+            }
+        }
+
         passInfo.model().getBone(ATTACHMENT_BONE)
                 .ifPresent(bone -> passInfo.addPerBoneRender(bone, new AttachmentRenderTask(this.attachmentModel, gun.getStats().id(), gunStack.copy())));
+    }
+
+    private static final class GunGlowRenderTask implements PerBoneRender<GeoRenderState> {
+        private final Identifier texture;
+
+        private GunGlowRenderTask(Identifier texture) {
+            this.texture = texture;
+        }
+
+        @Override
+        public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
+            collector.submitCustomGeometry(
+                    passInfo.poseStack(),
+                    RenderTypes.entityTranslucentEmissive(this.texture),
+                    (pose, buffer) -> {
+                        PoseStack glowPose = passInfo.poseStack();
+                        glowPose.pushPose();
+                        try {
+                            glowPose.last().set(pose);
+                            bone.render(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
+                            bone.renderChildren(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
+                        } finally {
+                            glowPose.popPose();
+                        }
+                    }
+            );
+        }
     }
 
     private static final class AttachmentRenderTask implements PerBoneRender<GeoRenderState> {
@@ -189,6 +224,25 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                         }
                     }
             );
+
+            collector.submitCustomGeometry(
+                    passInfo.poseStack(),
+                    RenderTypes.entityTranslucentEmissive(texture),
+                    (pose, buffer) -> {
+                        List<BoneVisibility> hiddenGlowBones = hideDisabledSpecialGlow(bakedModel, attachmentId, this.gunStack);
+                        try {
+                            renderGlowModel(bakedModel, passInfo, pose, buffer, attachmentPose -> {
+                                if (transform != null) {
+                                    transform.apply(attachmentPose);
+                                } else {
+                                    attachmentPose.translate(0.0D, SCOPE_MODEL_Y_OFFSET, 0.0D);
+                                }
+                            });
+                        } finally {
+                            restore(hiddenGlowBones);
+                        }
+                    }
+            );
         }
 
         private void renderBayonet(RenderPassInfo<GeoRenderState> passInfo, SubmitNodeCollector collector) {
@@ -238,6 +292,33 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             } finally {
                 renderPose.popPose();
             }
+        }
+    }
+
+    private static boolean isGlowBone(String name) {
+        return name.startsWith("glow") || "flashlight_glow".equals(name);
+    }
+
+    static void renderGlowModel(
+            BakedGeoModel bakedModel,
+            RenderPassInfo<GeoRenderState> passInfo,
+            PoseStack.Pose pose,
+            VertexConsumer buffer,
+            Consumer<PoseStack> transform
+    ) {
+        PoseStack renderPose = passInfo.poseStack();
+        renderPose.pushPose();
+        try {
+            renderPose.last().set(pose);
+            transform.accept(renderPose);
+            int fullBright = Brightness.FULL_BRIGHT.pack();
+            for (GeoBone bone : bakedModel.topLevelBones()) {
+                if (isGlowBone(bone.name())) {
+                    bone.positionAndRender(passInfo, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
+                }
+            }
+        } finally {
+            renderPose.popPose();
         }
     }
 
