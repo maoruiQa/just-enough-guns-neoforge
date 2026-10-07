@@ -18,10 +18,15 @@ public record VehicleInput(
         boolean deployDecoy,
         float mouseX,
         float mouseY,
-        boolean aiming
+        boolean aiming,
+        boolean toggleHover
 ) {
     public VehicleInput(boolean forward, boolean backward, boolean left, boolean right, boolean brake, boolean ascend, boolean descend, boolean fire, boolean reload, boolean freeLook, boolean switchWeapon, boolean previousWeapon, int weaponSlot, boolean seekTarget, boolean deployDecoy, float mouseX, float mouseY) {
         this(forward, backward, left, right, brake, ascend, descend, fire, reload, freeLook, switchWeapon, previousWeapon, weaponSlot, seekTarget, deployDecoy, mouseX, mouseY, false);
+    }
+
+    public VehicleInput(boolean forward, boolean backward, boolean left, boolean right, boolean brake, boolean ascend, boolean descend, boolean fire, boolean reload, boolean freeLook, boolean switchWeapon, boolean previousWeapon, int weaponSlot, boolean seekTarget, boolean deployDecoy, float mouseX, float mouseY, boolean aiming) {
+        this(forward, backward, left, right, brake, ascend, descend, fire, reload, freeLook, switchWeapon, previousWeapon, weaponSlot, seekTarget, deployDecoy, mouseX, mouseY, aiming, false);
     }
 
     public static final VehicleInput EMPTY = new VehicleInput(false, false, false, false, false, false, false, false, false, false, false, false, -1, false, false, 0.0F, 0.0F);
