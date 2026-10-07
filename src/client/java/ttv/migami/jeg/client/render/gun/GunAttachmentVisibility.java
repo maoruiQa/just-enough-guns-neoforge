@@ -127,7 +127,8 @@ public final class GunAttachmentVisibility {
                     Boolean hidden = installedAttachmentVisibility(gunId, stack, boneName);
                     if (hidden != null) {
                         snapshot.skipRender(hidden);
-                        if (BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
+                        if (isMagazineBone(boneName)
+                                || BAKED_UNDER_BARREL_GUNS.contains(gunId) && ("under_barrel".equals(boneName) || "grip".equals(boneName))) {
                             snapshot.skipChildrenRender(hidden);
                         }
                     }
@@ -146,7 +147,11 @@ public final class GunAttachmentVisibility {
             if (rule == null || !rule.visible().contains(boneName)) {
                 snapshots.ifPresent(boneName, snapshot -> {
                     Boolean hidden = installedAttachmentVisibility(gunId, stack, boneName);
-                    snapshot.skipRender(hidden != null ? hidden : true);
+                    boolean skip = hidden != null ? hidden : true;
+                    snapshot.skipRender(skip);
+                    if (isMagazineBone(boneName)) {
+                        snapshot.skipChildrenRender(skip);
+                    }
                 });
             }
         });

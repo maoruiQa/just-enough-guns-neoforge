@@ -304,13 +304,15 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         renderPose.pushPose();
         try {
             RenderUtil.prepMatrixForBoneAndUpdateListeners(renderPose, bone, passInfo);
-            if (isGlowBone(bone.name())) {
+            BoneSnapshot snapshot = bone.frameSnapshot;
+            boolean hidden = snapshot != null && snapshot.isHidden();
+            if (!hidden && isGlowBone(bone.name())) {
                 bone.render(passInfo, renderPose, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
-                bone.renderChildren(passInfo, renderPose, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
-                return;
             }
-            for (GeoBone child : bone.children()) {
-                renderGlowBone(child, passInfo, buffer, fullBright);
+            if (snapshot == null || !snapshot.areChildrenHidden()) {
+                for (GeoBone child : bone.children()) {
+                    renderGlowBone(child, passInfo, buffer, fullBright);
+                }
             }
         } finally {
             renderPose.popPose();
