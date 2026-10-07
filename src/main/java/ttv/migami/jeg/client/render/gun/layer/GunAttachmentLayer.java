@@ -122,15 +122,12 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                     passInfo.poseStack(),
                     RenderTypes.entityTranslucentEmissive(this.texture),
                     (pose, buffer) -> {
-                        PoseStack glowPose = passInfo.poseStack();
-                        glowPose.pushPose();
-                        try {
-                            glowPose.last().set(pose);
+                        PoseStack glowPose = new PoseStack();
+                        glowPose.last().set(pose);
+                        passInfo.renderPosed(() -> {
                             bone.render(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
                             bone.renderChildren(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
-                        } finally {
-                            glowPose.popPose();
-                        }
+                        });
                     }
             );
         }
@@ -324,9 +321,11 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
             renderPose.last().set(pose);
             transform.accept(renderPose);
             int fullBright = Brightness.FULL_BRIGHT.pack();
-            for (GeoBone bone : bakedModel.topLevelBones()) {
-                renderGlowBone(bone, passInfo, buffer, fullBright);
-            }
+            passInfo.renderPosed(() -> {
+                for (GeoBone bone : bakedModel.topLevelBones()) {
+                    renderGlowBone(bone, passInfo, buffer, fullBright);
+                }
+            });
         } finally {
             renderPose.popPose();
         }
