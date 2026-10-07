@@ -82,6 +82,7 @@ public final class VehicleMissileEntity extends Entity {
             boolean topAttack
     ) {
         this(ModEntities.VEHICLE_MISSILE.get(), level);
+        ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.markProjectile(this, owner);
         this.ownerId = owner.getId();
         this.ownerUuid = owner.getUUID();
         if (owner.getVehicle() instanceof VehicleEntity vehicle) this.advancementVehicle = vehicle.vehicleDataId().toString();

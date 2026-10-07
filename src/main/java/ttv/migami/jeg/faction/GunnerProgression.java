@@ -70,6 +70,19 @@ public final class GunnerProgression {
         return selectWeightedByTier(candidates, random, Config.gunnerWeaponAggression(gunnerType));
     }
 
+    public static Item selectRaidGun(List<Item> pool, RandomSource random, int maxTier, double aggression) {
+        List<Item> candidates = pool.stream().filter(item -> item instanceof GunItem gun
+                && !List.of("rocket_launcher", "javelin", "igla_9k38", "abstract_gun", "phantom_smg").contains(gun.getStats().id().getPath()) && gun.getStats().damage() > 0
+                && !ModItems.isDisabledGunId(gun.getStats().id()) && weaponTier(item) <= maxTier).toList();
+        if (candidates.isEmpty()) {
+            candidates = ModItems.GUNS.values().stream().map(holder -> (Item) holder.get())
+                    .filter(item -> item instanceof GunItem gun && gun.getStats().damage() > 0
+                            && !List.of("rocket_launcher", "javelin", "igla_9k38", "abstract_gun", "phantom_smg").contains(gun.getStats().id().getPath())
+                            && !ModItems.isDisabledGunId(gun.getStats().id()) && weaponTier(item) <= maxTier).toList();
+        }
+        return candidates.isEmpty() ? null : selectWeightedByTier(candidates, random, aggression);
+    }
+
     public static void prepareDroppedWeapon(Mob mob, ItemStack stack) {
         damageWeaponToLowDurability(stack, mob.getRandom());
         mob.setDropChance(EquipmentSlot.MAINHAND, WEAPON_DROP_CHANCE);
@@ -124,7 +137,11 @@ public final class GunnerProgression {
             return 0;
         }
 
-        Identifier gunId = gun.getStats().id();
+        return weaponTier(gun.getStats());
+    }
+
+    public static int weaponTier(ttv.migami.jeg.gun.GunStats stats) {
+        Identifier gunId = stats.id();
         String path = gunId.getPath();
         if ("bolt_action_rifle".equals(path)) {
             return 2;
@@ -136,7 +153,7 @@ public final class GunnerProgression {
             return 1;
         }
 
-        Identifier ammo = gun.getStats().ammoItem();
+        Identifier ammo = stats.ammoItem();
         if (ammo != null && "jeg".equals(ammo.getNamespace())) {
             if ("pistol_ammo".equals(ammo.getPath())) {
                 return 0;

@@ -106,7 +106,7 @@ public final class FactionRaidManager {
     }
 
     public static void startRaid(ServerLevel level, Faction faction, Vec3 startPos, boolean forceGuns) {
-        if (faction == null) {
+        if (faction == null || !Config.factionRaidEnabled()) {
             return;
         }
 
@@ -115,7 +115,13 @@ public final class FactionRaidManager {
             return;
         }
 
-        RaidContext raid = new RaidContext(UUID.randomUUID(), origin, faction.getName(), forceGuns, DEFAULT_TOTAL_WAVES);
+        List<ServerPlayer> players = level.getPlayers(player -> isValidRaidTarget(player, level, origin));
+        RaidDifficulty difficulty = Config.factionRaidDynamicDifficultyEnabled()
+                ? RaidDifficulty.evaluate(players, Config.gunnerProgressionScale(level)) : null;
+        RaidContext raid = new RaidContext(UUID.randomUUID(), origin, faction.getName(), forceGuns,
+                difficulty == null ? DEFAULT_TOTAL_WAVES : difficulty.totalWaves());
+        raid.difficulty = difficulty;
+        players.forEach(player -> raid.participantPlayerIds.add(player.getUUID()));
         ACTIVE_RAIDS.computeIfAbsent(level, ignored -> new ArrayList<>()).add(raid);
         ensureAnchor(level, raid, startPos);
 
@@ -159,7 +165,7 @@ public final class FactionRaidManager {
         List<RaidContext> raids = ACTIVE_RAIDS.computeIfAbsent(level, ignored -> new ArrayList<>());
         UUID raidId = anchor.getRaidId();
         RaidContext raid = raidId != null ? findContextById(raids, raidId) : null;
-        if (raid == null) {
+        if (raid == null && raidId == null) {
             raid = findCompatibleLegacyContext(raids, anchor.blockPosition(), anchor.getFactionName());
         }
         if (raid == null) {
@@ -173,6 +179,14 @@ public final class FactionRaidManager {
             raids.add(raid);
         }
 
+        raid.difficulty = anchor.getDifficulty();
+        raid.vehicleSpawnsThisWave = anchor.getVehicleSpawnsThisWave();
+        raid.heavyVehiclesThisWave = anchor.getHeavyVehiclesThisWave();
+        raid.vehicleSpawnFailedThisWave = anchor.isVehicleSpawnFailedThisWave();
+        for (String id : anchor.getParticipants().split(",")) {
+            UUID participant = parseUuid(id);
+            if (participant != null) raid.participantPlayerIds.add(participant);
+        }
         raid.currentWave = Math.max(anchor.getCurrentWave(), raid.currentWave);
         raid.waveCooldown = anchor.getWaveCooldown();
         raid.spawningWave = anchor.isSpawningWave();
@@ -184,6 +198,8 @@ public final class FactionRaidManager {
         raid.rewardGranted = anchor.isRewardGrantedState();
         raid.anchorId = anchor.getUUID();
 
+        anchor.syncDifficulty(raid.difficulty, raid.vehicleSpawnsThisWave, raid.heavyVehiclesThisWave,
+                raid.vehicleSpawnFailedThisWave, raid.participantPlayerIds.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(",")));
         anchor.bindToRaid(raid.raidId, raid.factionName, raid.forceGuns, raid.totalWaves, raid.currentWave);
         anchor.syncFromManager(
                 raid.factionName,
@@ -191,7 +207,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeCount(),
+                raid.activeBudget(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -276,7 +292,8 @@ public final class FactionRaidManager {
         Player preferred = pickPreferredTarget(level, raid);
         if (preferred != null) {
             raid.hadPlayersInRange = true;
-            raid.participantPlayerIds.add(preferred.getUUID());
+            level.getPlayers(player -> isValidRaidTarget(player, level, raid.origin))
+                    .forEach(player -> raid.participantPlayerIds.add(player.getUUID()));
             maintainRaidMobPressure(level, raid, preferred);
             tickActiveRaid(level, raid, preferred);
         } else if (raid.hadPlayersInRange) {
@@ -307,13 +324,13 @@ public final class FactionRaidManager {
             if (raid.spawnCooldown <= 0) {
                 raid.spawnCooldown = RAID_BURST_DELAY_TICKS;
                 spawnWaveBatch(level, raid, preferredTarget);
-                if (raid.spawnedThisWaveCount >= WAVE_MOBS) {
+                if (raid.spawnedThisWaveCount >= raid.waveBudget()) {
                     raid.spawningWave = false;
                 }
             }
         }
 
-        boolean waveSpawnedAll = raid.spawnedThisWaveCount >= WAVE_MOBS;
+        boolean waveSpawnedAll = raid.spawnedThisWaveCount >= raid.waveBudget();
         if (!raid.spawningWave && waveSpawnedAll && raid.activeCount() <= LOW_MOB_NO_FIRE_CLEANUP_THRESHOLD) {
             raid.lowMobNoFireTicks += RAID_MANAGER_TICK_INTERVAL;
             if (raid.lowMobNoFireTicks >= LOW_MOB_NO_FIRE_TIMEOUT_TICKS) {
@@ -342,6 +359,8 @@ public final class FactionRaidManager {
         raid.lowMobNoFireTicks = 0;
         raid.currentBurstCenter = null;
         raid.vehicleSpawnsThisWave = 0;
+        raid.heavyVehiclesThisWave = 0;
+        raid.vehicleSpawnFailedThisWave = false;
         raid.desiredVehicleSpawnsThisWave = -1;
         playHorn(level, raid.origin, false);
     }
@@ -367,15 +386,16 @@ public final class FactionRaidManager {
             return;
         }
 
-        int burstRemaining = Math.min(raid.spawnedInCurrentBurst, WAVE_MOBS - raid.spawnedThisWaveCount);
+        int burstRemaining = Math.min(raid.spawnedInCurrentBurst, raid.waveBudget() - raid.spawnedThisWaveCount);
         int attempts = 0;
         int spawned = 0;
         int desiredVehicles = raid.desiredVehicleSpawnsThisWave(level);
-        while (raid.vehicleSpawnsThisWave < desiredVehicles
-                && raid.spawnedThisWaveCount + EnemyVehicleSpawner.raidVehicleBatchWeight() <= WAVE_MOBS
+        while (!raid.vehicleSpawnFailedThisWave && raid.vehicleSpawnsThisWave < desiredVehicles
+                && raid.spawnedThisWaveCount + EnemyVehicleSpawner.raidVehicleBatchWeight() <= raid.waveBudget()
                 && raid.activeCount() < MAX_ACTIVE_MOBS) {
-            VehicleEntity vehicle = EnemyVehicleSpawner.trySpawnRaidVehicle(level, raid.origin, raid.currentBurstCenter, preferredTarget);
+            VehicleEntity vehicle = EnemyVehicleSpawner.trySpawnRaidVehicle(level, raid.origin, raid.currentBurstCenter, preferredTarget, raid.difficulty, raid.currentWave, raid.heavyVehiclesThisWave > 0);
             if (vehicle == null) {
+                raid.vehicleSpawnFailedThisWave = true;
                 break;
             }
             raid.trackVehicleSpawn(vehicle, preferredTarget);
@@ -392,7 +412,8 @@ public final class FactionRaidManager {
                     raid.origin.getX() + "," + raid.origin.getY() + "," + raid.origin.getZ(),
                     raid.factionName,
                     raid.forceGuns,
-                    raid.currentBurstCenter
+                    raid.currentBurstCenter,
+                    raid.difficulty
             );
             if (mob == null) {
                 continue;
@@ -672,18 +693,20 @@ public final class FactionRaidManager {
         }
 
         raid.rewardBarrelPositions.clear();
-        raid.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, raid.origin)));
+        raid.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, raid.origin), raid.difficulty));
         if (eligiblePlayers.size() > 1) {
-            raid.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, raid.origin.offset(2, 0, 2))));
+            raid.rewardBarrelPositions.add(placeRewardBarrel(level, findRewardTerrain(level, raid.origin.offset(2, 0, 2)), raid.difficulty));
         }
         raid.rewardGranted = true;
         raid.rewardMarkerActive = true;
         raid.rewardMarkerCooldown = REWARD_MARKER_TICK_INTERVAL;
     }
 
-    private static BlockPos placeRewardBarrel(ServerLevel level, BlockPos pos) {
+    private static BlockPos placeRewardBarrel(ServerLevel level, BlockPos pos, @Nullable RaidDifficulty difficulty) {
         level.setBlock(pos, Blocks.BARREL.defaultBlockState(), 3);
-        LootUtils.fillContainer(level, pos, FACTION_RAID_REWARD_LOOT, level.getRandom());
+        ResourceKey<LootTable> loot = difficulty == null ? FACTION_RAID_REWARD_LOOT
+                : ResourceKey.create(Registries.LOOT_TABLE, Reference.id("chests/faction_raid_reward_" + difficulty.rewardTier()));
+        LootUtils.fillContainer(level, pos, loot, level.getRandom());
         return pos.immutable();
     }
 
@@ -766,7 +789,7 @@ public final class FactionRaidManager {
 
     private static void clearRemainingRaidMobs(ServerLevel level, RaidContext raid) {
         AABB search = new AABB(raid.origin).inflate(LEGACY_RECOVERY_MERGE_DISTANCE * 4.0D);
-        for (Mob mob : level.getEntitiesOfClass(Mob.class, search, mob -> mob.entityTags().contains(FactionSpawnHelper.RAID_TAG))) {
+        for (Mob mob : level.getEntitiesOfClass(Mob.class, search, mob -> mob.entityTags().contains(FactionSpawnHelper.RAID_TAG) && !mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG))) {
             UUID mobRaidId = parseUuid(readTagValue(mob, RAID_ID_TAG_PREFIX));
             if (!raid.raidId.equals(mobRaidId)) {
                 continue;
@@ -786,6 +809,8 @@ public final class FactionRaidManager {
 
         anchor = new RaidEntity(ModEntities.RAID_ENTITY.get(), level);
         anchor.setPos(pos);
+        anchor.syncDifficulty(raid.difficulty, raid.vehicleSpawnsThisWave, raid.heavyVehiclesThisWave,
+                raid.vehicleSpawnFailedThisWave, raid.participantPlayerIds.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(",")));
         anchor.bindToRaid(raid.raidId, raid.factionName, raid.forceGuns, raid.totalWaves, raid.currentWave);
         anchor.syncFromManager(
                 raid.factionName,
@@ -793,7 +818,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeCount(),
+                raid.activeBudget(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -836,6 +861,8 @@ public final class FactionRaidManager {
     }
 
     private static void syncAnchor(RaidEntity anchor, RaidContext raid) {
+        anchor.syncDifficulty(raid.difficulty, raid.vehicleSpawnsThisWave, raid.heavyVehiclesThisWave,
+                raid.vehicleSpawnFailedThisWave, raid.participantPlayerIds.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(",")));
         anchor.bindToRaid(raid.raidId, raid.factionName, raid.forceGuns, raid.totalWaves, raid.currentWave);
         anchor.syncFromManager(
                 raid.factionName,
@@ -843,7 +870,7 @@ public final class FactionRaidManager {
                 raid.totalWaves,
                 raid.spawningWave,
                 raid.spawnedThisWaveCount,
-                raid.activeCount(),
+                raid.activeBudget(),
                 raid.waveCooldown,
                 raid.finished,
                 raid.victory,
@@ -858,7 +885,11 @@ public final class FactionRaidManager {
             return;
         }
         AABB search = new AABB(raid.origin).inflate(LEGACY_RECOVERY_MERGE_DISTANCE);
-        for (Mob mob : level.getEntitiesOfClass(Mob.class, search, mob -> mob.entityTags().contains(FactionSpawnHelper.RAID_TAG))) {
+        for (VehicleEntity vehicle : level.getEntitiesOfClass(VehicleEntity.class, search,
+                vehicle -> raid.raidId.equals(parseUuid(readTagValue(vehicle, RAID_ID_TAG_PREFIX))))) {
+            raid.activeVehicleIds.add(vehicle.getUUID());
+        }
+        for (Mob mob : level.getEntitiesOfClass(Mob.class, search, mob -> mob.entityTags().contains(FactionSpawnHelper.RAID_TAG) && !mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG))) {
             UUID mobRaidId = parseUuid(readTagValue(mob, RAID_ID_TAG_PREFIX));
             if (mobRaidId != null && !raid.raidId.equals(mobRaidId)) {
                 continue;
@@ -915,7 +946,7 @@ public final class FactionRaidManager {
     }
 
     @Nullable
-    private static String readTagValue(Mob mob, String prefix) {
+    private static String readTagValue(Entity mob, String prefix) {
         for (String tag : mob.entityTags()) {
             if (tag.startsWith(prefix)) {
                 return tag.substring(prefix.length());
@@ -969,7 +1000,7 @@ public final class FactionRaidManager {
         }
     }
 
-    private static void replaceTagValue(Mob mob, String prefix, @Nullable String value) {
+    private static void replaceTagValue(Entity mob, String prefix, @Nullable String value) {
         List<String> stale = new ArrayList<>();
         for (String tag : mob.entityTags()) {
             if (tag.startsWith(prefix)) {
@@ -1028,6 +1059,13 @@ public final class FactionRaidManager {
         private boolean rewardMarkerActive;
         private int vehicleSpawnsThisWave;
         private int desiredVehicleSpawnsThisWave = -1;
+        private @Nullable RaidDifficulty difficulty;
+        private int heavyVehiclesThisWave;
+        private boolean vehicleSpawnFailedThisWave;
+
+        private int waveBudget() {
+            return difficulty == null ? WAVE_MOBS : difficulty.waveBudget();
+        }
 
         private RaidContext(UUID raidId, BlockPos origin, String factionName, boolean forceGuns, int totalWaves) {
             this.raidId = raidId;
@@ -1052,6 +1090,8 @@ public final class FactionRaidManager {
             this.activeVehicleIds.add(vehicle.getUUID());
             this.spawnedThisWaveCount += EnemyVehicleSpawner.raidVehicleBatchWeight();
             this.vehicleSpawnsThisWave++;
+            if (vehicle.vehicleDataId().getPath().equals("mi28")) this.heavyVehiclesThisWave++;
+            replaceTagValue(vehicle, RAID_ID_TAG_PREFIX, this.raidId.toString());
             for (Entity passenger : vehicle.getPassengers()) {
                 if (passenger instanceof Mob mob && mob.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_CREW_TAG)) {
                     applyRaidTags(mob);
@@ -1066,6 +1106,10 @@ public final class FactionRaidManager {
 
         private int desiredVehicleSpawnsThisWave(ServerLevel level) {
             if (this.desiredVehicleSpawnsThisWave >= 0) {
+                return this.desiredVehicleSpawnsThisWave;
+            }
+            if (this.difficulty != null) {
+                this.desiredVehicleSpawnsThisWave = Config.enemyVehicleSpawningEnabled() ? this.difficulty.vehicleCount(this.currentWave) : 0;
                 return this.desiredVehicleSpawnsThisWave;
             }
             if (!EnemyVehicleSpawner.canSpawnNaturally(level)) {
@@ -1130,6 +1174,10 @@ public final class FactionRaidManager {
                 Entity entity = level.getEntity(uuid);
                 return !(entity instanceof VehicleEntity vehicle) || vehicle.isRemoved() || !vehicle.isAlive();
             });
+        }
+
+        private int activeBudget() {
+            return this.activeMobIds.size() + this.activeVehicleIds.size() * EnemyVehicleSpawner.raidVehicleBatchWeight();
         }
 
         private int activeCount() {

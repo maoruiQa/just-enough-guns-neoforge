@@ -24,6 +24,11 @@ public class Faction {
         this.eliteGuns = eliteGuns;
     }
 
+    public Item getRaidGun(boolean closeRange, boolean elite, ttv.migami.jeg.faction.raid.RaidDifficulty difficulty, RandomSource random, String gunnerType) {
+        List<Item> pool = elite ? eliteGuns : closeRange ? closeGuns : longGuns;
+        return GunnerProgression.selectRaidGun(pool, random, difficulty.weaponTier(), ttv.migami.jeg.Config.gunnerWeaponAggression(gunnerType));
+    }
+
     public String getName() {
         return name;
     }

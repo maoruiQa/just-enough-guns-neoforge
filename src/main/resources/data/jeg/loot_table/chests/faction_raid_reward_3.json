@@ -1,0 +1,325 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_helmet_iii",
+          "weight": 15,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_vest_iii",
+          "weight": 15,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_helmet_iv",
+          "weight": 15,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bulletproof_vest_iv",
+          "weight": 15,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:blossom_rifle",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:bolt_action_rifle",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:double_barrel_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:flamethrower",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:flare_gun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:grenade_launcher",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:hollenfire_mk2",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:holy_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:hypersonic_cannon",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:pump_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:repeating_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:soulhunter_mk2",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:subsonic_rifle",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:supersonic_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:waterpipe_shotgun",
+          "weight": 4,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": 1.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 5,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "jeg:pistol_ammo",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 20,
+                "max": 40
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:rifle_ammo",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 20,
+                "max": 40
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:shotgun_shell",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 20,
+                "max": 40
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:spectre_round",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 20,
+                "max": 40
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "jeg:rocket",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 20,
+                "max": 40
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:emerald",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "jeg:repair_kit",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
