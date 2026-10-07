@@ -54,22 +54,22 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         ItemDisplayContext ctx = passInfo.renderState()
                 .getOrDefaultGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, ItemDisplayContext.NONE);
 
-        if (ctx != ItemDisplayContext.FIRST_PERSON_LEFT_HAND && ctx != ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
-            return;
-        }
-
         Item item = passInfo.renderState().getGeckolibData(AnimatedGunRenderer.ANIMATED_ITEM);
         if (!(item instanceof AnimatedGunItem gun)) {
             return;
         }
 
         String gunId = gun.getStats().id().getPath();
+        boolean fingerGunGui = ctx == ItemDisplayContext.GUI && "finger_gun".equals(gunId);
+        if (!fingerGunGui && ctx != ItemDisplayContext.FIRST_PERSON_LEFT_HAND && ctx != ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
+            return;
+        }
         boolean suppressLeftArm = "typhoonee".equals(gunId);
         GunPoseProfile profile = item instanceof AnimatedGunItem animatedGun
                 ? GunPoseProfile.forGun(animatedGun.getStats().id())
                 : GunPoseProfile.forGun(Identifier.fromNamespaceAndPath("jeg", "abstract_gun"));
-        boolean oneHanded = profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED;
-        boolean renderLeftArm = profile.renderLeftArm();
+        boolean oneHanded = !fingerGunGui && profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED;
+        boolean renderLeftArm = fingerGunGui || profile.renderLeftArm();
         ArmSide activeSide = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? ArmSide.LEFT : ArmSide.RIGHT;
 
         passInfo.addBoneUpdater((info, snapshots) ->
@@ -118,7 +118,9 @@ public final class GunFirstPersonArmsLayer extends GeoRenderLayer<AnimatedGunIte
         @Override
         public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
             AbstractClientPlayer player = Minecraft.getInstance().player;
-            if (player == null || player.isInvisible()) {
+            boolean fingerGunGui = passInfo.renderState()
+                    .getOrDefaultGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, ItemDisplayContext.NONE) == ItemDisplayContext.GUI;
+            if (player == null || (!fingerGunGui && player.isInvisible())) {
                 return;
             }
 
