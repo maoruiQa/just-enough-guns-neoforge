@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import ttv.migami.jeg.config.ModConfigSpec;
 
 public final class Config {
+    public static final ModConfigSpec.IntValue EXPLOSION_SCREEN_SHAKE;
     public static final ModConfigSpec CLIENT_SPEC;
     public static final ModConfigSpec SERVER_SPEC;
     public static final ModConfigSpec.BooleanValue LEGACY_BULLET_TRAIL_ENABLED;
@@ -106,6 +107,9 @@ public final class Config {
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
         clientBuilder.push("rendering");
+        EXPLOSION_SCREEN_SHAKE = clientBuilder
+                .comment("Explosion camera shake strength: 0 disables it, 100 matches SuperbWarfare.")
+                .defineInRange("explosionScreenShake", 100, 0, 100);
         LEGACY_BULLET_TRAIL_ENABLED = clientBuilder
                 .comment("If true, use legacy 1.20.1-style bullet trail rendering.")
                 .define("legacyBulletTrailEnabled", true);
@@ -948,6 +952,10 @@ public final class Config {
 
     public static boolean glowingLaserPointers() {
         return GLOWING_LASER_POINTERS.get();
+    }
+
+    public static int explosionScreenShake() {
+        return EXPLOSION_SCREEN_SHAKE.get();
     }
 
     public static boolean legacyBulletTrailEnabled() {

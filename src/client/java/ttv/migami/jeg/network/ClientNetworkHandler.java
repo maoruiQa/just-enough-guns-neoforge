@@ -43,6 +43,9 @@ public final class ClientNetworkHandler {
             });
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(ExplosionShakePayload.TYPE, (payload, context) ->
+                context.client().execute(() -> ttv.migami.jeg.client.ExplosionShakeHandler.receive(payload)));
+
         ClientPlayNetworking.registerGlobalReceiver(GunFireFxPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> FabricClientBootstrap.showMuzzleFlash(payload.shooterId(), payload.randomValue()));
         });

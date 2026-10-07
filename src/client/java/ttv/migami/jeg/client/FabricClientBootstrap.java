@@ -419,6 +419,7 @@ public final class FabricClientBootstrap {
     }
 
     private static void onClientTick(Minecraft client) {
+        ExplosionShakeHandler.tick();
         MagazineModeClient.tick();
         GunRecoilHandler.tick();
         MedalManager.tick();
