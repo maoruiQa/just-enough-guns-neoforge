@@ -123,3 +123,12 @@ tasks.named('check') {
     dependsOn tasks.named('checkMagazineMode')
     dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
 }
+
+// Run the actual SW shake arithmetic/lifecycle assertions without launching Minecraft.
+tasks.register('checkExplosionShake', JavaExec) {
+    dependsOn tasks.named('clientClasses')
+    classpath = sourceSets.client.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.client.ExplosionShakeState'
+    jvmArgs '-ea'
+}
+tasks.named('check') { dependsOn tasks.named('checkExplosionShake') }

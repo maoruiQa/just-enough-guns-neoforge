@@ -52,6 +52,7 @@ public final class StunGrenadeEntity extends TimedThrowableItemProjectile {
     @Override
     protected void explode() {
         ServerLevel serverLevel = (ServerLevel) this.level();
+        ttv.migami.jeg.network.NetworkHandler.sendExplosionShake(serverLevel, this.position(), (float) (EFFECT_RADIUS / 4.0D));
         SoundEvent sound = resolveSound("entity.stun_grenade.explosion", SoundEvents.GENERIC_EXPLODE.value());
         serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.BLOCKS, 2.0F, 0.7F + this.random.nextFloat() * 0.2F);
         serverLevel.sendParticles(ModParticleTypes.BIG_EXPLOSION.get(), true, false, this.getX(), this.getY(), this.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);

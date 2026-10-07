@@ -102,6 +102,7 @@ public final class NetworkHandler {
         PayloadTypeRegistry.serverboundPlay().register(OpenServerConfigPayload.TYPE, OpenServerConfigPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ApplyServerConfigPayload.TYPE, ApplyServerConfigPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(BulletTrailPayload.TYPE, BulletTrailPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ExplosionShakePayload.TYPE, ExplosionShakePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GunFireFxPayload.TYPE, GunFireFxPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OffhandFullPromptPayload.TYPE, OffhandFullPromptPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitMarkerPayload.TYPE, HitMarkerPayload.STREAM_CODEC);
@@ -485,6 +486,18 @@ public final class NetworkHandler {
 
     public static boolean shouldRenderLegacyBulletTrail() {
         return Config.legacyBulletTrailEnabled();
+    }
+
+    /** Server-only blast notification, also usable by custom explosion implementations. */
+    public static void sendExplosionShake(ServerLevel level, net.minecraft.world.phys.Vec3 center, float blastRadius) {
+        ExplosionShakePayload payload = new ExplosionShakePayload(center.x, center.y, center.z,
+                4.0D * blastRadius, 20.0D + 0.2D * blastRadius, 50.0D + 0.5D * blastRadius);
+        if (!Float.isFinite(blastRadius) || blastRadius <= 0 || !payload.valid()) return;
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(center) < payload.radius() * payload.radius()) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
     }
 
     public static void sendGunFireFx(ServerLevel level, int shooterId, float randomValue) {
