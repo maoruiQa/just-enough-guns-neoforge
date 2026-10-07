@@ -3,6 +3,9 @@
   "package": "ttv.migami.jeg.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "MagazineModeRecipeMixin",
+    "MagazineRecipeMapAccessor",
+    "MagazineModeServerMixin",
     "VehiclePickMixin",
     "LivingEntityFireDamageMixin",
     "SmokeMobTargetMixin",

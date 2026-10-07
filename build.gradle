@@ -112,4 +112,12 @@ tasks.register('checkVehicleDamageModifiers', JavaExec) {
 }
 tasks.named('check') {
     dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
+tasks.register('checkMagazineMode', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.gun.MagazineModeRules'
+    jvmArgs '-ea'
 }
+
+}
+    dependsOn tasks.named('checkMagazineMode')
