@@ -82,6 +82,69 @@ public final class VehicleControlGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 40)
+    public static void swHelicopterHoverAndPowerFloor(GameTestHelper helper) throws ReflectiveOperationException {
+        var toggle = new VehicleInput(false,false,false,false,false,false,false,false,false,false,false,false,-1,false,false,0,0,false,true);
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            var payload = new ttv.migami.jeg.vehicle.network.VehicleInputPayload(42,false,false,false,false,false,false,false,false,false,false,false,false,-1,false,false,0,0,false,true);
+            ttv.migami.jeg.vehicle.network.VehicleInputPayload.STREAM_CODEC.encode(buffer, payload);
+            var decoded = ttv.migami.jeg.vehicle.network.VehicleInputPayload.STREAM_CODEC.decode(buffer);
+            helper.assertTrue(payload.equals(decoded) && toggle.equals(decoded.toInput()) && !buffer.isReadable(), "Hover toggle must survive the network codec and input conversion");
+        } finally { buffer.release(); }
+        for (String id : new String[]{"mi28", "ah6"}) {
+            VehicleEntity vehicle = isolatedVehicle(helper, ModEntities.AH6.get(), id);
+            EngineInfo engine = vehicle.vehicleData().defaults().engine();
+            vehicle.primeAiHelicopterSpawnHover();
+            vehicle.setOnGround(false);
+            vehicle.setXRot(15); invoke(vehicle,"setRoll",new Class<?>[]{float.class},12F);
+            vehicle.setDeltaMovement(.4, -.15, .2);
+            invoke(vehicle,"applyDriverInput",new Class<?>[]{VehicleInput.class},toggle);
+            helper.assertTrue(vehicle.hoverMode(), id + " must enable hover in powered flight");
+            set(vehicle,"input",VehicleInput.EMPTY);
+            for (int tick = 0; tick < 400; tick++) {
+                vehicle.setOnGround(false);
+                invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+            }
+            System.out.println("JEG hover " + id + ": pitch=" + vehicle.getXRot() + " roll=" + vehicle.roll() + " velocity=" + vehicle.getDeltaMovement());
+            helper.assertTrue(Math.abs(vehicle.getXRot()) < 3 && Math.abs(vehicle.roll()) < 3, id + " hover must level pitch and roll");
+            helper.assertTrue(vehicle.getDeltaMovement().horizontalDistance() < .03 && Math.abs(vehicle.getDeltaMovement().y) < .03, id + " hover must settle drift and vertical speed");
+            invoke(vehicle,"applyDriverInput",new Class<?>[]{VehicleInput.class},toggle);
+            helper.assertFalse(vehicle.hoverMode(), "A second click must disable hover");
+            invoke(vehicle,"applyDriverInput",new Class<?>[]{VehicleInput.class},toggle);
+            vehicle.setOnGround(true);
+            invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+            helper.assertFalse(vehicle.hoverMode(), "Landing must cancel hover");
+            invoke(vehicle,"applyDriverInput",new Class<?>[]{VehicleInput.class},toggle);
+            helper.assertFalse(vehicle.hoverMode(), "Hover must remain unavailable on the ground");
+            vehicle.setOnGround(false);
+            invoke(vehicle,"applyDriverInput",new Class<?>[]{VehicleInput.class},toggle);
+            vehicle.consumeEnergy(vehicle.vehicleEnergy());
+            invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+            helper.assertFalse(vehicle.hoverMode(), "Loss of energy must cancel hover");
+            vehicle.addEnergy(vehicle.maxVehicleEnergy()); vehicle.primeAiHelicopterSpawnHover();
+            set(vehicle,"enginePower",.08D);
+            set(vehicle,"input",new VehicleInput(false,false,false,false,true,false,true,false,false,false,false,false,-1,false,false,0,0));
+            for (int tick=0;tick<60;tick++) invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+            helper.assertTrue(Math.abs(vehicle.enginePower() - .0225F / engine.liftSpeed()) < 1.0E-6, "Manual descent must use the slightly lower airborne power floor");
+            set(vehicle,"input",input(false,true,false,false,0,0));
+            set(vehicle,"enginePower",.08D);
+            for (int tick=0;tick<60;tick++) invoke(vehicle,"tickSwHelicopterMovement",new Class<?>[]{EngineInfo.class,boolean.class},engine,false);
+            helper.assertTrue(Math.abs(vehicle.enginePower() - .055F / engine.liftSpeed()) < 1.0E-6, "Landing assist must retain a separate safe power floor");
+        }
+        var mounted = helper.spawn(ModEntities.MI28.get(), new Vec3(2,20,2));
+        net.minecraft.server.level.ServerPlayer driver=mockPlayer(helper), passenger=mockPlayer(helper), outsider=mockPlayer(helper);
+        driver.startRiding(mounted,true); passenger.startRiding(mounted,true);
+        mounted.primeAiHelicopterSpawnHover(); mounted.setOnGround(false);
+        mounted.processInput(passenger,toggle); mounted.processInput(outsider,toggle);
+        helper.assertFalse(mounted.hoverMode(), "Passengers and outsiders must not toggle pilot hover");
+        mounted.processInput(driver,toggle);
+        helper.assertTrue(mounted.hoverMode(), "The mounted driver must control hover");
+        driver.stopRiding();
+        helper.assertFalse(mounted.hoverMode(), "Dismounting must clear hover");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
     public static void swHelicopterStartupAndLift(GameTestHelper helper) throws ReflectiveOperationException {
         for (String id : new String[]{"mi28", "ah6"}) {
             VehicleEntity vehicle = isolatedVehicle(helper, ModEntities.AH6.get(), id);
@@ -462,7 +525,8 @@ public final class VehicleControlGameTests {
     }
 
     private static net.minecraft.server.level.ServerPlayer mockPlayer(GameTestHelper helper, java.util.function.Consumer<net.minecraft.network.protocol.Packet<?>> receive) {
-        var player=helper.makeMockServerPlayerInLevel();
+        var player=new net.minecraft.server.level.ServerPlayer(helper.getLevel().getServer(), helper.getLevel(),
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "vehicle-test"), net.minecraft.server.level.ClientInformation.createDefault());
         player.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(helper.getLevel().getServer(),
                 new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND),player,
                 net.minecraft.server.network.CommonListenerCookie.createInitial(player.getGameProfile(),false)) {

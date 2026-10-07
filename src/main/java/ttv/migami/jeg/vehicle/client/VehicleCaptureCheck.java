@@ -21,7 +21,8 @@ public final class VehicleCaptureCheck {
     private static final boolean HANDHELD = Boolean.getBoolean("jeg.vehicleCaptureHandheld");
     private static final boolean HUD_ONLY = Boolean.getBoolean("jeg.vehicleCaptureHudOnly");
     private static final boolean SURVIVAL = Boolean.getBoolean("jeg.vehicleCaptureSurvival");
-    private static final String[] VEHICLES = HANDHELD ? new String[]{"truck"} : new String[]{"bmp2", "lav150", "truck", "speedboat", "mi28", "ah6"};
+    private static final boolean HOVER = Boolean.getBoolean("jeg.vehicleCaptureHover");
+    private static final String[] VEHICLES = HOVER ? new String[]{"mi28", "ah6"} : HANDHELD ? new String[]{"truck"} : new String[]{"bmp2", "lav150", "truck", "speedboat", "mi28", "ah6"};
     private static int vehicleIndex, seat, view, stationWeapon, captures, stateTicks, entityId = -1;
     private static final boolean TILT = Boolean.getBoolean("jeg.vehicleCaptureTilt");
     private static boolean started, finished;
@@ -300,6 +301,13 @@ public final class VehicleCaptureCheck {
         vehicle.setXRot(TILT ? 12 : 0); vehicle.xRotO = vehicle.getXRot();
         vehicle.setYRot(TILT ? 25 : 0); vehicle.yRotO = vehicle.getYRot();
         vehicle.syncAuthoritativeControls(0, 0, 0, TILT ? 18 : 0, false, false);
+        if (HOVER) {
+            vehicle.setOnGround(false);
+            vehicle.primeAiHelicopterSpawnHover();
+            if (!vehicle.hoverMode() && vehicle.getControllingPassenger() instanceof net.minecraft.server.level.ServerPlayer pilot) {
+                vehicle.processInput(pilot, new ttv.migami.jeg.vehicle.entity.base.VehicleInput(false,false,false,false,false,false,false,false,false,false,false,false,-1,false,false,0,0,false,true));
+            }
+        }
         vehicle.snapControlInterpolation();
         for (var passenger : vehicle.getPassengers()) {
             vehicle.positionRider(passenger, (entity, x, y, z) -> entity.setPos(x, y, z));
