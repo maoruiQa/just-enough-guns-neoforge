@@ -1661,7 +1661,7 @@ public class BulletEntity extends Projectile {
 
     private boolean hurtNonLiving(Entity target, DamageSource source, float damage) {
         if (target instanceof VehicleEntity vehicle) {
-            if (vehicle.hurtAtPart(source, damage, this.vehicleHit == null ? ttv.migami.jeg.vehicle.data.subdata.OBBInfo.Part.BODY : this.vehicleHit.part())) {
+            if (vehicle.hurtAtPart(source, damage, this.vehicleHit == null ? null : this.vehicleHit.part())) {
                 ttv.migami.jeg.advancement.GameplayActions.hit(this.getOwner(), this, target, false);
                 return true;
             }

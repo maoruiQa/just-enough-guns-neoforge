@@ -23,6 +23,7 @@
     "VehicleExplosionMixin"
   ],
   "client": [
+    "VehicleHitboxRenderMixin",
     "AbstractClientPlayerMixin",
     "ArmedEntityRenderStateMixin",
     "AvatarRendererMixin",

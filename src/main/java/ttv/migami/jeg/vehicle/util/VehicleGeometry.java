@@ -16,7 +16,13 @@ public final class VehicleGeometry {
 
     public record Hit(Vec3 position, OBBInfo.Part part, double distanceSqr) {}
 
-    private record Box(Vec3 center, Vec3[] axes, double[] half, OBBInfo.Part part) {
+    public record Box(Vec3 center, Vec3[] axes, double[] half, OBBInfo.Part part) {
+        public Vec3 corner(int index) {
+            Vec3 point = center;
+            for (int axis = 0; axis < 3; axis++) point = point.add(axes[axis].scale((index & (1 << axis)) == 0 ? -half[axis] : half[axis]));
+            return point;
+        }
+
         Box moved(Vec3 delta) {
             return new Box(center.add(delta), axes, half, part);
         }
@@ -162,7 +168,11 @@ public final class VehicleGeometry {
         return total;
     }
 
-    private static List<Box> boxes(VehicleEntity vehicle) {
+    public static List<Box> boxes(VehicleEntity vehicle) {
+        return boxes(vehicle, 1.0F);
+    }
+
+    public static List<Box> boxes(VehicleEntity vehicle, float partialTick) {
         List<Box> result = new ArrayList<>();
         if (OBBInfo.DEFAULT.equals(vehicle.vehicleData().defaults().obb())) {
             result.add(Box.fromAabb(vehicle.getBoundingBox()));
@@ -174,35 +184,13 @@ public final class VehicleGeometry {
             return result;
         }
         for (OBBInfo.Box part : source) {
-            Matrix4d transform = partTransform(vehicle, part.transform());
-            Matrix4d rotation = partTransform(vehicle, part.rotation());
+            Matrix4d transform = vehicle.swTransform(part.transform(), partialTick);
+            Matrix4d rotation = vehicle.swTransform(part.rotation(), partialTick);
             Vec3 center = point(transform, part.x(), part.y(), part.z(), 1.0D);
             Vec3[] axes = {point(rotation, 1, 0, 0, 0).normalize(), point(rotation, 0, 1, 0, 0).normalize(), point(rotation, 0, 0, 1, 0).normalize()};
             result.add(new Box(center, axes, new double[]{part.halfWidth(), part.halfHeight(), part.halfDepth()}, part.part()));
         }
         return result;
-    }
-
-    private static Matrix4d partTransform(VehicleEntity vehicle, String part) {
-        Matrix4d transform = bodyTransform(vehicle);
-        var turret = vehicle.vehicleData().defaults().turret();
-        if (!turret.enabled() || !("turret".equalsIgnoreCase(part) || "barrel".equalsIgnoreCase(part))) return transform;
-        transform.translate(turret.originX(), turret.originY(), turret.originZ());
-        transform.rotateY(Math.toRadians(vehicle.turretYaw()));
-        if ("barrel".equalsIgnoreCase(part)) {
-            transform.translate(turret.barrelX(), turret.barrelY(), turret.barrelZ());
-            float yaw = vehicle.turretYaw();
-            float pitchWeight = (Math.abs(yaw) - 90.0F) / 90.0F;
-            float rollWeight = Math.abs(yaw) <= 90.0F ? yaw / 90.0F
-                    : yaw < 0.0F ? -(180.0F + yaw) / 90.0F : (180.0F - yaw) / 90.0F;
-            transform.rotateX(Math.toRadians(vehicle.turretPitch() + pitchWeight * vehicle.getXRot() + rollWeight * vehicle.roll()));
-        }
-        return transform;
-    }
-
-    private static Matrix4d bodyTransform(VehicleEntity vehicle) {
-        return bodyTransform(vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.rotateOffsetHeight(),
-                vehicle.getYRot(), vehicle.getXRot(), vehicle.roll());
     }
 
     private static Matrix4d bodyTransform(double x, double y, double z, double pivot, double yaw, double pitch, double roll) {
@@ -228,6 +216,8 @@ public final class VehicleGeometry {
         Box rotated = new Box(Vec3.ZERO, turned, new double[]{2, 1, 0.25}, OBBInfo.Part.TURRET);
         Hit turnedHit = clip(List.of(rotated), new Vec3(0, 0, -4), new Vec3(0, 0, 4));
         assert turnedHit != null && turnedHit.part() == OBBInfo.Part.TURRET && Math.abs(turnedHit.position().z + 2.0D) < 1.0E-8D;
+        assert rotated.corner(0).distanceTo(new Vec3(0.25, -1, -2)) < 1.0E-8D;
+        assert rotated.corner(7).distanceTo(new Vec3(-0.25, 1, 2)) < 1.0E-8D;
         assert rotated.intersects(Box.fromAabb(new AABB(-0.2, -0.2, 1.8, 0.2, 0.2, 2.2)));
         assert !rotated.intersects(Box.fromAabb(new AABB(1.8, -0.2, -0.2, 2.2, 0.2, 0.2)));
         Vec3 shift = correction(List.of(rotated), List.of(Box.fromAabb(new AABB(-0.2, -0.2, 1.7, 0.2, 0.2, 2.1))));
