@@ -8,6 +8,8 @@ All eleven existing SW-derived vehicles: A10, AH6, BMP2, HPJ11, laser tower, LAV
 
 ## Behavior
 
+- F3+B draws every oriented part box in green (interactive boxes in yellow), using the same interpolated vehicle/turret transforms as hit detection. Vanilla entity AABB debug lines remain visible.
+- Non-bullet-trail projectile impacts preserve the part selected by vanilla projectile picking instead of forcing BODY; area damage still affects only the hull.
 - Bullets, cannon/rocket direct hits, missiles, and vanilla projectile picking carry the selected OBB part to server damage. Blast damage affects the hull.
 - Every component starts at 50 health and regenerates 0.125 per tick independently of hull repair cooldown. Negative health breaks the component; a broken component recovers only above 47.5 health. Fault flags survive save/reload. Old 10-point component saves migrate proportionally.
 - Damage applies immunities, fixed reductions, multipliers, then directional armor. Registered damage types and entity/damage tags work with data-pack rules. JEG bullet, shell, rocket, missile and destruction sources map to the corresponding SW families without stacking mutually exclusive explosion rules.

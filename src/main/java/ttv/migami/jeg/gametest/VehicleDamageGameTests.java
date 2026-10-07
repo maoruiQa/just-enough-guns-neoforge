@@ -189,6 +189,59 @@ public final class VehicleDamageGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void flyingProjectilesKeepSelectedEngine(GameTestHelper helper) throws ReflectiveOperationException {
+        for (String weapon : new String[]{"vehicle_20mm_cannon", "vehicle_70mm_rocket", "blossom_rifle"}) {
+            var aircraft = helper.spawn(ModEntities.A10.get(), new Vec3(2, 10, 2));
+            aircraft.setNoGravity(true);
+            var shooter = helper.spawn(EntityType.COW, new Vec3(20, 10, 20));
+            Vec3 from = aircraft.position().add(-6, 3.375, -3.5);
+            Vec3 to = aircraft.position().add(-1.625, 3.375, -3.5);
+            var shell = new BulletEntity(helper.getLevel(), shooter,
+                    VehicleWeaponStats.get(Reference.id(weapon)), to.subtract(from));
+            shell.setPos(from);
+            helper.getLevel().addFreshEntity(shell);
+            shell.tick();
+            helper.assertTrue(shell.isRemoved(), weapon + " must hit the engine OBB");
+            helper.assertTrue(partHealth(aircraft, "engineHealth") < 50,
+                    weapon + " flight must damage the selected engine, not override it with BODY");
+            helper.assertValueEqual(partHealth(aircraft, "subEngineHealth"), 50.0F, "The other engine must remain intact");
+            helper.assertValueEqual(partHealth(aircraft, "leftWheelHealth"), 50.0F, "Unhit components must remain intact");
+            aircraft.discard();
+            shooter.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void flyingShellsDamageOnlySelectedComponents(GameTestHelper helper) throws ReflectiveOperationException {
+        String[] fields = {"leftWheelHealth", "rightWheelHealth", "engineHealth", "turretHealth", "engineHealth", "subEngineHealth"};
+        Vec3[] starts = {new Vec3(6, .3, 0), new Vec3(-6, .3, 0), new Vec3(-1.09375, 6, 1.75),
+                new Vec3(0, 6, -.703125), new Vec3(0, 6, -.53125), new Vec3(3, 2.09375, -6.15625)};
+        Vec3[] ends = {new Vec3(1.9375, .3, 0), new Vec3(-1.9375, .3, 0), new Vec3(-1.09375, 2.0625, 1.75),
+                new Vec3(0, 2.71875, -.703125), new Vec3(0, 3.28125, -.53125), new Vec3(.1875, 2.09375, -6.15625)};
+        for (int i = 0; i < fields.length; i++) {
+            VehicleEntity vehicle = i < 4 ? helper.spawn(ModEntities.BMP2.get(), new Vec3(2, 10, 2))
+                    : helper.spawn(ModEntities.AH6.get(), new Vec3(2, 10, 2));
+            vehicle.setNoGravity(true);
+            var shooter = helper.spawn(EntityType.COW, new Vec3(20, 10, 20));
+            Vec3 from = vehicle.position().add(starts[i]), to = vehicle.position().add(ends[i]);
+            var shell = new BulletEntity(helper.getLevel(), shooter,
+                    VehicleWeaponStats.get(Reference.id("vehicle_20mm_cannon")), to.subtract(from));
+            shell.setPos(from);
+            helper.getLevel().addFreshEntity(shell);
+            shell.tick();
+            helper.assertTrue(shell.isRemoved(), "Shell must reach " + fields[i]);
+            helper.assertTrue(partHealth(vehicle, fields[i]) < 50, "A real impact must damage " + fields[i]);
+            for (String field : new String[]{"leftWheelHealth", "rightWheelHealth", "engineHealth", "subEngineHealth", "turretHealth"}) {
+                if (!field.equals(fields[i])) helper.assertValueEqual(partHealth(vehicle, field), 50.0F, "Unhit " + field + " must stay intact");
+            }
+            vehicle.discard();
+            shooter.discard();
+        }
+        helper.succeed();
+    }
+
     private static float partHealth(VehicleEntity vehicle, String name) throws ReflectiveOperationException {
         Field field = VehicleEntity.class.getDeclaredField(name);
         field.setAccessible(true);

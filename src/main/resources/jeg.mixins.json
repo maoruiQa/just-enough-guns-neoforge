@@ -17,6 +17,7 @@
     "VehicleExplosionMixin"
   ],
   "client": [
+    "VehicleHitboxRenderMixin",
     "KeyMappingVehicleMixin",
     "LevelRendererDroneMixin",
     "MouseHandlerVehicleMixin",
