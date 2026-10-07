@@ -18,6 +18,7 @@
     "VehicleExplosionMixin"
   ],
   "client": [
+    "VehicleHitboxRenderMixin",
     "GuiGraphicsExtractorAccessor",
     "ItemInHandRendererMixin",
     "KeyMappingVehicleMixin",
