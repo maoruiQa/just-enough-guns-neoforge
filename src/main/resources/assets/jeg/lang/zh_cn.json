@@ -1056,5 +1056,11 @@
   "hud.jeg.vehicle.decoy_ready": "干扰弹就绪",
   "hud.jeg.vehicle.decoy_reloading": "干扰弹装填中",
   "hud.jeg.vehicle.need_ammo": "弹药不足！需要 ",
-  "hud.jeg.vehicle.not_enough_energy": "能量不足"
+  "hud.jeg.vehicle.not_enough_energy": "能量不足",
+  "gui.jegn.config.option.dynamic_raid_difficulty": "派系突袭动态难度",
+  "gui.jegn.config.option.enemy_vehicle_adaptive_combat": "敌方载具自适应战斗",
+  "raid.jeg.difficulty": "难度 %s",
+  "raid.jeg.reward": "奖励 %s",
+  "message.jeg.vehicle.attack_warning": "敌方载具即将开火！立即寻找掩护！",
+  "gui.jegn.config.option.natural_gunner_dynamic_difficulty": "自然枪手动态难度"
 }

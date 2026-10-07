@@ -1403,7 +1403,7 @@ public class GunItem extends Item {
     }
 
     private void spawnBlossomParticles(ServerLevel level, LivingEntity shooter, ItemStack stack) {
-        if (!stack.is(ModItems.BLOSSOM_RIFLE.get())) {
+        if (!this.stats.id().getPath().equals("blossom_rifle")) {
             return;
         }
 
@@ -2046,6 +2046,14 @@ public class GunItem extends Item {
 
     private static InteractionHand resolveReloadHand(Player player, ItemStack stack) {
         return player.getOffhandItem() == stack ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+    }
+
+    public boolean isLoadedMagazineCompatible(ItemStack candidate) {
+        var type = getCompatibleMagazineType();
+        var ammo = getCompatibleAmmoId();
+        return type != null && ammo != null && candidate.getItem() instanceof MagazineItem magazine
+                && magazine.type().isVariantOf(type) && magazine.getAmmoCount(candidate) > 0
+                && ammo.equals(magazine.getAmmoItemId(candidate));
     }
 
     private MagazineInventoryScan scanCompatibleMagazines(Player player) {
