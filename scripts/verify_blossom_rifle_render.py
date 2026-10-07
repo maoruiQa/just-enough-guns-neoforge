@@ -1,4 +1,4 @@
-"""Sample Blossom Rifle reload using this module's actual GeckoLib (Python + JDK 25).
+"""Check Blossom Rifle reload and actual ordinary/emissive geometry using this module's actual GeckoLib (Python + JDK 25).
 
 Run from any directory: python scripts/verify_blossom_rifle_render.py
 """
@@ -25,6 +25,54 @@ import com.geckolib.animation.state.*;
 import com.geckolib.animation.object.LoopType;
 
 class BlossomReloadCheck {
+
+    static void checkGlow(Path path) throws Exception {
+        var model = com.geckolib.loading.definition.geometry.Geometry.GSON
+                .fromJson(Files.readString(path), com.geckolib.loading.definition.geometry.Geometry.class)
+                .bake(net.minecraft.resources.Identifier.fromNamespaceAndPath("jeg", "item/gun/blossom_rifle"));
+        var silencer = model.getBone("silencer").orElseThrow();
+        var snapshot = BoneSnapshot.create(silencer);
+        var pass = new GlowPass(model);
+        var draw = Class.forName("ttv.migami.jeg.client.render.gun.layer.GunAttachmentLayer")
+                .getDeclaredMethod("renderGlowBone", com.geckolib.cache.model.GeoBone.class,
+                        com.geckolib.renderer.base.RenderPassInfo.class,
+                        com.mojang.blaze3d.vertex.VertexConsumer.class, int.class);
+        draw.setAccessible(true);
+        snapshot.apply();
+        int visible = vertices(silencer, pass, draw, true);
+        if (visible <= 0) throw new AssertionError("Silencer flowers must have visible glow geometry");
+        snapshot.skipRender(true).skipChildrenRender(true).apply();
+        if (vertices(silencer, pass, draw, false) != 0)
+            throw new AssertionError("Hidden silencer subtree emitted ordinary geometry");
+        int hiddenGlow = vertices(silencer, pass, draw, true);
+        if (hiddenGlow != 0) throw new AssertionError("Hidden silencer subtree emitted " + hiddenGlow + " glow vertices");
+        int body = vertices(model.getBone("gun_body").orElseThrow(), pass, draw, true);
+        if (body <= 0) throw new AssertionError("Gun body flowers lost their glow");
+        snapshot.skipRender(false).skipChildrenRender(false).apply();
+        if (vertices(silencer, pass, draw, true) != visible)
+            throw new AssertionError("Restored silencer lost its glow geometry");
+        System.out.println("Blossom glow passed: hidden ordinary/glow vertices=0, restored=" + visible + ", body=" + body);
+    }
+    static int vertices(com.geckolib.cache.model.GeoBone bone, GlowPass pass,
+                        java.lang.reflect.Method draw, boolean glow) throws Exception {
+        int[] count = {0};
+        var buffer = (com.mojang.blaze3d.vertex.VertexConsumer) java.lang.reflect.Proxy.newProxyInstance(
+                BlossomReloadCheck.class.getClassLoader(),
+                new Class<?>[]{com.mojang.blaze3d.vertex.VertexConsumer.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("addVertex")) count[0]++;
+                    return method.getReturnType() == com.mojang.blaze3d.vertex.VertexConsumer.class ? proxy : null;
+                });
+        if (glow) draw.invoke(null, bone, pass, buffer, 0x00F000F0);
+        else bone.positionAndRender(pass, buffer, 0x00F000F0, 0, -1);
+        return count[0];
+    }
+    static class GlowPass extends com.geckolib.renderer.base.RenderPassInfo<com.geckolib.renderer.base.GeoRenderState> {
+        GlowPass(com.geckolib.cache.model.BakedGeoModel model) {
+            super(null, () -> new java.util.HashMap<>(), new com.mojang.blaze3d.vertex.PoseStack(), model, null, true);
+        }
+        @Override public int packedOverlay() { return 0; }
+        @Override public int renderColor() { return -1; }
+    }
     static Animation reload;
     static float value(int bone, double time, AnimationPoint.Transform transform, AnimationPoint.Axis axis) {
         AnimationPoint point = AnimationPoint.createFor(reload, null, LoopType.PLAY_ONCE, time);
@@ -67,6 +115,7 @@ class BlossomReloadCheck {
             equal(value(magazine, 3.0833, AnimationPoint.Transform.SCALE, axis), 1, "Inserted");
             equal(value(magazine, 4.7917, AnimationPoint.Transform.SCALE, axis), 1, "Reload complete");
         }
+        checkGlow(Path.of(args[1]));
         System.out.println("Blossom reload passed: " + samples + " GeckoLib scale samples, initial hold, drop, disappearance and insertion");
     }
 }
@@ -85,6 +134,7 @@ with tempfile.TemporaryDirectory(prefix="jeg-blossom-") as directory:
     source.write_text(JAVA, encoding="utf-8")
     arguments = temporary / "java.args"
     arguments.write_text("\n".join('"' + value.replace("\\", "/") + '"'
-                                  for value in ["-cp", classpath.read_text(), str(source), str(ANIMATION)]),
+                                  for value in ["-cp", classpath.read_text(), str(source), str(ANIMATION),
+                                                str(ROOT / "src/main/resources/assets/jeg/geckolib/models/item/gun/blossom_rifle.geo.json")]),
                          encoding="utf-8")
     subprocess.run(["java", "@" + str(arguments)], cwd=ROOT, check=True)
