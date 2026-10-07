@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.model.loading.v1.FabricBakedModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -550,6 +551,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int color
     ) {
         String boneName = bone.getName();
+        if (boneName.startsWith("glow") || "flashlight_glow".equals(boneName)) {
+            packedLight = LightTexture.FULL_BRIGHT;
+        }
         ItemStack stack = currentRenderStack();
         if (!isReRender && stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
             GunAttachmentVisibility.apply(gun.getStats().id(), stack, bone);
