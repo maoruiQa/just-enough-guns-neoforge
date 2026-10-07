@@ -20,6 +20,7 @@
     "VehicleExplosionMixin"
   ],
   "client": [
+    "VehicleHitboxRenderMixin",
     "GuiGraphicsExtractorAccessor",
     "FirstPersonHandsMixin",
     "ItemInHandRendererMixin",
