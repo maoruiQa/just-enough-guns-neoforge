@@ -1046,6 +1046,7 @@ public class BulletEntity extends Projectile {
                         ExplosionInteraction.TNT);
                 if (id.equals(ROCKET_LAUNCHER_ID)) {
                     applyRocketBlastDamage(owner, directHitVehicle);
+                    applyVehicleRocketBlastDamage(result.getLocation(), owner, id, directHitVehicle);
                 } else if (isVehicleRocket(id)) {
                     applyVehicleRocketBlastDamage(result.getLocation(), owner, id, directHitVehicle);
                 }
@@ -1066,7 +1067,8 @@ public class BulletEntity extends Projectile {
                         ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source, directDamage);
+                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source,
+                                    hitEntity instanceof VehicleEntity && id.equals(ROCKET_LAUNCHER_ID) ? 340.0F : directDamage);
                         }
                     }
                 }
@@ -1133,7 +1135,8 @@ public class BulletEntity extends Projectile {
     }
 
     private static float vehicleRocketBlastDamage(Identifier id) {
-        return id.equals(VEHICLE_80MM_ROCKET_ID) ? 42.0F : 40.0F;
+        // SW standard anti-armor RPG warhead; retain the existing living-target blast.
+        return id.equals(ROCKET_LAUNCHER_ID) ? 80.0F : id.equals(VEHICLE_80MM_ROCKET_ID) ? 42.0F : 40.0F;
     }
 
     private static double vehicleRocketBlastRadius(Identifier id) {
@@ -1224,6 +1227,7 @@ public class BulletEntity extends Projectile {
         );
         DamageSource source = this.damageSources().explosion(this, owner instanceof LivingEntity living ? living : null);
         for (Entity target : this.level().getEntities(this, area, Entity::isAlive)) {
+            if (id.equals(ROCKET_LAUNCHER_ID) && !(target instanceof VehicleEntity)) continue;
             double effectiveDistance = target.position().distanceTo(pos) * (directHitVehicle ? VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE : 1.0D);
             if (effectiveDistance > radius) {
                 continue;
