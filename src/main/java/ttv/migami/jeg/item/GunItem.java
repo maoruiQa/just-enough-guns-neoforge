@@ -1366,6 +1366,7 @@ public class GunItem extends Item {
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), random.nextFloat());
             refreshGunfireLight(serverLevel, shooter, stack);
+            spawnBlossomParticles(serverLevel, shooter, stack);
             ejectCasing(serverLevel, shooter);
         }
 
@@ -1429,6 +1430,7 @@ public class GunItem extends Item {
         if (level instanceof ServerLevel serverLevel && !(shooter instanceof ttv.migami.jeg.entity.monster.phantom.PhantomGunner)) {
             NetworkHandler.sendGunFireFx(serverLevel, shooter.getId(), shooter.getRandom().nextFloat());
             refreshGunfireLight(serverLevel, shooter, stack);
+            spawnBlossomParticles(serverLevel, shooter, stack);
             ejectCasing(serverLevel, shooter);
         }
 
@@ -1460,6 +1462,43 @@ public class GunItem extends Item {
                 // Disabling shoot trigger avoids intermittent invisibility caused by per-shot animated state.
             }
         }
+    }
+
+    private void spawnBlossomParticles(ServerLevel level, LivingEntity shooter, ItemStack stack) {
+        if (!stack.is(ModItems.BLOSSOM_RIFLE.get())) {
+            return;
+        }
+
+        Vec3 look = shooter.getLookAngle();
+        Vec3 right = new Vec3(-look.z, 0.0D, look.x);
+        if (right.lengthSqr() < 1.0E-6D) {
+            right = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3 forward = new Vec3(look.x, 0.0D, look.z);
+        if (forward.lengthSqr() < 1.0E-6D) {
+            forward = Vec3.ZERO;
+        } else {
+            forward = forward.normalize();
+        }
+
+        double divisor = shooter instanceof Player player && NetworkHandler.isAiming(player) ? 0.4D : 0.5D;
+        Vec3 particlePos = shooter.getPosition(1.0F)
+                .add(right.scale(divisor))
+                .add(forward.scale(divisor))
+                .add(0.0D, shooter.getEyeHeight() - 0.4D, 0.0D);
+        level.sendParticles(
+                ParticleTypes.CHERRY_LEAVES,
+                particlePos.x,
+                particlePos.y,
+                particlePos.z,
+                1,
+                0.3D,
+                0.2D,
+                0.3D,
+                0.0D
+        );
     }
 
     private void refreshGunfireLight(ServerLevel level, LivingEntity shooter, ItemStack stack) {
