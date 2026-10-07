@@ -586,7 +586,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         if (shouldUseAnimatedThirdPerson(ctx, gunPath)) {
             return true;
         }
-        return isAttachmentScreenPreview(ctx);
+        return (ctx == ItemDisplayContext.GUI && "finger_gun".equals(gunPath)) || isAttachmentScreenPreview(ctx);
     }
 
     private static boolean isAttachmentScreenPreview(ItemDisplayContext ctx) {
