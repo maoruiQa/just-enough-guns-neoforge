@@ -188,6 +188,12 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int packedLight,
             int packedOverlay
     ) {
+        // Original JEG icon: player-skin arms, using the item's GUI transform.
+        if (displayContext == ItemDisplayContext.GUI && stack.getItem() instanceof AnimatedGunItem gun
+                && "finger_gun".equals(gun.getStats().id().getPath())) {
+            renderAnimatedItem(stack, displayContext, poseStack, bufferSource, 15728880, packedOverlay);
+            return;
+        }
         // SW inventory icons: item/generated layer0 textures/item/*_icon (same as SW separate_transforms gui).
         if (displayContext == ItemDisplayContext.GUI) {
             if (renderStaticGuiModel(stack, poseStack, bufferSource, packedLight, packedOverlay)) {
@@ -608,17 +614,20 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             MultiBufferSource bufferSource,
             int packedLight
     ) {
-        if (!isFirstPersonContext()) {
+        ItemStack stack = currentRenderStack();
+        boolean fingerGunGui = this.renderPerspective == ItemDisplayContext.GUI
+                && stack != null && stack.getItem() instanceof AnimatedGunItem iconGun
+                && "finger_gun".equals(iconGun.getStats().id().getPath());
+        if (!isFirstPersonContext() && !fingerGunGui) {
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         AbstractClientPlayer player = mc.player;
-        if (player == null || player.isInvisible()) {
+        if (player == null || (!fingerGunGui && player.isInvisible())) {
             return;
         }
 
-        ItemStack stack = currentRenderStack();
         if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof AnimatedGunItem gun)) {
             return;
         }
@@ -626,7 +635,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
         GunPoseProfile profile = GunPoseProfile.forGun(gun.getStats().id());
         HumanoidArm activeArm = resolveRenderedHand();
         boolean leftBone = isLeftArmBone(boneName);
-        if (profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED) {
+        if (!fingerGunGui && profile.armMode() == GunPoseProfile.ArmMode.ONE_HANDED) {
             if (leftBone && activeArm != HumanoidArm.LEFT) {
                 return;
             }
@@ -634,7 +643,7 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
                 return;
             }
         }
-        if (leftBone && !profile.renderLeftArm()) {
+        if (!fingerGunGui && leftBone && !profile.renderLeftArm()) {
             return;
         }
 
