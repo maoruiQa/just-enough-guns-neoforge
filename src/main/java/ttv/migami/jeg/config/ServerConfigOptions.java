@@ -87,6 +87,7 @@ public final class ServerConfigOptions {
         addDouble(options, "patrol.spawnChance", Category.PATROL, 0.0D, 1.0D, "gui.jegn.config.option.patrol_spawn_chance");
 
         addBoolean(options, "mob.mechanism.phantomGunner.deathExplosion", Category.MOB, "gui.jegn.config.option.phantom_gunner_death_explosion");
+        addBoolean(options, "combat.naturalGunnerDynamicDifficultyEnabled", Category.MOB, "gui.jegn.config.option.natural_gunner_dynamic_difficulty");
         for (String type : Config.gunnerGrowthTypes()) {
             for (String setting : Config.gunnerGrowthSettings()) {
                 double max = switch (setting) {
@@ -136,7 +137,7 @@ public final class ServerConfigOptions {
         addDouble(options, "vehicle.enemySpawning.maxConversionChance", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_max_conversion_chance");
         addDouble(options, "vehicle.enemySpawning.conversionChancePerDay", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_conversion_chance_per_day");
 
-        int expected = 23 + Config.gunnerGrowthTypes().length * Config.gunnerGrowthSettings().length;
+        int expected = 24 + Config.gunnerGrowthTypes().length * Config.gunnerGrowthSettings().length;
         if (options.size() != expected) {
             throw new IllegalStateException("Expected " + expected + " editable config options, found " + options.size());
         }

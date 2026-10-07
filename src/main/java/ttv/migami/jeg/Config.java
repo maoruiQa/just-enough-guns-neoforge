@@ -47,6 +47,7 @@ public final class Config {
     public static final ModConfigSpec.BooleanValue BULLET_BLOCK_DESTRUCTION_ENABLED;
     public static final ModConfigSpec.BooleanValue MAGAZINE_FEED_ENABLED;
     public static final ModConfigSpec.BooleanValue HEADSHOT_MULTIPLIER_ENABLED;
+    public static final ModConfigSpec.BooleanValue NATURAL_GUNNER_DYNAMIC_DIFFICULTY_ENABLED;
     public static final ModConfigSpec.BooleanValue GUNNER_TERRAIN_PLACEMENT_ENABLED;
     public static final ModConfigSpec.ConfigValue<String> GUNNER_TERRAIN_SUPPORT_BLOCK;
     public static final ModConfigSpec.IntValue GUNNER_TERRAIN_BREAK_MAX_TIER;
@@ -246,6 +247,9 @@ public final class Config {
         HEADSHOT_MULTIPLIER_ENABLED = serverBuilder
                 .comment("If true, gun headshots apply weapon-specific damage multipliers.")
                 .define("headshotMultiplier", true);
+        NATURAL_GUNNER_DYNAMIC_DIFFICULTY_ENABLED = serverBuilder
+                .comment("If true, natural gunners use the strongest survival player within 64 blocks for equipment, accuracy and elite chance. Accuracy retains rising time floors.")
+                .define("naturalGunnerDynamicDifficultyEnabled", true);
         GUNNER_TERRAIN_PLACEMENT_ENABLED = serverBuilder
                 .comment("If true, ground gunners can place support blocks to get around simple terrain obstacles.")
                 .define("gunnerTerrainPlacementEnabled", true);
@@ -381,6 +385,7 @@ public final class Config {
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.headshotMultiplier", HEADSHOT_MULTIPLIER_ENABLED);
         registerCommandConfig("combat.hipFireSpreadMultiplier", HIP_FIRE_SPREAD_MULTIPLIER);
+        registerCommandConfig("combat.naturalGunnerDynamicDifficultyEnabled", NATURAL_GUNNER_DYNAMIC_DIFFICULTY_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.block", GUNNER_TERRAIN_SUPPORT_BLOCK);
         registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
@@ -905,6 +910,10 @@ public final class Config {
 
     public static boolean factionRaidDynamicDifficultyEnabled() {
         return FACTION_RAID_DYNAMIC_DIFFICULTY_ENABLED.get();
+    }
+
+    public static boolean naturalGunnerDynamicDifficultyEnabled() {
+        return NATURAL_GUNNER_DYNAMIC_DIFFICULTY_ENABLED.get();
     }
 
     public static boolean enemyVehicleAdaptiveCombatEnabled() {

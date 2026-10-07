@@ -87,6 +87,15 @@ public final class GunnerProgression {
         return candidates.isEmpty() ? null : selectWeightedByTier(candidates, random, aggression);
     }
 
+    public static Item selectNaturalGun(List<Item> pool, net.minecraft.world.entity.PathfinderMob mob, boolean upgrading) {
+        String type = GunnerType.keyFor(mob);
+        Item rocket = resolveRocketLauncher();
+        if (!upgrading && rocket != null && Config.shouldGunnerUseRocketLauncher(mob.level(), type, mob.getRandom())) return rocket;
+        var profile = NaturalGunnerDifficulty.profile(mob);
+        int tier = profile == null ? Config.gunnerWeaponMaxTier(mob.level(), type) : profile.weaponTier();
+        return selectRaidGun(pool, mob.getRandom(), tier, upgrading ? 1 : Config.gunnerWeaponAggression(type));
+    }
+
     public static void prepareDroppedWeapon(Mob mob, ItemStack stack) {
         damageWeaponToLowDurability(stack, mob.getRandom());
         mob.setDropChance(EquipmentSlot.MAINHAND, WEAPON_DROP_CHANCE);
