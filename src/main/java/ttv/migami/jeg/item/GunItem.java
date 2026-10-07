@@ -1788,7 +1788,7 @@ public class GunItem extends Item {
             return isMinigunWeapon(gunId) ? MINIGUN_SPREAD_FLOOR : 0.0F;
         }
         SpreadEntry entry = playerState.byGun.get(gunId);
-        if (entry == null) {
+        if (entry == null || System.currentTimeMillis() - entry.lastFireMs >= SPREAD_THRESHOLD_MS) {
             return isMinigunWeapon(gunId) ? MINIGUN_SPREAD_FLOOR : 0.0F;
         }
         float tracked = (float) entry.spreadCount / (float) SPREAD_MAX_COUNT;
