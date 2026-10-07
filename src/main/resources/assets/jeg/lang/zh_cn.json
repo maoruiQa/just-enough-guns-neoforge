@@ -290,6 +290,7 @@
   "gui.jegn.config.option.gunner_terrain_break_tier": "Maximum Terrain Break Tier",
   "gui.jegn.config.option.gunner_terrain_placement": "Gunner Terrain Placement",
   "gui.jegn.config.option.headshot_multiplier": "Headshot Multiplier",
+  "gui.jegn.config.option.hip_fire_spread_multiplier": "腰射散布系数",
   "gui.jegn.config.option.hide_medals": "Hide Medals",
   "gui.jegn.config.option.magazine_feed": "Magazine Feed",
   "gui.jegn.config.option.patrol_enabled": "Enable Patrols",

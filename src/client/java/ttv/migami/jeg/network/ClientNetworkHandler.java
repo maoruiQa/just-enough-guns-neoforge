@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import ttv.migami.jeg.client.ClientUiConfig;
 import ttv.migami.jeg.client.FabricClientBootstrap;
+import ttv.migami.jeg.client.handler.AimingHandler;
 import ttv.migami.jeg.client.ServerConfigClient;
 import ttv.migami.jeg.client.medal.MedalManager;
 import ttv.migami.jeg.client.render.BulletTrailRenderer;
@@ -121,7 +122,7 @@ public final class ClientNetworkHandler {
     }
 
     public static void sendShoot(InteractionHand hand) {
-        ClientPlayNetworking.send(new ShootRequestPayload(hand));
+        ClientPlayNetworking.send(new ShootRequestPayload(hand, AimingHandler.get().isAiming()));
     }
 
     public static void sendHoldFire(InteractionHand hand, boolean holding) {

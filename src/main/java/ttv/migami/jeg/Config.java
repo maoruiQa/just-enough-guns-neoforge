@@ -53,6 +53,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue GUNNER_ACCURACY_MAX_DAY;
     public static final ModConfigSpec.DoubleValue GUNNER_ACCURACY_MAX_PERCENT;
     public static final ModConfigSpec.DoubleValue GUNNER_SHOTGUN_SPREAD_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue HIP_FIRE_SPREAD_MULTIPLIER;
     public static final ModConfigSpec.IntValue GUNNER_PROGRESSION_MAX_DAY;
     public static final ModConfigSpec.IntValue TERROR_RAID_WAVE_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue TERROR_RAID_GROUND_WAVE_COUNT;
@@ -256,6 +257,9 @@ public final class Config {
         GUNNER_SHOTGUN_SPREAD_MULTIPLIER = serverBuilder
                 .comment("Additional spread multiplier for gunner-fired shotguns. Lower = tighter pellet grouping.")
                 .defineInRange("gunnerShotgunSpreadMultiplier", 0.82D, 0.2D, 1.0D);
+        HIP_FIRE_SPREAD_MULTIPLIER = serverBuilder
+                .comment("Multiplier applied to player hip-fire spread. 1.5 means 50% more spread while not aiming.")
+                .defineInRange("hipFireSpreadMultiplier", 1.5D, 0.0D, 5.0D);
         GUNNER_PROGRESSION_MAX_DAY = serverBuilder
                 .comment("In-game day when gunner weapon strength, armor chance, and armor tier reach their maximum.")
                 .defineInRange("gunnerProgressionMaxDay", 60, 1, 5000);
@@ -361,6 +365,7 @@ public final class Config {
         registerCommandConfig("combat.bulletBlockDestruction", BULLET_BLOCK_DESTRUCTION_ENABLED);
         registerCommandConfig("combat.magazineFeed", MAGAZINE_FEED_ENABLED);
         registerCommandConfig("combat.headshotMultiplier", HEADSHOT_MULTIPLIER_ENABLED);
+        registerCommandConfig("combat.hipFireSpreadMultiplier", HIP_FIRE_SPREAD_MULTIPLIER);
         registerCommandConfig("combat.gunnerTerrainPlacement.enabled", GUNNER_TERRAIN_PLACEMENT_ENABLED);
         registerCommandConfig("combat.gunnerTerrainPlacement.block", GUNNER_TERRAIN_SUPPORT_BLOCK);
         registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
@@ -635,6 +640,10 @@ public final class Config {
 
     public static double gunnerShotgunSpreadMultiplier() {
         return Mth.clamp(GUNNER_SHOTGUN_SPREAD_MULTIPLIER.get(), 0.2D, 1.0D);
+    }
+
+    public static double hipFireSpreadMultiplier() {
+        return Mth.clamp(HIP_FIRE_SPREAD_MULTIPLIER.get(), 0.0D, 5.0D);
     }
 
     public static int gunnerProgressionMaxDay() {
