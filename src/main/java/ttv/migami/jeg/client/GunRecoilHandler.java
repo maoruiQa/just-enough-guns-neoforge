@@ -187,10 +187,10 @@ public final class GunRecoilHandler {
     }
 
     public static float getAdsRecoilReduction() {
-        return 1.0F - gunRecoilAdsReduction * AimingHandler.get().getNormalisedAdsProgress();
+        return Mth.lerp(AimingHandler.get().getNormalisedAdsProgress(), 1.0F, gunRecoilAdsReduction);
     }
 
     private static float getAdsRecoilReduction(RecoilProfiles.Parameters parameters) {
-        return 1.0F - parameters.adsReduction() * AimingHandler.get().getNormalisedAdsProgress();
+        return Mth.lerp(AimingHandler.get().getNormalisedAdsProgress(), 1.0F, parameters.adsReduction());
     }
 }
