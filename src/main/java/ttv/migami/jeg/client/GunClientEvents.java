@@ -428,7 +428,7 @@ public final class GunClientEvents {
                     CrosshairHandler.onGunFired();
                     forceExitScopedAdsAfterShot(heldMain, gun);
                 }
-            } else if (attackHeldLastTick && !gun.isAutomatic() && GunItem.isTriggerLocked(heldMain)) {
+            } else if (!gun.isAutomatic() && (attackHeldLastTick || GunItem.isTriggerLocked(heldMain))) {
                 GunItem.clearTriggerLock(heldMain);
                 NetworkHandler.sendTriggerRelease(net.minecraft.world.InteractionHand.MAIN_HAND);
                 nextVisualShotTickMain = 0L;
@@ -684,7 +684,7 @@ public final class GunClientEvents {
             if (rocketHoldStartSent) {
                 NetworkHandler.sendHoldFire(net.minecraft.world.InteractionHand.MAIN_HAND, false);
             }
-            if (attackHeldLastTick && GunItem.isTriggerLocked(stack)) {
+            if (attackHeldLastTick || GunItem.isTriggerLocked(stack)) {
                 GunItem.clearTriggerLock(stack);
                 NetworkHandler.sendTriggerRelease(net.minecraft.world.InteractionHand.MAIN_HAND);
             }
