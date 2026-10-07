@@ -3,9 +3,27 @@
 ## 1.8.2 - 2026-10-07
 
 ### Added
-- Rebuilt survival advancements as four combat-career chapters: Ready for Action, Front-line Experience, Special Operations, and Steel and Expeditions. The guide has 73 visible nodes and 54 core objectives, with raid, enemy recognition, demolition, drone, vehicle, and expedition routes.
-- Added silent migration of proven legacy advancement criteria, preserving partial progress without granting duplicate XP or inventing past actions from inventory.
-- Added a server magazine-feed notice with saved confirmation. Recipe availability now follows the active feed mode and refreshes after configuration changes or data reloads.
+
+#### Combat-career advancement system
+
+- Added a complete survival progression guide in Minecraft's native advancement screen, organized into four chapters: **Ready for Action**, **Front-line Experience**, **Special Operations**, and **Steel and Expeditions**. This branch has **73 visible nodes** and **54 core objectives**.
+- **Ready for Action:** learn recipes, craft a gun and compatible ammunition, load magazines, reload, land aimed hits, and defeat a first gunner. Related routes teach ballistic protection, weapon repair/cooling, attachments, magazine logistics, flashlights, and lasers.
+- **Front-line Experience:** master representative weapon roles and follow a complete Raid campaign: defeat a patrol, gain Faction Omen, return home, and win the home raid. Enemy objectives cover armed zombie-, skeleton-, and pillager/piglin-family gunners, actual Elite Gunners, stopping a C4 bomber before its vest detonates, and destroying enemy BMP-2/LAV-150 armor and AH-6/Mi-28 aircraft. Phantom Gunner is an independent challenge.
+- **Special Operations:** learn timed throwing weapons, flashbangs, smoke, incendiaries, C4 placement and timed/remote detonation, mines, defusing, and drone deployment/control/payload release/recovery. Guided-hit objectives cover Javelin direct and top-attack modes plus Igla anti-air hits.
+- **Steel and Expeditions:** assemble and deploy vehicles, perform characteristic missions with BMP-2, LAV-150, Speedboat, AH-6, and Mi-28, and learn crew roles, ammunition, charging, hull/part repairs, countermeasures, and recovery. The **Sky Ship / End Ship Armada** route covers entering the fleet, opening its loot, defeating the Bound Terror Phantom guardian, and winning the follow-up Terror Raid.
+- On 26.2 / 26.3, the logistics route also covers equipping and repairing an armored Happy Ghast harness; any supported color or tier counts.
+- Kept the guide focused on representative gameplay: equivalent weapons and equipment can satisfy the same objective, each node has at most three direct children, and independent challenges do not block chapter or career completion. Valid actions can be recorded before their displayed parent is completed.
+- Gameplay objectives require successful server-confirmed actions; failed requests, friendly targets, owned vehicles, and Creative/Spectator actions do not count. Driving and landing objectives require actual movement and controlled flight. Delayed projectiles and explosives retain player ownership.
+- Added silent migration of proven old advancement criteria, including partial progress, without duplicate XP or inferring past crafting/combat from inventory. Retired nodes remain as hidden compatibility records. English and Simplified Chinese descriptions are included; other languages use English fallback.
+
+#### Server-join ammunition rules popup
+
+- Added a native **Server ammunition rules** popup after the world has loaded on a player's first join under this notification system. It explains the server's current magazine-feed or direct-feed mode, the matching reload/capacity choices, and that special weapons retain their own ammunition rules. English and Simplified Chinese text is included.
+- **Magazine feed:** load compatible ammunition into physical magazines, then reload supported guns by swapping magazines; use physical extended magazines or drums for more capacity. The legacy Extended Magazine and Drum Magazine capacity attachments are unavailable in this mode, and their `extended_mag` / `drum_mag` recipes are disabled.
+- **Direct feed:** reload supported guns from compatible loose ammunition in the inventory; use the legacy capacity attachments for expansion. All 11 physical-magazine recipes and the Magazine Loader recipe are disabled in this mode.
+- Confirm with **Got it** or Esc. Confirmation is saved per player in the server world, so reconnecting or restarting the server does not repeat an unchanged notice. A player who disconnects before confirming receives it again on the next join.
+- When the feed mode changes, online players receive an updated popup immediately; offline players receive it on their next join. Each actual mode change advances the saved rules revision, so returning players must confirm the new rules.
+- Recipe filtering is enforced by the server, including manual crafting. Startup, configuration/command changes, and `/reload` refresh allowed recipes, online recipe books, and existing crafting-grid results. Existing items are not deleted or automatically converted.
 
 ### Changed
 - Aligned BMP-2, LAV-150, truck, speedboat, AH-6, and Mi-28 controls, cameras, crew permissions, and HUDs with Superb Warfare 0.8.8; adapted enemy vehicle AI to those controls.
