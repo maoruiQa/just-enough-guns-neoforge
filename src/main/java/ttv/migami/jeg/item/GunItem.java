@@ -2136,6 +2136,14 @@ public class GunItem extends Item {
         return scanCompatibleMagazines(player);
     }
 
+    public boolean isLoadedMagazineCompatible(ItemStack candidate) {
+        var type = getCompatibleMagazineType();
+        var ammo = getCompatibleAmmoId();
+        return type != null && ammo != null && candidate.getItem() instanceof MagazineItem magazine
+                && magazine.type().isVariantOf(type) && magazine.getAmmoCount(candidate) > 0
+                && ammo.equals(magazine.getAmmoItemId(candidate));
+    }
+
     private MagazineInventoryScan scanCompatibleMagazines(Player player) {
         MagazineItem.MagazineType compatibleType = getCompatibleMagazineType();
         ResourceLocation ammoId = getCompatibleAmmoId();

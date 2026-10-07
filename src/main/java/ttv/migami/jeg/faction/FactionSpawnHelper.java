@@ -1,5 +1,7 @@
 package ttv.migami.jeg.faction;
 
+import ttv.migami.jeg.faction.raid.RaidDifficulty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -170,6 +172,11 @@ public final class FactionSpawnHelper {
 
     @Nullable
     public static Mob spawnRaidMember(ServerLevel level, Faction faction, BlockPos origin, @Nullable Player preferredTarget, @Nullable BlockPos burstCenter) {
+
+        return spawnRaidMember(level, faction, origin, preferredTarget, burstCenter, null);
+    }
+
+    public static Mob spawnRaidMember(ServerLevel level, Faction faction, BlockPos origin, @Nullable Player preferredTarget, @Nullable BlockPos burstCenter, @Nullable RaidDifficulty difficulty) {
         RandomSource random = level.getRandom();
         for (int attempt = 0; attempt < MAX_SPAWN_POSITION_ATTEMPTS; attempt++) {
             BlockPos candidate = burstCenter != null
@@ -184,6 +191,7 @@ public final class FactionSpawnHelper {
             }
 
             Mob mob = createFactionMob(level, faction, candidate, true, true);
+            if (mob != null && difficulty != null) difficulty.prepareMob(mob);
             if (mob == null || prepareAndSpawn(level, mob, candidate, false, true) != SpawnFailReason.NONE) {
                 continue;
             }

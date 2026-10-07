@@ -138,8 +138,9 @@ public class GunnerMobSpawner {
             {
                 String gunnerType = GunnerType.keyFor(mob);
                 // Bomber roll is independent of rocket-launcher chance and mutually exclusive with it.
-                boolean bomber = Config.shouldGunnerBecomeBomber(mob.level(), gunnerType, mob.getRandom());
-                boolean elite = GunMobValues.rollElite(mob.level(), mob.getRandom());
+                var raidDifficulty = ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(mob);
+                boolean bomber = raidDifficulty == null && Config.shouldGunnerBecomeBomber(mob.level(), gunnerType, mob.getRandom());
+                boolean elite = raidDifficulty == null ? GunMobValues.rollElite(mob.level(), mob.getRandom()) : mob.getTags().contains("EliteGunner");
                 if (elite) {
                     applyEliteAttributes(mob);
                 }
@@ -166,11 +167,12 @@ public class GunnerMobSpawner {
 
                 boolean isCloseRange = mob.getRandom().nextBoolean();
                 int stopRange = isCloseRange ? 7 : 20;
-                Item gun = faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType, true);
+                Item gun = raidDifficulty == null ? faction.getRandomGun(isCloseRange, mob.level(), mob.getRandom(), gunnerType, true)
+                        : faction.getRaidGun(isCloseRange, elite, raidDifficulty, mob.getRandom(), gunnerType);
                 AIType aiType = AIType.values()[mob.getRandom().nextInt(AIType.values().length)];
                 int aiLevel = faction.getAiLevel() + (elite ? 1 : 0);
 
-                if (elite) {
+                if (elite && raidDifficulty == null) {
                     gun = faction.getEliteGun(mob.level(), mob.getRandom(), gunnerType, true);
                 }
 

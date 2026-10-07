@@ -67,7 +67,8 @@ public final class SwStyleExplosion {
                     double resistance = Math.max(level.getBlockState(net.minecraft.core.BlockPos.containing(center)).getBlock().getExplosionResistance(),
                             level.getFluidState(net.minecraft.core.BlockPos.containing(center)).getExplosionResistance());
                     double force = damageFinal * .015D - (resistance + .3D) * .3D;
-                    living.setDeltaMovement(living.getDeltaMovement().add(center.vectorTo(living.getBoundingBox().getCenter()).normalize().scale(force)));
+                    living.setDeltaMovement(living.getDeltaMovement().add(ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.limitImpulse(living, damageSource,
+                            center.vectorTo(living.getBoundingBox().getCenter()).normalize().scale(force))));
                     living.invulnerableTime = 1;
                 }
             } else {

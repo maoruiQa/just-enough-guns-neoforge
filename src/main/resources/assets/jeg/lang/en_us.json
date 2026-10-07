@@ -1040,5 +1040,10 @@
   "hud.jeg.vehicle.decoy_ready": "CM READY",
   "hud.jeg.vehicle.decoy_reloading": "CM RELOADING",
   "hud.jeg.vehicle.need_ammo": "Not Enough Ammo! Need ",
-  "hud.jeg.vehicle.not_enough_energy": "Not Enough Energy"
+  "hud.jeg.vehicle.not_enough_energy": "Not Enough Energy",
+  "gui.jegn.config.option.dynamic_raid_difficulty": "Dynamic Faction Raid Difficulty",
+  "gui.jegn.config.option.enemy_vehicle_adaptive_combat": "Adaptive Enemy Vehicle Combat",
+  "raid.jeg.difficulty": "Difficulty %s",
+  "raid.jeg.reward": "Reward %s",
+  "message.jeg.vehicle.attack_warning": "Incoming vehicle attack! Take cover!"
 }

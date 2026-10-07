@@ -67,6 +67,8 @@ public final class Config {
     public static final ModConfigSpec.IntValue FACTION_PATROL_BOSSBAR_RANGE;
     public static final ModConfigSpec.DoubleValue FACTION_PATROL_SPAWN_CHANCE;
     public static final ModConfigSpec.BooleanValue FACTION_RAID_ENABLED;
+    public static final ModConfigSpec.BooleanValue FACTION_RAID_DYNAMIC_DIFFICULTY_ENABLED;
+    public static final ModConfigSpec.BooleanValue ENEMY_VEHICLE_ADAPTIVE_COMBAT_ENABLED;
     public static final ModConfigSpec.IntValue FACTION_RAID_INTERVAL_DAYS;
     public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MIN_TICKS;
     public static final ModConfigSpec.IntValue FACTION_RAID_RANDOM_INTERVAL_MAX_TICKS;
@@ -310,6 +312,9 @@ public final class Config {
         serverBuilder.pop();
 
         serverBuilder.push("factionRaid");
+        FACTION_RAID_DYNAMIC_DIFFICULTY_ENABLED = serverBuilder
+                .comment("Evaluate raid difficulty and rewards from nearby survival players' equipment and world age when a raid starts.")
+                .define("dynamicDifficultyEnabled", true);
         FACTION_RAID_ENABLED = serverBuilder
                 .comment("If true, faction raids can spawn naturally and by returning home with Faction Omen.")
                 .define("enabled", true);
@@ -331,6 +336,9 @@ public final class Config {
         serverBuilder.pop();
 
         serverBuilder.push("vehicle");
+        ENEMY_VEHICLE_ADAPTIVE_COMBAT_ENABLED = serverBuilder
+                .comment("Give enemy AI vehicles warning, attack rounds and foot-player damage/knockback limits. Player weapons retain their stats.")
+                .define("enemyVehicleAdaptiveCombatEnabled", true);
         VEHICLE_ENABLED = serverBuilder
                 .comment("If true, players can place vehicle assembling tables and assemble new vehicle containers.")
                 .define("enabled", true);
@@ -377,6 +385,8 @@ public final class Config {
         registerCommandConfig("combat.gunnerTerrainPlacement.block", GUNNER_TERRAIN_SUPPORT_BLOCK);
         registerCommandConfig("combat.gunnerTerrainBreak.maxTier", GUNNER_TERRAIN_BREAK_MAX_TIER);
         registerGunnerGrowthCommandConfigs();
+        registerCommandConfig("factionRaid.dynamicDifficultyEnabled", FACTION_RAID_DYNAMIC_DIFFICULTY_ENABLED);
+        registerCommandConfig("vehicle.enemyVehicleAdaptiveCombatEnabled", ENEMY_VEHICLE_ADAPTIVE_COMBAT_ENABLED);
         registerCommandConfig("vehicle.enabled", VEHICLE_ENABLED);
         registerCommandConfig("vehicle.enemySpawning.enabled", ENEMY_VEHICLE_SPAWNING_ENABLED);
         registerCommandConfig("vehicle.enemySpawning.startDay", ENEMY_VEHICLE_START_DAY);
@@ -891,6 +901,14 @@ public final class Config {
 
     public static double factionPatrolSpawnChance() {
         return clamp01(FACTION_PATROL_SPAWN_CHANCE.get());
+    }
+
+    public static boolean factionRaidDynamicDifficultyEnabled() {
+        return FACTION_RAID_DYNAMIC_DIFFICULTY_ENABLED.get();
+    }
+
+    public static boolean enemyVehicleAdaptiveCombatEnabled() {
+        return ENEMY_VEHICLE_ADAPTIVE_COMBAT_ENABLED.get();
     }
 
     public static boolean factionRaidEnabled() {

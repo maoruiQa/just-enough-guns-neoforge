@@ -55,7 +55,7 @@ public class GunnerArmorEquiper {
 
     private static float getHelmetEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        int maxTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
+        int maxTier = maximumTier(context);
         if (maxTier <= 0) return 0.0F;
         if (context.isSpecialSituation) return Math.min(0.95F, 0.45F + 0.08F * maxTier);
         return Math.min(0.65F, 0.06F + 0.07F * maxTier);
@@ -63,19 +63,25 @@ public class GunnerArmorEquiper {
 
     private static float getBodyArmorEquipChance(GunnerArmorContext context) {
         if (context.isElite) return 1.0f;                             // 100% for elites
-        int maxTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
+        int maxTier = maximumTier(context);
         if (maxTier <= 0) return 0.0F;
         if (context.isSpecialSituation) return Math.min(0.90F, 0.30F + 0.08F * maxTier);
         return Math.min(0.45F, 0.02F + 0.055F * maxTier);
     }
 
+    private static int maximumTier(GunnerArmorContext context) {
+        var difficulty = ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob);
+        return difficulty == null ? Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob)) : difficulty.armorTier();
+    }
+
     private static BulletproofArmorItem.Tier randomTier(RandomSource random, GunnerArmorContext context, int minimumTier) {
-        int maximumTier = Config.gunnerArmorMaxTier(context.mob.level(), GunnerType.keyFor(context.mob));
-        if (context.isElite) {
+        int maximumTier = maximumTier(context);
+        if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && context.isElite) {
             maximumTier = Math.max(maximumTier, 4);
-        } else if (context.isSpecialSituation) {
+        } else if (ttv.migami.jeg.faction.raid.RaidDifficulty.forMob(context.mob) == null && context.isSpecialSituation) {
             maximumTier = Math.max(maximumTier, 3);
         }
+        minimumTier = Math.min(minimumTier, maximumTier);
         maximumTier = Math.max(minimumTier, Math.min(6, maximumTier));
         int count = maximumTier - minimumTier + 1;
         float biased = (float) Math.pow(random.nextFloat(), 1.25D);
