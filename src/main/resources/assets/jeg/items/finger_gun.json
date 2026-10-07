@@ -40,6 +40,18 @@
             "type": "geckolib:geckolib"
           }
         }
+      },
+      {
+        "when": [
+          "gui"
+        ],
+        "model": {
+          "type": "minecraft:special",
+          "base": "jeg:item/gui/finger_gun",
+          "model": {
+            "type": "geckolib:geckolib"
+          }
+        }
       }
     ],
     "fallback": {
