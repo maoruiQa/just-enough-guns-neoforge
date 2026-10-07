@@ -147,6 +147,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private static final EntityDataAccessor<Float> DATA_ENGINE_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_SUB_ENGINE_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_TURRET_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DATA_HOVER_MODE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_AIMING_SEATS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_HEALTH = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
@@ -545,6 +546,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         builder.define(DATA_SUB_ENGINE_HEALTH, PART_MAX_HEALTH);
         builder.define(DATA_TURRET_HEALTH, PART_MAX_HEALTH);
         builder.define(DATA_AIMING_SEATS, 0);
+        builder.define(DATA_HOVER_MODE, false);
         builder.define(DATA_HEALTH, DefaultVehicleData.TEST_WHEEL.maxHealth());
         builder.define(DATA_ENERGY, DefaultVehicleData.TEST_WHEEL.maxEnergy());
         builder.define(DATA_RIFLE_AMMO, 0);
@@ -1292,8 +1294,28 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.weaponFireInput = false;
         }
         if (player == this.getControllingPassenger()) {
-            this.input = input;
+            this.applyDriverInput(input);
         }
+    }
+
+    private void applyDriverInput(VehicleInput input) {
+        this.input = input;
+        if (input.toggleHover() && this.canHover()) {
+            this.entityData.set(DATA_HOVER_MODE, !this.hoverMode());
+        }
+    }
+
+    public boolean hoverMode() {
+        return this.entityData.get(DATA_HOVER_MODE);
+    }
+
+    public boolean canHover() {
+        return this.usesSwControls() && this.vehicleData().defaults().vehicleType() == VehicleType.HELICOPTER
+                && this.getControllingPassenger() != null && !this.onGround() && this.engineStartOver
+                && !this.isLowHealthDecayActive() && this.vehicleHealth() > 0.1F * this.maxVehicleHealth()
+                && !this.isEngineDamaged() && !this.isSubEngineDamaged()
+                && this.hasEngineEnergy(this.vehicleData().defaults().engine(), true)
+                && (this.maxVehicleEnergy() <= 0 || this.vehicleEnergy() > 0);
     }
 
     public void processClientInput(Player player, VehicleInput input) {
@@ -1317,7 +1339,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             this.updateTurretTarget(player);
         }
         if (player == this.getControllingPassenger()) {
-            this.input = input;
+            this.applyDriverInput(input);
         }
     }
 
@@ -1976,6 +1998,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void clearControlState(boolean stopHorizontalMotion) {
+        this.entityData.set(DATA_HOVER_MODE, false);
         this.input = VehicleInput.EMPTY;
         this.hasTurretTarget = false;
         this.entityData.set(DATA_AIMING_SEATS, 0);
@@ -2003,6 +2026,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     }
 
     private void clearDriverControlState(boolean stopHorizontalMotion) {
+        this.entityData.set(DATA_HOVER_MODE, false);
         this.input = VehicleInput.EMPTY;
         this.wheelSteering = 0.0D;
         this.holdTick = 0;
@@ -6454,6 +6478,9 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
         boolean down = pilot && this.input.descend();
         boolean back = pilot && this.input.backward();
         float rotor = this.propellerSpeed();
+        double pitchSpeed = engine.pitchSpeed(), yawSpeed = engine.yawSpeed(), rollSpeed = engine.rollSpeed();
+        if (!this.canHover() || back) this.entityData.set(DATA_HOVER_MODE, false);
+        boolean hover = this.hoverMode();
         if (this.onGround()) velocity = velocity.multiply(0.8D, 1, 0.8D);
         else {
             this.setRoll(this.roll() * (back ? 0.9F : 0.99F));
@@ -6471,15 +6498,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                 this.setXRot(this.getXRot() * 0.98F);
                 if (this.hasPlayerPassenger()) this.enginePower *= 0.99F;
             } else {
+                if (hover) {
+                    // SW hover assist: level against drift, damp horizontal motion and soften pilot input.
+                    this.setRoll(this.roll() * 0.97F - (float) (0.5D * velocity.dot(this.rotateLocalDirectionWithPose(1, 0, 0, 1))));
+                    this.setXRot(this.getXRot() * 0.97F - (float) (0.5D * velocity.dot(this.getViewVector(1))));
+                    rollSpeed *= 0.05D;
+                    yawSpeed *= 0.5D;
+                    pitchSpeed *= 0.2D;
+                    velocity = velocity.multiply(0.95D, 1, 0.95D);
+                }
                 if (!back || landing == null) {
                     if (this.input.right() || this.input.left()) {
                         this.holdTick++;
                         this.wheelSteering += (this.input.right() ? -2 : 2) * Math.min(this.holdTick, 7) * this.enginePower;
                     } else this.holdTick = 0;
-                    this.setXRot((float) (this.getXRot() + (this.onGround() ? 0 : 1.5F) * engine.pitchSpeed() * this.input.mouseY() * rotor));
-                    this.setRoll((float) (this.roll() - engine.rollSpeed() * (this.wheelSteering + (this.onGround() ? 0 : 0.25F) * this.input.mouseX() * rotor)));
+                    this.setXRot((float) (this.getXRot() + (this.onGround() ? 0 : 1.5F) * pitchSpeed * this.input.mouseY() * rotor));
+                    this.setRoll((float) (this.roll() - rollSpeed * (this.wheelSteering + (this.onGround() ? 0 : 0.25F) * this.input.mouseX() * rotor)));
                 }
-                this.setYRot((float) (this.getYRot() + engine.yawSpeed() * Mth.clamp((this.onGround() ? 0.1F : 2) * this.input.mouseX() * rotor + (this.isSubEngineDamaged() ? 25 : 0) * rotor, -10, 10)));
+                this.setYRot((float) (this.getYRot() + yawSpeed * Mth.clamp((this.onGround() ? 0.1F : 2) * this.input.mouseX() * rotor + (this.isSubEngineDamaged() ? 25 : 0) * rotor, -10, 10)));
                 if (landing != null && !this.onGround()) {
                     velocity = velocity.multiply(0.975D, 0.99D, 0.975D);
                     Vec3 horizontal = landing.subtract(this.position()).multiply(1, 0, 1);
@@ -6504,10 +6540,11 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
                     }
                 }
                 if (up && this.engineStartOver) this.enginePower = Math.min(this.enginePower + 0.0007F * engine.increment() * Math.min(++this.holdPowerTick, 10), 0.12F);
-                if (this.engineStartOver && (down || back)) this.enginePower = Math.max(this.enginePower - 0.001F * engine.decrement() * Math.min(++this.holdPowerTick, 5), this.onGround() ? 0 : (down ? 0.025F : 0.058F) / engine.liftSpeed());
+                if (this.engineStartOver && (down || back)) this.enginePower = Math.max(this.enginePower - 0.001F * engine.decrement() * Math.min(++this.holdPowerTick, 5), this.onGround() ? 0 : (down ? 0.0225F : 0.055F) / engine.liftSpeed());
                 if (this.engineStart && !this.engineStartOver) this.enginePower = Math.min(this.enginePower + 0.0012F * engine.increment(), 0.045F);
                 if (!(up || down || back) && this.engineStartOver) {
-                    this.enginePower = velocity.y < 0 ? Math.min(this.enginePower + 0.0002F, 0.12F) : Math.max(this.enginePower - (this.onGround() ? 0.00005F : 0.0002F), 0);
+                    if (hover) this.enginePower = Mth.clamp(this.enginePower - 0.01D * velocity.y, 0, 0.12D);
+                    else this.enginePower = velocity.y < 0 ? Math.min(this.enginePower + 0.0002F, 0.12F) : Math.max(this.enginePower - (this.onGround() ? 0.00005F : 0.0002F), 0);
                     this.holdPowerTick = 0;
                 }
             }
