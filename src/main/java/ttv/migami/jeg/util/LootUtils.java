@@ -88,7 +88,9 @@ public final class LootUtils {
 
         long seed = random.nextLong();
 
-        if (blockEntity instanceof RandomizableContainerBlockEntity randomizable) {
+        int dynamicTier = lootTable.identifier().getPath().matches("chests/faction_raid_reward_[1-5]")
+                ? lootTable.identifier().getPath().charAt(lootTable.identifier().getPath().length() - 1) - '0' : 0;
+        if (blockEntity instanceof RandomizableContainerBlockEntity randomizable && dynamicTier == 0) {
             if (!present) {
                 if (fillFallbackLoot(level, lootTable, randomizable, random)) {
                     randomizable.setChanged();
@@ -122,6 +124,10 @@ public final class LootUtils {
         var registryHolder = serverLevel.getServer().reloadableRegistries();
         LootTable table = registryHolder.getLootTable(lootTable);
         if (table == LootTable.EMPTY) {
+            if (dynamicTier > 0) {
+                fillDynamicFactionRaidReward(container, random, dynamicTier);
+                blockEntity.setChanged();
+            }
             JustEnoughGuns.LOGGER.debug("[LootUtils] Loot table {} is empty when filling {}", lootTable.identifier(), pos);
             return;
         }
@@ -132,6 +138,11 @@ public final class LootUtils {
         container.clearContent();
         table.fill(container, params, seed);
         removeExcludedGunLoot(container);
+        if (dynamicTier > 0 && IntStream.range(0, container.getContainerSize())
+                .mapToObj(container::getItem).noneMatch(stack -> dynamicRewardEquipment(stack, dynamicTier))) {
+            fillDynamicFactionRaidReward(container, random, dynamicTier);
+        }
+
         boolean empty = isContainerEmpty(container);
         JustEnoughGuns.LOGGER.debug("[LootUtils] Filled container {} with {} empty={} seed={}", pos, lootTable.identifier(), empty, seed);
         blockEntity.setChanged();
@@ -164,6 +175,10 @@ public final class LootUtils {
         }
         if (id.equals(REWARD_LOOT)) {
             fillRewardFallback(container, random, enchantLookup);
+            return true;
+        }
+        if (id.getPath().matches("chests/faction_raid_reward_[1-5]")) {
+            fillDynamicFactionRaidReward(container, random, id.getPath().charAt(id.getPath().length() - 1) - '0');
             return true;
         }
         if (id.equals(FACTION_RAID_REWARD_LOOT)) {
@@ -425,6 +440,52 @@ public final class LootUtils {
         if (container instanceof BlockEntity blockEntity) {
             blockEntity.setChanged();
         }
+    }
+
+    private static void fillDynamicFactionRaidReward(Container container, RandomSource random, int tier) {
+        container.clearContent();
+        var profile = ttv.migami.jeg.faction.raid.RaidDifficulty.forScore((tier - 1) * 20, 0, 1);
+        int armorTier = tier == 3 ? 3 + random.nextInt(2) : profile.armorTier();
+        boolean helmet = random.nextBoolean();
+        var armor = ttv.migami.jeg.item.BulletproofArmorItem.Tier.values()[armorTier - 1];
+        ItemStack guaranteed = new ItemStack((helmet ? ModItems.BULLETPROOF_HELMETS : ModItems.BULLETPROOF_VESTS).get(armor).get());
+        if (tier < 5 && random.nextBoolean()) {
+            var guns = ModItems.GUNS.entrySet().stream()
+                    .filter(entry -> !EXCLUDED_GUN_LOOT.contains(entry.getKey()) && !ModItems.isDisabledGunId(entry.getKey())
+                            && !entry.getKey().getPath().equals("rocket_launcher") && entry.getValue().get().getStats().damage() > 0
+                            && ttv.migami.jeg.faction.GunnerProgression.weaponTier(entry.getValue().get()) == profile.weaponTier()).toList();
+            if (!guns.isEmpty()) guaranteed = new ItemStack(guns.get(random.nextInt(guns.size())).getValue().get());
+        }
+        placeInRandomSlot(container, guaranteed, random);
+        var ammoPool = List.of("pistol_ammo", "rifle_ammo", "shotgun_shell", "spectre_round", "rocket");
+        for (int i = 0; i < 2 + tier; i++) {
+            ItemStack ammo = createDynamicSupply(ammoPool.get(random.nextInt(ammoPool.size())));
+            ammo.setCount(Math.min(ammo.getMaxStackSize(), Mth.nextInt(random, 8 + 4 * tier, 16 + 8 * tier)));
+            placeInRandomSlot(container, ammo, random);
+        }
+        placeInRandomSlot(container, new ItemStack(Items.EMERALD, 2 + tier * 2), random);
+        placeInRandomSlot(container, createDynamicSupply("repair_kit"), random);
+        if (random.nextDouble() < profile.rareRewardChance()) {
+            var rareIds = List.of(Reference.id("rocket_launcher"), Reference.id("minigun"), Reference.id("light_machine_gun"));
+            var available = rareIds.stream().filter(id -> ModItems.GUNS.containsKey(id) && !ModItems.isDisabledGunId(id)).toList();
+            if (!available.isEmpty()) placeInRandomSlot(container, new ItemStack(ModItems.GUNS.get(available.get(random.nextInt(available.size()))).get()), random);
+        }
+    }
+
+    private static ItemStack createDynamicSupply(String id) {
+        return BuiltInRegistries.ITEM.getOptional(Reference.id(id)).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
+    public static boolean dynamicRewardEquipment(ItemStack stack, int tier) {
+        if (stack.isEmpty() || stack.getDamageValue() != 0) return false;
+        if (stack.getItem() instanceof ttv.migami.jeg.item.BulletproofArmorItem armor) {
+            int required = tier == 5 ? 6 : tier == 4 ? 5 : tier;
+            return armor.tier().tierNumber() == required || tier == 3 && armor.tier().tierNumber() == 4;
+        }
+        return tier < 5 && stack.getItem() instanceof ttv.migami.jeg.item.GunItem gun
+                && gun.getStats().damage() > 0 && !EXCLUDED_GUN_LOOT.contains(gun.getStats().id())
+                && !ModItems.isDisabledGunId(gun.getStats().id()) && !gun.getStats().id().getPath().equals("rocket_launcher")
+                && ttv.migami.jeg.faction.GunnerProgression.weaponTier(gun) == Math.min(3, tier - 1);
     }
 
     private static void fillFactionRaidRewardFallback(Container container, RandomSource random, HolderLookup.RegistryLookup<Enchantment> lookup) {
