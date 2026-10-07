@@ -67,6 +67,9 @@ public final class ClientNetworkHandler {
             context.client().execute(MedalManager::showKill);
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(MagazineModePayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> ttv.migami.jeg.client.MagazineModeClient.handle(payload));
+        });
         ClientPlayNetworking.registerGlobalReceiver(UiConfigPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> ClientUiConfig.update(payload.showCrosshair(), payload.showHitFeedback(), payload.hideMedals()));
         });
@@ -163,6 +166,10 @@ public final class ClientNetworkHandler {
 
     public static void sendAiming(boolean aiming) {
         ClientPlayNetworking.send(new AimingStatePayload(aiming));
+    }
+
+    public static void sendMagazineModeAck(MagazineModeAckPayload payload) {
+        ClientPlayNetworking.send(payload);
     }
 
     public static void sendGuidedLock(InteractionHand hand, int targetId) {

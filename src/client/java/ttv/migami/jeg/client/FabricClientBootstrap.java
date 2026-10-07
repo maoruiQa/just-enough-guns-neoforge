@@ -419,6 +419,7 @@ public final class FabricClientBootstrap {
     }
 
     private static void onClientTick(Minecraft client) {
+        MagazineModeClient.tick();
         GunRecoilHandler.tick();
         MedalManager.tick();
         if (NetworkHandler.shouldRenderLegacyBulletTrail()) {

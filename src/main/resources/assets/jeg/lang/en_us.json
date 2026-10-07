@@ -1,4 +1,11 @@
 {
+  "gui.jeg.magazine_mode.title": "Server ammunition rules",
+  "gui.jeg.magazine_mode.confirm": "Got it",
+  "gui.jeg.magazine_mode.first": "This server uses the ammunition rules below.",
+  "gui.jeg.magazine_mode.changed": "The server ammunition rules have changed.",
+  "gui.jeg.magazine_mode.magazine": "Magazine feed: load compatible ammo into a physical magazine, then reload supported guns by swapping magazines. Use physical extended magazines or drums for more capacity. Legacy Extended Magazine and Drum Magazine attachments cannot be crafted or used in this mode.",
+  "gui.jeg.magazine_mode.direct": "Direct feed: reloading uses compatible loose ammo from your inventory, without a physical magazine. Use Extended Magazine or Drum Magazine attachments for more capacity. Physical magazines and the Magazine Loader cannot be crafted in this mode.",
+  "gui.jeg.magazine_mode.special": "Weapons with special feeding mechanisms continue to use their own ammunition rules.",
   "advantage.jeg:fire": "Fire",
   "advantage.jeg:heavy": "Heavy",
   "advantage.jeg:undead": "Undead",

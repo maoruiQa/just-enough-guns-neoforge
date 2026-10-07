@@ -75,6 +75,7 @@ public final class GunEvents {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            ttv.migami.jeg.gun.MagazineModeServer.login(serverPlayer);
             grantStartingManual(serverPlayer);
             sendAvailableCommands(serverPlayer);
             NetworkHandler.sendUiConfig(serverPlayer);
@@ -109,6 +110,7 @@ public final class GunEvents {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
+        ttv.migami.jeg.gun.MagazineModeServer.refresh(event.getServer());
         long count = StreamSupport.stream(event.getServer().getRecipeManager().getRecipes().spliterator(), false)
                 .filter(holder -> holder.id().getNamespace().equals(Reference.MOD_ID))
                 .count();

@@ -73,6 +73,7 @@ public final class ServerConfigEditor {
 
         if (changedCount > 0) {
             Config.saveServerConfig();
+            ttv.migami.jeg.gun.MagazineModeServer.refresh(server);
             if (uiChanged) {
                 NetworkHandler.broadcastUiConfig(server);
             }
