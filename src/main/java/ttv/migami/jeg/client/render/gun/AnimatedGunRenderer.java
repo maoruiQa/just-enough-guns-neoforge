@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.ItemTransform;
@@ -496,6 +497,9 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int color
     ) {
         String boneName = bone.getName();
+        if (boneName.startsWith("glow") || "flashlight_glow".equals(boneName)) {
+            packedLight = LightTexture.FULL_BRIGHT;
+        }
         if (!isReRender) {
             ItemStack stack = this.getCurrentItemStack();
             if (stack != null && !stack.isEmpty() && stack.getItem() instanceof AnimatedGunItem gun) {
