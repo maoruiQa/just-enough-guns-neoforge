@@ -175,6 +175,7 @@ public class BulletEntity extends Projectile {
             }
             this.advancementAttachments = String.join(",", used);
         }
+        ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.markProjectile(this, shooter);
         this.advancementAimed = shooter instanceof net.minecraft.server.level.ServerPlayer player && ttv.migami.jeg.network.NetworkHandler.isAiming(player);
         if (shooter.getVehicle() instanceof VehicleEntity vehicle) this.advancementVehicle = vehicle.vehicleDataId().toString();
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());

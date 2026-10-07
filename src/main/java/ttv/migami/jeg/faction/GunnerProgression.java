@@ -74,6 +74,28 @@ public final class GunnerProgression {
         return selectWeightedByTier(candidates, random, Config.gunnerWeaponAggression(gunnerType));
     }
 
+    public static Item selectRaidGun(List<Item> pool, RandomSource random, int maxTier, double aggression) {
+        List<Item> candidates = pool.stream().filter(item -> item instanceof GunItem gun
+                && !List.of("rocket_launcher", "javelin", "igla_9k38", "abstract_gun", "phantom_smg").contains(gun.getStats().id().getPath()) && gun.getStats().damage() > 0
+                && !ModItems.isDisabledGunId(gun.getStats().id()) && weaponTier(item) <= maxTier).toList();
+        if (candidates.isEmpty()) {
+            candidates = ModItems.GUNS.values().stream().map(holder -> (Item) holder.get())
+                    .filter(item -> item instanceof GunItem gun && gun.getStats().damage() > 0
+                            && !List.of("rocket_launcher", "javelin", "igla_9k38", "abstract_gun", "phantom_smg").contains(gun.getStats().id().getPath())
+                            && !ModItems.isDisabledGunId(gun.getStats().id()) && weaponTier(item) <= maxTier).toList();
+        }
+        return candidates.isEmpty() ? null : selectWeightedByTier(candidates, random, aggression);
+    }
+
+    public static Item selectNaturalGun(List<Item> pool, net.minecraft.world.entity.PathfinderMob mob, boolean upgrading) {
+        String type = GunnerType.keyFor(mob);
+        Item rocket = resolveRocketLauncher();
+        if (!upgrading && rocket != null && Config.shouldGunnerUseRocketLauncher(mob.level(), type, mob.getRandom())) return rocket;
+        var profile = NaturalGunnerDifficulty.profile(mob);
+        int tier = profile == null ? Config.gunnerWeaponMaxTier(mob.level(), type) : profile.weaponTier();
+        return selectRaidGun(pool, mob.getRandom(), tier, upgrading ? 1 : Config.gunnerWeaponAggression(type));
+    }
+
     public static void prepareDroppedWeapon(Mob mob, ItemStack stack) {
         damageWeaponToLowDurability(stack, mob.getRandom());
         mob.setDropChance(EquipmentSlot.MAINHAND, WEAPON_DROP_CHANCE);
@@ -128,7 +150,11 @@ public final class GunnerProgression {
             return 0;
         }
 
-        ResourceLocation gunId = gun.getStats().id();
+        return weaponTier(gun.getStats());
+    }
+
+    public static int weaponTier(ttv.migami.jeg.gun.GunStats stats) {
+        ResourceLocation gunId = stats.id();
         String path = gunId.getPath();
         if ("bolt_action_rifle".equals(path)) {
             return 2;
@@ -140,7 +166,7 @@ public final class GunnerProgression {
             return 1;
         }
 
-        ResourceLocation ammo = gun.getStats().ammoItem();
+        ResourceLocation ammo = stats.ammoItem();
         if (ammo != null && "jeg".equals(ammo.getNamespace())) {
             if ("pistol_ammo".equals(ammo.getPath())) {
                 return 0;

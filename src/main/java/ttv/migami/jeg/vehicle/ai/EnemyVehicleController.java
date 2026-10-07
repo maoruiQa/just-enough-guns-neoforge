@@ -40,6 +40,10 @@ public final class EnemyVehicleController {
 
     private EnemyVehicleController() {}
 
+    public static EnemyVehicleCombat.Cycle combatCycle(VehicleEntity vehicle) {
+        return BRAINS.computeIfAbsent(vehicle.getUUID(), ignored -> new Brain()).combat;
+    }
+
     public static void tickEntity(Entity entity) {
         if (!(entity instanceof VehicleEntity vehicle) || vehicle.level().isClientSide || !vehicle.getTags().contains(ENEMY_VEHICLE_TAG)) {
             return;
@@ -113,6 +117,7 @@ public final class EnemyVehicleController {
 
         Player target = updateTarget(level, vehicle, brain, kind);
         if (target == null) {
+            brain.combat.cancel();
             patrol(vehicle, brain, anchor);
             vehicle.setAiWeaponControl(crews[0], false, false);
             return;
@@ -120,14 +125,18 @@ public final class EnemyVehicleController {
 
         double distance = vehicle.distanceTo(target);
         boolean visible = canSee(vehicle, target);
-        int weaponSlot = weaponSlot(kind, distance);
-        vehicle.selectAiWeaponForSeat(0, weaponSlot);
-        Aim aim = aimAt(vehicle, target);
-        vehicle.setAiTurretAim(aim.turretYaw(), aim.pitch());
+        if (ttv.migami.jeg.Config.enemyVehicleAdaptiveCombatEnabled()) {
+            EnemyVehicleCombat.control(vehicle, crews, target, visible, distance, brain.combat);
+        } else {
+            int weaponSlot = weaponSlot(kind, distance);
+            vehicle.selectAiWeaponForSeat(0, weaponSlot);
+            Aim aim = aimAt(vehicle, target);
+            vehicle.setAiTurretAim(aim.turretYaw(), aim.pitch());
 
-        boolean fire = visible && weaponAligned(vehicle, crews[0], target.getEyePosition(), aimTolerance(weaponSlot));
-        aimCrewAt(crews[0], aim);
-        vehicle.setAiWeaponControl(crews[0], fire, false);
+            boolean fire = visible && weaponAligned(vehicle, crews[0], target.getEyePosition(), aimTolerance(weaponSlot));
+            aimCrewAt(crews[0], aim);
+            vehicle.setAiWeaponControl(crews[0], fire, false);
+        }
         engage(vehicle, brain, target, kind, distance);
     }
 
@@ -282,14 +291,20 @@ public final class EnemyVehicleController {
         double range = detectionRange(kind);
         Player nearest = null;
         double nearestDistance = range * range;
+        double highestThreat = -1;
         for (Player player : level.players()) {
             if (player.isCreative() || player.isSpectator() || !player.isAlive() || player.isInvisible()) {
                 continue;
             }
             double distance = player.distanceToSqr(vehicle);
-            if (distance <= nearestDistance && canSee(vehicle, player)) {
-                nearestDistance = distance;
-                nearest = player;
+            if (distance <= range * range && canSee(vehicle, player)) {
+                double threat = ttv.migami.jeg.Config.enemyVehicleAdaptiveCombatEnabled()
+                        ? ttv.migami.jeg.faction.raid.RaidDifficulty.threatPriority(player, isAirVehicle(kind)) : 0;
+                if (threat > highestThreat || threat == highestThreat && distance <= nearestDistance) {
+                    highestThreat = threat;
+                    nearestDistance = distance;
+                    nearest = player;
+                }
             }
         }
         if (nearest != null) {
@@ -334,6 +349,7 @@ public final class EnemyVehicleController {
         Vec3 anchor = anchor(vehicle);
         Player target = updateTarget(level, vehicle, brain, kind);
         if (target == null) {
+            brain.combat.cancel();
             airPatrol(vehicle, brain, anchor, kind);
             vehicle.setAiWeaponControlForSeat(0, crews[0], false, false);
             if (crews.length > 1) {
@@ -346,11 +362,15 @@ public final class EnemyVehicleController {
         double distance = vehicle.distanceTo(target);
         Aim aim = airAimAt(vehicle, target.getEyePosition(), kind);
         boolean visible = canSee(vehicle, target);
-        aimCrewAt(crews[0], aim);
-        if ("mi28".equals(kind)) {
-            tickMi28Weapons(vehicle, crews, target, aim, distance, visible);
+        if (ttv.migami.jeg.Config.enemyVehicleAdaptiveCombatEnabled()) {
+            EnemyVehicleCombat.control(vehicle, crews, target, visible, distance, brain.combat);
         } else {
-            tickAh6Weapons(vehicle, crews[0], target, aim, distance, visible);
+            aimCrewAt(crews[0], aim);
+            if ("mi28".equals(kind)) {
+                tickMi28Weapons(vehicle, crews, target, aim, distance, visible);
+            } else {
+                tickAh6Weapons(vehicle, crews[0], target, aim, distance, visible);
+            }
         }
         airEngage(vehicle, brain, target, kind, distance);
     }
@@ -817,6 +837,7 @@ public final class EnemyVehicleController {
     }
 
     private static final class Brain {
+        private final EnemyVehicleCombat.Cycle combat = new EnemyVehicleCombat.Cycle();
         private UUID targetId;
         private int targetMemory;
         private Vec3 patrolTarget;

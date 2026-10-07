@@ -141,6 +141,8 @@ public final class ModCommands {
                 .then(configPatrolCommand())
                 .then(configMobCommand())
                 .then(configCombatCommand())
+                .then(Commands.literal("factionRaid")
+                        .then(configBooleanConfigCommand("dynamicDifficultyEnabled", "factionRaid.dynamicDifficultyEnabled")))
                 .then(configVehicleCommand());
     }
 
@@ -190,6 +192,7 @@ public final class ModCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> configCombatCommand() {
         return Commands.literal("combat")
+                .then(configBooleanConfigCommand("naturalGunnerDynamicDifficultyEnabled", "combat.naturalGunnerDynamicDifficultyEnabled"))
                 .then(configBulletBlockDestructionCommand())
                 .then(configMagazineFeedCommand())
                 .then(configBooleanConfigCommand("headshotMultiplier", "combat.headshotMultiplier"))
@@ -200,6 +203,7 @@ public final class ModCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> configVehicleCommand() {
         return Commands.literal("vehicle")
+                .then(configBooleanConfigCommand("enemyVehicleAdaptiveCombatEnabled", "vehicle.enemyVehicleAdaptiveCombatEnabled"))
                 .then(configBooleanConfigCommand("enabled", "vehicle.enabled"))
                 .then(Commands.literal("enemySpawning")
                         .then(configBooleanConfigCommand("enabled", "vehicle.enemySpawning.enabled"))

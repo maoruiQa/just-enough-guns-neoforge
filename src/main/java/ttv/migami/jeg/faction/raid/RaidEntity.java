@@ -40,6 +40,25 @@ public class RaidEntity extends Entity {
     private String factionName = "night_of_the_undead";
     private @Nullable UUID raidId;
     private boolean forceGuns = true;
+    private @Nullable RaidDifficulty difficulty;
+    private int vehicleSpawnsThisWave;
+    private int heavyVehiclesThisWave;
+    private boolean vehicleSpawnFailedThisWave;
+    private String participants = "";
+
+    public @Nullable RaidDifficulty getDifficulty() { return difficulty; }
+    public int getVehicleSpawnsThisWave() { return vehicleSpawnsThisWave; }
+    public int getHeavyVehiclesThisWave() { return heavyVehiclesThisWave; }
+    public boolean isVehicleSpawnFailedThisWave() { return vehicleSpawnFailedThisWave; }
+    public String getParticipants() { return participants; }
+
+    public void syncDifficulty(@Nullable RaidDifficulty difficulty, int vehicles, int heavyVehicles, boolean failed, String participants) {
+        this.difficulty = difficulty;
+        this.vehicleSpawnsThisWave = vehicles;
+        this.heavyVehiclesThisWave = heavyVehicles;
+        this.vehicleSpawnFailedThisWave = failed;
+        this.participants = participants;
+    }
     private int totalWaves = 3;
     private int currentWave;
     private int waveCooldown = 20;
@@ -192,8 +211,9 @@ public class RaidEntity extends Entity {
         float progress;
         if (this.spawningWave || this.spawnedThisWaveCount > 0) {
             int defeated = Math.max(0, this.spawnedThisWaveCount - this.activeMobCount);
-            int remaining = Math.max(0, WAVE_MOBS - defeated);
-            progress = (float) remaining / (float) WAVE_MOBS;
+            int budget = difficulty == null ? WAVE_MOBS : difficulty.waveBudget();
+            int remaining = Math.max(0, budget - defeated);
+            progress = (float) remaining / (float) budget;
         } else {
             progress = 1.0F - ((float) this.waveCooldown / (float) WAVE_COOLDOWN_TICKS);
         }
@@ -204,6 +224,8 @@ public class RaidEntity extends Entity {
         MutableComponent waveLang = Component.translatable("raid.jeg.wave");
         this.bossBar.setName(Component.literal(
                 factionLang.getString() + " " + raidLang.getString() + " | " + waveLang.getString() + " : " + this.currentWave + "/" + this.totalWaves
+                        + (difficulty == null ? "" : " | " + Component.translatable("raid.jeg.difficulty", difficulty.tier()).getString()
+                        + " | " + Component.translatable("raid.jeg.reward", difficulty.rewardTier()).getString())
         ));
     }
 
@@ -284,6 +306,11 @@ public class RaidEntity extends Entity {
         if (this.raidId != null) {
             output.putString("RaidId", this.raidId.toString());
         }
+        output.putString("DynamicRaidProfile", difficulty == null ? "" : difficulty.save());
+        output.putInt("RaidVehicleSpawns", vehicleSpawnsThisWave);
+        output.putInt("RaidHeavyVehicleSpawns", heavyVehiclesThisWave);
+        output.putBoolean("RaidVehicleSpawnFailed", vehicleSpawnFailedThisWave);
+        output.putString("RaidParticipants", participants);
         output.putString("FactionName", this.factionName);
         output.putBoolean("ForceGuns", this.forceGuns);
         output.putBoolean("Finished", this.finished);
@@ -305,7 +332,12 @@ public class RaidEntity extends Entity {
         String raidIdValue = input.getString("RaidId");
         this.raidId = raidIdValue.isBlank() ? null : UUID.fromString(raidIdValue);
         if (input.contains("FactionName")) {
-            this.factionName = input.getString("FactionName");
+            this.difficulty = RaidDifficulty.load(input.getString("DynamicRaidProfile"));
+        this.vehicleSpawnsThisWave = Math.max(0, input.getInt("RaidVehicleSpawns"));
+        this.heavyVehiclesThisWave = Math.max(0, input.getInt("RaidHeavyVehicleSpawns"));
+        this.vehicleSpawnFailedThisWave = input.getBoolean("RaidVehicleSpawnFailed");
+        this.participants = input.getString("RaidParticipants");
+        this.factionName = input.getString("FactionName");
         }
         this.forceGuns = input.getBoolean("ForceGuns");
         this.finished = input.getBoolean("Finished");
