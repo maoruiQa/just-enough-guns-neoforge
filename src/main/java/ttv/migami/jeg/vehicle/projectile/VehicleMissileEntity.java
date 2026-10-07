@@ -275,7 +275,7 @@ public final class VehicleMissileEntity extends Entity {
         return target.isAlive()
                 && target != owner
                 && target != ownerVehicle
-                && target.getVehicle() != ownerVehicle
+                && (ownerVehicle == null || target.getVehicle() != ownerVehicle)
                 && (target instanceof LivingEntity || target instanceof VehicleEntity);
     }
 
