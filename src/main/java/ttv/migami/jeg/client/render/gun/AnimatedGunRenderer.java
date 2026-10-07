@@ -497,7 +497,10 @@ public final class AnimatedGunRenderer extends GeoItemRenderer<AnimatedGunItem> 
             int color
     ) {
         String boneName = bone.getName();
-        if (boneName.startsWith("glow") || "flashlight_glow".equals(boneName)) {
+        if (boneName.startsWith("glow")
+                || boneName.startsWith("flower")
+                || boneName.startsWith("static_flower")
+                || "flashlight_glow".equals(boneName)) {
             packedLight = LightTexture.FULL_BRIGHT;
         }
         if (!isReRender) {

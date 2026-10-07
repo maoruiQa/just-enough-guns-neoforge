@@ -7,7 +7,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -156,6 +158,26 @@ public final class GunPositionedAttachmentLayer extends GeoRenderLayer<AnimatedG
                     packedOverlay,
                     0xFFFFFFFF
             );
+            if (Reference.id("laser_pointer").equals(attachmentId)) {
+                List<BoneVisibility> hiddenBodyBones = hideBones(bakedModel, "flashlight");
+                try {
+                    RenderType emissiveRenderType = RenderType.entityTranslucentEmissive(texture);
+                    getRenderer().reRender(
+                            bakedModel,
+                            poseStack,
+                            bufferSource,
+                            animatable,
+                            emissiveRenderType,
+                            bufferSource.getBuffer(emissiveRenderType),
+                            partialTick,
+                            LightTexture.FULL_BRIGHT,
+                            OverlayTexture.NO_OVERLAY,
+                            0xFFFFFFFF
+                    );
+                } finally {
+                    restore(hiddenBodyBones);
+                }
+            }
         } finally {
             restore(hiddenGlowBones);
             poseStack.popPose();
