@@ -23,15 +23,15 @@ public final class EnemyVehicleCombat {
 
     public record Settings(int windup, int burst, int pause, int interval, int maxShots, double spread) {
         public static Settings forTarget(double pressure, boolean explosive) {
-            return forTarget(pressure, explosive, false);
+            return forTarget(pressure, explosive, true);
         }
 
-        public static Settings forTarget(double pressure, boolean explosive, boolean cannon) {
+        public static Settings forTarget(double pressure, boolean explosive, boolean unguidedHeavy) {
             double q = Double.isFinite(pressure) ? Mth.clamp(pressure, 0, 1) : 0;
             // A spawned vehicle always has a combat baseline; equipment mainly tightens its aim.
             double tempo = Math.max(.4, q);
             if (explosive) return new Settings((int) Math.round(80 - 30 * tempo), 20,
-                    (int) Math.round(200 - 80 * tempo), 20, 1, cannon ? 5 - 2 * q : 2.2 - 1.2 * q);
+                    (int) Math.round(200 - 80 * tempo), 20, 1, unguidedHeavy ? 5 - 2 * q : 2.2 - 1.2 * q);
             int interval = (int) Math.round(3 - q), shots = 10 + (int) (6 * q);
             // Include controller latency so the whole suppressive burst can fire.
             return new Settings(0, interval * (shots - 1) + 2,
@@ -130,9 +130,8 @@ public final class EnemyVehicleCombat {
             }
             if (cycle.seat >= crew.length || cycle.slot >= vehicle.vehicleData().defaults().weapons().size()) return;
             double q = Math.max(RaidDifficulty.equipmentScore(target) / 100, mountStrength(target));
-            String weapon = vehicle.vehicleData().defaults().weapons().get(cycle.slot).weaponId().getPath();
-            boolean cannon = weapon.equals("vehicle_20mm_cannon") || weapon.equals("vehicle_30mm_cannon");
-            cycle.settings = Settings.forTarget(q, explosive, cannon);
+            cycle.settings = Settings.forTarget(q, explosive,
+                    !vehicle.vehicleData().defaults().weapons().get(cycle.slot).guided());
             cycle.explosive = explosive;
             cycle.machineGunPause = Settings.forTarget(q, false).pause;
             cycle.targetId = target.getUUID();
@@ -265,7 +264,9 @@ public final class EnemyVehicleCombat {
         assert strong.windup == 0 && strong.burst == 32 && strong.pause == 12 && strong.maxShots == 16 && strong.interval == 2;
         assert weak.spread == 2 && strong.spread == 1;
         assert Settings.forTarget(0, true, true).spread == 5 && Settings.forTarget(1, true, true).spread == 3;
-        assert Settings.forTarget(0, true).spread == 2.2 && Math.abs(Settings.forTarget(1, true).spread - 1) < .00001;
+        assert Settings.forTarget(0, true).spread == 5 && Settings.forTarget(1, true).spread == 3;
+        assert Settings.forTarget(.5, true).spread == 4;
+        assert Settings.forTarget(0, true, false).spread == 2.2 && Math.abs(Settings.forTarget(1, true, false).spread - 1) < .00001;
         assert Settings.forTarget(1, true).windup == 50 && Settings.forTarget(1, true).pause == 120 && Settings.forTarget(1, true).maxShots == 1;
         assert Settings.forTarget(0, true).windup == 68 && Settings.forTarget(0, true).pause == 168;
         Cycle cycle = new Cycle();
