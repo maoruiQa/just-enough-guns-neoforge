@@ -101,36 +101,14 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
         }
 
         Identifier gunTexture = Reference.id("textures/animated/gun/" + gun.getStats().id().getPath() + ".png");
-        for (GeoBone bone : passInfo.model().topLevelBones()) {
-            addGlowRenderTask(passInfo, bone, gunTexture);
-        }
+        collector.submitCustomGeometry(
+                passInfo.poseStack(),
+                RenderTypes.entityTranslucentEmissive(gunTexture),
+                (pose, buffer) -> renderGlowModel(passInfo.model(), passInfo, pose, buffer, ignored -> {})
+        );
 
         passInfo.model().getBone(ATTACHMENT_BONE)
                 .ifPresent(bone -> passInfo.addPerBoneRender(bone, new AttachmentRenderTask(this.attachmentModel, gun.getStats().id(), gunStack.copy())));
-    }
-
-    private static final class GunGlowRenderTask implements PerBoneRender<GeoRenderState> {
-        private final Identifier texture;
-
-        private GunGlowRenderTask(Identifier texture) {
-            this.texture = texture;
-        }
-
-        @Override
-        public void submitRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, SubmitNodeCollector collector) {
-            collector.submitCustomGeometry(
-                    passInfo.poseStack(),
-                    RenderTypes.entityTranslucentEmissive(this.texture),
-                    (pose, buffer) -> {
-                        PoseStack glowPose = new PoseStack();
-                        glowPose.last().set(pose);
-                        passInfo.renderPosed(() -> {
-                            bone.render(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
-                            bone.renderChildren(passInfo, glowPose, buffer, Brightness.FULL_BRIGHT.pack(), passInfo.packedOverlay(), passInfo.renderColor());
-                        });
-                    }
-            );
-        }
     }
 
     private static final class AttachmentRenderTask implements PerBoneRender<GeoRenderState> {
@@ -296,16 +274,6 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
                 || name.startsWith("flower")
                 || name.startsWith("static_flower")
                 || "flashlight_glow".equals(name);
-    }
-
-    private static void addGlowRenderTask(RenderPassInfo<GeoRenderState> passInfo, GeoBone bone, Identifier texture) {
-        if (isGlowBone(bone.name())) {
-            passInfo.addPerBoneRender(bone, new GunGlowRenderTask(texture));
-            return;
-        }
-        for (GeoBone child : bone.children()) {
-            addGlowRenderTask(passInfo, child, texture);
-        }
     }
 
     static void renderGlowModel(
