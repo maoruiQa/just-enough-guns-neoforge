@@ -21,6 +21,7 @@
     "VehicleExplosionMixin"
   ],
   "client": [
+    "VehicleHitboxRenderMixin",
     "GameRendererMixin",
     "GuiAccessor",
     "GuiMixin",
