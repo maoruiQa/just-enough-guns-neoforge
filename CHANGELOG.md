@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.8.2 - 2026-10-07
+
+### Added
+- Rebuilt survival advancements as four combat-career chapters: Ready for Action, Front-line Experience, Special Operations, and Steel and Expeditions. The guide has 73 visible nodes and 54 core objectives, with raid, enemy recognition, demolition, drone, vehicle, and expedition routes.
+- Added silent migration of proven legacy advancement criteria, preserving partial progress without granting duplicate XP or inventing past actions from inventory.
+- Added a server magazine-feed notice with saved confirmation. Recipe availability now follows the active feed mode and refreshes after configuration changes or data reloads.
+
+### Changed
+- Aligned BMP-2, LAV-150, truck, speedboat, AH-6, and Mi-28 controls, cameras, crew permissions, and HUDs with Superb Warfare 0.8.8; adapted enemy vehicle AI to those controls.
+- Ported SW vehicle part hitboxes and damage behavior across all eleven existing SW-derived vehicles, including component faults, repairs, collision damage, destruction feedback, and visible debug part hitboxes.
+- Retuned ADS recoil, hip-fire spread, and shotgun pellet grouping; added the configurable hip-fire spread multiplier (default 1.5). Client shot-spread feedback now follows the current aiming state.
+- Restored the Finger Gun inventory icon using the original player-skin presentation.
+
+### Fixed
+- Fixed semi-automatic and held-fire trigger release when server lock updates arrive late, including Creative-mode firing.
+- Fixed handheld anti-armor rocket damage against vehicle hulls and struck parts, and missile contact with unmounted targets when fired on foot.
+- Fixed civilian truck fall immunity: falls up to three blocks are safe, larger falls apply structural hull damage once, and a twenty-block fall destroys the truck.
+- Fixed server-config tooltip line breaks and logged failures when opening the config menu without letting that request stop the server tick.
+- Repaired Gradle check task wiring so magazine-mode and vehicle geometry/damage regressions run in the normal build workflow.
+- Smoothed remote land vehicles, boats, and helicopters on NeoForge, preventing competing tracker updates from snapping them backward while preserving local driver prediction.
+
+### Verification
+- Passed `gradlew.bat build`, including magazine-mode recipe rules and vehicle geometry, part damage, and damage-modifier assertions.
+- Passed the advancement generator's `--check` and trigger-release regression (200 shots per path with delayed synchronization).
+- Verified that the generated JAR declares mod version `1.8.2`.
+
+## 1.8.1 - 2026-09-22
+
+### Changed
+- Set the module version to `1.8.1`.
+
+### Fixed
+- Fixed the in-game server config menu and gunner-growth config commands crashing the server. `ServerConfigOptions` asserted a stale size of 291 while the list is 19 non-growth options plus 15 growth types × 18 settings. Opening the pause-menu config or running `/justEnoughGuns config mob spawn ...` initialized that class and stopped the server tick. The expected size is now computed from those lists.
+
+### Verification
+- `.\gradlew runServer` reached `Done` and loaded 163 jeg recipes.
+
 ## 1.8.0 - NeoForge 26.3 port
 
 ### Changed
