@@ -1061,5 +1061,6 @@
   "gui.jegn.config.option.enemy_vehicle_adaptive_combat": "敌方载具自适应战斗",
   "raid.jeg.difficulty": "难度 %s",
   "raid.jeg.reward": "奖励 %s",
-  "message.jeg.vehicle.attack_warning": "敌方载具即将开火！立即寻找掩护！"
+  "message.jeg.vehicle.attack_warning": "敌方载具即将开火！立即寻找掩护！",
+  "gui.jegn.config.option.natural_gunner_dynamic_difficulty": "自然枪手动态难度"
 }

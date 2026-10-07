@@ -201,6 +201,7 @@ public record RaidDifficulty(int tier, int totalWaves, int waveBudget, int weapo
             if (tier < 3) assert profile.vehicleCount(1) == 0 && profile.vehiclePool(1, false).isEmpty();
         }
         ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.selfCheck();
+        ttv.migami.jeg.faction.NaturalGunnerDifficulty.selfCheck();
         checkRewardTables();
         System.out.println("Raid and enemy vehicle balance checks passed");
     }

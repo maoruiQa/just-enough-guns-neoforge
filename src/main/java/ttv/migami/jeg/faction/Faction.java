@@ -29,6 +29,12 @@ public class Faction {
         return GunnerProgression.selectRaidGun(pool, random, difficulty.weaponTier(), ttv.migami.jeg.Config.gunnerWeaponAggression(gunnerType));
     }
 
+    public Item getNaturalGun(boolean closeRange, boolean elite, net.minecraft.world.entity.PathfinderMob mob, boolean upgrading) {
+        List<Item> pool = upgrading ? java.util.stream.Stream.of(closeGuns, longGuns, eliteGuns).flatMap(List::stream).distinct().toList()
+                : elite ? eliteGuns : closeRange ? closeGuns : longGuns;
+        return GunnerProgression.selectNaturalGun(pool, mob, upgrading);
+    }
+
     public String getName() {
         return name;
     }
