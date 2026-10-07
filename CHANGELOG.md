@@ -25,13 +25,27 @@
 - When the feed mode changes, online players receive an updated popup immediately; offline players receive it on their next join. Each actual mode change advances the saved rules revision, so returning players must confirm the new rules.
 - Recipe filtering is enforced by the server, including manual crafting. Startup, configuration/command changes, and `/reload` refresh allowed recipes, online recipe books, and existing crafting-grid results. Existing items are not deleted or automatically converted.
 
+#### Combat feedback and helicopter assistance
+
+- Added SW-style explosion camera shake with delayed, distance-scaled rotation and configurable strength, including stun-grenade feedback.
+- Added SW helicopter hover assistance and its HUD for AH-6 and Mi-28.
+
 ### Changed
+- Added five dynamic faction-raid difficulty and reward tiers based on participating players' usable equipment, world-time progression, and party size; each raid saves its difficulty profile for recovery.
+- Raid waves now scale gunner loadouts, elite chances, and enemy vehicle reinforcements, with tier-matched reward loot and rare rewards in higher tiers.
+- Enemy vehicles now prioritize combat threats and adapt weapon selection, firing windows, and accuracy to their targets; unguided rockets follow cannon accuracy.
+- Natural gunners adapt to nearby Survival players' equipment while retaining time-based growth and accuracy floors; living gunners do not downgrade their equipment. Added server configuration controls for the dynamic difficulty systems.
 - Aligned BMP-2, LAV-150, truck, speedboat, AH-6, and Mi-28 controls, cameras, crew permissions, and HUDs with Superb Warfare 0.8.8; adapted enemy vehicle AI to those controls.
 - Ported SW vehicle part hitboxes and damage behavior across all eleven existing SW-derived vehicles, including component faults, repairs, collision damage, destruction feedback, and visible debug part hitboxes.
 - Retuned ADS recoil, hip-fire spread, and shotgun pellet grouping; added the configurable hip-fire spread multiplier (default 1.5). Client shot-spread feedback now follows the current aiming state.
 - Restored the Finger Gun inventory icon using the original player-skin presentation.
 
 ### Fixed
+- Fixed dynamic-crosshair idle spread recovery after firing.
+- Fixed gun emissive rendering so glowing geometry follows gun models correctly.
+- Fixed truncated configuration labels and restored the original configuration text colors.
+- Fixed nested glow-bone transforms and reload animation state on GeckoLib 5 gun models.
+- Fixed Blossom Rifle reload scaling and silencer decoration visibility.
 - Fixed semi-automatic and held-fire trigger release when server lock updates arrive late, including Creative-mode firing.
 - Fixed handheld anti-armor rocket damage against vehicle hulls and struck parts, and missile contact with unmounted targets when fired on foot.
 - Fixed civilian truck fall immunity: falls up to three blocks are safe, larger falls apply structural hull damage once, and a twenty-block fall destroys the truck.
