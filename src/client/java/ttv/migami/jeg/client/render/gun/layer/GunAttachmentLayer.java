@@ -296,7 +296,10 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
     }
 
     private static boolean isGlowBone(String name) {
-        return name.startsWith("glow") || "flashlight_glow".equals(name);
+        return name.startsWith("glow")
+                || name.startsWith("flower")
+                || name.startsWith("static_flower")
+                || "flashlight_glow".equals(name);
     }
 
     static void renderGlowModel(
