@@ -36,9 +36,6 @@ public final class ClientGunInputHandler {
             if (GunItem.isAutomatic(gun.getStats())) {
                 continue;
             }
-            if (!GunItem.isTriggerLocked(stack)) {
-                continue;
-            }
             GunItem.clearTriggerLock(stack);
             NetworkHandler.sendTriggerRelease(hand);
         }
