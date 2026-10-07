@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class Config {
+    public static final ModConfigSpec.IntValue EXPLOSION_SCREEN_SHAKE;
     public static final ModConfigSpec CLIENT_SPEC;
     public static final ModConfigSpec SERVER_SPEC;
     public static final ModConfigSpec.BooleanValue LEGACY_BULLET_TRAIL_ENABLED;
@@ -104,6 +105,9 @@ public final class Config {
     static {
         ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
         clientBuilder.push("rendering");
+        EXPLOSION_SCREEN_SHAKE = clientBuilder
+                .comment("Explosion camera shake strength: 0 disables it, 100 matches SuperbWarfare.")
+                .defineInRange("explosionScreenShake", 100, 0, 100);
         LEGACY_BULLET_TRAIL_ENABLED = clientBuilder
                 .comment("If true, use legacy 1.20.1-style bullet trail rendering.")
                 .define("legacyBulletTrailEnabled", true);
@@ -947,6 +951,10 @@ public final class Config {
 
     public static boolean hideMedals() {
         return UI_HIDE_MEDALS.get();
+    }
+
+    public static int explosionScreenShake() {
+        return !CLIENT_SPEC.isLoaded() ? 100 : EXPLOSION_SCREEN_SHAKE.get();
     }
 
     public static boolean legacyBulletTrailEnabled() {

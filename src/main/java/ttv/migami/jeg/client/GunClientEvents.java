@@ -306,6 +306,7 @@ public final class GunClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        ExplosionShakeHandler.tick();
         MagazineModeClient.tick();
         GunRecoilHandler.tick();
         MedalManager.tick();
