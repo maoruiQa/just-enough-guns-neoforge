@@ -291,6 +291,7 @@
   "gui.jegn.config.option.gunner_terrain_break_tier": "最大破坏地形等级",
   "gui.jegn.config.option.gunner_terrain_placement": "枪手地形垫块",
   "gui.jegn.config.option.headshot_multiplier": "爆头倍率",
+  "gui.jegn.config.option.hip_fire_spread_multiplier": "腰射散布系数",
   "gui.jegn.config.option.hide_medals": "隐藏勋章",
   "gui.jegn.config.option.magazine_feed": "弹匣供弹",
   "gui.jegn.config.option.patrol_enabled": "启用巡逻",

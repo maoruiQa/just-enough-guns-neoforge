@@ -222,6 +222,7 @@ public final class ModCommands {
                 .then(configBulletBlockDestructionCommand())
                 .then(configMagazineFeedCommand())
                 .then(configBooleanConfigCommand("headshotMultiplier", "combat.headshotMultiplier"))
+                .then(configDoubleConfigCommand("hipFireSpreadMultiplier", "combat.hipFireSpreadMultiplier", 0.0D, 5.0D))
                 .then(configGunnerTerrainPlacementCommand())
                 .then(configGunnerTerrainBreakCommand());
     }
@@ -249,9 +250,13 @@ public final class ModCommands {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> configDoubleConfigCommand(String name, String key) {
+        return configDoubleConfigCommand(name, key, 0.0D, 1.0D);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> configDoubleConfigCommand(String name, String key, double min, double max) {
         return Commands.literal(name)
                 .executes(context -> executeGetDoubleConfig(context.getSource(), key, key))
-                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0.0D, 1.0D))
+                .then(Commands.argument("value", DoubleArgumentType.doubleArg(min, max))
                         .executes(context -> executeSetDoubleConfig(
                                 context.getSource(),
                                 key,

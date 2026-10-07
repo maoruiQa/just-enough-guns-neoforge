@@ -238,6 +238,8 @@ public class GunItem extends Item {
             "supersonic_shotgun",
             "waterpipe_shotgun"
     );
+    private static final float SHOTGUN_PELLET_SPREAD_SCALE = 0.75F;
+    private static final float SHOTGUN_HIP_DIRECTION_SPREAD_SCALE = 0.50F;
     private static final Set<String> NON_BULLET_TRAIL_IDS = Set.of(
             "flamethrower",
             "flare_gun",
@@ -1003,7 +1005,7 @@ public class GunItem extends Item {
             if (shouldJamBeforeShot(level, player, stack)) {
                 return false;
             }
-            updateSpreadTracker(player, stats.id());
+            boolean aiming = NetworkHandler.isAiming(player);
             int shotsFired = 0;
             int shotsToFire = shotsPerTrigger();
             for (int shot = 0; shot < shotsToFire; shot++) {
@@ -1023,6 +1025,8 @@ public class GunItem extends Item {
             if (shotsFired <= 0) {
                 return false;
             }
+
+            updateSpreadTracker(player, stats.id(), aiming);
 
             if (usesOverheatMechanic()) {
                 addOverheatForShots(stack, stats.id(), shotsFired, player);
@@ -1366,8 +1370,14 @@ public class GunItem extends Item {
             ejectCasing(serverLevel, shooter);
         }
 
+        boolean shotgun = isShotgunWeapon(gunId);
+        Vec3 shotgunCenterDirection = shotgun
+                ? computeShotgunCenterDirection(shooter, origin, target, random, stats, stack)
+                : null;
         for (int i = 0; i < pellets; i++) {
-            Vec3 direction = computeDirection(shooter, origin, target, random, stats, stack);
+            Vec3 direction = shotgun
+                    ? applyRandomCone(shotgunCenterDirection, getShotgunPelletSpread(shooter, stats, stack), random)
+                    : computeDirection(shooter, origin, target, random, stats, stack);
             Vec3 muzzle = origin.add(direction.scale(0.35F));
 
             if (grenadeLauncher) {
@@ -1606,6 +1616,28 @@ public class GunItem extends Item {
                 .ifPresent(bullet::setFlareColor);
     }
 
+    private Vec3 computeShotgunCenterDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats, ItemStack stack) {
+        Vec3 base = target != null
+                ? target.getEyePosition().subtract(origin)
+                : shooter.getViewVector(1.0F);
+        Vec3 forwards = base.normalize();
+        if (forwards.lengthSqr() < 1.0E-6D) {
+            forwards = shooter.getViewVector(1.0F);
+        }
+        if (shooter instanceof Player player && !NetworkHandler.isAiming(player)) {
+            float macroSpread = modifiedSpread(stats, stack)
+                    * SHOTGUN_HIP_DIRECTION_SPREAD_SCALE
+                    * (float) Config.hipFireSpreadMultiplier();
+            return applyRandomCone(forwards, macroSpread, random);
+        }
+        return forwards;
+    }
+
+    private static float getShotgunPelletSpread(LivingEntity shooter, GunStats stats, ItemStack stack) {
+        boolean aiming = shooter instanceof Player player && NetworkHandler.isAiming(player);
+        return modifiedSpread(stats, stack) * SHOTGUN_PELLET_SPREAD_SCALE * (aiming ? 0.35F : 0.60F);
+    }
+
     private Vec3 computeDirection(LivingEntity shooter, Vec3 origin, @Nullable LivingEntity target, RandomSource random, GunStats stats, ItemStack stack) {
         Vec3 base = target != null
                 ? target.getEyePosition().subtract(origin)
@@ -1620,31 +1652,33 @@ public class GunItem extends Item {
         }
 
         float baseSpread = modifiedSpread(stats, stack);
-        float gunSpread = baseSpread;
-        if (gunSpread == 0.0F) {
+        if (baseSpread == 0.0F) {
             return forwards.normalize();
         }
 
+        if (isShotgunWeapon(stats.id())) {
+            return applyRandomCone(forwards, getShotgunPelletSpread(shooter, stats, stack), random);
+        }
+
+        float gunSpread = baseSpread;
         if (shooter instanceof Player player) {
             boolean minigun = isMinigunWeapon(stats.id());
+            boolean aiming = NetworkHandler.isAiming(player);
             gunSpread *= getSpreadMultiplier(player, stats);
-            if (!minigun && NetworkHandler.isAiming(player)) {
+            if (!minigun && aiming) {
                 gunSpread *= 0.5F;
             }
             if (!minigun) {
-                gunSpread += getMovementSpreadDegrees(player, stats, NetworkHandler.isAiming(player), baseSpread);
+                gunSpread += getMovementSpreadDegrees(player, stats, aiming, baseSpread);
             } else {
                 gunSpread = Math.max(gunSpread, baseSpread * MINIGUN_SPREAD_FLOOR);
             }
-            if (isBoltActionRifle(stats.id()) && !NetworkHandler.isAiming(player)) {
+            if (isBoltActionRifle(stats.id()) && !aiming) {
                 gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
             }
-            if (isShotgun(stats.id())) {
-                float shotgunFloor = baseSpread * (NetworkHandler.isAiming(player) ? 0.35F : 0.60F);
-                gunSpread = Math.max(gunSpread, shotgunFloor);
+            if (!aiming) {
+                gunSpread *= (float) Config.hipFireSpreadMultiplier();
             }
-        } else if (isShotgun(stats.id())) {
-            gunSpread = baseSpread * 0.60F;
         } else {
             float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
             float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
@@ -1654,11 +1688,16 @@ public class GunItem extends Item {
             }
         }
 
-        if (gunSpread <= 0.0F) {
-            return forwards.normalize();
+        return applyRandomCone(forwards, gunSpread, random);
+    }
+
+    private static Vec3 applyRandomCone(Vec3 forwards, float spreadDegrees, RandomSource random) {
+        forwards = forwards.normalize();
+        if (spreadDegrees <= 0.0F) {
+            return forwards;
         }
 
-        float spreadRadians = Math.min(gunSpread, 170.0F) * Mth.DEG_TO_RAD;
+        float spreadRadians = Math.min(spreadDegrees, 170.0F) * Mth.DEG_TO_RAD;
         Vec3 worldUp = new Vec3(0.0D, 1.0D, 0.0D);
         Vec3 sideways = forwards.cross(worldUp);
         if (sideways.lengthSqr() < 1.0E-6D) {
@@ -1676,7 +1715,7 @@ public class GunItem extends Item {
         return forwards.add(sideways.scale(a1)).add(upwards.scale(a2)).normalize();
     }
 
-    private static void updateSpreadTracker(Player player, ResourceLocation gunId) {
+    private static void updateSpreadTracker(Player player, ResourceLocation gunId, boolean aiming) {
         SpreadTrackerState playerState = SPREAD_TRACKERS.computeIfAbsent(player.getUUID(), ignored -> new SpreadTrackerState());
         SpreadEntry entry = playerState.byGun.computeIfAbsent(gunId, ignored -> new SpreadEntry());
         long now = System.currentTimeMillis();
@@ -1685,7 +1724,7 @@ public class GunItem extends Item {
             if (delta < SPREAD_THRESHOLD_MS) {
                 if (entry.spreadCount < SPREAD_MAX_COUNT) {
                     entry.spreadCount++;
-                    if (entry.spreadCount < SPREAD_MAX_COUNT && !NetworkHandler.isAiming(player)) {
+                    if (entry.spreadCount < SPREAD_MAX_COUNT && !aiming) {
                         entry.spreadCount++;
                     }
                     if (isMinigunWeapon(gunId) && entry.spreadCount < SPREAD_MAX_COUNT) {
@@ -1699,8 +1738,8 @@ public class GunItem extends Item {
         entry.lastFireMs = now;
     }
 
-    public static void recordClientShotSpread(Player player, GunStats stats) {
-        updateSpreadTracker(player, stats.id());
+    public static void recordClientShotSpread(Player player, GunStats stats, boolean aiming) {
+        updateSpreadTracker(player, stats.id(), aiming);
     }
 
     private static float getSpreadMultiplier(Player player, GunStats stats) {
@@ -1726,11 +1765,19 @@ public class GunItem extends Item {
 
     public static float getClientSpreadDegrees(Player player, ItemStack stack, GunStats stats, boolean aiming) {
         float baseSpread = modifiedSpread(stats, stack);
-        float gunSpread = baseSpread;
-        if (gunSpread <= 0.0F) {
+        if (baseSpread <= 0.0F) {
             return 0.0F;
         }
 
+        if (isShotgunWeapon(stats.id())) {
+            float pelletSpread = baseSpread * SHOTGUN_PELLET_SPREAD_SCALE * (aiming ? 0.35F : 0.60F);
+            float macroSpread = aiming
+                    ? 0.0F
+                    : baseSpread * SHOTGUN_HIP_DIRECTION_SPREAD_SCALE * (float) Config.hipFireSpreadMultiplier();
+            return pelletSpread + macroSpread;
+        }
+
+        float gunSpread = baseSpread;
         boolean minigun = isMinigunWeapon(stats.id());
         gunSpread *= getSpreadMultiplier(player, stats);
         if (!minigun && aiming) {
@@ -1744,9 +1791,8 @@ public class GunItem extends Item {
         if (isBoltActionRifle(stats.id()) && !aiming) {
             gunSpread = Math.max(gunSpread, BOLT_ACTION_PLAYER_HIP_SPREAD);
         }
-        if (isShotgun(stats.id())) {
-            float shotgunFloor = baseSpread * (aiming ? 0.35F : 0.60F);
-            gunSpread = Math.max(gunSpread, shotgunFloor);
+        if (!aiming) {
+            gunSpread *= (float) Config.hipFireSpreadMultiplier();
         }
         return Math.max(0.0F, gunSpread);
     }
