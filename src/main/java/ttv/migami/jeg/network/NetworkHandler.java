@@ -22,6 +22,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import ttv.migami.jeg.Config;
 import ttv.migami.jeg.Reference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ttv.migami.jeg.config.ServerConfigEditor;
 import ttv.migami.jeg.event.AttachmentRuntimeEvents;
 import ttv.migami.jeg.event.GunEvents;
@@ -51,16 +53,18 @@ import ttv.migami.jeg.vehicle.network.VehicleSeatAssignmentsPayload;
 import ttv.migami.jeg.vehicle.network.VehicleStatePayload;
 
 public final class NetworkHandler {
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private NetworkHandler() {}
+
+    public static void sendMagazineMode(ServerPlayer player, MagazineModePayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
 
     /** Fallback distance for vehicle state when not already tracking the entity (256 blocks). */
     private static final double VEHICLE_STATE_FALLBACK_DISTANCE_SQR = 256.0D * 256.0D;
 
     private static boolean commonRegistered;
-    public static void sendMagazineMode(ServerPlayer player, MagazineModePayload payload) {
-        ServerPlayNetworking.send(player, payload);
-    }
-
     private static final Set<UUID> AIMING_PLAYERS = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Long> HOLD_FIRE_START_TICKS = new HashMap<>();
 
@@ -69,15 +73,15 @@ public final class NetworkHandler {
             return;
         }
         commonRegistered = true;
-
-        PayloadTypeRegistry.serverboundPlay().register(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MagazineModeAckPayload.TYPE, MagazineModeAckPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(MagazineModePayload.TYPE, MagazineModePayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(MagazineModeAckPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> ttv.migami.jeg.gun.MagazineModeServer.confirm(context.player(), payload.revision()));
         });
+
+        PayloadTypeRegistry.serverboundPlay().register(ShootRequestPayload.TYPE, ShootRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(HoldFirePayload.TYPE, HoldFirePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ReloadRequestPayload.TYPE, ReloadRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UnloadMagazineRequestPayload.TYPE, UnloadMagazineRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(OpenAttachmentsPayload.TYPE, OpenAttachmentsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ToggleMedalsPayload.TYPE, ToggleMedalsPayload.STREAM_CODEC);
@@ -186,8 +190,12 @@ public final class NetworkHandler {
                     ServerConfigStatePayload.Status.DENIED, Map.of(), List.of(), 0));
             return;
         }
-        ServerPlayNetworking.send(player, new ServerConfigStatePayload(
-                ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+        try {
+            ServerPlayNetworking.send(player, new ServerConfigStatePayload(
+                    ServerConfigStatePayload.Status.OPEN, ServerConfigEditor.snapshot(), List.of(), 0));
+        } catch (Throwable ex) {
+            LOGGER.error("Failed to open the JEG config menu", ex);
+        }
     }
 
     private static void handleApplyServerConfig(ApplyServerConfigPayload payload, ServerPlayer player) {

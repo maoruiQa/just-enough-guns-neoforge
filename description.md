@@ -4,7 +4,7 @@ A modern fork and unofficial port of the Forge 1.20.1 mod Just Enough Guns, brin
 
 ![Terminal Guidance — 1.8.0 special equipment](https://github.com/maoruiQa/just-enough-guns-neoforge/raw/fabric-26.2/screenshots/terminal-guidance-1.8.0.png)
 
-Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork unofficially ports and continues that gameplay work on modern Fabric and NeoForge versions while keeping the Minecraft-friendly visual style. Weapons use survival crafting progression, magazines, attachments, recoil, spread, overheating, ammo HUD feedback, and server-side combat logic. The current **1.8.0** builds add SuperbWarfare-style special equipment — FPV drones, C4 / claymore / C4 vest, Javelin and Igla guided launchers, smoke denial, and vehicle missile lock UI — plus kill-credit fixes and a vehicle / missile / rocket combat balance pass across all four maintained loaders.
+Just Enough Guns New is based on the original Just Enough Guns project for Forge 1.20.1. This fork continues its Minecraft-friendly firearms, survival crafting, hostile gunners, raids, vehicles, and special equipment on modern Fabric and NeoForge versions. The current **1.8.2** builds add a four-chapter combat-career guide, SW-aligned vehicle controls and part damage, revised ADS/spread, magazine-mode notices and recipe rules, and combat/configuration fixes across all six maintained branches.
 
 ## Screenshots
 
@@ -32,41 +32,36 @@ Just Enough Guns New is based on the original Just Enough Guns project for Forge
 
 ## Latest Release Notes
 
-Version `1.8.0` is the current release line. Interim local labels **1.8.1** / **1.8.2** were never separate public releases; their work is included here.
+Version `1.8.2` adds a four-chapter combat-career guide with legacy progress migration, SW-aligned vehicle controls and part damage, ADS/spread adjustments, and server magazine-mode notices with matching recipes. It also fixes delayed trigger release, anti-armor impacts, truck fall damage, and config-menu feedback.
 
 ### Highlights
 
-*   **Special equipment** — FPV drones with monitor control, C4 / claymore / C4 vest, C4 defuser, Javelin & Igla guided launchers, smoke denial, and vehicle missile lock UI.
-*   **Kill credit** — gun / rocket / explosive kills correctly credit the player for advancements, loot, and boss kills ([#10](https://github.com/maoruiQa/just-enough-guns-neoforge/issues/10)).
-*   **Vehicle / missile / rocket balance** — SW-aligned missile damage model, ballistic AP for missiles, retuned vehicle armor & HE modifiers, rocket numbers and tooltip fixes.
+- **Combat career** — Four chapters with 72 visible nodes / 53 core objectives on 1.21.1 and 73 nodes / 54 objectives on 26.2 and 26.3, with legacy progress preserved silently.
+- **Vehicle warfare** — SW-aligned controls, cameras, crew HUDs, enemy AI, component hitboxes, damage, repair, and collision behavior.
+- **Gun handling** — revised ADS recoil and spread, tighter shotgun grouping, configurable hip-fire spread, and reliable trigger release under delayed synchronization.
+- **Magazine rules** — a confirmed server-mode notice and recipes that follow the active magazine or direct-ammo mode.
 
-### Added
+### Fixed
 
-*   Ported SuperbWarfare-style special equipment: FPV drones, C4 (including remote/detonator), claymore mines, C4 vest, and C4 defuser.
-*   Added guided launchers **Javelin** and **Igla 9K38** with lock-on fire, SW-aligned first-person poses/ADS, icons, root motion, and reload animations.
-*   Added C4 drone FPV payload HUD with detonate guidance and a **KAMIKAZE** dive presentation for explosive drone runs.
-*   Added a C4 vest bomber gunner variant with configurable spawn rates.
-*   Added SW-style smoke screens that deny missile locks, denser smoke particles, and release audio.
-*   Added vehicle missile lock frames and seek audio for lockable targets.
-*   Soft-disabled natural Terror Phantom spawns by default.
+- Corrected anti-armor rocket damage and missile contact with unmounted targets.
+- Corrected truck fall immunity and restored the player-skin Finger Gun inventory icon.
+- Fixed config tooltip line breaks and guarded config-menu opening failures.
+- Added remote vehicle smoothing on NeoForge; corrected vehicle scroll and crew HUD visibility on Fabric 1.21.1.
 
-### Changed / Fixed
+The dedicated-server monitor tooltip and gunner-growth configuration fixes from `1.8.1` remain included. The FPV drones, C4, mines, guided launchers, smoke denial, and kill-credit work from `1.8.0` remain available.
 
-*   Rebalanced guided missiles, anti-vehicle rockets, drone descent power, and vehicle state sync; only draw lock boxes for in-range LOS targets.
-*   Vehicle armor and HE modifiers use SW-style damage modifiers with strict type matching; guided missiles use direct hit + explosion falloff and ballistic AP.
-*   Rocket launcher: direct **150**, blast **50**, radius **11**, AP **10**; tooltips show real direct + blast + radius for rockets and guided launchers.
-*   Fixed drone FPV rubber-banding, seek frames due north, helicopter rotor spin-down after dismount, guided launcher fire/lock/ADS presentation, and special-equipment audio/HUD.
-*   Fixed kill credit for guns, missiles, grenades, and molotovs across advancements, `killed_by_player` loot, Free the End / `MOB_KILLS`, and multipart bosses.
-*   Fixed stacked vehicle explosion modifiers and rocket/Javelin/Igla tooltip damage readouts.
+Full release notes: [1.8.2 changelog](https://github.com/maoruiQa/just-enough-guns-neoforge/blob/fabric-26.2/CHANGELOG.md).
 
 ## Supported Versions
 
-| Loader   |Minecraft     |Java    |Mod Version |Required Dependencies           |
-| -------- |------------- |------- |----------- |------------------------------- |
-| Fabric   |1.21.1        |Java 21 |1.8.0       |Fabric API, GeckoLib 4.8.3      |
-| NeoForge |1.21.1-1.21.4 |Java 21 |1.8.0       |NeoForge 21.1.x, GeckoLib 4.8.3 |
-| Fabric   |26.2          |Java 25 |1.8.0       |Fabric API, GeckoLib 5.5+       |
-| NeoForge |26.2          |Java 25 |1.8.0       |NeoForge 26.2.x, GeckoLib 5.5.1 |
+| Loader | Minecraft | Java | Mod Version | Required Dependencies |
+| --- | --- | --- | --- | --- |
+| Fabric | 1.21.1 | Java 21 | 1.8.2 | Fabric API, GeckoLib 4.8.3 |
+| NeoForge | 1.21.1-1.21.4 | Java 21 | 1.8.2 | NeoForge 21.1.x, GeckoLib 4.8.3 |
+| Fabric | 26.2 | Java 25 | 1.8.2 | Fabric API, GeckoLib 5.5+ |
+| NeoForge | 26.2 | Java 25 | 1.8.2 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+| Fabric | 26.3 | Java 25 | 1.8.2 | Fabric API, GeckoLib 5.5.7 |
+| NeoForge | 26.3 | Java 25 | 1.8.2 | NeoForge 26.3.x, GeckoLib 5.5.7 |
 
 The older Fabric 26.1 and NeoForge 26.1 branches are legacy lines after the 26.2 unofficial port. Use 26.2 for the maintained Java 25 release line unless you specifically need a 26.1 legacy build.
 
