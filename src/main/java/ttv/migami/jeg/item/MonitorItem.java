@@ -3,8 +3,9 @@ package ttv.migami.jeg.item;
 import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import ttv.migami.jeg.entity.DroneEntity;
 import ttv.migami.jeg.init.ModDataComponents;
 
@@ -113,11 +113,14 @@ public final class MonitorItem extends Item {
         if (x == null || y == null || z == null) {
             return;
         }
-        // Client-only distance readout; keep tooltip safe on dedicated server.
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null && mc.player != null) {
-            double dist = mc.player.position().distanceTo(new Vec3(x, y, z));
-            tooltipAdder.accept(Component.translatable("des.jeg.monitor.distance", String.format("%.1fm", dist)).withStyle(ChatFormatting.GRAY));
+        // Client-only distance readout. Reflect so the dedicated server never links a client class.
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            try {
+                Class.forName("ttv.migami.jeg.client.MonitorDistanceTooltip")
+                        .getMethod("append", Consumer.class, float.class, float.class, float.class)
+                        .invoke(null, tooltipAdder, x, y, z);
+            } catch (ReflectiveOperationException ignored) {
+            }
         }
         tooltipAdder.accept(Component.literal(String.format("X: %.1f Y: %.1f Z: %.1f", x, y, z)).withStyle(ChatFormatting.DARK_GRAY));
     }

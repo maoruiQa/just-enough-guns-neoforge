@@ -97,7 +97,7 @@ tasks.register('checkVehicleGeometry', JavaExec) {
     jvmArgs '-ea'
 }
 
-// Small assertion checks for SW component recovery, save migration and damage-rule parsing.
+// Small assertion checks for SW part recovery, save migration and damage-rule parsing.
 tasks.register('checkVehicleDamage', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
@@ -110,8 +110,8 @@ tasks.register('checkVehicleDamageModifiers', JavaExec) {
     mainClass = 'ttv.migami.jeg.vehicle.data.subdata.DamageModifierInfo'
     jvmArgs '-ea'
 }
-tasks.named('check') {
-    dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
+
+// Keep vehicle damage regressions in the normal build/check workflow.
 tasks.register('checkMagazineMode', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
@@ -119,5 +119,7 @@ tasks.register('checkMagazineMode', JavaExec) {
     jvmArgs '-ea'
 }
 
-}
+tasks.named('check') {
     dependsOn tasks.named('checkMagazineMode')
+    dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
+}
