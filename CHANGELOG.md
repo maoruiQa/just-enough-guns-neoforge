@@ -35,6 +35,7 @@
 - Fixed handheld anti-armor rocket damage against vehicle hulls and struck parts, and missile contact with unmounted targets when fired on foot.
 - Fixed civilian truck fall immunity: falls up to three blocks are safe, larger falls apply structural hull damage once, and a twenty-block fall destroys the truck.
 - Fixed server-config tooltip line breaks and logged failures when opening the config menu without letting that request stop the server tick.
+- Fixed a client startup crash when the bullet-trail setting was read before NeoForge finished loading the client config.
 - Repaired Gradle check task wiring so magazine-mode and vehicle geometry/damage regressions run in the normal build workflow.
 - Smoothed remote land vehicles, boats, and helicopters on NeoForge, preventing competing tracker updates from snapping them backward while preserving local driver prediction.
 

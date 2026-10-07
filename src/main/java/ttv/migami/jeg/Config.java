@@ -950,7 +950,7 @@ public final class Config {
     }
 
     public static boolean legacyBulletTrailEnabled() {
-        return LEGACY_BULLET_TRAIL_ENABLED.get();
+        return !CLIENT_SPEC.isLoaded() || LEGACY_BULLET_TRAIL_ENABLED.get();
     }
 
     public static boolean showAmmoHud() {
