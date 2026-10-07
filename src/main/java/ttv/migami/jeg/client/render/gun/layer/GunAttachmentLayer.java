@@ -28,6 +28,7 @@ import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.PerBoneRender;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.GeoRenderLayer;
+import com.geckolib.util.RenderUtil;
 import ttv.migami.jeg.Reference;
 import ttv.migami.jeg.client.GunClientEvents;
 import ttv.migami.jeg.client.render.gun.AnimatedGunRenderer;
@@ -332,12 +333,20 @@ public final class GunAttachmentLayer extends GeoRenderLayer<AnimatedGunItem, Ge
     }
 
     private static void renderGlowBone(GeoBone bone, RenderPassInfo<GeoRenderState> passInfo, VertexConsumer buffer, int fullBright) {
-        if (isGlowBone(bone.name())) {
-            bone.positionAndRender(passInfo, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
-            return;
-        }
-        for (GeoBone child : bone.children()) {
-            renderGlowBone(child, passInfo, buffer, fullBright);
+        PoseStack renderPose = passInfo.poseStack();
+        renderPose.pushPose();
+        try {
+            RenderUtil.prepMatrixForBoneAndUpdateListeners(renderPose, bone, passInfo);
+            if (isGlowBone(bone.name())) {
+                bone.render(passInfo, renderPose, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
+                bone.renderChildren(passInfo, renderPose, buffer, fullBright, passInfo.packedOverlay(), passInfo.renderColor());
+                return;
+            }
+            for (GeoBone child : bone.children()) {
+                renderGlowBone(child, passInfo, buffer, fullBright);
+            }
+        } finally {
+            renderPose.popPose();
         }
     }
 
