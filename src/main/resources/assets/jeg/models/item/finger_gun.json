@@ -2,5 +2,24 @@
   "parent": "builtin/entity",
   "textures": {
     "layer0": "jeg:item/finger_gun"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        90,
+        -45,
+        90
+      ],
+      "translation": [
+        10,
+        5,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ]
+    }
   }
 }
