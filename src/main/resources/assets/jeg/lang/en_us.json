@@ -772,6 +772,7 @@
   "gui.jegn.config.option.bullet_block_destruction": "Bullet Block Destruction",
   "gui.jegn.config.option.magazine_feed": "Magazine Feed",
   "gui.jegn.config.option.headshot_multiplier": "Headshot Multiplier",
+  "gui.jegn.config.option.hip_fire_spread_multiplier": "Hip-fire Spread Multiplier",
   "gui.jegn.config.option.gunner_terrain_placement": "Gunner Terrain Placement",
   "gui.jegn.config.option.gunner_terrain_block": "Terrain Support Block",
   "gui.jegn.config.option.gunner_terrain_break_tier": "Maximum Terrain Break Tier",
