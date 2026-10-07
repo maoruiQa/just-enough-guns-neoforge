@@ -8,7 +8,7 @@ This is the versioned, repository-local guide for **Just Enough Guns New 1.8.2**
 
 | Language | Guide |
 | --- | --- |
-| English (主文档) | [English](en-US.md) |
+| English (main document) | [English](en-US.md) |
 | 简体中文 | [中文](zh-CN.md) |
 | 日本語 | [日本語](ja-JP.md) |
 | Deutsch | [Deutsch](de-DE.md) |
