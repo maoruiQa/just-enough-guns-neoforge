@@ -2,7 +2,7 @@
 
 ![Terminal Guidance](../../screenshots/terminal-guidance-1.8.0.png)
 
-This is the versioned, repository-local guide for **Just Enough Guns New 1.8.1**. English is the reference text; the other pages keep the same sections and links for easier maintenance.
+This is the versioned, repository-local guide for **Just Enough Guns New 1.8.2**. English is the reference text; the other pages keep the same sections and links for easier maintenance.
 
 ## Choose a language
 
@@ -19,6 +19,7 @@ This is the versioned, repository-local guide for **Just Enough Guns New 1.8.1**
 - **New players:** [Quick start](en-US.md#quick-start) · [Controls](en-US.md#controls) · [First-session checklist](en-US.md#first-session-checklist)
 - **Server owners:** [Compatibility](en-US.md#compatibility) · [Server administration](en-US.md#server-administration) · [Troubleshooting](en-US.md#troubleshooting)
 - **Combat reference:** [Weapons and ammunition](en-US.md#weapons-and-ammunition) · [Vehicles](en-US.md#vehicles) · [Special equipment](en-US.md#special-equipment)
+- **Tuning:** [Too hard or too easy?](en-US.md#too-hard-or-too-easy) · [Configuration UI](en-US.md#in-game-server-configuration-ui) · [Command reference](en-US.md#command-reference)
 - **Contributors:** [Developer and maintainer links](en-US.md#developer-and-maintainer-links) · [Bug reports](en-US.md#bug-reports)
 
 ## Project at a glance
@@ -43,4 +44,3 @@ The maintained release line targets Minecraft **1.21.1, 26.2 and 26.3**. Fabric 
 ## Maintenance note
 
 When behavior changes, update `en-US.md` first, then keep the translated pages aligned section by section. The language pages document player-facing behavior; branch-specific engineering evidence remains in each module's `docs/` directory.
-

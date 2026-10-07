@@ -1,6 +1,6 @@
 # Just Enough Guns New — プレイヤー・サーバー Wiki
 
-**基準言語:** English · **対応リリース:** `1.8.1`
+**基準言語:** English · **対応リリース:** `1.8.2`
 
 [Wiki 索引](README.md) · [English](en-US.md) · [简体中文](zh-CN.md) · [Deutsch](de-DE.md) · [Español](es-ES.md)
 
@@ -14,7 +14,7 @@ Just Enough Guns New は、MigaMi の Forge 1.20.1 向け **Just Enough Guns** �
 
 1. [互換性表](#互換性)から、Minecraft とローダーに合う行を選びます。
 2. 対応するローダー、Fabric API または NeoForge、表に記載された GeckoLib をインストールします。
-3. 対応する `jegn-1.8.1` JAR をインスタンスの `mods` フォルダーへ入れます。Fabric と NeoForge の JAR を混在させないでください。
+3. 対応する `jegn-1.8.2` JAR をインスタンスの `mods` フォルダーへ入れます。Fabric と NeoForge の JAR を混在させないでください。
 4. 一度起動してテストワールドを作成またはコピーし、MOD リストに Just Enough Guns が表示されることを確認します。
 5. レシピ、キー設定、サーバー設定、追加 MOD の依存関係を確認するまでは、本番ワールドでテストしないでください。
 
@@ -30,12 +30,12 @@ Just Enough Guns New は、MigaMi の Forge 1.20.1 向け **Just Enough Guns** �
 
 | ローダー | Minecraft | Java | MOD | 必須依存関係 |
 | --- | --- | --- | --- | --- |
-| Fabric | 1.21.1 | 21 | 1.8.1 | Fabric API、GeckoLib 4.8.3 |
-| NeoForge | 1.21.1–1.21.4 | 21 | 1.8.1 | NeoForge 21.1.x、GeckoLib 4.8.3 |
-| Fabric | 26.2 | 25 | 1.8.1 | Fabric API、GeckoLib 5.5+ |
-| NeoForge | 26.2 | 25 | 1.8.1 | NeoForge 26.2.x、GeckoLib 5.5.1 |
-| Fabric | 26.3 | 25 | 1.8.1 | Fabric API、GeckoLib 5.5.7 |
-| NeoForge | 26.3 | 25 | 1.8.1 | NeoForge 26.3.x、GeckoLib 5.5.7 |
+| Fabric | 1.21.1 | 21 | 1.8.2 | Fabric API、GeckoLib 4.8.3 |
+| NeoForge | 1.21.1–1.21.4 | 21 | 1.8.2 | NeoForge 21.1.x、GeckoLib 4.8.3 |
+| Fabric | 26.2 | 25 | 1.8.2 | Fabric API、GeckoLib 5.5+ |
+| NeoForge | 26.2 | 25 | 1.8.2 | NeoForge 26.2.x、GeckoLib 5.5.1 |
+| Fabric | 26.3 | 25 | 1.8.2 | Fabric API、GeckoLib 5.5.7 |
+| NeoForge | 26.3 | 25 | 1.8.2 | NeoForge 26.3.x、GeckoLib 5.5.7 |
 
 Fabric 26.1 と NeoForge 26.1 はレガシー系列です。特別なパック要件がなければ、Java 25 の維持系列には 26.2 を使用してください。
 
@@ -109,18 +109,61 @@ Walkürenritt には組み立て式の陸上車両、ボート、航空機、ヘ
 
 Terror Phantom は、Bound Terror Phantom、ファントムガンナー召喚、設定可能な死亡爆発、End Ship Armada を含む稀な空中脅威です。1.8.0 の特殊装備系列では自然スポーンがデフォルトでソフト無効化されています。サーバー管理者は設定から再有効化や調整ができます。
 
+## 難しすぎる、または簡単すぎる？
+
+一度に一つの項目だけを変更し、数日プレイしてから次を調整してください。以下はこの Fabric 26.2 ブランチで実際に使えるコマンドです。設定変更には OP レベル 2 が必要です。
+
+| プレイヤーが感じること | 最初に試す調整 | 結果 |
+| --- | --- | --- |
+| 序盤のガンナーが強すぎる | `/justEnoughGuns config combat naturalGunnerDynamicDifficultyEnabled false` | 周囲の最強装備に合わせる動的補正を止めます。 |
+| 帰宅するたびにパトロールが来る | `/justEnoughGuns config patrol minimumDays 15` または `... spawnChance 0.15` | 出現開始日または確率を下げます。 |
+| 腰だめ射撃が当たらない | `/justEnoughGuns config combat hipFireSpreadMultiplier 1.0` | 標準値 1.5 より拡散を狭めます。 |
+| マガジン運用が重い | `/justEnoughGuns config combat magazineFeed false` | 対応銃を弾薬の直接給弾にします。接続中のプレイヤーに弾薬ルールが表示されます。 |
+| ロケットや C4 が早すぎる | ゲーム内設定の **Mobs** で **All Gunners** を選び、`Rocket Launcher Start Day` または `Bomber Gunner Start Day` を上げる | 通常のガンナーを残したまま特殊脅威だけ遅らせます。 |
+| 敵車両が基地を圧倒する | `/justEnoughGuns config vehicle enemySpawning enabled false` | 自然な敵車両変換を止め、プレイヤー車両は残します。 |
+| 爆発の画面揺れが強い | `config/jeg-client.toml` の `rendering.explosionScreenShake = 0` | 自分のカメラ効果だけを無効化します。ダメージは変わりません。 |
+
+すべてのガンナー確率を 0 にする必要はありません。パトロール、派閥レイド、自然ガンナー成長、敵車両は別々の仕組みです。成長設定の `-1` はバランス標準値または **All Gunners** の上書き値を継承します。
+
+## ゲーム内サーバー設定画面
+
+Fabric 26.2 では一時停止画面上部の **JEGN Configuration** ボタンから開きます。サーバー側と同じ MOD バージョンを使い、OP レベル 2 が必要です。シングルプレイではチート、専用サーバーでは `/op <player>` で権限を付与します。
+
+1. `Esc` → **JEGN Configuration** を押します。
+2. **Interface / Patrols / Mobs / Combat / Vehicles** からカテゴリを選びます。
+3. トグルを押すか数値欄に入力します。**Mobs** では左右ボタンでガンナー種類を選びます。
+4. ラベルにマウスを置くと、対応コマンド、範囲、`-1` 継承規則が表示されます。
+5. **Apply** で検証・保存、**Reset** で現在のカテゴリだけ初期値に戻します。未保存のまま **Done** を押すと破棄確認が出ます。
+
+サーバー設定画面で変更できる主な項目は、UI の准星・ヒットフィードバック、パトロール、ガンナー成長、弾薬マガジン方式、腰だめ拡散、地形支援、派閥レイド難易度、敵車両出現です。クライアントだけの HUD や画面揺れは `jeg-client.toml` を編集します。
+
+## コマンドリファレンス
+
+すべて `/justEnoughGuns` から始まります。各語の後で `Tab` を押すと候補が出ます。設定値を省略すると現在値を表示し、値を付けると保存します。以下の設定変更は OP レベル 2 が必要です。
+
+```text
+/justEnoughGuns unlockGunRecipes
+/justEnoughGuns spawnPatrol <faction> <size> <pos> [forceGuns] [spawnRadius]
+/justEnoughGuns simulatePatrol <faction> <size> <player> [forceGuns]
+/justEnoughGuns config patrol minimumDays 15
+/justEnoughGuns config patrol spawnChance 0.15
+/justEnoughGuns config combat hipFireSpreadMultiplier 1.0
+/justEnoughGuns config combat magazineFeed false
+/justEnoughGuns config vehicle enemySpawning startDay 120
+/justEnoughGuns config mob spawn all bomberStartDay 100
+```
+
+派閥名は `night_of_the_undead`、`the_rattlers`、`nosy_business`、`bad_piggies`、`hell_hogs`、`lost_souls` です。パトロールサイズは 1–20、出現半径は 0–16（省略時 10）です。`unlockGunRecipes` はテスト用に全銃レシピを与えるプレイヤー専用コマンドです。Peaceful ではパトロールを生成できません。
+
+`config mob spawn` の種類は `all`、`skeleton`、`stray`、`zombie`、`husk`、`parched`、`drowned`、`zombieVillager`、`zombifiedPiglin`、`piglin`、`piglinBrute`、`witherSkeleton`、`pillager`、`vindicator`、`generic`。設定名は `minSpawnChance`、`maxSpawnChance`、`spawnChancePerDay`、`weaponInitialTier`、`weaponMaxTier`、`weaponTierPerDay`、`armorInitialTier`、`armorMaxTier`、`armorTierPerDay`、`rocketLauncherStartDay`、`rocketLauncherChance`、`rocketLauncherMaxChance`、`rocketLauncherChancePerDay`、`bomberStartDay`、`bomberChance`、`bomberMaxChance`、`bomberChancePerDay`、`weaponAggression` です。
+
+## 設定ファイル
+
+実行中のサーバーが上書きしないよう、直接編集する場合は停止してください。`config/jeg-client.toml` では `rendering.showAmmoHud`、`rendering.showTimersHud`、`rendering.crosshair`、`rendering.showHitmarker`、`rendering.dynamicCrosshairDotMode`、`rendering.explosionScreenShake`（0–100）を調整できます。`config/jeg-server.toml` では `combat.magazineFeed`、`combat.hipFireSpreadMultiplier`（0–5）、`factionPatrol.*`、`factionRaid.*`、`vehicle.enemyVehicle*` を調整できます。`magazineFeed` を変更すると弾薬ルール表示と制限レシピが更新されます。
+
 ## サーバー管理
 
-対応ブランチではサーバー設定画面を開き、そうでない場合はサーバーを停止して生成された設定ファイルを編集します。変更前にワールドのコピーを作成してください。
-
-設定項目には次の領域があります。
-
-- **UI:** 弾薬 HUD、タイマー HUD、クロスヘア、動的クロスヘア、ヒットマーカー。
-- **ガンナー:** 変換率、Parched 変換、ファントムガンナーの死亡爆発、Terror Phantom の挙動。
-- **レイド:** 派閥パトロール、開始時刻、ウェーブ数、ガンナー精度倍率。
-- **車両:** 組み立て、敵車両スポーン、戦闘挙動、車両サポート。
-
-新しいブランチではガンナー成長設定をサーバー設定コマンドから変更できます。コマンド名や項目はローダーと Minecraft のバージョンで異なるため、インストールしたブランチのヘルプを使用してください。
+リアルタイム変更は上の[ゲーム内サーバー設定画面](#ゲーム内サーバー設定画面)、素早い試験は[コマンドリファレンス](#コマンドリファレンス)、画面にない高度な値は `config/jeg-server.toml` を使います。TOML を直接編集するときはサーバーを停止し、ワールドをバックアップしてください。
 
 ## トラブルシューティング
 
@@ -160,7 +203,7 @@ JAR がサーバーのローダーと Minecraft に一致しているか確認�
 ## 開発者・メンテナー向けリンク
 
 - [ルート README](../../README.md) と [description](../../description.md)
-- [1.8.1 リリースノート](../../CHANGELOG.md)
+- [1.8.2 リリースノート](../../CHANGELOG.md)
 - [1.8.0 機能ノート](../../CHANGELOG.md)
 - [アドバンスメントガイド](../../docs/ADVANCEMENT_GUIDE.md)
 - [敵車両 AI ノート](../../docs/vehicle_enemy_ai.md)
@@ -170,7 +213,7 @@ JAR がサーバーのローダーと Minecraft に一致しているか確認�
 
 ## リリース、クレジット、ライセンス
 
-公開 1.8.1 は、維持対象ブランチの専用サーバー起動経路とサーバー設定オプション処理を修正します。1.8.0 では FPV ドローン、C4、クレイモア、C4 ベスト、Javelin、Igla、スモークによるロック拒否、ミサイルロック HUD、キルクレジット修正、車両/ミサイル/ロケットのバランス調整を追加しました。
+公開 1.8.2 は、4 章の進行ガイド、弾薬ルール表示、ライブ設定フィードバック、車両操作調整を追加しました。1.8.1 は専用サーバー起動と設定処理を修正しました。1.8.0 では FPV ドローン、C4、クレイモア、C4 ベスト、Javelin、Igla、スモークによるロック拒否、ミサイルロック HUD、キルクレジット修正、車両/ミサイル/ロケットのバランス調整を追加しました。
 
 Just Enough Guns New は非公式移植であり、Just Enough Guns や Superb Warfare と提携・承認関係にありません。Just Enough Guns を基にしたコードは GPL-3.0、元の JEG アセットは ARR で作者の許諾により使用しています。SBW 由来の車両・特殊装備素材には指定されたクレジットとライセンス条件が適用されます。完全な一覧はルート README を確認してください。
 

@@ -1,6 +1,6 @@
 # Just Enough Guns New — Wiki de jugadores y servidores
 
-**Idioma de referencia:** English · **Versión:** `1.8.1`
+**Idioma de referencia:** English · **Versión:** `1.8.2`
 
 [Índice de la wiki](README.md) · [English](en-US.md) · [简体中文](zh-CN.md) · [日本語](ja-JP.md) · [Deutsch](de-DE.md)
 
@@ -14,7 +14,7 @@ El proyecto está dividido en módulos independientes de Fabric y NeoForge. El s
 
 1. Elige en la [tabla de compatibilidad](#compatibilidad) la fila que corresponda a tu versión de Minecraft y cargador.
 2. Instala el cargador adecuado, Fabric API o NeoForge, y la versión de GeckoLib indicada.
-3. Coloca el JAR `jegn-1.8.1` correspondiente en la carpeta `mods` de la instancia. No mezcles JAR de Fabric y NeoForge.
+3. Coloca el JAR `jegn-1.8.2` correspondiente en la carpeta `mods` de la instancia. No mezcles JAR de Fabric y NeoForge.
 4. Inicia el juego una vez, crea o copia un mundo de prueba y confirma que Just Enough Guns aparece en la lista de mods.
 5. Mantén el primer mundo de prueba separado del servidor permanente hasta comprobar recetas, teclas, configuración y dependencias de addons.
 
@@ -30,12 +30,12 @@ El proyecto está dividido en módulos independientes de Fabric y NeoForge. El s
 
 | Cargador | Minecraft | Java | Mod | Dependencias necesarias |
 | --- | --- | --- | --- | --- |
-| Fabric | 1.21.1 | 21 | 1.8.1 | Fabric API, GeckoLib 4.8.3 |
-| NeoForge | 1.21.1–1.21.4 | 21 | 1.8.1 | NeoForge 21.1.x, GeckoLib 4.8.3 |
-| Fabric | 26.2 | 25 | 1.8.1 | Fabric API, GeckoLib 5.5+ |
-| NeoForge | 26.2 | 25 | 1.8.1 | NeoForge 26.2.x, GeckoLib 5.5.1 |
-| Fabric | 26.3 | 25 | 1.8.1 | Fabric API, GeckoLib 5.5.7 |
-| NeoForge | 26.3 | 25 | 1.8.1 | NeoForge 26.3.x, GeckoLib 5.5.7 |
+| Fabric | 1.21.1 | 21 | 1.8.2 | Fabric API, GeckoLib 4.8.3 |
+| NeoForge | 1.21.1–1.21.4 | 21 | 1.8.2 | NeoForge 21.1.x, GeckoLib 4.8.3 |
+| Fabric | 26.2 | 25 | 1.8.2 | Fabric API, GeckoLib 5.5+ |
+| NeoForge | 26.2 | 25 | 1.8.2 | NeoForge 26.2.x, GeckoLib 5.5.1 |
+| Fabric | 26.3 | 25 | 1.8.2 | Fabric API, GeckoLib 5.5.7 |
+| NeoForge | 26.3 | 25 | 1.8.2 | NeoForge 26.3.x, GeckoLib 5.5.7 |
 
 Fabric 26.1 y NeoForge 26.1 son líneas heredadas. Usa 26.2 para la línea mantenida de Java 25, salvo que un modpack necesite explícitamente 26.1.
 
@@ -109,18 +109,61 @@ La IA de vehículos enemigos puede patrullar, perseguir, retroceder, evitar terr
 
 Terror Phantom es una amenaza aérea poco frecuente que incluye Bound Terror Phantom, invocaciones de artilleros fantasma, explosiones de muerte configurables y encuentros End Ship Armada. En la línea de equipo especial 1.8.0, la aparición natural está desactivada de forma flexible por defecto; el administrador puede activarla o ajustarla en la configuración.
 
+## ¿Demasiado difícil o demasiado fácil?
+
+Cambia una sola familia de opciones cada vez y juega varios días. Estos comandos corresponden a Fabric 26.2 y requieren permiso de operador nivel 2.
+
+| Lo que notas como jugador | Primer ajuste | Efecto |
+| --- | --- | --- |
+| Los artilleros son demasiado fuertes al principio | `/justEnoughGuns config combat naturalGunnerDynamicDifficultyEnabled false` | Detiene la adaptación a la mejor armadura y armas cercanas. |
+| Las patrullas interrumpen cada regreso | `/justEnoughGuns config patrol minimumDays 15` o `... spawnChance 0.15` | Retrasa el primer día o reduce la probabilidad. |
+| El fuego desde la cadera no acierta | `/justEnoughGuns config combat hipFireSpreadMultiplier 1.0` | Reduce la dispersión frente al valor predeterminado 1.5. |
+| Los cargadores exigen demasiada logística | `/justEnoughGuns config combat magazineFeed false` | Cambia las armas compatibles a alimentación directa y muestra las nuevas reglas de munición. |
+| Los cohetes o el C4 llegan demasiado pronto | En **Mobs** → **All Gunners**, aumenta `Rocket Launcher Start Day` o `Bomber Gunner Start Day` | Retrasa las amenazas especiales sin quitar los artilleros normales. |
+| Los vehículos enemigos dominan la base | `/justEnoughGuns config vehicle enemySpawning enabled false` | Detiene la conversión natural de vehículos enemigos y mantiene los vehículos del jugador. |
+| El temblor de explosiones cansa | En `config/jeg-client.toml`, usa `rendering.explosionScreenShake = 0` | Desactiva solo el efecto visual local. |
+
+Patrullas, incursiones de facción, crecimiento de artilleros y vehículos enemigos son sistemas separados. No pongas todas las probabilidades a cero; `-1` significa heredar el valor equilibrado o la sobrescritura de **All Gunners**.
+
+## Configuración del servidor desde el juego
+
+En Fabric 26.2 aparece **JEGN Configuration** en la parte superior del menú de pausa. El servidor debe usar la misma versión del mod y necesitas operador nivel 2 (`/op <player>` en un servidor dedicado).
+
+1. Pulsa `Esc` y abre **JEGN Configuration**.
+2. Elige **Interface**, **Patrols**, **Mobs**, **Combat** o **Vehicles**.
+3. Pulsa los interruptores o escribe números; en **Mobs**, selecciona primero el tipo de artillero con los botones izquierdo/derecho.
+4. Pasa el ratón por una etiqueta para ver la clave de comando, el rango permitido y la regla de herencia `-1`.
+5. **Apply** valida y guarda `config/jeg-server.toml`; **Reset** restablece solo la categoría actual. **Done** pide confirmar si hay cambios sin guardar.
+
+La pantalla controla interfaz, patrullas, crecimiento de artilleros, alimentación por cargador, dispersión desde la cadera, apoyo de terreno, dificultad de incursiones y vehículos enemigos. El HUD local y el temblor de cámara se ajustan en `jeg-client.toml`.
+
+## Referencia de comandos
+
+Todos empiezan por `/justEnoughGuns`; pulsa `Tab` para ver sugerencias. Sin el valor final se muestra el valor actual; con un valor se guarda el cambio. Los cambios de configuración requieren operador nivel 2.
+
+```text
+/justEnoughGuns unlockGunRecipes
+/justEnoughGuns spawnPatrol <faction> <size> <pos> [forceGuns] [spawnRadius]
+/justEnoughGuns simulatePatrol <faction> <size> <player> [forceGuns]
+/justEnoughGuns config patrol minimumDays 15
+/justEnoughGuns config patrol spawnChance 0.15
+/justEnoughGuns config combat hipFireSpreadMultiplier 1.0
+/justEnoughGuns config combat magazineFeed false
+/justEnoughGuns config vehicle enemySpawning startDay 120
+/justEnoughGuns config mob spawn all bomberStartDay 100
+```
+
+Las facciones son `night_of_the_undead`, `the_rattlers`, `nosy_business`, `bad_piggies`, `hell_hogs` y `lost_souls`. El tamaño de patrulla es 1–20 y el radio 0–16 (10 por defecto). `unlockGunRecipes` es para jugadores y pruebas; las patrullas no funcionan en Peaceful.
+
+`config mob spawn` acepta `all`, `skeleton`, `stray`, `zombie`, `husk`, `parched`, `drowned`, `zombieVillager`, `zombifiedPiglin`, `piglin`, `piglinBrute`, `witherSkeleton`, `pillager`, `vindicator` y `generic`. Sus opciones incluyen `minSpawnChance`, `maxSpawnChance`, `spawnChancePerDay`, valores de tier de arma/armadura, `rocketLauncherStartDay`, `rocketLauncherChance`, `rocketLauncherMaxChance`, `rocketLauncherChancePerDay`, `bomberStartDay`, `bomberChance`, `bomberMaxChance`, `bomberChancePerDay` y `weaponAggression`.
+
+## Archivos de configuración
+
+Detén el servidor antes de editar directamente. En `config/jeg-client.toml` puedes cambiar `rendering.showAmmoHud`, `rendering.showTimersHud`, `rendering.crosshair`, `rendering.showHitmarker`, `rendering.dynamicCrosshairDotMode` y `rendering.explosionScreenShake` (0–100). En `config/jeg-server.toml` consulta `combat.magazineFeed`, `combat.hipFireSpreadMultiplier` (0–5), `factionPatrol.*`, `factionRaid.*` y `vehicle.enemyVehicle*`. Cambiar el modo de cargador actualiza el aviso de munición y las recetas filtradas.
+
 ## Administración del servidor
 
-Abre la pantalla de configuración del servidor cuando la rama la ofrezca o edita el archivo generado con el servidor detenido. Prueba los cambios en una copia del mundo.
-
-Las áreas principales son:
-
-- **UI:** HUD de munición, HUD de temporizador, mira, mira dinámica y marcadores de impacto.
-- **Artilleros:** probabilidades de conversión, conversión Parched, explosiones de muerte de Phantom Gunner y comportamiento de Terror Phantom.
-- **Incursiones:** patrullas de facción, tiempo de oleadas, cantidad de oleadas y precisión de artilleros.
-- **Vehículos:** ensamblaje, aparición de vehículos enemigos, comportamiento de combate y sistemas de apoyo.
-
-Las ramas recientes también exponen el crecimiento de artilleros mediante comandos de configuración. Los nombres y opciones pueden cambiar según el cargador y Minecraft; usa la ayuda de la rama instalada.
+Usa la [configuración del servidor desde el juego](#configuración-del-servidor-desde-el-juego) para cambios en vivo, la [referencia de comandos](#referencia-de-comandos) para pruebas rápidas y `config/jeg-server.toml` para opciones avanzadas que no aparecen en la pantalla. Detén el servidor y haz una copia del mundo antes de editar TOML.
 
 ## Solución de problemas
 
@@ -160,7 +203,7 @@ Incluye en el issue:
 ## Enlaces para desarrolladores y mantenedores
 
 - [README raíz](../../README.md) y [copia de description](../../description.md)
-- [Notas de la versión 1.8.1](../../CHANGELOG.md)
+- [Notas de la versión 1.8.2](../../CHANGELOG.md)
 - [Notas de funciones 1.8.0](../../CHANGELOG.md)
 - [Guía de avances](../../docs/ADVANCEMENT_GUIDE.md)
 - [Notas de IA de vehículos enemigos](../../docs/vehicle_enemy_ai.md)
@@ -170,7 +213,7 @@ Cuando cambie el comportamiento visible para jugadores, actualiza primero la pá
 
 ## Versión, créditos y licencia
 
-La versión pública 1.8.1 corrige rutas de inicio de servidor dedicado y el manejo de opciones de configuración en las ramas mantenidas. La versión de funciones 1.8.0 añadió drones FPV, C4, claymores, chaleco C4, Javelin, Igla, humo contra fijación, HUD de fijación de misiles, correcciones de crédito de bajas y ajustes de vehículos/misiles/cohetes.
+La versión pública 1.8.2 añade la guía de progreso de cuatro capítulos, el aviso de reglas de munición, comentarios de configuración en vivo y controles de vehículos ajustados. La 1.8.1 corrigió el inicio de servidores dedicados y las opciones de configuración. La versión de funciones 1.8.0 añadió drones FPV, C4, claymores, chaleco C4, Javelin, Igla, humo contra fijación, HUD de fijación de misiles, correcciones de crédito de bajas y ajustes de vehículos/misiles/cohetes.
 
 Just Enough Guns New es un port no oficial independiente y no está afiliado ni respaldado por Just Enough Guns o Superb Warfare. El código basado en Just Enough Guns usa GPL-3.0. Los recursos originales de JEG son ARR y se usan con autorización del autor. Los materiales de vehículos y equipo especial derivados de SBW conservan sus requisitos de atribución y licencia; consulta el README raíz para la lista completa.
 
