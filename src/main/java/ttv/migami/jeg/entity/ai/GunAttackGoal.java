@@ -3165,9 +3165,13 @@ public class GunAttackGoal<T extends PathfinderMob> extends Goal {
                 gunSpread = stats.spread() * 2.75F;
             } else {
                 float earlySpreadMultiplier = shooter.level().getDifficulty() != Difficulty.HARD ? 10.0F : 5.0F;
-                float scaledSpreadMultiplier = Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
+                float scaledSpreadMultiplier = shooter instanceof PathfinderMob mob && ttv.migami.jeg.faction.NaturalGunnerDifficulty.applies(mob)
+                        ? earlySpreadMultiplier : Config.scaleGunnerSpreadMultiplier(shooter.level(), earlySpreadMultiplier);
                 gunSpread *= scaledSpreadMultiplier;
             }
+        }
+        if (shooter instanceof PathfinderMob mob && ttv.migami.jeg.faction.NaturalGunnerDifficulty.applies(mob)) {
+            gunSpread = ttv.migami.jeg.faction.NaturalGunnerDifficulty.spread(mob, gunSpread);
         }
         if (gunSpread <= 0.0F) {
             return forwards.normalize();

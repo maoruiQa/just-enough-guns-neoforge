@@ -124,6 +124,15 @@ tasks.named('check') {
     dependsOn 'checkVehicleGeometry', 'checkVehicleDamage', 'checkVehicleDamageModifiers'
 }
 
+// Deterministic raid/vehicle math and attack-window checks, using the existing assertion-check pattern.
+tasks.register('checkRaidBalance', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ttv.migami.jeg.faction.raid.RaidDifficulty'
+    jvmArgs '-ea'
+}
+tasks.named('check') { dependsOn 'checkRaidBalance' }
+
 // Run the actual SW shake arithmetic/lifecycle assertions without launching Minecraft.
 tasks.register('checkExplosionShake', JavaExec) {
     dependsOn tasks.named('clientClasses')

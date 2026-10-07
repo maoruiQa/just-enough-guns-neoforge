@@ -9,6 +9,7 @@
     "VehicleProjectileHitMixin",
     "FabricExplosionShakeMixin",
     "VehicleExplosionMixin",
+    "EnemyVehicleDamageMixin",
     "LivingEntityFireDamageMixin",
     "SmokeMobTargetMixin",
     "SmokeTargetingConditionsMixin",

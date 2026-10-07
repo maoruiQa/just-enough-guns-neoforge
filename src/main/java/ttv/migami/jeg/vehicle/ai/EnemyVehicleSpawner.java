@@ -51,7 +51,14 @@ public final class EnemyVehicleSpawner {
 
     @Nullable
     public static VehicleEntity trySpawnRaidVehicle(ServerLevel level, BlockPos origin, @Nullable BlockPos burstCenter, @Nullable Player target) {
-        if (!canSpawnNaturally(level)) {
+        return trySpawnRaidVehicle(level, origin, burstCenter, target, null, 0, false);
+    }
+
+    @Nullable
+    public static VehicleEntity trySpawnRaidVehicle(ServerLevel level, BlockPos origin, @Nullable BlockPos burstCenter,
+                                                   @Nullable Player target, @Nullable ttv.migami.jeg.faction.raid.RaidDifficulty difficulty,
+                                                   int wave, boolean heavyAlreadySpawned) {
+        if (difficulty == null ? !canSpawnNaturally(level) : !Config.enemyVehicleSpawningEnabled()) {
             return null;
         }
 
@@ -60,7 +67,18 @@ public final class EnemyVehicleSpawner {
             if (!isOpenSky(level, groundPos)) {
                 continue;
             }
-            Identifier vehicleId = pickVehicleId(level, groundPos, level.getRandom());
+            Identifier vehicleId;
+            if (difficulty == null) {
+                vehicleId = pickVehicleId(level, groundPos, level.getRandom());
+            } else {
+                var pool = difficulty.vehiclePool(wave, heavyAlreadySpawned);
+                if (pool.isEmpty()) return null;
+                if (isJungle(level, groundPos)) {
+                    var air = pool.stream().filter(id -> id.equals("ah6") || id.equals("mi28")).toList();
+                    if (!air.isEmpty()) pool = air;
+                }
+                vehicleId = Reference.id(pool.get(level.getRandom().nextInt(pool.size())));
+            }
             BlockPos spawnPos = spawnPosForVehicle(level, groundPos, vehicleId);
             if (!isVehicleSpawnClear(level, spawnPos, vehicleId)) {
                 continue;

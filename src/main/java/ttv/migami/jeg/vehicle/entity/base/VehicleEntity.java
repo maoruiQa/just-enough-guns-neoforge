@@ -1930,7 +1930,7 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         }
     }
 
-    private boolean isEnemyAiVehicle() {
+    public boolean isEnemyAiVehicle() {
         return this.entityTags().contains(EnemyVehicleController.ENEMY_VEHICLE_TAG);
     }
 
@@ -2285,7 +2285,10 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         } else if (!this.hasAmmo(weapon.ammoId())) {
             return false;
         }
-        Vec3 direction = this.weaponAimDirection(shooter);
+        var combatCycle = ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.applies(this, shooter)
+                ? EnemyVehicleController.combatCycle(this) : null;
+        if (!ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.allowShot(this, shooter, combatCycle)) return false;
+        Vec3 direction = ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.shotDirection(this, shooter, this.weaponAimDirection(shooter), combatCycle);
         if (direction.lengthSqr() < 1.0E-4D || !this.consumeEnergy(weapon.energyCost())) {
             return false;
         }
@@ -2301,7 +2304,9 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         }
         if (weapon.guided()) {
             this.launchMissile(shooter, direction, stats, seekInput);
-            this.setWeaponFireCooldown(selectedSlot, aiSeatIndex, stats.fireDelay());
+            this.setWeaponFireCooldown(selectedSlot, aiSeatIndex,
+                    ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.fireDelay(this, shooter, stats.fireDelay(), combatCycle));
+            ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.fired(this, shooter, combatCycle);
             return true;
         }
         Vec3 muzzle = this.weaponMuzzlePosition(weapon, direction, 1.15D, 0.9D);
@@ -2312,7 +2317,9 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         if (this.level() instanceof ServerLevel serverLevel) {
             bullet.sendTrailToClients(serverLevel);
         }
-        this.setWeaponFireCooldown(selectedSlot, aiSeatIndex, stats.fireDelay());
+        this.setWeaponFireCooldown(selectedSlot, aiSeatIndex,
+                ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.fireDelay(this, shooter, stats.fireDelay(), combatCycle));
+        ttv.migami.jeg.vehicle.ai.EnemyVehicleCombat.fired(this, shooter, combatCycle);
         return true;
     }
 
@@ -2492,6 +2499,13 @@ public class VehicleEntity extends Entity implements MenuProvider, ExtendedMenuP
         this.entityData.set(DATA_MISSILE_LOCKED, false);
         this.entityData.set(DATA_MISSILE_LOCK_TARGET, -1);
         this.entityData.set(DATA_MISSILE_SEEK_TICKS, 0);
+    }
+
+    public static void warnEnemyAttack(Player target) {
+        warnTarget(target, "message.jeg.vehicle.attack_warning", VehicleSoundHelper.lockedWarning(), 2.0F, 1.2F);
+        if (target.getRootVehicle() instanceof VehicleEntity vehicle && hasRadarWarningSystem(vehicle)) {
+            warnTarget(vehicle, "message.jeg.vehicle.attack_warning", VehicleSoundHelper.lockedWarning(), 2.0F, 1.2F);
+        }
     }
 
     private void warnSeekTarget(Entity target) {
