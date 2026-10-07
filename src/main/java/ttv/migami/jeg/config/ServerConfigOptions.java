@@ -113,6 +113,7 @@ public final class ServerConfigOptions {
         addBoolean(options, "combat.bulletBlockDestruction", Category.COMBAT, "gui.jegn.config.option.bullet_block_destruction");
         addBoolean(options, "combat.magazineFeed", Category.COMBAT, "gui.jegn.config.option.magazine_feed");
         addBoolean(options, "combat.headshotMultiplier", Category.COMBAT, "gui.jegn.config.option.headshot_multiplier");
+        addDouble(options, "combat.hipFireSpreadMultiplier", Category.COMBAT, 0.0D, 5.0D, "gui.jegn.config.option.hip_fire_spread_multiplier");
         addBoolean(options, "combat.gunnerTerrainPlacement.enabled", Category.COMBAT, "gui.jegn.config.option.gunner_terrain_placement");
         options.add(new Option(
                 "combat.gunnerTerrainPlacement.block",
@@ -132,9 +133,10 @@ public final class ServerConfigOptions {
         addDouble(options, "vehicle.enemySpawning.maxConversionChance", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_max_conversion_chance");
         addDouble(options, "vehicle.enemySpawning.conversionChancePerDay", Category.VEHICLE, 0.0D, 1.0D, "gui.jegn.config.option.enemy_vehicle_conversion_chance_per_day");
 
-        // 15 gunner growth types × 18 settings = 270, plus 21 non-growth options = 291
-        if (options.size() != 291) {
-            throw new IllegalStateException("Expected 291 editable config options, found " + options.size());
+        // 15 gunner growth types × 18 settings = 270, plus 20 non-growth options = 290
+        int expected = 20 + Config.gunnerGrowthTypes().length * Config.gunnerGrowthSettings().length;
+        if (options.size() != expected) {
+            throw new IllegalStateException("Expected " + expected + " editable config options, found " + options.size());
         }
         return List.copyOf(options);
     }
