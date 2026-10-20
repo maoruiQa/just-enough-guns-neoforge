@@ -6,7 +6,7 @@
 
 - Fixed the startup crash on NeoForge `26.3.0.95` / FancyModLoader `12.0.12` caused by the removed `ModConfig.Type.SERVER` field. Resolve the renamed `SYNCED` type at runtime, with `SERVER` support retained for earlier 26.3 loaders.
 - Kept the existing `jeg-server.toml` filename and server-to-client configuration synchronization, so the global `config/jeg-server.toml` continues to be used.
-- Included the recipe-map fix from commit `c999b73c`: initialize filtered recipe maps through the platform factory so NeoForge's synchronized recipe indexes are populated when players join.
+- Included the recipe-map fix from commit `c999b73c`: build filtered recipe maps through `RecipeMap.create()` to preserve platform and mod initialization hooks. The Fabric-specific synchronized-serializer crash was not reproduced on NeoForge.
 
 ### Changed
 
@@ -19,6 +19,8 @@
 
 ### Verification
 
+- Passed all 24 RecipeMap regression steps covering dedicated login, same-player reconnect, server restart, singleplayer, both ammunition modes, and reloads; checked all 14 controlled recipes, ordinary recipes, and client recipe books.
+- Repeated all 18 dedicated-server recipe steps with the combined `1.8.2-hotfix1020` source snapshot, including the config compatibility fix. Verified the delivered JAR's classes and resource contents against the independently built snapshot; the mixin JSON differs only in formatting.
 - Passed `gradlew.bat clean build`, including all existing magazine-mode, vehicle geometry/damage, explosion-shake, and raid-balance checks.
 - Executed the production config-type resolver against FML `12.0.0` and `12.0.12`; both `SERVER` and `SYNCED` paths passed.
 - Started the NeoForge `26.3.0.7-beta` dedicated server, reached `Done`, loaded 161 JEG recipes, and stopped it normally.
