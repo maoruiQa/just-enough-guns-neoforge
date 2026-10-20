@@ -3,6 +3,7 @@
 ## 1.8.2-hotfix1020 - 2026-10-20
 
 ### Fixed
+- Fixed missing Phantom SMG textures by supplying both the animated texture and the item fallback used by gun rendering.
 
 - Fixed the startup crash on NeoForge `26.3.0.95` / FancyModLoader `12.0.12` caused by the removed `ModConfig.Type.SERVER` field. Resolve the renamed `SYNCED` type at runtime, with `SERVER` support retained for earlier 26.3 loaders.
 - Kept the existing `jeg-server.toml` filename and server-to-client configuration synchronization, so the global `config/jeg-server.toml` continues to be used.
