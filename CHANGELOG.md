@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.2-hotfix1020 - 2026-10-20
+
+### Fixed
+- Fixed joining a world failing with `Invalid player data` when Fabric recipe synchronization is enabled. Magazine-mode filtering now uses `RecipeMap.create()` so Fabric initializes its synchronized-serializer index.
+- Rebuild filtered recipe maps from the original registry lookup so recipes return correctly when switching ammunition modes; recipe-book filtering and reload behavior are preserved.
+
+### Verification
+- Reproduced the original `bySyncedSerializer` null-pointer failure with a standalone Fabric test mod and a real client connecting to a dedicated server.
+- Passed all 24 recipe regression steps covering dedicated login, same-player reconnect, server restart, singleplayer, both modes, and reloads; checked all 14 controlled recipes, ordinary recipes, and client synchronization.
+- Passed the full build and separate client source-set compilation. Verification fixtures are excluded from the release JAR.
+
 ## 1.8.2 - 2026-10-07
 
 ### Added
