@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.2-hotfix1020 - 2026-10-20
+
+### Fixed
+
+- Fixed missing Phantom SMG textures by supplying both the animated texture and the item fallback used by gun rendering.
+
 ## 1.8.2 - 2026-10-07
 
 ### Added
