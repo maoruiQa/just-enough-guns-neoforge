@@ -5,9 +5,11 @@ A modern NeoForge 26.3 unofficial port of the Forge 1.20.1 mod Just Enough Guns,
 
 ## Overview
 
-This module is the Java 25 NeoForge 26.3 port of Just Enough Guns New **1.8.2**, carried forward from the NeoForge 26.2 line. It carries magazine-fed weapons, Walkürenritt vehicles, and the 1.8.0 special-equipment pack (FPV drones, C4 / claymore / C4 vest, Javelin & Igla, smoke denial, vehicle lock UI), plus kill-credit fixes and the vehicle / missile / rocket combat balance pass.
+This module is the Java 25 NeoForge 26.3 port of Just Enough Guns New **1.8.2-hotfix1020**, carried forward from the NeoForge 26.2 line. It carries magazine-fed weapons, Walkürenritt vehicles, and the 1.8.0 special-equipment pack (FPV drones, C4 / claymore / C4 vest, Javelin & Igla, smoke denial, vehicle lock UI), plus kill-credit fixes and the vehicle / missile / rocket combat balance pass.
 
 ## Latest Release Notes
+
+Version `1.8.2-hotfix1020` fixes startup on NeoForge 26.3.0.95 / FML 12.0.12 after the server config type was renamed, while retaining support for earlier 26.3 loaders and the existing `jeg-server.toml` configuration.
 
 Version `1.8.2` adds a four-chapter combat-career guide with legacy progress migration, SW-aligned vehicle controls and part damage, ADS/spread adjustments, and server magazine-mode notices with matching recipes. It also fixes delayed trigger release, anti-armor impacts, truck fall damage, and config-menu feedback.
 
@@ -19,7 +21,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete changes.
 
 | Loader | Minecraft | Java | Mod Version | Required Dependencies |
 | --- | --- | --- | --- | --- |
-| NeoForge | 26.3 | Java 25 | 1.8.2 | NeoForge 26.3.x, GeckoLib 5.5.7 |
+| NeoForge | 26.3 | Java 25 | 1.8.2-hotfix1020 | NeoForge 26.3.x, GeckoLib 5.5.7 |
 
 ## Controls
 

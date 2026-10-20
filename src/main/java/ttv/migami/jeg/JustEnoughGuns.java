@@ -43,7 +43,7 @@ public final class JustEnoughGuns {
 
     public JustEnoughGuns(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
-        container.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);
+        container.registerConfig(serverConfigType(), Config.SERVER_SPEC, Reference.MOD_ID + "-server.toml");
 
         LOGGER.info("Initializing Just Enough Guns for Minecraft 26.3");
 
@@ -74,6 +74,15 @@ public final class JustEnoughGuns {
         registerGameEvents();
 
         LOGGER.info("JEG initialization completed successfully");
+    }
+
+    private static ModConfig.Type serverConfigType() {
+        // FML 12.0.8 renamed SERVER to SYNCED; support both 26.3 loader versions.
+        try {
+            return ModConfig.Type.valueOf("SYNCED");
+        } catch (IllegalArgumentException ignored) {
+            return ModConfig.Type.valueOf("SERVER");
+        }
     }
 
     // FIXED: Remove the timing issue by registering events immediately

@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.8.2-hotfix1020 - 2026-10-20
+
+### Fixed
+
+- Fixed the startup crash on NeoForge `26.3.0.95` / FancyModLoader `12.0.12` caused by the removed `ModConfig.Type.SERVER` field. Resolve the renamed `SYNCED` type at runtime, with `SERVER` support retained for earlier 26.3 loaders.
+- Kept the existing `jeg-server.toml` filename and server-to-client configuration synchronization, so the global `config/jeg-server.toml` continues to be used.
+- Included the recipe-map fix from commit `c999b73c`: initialize filtered recipe maps through the platform factory so NeoForge's synchronized recipe indexes are populated when players join.
+
+### Changed
+
+- Set the mod version to `1.8.2-hotfix1020`; the artifact is `jegn-1.8.2-hotfix1020+neoforge26.3.jar`.
+- This hotfix applies to the NeoForge 26.3 module only.
+
+### Upgrading
+
+- FML 12.0.8+ uses the world's `syncedconfig` directory instead of `serverconfig` for synchronized configuration overrides. If a world uses `serverconfig/jeg-server.toml`, copy that file to `syncedconfig/jeg-server.toml` when upgrading the loader. The global `config/jeg-server.toml` needs no rename or move.
+
+### Verification
+
+- Passed `gradlew.bat clean build`, including all existing magazine-mode, vehicle geometry/damage, explosion-shake, and raid-balance checks.
+- Executed the production config-type resolver against FML `12.0.0` and `12.0.12`; both `SERVER` and `SYNCED` paths passed.
+- Started the NeoForge `26.3.0.7-beta` dedicated server, reached `Done`, loaded 161 JEG recipes, and stopped it normally.
+- Launched the packaged JAR on production NeoForge `26.3.0.95` / FML `12.0.12` with GeckoLib `5.5.7`, then joined a disposable singleplayer world. Confirmed that `syncedconfig/jeg-server.toml` overrides the global configuration: `magazineFeedEnabled = false` loaded direct-feed mode and 151 JEG recipes.
+- Verified the packaged version is `1.8.2-hotfix1020`. Full gameplay regression testing was not performed; existing GeckoLib animation parsing warnings remain outside this hotfix.
+
 ## 1.8.2 - 2026-10-07
 
 ### Added
