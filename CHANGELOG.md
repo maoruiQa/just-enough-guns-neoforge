@@ -3,6 +3,7 @@
 ## 1.8.2-hotfix1020 - 2026-10-20
 
 ### Fixed
+- Fixed missing Phantom SMG textures by supplying both the animated texture and the item fallback used by gun rendering.
 - Fixed joining a world failing with `Invalid player data` when Fabric recipe synchronization is enabled. Magazine-mode filtering now uses `RecipeMap.create()` so Fabric initializes its synchronized-serializer index.
 - Rebuild filtered recipe maps from the original registry lookup so recipes return correctly when switching ammunition modes; recipe-book filtering and reload behavior are preserved.
 
