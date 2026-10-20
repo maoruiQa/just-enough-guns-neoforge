@@ -9,6 +9,7 @@
 ### Verification
 - Reproduced the original `bySyncedSerializer` null-pointer failure with a standalone Fabric test mod and a real client connecting to a dedicated server.
 - Passed all 24 recipe regression steps covering dedicated login, same-player reconnect, server restart, singleplayer, both modes, and reloads; checked all 14 controlled recipes, ordinary recipes, and client synchronization.
+- Repeated all 18 dedicated-server recipe steps with the `1.8.2-hotfix1020` source snapshot, including reconnects and server restart.
 - Passed the full build and separate client source-set compilation. Verification fixtures are excluded from the release JAR.
 
 ## 1.8.2 - 2026-10-07
