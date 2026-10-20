@@ -1,6 +1,11 @@
 package ttv.migami.jeg.mixin;
 
 import java.util.List;
+import java.util.stream.Stream;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeMap;
@@ -19,14 +24,14 @@ public abstract class MagazineModeRecipeMixin implements MagazineRecipeAccess {
     @Shadow  @org.spongepowered.asm.mixin.Final @org.spongepowered.asm.mixin.Mutable private RecipeMap recipes;
     @Shadow @org.spongepowered.asm.mixin.Final @org.spongepowered.asm.mixin.Mutable private java.util.Collection<RecipeHolder<?>> learnableRecipes;
     @Unique private List<RecipeHolder<?>> jeg$learnable;
-    @Unique private List<RecipeHolder<?>> jeg$originals;
+    @Unique private HolderLookup.RegistryLookup<Recipe<?>> jeg$originals;
     @Unique private Boolean jeg$mode;
     @Unique private long jeg$generation;
     @Unique private boolean jeg$dirty;
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void jeg$captureRecipes(CallbackInfo callback) {
-        jeg$originals = List.copyOf(recipes.values());
+    private void jeg$captureRecipes(HolderLookup.Provider registries, CallbackInfo callback) {
+        jeg$originals = registries.lookupOrThrow(Registries.RECIPE);
         jeg$learnable = List.copyOf(learnableRecipes);
         jeg$generation++;
         jeg$dirty = true;
@@ -38,14 +43,15 @@ public abstract class MagazineModeRecipeMixin implements MagazineRecipeAccess {
         if (jeg$originals == null || (!jeg$dirty && Boolean.valueOf(mode).equals(jeg$mode))) return false;
         jeg$mode = mode;
         jeg$dirty = false;
-        var allowed = jeg$originals.stream().filter(holder -> MagazineModeRules.allows(holder.id().identifier().toString(), mode)).toList();
-        var byType = com.google.common.collect.ImmutableMultimap.<net.minecraft.world.item.crafting.RecipeType<?>, RecipeHolder<?>>builder();
-        var byKey = com.google.common.collect.ImmutableMap.<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>, RecipeHolder<?>>builder();
-        for (var holder : allowed) {
-            byType.put(holder.value().getType(), holder);
-            byKey.put(holder.id(), holder);
-        }
-        recipes = MagazineRecipeMapAccessor.jeg$create(byType.build(), byKey.build());
+        var original = jeg$originals;
+        // The factory also initializes recipe indexes injected by the loader and other mods.
+        recipes = RecipeMap.create(new HolderLookup.RegistryLookup.Delegate<Recipe<?>>() {
+            @Override public HolderLookup.RegistryLookup<Recipe<?>> parent() { return original; }
+            @Override public Stream<Holder.Reference<Recipe<?>>> listElements() {
+                return original.listElements().filter(holder ->
+                        MagazineModeRules.allows(holder.key().identifier().toString(), mode));
+            }
+        });
         learnableRecipes = jeg$learnable.stream().filter(holder -> MagazineModeRules.allows(holder.id().identifier().toString(), mode)).toList();
         return true;
     }
