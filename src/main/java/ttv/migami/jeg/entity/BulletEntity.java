@@ -122,9 +122,9 @@ public class BulletEntity extends Projectile {
     private static final float VEHICLE_DIRECT_HIT_BLOCK_DAMAGE_SCALE = 0.3F;
     private static final double VEHICLE_DIRECT_HIT_FALLOFF_DISTANCE_SCALE = 1.7D;
     private static final float VEHICLE_20MM_EXPLOSION_POWER = 1.35F;
-    private static final float VEHICLE_30MM_EXPLOSION_POWER = 0.75F;
+    private static final float VEHICLE_30MM_EXPLOSION_POWER = 0.5F;
     private static final float VEHICLE_20MM_EXPLOSION_DAMAGE = 14.0F;
-    private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 4.0F;
+    private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 2.5F;
     private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.5D;
     private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
     private static final float EXPLOSIVE_MUZZLE_WOOD_BREAK_CHANCE = 0.1F;
@@ -1133,6 +1133,12 @@ public class BulletEntity extends Projectile {
                 }
 
                 applyVehicleCannonBlastDamage(pos, owner, id);
+
+                if (id.equals(VEHICLE_30MM_CANNON_ID) && result instanceof EntityHitResult cannonHit
+                        && cannonHit.getEntity() instanceof LivingEntity cannonTarget) {
+                    // The 2A42 fires every 4 ticks; clear hurt cooldown so each shell lands instead of being eaten by i-frames.
+                    cannonTarget.invulnerableTime = 0;
+                }
             }
             return true;
         }

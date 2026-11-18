@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.8.3 - 2026-11-18
+
+### Fixed
+- Added the missing crafting recipes for the **20mm HE Shell** (`jeg:small_shell`, LAV-150 cannon) and the **30mm AP Shell** (`jeg:autocannon_shell`, BMP-2 2A42 cannon). Both were registered as ammunition and listed in the Gunsmith Manual, but could not be crafted.
+  - 20mm HE Shell ×16: shaped ` C ` / `GTG` / ` I ` — copper ingot, 2 gunpowder, TNT, iron ingot.
+  - 30mm AP Shell ×24: shaped ` I ` / `CGC` / `CTC` — iron ingot, 4 copper ingots, gunpowder, TNT.
+- Restored the missing **Finger Gun** recipe on this branch (shapeless: 2 sticks, iron nugget, string), matching the 26.x branches.
+- Magazines that carry an ammo count but no ammo type, such as `/give @p jeg:rifle_extended_magazine[jeg:magazine_ammo_count=45]`, no longer show "Ammo type: Empty" and refuse to load. They now hold the magazine's standard round: Pistol Ammo for pistol/SMG magazines, Rifle Ammo for rifle/machine-gun magazines, and Shotgun Shells for shotgun magazines. An explicit `jeg:magazine_ammo_item` is still respected.
+
+### Changed
+- Rebalanced the BMP-2 30mm 2A42 cannon so that it behaves like an autocannon. It now fires automatically while the trigger is held:
+  - Fire rate: 80 → 300 RPM (fire delay 15 → 4 ticks).
+  - Damage per shell: 60 → 25. Raw burst DPS rises from 80 to 125, but vehicle flat armour reduction means the effective DPS against armour stays close to before.
+  - Magazine: 8 → 30 shells (reload time unchanged at 3 s), so the cannon can sustain bursts.
+  - Per-shell splash: explosion power 0.75 → 0.5 and blast damage 4 → 2.5, which limits splash damage and block damage at the higher fire rate.
+  - The directly hit target's hurt cooldown is cleared after each shell, so damage invulnerability does not absorb the faster shots.
+  - Estimated direct-fire time to kill (old → new): BMP-2 ≈23 s → ≈27 s, LAV-150 ≈22 s → ≈21 s, Mi-28 ≈14 s → ≈14 s, AH-6 ≈4.5 s → ≈3.4 s, truck ≈13 s → ≈10 s. Infantry wearing Tier VI ballistic armour and full Netherite armour now take about 3 shells (≈0.4 s) instead of being killed by 1 shell.
+  - Enemy AI BMP-2s still fire single heavy rounds per attack cycle, so each AI cannon hit now deals 25 instead of 60.
+- Set the mod version to `1.8.3`; the artifact is `jegn-1.8.3+fabric1.21.1.jar`.
+
+### Verification
+
+- Compiled the module and started a dedicated server (`runServer`). It reached `Done` and loaded 111 → 114 JEG recipes. A temporary in-process check confirmed that the new recipes were loaded, the count-only magazine fallback works for every magazine family, an explicit ammo type is preserved, empty magazines stay empty, the count is clamped to capacity, and the 30mm stats are applied. Magazines built with `item replace … jeg:rifle_extended_magazine[jeg:magazine_ammo_count=45]`, with and without `jeg:magazine_ammo_item`, load as 45 rounds of Rifle Ammo. The temporary check is not included in the release.
+- Ran `gradlew build`, including the existing vehicle damage/geometry, magazine-mode, raid-balance and explosion-shake checks.
+
 ## 1.8.2-hotfix1020 - 2026-10-20
 
 ### Fixed
