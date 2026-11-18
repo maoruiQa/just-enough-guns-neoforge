@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " I ",
+    "CGC",
+    "CTC"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:copper_ingot",
+    "G": "minecraft:gunpowder",
+    "T": "minecraft:tnt"
+  },
+  "result": {
+    "id": "jeg:autocannon_shell",
+    "count": 24
+  }
+}
