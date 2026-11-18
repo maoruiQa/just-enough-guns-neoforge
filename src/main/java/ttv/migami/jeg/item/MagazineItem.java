@@ -79,6 +79,14 @@ public final class MagazineItem extends Item {
             return baseType;
         }
 
+        public Identifier defaultAmmo() {
+            return switch (baseType) {
+                case PISTOL, SMG -> Reference.id("pistol_ammo");
+                case SHOTGUN -> Reference.id("shotgun_shell");
+                default -> Reference.id("rifle_ammo");
+            };
+        }
+
         public boolean isVariantOf(MagazineType type) {
             return baseType == type;
         }
@@ -226,10 +234,12 @@ public final class MagazineItem extends Item {
     @Nullable
     public Identifier getAmmoItemId(ItemStack stack) {
         String stored = stack.get(ModDataComponents.MAGAZINE_AMMO_ITEM.get());
-        if (stored == null || stored.isBlank()) {
-            return null;
+        Identifier parsed = stored == null || stored.isBlank() ? null : Identifier.tryParse(stored);
+        if (parsed != null) {
+            return parsed;
         }
-        return Identifier.tryParse(stored);
+        // A count without an ammo type (e.g. /give ...[jeg:magazine_ammo_count=45]) holds the magazine's standard round.
+        return getAmmoCount(stack) > 0 ? type.defaultAmmo() : null;
     }
 
     private UnloadState getUnloadState(ItemStack magazineStack, ItemStack offhandStack) {
