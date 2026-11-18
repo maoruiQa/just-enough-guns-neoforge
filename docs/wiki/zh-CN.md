@@ -182,6 +182,17 @@ Fabric 26.2 客户端会在暂停菜单加入 **JEGN 配置** 按钮。服务器
 
 和平难度下不能生成枪手巡逻；巡逻命令需要管理员权限。`simulatePatrol` 适合不等待自然事件就检查某个派系的武器配置。
 
+### 给予已装填的弹匣
+
+弹匣内容保存在两个物品组件中：`jeg:magazine_ammo_count` 与 `jeg:magazine_ammo_item`。同时设置两者即可获得装有指定弹药的弹匣：
+
+```text
+/give @p jeg:rifle_extended_magazine[jeg:magazine_ammo_count=45,jeg:magazine_ammo_item="jeg:rifle_ammo"]
+/give @p jeg:shotgun_magazine[jeg:magazine_ammo_count=8,jeg:magazine_ammo_item="jeg:handmade_shell"]
+```
+
+自 1.8.3 起只写数量也可以：只有数量、没有弹药类型的弹匣会视为装有该弹匣的标准弹药（手枪与冲锋枪弹匣为手枪弹，步枪与机枪弹匣为步枪弹，霰弹枪弹匣为霰弹）。超过容量的数量会被限制为弹匣容量。
+
 ### 配置命令树
 
 ```text

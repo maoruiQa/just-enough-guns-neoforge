@@ -182,6 +182,17 @@ All commands start with `/justEnoughGuns`. Press `Tab` after each word to see su
 
 Patrol commands fail in Peaceful and require gamemaster permission. `simulatePatrol` is useful for checking a faction loadout without waiting for a natural encounter.
 
+### Giving pre-loaded magazines
+
+Magazines store their contents in two item components: `jeg:magazine_ammo_count` and `jeg:magazine_ammo_item`. Set both to give a magazine loaded with a specific round:
+
+```text
+/give @p jeg:rifle_extended_magazine[jeg:magazine_ammo_count=45,jeg:magazine_ammo_item="jeg:rifle_ammo"]
+/give @p jeg:shotgun_magazine[jeg:magazine_ammo_count=8,jeg:magazine_ammo_item="jeg:handmade_shell"]
+```
+
+Since 1.8.3 the count alone is also enough: a magazine with a count but no ammo item holds its standard round (pistol and SMG magazines hold Pistol Ammo, rifle and machine-gun magazines hold Rifle Ammo, shotgun magazines hold Shotgun Shells). Counts above the magazine's capacity are clamped.
+
 ### Configuration command tree
 
 ```text
