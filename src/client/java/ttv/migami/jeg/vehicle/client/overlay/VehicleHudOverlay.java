@@ -784,6 +784,7 @@ public final class VehicleHudOverlay {
     private static void renderSwHud(GuiGraphics gui, Minecraft mc, VehicleEntity vehicle) {
         if (mc.options.hideGui || mc.player == null || mc.player.isSpectator()) return;
         int w=gui.guiWidth(), h=gui.guiHeight();
+        swReadoutDrawn=false;
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
@@ -805,6 +806,7 @@ public final class VehicleHudOverlay {
             Component hover = Component.translatable(hoverKey, mc.options.keyJump.getTranslatedKeyMessage());
             swText(gui, mc, hover.getString(), 85, h - 13, vehicle.hoverMode() ? swHudColor(vehicle) : vehicle.canHover() ? 0xFFFFFF : 0xAAAAAA);
         }
+        swFallbackReadout(gui,mc,vehicle);
         renderPassengerInfo(gui,mc,vehicle);
         renderSwWeaponSelector(gui,mc,vehicle);
         if (!vehicle.activeWarningMessageKey().isEmpty()) {
@@ -895,12 +897,27 @@ public final class VehicleHudOverlay {
         else if(canManualReloadPrompt(vehicle)) text+=" ["+KeyBindings.RELOAD.getTranslatedKeyMessage().getString()+"]";
         return text;
     }
+    private static boolean swReadoutDrawn;
+    /** SW sight HUDs only draw the readout inside first-person/zoomed sights; third person and
+     *  sight-less seats (helicopter pilot/gunner, speedboat) otherwise never see ammo or reload time. */
+    private static void swFallbackReadout(GuiGraphics gui,Minecraft mc,VehicleEntity vehicle) {
+        if(swReadoutDrawn || !vehicle.canPassengerUseSelectedVehicleWeapon(mc.player)) return;
+        // A helicopter pilot in third-person back view already gets the readout beside the projected reticle.
+        if(vehicle.vehicleData().defaults().vehicleType()==VehicleType.HELICOPTER && vehicle.getSeatIndex(mc.player)==0
+                && mc.options.getCameraType()==CameraType.THIRD_PERSON_BACK && !VehicleClientState.zoomDown()) return;
+        String text=swWeaponText(mc,vehicle);
+        if(text==null) return;
+        swText(gui,mc,text,(gui.guiWidth()-mc.font.width(text))/2,gui.guiHeight()-65,swHudColor(vehicle));
+    }
     private static void swWeaponReadout(GuiGraphics gui,Minecraft mc,VehicleEntity vehicle,int color) {
         int w=gui.guiWidth(),h=gui.guiHeight();
         String text=swWeaponText(mc,vehicle);
         if(text==null) return;
+        swReadoutDrawn=true;
         boolean pilot=vehicle.vehicleData().defaults().vehicleType()==VehicleType.HELICOPTER && (!vehicle.vehicleData().defaults().turret().enabled() || vehicle.getSeatIndex(mc.player)!=vehicle.vehicleData().defaults().turret().seatIndex());
         swText(gui,mc,text,pilot?w/2-160:(w-mc.font.width(text))/2,pilot?h/2-59:h-65,color);
+        // The pilot readout sits in the busy upper-left of the sight HUD; repeat a reload under the reticle so it is not missed.
+        if(pilot && vehicle.selectedVehicleWeaponReloading(mc.player)) { String pilotReload=text; swText(gui,mc,pilotReload,(w-mc.font.width(pilotReload))/2,h/2+36,0xFFAA55); }
         if(vehicle.maxVehicleEnergy()>0 && vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.2) swText(gui,mc,vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.02?"NO POWER!":"LOW POWER",w/2-144,h/2+14,vehicle.vehicleEnergy()<vehicle.maxVehicleEnergy()*.02?0xFFFF0000:0xFFFF6B00);
     }
     private static void swDecoy(GuiGraphics gui,Minecraft mc,VehicleEntity vehicle,int y,int color) {

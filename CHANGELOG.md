@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.4 - 2026-11-19
+
+### Fixed
+- Vehicle muzzle flashes and projectiles now leave from the barrel tip. On the LAV-150, the BMP-2 and the speedboat they spawned about 2.7 blocks above the barrel, because the stored muzzle position was offset by the turret and barrel twice. The HUD aim origin and the enemy AI aim origin use the same corrected point. The BMP-2 missile now launches from the roof launcher.
+- Helicopter crews now see the reload countdown (e.g. "Reloading 4s") clearly in every view. In first person the pilot's countdown was only drawn small in the crowded upper-left corner of the sight HUD; it is now also shown in orange under the reticle while reloading. The Mi-28 gunner previously saw no ammo or reload readout unless zoomed in. The same readout now also appears for land vehicles in third person and for the speedboat gunner.
+- Players who start tracking a vehicle after its crew took their seats (coming into range, rejoining, or a vehicle spawned with its crew already seated) now receive the seat assignments one tick after the vehicle appears. Before, their client fell back to boarding order, so for example a Mi-28 gunner could be shown the pilot's rocket pod and no reload countdown. In the 26.3 test this happened every time.
+
+### Changed
+- The 30mm AP shell (BMP-2 2A42) now deals 65 direct damage to vehicles. Damage to living targets stays at 25. Against a LAV-150 this goes from about 3.8 to about 14.6 damage per hit, so one 30-round magazine destroys it (27 head-on hits; previously more than 64 hits did not).
+- Higher crafting yields, so vehicle ammunition is about as cost-effective as RPG rockets made from similar materials:
+  - 20mm HE Shell: 16 → 36 per craft.
+  - 30mm AP Shell: 24 → 30 per craft (one full 2A42 magazine).
+  - Small Rocket (AH-6 70mm / Mi-28 80mm pods): 4 → 18 per craft.
+- Set the mod version to `1.8.4` on all six maintained branches.
+
+### Verification
+- Ran a real client on all six branches with a temporary fire-test hook (not included in the release). The tester sat in the gunner seat and fired the real cannons. Muzzle positions matched the barrel tips, a head-on LAV-150 was destroyed by 27 30mm shells or 40 20mm shells, and the loaded recipes produced 36 / 30 / 18. During AH-6 and Mi-28 reloads, the countdown was visible in first and third person for every pilot weapon (fired empty from a full magazine, and a manual reload) and for the Mi-28 gunner. The pilot's first-person screenshots were checked for the orange countdown under the reticle, also with a gun in hand.
+- Ran `gradlew build` on all six branches.
+
 ## 1.8.3 - 2026-11-18
 
 ### Fixed

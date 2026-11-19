@@ -466,9 +466,9 @@
       "guided": false,
       "seat": 0,
       "muzzle": {
-        "x": -0.0875,
-        "y": 2.943125,
-        "z": 3.677825
+        "x": -0.45,
+        "y": 0.4,
+        "z": 3.2
       },
       "default_zoom": 3,
       "crosshair": "@VehicleRuApc",
@@ -486,9 +486,9 @@
       "guided": false,
       "seat": 0,
       "muzzle": {
-        "x": 0.1625,
-        "y": 2.843125,
-        "z": 0.977825
+        "x": -0.2,
+        "y": 0.3,
+        "z": 0.5
       },
       "default_zoom": 3,
       "crosshair": "@VehicleCommonGun",
@@ -506,9 +506,9 @@
       "guided": true,
       "seat": 0,
       "muzzle": {
-        "x": -0.0875,
-        "y": 2.943125,
-        "z": 3.677825
+        "x": 0,
+        "y": 1.24375,
+        "z": -0.3234
       },
       "default_zoom": 3,
       "crosshair": "@VehicleCommonMissile",
