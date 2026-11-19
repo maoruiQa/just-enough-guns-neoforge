@@ -70,6 +70,67 @@ public final class LauncherGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 60)
+    public static void ammoDamageAgainstLav(GameTestHelper helper) {
+        String[] bullets = {"vehicle_20mm_cannon", "vehicle_30mm_cannon", "rocket_launcher", "vehicle_70mm_rocket", "vehicle_80mm_rocket"};
+        // Every sample stays below LAV hull health: a destruction blast would disturb parallel GameTests.
+        String[] missiles = {"javelin", "vehicle_bmp2_missile", "vehicle_9m120_driver_missile"};
+        java.util.Map<String, Float> perHit = new java.util.LinkedHashMap<>();
+        for (String weapon : bullets) perHit.put(weapon, averageLavHit(helper, weapon, false));
+        for (String weapon : missiles) perHit.put(weapon, averageLavHit(helper, weapon, true));
+        perHit.forEach((weapon, damage) -> System.out.println("AMMO_BALANCE " + weapon + " lavHit=" + damage));
+        helper.assertTrue(perHit.get("vehicle_30mm_cannon") > perHit.get("vehicle_20mm_cannon"),
+                "30mm AP must out-damage 20mm HE against LAV armor: " + perHit);
+        int shellsToKill = (int) Math.ceil(270.0F / perHit.get("vehicle_30mm_cannon"));
+        helper.assertTrue(shellsToKill <= 30, "One 30-round 2A42 magazine must destroy a LAV-150; shells=" + shellsToKill);
+        // Per-craft value: shell recipes and the RPG rocket recipe cost about the same (1 TNT + gunpowder + metal).
+        float rpgCraft = perHit.get("rocket_launcher") * craftYield(helper, "rocket");
+        for (String[] shell : new String[][]{{"vehicle_20mm_cannon", "small_shell"}, {"vehicle_30mm_cannon", "autocannon_shell"},
+                {"vehicle_70mm_rocket", "small_rocket"}, {"vehicle_80mm_rocket", "small_rocket"}}) {
+            float craft = perHit.get(shell[0]) * craftYield(helper, shell[1]);
+            System.out.println("AMMO_BALANCE craft " + shell[1] + "=" + craft + " rocket=" + rpgCraft);
+            helper.assertTrue(craft >= rpgCraft * 0.8F, shell[1] + " craft must deal at least 80% of an RPG rocket craft: " + craft + " vs " + rpgCraft);
+        }
+        helper.succeed();
+    }
+
+    private static int craftYield(GameTestHelper helper, String recipe) {
+        var holder = helper.getLevel().getRecipeManager().byKey(Reference.id(recipe)).orElseThrow();
+        return holder.value().getResultItem(helper.getLevel().registryAccess()).getCount();
+    }
+
+    private static float averageLavHit(GameTestHelper helper, String weapon, boolean missile) {
+        float total = 0.0F;
+        int samples = 4;
+        for (int i = 0; i < samples; i++) {
+            var lav = helper.spawn(ModEntities.LAV150.get(), new Vec3(2, 15, 2));
+            lav.setNoGravity(true);
+            var shooter = helper.spawn(EntityType.COW, new Vec3(15, 15, 15));
+            var center = VehicleGeometry.parts(lav).stream().filter(hit -> hit.part() == OBBInfo.Part.BODY).findFirst().orElseThrow().position();
+            var from = center.add(12, 0, 0);
+            float health = lav.vehicleHealth();
+            if (missile) {
+                var projectile = new VehicleMissileEntity(helper.getLevel(), shooter, null, null, from, center.subtract(from).normalize().scale(5), Reference.id(weapon), false);
+                helper.getLevel().addFreshEntity(projectile);
+                for (int tick = 0; tick < 20 && !projectile.isRemoved(); tick++) {
+                    projectile.tickCount++;
+                    projectile.tick();
+                }
+                helper.assertTrue(projectile.isRemoved(), weapon + " must hit the LAV");
+            } else {
+                var projectile = new BulletEntity(helper.getLevel(), shooter, VehicleWeaponStats.get(Reference.id(weapon)), center.subtract(from));
+                projectile.setPos(from);
+                helper.getLevel().addFreshEntity(projectile);
+                projectile.tick();
+                helper.assertTrue(projectile.isRemoved(), weapon + " must hit the LAV");
+            }
+            total += health - (lav.isRemoved() ? 0.0F : lav.vehicleHealth());
+            lav.discard();
+            shooter.discard();
+        }
+        return total / samples;
+    }
+
     @GameTest(template = "empty", timeoutTicks = 100)
     public static void javelinGuidedDirectImpact(GameTestHelper helper) { flyingMissile(helper, "javelin", false, true); }
     @GameTest(template = "empty", timeoutTicks = 140)

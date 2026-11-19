@@ -521,6 +521,11 @@ public final class NetworkHandler {
         syncVehicleStateToTrackingPlayers(vehicle, true);
     }
 
+    /** A player who starts tracking a vehicle later (came into range, rejoined) never saw the seat-change broadcasts. */
+    public static void sendVehicleSeatAssignments(VehicleEntity vehicle, ServerPlayer player) {
+        player.connection.send(VehicleSeatAssignmentsPayload.fromMap(vehicle.getId(), vehicle.seatAssignmentsSnapshot()));
+    }
+
     public static void broadcastVehicleSeatAssignments(VehicleEntity vehicle) {
         if (!(vehicle.level() instanceof ServerLevel level)) {
             return;

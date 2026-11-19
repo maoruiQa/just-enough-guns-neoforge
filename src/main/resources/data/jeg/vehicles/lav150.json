@@ -375,9 +375,9 @@
       "guided": false,
       "seat": 0,
       "muzzle": {
-        "x": 0.0434375,
-        "y": 2.78995,
-        "z": 4.025
+        "x": 0.02,
+        "y": 0.0517,
+        "z": 3.2
       },
       "default_zoom": 3,
       "crosshair": "@VehicleUsApc",
@@ -395,9 +395,9 @@
       "guided": false,
       "seat": 0,
       "muzzle": {
-        "x": 0.3234375,
-        "y": 2.78995,
-        "z": 1.325
+        "x": 0.3,
+        "y": 0.0517,
+        "z": 0.5
       },
       "default_zoom": 3,
       "crosshair": "@VehicleCommonGun",

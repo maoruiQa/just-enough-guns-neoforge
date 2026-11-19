@@ -2,6 +2,8 @@ package ttv.migami.jeg.vehicle.entity.base;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -278,6 +280,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
     private final Map<UUID, Integer> seatAssignments = new HashMap<>();
     private final Map<UUID, Integer> recentDismountSeatAssignments = new HashMap<>();
     private final Set<UUID> preservedSeatAssignments = new HashSet<>();
+    private final List<ServerPlayer> pendingSeatSyncPlayers = new ArrayList<>();
     private final Map<Integer, Integer> loadedAmmoByWeaponSlot = new HashMap<>();
     private final Map<Integer, Integer> selectedWeaponSlotBySeat = new HashMap<>();
     private final Map<Integer, AiWeaponControl> aiWeaponControlBySeat = new HashMap<>();
@@ -1410,6 +1413,7 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
 
     @Override
     public void tick() {
+        this.sendPendingSeatSyncs();
         this.turretYawO = this.turretYaw();
         this.turretPitchO = this.turretPitch();
         this.propellerRotO = this.propellerRot;
@@ -2122,6 +2126,24 @@ public class VehicleEntity extends Entity implements MenuProvider, GeoEntity {
             return;
         }
         this.seatAssignments.put(passenger.getUUID(), seatIndex);
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        // Without the seats the client falls back to passenger order, e.g. a gunner sees the pilot's weapon and no reload
+        // readout. Sent next tick: a payload sent now can reach the client before the spawn packet and be dropped.
+        this.pendingSeatSyncPlayers.add(player);
+    }
+
+    private void sendPendingSeatSyncs() {
+        if (this.pendingSeatSyncPlayers.isEmpty() || this.level().isClientSide()) {
+            return;
+        }
+        for (ServerPlayer player : this.pendingSeatSyncPlayers) {
+            NetworkHandler.sendVehicleSeatAssignments(this, player);
+        }
+        this.pendingSeatSyncPlayers.clear();
     }
 
     private void syncSeatAssignments() {

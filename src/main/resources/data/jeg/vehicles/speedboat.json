@@ -352,9 +352,9 @@
       "guided": false,
       "seat": 0,
       "muzzle": {
-        "x": 0.0,
-        "y": 3.2705,
-        "z": 0.4761
+        "x": 0,
+        "y": 0.2,
+        "z": 1
       },
       "default_zoom": 3,
       "crosshair": "@VehicleDynamicCross",
