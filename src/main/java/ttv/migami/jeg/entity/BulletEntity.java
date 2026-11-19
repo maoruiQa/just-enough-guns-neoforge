@@ -124,6 +124,8 @@ public class BulletEntity extends Projectile {
     private static final float VEHICLE_30MM_EXPLOSION_DAMAGE = 2.5F;
     private static final double VEHICLE_20MM_EXPLOSION_RADIUS = 4.5D;
     private static final double VEHICLE_30MM_EXPLOSION_RADIUS = 2.0D;
+    // AP shell: vehicles take full-calibre direct damage; living targets keep the per-shell value.
+    private static final float VEHICLE_30MM_ANTI_ARMOR_DAMAGE = 65.0F;
     private static final String TERROR_RAID_MOB_TAG = "TerrorRaidMob";
     private static final EntityDataAccessor<Integer> DATA_TICKS_LIVED = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_HIT_SOLID_BLOCK = SynchedEntityData.defineId(BulletEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1106,7 +1108,7 @@ public class BulletEntity extends Projectile {
                         ttv.migami.jeg.advancement.GameplayActions.hit(shooter, this, living, isCriticalHit(entityHit, living));
                             }
                         } else {
-                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source, stats.damage());
+                            hurtNonLiving(hitEntity, hitEntity instanceof VehicleEntity ? this.damageSources().thrown(this, this.getOwner()) : source, vehicleCannonDirectDamage(id, hitEntity, stats));
                         }
                     }
                 }
@@ -1123,6 +1125,10 @@ public class BulletEntity extends Projectile {
         }
 
         return false;
+    }
+
+    private static float vehicleCannonDirectDamage(Identifier id, Entity hitEntity, GunStats stats) {
+        return id.equals(VEHICLE_30MM_CANNON_ID) && hitEntity instanceof VehicleEntity ? VEHICLE_30MM_ANTI_ARMOR_DAMAGE : stats.damage();
     }
 
     private static float vehicleCannonExplosionPower(Identifier id) {
